@@ -13,18 +13,65 @@
 //                                              old link → the exact error redirect
 //                                              Supabase builds (otp_expired)
 //   POST /rest/v1/rpc/auth_email_confirmed     the /link-expired server check
+//   GET  /rest/v1/<table>                      read-only rows from the sitter
+//                                              fixture (e2e/sitter-fixture.mjs), with
+//                                              PostgREST's eq / neq / in / is / gte /
+//                                              lte filters, order and limit
+//   GET  /auth/v1/admin/users/<id>             the fixture's owner account
 //   everything else under /auth/v1             "no session"
 //
 // Test helpers (not Supabase): POST /__seed {email, confirmed} pre-creates an
-// account; GET /__links?email= returns its link tokens.
+// account; GET /__links?email= returns its link tokens; GET /__photo.png?delay=ms
+// is a bird photo that arrives late.
 //
 //   node e2e/mock-supabase.mjs        (port from MOCK_SUPABASE_PORT, default 54399)
 
 import http from "node:http";
+import { sitterFixture } from "./sitter-fixture.mjs";
 
 const port = Number(process.env.MOCK_SUPABASE_PORT || 54399);
 const users = new Map(); // email → { id, confirmed, token, tokens[] }
 let n = 0;
+const fixture = sitterFixture(`http://127.0.0.1:${port}`);
+// 1x1 PNG.
+const PNG = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==", "base64");
+
+/** PostgREST-style filtering over the fixture's rows (read-only). */
+function selectRows(table, params) {
+  let rows = [...(fixture.tables[table] ?? [])];
+  const unquote = (v) => v.replace(/^"(.*)"$/, "$1");
+  for (const [key, raw] of params) {
+    if (["select", "order", "limit", "offset"].includes(key)) continue;
+    const dot = raw.indexOf(".");
+    const op = raw.slice(0, dot);
+    const val = raw.slice(dot + 1);
+    const get = (r) => (r[key] === undefined ? null : r[key]);
+    if (op === "eq") rows = rows.filter((r) => String(get(r)) === val);
+    else if (op === "neq") rows = rows.filter((r) => String(get(r)) !== val);
+    else if (op === "in") {
+      const set = new Set(val.replace(/^\(|\)$/g, "").split(",").map(unquote));
+      rows = rows.filter((r) => set.has(String(get(r))));
+    } else if (op === "is") rows = rows.filter((r) => (val === "null" ? get(r) == null : String(get(r)) === val));
+    else if (op === "gte") rows = rows.filter((r) => get(r) != null && String(get(r)) >= val);
+    else if (op === "lte") rows = rows.filter((r) => get(r) != null && String(get(r)) <= val);
+  }
+  const order = params.get("order");
+  if (order) {
+    const keys = order.split(",").map((o) => { const [col, dir] = o.split("."); return { col, desc: dir === "desc" }; });
+    rows.sort((a, b) => {
+      for (const { col, desc } of keys) {
+        const x = a[col] ?? "";
+        const y = b[col] ?? "";
+        if (x < y) return desc ? 1 : -1;
+        if (x > y) return desc ? -1 : 1;
+      }
+      return 0;
+    });
+  }
+  const offset = Number(params.get("offset") || 0);
+  const limit = params.get("limit");
+  return rows.slice(offset, limit ? offset + Number(limit) : undefined);
+}
 
 const now = () => new Date().toISOString();
 const newId = () => `00000000-0000-4000-8000-${String(++n).padStart(12, "0")}`;
@@ -64,6 +111,27 @@ http
       const email = (v) => String(v ?? "").trim().toLowerCase();
 
       if (p === "/__health") return send(res, 200, { ok: true });
+      if (p === "/__photo.png") {
+        const delay = Number(url.searchParams.get("delay") || 0);
+        setTimeout(() => {
+          res.writeHead(200, { "content-type": "image/png", "access-control-allow-origin": "*", "cache-control": "no-store" });
+          res.end(PNG);
+        }, delay);
+        return;
+      }
+      if (req.method === "GET" && p.startsWith("/rest/v1/") && !p.startsWith("/rest/v1/rpc/")) {
+        const rows = selectRows(decodeURIComponent(p.slice("/rest/v1/".length)), url.searchParams);
+        // .single() asks for one object; .maybeSingle() and lists take the array.
+        if ((req.headers.accept ?? "").includes("vnd.pgrst.object")) {
+          return rows.length === 1 ? send(res, 200, rows[0]) : send(res, 406, { code: "PGRST116", message: "JSON object requested, multiple (or no) rows returned" });
+        }
+        return send(res, 200, rows, { "content-range": `0-${Math.max(rows.length - 1, 0)}/${rows.length}` });
+      }
+      const admin = p.match(/^\/auth\/v1\/admin\/users\/([^/]+)$/);
+      if (admin) {
+        const u = fixture.users[admin[1]];
+        return u ? send(res, 200, { ...u, aud: "authenticated", role: "authenticated", app_metadata: {}, identities: [], created_at: now() }) : send(res, 404, { code: 404, msg: "User not found" });
+      }
       if (p === "/__seed") {
         const u = { id: newId(), confirmed: !!body.confirmed, tokens: [] };
         if (!u.confirmed) issue(u);

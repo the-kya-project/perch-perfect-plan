@@ -17,6 +17,8 @@ That happened on iPhones in October 2026. On Dutch phones, the app switched to D
   - tapping an old confirmation link after a newer one was sent, then **Send a new link**, then an old link again after confirming;
   - opening a signed-in page, and an old confirmation link, while signed out. The app has to leave for sign-in (or `/link-expired`) on the page's first load, which used to crash on slow phones. Chromium runs this one with its processor slowed 8x, five times over, to recreate a slow phone.
 
+- **The new-sitter tour** (`sitter-tour.spec.ts`): the whole first-visit tour on a sitter link, step by step, with a bird whose long care sheet puts later steps below the fold and whose photo loads late. Every step's highlight must be on screen, on its element, with the tooltip clear of the top buttons and the Emergency bar. A second sitter, with no routine tasks, checks that a step with nothing to point at is skipped. The sitter data comes from `sitter-fixture.mjs`, served by the mock.
+
 A test fails on any React hydration error (#418, #421, #422, #423, #425, #520) or any uncaught error. Each page test also checks that the page shows its own heading, in that language.
 
 ### Adding a language

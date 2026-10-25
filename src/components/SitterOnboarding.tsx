@@ -7,6 +7,7 @@ import { objectPronoun, possessivePronoun } from "@/lib/i18n/pronouns";
 import { AlertTriangle, ChevronLeft, Check, X } from "lucide-react";
 import { K, SERIF } from "@/components/kya";
 import { birdNames } from "@/lib/birdNames";
+import { useCoachSpot } from "@/lib/useCoachSpot";
 
 // First-visit sitter onboarding: a two-screen welcome, then a coach-mark bubble
 // walkthrough that points at the REAL on-screen elements (tagged with
@@ -30,17 +31,6 @@ function formatNames(t: TFunction, names: string[]): string {
 }
 
 
-// A fixed-position element (the bottom nav) shouldn't be scrolled to — only
-// in-page targets (cards, care-plan sections) need the page scrolled.
-function isFixedEl(el: HTMLElement | null): boolean {
-  let n: HTMLElement | null = el;
-  while (n && n !== document.body) {
-    if (window.getComputedStyle(n).position === "fixed") return true;
-    n = n.parentElement;
-  }
-  return false;
-}
-
 const CP_TARGET: Record<string, string> = {
   food: "cp-food",
   handling: "cp-handling",
@@ -51,19 +41,24 @@ const CP_TARGET: Record<string, string> = {
 
 type CoachStep = { target: string; text: string; place: "top" | "bottom" | "auto"; route: "home" | "today" | "careplan" | "guide"; emphasis?: boolean };
 type Phase = null | "welcome" | "overview" | "coach" | "closing";
-type Spot = { rect: { top: number; left: number; width: number; height: number; bottom: number } | null; vw: number; vh: number };
-
 const PAD = 6;
 const GAP = 12;
+// The tour's own Close and Emergency buttons along the top (safe area + 44px
+// buttons), and the bottom Emergency bar's minimum height.
+const OVERLAY_TOP = 64;
+const OVERLAY_BOTTOM = 72;
 
 export function SitterOnboarding({ birds, bird, careSections, hasClips, token }: { birds: any[]; bird: any; careSections?: string[]; hasClips?: boolean; token: string }) {
   const { t, i18n } = useTranslation();
   const locale = pickLocale(i18n.language);
   const [phase, setPhase] = useState<Phase>(null);
   const [step, setStep] = useState(0);
-  const [spot, setSpot] = useState<Spot | null>(null);
   const navigate = useNavigate();
   const stepRef = useRef(0);
+  // Which way the sitter is moving, so a step with nothing to point at is
+  // skipped in that direction; and the steps skipped so far, for the count.
+  const dirRef = useRef<1 | -1>(1);
+  const [skipped, setSkipped] = useState<Set<number>>(() => new Set());
   const bubbleRef = useRef<HTMLDivElement | null>(null);
   const [bubbleH, setBubbleH] = useState(150);
 
@@ -215,69 +210,46 @@ export function SitterOnboarding({ birds, bird, careSections, hasClips, token }:
     return () => window.removeEventListener(REPLAY_EVENT, onReplay);
   }, []);
 
-  // Measure + track the current coach target. Retries until the element renders
-  // (it may be on a route we just navigated to), and re-measures on resize/scroll.
+  // Put each step's screen up. Targets live on different screens (the bird card
+  // on Home, the care-plan sections in the care sheet, the scan card on a
+  // bird's Today). Navigate only when the screen changes, and never let the
+  // router scroll to the top: that reset used to land after the step had
+  // scrolled its target into view, leaving the highlight off screen.
   useEffect(() => {
     if (phase !== "coach") return;
     const cur = steps[step];
     if (!cur) return;
-
-    // Targets live on different screens — the bird card on Home, the care-plan
-    // sections inside the care sheet, the scan card on a bird's Today — so make
-    // sure we're on the right screen before pointing at the target. The retry
-    // loop below waits for it to render after navigation.
+    const base = `/sitter/${token}`;
+    const path = cur.route === "home" ? `${base}/home` : cur.route === "careplan" ? `${base}/care-sheet` : cur.route === "guide" ? `${base}/guide` : base;
+    const here = window.location.pathname.replace(/\/$/, "");
+    const hereBird = new URLSearchParams(window.location.search).get("birdId");
+    const sameBird = cur.route === "home" || !bird?.id || hereBird === bird.id;
+    if (here === path && sameBird) return;
     if (cur.route === "home") {
-      navigate({ to: "/sitter/$token/home", params: { token } });
+      navigate({ to: "/sitter/$token/home", params: { token }, resetScroll: false });
     } else if (cur.route === "careplan") {
-      navigate({ to: "/sitter/$token/care-sheet", params: { token }, search: { birdId: bird?.id } });
+      navigate({ to: "/sitter/$token/care-sheet", params: { token }, search: { birdId: bird?.id }, resetScroll: false });
     } else if (cur.route === "guide") {
-      navigate({ to: "/sitter/$token/guide", params: { token }, search: { birdId: bird?.id } });
+      navigate({ to: "/sitter/$token/guide", params: { token }, search: { birdId: bird?.id }, resetScroll: false });
     } else {
-      navigate({ to: "/sitter/$token", params: { token }, search: { birdId: bird?.id } });
+      navigate({ to: "/sitter/$token", params: { token }, search: { birdId: bird?.id }, resetScroll: false });
     }
-
-    let raf = 0;
-    let tries = 0;
-
-    const measure = (): boolean => {
-      const el = document.querySelector(`[data-coach="${cur.target}"]`);
-      const vw = window.innerWidth;
-      const vh = window.innerHeight;
-      if (!el) {
-        setSpot({ rect: null, vw, vh });
-        return false;
-      }
-      const r = el.getBoundingClientRect();
-      setSpot({ rect: { top: r.top, left: r.left, width: r.width, height: r.height, bottom: r.bottom }, vw, vh });
-      return true;
-    };
-
-    const tick = () => {
-      const el = document.querySelector(`[data-coach="${cur.target}"]`) as HTMLElement | null;
-      // Scroll in-page targets so their top sits ~25% down — keeps the section's
-      // heading visible with room for the bubble. Fixed nav items aren't scrolled.
-      if (el && !isFixedEl(el)) {
-        const r = el.getBoundingClientRect();
-        const delta = r.top - window.innerHeight * 0.25;
-        if (Math.abs(delta) > 4) window.scrollBy({ top: delta, behavior: "auto" });
-      }
-      const ok = measure();
-      if (!ok && tries < 40) {
-        tries += 1;
-        raf = requestAnimationFrame(tick);
-      }
-    };
-    tick();
-
-    const onChange = () => measure();
-    window.addEventListener("resize", onChange);
-    window.addEventListener("scroll", onChange, true);
-    return () => {
-      if (raf) cancelAnimationFrame(raf);
-      window.removeEventListener("resize", onChange);
-      window.removeEventListener("scroll", onChange, true);
-    };
   }, [phase, step, steps]);
+
+  // Wait for the target, scroll it into the clear part of the screen, and
+  // follow it (useCoachSpot).
+  const coachTarget = phase === "coach" ? steps[step]?.target ?? null : null;
+  const spot = useCoachSpot(coachTarget, step, bubbleH + GAP, { top: OVERLAY_TOP, bottom: OVERLAY_BOTTOM });
+
+  // Nothing to point at for this bird (no such section, no clips): skip the
+  // step in the direction the sitter is going rather than dim empty space.
+  useEffect(() => {
+    if (phase !== "coach" || spot.status !== "missing" || spot.stepKey !== step) return;
+    setSkipped((prev) => (prev.has(step) ? prev : new Set(prev).add(step)));
+    if (dirRef.current === 1) next();
+    else back();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [spot.status, phase, step]);
 
   // Track the bubble's real height so the clamp above can keep it on-screen.
   useLayoutEffect(() => {
@@ -305,10 +277,13 @@ export function SitterOnboarding({ birds, bird, careSections, hasClips, token }:
     // first, then a bird's Today), so we just enter the coach at step 0.
     setStep(0);
     stepRef.current = 0;
+    dirRef.current = 1;
+    setSkipped(new Set());
     setPhase("coach");
   }
 
   function next() {
+    dirRef.current = 1;
     if (step < steps.length - 1) {
       const n = step + 1;
       stepRef.current = n;
@@ -318,6 +293,7 @@ export function SitterOnboarding({ birds, bird, careSections, hasClips, token }:
     }
   }
   function back() {
+    dirRef.current = -1;
     if (step > 0) {
       const n = step - 1;
       stepRef.current = n;
@@ -432,17 +408,21 @@ export function SitterOnboarding({ birds, bird, careSections, hasClips, token }:
 
   // ---- Coach-mark walkthrough ----
   const cur = steps[step];
-  const rect = spot?.rect ?? null;
-  const vw = spot?.vw ?? (typeof window !== "undefined" ? window.innerWidth : 360);
-  const vh = spot?.vh ?? (typeof window !== "undefined" ? window.innerHeight : 640);
+  // Until the target has been scrolled into place, show nothing over it: a
+  // highlight drawn mid-scroll is what used to land off screen.
+  const rect = spot.status === "ready" && spot.stepKey === step ? spot.rect : null;
+  const vw = spot.vw || (typeof window !== "undefined" ? window.innerWidth : 360);
+  const vh = spot.vh || (typeof window !== "undefined" ? window.innerHeight : 640);
   const BW = Math.min(300, vw - 24);
+  const shownTotal = steps.length - skipped.size;
+  const shownCurrent = steps.slice(0, step + 1).filter((_, i) => !skipped.has(i)).length;
 
   // Bubble placement: always position by `top` (computed from the measured bubble
   // height) and CLAMP it fully on-screen between the sticky header and the bottom
   // nav — so the Next button is always reachable without scrolling, no matter
   // where the target is.
-  const SAFE_TOP = 58; // clears the sticky layout header
-  const safeBottom = vh - 84; // clears the bottom nav + safe area
+  const SAFE_TOP = Math.max(OVERLAY_TOP, spot.insets.top) ; // under the tour's own buttons, the notch and any pinned header
+  const safeBottom = vh - Math.max(OVERLAY_BOTTOM, spot.insets.bottom); // above the bottom bar and the home bar
   let bubbleStyle: React.CSSProperties;
   if (!rect) {
     const top = Math.max(SAFE_TOP, Math.min((vh - bubbleH) / 2, safeBottom - bubbleH));
@@ -461,13 +441,15 @@ export function SitterOnboarding({ birds, bird, careSections, hasClips, token }:
   }
 
   return (
-    <div className="fixed inset-0 z-50">
+    // data-coach-* attributes: what the iPhone tour test (e2e/sitter-tour.spec.ts) reads.
+    <div className="fixed inset-0 z-50" data-coach-overlay data-coach-current={cur.target} data-coach-status={spot.stepKey === step ? spot.status : "searching"}>
       {/* Transparent capture layer — keeps the app behind inert during the tour. */}
       <div className="absolute inset-0" />
 
       {/* Spotlight: a transparent hole over the target with a huge dimming shadow. */}
       {rect && (
         <div
+          data-coach-spot
           className={`pointer-events-none absolute rounded-[16px] ring-[3px] transition-all duration-200 ${cur.emphasis ? "ring-[#f2b33d]" : "ring-[#cdeab0]"}`}
           style={{
             top: rect.top - PAD,
@@ -478,7 +460,7 @@ export function SitterOnboarding({ birds, bird, careSections, hasClips, token }:
           }}
         />
       )}
-      {/* When the target isn't found, dim the whole screen so the bubble still reads. */}
+      {/* While the target is being found and scrolled to, dim the whole screen. */}
       {!rect && <div className="absolute inset-0 bg-[#1a3d2e]/60" />}
 
       {/* Close (top left) + persistent Emergency (top right). */}
@@ -488,12 +470,12 @@ export function SitterOnboarding({ birds, bird, careSections, hasClips, token }:
       </div>
 
       {/* Bubble: white card, step count, forest progress dots, Back + sunflower Next */}
-      <div ref={bubbleRef} className="setup-frame pointer-events-auto absolute rounded-[20px] bg-white p-4 shadow-xl" style={{ ...bubbleStyle, color: K.forest }}>
-        <p className="m-0 text-[13px] font-[700]" style={{ color: K.quiet }}>{t("sitterOnboarding.coach.stepProgress", "Step {{current}} of {{total}}", { current: step + 1, total: steps.length })}</p>
+      <div ref={bubbleRef} data-coach-bubble className="setup-frame pointer-events-auto absolute rounded-[20px] bg-white p-4 shadow-xl" style={{ ...bubbleStyle, color: K.forest }}>
+        <p className="m-0 text-[13px] font-[700]" style={{ color: K.quiet }}>{t("sitterOnboarding.coach.stepProgress", "Step {{current}} of {{total}}", { current: shownCurrent, total: shownTotal })}</p>
         <p className="m-0 mt-1.5 text-[15px] leading-[1.45]" style={{ color: K.forest }}>{cur.text}</p>
         {/* Dots wrap onto a second line on long tours instead of pushing Next off the card. */}
         <div className="mt-3 flex flex-wrap items-center gap-1" aria-hidden="true">
-          {steps.map((_, i) => (
+          {steps.map((_, i) => skipped.has(i) ? null : (
             <span
               key={i}
               className="h-1.5 rounded-full transition-all"
