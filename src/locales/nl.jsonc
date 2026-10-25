@@ -237,22 +237,28 @@
   "addressInput.zip": "Postcode",
   // By creating an account you agree to our <terms>Terms of service</terms> and <privacy>Privacy policy</privacy>.
   "auth.agreeToTermsOfService": "Door een account aan te maken ga je akkoord met onze <terms>servicevoorwaarden</terms> en ons <privacy>privacybeleid</privacy>.",
+  // Already confirmed? Sign in below.
+  "auth.alreadyConfirmedSignInBelow": "Al bevestigd? Log hieronder in.",
+  // You already have an account — check your inbox or resend the confirmation.
+  "auth.alreadyHaveAccountCheckInbox": "Je hebt al een account — kijk in je inbox of stuur de bevestiging opnieuw.",
   // Apple sign-in failed.
   "auth.appleSignInFailed": "Inloggen met Apple mislukt.",
   // Back to sign in
   "auth.backToSignIn": "Terug naar inloggen",
+  // We sent a new link to <b>{{email}}</b>. Check spam if it isn't there.
+  "auth.confirmationResentTo": "We hebben een nieuwe link gestuurd naar <b>{{email}}</b>. Kijk ook in je spammap als hij er niet is.",
   // Continue with Apple
   "auth.continueWithApple": "Doorgaan met Apple",
   // Continue with Google
   "auth.continueWithGoogle": "Doorgaan met Google",
+  // Couldn't resend. Try again in a moment.
+  "auth.couldNotResendConfirmation": "Opnieuw versturen lukte niet. Probeer het zo nog eens.",
   // Could not send reset email.
   "auth.couldNotSendReset": "Kon de resetmail niet versturen.",
   // Create account
   "auth.createAccount": "Account aanmaken",
   // Email
   "auth.email": "E-mail",
-  // That email already has an account — sign in instead.
-  "auth.emailAlreadyHasAccount": "Er is al een account met dit e-mailadres — log in plaats daarvan in.",
   // Enter the email you signed up with.
   "auth.enterEmailForReset": "Vul het e-mailadres in waarmee je je hebt aangemeld.",
   // First name
@@ -281,6 +287,12 @@
   "auth.pageTitle": "Inloggen — Kya & Co.",
   // Password
   "auth.password": "Wachtwoord",
+  // Resend confirmation
+  "auth.resendConfirmation": "Stuur bevestiging opnieuw",
+  // Resend confirmation ({{cooldown}}s)
+  "auth.resendConfirmationIn": "Stuur bevestiging opnieuw ({{cooldown}}s)",
+  // Sending…
+  "auth.resendingConfirmation": "Versturen…",
   // We'll email you a link to set a new one.
   "auth.resetLine": "We mailen je een link om een nieuw wachtwoord in te stellen.",
   // Reset your password

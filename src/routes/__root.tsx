@@ -9,11 +9,11 @@ import {
   Scripts,
   type ErrorComponentProps,
 } from "@tanstack/react-router";
-import { useEffect, useState, type ReactNode } from "react";
+import { startTransition, useEffect, useState, type ReactNode } from "react";
 import { I18nextProvider, useTranslation } from "react-i18next";
 import i18next from "i18next";
 import { Loader2 } from "lucide-react";
-import { globalI18n } from "@/lib/i18n";
+import { globalI18n, hydrationI18n } from "@/lib/i18n";
 import { StartupSplash } from "@/components/StartupSplash";
 import { K, KyaPrimaryButton } from "@/components/kya";
 import { FrontDoorBody, FrontDoorHeader, FrontDoorPage } from "@/components/frontDoor";
@@ -192,6 +192,10 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1, viewport-fit=cover" },
+      // iOS Safari otherwise rewrites text that looks like a phone number, date,
+      // email or address into links before React hydrates, so the page no longer
+      // matches the server HTML (React #418).
+      { name: "format-detection", content: "telephone=no, date=no, email=no, address=no" },
       { name: "robots", content: "noindex,nofollow" },
       // Ink (--ink) — matches the home-screen icon background for splash continuity.
       { name: "theme-color", content: "#1a3d2e" },
@@ -306,6 +310,14 @@ function RootComponent() {
     return router.subscribe("onResolved", ready);
   }, [router]);
   useEffect(() => { void runErrorTest(setRenderTest); }, []); // TEMPORARY
+  // English (hydrationI18n) for the server render and hydration, then the live
+  // instance, which follows the owner's language. See hydrationI18n in
+  // lib/i18n/i18n.ts: switching language while a route was still hydrating is
+  // what made Dutch phones hit React #418/#422 on /, /auth and /confirm-email.
+  // A transition, so React finishes hydrating every pending subtree with the
+  // English it was server-rendered in before applying the switch.
+  const [i18n, setI18n] = useState(() => hydrationI18n);
+  useEffect(() => { startTransition(() => setI18n(globalI18n)); }, []);
 
   useEffect(() => {
     // Error reporting first, so anything that throws during the rest of boot is
@@ -376,13 +388,13 @@ function RootComponent() {
   }, [router, queryClient]);
 
   return (
-    // App-wide default i18n instance, pinned to English. This establishes
-    // react-i18next's instance for EVERY surface — including owner routes that
-    // render shared components (CareSheetView, ConcernFlow, ScanForm, …) but
-    // don't otherwise import the i18n module. Without it those components would
-    // hit an uninitialized i18next and render raw keys. The sitter route nests
-    // its own <I18nextProvider> to switch its subtree to Dutch; this stays en.
-    <I18nextProvider i18n={globalI18n} defaultNS="translation">
+    // App-wide i18n instance (hydrationI18n until hydrated, then globalI18n).
+    // This establishes react-i18next's instance for EVERY surface — including
+    // owner routes that render shared components (CareSheetView, ConcernFlow,
+    // ScanForm, …) but don't otherwise import the i18n module. Without it those
+    // components would hit an uninitialized i18next and render raw keys. The
+    // sitter route nests its own <I18nextProvider> for its own language.
+    <I18nextProvider i18n={i18n} defaultNS="translation">
       <QueryClientProvider client={queryClient}>
         {startupFailed ? <SomethingWentWrong /> : renderTest ? <ThrowOnRender nonce={renderTest} /> : <Outlet />}
         <Toaster />

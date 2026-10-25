@@ -34,7 +34,12 @@ function writeResendUntil(ts: number) {
 function ConfirmEmail() {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const [email] = useState(readEmail);
+  // null until read after mount. Reading sessionStorage during render gave the
+  // browser's first render an address the server never had ("We sent a link to
+  // <b></b>" vs "…<b>you@…</b>"), React #418. It shows up on a reload, e.g.
+  // when iOS reloads the tab after the person comes back from the Mail app.
+  const [email, setEmail] = useState<string | null>(null);
+  useEffect(() => setEmail(readEmail()), []);
   const [resending, setResending] = useState(false);
   const [cooldown, setCooldown] = useState(0);
   const [justSent, setJustSent] = useState(false);
@@ -43,7 +48,7 @@ function ConfirmEmail() {
 
   // No pending email (e.g. opened this URL directly) → nothing to confirm.
   useEffect(() => {
-    if (!email) navigate({ to: "/auth", search: { mode: "signup" as const }, replace: true });
+    if (email === "") navigate({ to: "/auth", search: { mode: "signup" as const }, replace: true });
   }, [email, navigate]);
 
   // Recognize confirmation and move on. The owner clicks the link in their email
@@ -125,7 +130,7 @@ function ConfirmEmail() {
 
   return (
     <CheckEmailView
-      email={email}
+      email={email ?? ""}
       kind="signup"
       onBack={useDifferentEmail}
       onResend={resend}
