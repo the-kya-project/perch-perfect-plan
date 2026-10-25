@@ -63,6 +63,21 @@ async function walkTour(page: Page, locale: string) {
     expect(bubble!.top, `${where}: tooltip below the top buttons`).toBeGreaterThanOrEqual(56);
     expect(bubble!.bottom, `${where}: tooltip on screen`).toBeLessThanOrEqual(vh);
     if (bar) expect(bubble!.bottom, `${where}: tooltip above the Emergency bar`).toBeLessThanOrEqual(bar.top + 1);
+    if (target === "cp-home") {
+      // Data refreshing can blank the care sheet for a moment: the page shrinks,
+      // the browser pulls the scroll back up, and the section comes back below
+      // the fold (what WebKit hit in CI). The tour has to bring it back.
+      await page.evaluate(async () => {
+        const main = document.querySelector<HTMLElement>('[data-coach="cp-header"]')?.parentElement;
+        if (!main) return;
+        main.style.display = "none";
+        await new Promise((r) => setTimeout(r, 300));
+        main.style.display = "";
+      });
+      await expect
+        .poll(async () => (await boxOf(page, `[data-coach="${target}"]`))?.top ?? 9999, { message: `${where}: back on screen after the page collapsed`, timeout: 6000 })
+        .toBeLessThan(vh - 40);
+    }
     seen.push({ target, scrollY: await page.evaluate(() => window.scrollY), step: (await page.locator("[data-coach-bubble] p").first().textContent()) ?? "" });
     await page.locator("[data-coach-bubble]").getByRole("button", { name: nextLabel }).click();
   }

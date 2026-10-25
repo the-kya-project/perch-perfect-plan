@@ -152,6 +152,7 @@ export function useCoachSpot(
     let el: HTMLElement | null = null;
     let insets: CoachInsets = { top: 0, bottom: 0 };
     let ro: ResizeObserver | null = null;
+    let recentering = false;
     const started = performance.now();
     const selector = `[data-coach="${target}"]`;
     const vp = () => ({ vw: window.innerWidth, vh: window.innerHeight });
@@ -233,9 +234,18 @@ export function useCoachSpot(
       if (!settled && now - foundAt < SETTLE_MS) { raf = requestAnimationFrame(find); return; }
       scrollIntoBand(() => {
         measure();
-        // From here on, follow the element: layout shifts and size changes.
+        // From here on, follow the element. When the page changes size (data
+        // refreshing, a section re-rendering) the browser can pull the scroll
+        // position back up and leave the element off screen: put it back.
+        // A person scrolling doesn't resize the page, so this never fights them.
         if (typeof ResizeObserver !== "undefined" && el) {
-          ro = new ResizeObserver(() => measure());
+          ro = new ResizeObserver(() => {
+            measure();
+            if (!recentering && !inBand()) {
+              recentering = true;
+              scrollIntoBand(() => { recentering = false; measure(); });
+            }
+          });
           ro.observe(el);
           ro.observe(document.body);
         }
