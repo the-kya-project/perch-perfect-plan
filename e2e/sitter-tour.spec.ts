@@ -70,8 +70,14 @@ async function walkTour(page: Page, locale: string) {
   return seen;
 }
 
-test("the sitter tour shows every step on screen, with a long care sheet", async ({ page, problems, locale_ }) => {
-  test.setTimeout(180_000);
+test("the sitter tour shows every step on screen, with a long care sheet", async ({ page, problems, locale_, browserName }) => {
+  test.setTimeout(240_000);
+  // A slow phone: CI first caught the tour scrolling to a section that then
+  // moved again. Chromium slows its processor 4x to recreate that.
+  if (browserName === "chromium") {
+    const cdp = await page.context().newCDPSession(page);
+    await cdp.send("Emulation.setCPUThrottlingRate", { rate: 4 });
+  }
   await startTour(page, "e2e-sitter-long-care", locale_);
   const seen = await walkTour(page, locale_);
 

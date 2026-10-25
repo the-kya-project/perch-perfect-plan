@@ -38,6 +38,8 @@ const FIND_MS = 5000;
 /** How long a found element may keep moving (late images, data) before we scroll anyway. */
 const SETTLE_MS = 2500;
 const STABLE_FRAMES = 3;
+/** Scroll attempts per step before showing the highlight wherever it is. */
+const MAX_SCROLLS = 3;
 
 const IDLE: CoachSpot = { stepKey: null, status: "idle", rect: null, vw: 0, vh: 0, insets: { top: 0, bottom: 0 } };
 
@@ -171,14 +173,24 @@ export function useCoachSpot(
       setSpot({ stepKey, status: "ready", rect: rectOf(el), ...vp(), insets });
     };
 
-    const scrollIntoBand = (then: () => void) => {
+    /** Is the element where we put it: its top inside the clear band? */
+    const inBand = (): boolean => {
+      if (!el) return false;
+      const r = el.getBoundingClientRect();
+      return r.top >= insets.top - 2 && r.top <= window.innerHeight - insets.bottom - 24;
+    };
+
+    const scrollIntoBand = (then: () => void, attempt = 1) => {
       if (!el || isFixed(el)) { then(); return; }
       insets = clearInsets();
       const to = scrollTargetFor(el, insets, reserveRef.current);
       if (Math.abs(to - window.scrollY) < 2) { then(); return; }
-      window.scrollTo({ top: to, behavior: reducedMotion() ? "auto" : "smooth" });
+      // The last try jumps: a smooth scroll that something keeps interrupting
+      // would otherwise never arrive.
+      const smooth = attempt < MAX_SCROLLS && !reducedMotion();
+      window.scrollTo({ top: to, behavior: smooth ? "smooth" : "auto" });
       // Wait for the scroll to finish: scrollY steady for a few frames (Safari
-      // has no reliable scrollend), at most a second.
+      // has no reliable scrollend). A long care sheet can take a while.
       let last = -1;
       let steady = 0;
       const t0 = performance.now();
@@ -187,8 +199,11 @@ export function useCoachSpot(
         const y = window.scrollY;
         steady = Math.abs(y - last) < 0.5 ? steady + 1 : 0;
         last = y;
-        if (steady >= 4 || performance.now() - t0 > 1000) { then(); return; }
-        raf = requestAnimationFrame(wait);
+        if (steady < 4 && performance.now() - t0 < 2500) { raf = requestAnimationFrame(wait); return; }
+        // Landed somewhere else (the page moved under the scroll, or a late
+        // router or page scroll undid it): go again.
+        if (!inBand() && attempt < MAX_SCROLLS) { scrollIntoBand(then, attempt + 1); return; }
+        then();
       };
       raf = requestAnimationFrame(wait);
     };
