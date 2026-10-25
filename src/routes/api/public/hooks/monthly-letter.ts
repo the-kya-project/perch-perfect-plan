@@ -57,6 +57,7 @@
  */
 import { withErrorTelemetry } from "@/lib/errorTelemetry";
 import { createFileRoute } from "@tanstack/react-router";
+import { realFirstName, realFullName } from "@/lib/personName";
 import { withCronTelemetry } from "@/lib/cronTelemetry";
 import { buildFlockReportEmail, isQuietFlock, type FlockBird } from "@/lib/flockEmails";
 import { eligibleForRecap } from "@/lib/monthlyEligibility";
@@ -134,7 +135,7 @@ export const Route = createFileRoute("/api/public/hooks/monthly-letter")({
         // ── Who ────────────────────────────────────────────────────────────
         let profileQ = sb
           .from("profiles")
-          .select("id, email, first_name, display_name, locale, notify_monthly_letter, notify_onboarding, created_at")
+          .select("id, email, first_name, full_name, display_name, locale, notify_monthly_letter, notify_onboarding, created_at")
           .eq("notify_monthly_letter", true);
         if (onlyEmail) profileQ = profileQ.eq("email", onlyEmail);
         const { data: profiles, error: pErr } = await profileQ;
@@ -289,7 +290,8 @@ export const Route = createFileRoute("/api/public/hooks/monthly-letter")({
 
           const unsub = unsubUrl(APP_URL, p.id, "monthly");
           const built = buildFlockReportEmail({
-            firstName: p.first_name ?? p.display_name ?? undefined,
+            // Real names only, never the part of the address before the @.
+            firstName: realFirstName(p, p.email),
             birds: modelled,
             month: recapMonth,
             year: recapYear,
@@ -308,7 +310,7 @@ export const Route = createFileRoute("/api/public/hooks/monthly-letter")({
 
           const res = await sendTransactionalEmail({
             to: p.email,
-            toName: p.first_name ?? p.display_name ?? undefined,
+            toName: realFullName([p.full_name, p.display_name], p.email) ?? undefined,
             subject: built.subject,
             htmlContent: built.html,
             textContent: built.text,

@@ -8,6 +8,7 @@
  */
 import { withErrorTelemetry } from "@/lib/errorTelemetry";
 import { createFileRoute } from "@tanstack/react-router";
+import { realFullName } from "@/lib/personName";
 import { withCronTelemetry } from "@/lib/cronTelemetry";
 
 export const Route = createFileRoute("/api/public/hooks/care-plan-reminders")({
@@ -108,7 +109,7 @@ export const Route = createFileRoute("/api/public/hooks/care-plan-reminders")({
             try {
               const { data: profile } = await supabaseAdmin
                 .from("profiles")
-                .select("email, display_name, notify_care_plan_reminder, locale")
+                .select("email, display_name, full_name, notify_care_plan_reminder, locale")
                 .eq("id", ownerId)
                 .maybeSingle();
               if ((profile?.notify_care_plan_reminder ?? true) === true) {
@@ -126,7 +127,7 @@ export const Route = createFileRoute("/api/public/hooks/care-plan-reminders")({
                   const built = buildCarePlanReminderEmail({ birdName: bird?.name ?? emailT(emailLocale)("email.common.yourBird"), link: `${appUrl}/dashboard`, locale: emailLocale });
                   await sendTransactionalEmail({
                     to,
-                    toName: profile?.display_name ?? undefined,
+                    toName: realFullName([(profile as { full_name?: string | null } | null)?.full_name, profile?.display_name], to, profile?.email) ?? undefined,
                     subject: built.subject,
                     htmlContent: built.html,
                     textContent: built.text,

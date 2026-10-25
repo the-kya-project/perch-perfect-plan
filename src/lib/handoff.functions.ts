@@ -10,6 +10,7 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { buildHandoffInviteEmail, buildHandoffAcceptedEmail, buildHandoffDeclinedEmail } from "./emailTemplates";
 import { localeForUser, fallbackSomeoneLabel } from "./emailLocale.server";
+import { realPersonName } from "./personName.server";
 import { emailT } from "./i18n/emailI18n.server";
 import { purgeBirdMediaWith, pdfHandoffFailedMessage } from "./birdMedia.functions";
 import { ownerIntakeDate } from "./intakeDate";
@@ -35,22 +36,10 @@ async function signBirdPhotoPath(sb: any, value: string | null | undefined): Pro
 }
 /** Display name, or null when there's nothing to show. Callers supply the fallback. */
 async function displayNameRaw(sb: any, userId: string): Promise<string | null> {
-  const { data } = await sb.from("profiles").select("display_name").eq("id", userId).maybeSingle();
-  const n = (data?.display_name ?? "").toString().trim();
-  if (n) return n;
-  try {
-    const { data: u } = await sb.auth.admin.getUserById(userId);
-    return (u?.user?.user_metadata?.display_name ?? "").toString().trim() || u?.user?.email?.split("@")[0] || null;
-  } catch { return null; }
+  return realPersonName(sb, userId);
 }
 async function displayName(sb: any, userId: string, locale: string = "en"): Promise<string> {
-  const { data } = await sb.from("profiles").select("display_name").eq("id", userId).maybeSingle();
-  const n = (data?.display_name ?? "").toString().trim();
-  if (n) return n;
-  try {
-    const { data: u } = await sb.auth.admin.getUserById(userId);
-    return (u?.user?.user_metadata?.display_name ?? "").toString().trim() || u?.user?.email?.split("@")[0] || fallbackSomeoneLabel(locale);
-  } catch { return fallbackSomeoneLabel(locale); }
+  return (await realPersonName(sb, userId)) ?? fallbackSomeoneLabel(locale);
 }
 async function sendEmail(to: string, toName: string | undefined, built: { subject: string; html: string; text: string }, tag: EmailTag) {
   const { sendTransactionalEmail } = await import("./brevoEmail.server");

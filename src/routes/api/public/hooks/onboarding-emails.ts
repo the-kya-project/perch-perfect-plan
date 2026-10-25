@@ -55,6 +55,7 @@
  */
 import { withErrorTelemetry } from "@/lib/errorTelemetry";
 import { createFileRoute } from "@tanstack/react-router";
+import { realFirstName, realFullName } from "@/lib/personName";
 import { withCronTelemetry } from "@/lib/cronTelemetry";
 import {
   SLOTS,
@@ -75,6 +76,8 @@ const ONBOARDING_LAUNCH = "2026-07-21T00:00:00Z";
 type Profile = RawRows["profiles"][number] & {
   email: string | null;
   display_name: string | null;
+  first_name: string | null;
+  full_name: string | null;
   locale: string | null;
   marketing_opt_in: boolean | null;
 };
@@ -113,6 +116,7 @@ export const Route = createFileRoute("/api/public/hooks/onboarding-emails")({
         let audit: string | null = null;
         let simulateDays = 0;
         let testSend: { userId: string; stage: Slot } | null = null;
+        let resend: { userId: string; stage: Slot } | null = null;
         try {
           const body = await request.clone().json();
           dryRun = body?.dryRun === true;
@@ -120,6 +124,9 @@ export const Route = createFileRoute("/api/public/hooks/onboarding-emails")({
           if (Number.isInteger(body?.simulateDays)) simulateDays = Math.min(Math.max(body.simulateDays, 1), 60);
           if (body?.testSend && typeof body.testSend.userId === "string" && (SLOTS as readonly string[]).includes(body.testSend.stage)) {
             testSend = { userId: body.testSend.userId, stage: body.testSend.stage as Slot };
+          }
+          if (body?.resend && typeof body.resend.userId === "string" && (SLOTS as readonly string[]).includes(body.resend.stage)) {
+            resend = { userId: body.resend.userId, stage: body.resend.stage as Slot };
           }
         } catch { /* empty body is fine */ }
 
@@ -134,7 +141,7 @@ export const Route = createFileRoute("/api/public/hooks/onboarding-emails")({
         let raw: RawRows;
         try {
           const [p, birds, members, permissions, weights, dailyLogs, journals, invites, sits, log, pushes, letters] = await Promise.all([
-            selectAll<Profile>((a, b) => db.from("profiles").select("id, email, display_name, created_at, marketing_opt_in, locale, notify_onboarding").order("id").range(a, b)),
+            selectAll<Profile>((a, b) => db.from("profiles").select("id, email, display_name, first_name, full_name, created_at, marketing_opt_in, locale, notify_onboarding").order("id").range(a, b)),
             selectAll<RawRows["birds"][number]>((a, b) => db.from("birds").select("id, owner_id, name, created_at, passed_at, setup_complete").order("id").range(a, b)),
             selectAll<RawRows["members"][number]>((a, b) => db.from("bird_members").select("bird_id, user_id, role").eq("role", "household").order("bird_id").order("user_id").range(a, b)),
             selectAll<RawRows["permissions"][number]>((a, b) => db.from("household_member_permissions").select("owner_id, member_user_id, capabilities").order("owner_id").order("member_user_id").range(a, b)),
@@ -253,7 +260,10 @@ export const Route = createFileRoute("/api/public/hooks/onboarding-emails")({
           const email = await emailFor(userId);
           if (!email) return { ok: false as const, skipped: "no-email" };
           const profile = profileById.get(userId);
-          const firstName = ((profile?.display_name ?? "").trim().split(/\s+/)[0] || "").trim() || undefined;
+          // A real first name or none: never the part of the address before
+          // the @ (Apple's hidden addresses made "Welcome to the flock, 2dkh5ctcgb.").
+          const firstName = profile ? realFirstName(profile, email, profile.email) : undefined;
+          const toName = profile ? realFullName([profile.full_name, profile.display_name], email, profile.email) ?? undefined : undefined;
           // profiles.locale, else the language their auth emails used (null
           // locales got English onboarding after Dutch confirmation emails).
           const { lifecycleLocaleFor } = await import("@/lib/emailLocale.server");
@@ -287,7 +297,7 @@ export const Route = createFileRoute("/api/public/hooks/onboarding-emails")({
 
           return sendTransactionalEmail({
             to: email,
-            toName: profile?.display_name ?? undefined,
+            toName,
             subject: built.subject,
             htmlContent: built.html,
             textContent: built.text,
@@ -316,6 +326,36 @@ export const Route = createFileRoute("/api/public/hooks/onboarding-emails")({
           const variant = nudge || !account.hasBird ? "no_bird" : "standard";
           const res = await sendStage(account, testSend.stage, variant, true);
           return Response.json({ ok: res.ok, test: true, stage: testSend.stage, ctaVariant: variant, result: res });
+        }
+
+        // Re-deliver ONE email the log already counts as sent but that never
+        // arrived (e.g. Apple's relay rejected our sender). The real template,
+        // tag and click tracking, unlike testSend. At most once per user and
+        // stage: resent_at is set after the send and a second call is refused.
+        if (resend) {
+          const account = accounts.find((a) => a.userId === resend!.userId);
+          if (!account) return Response.json({ ok: false, error: "no such account" }, { status: 404 });
+          const { data: row, error: rowErr } = await db
+            .from("onboarding_email_log")
+            .select("status, resent_at")
+            .eq("user_id", resend.userId)
+            .eq("stage", resend.stage)
+            .maybeSingle();
+          if (rowErr) return Response.json({ ok: false, error: rowErr.message }, { status: 500 });
+          if (row?.status !== "sent") return Response.json({ ok: false, error: "not logged as sent; the normal run will send it" }, { status: 409 });
+          if (row.resent_at) return Response.json({ ok: false, error: "already resent", resent_at: row.resent_at }, { status: 409 });
+          const nudge = resend.stage === "add_first_bird" || resend.stage === "add_first_bird_reminder";
+          const variant = nudge || !account.hasBird ? "no_bird" : "standard";
+          const res = await sendStage(account, resend.stage, variant);
+          if (!res.ok) return Response.json({ ok: false, stage: resend.stage, ctaVariant: variant, result: res }, { status: 502 });
+          const resentAt = new Date().toISOString();
+          const { error: markErr } = await db
+            .from("onboarding_email_log")
+            .update({ resent_at: resentAt })
+            .eq("user_id", resend.userId)
+            .eq("stage", resend.stage);
+          if (markErr) console.error("[onboarding-emails] resent_at update failed", resend.userId, resend.stage, markErr.message);
+          return Response.json({ ok: true, resent: true, stage: resend.stage, ctaVariant: variant, resent_at: resentAt, marked: !markErr, result: res });
         }
 
         const sent: Record<string, number> = {};

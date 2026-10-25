@@ -114,7 +114,7 @@ export async function prepareContent(email: Pick<TransactionalEmail, "htmlConten
 
 export async function sendTransactionalEmail(
   email: TransactionalEmail,
-): Promise<{ ok: boolean; skipped?: string; status?: number }> {
+): Promise<{ ok: boolean; skipped?: string; status?: number; messageId?: string }> {
   const apiKey = process.env.BREVO_API_KEY;
   const senderEmail = process.env.BREVO_SENDER_EMAIL;
   const senderName = process.env.BREVO_SENDER_NAME || "The Kya Project";
@@ -151,8 +151,10 @@ export async function sendTransactionalEmail(
       console.error("[brevoEmail] send failed", res.status, text);
       return { ok: false, status: res.status };
     }
+    // Brevo's id for this message, for looking up its delivery events later.
+    const messageId = ((await res.json().catch(() => null)) as { messageId?: unknown } | null)?.messageId;
     console.log("[brevoEmail] sent ok", res.status, "to", email.to);
-    return { ok: true, status: res.status };
+    return { ok: true, status: res.status, ...(typeof messageId === "string" ? { messageId } : {}) };
   } catch (err) {
     console.error("[brevoEmail] network error", err);
     return { ok: false, skipped: "network-error" };

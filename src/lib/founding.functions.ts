@@ -64,12 +64,15 @@ export const claimFoundingSpot = createServerFn({ method: "POST" })
       const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
       const [{ data: user }, { data: profile }] = await Promise.all([
         supabaseAdmin.auth.admin.getUserById(context.userId),
-        supabaseAdmin.from("profiles").select("first_name").eq("id", context.userId).maybeSingle(),
+        supabaseAdmin.from("profiles").select("first_name, full_name, display_name, email").eq("id", context.userId).maybeSingle(),
       ]);
       const email = user?.user?.email;
       if (email) {
         const { addContactToList } = await import("./brevoContacts.server");
-        await addContactToList("BREVO_FOUNDING_LIST_ID", { email, firstName: profile?.first_name ?? null });
+        const { realFirstName } = await import("./personName");
+        // Brevo's own campaigns greet with FIRSTNAME: real names only.
+        const firstName = profile ? realFirstName(profile, email, profile.email) ?? null : null;
+        await addContactToList("BREVO_FOUNDING_LIST_ID", { email, firstName });
       }
     } catch (err) {
       console.error("[founding] Brevo list add failed", err);
