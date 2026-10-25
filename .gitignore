@@ -75,3 +75,7 @@ docs/email-redesign/*
 !docs/email-redesign/README.md
 !docs/email-redesign/new-strings.json
 !docs/email-redesign/templates/
+
+# Playwright (iPhone hydration check, e2e/)
+/test-results/
+/playwright-report/
