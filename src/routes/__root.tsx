@@ -161,10 +161,18 @@ const COLD_LAUNCH_REDIRECT = `(function(){try{` +
 //     it shows the screen below instead.
 //  2. The app hasn't finished starting after 10 seconds → "Something's taking
 //     too long" with a Try again button. Never an automatic reload.
+// Leaving the page doesn't count as a failure: when a navigation starts
+// (a tapped link, a redirect), Safari cancels the page's pending file loads
+// and reports each as an error. Reloading then would replace the page the
+// person asked for, so from beforeunload/pagehide until the page is shown
+// again, load errors are ignored here and in sw-register.ts
+// (window.__kyaLeaving).
 // The app sets window.__kyaReady once the first screen has loaded (see
 // RootComponent), which also removes the screen if it's showing.
 const STARTUP_GUARD = `(function(){try{` +
-  `var K="kya-auto-reload",W=300000,shown=false;` +
+  `var K="kya-auto-reload",W=300000,shown=false,leaving=false;` +
+  `addEventListener("beforeunload",function(){leaving=true});addEventListener("pagehide",function(){leaving=true});` +
+  `addEventListener("pageshow",function(){leaving=false});window.__kyaLeaving=function(){return leaving};` +
   `function nl(){try{return /^nl/i.test(navigator.language||"")}catch(e){return false}}` +
   `function reset(){var done=function(){try{var u=new URL(location.href);u.searchParams.set("_r",String(Date.now()));location.replace(u.toString())}catch(e){location.reload()}};` +
   `var p=[];try{if(navigator.serviceWorker)p.push(navigator.serviceWorker.getRegistrations().then(function(rs){return Promise.all(rs.map(function(r){return r.unregister()}))}))}catch(e){}` +
@@ -178,7 +186,7 @@ const STARTUP_GUARD = `(function(){try{` +
   `b.onclick=function(){b.disabled=true;reset()};d.appendChild(h);d.appendChild(t);d.appendChild(b);document.body.appendChild(d)}` +
   `window.__kyaHideStartupGuard=function(){var d=document.getElementById("kya-startup-slow");if(d)d.remove()};` +
   `setTimeout(function(){if(!window.__kyaReady){if(document.body)show();else addEventListener("DOMContentLoaded",show)}},10000);` +
-  `addEventListener("error",function(e){var el=e&&e.target;if(!el||(el.tagName!=="SCRIPT"&&el.tagName!=="LINK"))return;` +
+  `addEventListener("error",function(e){if(leaving)return;var el=e&&e.target;if(!el||(el.tagName!=="SCRIPT"&&el.tagName!=="LINK"))return;` +
   `var u=el.src||el.href||"";if(u.indexOf(location.origin+"/assets/")!==0||window.__kyaReady)return;` +
   `var at=0;try{at=Number(localStorage.getItem(K))||0}catch(x){}` +
   `if(navigator.onLine!==false&&!(Date.now()-at<W)){try{localStorage.setItem(K,String(Date.now()));reset();return}catch(x){}}` +

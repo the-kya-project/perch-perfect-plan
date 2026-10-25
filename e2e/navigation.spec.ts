@@ -42,6 +42,10 @@ test("tapping a link while the app is still loading goes where the link points",
   await expect(page.locator("h1").first()).toHaveText(wording(locale_, "linkExpired.title"));
 });
 
+// The fix must not switch the safety net off: a file that really fails to
+// load, with nobody leaving the page, still gets its one reset. (Only the
+// reset is checked. Whether the reloaded page then starts is up to the
+// browser's cache, and WebKit keeps the failed file for the tab.)
 test("a file that really fails to load still gets one automatic reset", async ({ page, problems: _problems }) => {
   let failed = false;
   await page.route("**/assets/**/*.js", async (route) => {
@@ -50,12 +54,15 @@ test("a file that really fails to load still gets one automatic reset", async ({
       await route.abort();
       return;
     }
-    await route.continue();
+    await route.continue().catch(() => { /* the reset reload cancelled it */ });
   });
+  const resets: string[] = [];
+  page.on("framenavigated", (frame) => { if (frame === page.mainFrame() && frame.url().includes("_r=")) resets.push(frame.url()); });
 
   await page.goto("/auth?mode=signin", { waitUntil: "commit" });
   // One reset: caches cleared, the page reloaded with a cache-busting _r.
   await page.waitForURL((u) => u.searchParams.has("_r"), { timeout: 20_000 });
-  await page.waitForFunction(() => (window as { __kyaReady?: boolean }).__kyaReady === true, null, { timeout: 30_000 });
+  await page.waitForTimeout(1500);
   expect(failed).toBe(true);
+  expect(new Set(resets).size, "exactly one reset").toBe(1);
 });
