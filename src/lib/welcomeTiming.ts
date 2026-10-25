@@ -57,6 +57,16 @@ export function localHour(at: Date, tz: string): number {
   return wallParts(at.getTime(), tz).h;
 }
 
+/** `t` if it falls outside 10 PM–7 AM in `tz`, else the next 8 AM there. */
+function outsideQuietHours(t: number, tz: string): { at: number; held: boolean } {
+  const p = wallParts(t, tz);
+  if (p.h < QUIET_START_HOUR && p.h >= QUIET_END_HOUR) return { at: t, held: false };
+  // 22:00–23:59 → 8 AM the next local day; 00:00–06:59 → 8 AM the same day.
+  // Built from the local date, so a DST change overnight still lands on 8:00.
+  const day = p.h >= QUIET_START_HOUR ? new Date(Date.UTC(p.y, p.m - 1, p.d + 1)) : new Date(Date.UTC(p.y, p.m - 1, p.d));
+  return { at: wallToInstant(day.getUTCFullYear(), day.getUTCMonth() + 1, day.getUTCDate(), QUIET_RELEASE_HOUR, tz), held: true };
+}
+
 /**
  * When this account's welcome should go: an hour after confirmation, or 8 AM
  * their time if that hour falls between 10 PM and 7 AM there.
@@ -64,13 +74,8 @@ export function localHour(at: Date, tz: string): number {
 export function welcomeSendAt(confirmedAt: string, timeZone: string | null | undefined): { at: Date; quietHold: boolean } {
   const due = new Date(confirmedAt).getTime() + WELCOME_DELAY_MINUTES * 60_000;
   if (!isValidTimeZone(timeZone)) return { at: new Date(due), quietHold: false };
-  const p = wallParts(due, timeZone);
-  if (p.h < QUIET_START_HOUR && p.h >= QUIET_END_HOUR) return { at: new Date(due), quietHold: false };
-  // 22:00–23:59 → 8 AM the next local day; 00:00–06:59 → 8 AM the same day.
-  // Built from the local date, so a DST change overnight still lands on 8:00.
-  const day = p.h >= QUIET_START_HOUR ? new Date(Date.UTC(p.y, p.m - 1, p.d + 1)) : new Date(Date.UTC(p.y, p.m - 1, p.d));
-  const at = wallToInstant(day.getUTCFullYear(), day.getUTCMonth() + 1, day.getUTCDate(), QUIET_RELEASE_HOUR, timeZone);
-  return { at: new Date(at), quietHold: true };
+  const { at, held } = outsideQuietHours(due, timeZone);
+  return { at: new Date(at), quietHold: held };
 }
 
 export type WelcomeCandidate = {
@@ -100,5 +105,11 @@ export function welcomeDecision(c: WelcomeCandidate, now: Date): WelcomeDecision
   if (!c.notifyOnboarding) return { kind: "hold", reason: "opted_out" };
   const { at, quietHold } = welcomeSendAt(c.confirmedAt, c.timeZone);
   if (now < at) return { kind: "hold", reason: quietHold ? "quiet_hours" : "too_soon", sendAt: at.toISOString() };
+  // A welcome sent after its time (a retry, or the catch-up after a deploy)
+  // must not land in the night either: check the moment it would actually go.
+  if (isValidTimeZone(c.timeZone)) {
+    const late = outsideQuietHours(now.getTime(), c.timeZone);
+    if (late.held) return { kind: "hold", reason: "quiet_hours", sendAt: new Date(late.at).toISOString() };
+  }
   return { kind: "send", sendAt: at.toISOString(), quietHold };
 }

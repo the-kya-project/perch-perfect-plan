@@ -95,6 +95,15 @@ check("held for quiet hours → hold until 8 AM, then send", () => {
   assert.deepEqual(welcomeDecision(c, at("2026-10-26T23:00:00Z")), { kind: "hold", reason: "quiet_hours", sendAt: "2026-10-27T08:00:00.000Z" });
   assert.deepEqual(welcomeDecision(c, at("2026-10-27T08:07:00Z")), { kind: "send", sendAt: "2026-10-27T08:00:00.000Z", quietHold: true });
 });
+check("a late send (retry, catch-up) that would land at night also waits for 8 AM", () => {
+  // 1-hour mark 17:37 London; the run that finally sends is at 22:07 London.
+  const c = cand({ confirmedAt: "2026-10-25T16:37:13Z", createdAt: "2026-10-25T16:36:48Z", timeZone: "Europe/London" });
+  assert.deepEqual(welcomeDecision(c, at("2026-10-25T21:52:00Z")).kind, "send");
+  assert.deepEqual(welcomeDecision(c, at("2026-10-25T22:07:00Z")), { kind: "hold", reason: "quiet_hours", sendAt: "2026-10-26T08:00:00.000Z" });
+  assert.equal(welcomeDecision(c, at("2026-10-26T08:07:00Z")).kind, "send");
+});
+check("…unless we don't know their time zone", () =>
+  assert.equal(welcomeDecision(cand({ confirmedAt: "2026-10-25T16:37:13Z", createdAt: "2026-10-25T16:36:48Z" }), at("2026-10-25T22:07:00Z")).kind, "send"));
 
 console.log("\nthe daily batch and the welcome");
 const sent = (stage: string, iso: string): LogEntry => ({ stage, status: "sent", at: iso });
