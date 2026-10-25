@@ -147,7 +147,7 @@ export async function brevoBlockedAddresses(): Promise<Map<string, string> | nul
 
 export async function sendTransactionalEmail(
   email: TransactionalEmail,
-): Promise<{ ok: boolean; skipped?: string; status?: number; messageId?: string }> {
+): Promise<{ ok: boolean; skipped?: string; status?: number; messageId?: string; error?: string }> {
   const apiKey = process.env.BREVO_API_KEY;
   const senderEmail = process.env.BREVO_SENDER_EMAIL;
   const senderName = process.env.BREVO_SENDER_NAME || "The Kya Project";
@@ -182,7 +182,9 @@ export async function sendTransactionalEmail(
     if (!res.ok) {
       const text = await res.text().catch(() => "");
       console.error("[brevoEmail] send failed", res.status, text);
-      return { ok: false, status: res.status };
+      // Brevo's own message (e.g. "invalid email address"), for callers that
+      // report why a send failed. Never contains the API key.
+      return { ok: false, status: res.status, error: text.slice(0, 300) || `HTTP ${res.status}` };
     }
     // Brevo's id for this message, for looking up its delivery events later.
     const messageId = ((await res.json().catch(() => null)) as { messageId?: unknown } | null)?.messageId;
@@ -190,6 +192,6 @@ export async function sendTransactionalEmail(
     return { ok: true, status: res.status, ...(typeof messageId === "string" ? { messageId } : {}) };
   } catch (err) {
     console.error("[brevoEmail] network error", err);
-    return { ok: false, skipped: "network-error" };
+    return { ok: false, skipped: "network-error", error: err instanceof Error ? err.message : String(err) };
   }
 }

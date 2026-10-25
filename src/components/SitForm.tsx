@@ -147,7 +147,7 @@ export function SitForm({
       try {
         const res = await sendSitterCancel({ data: sitterCancelInfo });
         if (!res?.emailed) {
-          track("sitter_invite_email_failed", { event: "cancelled", reason: res?.reason ?? "unknown" });
+          track("sitter_invite_email_failed", { event: "cancelled", reason: res?.reason ?? "unknown", error: res?.error ?? res?.reason ?? "no result" });
           toast.error(
             t("sitForm.deletedEmailFailed", "Sit deleted, but we couldn't email {{name}} the cancellation. Tell them directly so they don't show up.", { name: label }),
             { duration: 10000 },
@@ -155,8 +155,8 @@ export function SitForm({
         } else {
           toast.success(t("sitForm.sitDeleted", "Sit deleted."));
         }
-      } catch {
-        track("sitter_invite_email_failed", { event: "cancelled", reason: "threw" });
+      } catch (e) {
+        track("sitter_invite_email_failed", { event: "cancelled", reason: "threw", error: e instanceof Error ? e.message : String(e) });
         toast.error(
           t("sitForm.deletedEmailFailed", "Sit deleted, but we couldn't email {{name}} the cancellation. Tell them directly so they don't show up.", { name: label }),
           { duration: 10000 },
@@ -167,6 +167,22 @@ export function SitForm({
     }
     onSaved();      // parent refreshes ["all-sits"]
     navigate({ to: "/sits" });
+  }
+
+  // An invite or update email that didn't go out leaves the sitter without
+  // the link, so this one stays on screen (it survives the move to /sits)
+  // until the owner copies the link or closes it.
+  function showSitterLinkFallback(message: string, sit: { invite_token?: string | null; caregiver_user_id?: string | null }, sitBirds: Array<{ id: string; name: string }>) {
+    const id = toast.error(message, {
+      duration: Infinity,
+      action: {
+        label: t("sitForm.copySitterLink", "Copy sitter link"),
+        onClick: (event) => {
+          event.preventDefault(); // keep it open until the copy succeeds
+          void copySitterLink(sit, sitBirds).then((copied) => { if (copied) toast.dismiss(id); });
+        },
+      },
+    });
   }
 
   // Caregiver kind:
@@ -443,6 +459,7 @@ export function SitForm({
         const sitterLabel = sitterName?.trim() || sitterEmail || "the sitter";
         let updateFailedName: string | null = null;
         let sitterUpdateFailed = false;
+        let sitterUpdateReason: string | null = null;
         if (kind === "household" && (datesChanged || birdsChanged)) {
           try {
             const res = await notifyUpdated({ data: { sitId: editSit.id, datesChanged, birdsChanged } });
@@ -453,13 +470,27 @@ export function SitForm({
           // server-side if the token is revoked/expired (reason surfaced).
           try {
             const res = await sendSitterUpdate({ data: { sitId: editSit.id, datesChanged, birdsChanged } });
-            if (!res?.emailed) { sitterUpdateFailed = true; track("sitter_invite_email_failed", { event: "updated", reason: res?.reason ?? "unknown" }); }
-          } catch { sitterUpdateFailed = true; track("sitter_invite_email_failed", { event: "updated", reason: "threw" }); }
+            if (!res?.emailed) {
+              sitterUpdateFailed = true;
+              sitterUpdateReason = res?.reason ?? "unknown";
+              track("sitter_invite_email_failed", { event: "updated", reason: sitterUpdateReason, error: res?.error ?? res?.reason ?? "no result" });
+            }
+          } catch (e) {
+            sitterUpdateFailed = true;
+            track("sitter_invite_email_failed", { event: "updated", reason: "threw", error: e instanceof Error ? e.message : String(e) });
+          }
         }
         if (updateFailedName) {
           toast.error(t("sitForm.updatedHouseholdEmailFailed", "Sit updated, but we couldn't email {{name}} the change. Let them know directly.", { name: updateFailedName }), { duration: 8000 });
         } else if (sitterUpdateFailed) {
-          toast.error(t("sitForm.updatedSitterEmailFailed", "Sit updated, but we couldn't email {{name}} the change. The link still works — send them the new details.", { name: sitterLabel }), { duration: 10000 });
+          const sitBirds = birdIds.map((id) => ({ id, name: (birds.find((b: any) => b.id === id)?.name ?? "") as string }));
+          showSitterLinkFallback(
+            sitterUpdateReason === "undeliverable-address"
+              ? t("sitForm.updatedAddressUndeliverable", "Sit updated, but {{email}} can't receive email, so the change wasn't sent. Copy the sitter link and send it yourself, or fix the address.", { email: sitterEmail.trim() })
+              : t("sitForm.updatedSitterEmailFailed", "Sit updated, but we couldn't email {{name}} the change. The link still works — send them the new details.", { name: sitterLabel }),
+            editSit as any,
+            sitBirds,
+          );
         } else {
           toast.success(t("sitForm.sitUpdated", "Sit updated."));
         }
@@ -505,6 +536,7 @@ export function SitForm({
         const sitterLabel = sitterName?.trim() || sitterEmail || "the sitter";
         let assignFailedName: string | null = null;
         let sitterInviteFailed = false;
+        let sitterInviteReason: string | null = null;
         if (kind === "household") {
           try {
             const res = await notifyAssigned({ data: { sitId: sit.id } });
@@ -516,17 +548,27 @@ export function SitForm({
           // fall back to copying the link.
           try {
             const res = await sendSitterInvite({ data: { sitId: sit.id } });
-            if (!res?.emailed) { sitterInviteFailed = true; track("sitter_invite_email_failed", { event: "created", reason: res?.reason ?? "unknown" }); }
-          } catch { sitterInviteFailed = true; track("sitter_invite_email_failed", { event: "created", reason: "threw" }); }
+            if (!res?.emailed) {
+              sitterInviteFailed = true;
+              sitterInviteReason = res?.reason ?? "unknown";
+              track("sitter_invite_email_failed", { event: "created", reason: sitterInviteReason, error: res?.error ?? res?.reason ?? "no result" });
+            }
+          } catch (e) {
+            sitterInviteFailed = true;
+            track("sitter_invite_email_failed", { event: "created", reason: "threw", error: e instanceof Error ? e.message : String(e) });
+          }
         }
         if (assignFailedName) {
           toast.error(t("sitForm.createdHouseholdEmailFailed", "Sit created, but we couldn't email {{name}}. Let them know directly.", { name: assignFailedName }), { duration: 8000 });
         } else if (sitterInviteFailed) {
           const sitBirds = birdIds.map((id) => ({ id, name: (birds.find((b: any) => b.id === id)?.name ?? "") as string }));
-          toast.error(t("sitForm.createdCopyLink", "Sit created. We couldn't email {{name}}, so copy the link and send it yourself.", { name: sitterLabel }), {
-            duration: 15000,
-            action: { label: t("sitForm.copyLink", "Copy link"), onClick: () => { void copySitterLink(sit as any, sitBirds); } },
-          });
+          showSitterLinkFallback(
+            sitterInviteReason === "undeliverable-address"
+              ? t("sitForm.createdAddressUndeliverable", "Sit created, but {{email}} can't receive email, so the invite wasn't sent. Copy the sitter link and send it yourself, or edit the sit to fix the address.", { email: sitterEmail.trim() })
+              : t("sitForm.createdCopyLink", "Sit created. We couldn't email {{name}}, so copy the link and send it yourself.", { name: sitterLabel }),
+            sit as any,
+            sitBirds,
+          );
         } else {
           toast.success(
             kind === "household" ? t("sitForm.createdHousehold", "Sit created — your household member is set.") : t("sitForm.createdInviteSent", "Sit created — invite sent to {{name}}.", { name: sitterLabel }),
