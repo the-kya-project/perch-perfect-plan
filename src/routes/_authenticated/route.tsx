@@ -11,6 +11,34 @@ import { OwnerTabBar, isTaskPath } from "@/components/OwnerTabBar";
 import { StartupSplash } from "@/components/StartupSplash";
 import { FLOCK_ENABLED_QUERY, rememberMode, rememberedMode } from "@/lib/flock";
 
+/**
+ * Send the reader elsewhere from a signed-in page.
+ *
+ * On the page's first load a router redirect races React. The server sent
+ * this route's placeholder (it's ssr:false), and React is still checking that
+ * against the server's HTML when beforeLoad decides to leave. The router swaps
+ * its matches mid-check, React looks for the old one and gets undefined
+ * ("Cannot read properties of undefined (reading 'routeId')"), and recovers
+ * by rebuilding the page: React #422 + #520. That's the pair iPhones reported
+ * on /auth in Oct 2026, from people opening an email link while signed out
+ * (Mail opens Safari, which has no session). The iPhone hydration check
+ * (e2e/) caught it on WebKit; slowing Chromium's CPU 6x reproduces it.
+ *
+ * So on the first load we leave with a real page load instead: the browser
+ * fetches the destination fresh, with nothing half-checked to collide with.
+ * Later, in-app navigations keep the normal router redirect. "First load"
+ * means the router hasn't finished one yet (window.__kyaReady, set by
+ * RootComponent). The router is held on the pending splash while the browser
+ * leaves, and falls back to its own redirect if that somehow takes over 5s.
+ */
+async function leave(href: string, routerRedirect: () => never): Promise<never> {
+  if (typeof window !== "undefined" && !(window as { __kyaReady?: boolean }).__kyaReady) {
+    window.location.replace(href);
+    await new Promise((resolve) => setTimeout(resolve, 5000));
+  }
+  return routerRedirect();
+}
+
 export const Route = createFileRoute("/_authenticated")({
   ssr: false,
   beforeLoad: async ({ location }) => {
@@ -19,7 +47,11 @@ export const Route = createFileRoute("/_authenticated")({
     // this the guard below would bounce the reader to sign-in with no word of
     // what happened. /link-expired explains and offers a fresh link.
     const linkError = readAuthLinkError(location.searchStr, location.hash);
-    if (linkError) throw redirect({ to: "/link-expired", search: { reason: linkError.code }, replace: true });
+    if (linkError) {
+      return leave(`/link-expired?reason=${encodeURIComponent(linkError.code)}`, () => {
+        throw redirect({ to: "/link-expired", search: { reason: linkError.code }, replace: true });
+      });
+    }
     // Cold-start safe read: waits for the persisted session to hydrate from
     // storage before deciding (see authReady). Without this, a cold launch in
     // the native webview read null before hydration and bounced signed-in
@@ -46,7 +78,9 @@ export const Route = createFileRoute("/_authenticated")({
       // Remember where they were headed (e.g. a /past-birds email deep-link) so
       // /auth lands them there after sign-in instead of the default dashboard.
       // `href` keeps the query string: /birds/new?next=weight must survive.
-      throw redirect({ to: "/auth", search: { mode: "signin" as const, redirect: location.href } });
+      return leave(`/auth?mode=signin&redirect=${encodeURIComponent(location.href)}`, () => {
+        throw redirect({ to: "/auth", search: { mode: "signin" as const, redirect: location.href } });
+      });
     }
     return { user: session.user };
   },

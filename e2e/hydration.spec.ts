@@ -95,3 +95,34 @@ test("tapping an old confirmation link after a newer one was sent", async ({ pag
 
   expectClean(problems, `old confirmation link (${locale_})`);
 });
+
+// Opening a signed-in page while signed out, on the page's first load: the
+// app leaves for sign-in (or /link-expired for a dead email link). A router
+// redirect there raced React's hydration and crashed ("reading 'routeId'",
+// React #422 + #520): what iPhones reported on /auth in Oct 2026. It only
+// shows on a slow device, so on Chromium the CPU is slowed 8x and the visit
+// repeated five times; WebKit runs it once at normal speed.
+const SIGNED_OUT_LANDINGS = [
+  { name: "a signed-in page", path: "/welcome", lands: /\/auth\?mode=signin&redirect=/ },
+  {
+    name: "an old confirmation link",
+    path: "/welcome?error=access_denied&error_code=otp_expired&error_description=Email+link+is+invalid+or+has+expired#error=access_denied&error_code=otp_expired&sb=",
+    lands: /\/link-expired\?reason=otp_expired/,
+  },
+] as const;
+
+for (const l of SIGNED_OUT_LANDINGS) {
+  test(`opening ${l.name} while signed out`, async ({ page, problems, locale_, browserName }) => {
+    const slow = browserName === "chromium";
+    if (slow) {
+      const cdp = await page.context().newCDPSession(page);
+      await cdp.send("Emulation.setCPUThrottlingRate", { rate: 8 });
+    }
+    for (let i = 0; i < (slow ? 5 : 1); i++) {
+      await page.goto(l.path, { waitUntil: "networkidle" });
+      await expect(page).toHaveURL(l.lands);
+      await page.waitForTimeout(800);
+    }
+    expectClean(problems, `opening ${l.name} while signed out (${locale_})`);
+  });
+}
