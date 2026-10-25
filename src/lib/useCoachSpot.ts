@@ -154,6 +154,10 @@ export function useCoachSpot(
     let insets: CoachInsets = { top: 0, bottom: 0 };
     let ro: ResizeObserver | null = null;
     let recentering = false;
+    // Nothing is shown until this step's own scroll has finished: a scroll
+    // event left over from the last step (WebKit sends them for a while)
+    // would otherwise draw the highlight where the element was, off screen.
+    let placed = false;
     const started = performance.now();
     const selector = `[data-coach="${target}"]`;
     const vp = () => ({ vw: window.innerWidth, vh: window.innerHeight });
@@ -165,7 +169,7 @@ export function useCoachSpot(
     setSpot({ stepKey, status: "searching", rect: null, ...vp(), insets: { top: 0, bottom: 0 } });
 
     const measure = () => {
-      if (done || !el) return;
+      if (done || !el || !placed) return;
       if (!el.isConnected) {
         // Re-rendered under us: pick up the new node.
         el = document.querySelector<HTMLElement>(selector);
@@ -234,6 +238,7 @@ export function useCoachSpot(
       const settled = stable >= STABLE_FRAMES && !pendingImagesAbove(el);
       if (!settled && now - foundAt < SETTLE_MS) { raf = requestAnimationFrame(find); return; }
       scrollIntoBand(() => {
+        placed = true;
         measure();
         // From here on, follow the element. When the page changes size (data
         // refreshing, a section re-rendering) the browser can pull the scroll
