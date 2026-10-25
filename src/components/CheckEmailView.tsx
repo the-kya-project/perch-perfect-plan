@@ -4,7 +4,7 @@
 // envelope tile, the address in bold, and Open email app / Send it again /
 // Use a different email.
 import { useEffect, useState, type ReactNode } from "react";
-import { Check, Loader2, Mail } from "lucide-react";
+import { Check, Clock, Loader2, Mail } from "lucide-react";
 import { Trans, useTranslation } from "react-i18next";
 import { K, KyaHeading, KyaLink, KyaPrimaryButton, KyaSecondaryButton } from "@/components/kya";
 import { FrontDoorBody, FrontDoorError, FrontDoorHeader, FrontDoorPage } from "@/components/frontDoor";
@@ -48,7 +48,35 @@ function mailTarget(email: string): MailTarget {
   return webmail ? { href: webmail, newTab: true } : mailto;
 }
 
-export function CheckEmailView({ email, kind, message, onBack, onResend, resending, cooldown, justSent, error, onUseDifferentEmail, footer }: {
+/** For a sign-up confirmation: the email can be slow (iCloud especially), and
+ *  each new request replaces the previous link. A real user waited 1h45m for
+ *  hers, asked for several more meanwhile, then clicked the older links as they
+ *  arrived and couldn't get in. Calm, not an error. */
+export function ConfirmationWaitNote() {
+  const { t } = useTranslation();
+  return (
+    <div className="flex w-full max-w-[340px] items-start gap-3 rounded-[16px] bg-white px-4 py-3 text-left">
+      <Clock className="mt-[2px] size-4 shrink-0" style={{ color: K.moss }} aria-hidden="true" />
+      <div className="flex flex-col gap-1.5 text-[13.5px] leading-[1.45]" style={{ color: K.ink }}>
+        <p className="m-0">{t("confirmNote.mayTakeMinutes", "Emails can sometimes take a few minutes to arrive, and iCloud and some other providers can be slower. Check your spam or junk folder too.")}</p>
+        <p className="m-0">{t("confirmNote.newestLinkOnly", "If you ask for another email, only the link in the newest one will work.")}</p>
+      </div>
+    </div>
+  );
+}
+
+/** Shown after a confirmation email is resent. */
+export function NewestLinkSent() {
+  const { t } = useTranslation();
+  return (
+    <p role="status" className="m-0 inline-flex items-center gap-1.5 text-[13.5px] font-[600] leading-[1.45]" style={{ color: K.forest }}>
+      <Check className="size-4 shrink-0" strokeWidth={3} aria-hidden="true" />
+      {t("confirmNote.sentUseNewest", "Sent. Use the link in this newest email.")}
+    </p>
+  );
+}
+
+export function CheckEmailView({ email, kind, message, onBack, onResend, resending, cooldown, justSent, resent, error, onUseDifferentEmail, footer }: {
   email: string;
   kind: "signup" | "reset";
   /** Replaces the "We sent a link to …" line, for screens that say where the
@@ -61,6 +89,9 @@ export function CheckEmailView({ email, kind, message, onBack, onResend, resendi
   cooldown: number;
   /** True for a moment after a resend succeeds, to show "Sent". */
   justSent: boolean;
+  /** A resend has succeeded at least once (sign-up only): show "Use the link
+   *  in this newest email" until the person leaves. */
+  resent?: boolean;
   error?: ReactNode;
   /** Left out where the address is fixed (an invite or handoff goes to one email). */
   onUseDifferentEmail?: () => void;
@@ -113,9 +144,14 @@ export function CheckEmailView({ email, kind, message, onBack, onResend, resendi
             />
           ))}
         </p>
-        <p className="m-0 max-w-[340px] text-[13.5px] leading-[1.45]" style={{ color: K.quiet }}>
-          {t("checkEmail.canTakeAMinute", "It can take a minute. Check spam if it isn't there.")}
-        </p>
+        {kind === "signup" ? (
+          <ConfirmationWaitNote />
+        ) : (
+          <p className="m-0 max-w-[340px] text-[13.5px] leading-[1.45]" style={{ color: K.quiet }}>
+            {t("checkEmail.canTakeAMinute", "It can take a minute. Check spam if it isn't there.")}
+          </p>
+        )}
+        {resent && <NewestLinkSent />}
 
         {error && <div className="w-full text-left"><FrontDoorError>{error}</FrontDoorError></div>}
 

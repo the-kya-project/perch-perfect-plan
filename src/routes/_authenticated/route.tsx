@@ -3,6 +3,7 @@ import { useEffect } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { AuthClientStalled, getReadySession } from "@/lib/authReady";
+import { readAuthLinkError } from "@/lib/authLinkError";
 import { applyOAuthAttribution } from "@/lib/attribution";
 import { ensureAccountTimeZone } from "@/lib/sitTimeZoneBackfill";
 import { PullToRefresh } from "@/components/PullToRefresh";
@@ -13,6 +14,12 @@ import { FLOCK_ENABLED_QUERY, rememberMode, rememberedMode } from "@/lib/flock";
 export const Route = createFileRoute("/_authenticated")({
   ssr: false,
   beforeLoad: async ({ location }) => {
+    // An emailed link Supabase rejected (expired, already used, or replaced
+    // by a newer email) comes back here, to /welcome, with no session. Without
+    // this the guard below would bounce the reader to sign-in with no word of
+    // what happened. /link-expired explains and offers a fresh link.
+    const linkError = readAuthLinkError(location.searchStr, location.hash);
+    if (linkError) throw redirect({ to: "/link-expired", search: { reason: linkError.code }, replace: true });
     // Cold-start safe read: waits for the persisted session to hydrate from
     // storage before deciding (see authReady). Without this, a cold launch in
     // the native webview read null before hydration and bounced signed-in

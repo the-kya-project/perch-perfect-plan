@@ -351,6 +351,9 @@
     "auth.agreeToTermsOfService": {
       "stamp": "e6d5bbd4ee8a7cac"
     },
+    "auth.alreadyConfirmedSignIn": {
+      "stamp": "83582aa4a18b851d"
+    },
     "auth.alreadyConfirmedSignInBelow": {
       "stamp": "c2ea787976101696"
     },
@@ -362,9 +365,6 @@
     },
     "auth.backToSignIn": {
       "stamp": "9c8f60e559c93e73"
-    },
-    "auth.confirmationResentTo": {
-      "stamp": "e830006fb5afa828"
     },
     "auth.continueWithApple": {
       "stamp": "ab4037c281b95f3b"
@@ -3693,6 +3693,15 @@
     "confirmEmail.signIn": {
       "stamp": "dc9922893e139658"
     },
+    "confirmNote.mayTakeMinutes": {
+      "stamp": "adc4ab384e2469c9"
+    },
+    "confirmNote.newestLinkOnly": {
+      "stamp": "845280c34665bb89"
+    },
+    "confirmNote.sentUseNewest": {
+      "stamp": "ebdd1e3e016e2046"
+    },
     "confirmSheet.cancel": {
       "stamp": "06c80f8b6f9f2b3b"
     },
@@ -6641,6 +6650,36 @@
     },
     "legal.termsTitle": {
       "stamp": "3716c46040c949b6"
+    },
+    "linkExpired.alreadyConfirmed": {
+      "stamp": "ce240e274b7af684"
+    },
+    "linkExpired.couldNotSend": {
+      "stamp": "6451b4b651466912"
+    },
+    "linkExpired.email": {
+      "stamp": "e51787b1a8990056"
+    },
+    "linkExpired.enterEmail": {
+      "stamp": "264e9630da86d509"
+    },
+    "linkExpired.line": {
+      "stamp": "674c5bc5916cca05"
+    },
+    "linkExpired.pageTitle": {
+      "stamp": "39c2e8f646bd6952"
+    },
+    "linkExpired.sendNewLink": {
+      "stamp": "a02018c11fc8113b"
+    },
+    "linkExpired.sendNewLinkIn": {
+      "stamp": "5e0595ed0afc40fe"
+    },
+    "linkExpired.signIn": {
+      "stamp": "dc9922893e139658"
+    },
+    "linkExpired.title": {
+      "stamp": "78bc4f0c8154d931"
     },
     "loadError.backHome": {
       "stamp": "5707ed08861e2e51"

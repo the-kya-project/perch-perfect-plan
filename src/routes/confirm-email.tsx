@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { authErrorMessage } from "@/lib/authErrorMessage";
 import { CheckEmailView } from "@/components/CheckEmailView";
 import { K } from "@/components/kya";
+import { CONFIRM_RESEND_COOLDOWN_S } from "@/lib/confirmResend";
 import { useTranslation } from "react-i18next";
 import i18next from "i18next";
 
@@ -13,7 +14,7 @@ import i18next from "i18next";
 // data) by the auth page right before navigating here.
 export const PENDING_EMAIL_KEY = "ppc_pending_confirm_email";
 const RESEND_UNTIL_KEY = "ppc_confirm_resend_until";
-const RESEND_COOLDOWN_S = 30;
+const RESEND_COOLDOWN_S = CONFIRM_RESEND_COOLDOWN_S; // see lib/confirmResend
 const SENT_FLASH_MS = 2500;
 
 export const Route = createFileRoute("/confirm-email")({
@@ -43,6 +44,7 @@ function ConfirmEmail() {
   const [resending, setResending] = useState(false);
   const [cooldown, setCooldown] = useState(0);
   const [justSent, setJustSent] = useState(false);
+  const [resent, setResent] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const proceeded = useRef(false);
 
@@ -113,6 +115,7 @@ function ConfirmEmail() {
       writeResendUntil(Date.now() + RESEND_COOLDOWN_S * 1000);
       setCooldown(RESEND_COOLDOWN_S);
       setJustSent(true);
+      setResent(true);
     } catch (err: any) {
       setError(authErrorMessage(err, t("confirmEmail.couldNotResend", "Couldn't resend. Try again in a moment.")));
     } finally {
@@ -137,6 +140,7 @@ function ConfirmEmail() {
       resending={resending}
       cooldown={cooldown}
       justSent={justSent}
+      resent={resent}
       error={error}
       onUseDifferentEmail={useDifferentEmail}
       footer={
