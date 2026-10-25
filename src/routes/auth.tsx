@@ -13,6 +13,7 @@ import { FrontDoorBody, FrontDoorError, FrontDoorHeader, FrontDoorPage, LegalLin
 import { CheckEmailView } from "@/components/CheckEmailView";
 import { SocialSignInButtons } from "@/components/SocialSignInButtons";
 import { authErrorMessage } from "@/lib/authErrorMessage";
+import { existingAccountSignal } from "@/lib/signupExisting";
 import { useTranslation, Trans } from "react-i18next";
 import i18next from "i18next";
 import { safeInternalPath, stashReturnTo, takeReturnTo } from "@/lib/returnTo";
@@ -132,26 +133,18 @@ function AuthPage() {
             emailRedirectTo: window.location.origin + "/welcome",
           },
         });
-        // Already-registered email — handle BOTH Supabase configs the same way
-        // (bounce to sign-in, email persists on the same /auth route):
-        //   • Confirm-email OFF → signUp returns an error ("User already
-        //     registered"). Without this we'd just toast a raw error and leave
-        //     them on the form, free to keep retrying.
-        //   • Confirm-email ON → no error (anti-enumeration), but an obfuscated
-        //     user with an EMPTY identities array and no session — otherwise
-        //     we'd send them to "check your email to confirm" for a mail that
-        //     never comes.
-        const identities = (data?.user as { identities?: unknown[] } | null)?.identities;
-        const alreadyRegistered =
-          (!!error && /already\s*(registered|exist)/i.test(error.message ?? "")) ||
-          (!error && Array.isArray(identities) && identities.length === 0);
-        if (alreadyRegistered) {
+        // Already-registered email. With "Confirm email" on (production) this
+        // is NOT an error: Supabase returns a user with an empty identities
+        // array and no session. Without this we'd send them to "check your
+        // email" for a mail that never comes. See lib/signupExisting.ts.
+        const existing = existingAccountSignal({ data, error });
+        if (existing) {
           // Say so plainly, with a way to get the confirmation email again
           // (the usual reason someone signs up twice is that they never
           // confirmed). The card stays on the sign-in form this lands on (same
           // page, so the email and password they typed carry over).
           setExistingEmail(email.trim());
-          track("signup_existing_account", { via: error ? "error" : "empty_identities" });
+          track("signup_existing_account", { via: existing });
           navigate({ to: "/auth", search: { mode: "signin", ...(returnTo ? { redirect: returnTo } : {}) } });
           return;
         }
