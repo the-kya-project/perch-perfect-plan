@@ -8,6 +8,7 @@ import { K, KyaHeader, KyaHeading, KyaIconButton, KyaLink, KyaPrimaryButton } fr
 import { ChevronLeft, ArrowRight, Check, X } from "lucide-react";
 import { getMemberOnboardingContext, type MemberHousehold } from "@/lib/onboarding.functions";
 import { useTranslation } from "react-i18next";
+import { useCoachSpot } from "@/lib/useCoachSpot";
 import i18next from "i18next";
 import { birdNames } from "@/lib/birdNames";
 
@@ -56,15 +57,9 @@ function welcomeBody(households: MemberHousehold[]): string {
 
 const PAD = 6;
 const GAP = 12;
+// The tour's own controls along the top (safe area + 44px buttons).
+const OVERLAY_TOP = 64;
 
-function isFixedEl(el: HTMLElement | null): boolean {
-  let n: HTMLElement | null = el;
-  while (n && n !== document.body) {
-    if (window.getComputedStyle(n).position === "fixed") return true;
-    n = n.parentElement;
-  }
-  return false;
-}
 
 type Phase = null | "welcome" | "coach";
 
@@ -98,14 +93,12 @@ function CoachNext({ children, onClick }: { children: React.ReactNode; onClick: 
     </button>
   );
 }
-type Spot = { rect: { top: number; left: number; width: number; height: number; bottom: number } | null; vw: number; vh: number };
 
 export function MemberOnboarding() {
   const { t } = useTranslation();
   const [phase, setPhase] = useState<Phase>(null);
   const [step, setStep] = useState(0);
   const [firstName, setFirstName] = useState("");
-  const [spot, setSpot] = useState<Spot | null>(null);
   const bubbleRef = useRef<HTMLDivElement | null>(null);
   const [bubbleH, setBubbleH] = useState(160);
 
@@ -155,42 +148,10 @@ export function MemberOnboarding() {
     return () => { cancelled = true; window.removeEventListener(REPLAY_EVENT, onReplay); };
   }, []);
 
-  // Measure + track the current target; retry until it renders. Centered steps
-  // (no target, or a target not on screen) skip this and render mid-screen.
-  useEffect(() => {
-    if (phase !== "coach" || !activeTarget) { setSpot(null); return; }
-    const target = activeTarget;
-    let raf = 0;
-    let tries = 0;
-    const measure = (): boolean => {
-      const el = document.querySelector(`[data-coach="${target}"]`);
-      const vw = window.innerWidth;
-      const vh = window.innerHeight;
-      if (!el) { setSpot({ rect: null, vw, vh }); return false; }
-      const r = el.getBoundingClientRect();
-      setSpot({ rect: { top: r.top, left: r.left, width: r.width, height: r.height, bottom: r.bottom }, vw, vh });
-      return true;
-    };
-    const tick = () => {
-      const el = document.querySelector(`[data-coach="${target}"]`) as HTMLElement | null;
-      if (el && !isFixedEl(el)) {
-        const r = el.getBoundingClientRect();
-        const delta = r.top - window.innerHeight * 0.28;
-        if (Math.abs(delta) > 4) window.scrollBy({ top: delta, behavior: "auto" });
-      }
-      const ok = measure();
-      if (!ok && tries < 40) { tries += 1; raf = requestAnimationFrame(tick); }
-    };
-    tick();
-    const onChange = () => measure();
-    window.addEventListener("resize", onChange);
-    window.addEventListener("scroll", onChange, true);
-    return () => {
-      if (raf) cancelAnimationFrame(raf);
-      window.removeEventListener("resize", onChange);
-      window.removeEventListener("scroll", onChange, true);
-    };
-  }, [phase, step, activeTarget]);
+  // Wait for the target, scroll it into the clear part of the screen, and
+  // follow it (useCoachSpot). A target that never appears (a surface this
+  // member can't use) leaves rect null: the bubble then sits centered.
+  const spot = useCoachSpot(activeTarget, step, bubbleH + GAP, { top: OVERLAY_TOP, bottom: 0 });
 
   useLayoutEffect(() => {
     if (phase !== "coach") return;
@@ -241,12 +202,13 @@ export function MemberOnboarding() {
   }
 
   // ---- Coach + wrap-up ----
-  const rect = spot?.rect ?? null;
-  const vw = spot?.vw ?? (typeof window !== "undefined" ? window.innerWidth : 360);
-  const vh = spot?.vh ?? (typeof window !== "undefined" ? window.innerHeight : 640);
+  // Nothing over the target until it has been scrolled into place.
+  const rect = spot.status === "ready" && spot.stepKey === step ? spot.rect : null;
+  const vw = spot.vw || (typeof window !== "undefined" ? window.innerWidth : 360);
+  const vh = spot.vh || (typeof window !== "undefined" ? window.innerHeight : 640);
   const BW = Math.min(300, vw - 24);
-  const SAFE_TOP = 58;
-  const safeBottom = vh - 84;
+  const SAFE_TOP = Math.max(OVERLAY_TOP, spot.insets.top); // under the notch, any pinned header and the tour's own buttons
+  const safeBottom = vh - Math.max(84, spot.insets.bottom); // above the tab bar and the home bar
   const centered = isWrapUp || !activeTarget || !rect;
 
   let bubbleStyle: React.CSSProperties;
@@ -267,7 +229,7 @@ export function MemberOnboarding() {
   }
 
   return (
-    <div className="setup-frame fixed inset-0 z-[60]" style={{ color: K.forest }}>
+    <div className="setup-frame fixed inset-0 z-[60]" style={{ color: K.forest }} data-coach-overlay>
       {!centered ? (
         <div
           className="pointer-events-none absolute rounded-[14px] ring-2 ring-[#cdeab0] transition-all duration-200"
