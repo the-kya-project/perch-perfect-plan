@@ -16,7 +16,16 @@
  * onboarding_email_log. A settled slot never runs again, which is what makes
  * "never re-send" and "at most two add-a-bird nudges" hold.
  *
- * THE CADENCE. One email per run, and the next one is due 3 UTC calendar days
+ * THE WELCOME is not sent from here. The onboarding-welcome hook (every 15
+ * minutes, src/lib/welcomeTiming.ts) sends it about an hour after the account
+ * is confirmed. Until the welcome is settled this batch holds the account
+ * (`awaiting_welcome`), so the two never both send it. A welcome still unsent
+ * WELCOME_MISSED_AFTER_HOURS after confirmation is skipped `welcome_missed`
+ * and the series goes on without it; an account that never confirms waits.
+ *
+ * THE CADENCE. One email per run. The first email after the welcome is due 3
+ * UTC calendar days after SIGN-UP (the day the account was created), whenever
+ * the welcome itself went out. After that, each is due 3 UTC calendar days
  * after the last onboarding email that was SENT. Calendar days, not hours: the
  * cron fires at 15:00 and a run a few seconds earlier than the last one must not
  * slip a whole day. A skip does not use up the gap — the run moves straight on
@@ -33,6 +42,12 @@
 export const SERIES_LAUNCH = "2026-09-25T00:00:00Z";
 
 export const SPACING_DAYS = 3;
+
+/** The welcome hook sends within this many hours of confirmation, never later. */
+export const WELCOME_WINDOW_HOURS = 48;
+/** The daily batch gives up on a welcome this long after confirmation: an hour
+ *  past the hook's window, so the two never act on the same account. */
+export const WELCOME_MISSED_AFTER_HOURS = WELCOME_WINDOW_HOURS + 1;
 
 export const SLOTS = [
   "welcome",
@@ -54,7 +69,12 @@ export type SkipReason =
   | "care_plan_complete"
   | "already_journaled"
   | "already_shared"
-  | "cannot_share";
+  | "cannot_share"
+  /** The welcome wasn't sent within its window after confirmation. */
+  | "welcome_missed"
+  /** The address can't take email: Brevo has it blocked (hard bounce, spam
+   *  complaint, unsubscribed, blocked by us) or it is a reserved test domain. */
+  | "undeliverable";
 
 export type CtaVariant = "standard" | "no_bird";
 
@@ -95,6 +115,9 @@ export type RawRows = {
   pushedToday: string[];
   /** Users who got The Flock Report today (UTC). */
   flockReportToday: string[];
+  /** auth.users.email_confirmed_at per user (onboarding_confirmations()).
+   *  A user missing here counts as unconfirmed. */
+  confirmations?: Array<{ user_id: string; email_confirmed_at: string | null }>;
 };
 
 export type LogEntry = { stage: string; status: "sent" | "skipped"; at: string };
@@ -102,6 +125,8 @@ export type LogEntry = { stage: string; status: "sent" | "skipped"; at: string }
 export type OnboardingAccount = {
   userId: string;
   createdAt: string;
+  /** When the email address was confirmed; null if it hasn't been. */
+  confirmedAt: string | null;
   notifyOnboarding: boolean;
   /** Owns a living bird, or is a household member of someone else's. */
   hasBird: boolean;
@@ -149,6 +174,7 @@ export function buildAccounts(raw: RawRows): OnboardingAccount[] {
   const logByUser = group(raw.log, (l) => l.user_id);
   const pushed = new Set(raw.pushedToday);
   const flock = new Set(raw.flockReportToday);
+  const confirmedAt = new Map((raw.confirmations ?? []).map((c) => [c.user_id, c.email_confirmed_at]));
   const byAge = (a: { created_at: string }, b: { created_at: string }) =>
     new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
 
@@ -171,6 +197,7 @@ export function buildAccounts(raw: RawRows): OnboardingAccount[] {
     return {
       userId: p.id,
       createdAt: p.created_at,
+      confirmedAt: confirmedAt.get(p.id) ?? null,
       notifyOnboarding: p.notify_onboarding !== false,
       hasBird: accessible.length > 0,
       linkBird: linkBird ? { id: linkBird.id, name: linkBird.name } : null,
@@ -204,7 +231,9 @@ export type HoldReason =
   | "flock_report_today"
   | "pushed_today"
   | "not_due"
-  | "finished";
+  | "finished"
+  /** The welcome hook hasn't sent (or settled) the welcome yet. */
+  | "awaiting_welcome";
 
 export type Decision =
   | { kind: "hold"; reason: HoldReason; nextDue?: string }
@@ -278,11 +307,23 @@ export function decide(a: OnboardingAccount, now: Date): Decision {
   if (a.onlyPassedBirds) return { kind: "hold", reason: "bird_passed" };
 
   const settled = settledSlots(a.log);
-  const pending = SLOTS.filter((s) => !settled.has(s));
+  let pending: Slot[] = SLOTS.filter((s) => !settled.has(s));
   if (pending.length === 0) return { kind: "hold", reason: "finished" };
 
+  // The welcome belongs to the onboarding-welcome hook. Wait for it, unless its
+  // window has closed, in which case the welcome is skipped and the series
+  // carries on.
+  const skips: Array<{ stage: Slot; reason: SkipReason }> = [];
+  if (pending[0] === "welcome") {
+    const missed = !!a.confirmedAt && now.getTime() - new Date(a.confirmedAt).getTime() > WELCOME_MISSED_AFTER_HOURS * 3_600_000;
+    if (!missed) return { kind: "hold", reason: "awaiting_welcome" };
+    skips.push({ stage: "welcome", reason: "welcome_missed" });
+    pending = pending.slice(1);
+  }
+
   const today = utcDay(now);
-  const sends = a.log.filter((l) => l.status === "sent").map((l) => utcDay(l.at)).sort();
+  const sentRows = a.log.filter((l) => l.status === "sent").sort((x, y) => x.at.localeCompare(y.at));
+  const sends = sentRows.map((l) => utcDay(l.at));
   const lastSent = sends[sends.length - 1];
   if (lastSent === today) return { kind: "hold", reason: "sent_today" };
   // One touch per UTC day across onboarding, push nudges and The Flock Report.
@@ -290,12 +331,12 @@ export function decide(a: OnboardingAccount, now: Date): Decision {
   // the email wins; these only bite if the order ever changes, or on the 2nd.
   if (a.flockReportToday) return { kind: "hold", reason: "flock_report_today" };
   if (a.pushedToday) return { kind: "hold", reason: "pushed_today" };
-  if (lastSent) {
-    const due = addDays(lastSent, SPACING_DAYS);
-    if (dayNumber(today) < dayNumber(due)) return { kind: "hold", reason: "not_due", nextDue: due };
-  }
+  // Nothing but the welcome sent so far: count from sign-up, not from the
+  // welcome (which can go a day later, after a late confirmation or a night).
+  const onlyWelcome = sentRows.every((l) => l.stage === "welcome");
+  const due = onlyWelcome ? addDays(utcDay(a.createdAt), SPACING_DAYS) : addDays(lastSent!, SPACING_DAYS);
+  if (dayNumber(today) < dayNumber(due)) return { kind: "hold", reason: "not_due", nextDue: due };
 
-  const skips: Array<{ stage: Slot; reason: SkipReason }> = [];
   for (const slot of pending) {
     const reason = skipReason(slot, a, a.log);
     if (reason) {
@@ -338,6 +379,14 @@ export function simulate(accounts: OnboardingAccount[], start: Date, days: numbe
         a.flockReportToday = false;
       }
       const dec = decide(a, now);
+      // The welcome hook's part, for a confirmed account: it sends the welcome
+      // within the hour, so the simulation does it here on the same day.
+      if (dec.kind === "hold" && dec.reason === "awaiting_welcome" && a.confirmedAt) {
+        const ctaVariant: CtaVariant = a.hasBird ? "standard" : "no_bird";
+        a.log.push({ stage: "welcome", status: "sent", at: now.toISOString() });
+        events.push({ date, userId: a.userId, kind: "sent", stage: "welcome", ctaVariant });
+        continue;
+      }
       if (dec.kind === "hold") {
         const sticky = dec.reason === "opted_out" || dec.reason === "pre_series" || dec.reason === "bird_passed" || dec.reason === "finished";
         if (sticky) {
@@ -346,7 +395,7 @@ export function simulate(accounts: OnboardingAccount[], start: Date, days: numbe
             reportedOnce.add(key);
             events.push({ date, userId: a.userId, kind: "hold", reason: dec.reason });
           }
-        } else if (dec.reason !== "not_due" && dec.reason !== "sent_today") {
+        } else if (dec.reason !== "not_due" && dec.reason !== "sent_today" && dec.reason !== "awaiting_welcome") {
           events.push({ date, userId: a.userId, kind: "hold", reason: dec.reason });
         }
         continue;

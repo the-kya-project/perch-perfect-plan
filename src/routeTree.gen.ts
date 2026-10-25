@@ -98,6 +98,7 @@ import { Route as ApiPublicHooksEngagementNudgesRouteImport } from './routes/api
 import { Route as ApiPublicHooksGiftEmailsRouteImport } from './routes/api/public/hooks/gift-emails'
 import { Route as ApiPublicHooksMonthlyLetterRouteImport } from './routes/api/public/hooks/monthly-letter'
 import { Route as ApiPublicHooksOnboardingEmailsRouteImport } from './routes/api/public/hooks/onboarding-emails'
+import { Route as ApiPublicHooksOnboardingWelcomeRouteImport } from './routes/api/public/hooks/onboarding-welcome'
 import { Route as ApiPublicHooksSendEmailRouteImport } from './routes/api/public/hooks/send-email'
 import { Route as ApiPublicStripeWebhookRouteImport } from './routes/api/public/stripe/webhook'
 import { Route as AuthenticatedBirdsBirdIdPlanIndexRouteImport } from './routes/_authenticated/birds/$birdId.plan.index'
@@ -592,6 +593,12 @@ const ApiPublicHooksOnboardingEmailsRoute =
     path: '/api/public/hooks/onboarding-emails',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicHooksOnboardingWelcomeRoute =
+  ApiPublicHooksOnboardingWelcomeRouteImport.update({
+    id: '/api/public/hooks/onboarding-welcome',
+    path: '/api/public/hooks/onboarding-welcome',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicHooksSendEmailRoute = ApiPublicHooksSendEmailRouteImport.update({
   id: '/api/public/hooks/send-email',
   path: '/api/public/hooks/send-email',
@@ -727,6 +734,7 @@ export interface FileRoutesByFullPath {
   '/api/public/hooks/gift-emails': typeof ApiPublicHooksGiftEmailsRoute
   '/api/public/hooks/monthly-letter': typeof ApiPublicHooksMonthlyLetterRoute
   '/api/public/hooks/onboarding-emails': typeof ApiPublicHooksOnboardingEmailsRoute
+  '/api/public/hooks/onboarding-welcome': typeof ApiPublicHooksOnboardingWelcomeRoute
   '/api/public/hooks/send-email': typeof ApiPublicHooksSendEmailRoute
   '/api/public/stripe/webhook': typeof ApiPublicStripeWebhookRoute
   '/birds/$birdId/': typeof AuthenticatedBirdsBirdIdIndexRoute
@@ -818,6 +826,7 @@ export interface FileRoutesByTo {
   '/api/public/hooks/gift-emails': typeof ApiPublicHooksGiftEmailsRoute
   '/api/public/hooks/monthly-letter': typeof ApiPublicHooksMonthlyLetterRoute
   '/api/public/hooks/onboarding-emails': typeof ApiPublicHooksOnboardingEmailsRoute
+  '/api/public/hooks/onboarding-welcome': typeof ApiPublicHooksOnboardingWelcomeRoute
   '/api/public/hooks/send-email': typeof ApiPublicHooksSendEmailRoute
   '/api/public/stripe/webhook': typeof ApiPublicStripeWebhookRoute
   '/birds/$birdId': typeof AuthenticatedBirdsBirdIdIndexRoute
@@ -918,6 +927,7 @@ export interface FileRoutesById {
   '/api/public/hooks/gift-emails': typeof ApiPublicHooksGiftEmailsRoute
   '/api/public/hooks/monthly-letter': typeof ApiPublicHooksMonthlyLetterRoute
   '/api/public/hooks/onboarding-emails': typeof ApiPublicHooksOnboardingEmailsRoute
+  '/api/public/hooks/onboarding-welcome': typeof ApiPublicHooksOnboardingWelcomeRoute
   '/api/public/hooks/send-email': typeof ApiPublicHooksSendEmailRoute
   '/api/public/stripe/webhook': typeof ApiPublicStripeWebhookRoute
   '/_authenticated/birds/$birdId/': typeof AuthenticatedBirdsBirdIdIndexRoute
@@ -1018,6 +1028,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/gift-emails'
     | '/api/public/hooks/monthly-letter'
     | '/api/public/hooks/onboarding-emails'
+    | '/api/public/hooks/onboarding-welcome'
     | '/api/public/hooks/send-email'
     | '/api/public/stripe/webhook'
     | '/birds/$birdId/'
@@ -1109,6 +1120,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/gift-emails'
     | '/api/public/hooks/monthly-letter'
     | '/api/public/hooks/onboarding-emails'
+    | '/api/public/hooks/onboarding-welcome'
     | '/api/public/hooks/send-email'
     | '/api/public/stripe/webhook'
     | '/birds/$birdId'
@@ -1208,6 +1220,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/gift-emails'
     | '/api/public/hooks/monthly-letter'
     | '/api/public/hooks/onboarding-emails'
+    | '/api/public/hooks/onboarding-welcome'
     | '/api/public/hooks/send-email'
     | '/api/public/stripe/webhook'
     | '/_authenticated/birds/$birdId/'
@@ -1249,6 +1262,7 @@ export interface RootRouteChildren {
   ApiPublicHooksGiftEmailsRoute: typeof ApiPublicHooksGiftEmailsRoute
   ApiPublicHooksMonthlyLetterRoute: typeof ApiPublicHooksMonthlyLetterRoute
   ApiPublicHooksOnboardingEmailsRoute: typeof ApiPublicHooksOnboardingEmailsRoute
+  ApiPublicHooksOnboardingWelcomeRoute: typeof ApiPublicHooksOnboardingWelcomeRoute
   ApiPublicHooksSendEmailRoute: typeof ApiPublicHooksSendEmailRoute
   ApiPublicStripeWebhookRoute: typeof ApiPublicStripeWebhookRoute
   ApiPublicBereavementReviewReviewIdSigRoute: typeof ApiPublicBereavementReviewReviewIdSigRoute
@@ -1881,6 +1895,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksOnboardingEmailsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/onboarding-welcome': {
+      id: '/api/public/hooks/onboarding-welcome'
+      path: '/api/public/hooks/onboarding-welcome'
+      fullPath: '/api/public/hooks/onboarding-welcome'
+      preLoaderRoute: typeof ApiPublicHooksOnboardingWelcomeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/hooks/send-email': {
       id: '/api/public/hooks/send-email'
       path: '/api/public/hooks/send-email'
@@ -2190,6 +2211,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicHooksGiftEmailsRoute: ApiPublicHooksGiftEmailsRoute,
   ApiPublicHooksMonthlyLetterRoute: ApiPublicHooksMonthlyLetterRoute,
   ApiPublicHooksOnboardingEmailsRoute: ApiPublicHooksOnboardingEmailsRoute,
+  ApiPublicHooksOnboardingWelcomeRoute: ApiPublicHooksOnboardingWelcomeRoute,
   ApiPublicHooksSendEmailRoute: ApiPublicHooksSendEmailRoute,
   ApiPublicStripeWebhookRoute: ApiPublicStripeWebhookRoute,
   ApiPublicBereavementReviewReviewIdSigRoute:

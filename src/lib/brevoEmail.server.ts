@@ -23,6 +23,7 @@ import { tagHtmlLinks, tagTextLinks, type EmailTag } from "./emailTracking";
 import { wrapEmailLinks, type ClickVariant } from "./emailClicks.server";
 
 const BREVO_SMTP_URL = "https://api.brevo.com/v3/smtp/email";
+const BREVO_BLOCKED_URL = "https://api.brevo.com/v3/smtp/blockedContacts";
 
 // Reserved names from RFC 2606 / RFC 6761. Nothing on these can ever receive
 // mail, so a send is a guaranteed hard bounce. QA accounts are provisioned at
@@ -110,6 +111,38 @@ export async function prepareContent(email: Pick<TransactionalEmail, "htmlConten
     sentAt,
     test: email.clicks.test,
   });
+}
+
+/**
+ * Addresses Brevo won't deliver transactional email to: its blocklist, which
+ * holds hard bounces, spam complaints, transactional unsubscribes and our own
+ * manual blocks. Lower-cased. Null when it can't be read (no key, a preview,
+ * an API error): callers should wait and try again rather than send blind.
+ * Brevo pages this list 100 at a time.
+ */
+export async function brevoBlockedAddresses(): Promise<Map<string, string> | null> {
+  const apiKey = process.env.BREVO_API_KEY;
+  if (process.env.VERCEL_ENV === "preview" || !apiKey) return null;
+  const out = new Map<string, string>();
+  try {
+    for (let offset = 0; offset < 100_000; offset += 100) {
+      const res = await fetch(`${BREVO_BLOCKED_URL}?limit=100&offset=${offset}`, {
+        headers: { "api-key": apiKey, accept: "application/json" },
+      });
+      if (!res.ok) {
+        console.error("[brevoEmail] blocked contacts read failed", res.status, await res.text().catch(() => ""));
+        return null;
+      }
+      const body = (await res.json().catch(() => null)) as { contacts?: Array<{ email?: string; reason?: { code?: string } }> } | null;
+      const page = body?.contacts ?? [];
+      for (const c of page) if (c.email) out.set(c.email.trim().toLowerCase(), c.reason?.code ?? "blocked");
+      if (page.length < 100) return out;
+    }
+    return out;
+  } catch (err) {
+    console.error("[brevoEmail] blocked contacts network error", err);
+    return null;
+  }
 }
 
 export async function sendTransactionalEmail(
