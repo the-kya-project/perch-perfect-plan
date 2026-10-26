@@ -50,10 +50,8 @@ const BODY = "'DM Sans','Helvetica Neue',Helvetica,'Segoe UI',sans-serif";
 const HEAD = "'Newsreader',Georgia,serif";
 /** The same lockup the app's forest headers use (BrandLockup horizontal, ink). */
 const LOGO = "/brand/lockups/horizontal-ink.svg";
-/** The same Google Fonts request as the app (__root.tsx). */
-const FONTS = `<link rel="preconnect" href="https://fonts.googleapis.com" />
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,700&family=Newsreader:opsz,wght@6..72,600;6..72,700&display=swap" />`;
+/** The same self-hosted fonts as the app (__root.tsx). Never Google Fonts. */
+const FONTS = `<link rel="stylesheet" href="/fonts/fonts.css" />`;
 
 /** Shared styles for both pages: header, mist body, white card, text. */
 const BASE_CSS = `

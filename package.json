@@ -7,7 +7,7 @@
   "packageManager": "npm@11.12.1",
   "scripts": {
     "dev": "vite dev",
-    "build": "vite build && node scripts/copy-sw.mjs && node scripts/sourcemaps.mjs",
+    "build": "vite build && node scripts/copy-sw.mjs && node scripts/sourcemaps.mjs && node scripts/no-google-fonts.mjs --build",
     "build:dev": "vite build --mode development",
     "preview": "vite preview",
     "lint": "eslint .",
@@ -24,6 +24,7 @@
     "test:get-app": "npx --yes vite-node scripts/get-app.test.ts",
     "test:blog-feed": "npx --yes vite-node scripts/blog-feed.test.ts",
     "test:url-scrub": "npx --yes vite-node scripts/url-scrub.test.ts",
+    "check:no-google-fonts": "node scripts/no-google-fonts.mjs",
     "test:signup-existing": "npx --yes vite-node scripts/signup-existing.test.ts",
     "test:confirm-links": "npx --yes vite-node scripts/confirm-links.test.ts",
     "test:person-name": "npx --yes vite-node scripts/person-name.test.ts",
