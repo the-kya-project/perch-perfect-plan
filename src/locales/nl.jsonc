@@ -3201,6 +3201,12 @@
   "flockCheck.checkedNotWeighed": "Gecheckt, niet gewogen",
   // Check {{name}} next →
   "flockCheck.checkNext": "Check {{name}} hierna →",
+  // Discard
+  "flockCheck.discard": "Weggooien",
+  // It hasn't been saved yet.
+  "flockCheck.discardBody": "Het is nog niet opgeslagen.",
+  // Discard what you entered for {{name}}?
+  "flockCheck.discardTitle": "Wat je voor {{name}} hebt ingevuld weggooien?",
   // Nice work. Everything's saved to each bird's health log.
   "flockCheck.doneSubhead": "Goed gedaan. Alles staat in het gezondheidslogboek van elke vogel.",
   // Done
@@ -3223,6 +3229,8 @@
   "flockCheck.headingOne": "Dagelijkse check van {{name}}",
   // A quick once-over every day helps you spot early signs of illness. Record what you see for each bird here.
   "flockCheck.intro": "Elke dag even goed kijken helpt je vroege tekenen van ziekte op te merken. Noteer hier wat je bij elke vogel ziet.",
+  // Keep editing
+  "flockCheck.keepEditing": "Verder invullen",
   // Last weighed {{count}} day ago
   "flockCheck.lastWeighedDaysAgo_one": "{{count}} dag geleden gewogen",
   // Last weighed {{count}} days ago
@@ -5807,7 +5815,7 @@
   "sitForm.anythingElseSitter": "Moet je oppas nog iets weten?",
   // Bird
   "sitForm.bird": "Vogel",
-  // Copy link
+  // Copy sitter link
   "sitForm.copySitterLink": "Oppaslink kopiëren",
   // Could not create sit.
   "sitForm.couldNotCreate": "Kon de oppasperiode niet aanmaken.",
@@ -5815,8 +5823,9 @@
   "sitForm.coveringHint": "Huisgenoten hebben al toegang. Iemand anders krijgt een privélink, zonder account.",
   // Create sit and email {{name}}
   "sitForm.createAndEmail": "Oppasperiode maken en {{name}} mailen",
-  // Sit created. We couldn't email {{name}}, so copy the link and send it yourself.
+  // Sit created, but {{email}} can't receive email, so the invite wasn't sent. Copy the sitter link and send it yourself, or edit the sit to fix the address.
   "sitForm.createdAddressUndeliverable": "Oppasperiode gemaakt, maar {{email}} kan geen e-mail ontvangen, dus de uitnodiging is niet verstuurd. Kopieer de oppaslink en stuur hem zelf, of pas het adres aan in de oppasperiode.",
+  // Sit created. We couldn't email {{name}}, so copy the link and send it yourself.
   "sitForm.createdCopyLink": "Oppasperiode gemaakt. We konden {{name}} niet mailen, dus kopieer de link en stuur hem zelf.",
   // Sit created — your household member is set.
   "sitForm.createdHousehold": "Oppasperiode aangemaakt — je huisgenoot is ingesteld.",
@@ -5958,8 +5967,9 @@
   "sitForm.starts": "Begint",
   // Their info
   "sitForm.theirInfo": "Hun gegevens",
-  // Sit updated, but we couldn't email {{name}} the change. Let them know directly.
+  // Sit updated, but {{email}} can't receive email, so the change wasn't sent. Copy the sitter link and send it yourself, or fix the address.
   "sitForm.updatedAddressUndeliverable": "Oppasperiode bijgewerkt, maar {{email}} kan geen e-mail ontvangen, dus de wijziging is niet verstuurd. Kopieer de oppaslink en stuur hem zelf, of pas het adres aan.",
+  // Sit updated, but we couldn't email {{name}} the change. Let them know directly.
   "sitForm.updatedHouseholdEmailFailed": "Oppasperiode bijgewerkt, maar we konden {{name}} niet mailen over de wijziging. Laat het diegene zelf even weten.",
   // Sit updated, but we couldn't email {{name}} the change. The link still works — send them the new details.
   "sitForm.updatedSitterEmailFailed": "Oppasperiode bijgewerkt, maar we konden {{name}} niet mailen over de wijziging. De link werkt nog — stuur diegene de nieuwe details.",
@@ -5979,6 +5989,7 @@
   "sitForm.yourSitterLower": "je oppas",
   // Link copied.
   "sitLink.copied": "Link gekopieerd.",
+  // Couldn't copy the link. Open the sit and copy it from there.
   "sitLink.copyFailed": "De link kon niet worden gekopieerd. Open de oppasperiode en kopieer hem daar.",
   // A sitter needs emergency contacts before you share this link — {{missing}}. Add them in Account → Emergency info, or on the bird's Emergency tab.
   "sitLink.missingContactsAccount": "Een oppas heeft noodcontacten nodig voordat je deze link deelt — {{missing}}. Voeg ze toe via Account → Noodinformatie, of op het tabblad Noodinformatie van de vogel.",
