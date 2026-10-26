@@ -10,7 +10,7 @@
 // never reach PostHog (a care-plan row, an email, a sitter link), so the
 // production payload can be checked for them.
 
-export const ERROR_TEST_ACCOUNT = "0696b18f-681b-489b-9301-9074cb3f3ac4";
+export const ERROR_TEST_ACCOUNT = "df4c89f5-0be0-4df2-9ecf-e6818fa7471d"; // brittany@thekyaproject.com
 
 export function errorTestMessage(kind: string): string {
   return (
