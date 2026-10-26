@@ -43,10 +43,28 @@ function scrubStringArray(v: unknown): unknown {
   return Array.isArray(v) ? v.map((s) => (typeof s === "string" ? scrubErrorMessage(s) : s)) : v;
 }
 
+// Frame fields that can carry text from the error MESSAGE. Browsers' stack
+// parsers can mistake part of a message for a frame line (a message containing
+// " at /some/path" becomes a frame whose function name is the message text),
+// so every textual frame field gets the full message scrub, not just the
+// URL/token pass. Found by the 2026-10-26 production test: the fake email and
+// care-plan row survived in `function` / `$exception_functions`.
+const FRAME_TEXT_FIELDS = ["function", "filename", "module", "abs_path", "mangled_name", "resolved_name"] as const;
+
+function scrubFrame(frame: unknown): unknown {
+  if (!frame || typeof frame !== "object") return frame;
+  const copy: Record<string, unknown> = { ...(frame as Record<string, unknown>) };
+  for (const field of FRAME_TEXT_FIELDS) {
+    if (typeof copy[field] === "string") copy[field] = scrubErrorMessage(copy[field] as string);
+  }
+  return copy;
+}
+
 /**
- * Scrub the exception-specific properties of an `$exception` event in place
- * (message text in every place PostHog puts it). Run AFTER the generic
- * analytics scrubber, which has already handled URLs and tokens everywhere.
+ * Scrub the exception-specific properties of an `$exception` event in place:
+ * message text everywhere PostHog puts it, INCLUDING stack frames and the
+ * derived function list. Run AFTER the generic analytics scrubber, which has
+ * already handled URLs and tokens everywhere.
  */
 export function scrubExceptionProperties(props: Record<string, any>): Record<string, any> {
   const list = props.$exception_list;
@@ -55,6 +73,9 @@ export function scrubExceptionProperties(props: Record<string, any>): Record<str
       if (!ex || typeof ex !== "object") return ex;
       const copy = { ...ex };
       if (typeof copy.value === "string") copy.value = scrubErrorMessage(copy.value);
+      if (copy.stacktrace && typeof copy.stacktrace === "object" && Array.isArray(copy.stacktrace.frames)) {
+        copy.stacktrace = { ...copy.stacktrace, frames: copy.stacktrace.frames.map(scrubFrame) };
+      }
       return copy;
     });
   }
@@ -62,5 +83,6 @@ export function scrubExceptionProperties(props: Record<string, any>): Record<str
     if (typeof props[key] === "string") props[key] = scrubErrorMessage(props[key]);
   }
   props.$exception_values = scrubStringArray(props.$exception_values);
+  props.$exception_functions = scrubStringArray(props.$exception_functions);
   return props;
 }
