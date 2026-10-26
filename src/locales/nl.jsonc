@@ -2937,8 +2937,6 @@
   "emergencyList.you": "Jij",
   // + Add
   "emergencySetup.add": "+ Toevoegen",
-  // ASPCA Animal Poison Control
-  "emergencySetup.aspca": "ASPCA Animal Poison Control",
   // Avian vet
   "emergencySetup.avianVet": "Vogeldierenarts",
   // Backup contact
@@ -6153,6 +6151,8 @@
   "sitter.emergency.firstAidKit": "EHBO-kit",
   // Care guidance from The Kya Project · Parrot Care Bible for Pet Sitters.
   "sitter.emergency.footer": "Verzorgingsadvies van The Kya Project · Parrot Care Bible for Pet Sitters.",
+  // no public line here. Call the owner's vet or an emergency vet right away.
+  "sitter.emergency.noPoisonLineAnyVet": "hier is geen openbare lijn. Bel meteen de dierenarts van de eigenaar of een spoeddierenarts.",
   // not provided by owner.
   "sitter.emergency.notProvided": "niet opgegeven door de eigenaar.",
   // Emergency
@@ -6195,8 +6195,8 @@
   "sitter.emergency.pb_breathing_step1": "Stop met vastpakken — vogels hebben borstbeweging nodig om te ademen.",
   // Move the bird away from fumes, smoke, heat, and stress to fresh air.
   "sitter.emergency.pb_breathing_step2": "Breng de vogel weg van dampen, rook, hitte en stress naar frisse lucht.",
-  // Keep warm (~85–90°F if shocky, heat on ONE side only), quiet, and dim.
-  "sitter.emergency.pb_breathing_step3": "Houd hem warm (~85–90°F bij shock, verwarm maar aan ÉÉN kant), rustig en in het donker.",
+  // Keep warm (about {{temp}} if shocky, heat on ONE side only), quiet, and dim.
+  "sitter.emergency.pb_breathing_step3": "Houd de vogel warm (ongeveer {{temp}} bij shock, verwarm maar aan ÉÉN kant), rustig en in het donker.",
   // Don't mist, bathe, or force water.
   "sitter.emergency.pb_breathing_step4": "Niet besproeien, baden of water opdringen.",
   // Call the avian vet and prepare to transport.
@@ -6273,8 +6273,10 @@
   "sitter.emergency.pb_poison_step3": "Bewaar of fotografeer de verpakking of het materiaal.",
   // Note what was eaten or chewed and when.
   "sitter.emergency.pb_poison_step4": "Noteer wat er is gegeten of aangeknaagd en wanneer.",
-  // Call the avian vet or ASPCA Animal Poison Control: (888) 426-4435.
-  "sitter.emergency.pb_poison_step5": "Bel de vogeldierenarts of ASPCA Animal Poison Control: (888) 426-4435.",
+  // Call the owner's vet or an emergency vet right away, and bring the packaging with you.
+  "sitter.emergency.pb_poison_step5_anyVet": "Bel meteen de dierenarts van de eigenaar of een spoeddierenarts, en neem de verpakking mee.",
+  // Call the avian vet or poison control: {{phone}}.
+  "sitter.emergency.pb_poison_step5_line": "Bel de vogeldierenarts of de vergiftigingslijn: {{phone}}.",
   // Suspected poisoning
   "sitter.emergency.pb_poison_title": "Vermoedelijke vergiftiging",
   // Uncontrolled movement, loss of balance, unresponsive episode.
@@ -6297,8 +6299,8 @@
   "sitter.emergency.pb_transport_signs": "Elk noodgeval waarbij je moet reizen.",
   // Use a small carrier or box lined with a towel — not loose bedding.
   "sitter.emergency.pb_transport_step1": "Gebruik een kleine reismand of doos met een handdoek erin — geen los strooisel.",
-  // Warm to ~85–90°F using a wrapped warm water bottle or heat pack on ONE side only.
-  "sitter.emergency.pb_transport_step2": "Verwarm tot ~85–90°F met een omwikkelde warmwaterkruik of warmtepack, maar aan ÉÉN kant.",
+  // Warm to about {{temp}} using a wrapped warm water bottle or heat pack on ONE side only.
+  "sitter.emergency.pb_transport_step2": "Verwarm tot ongeveer {{temp}} met een omwikkelde warmwaterkruik of warmtepack, maar aan ÉÉN kant.",
   // Cover the carrier to keep it dark and quiet.
   "sitter.emergency.pb_transport_step3": "Bedek de reismand zodat het donker en rustig blijft.",
   // Bring the owner's care sheet, any medications, photos of abnormal droppings, and anything the bird ate or chewed (with packaging).
@@ -6311,16 +6313,20 @@
   "sitter.emergency.pb_transport_title": "Vervoer naar de dierenarts",
   // Poison control
   "sitter.emergency.poisonControl": "Gifcentrum",
+  // Both poison lines charge a consultation fee.
+  "sitter.emergency.poisonFeeBoth": "Beide vergiftigingslijnen rekenen kosten voor het consult.",
+  // This poison line charges a consultation fee.
+  "sitter.emergency.poisonFeeOne": "Deze vergiftigingslijn rekent kosten voor het consult.",
   // Stay calm.
   "sitter.emergency.rule1": "Blijf rustig.",
-  // Keep {{name}} warm: about 85–90°F if she seems sick or in shock. Heat on one side only.
-  "sitter.emergency.rule2_f": "Houd {{name}} warm: ongeveer 85–90°F als ze ziek lijkt of in shock is. Verwarm maar aan één kant.",
-  // Keep {{name}} warm: about 85–90°F if he seems sick or in shock. Heat on one side only.
-  "sitter.emergency.rule2_m": "Houd {{name}} warm: ongeveer 85–90°F als hij ziek lijkt of in shock is. Verwarm maar aan één kant.",
-  // Keep {{name}} warm: about 85–90°F if they seem sick or in shock. Heat on one side only.
-  "sitter.emergency.rule2_n": "Houd {{name}} warm: ongeveer 85–90°F als de vogel ziek lijkt of in shock is. Verwarm maar aan één kant.",
-  // Keep your bird warm: about 85–90°F if they seem sick or in shock. Heat on one side only.
-  "sitter.emergency.rule2_your": "Houd je vogel warm: ongeveer 85–90°F als de vogel ziek lijkt of in shock is. Verwarm maar aan één kant.",
+  // Keep {{name}} warm: about {{temp}} if she seems sick or in shock. Heat on one side only.
+  "sitter.emergency.rule2_f": "Houd {{name}} warm: ongeveer {{temp}} als ze ziek lijkt of in shock is. Verwarm maar aan één kant.",
+  // Keep {{name}} warm: about {{temp}} if he seems sick or in shock. Heat on one side only.
+  "sitter.emergency.rule2_m": "Houd {{name}} warm: ongeveer {{temp}} als hij ziek lijkt of in shock is. Verwarm maar aan één kant.",
+  // Keep {{name}} warm: about {{temp}} if they seem sick or in shock. Heat on one side only.
+  "sitter.emergency.rule2_n": "Houd {{name}} warm: ongeveer {{temp}} als de vogel ziek lijkt of in shock is. Verwarm maar aan één kant.",
+  // Keep your bird warm: about {{temp}} if they seem sick or in shock. Heat on one side only.
+  "sitter.emergency.rule2_your": "Houd je vogel warm: ongeveer {{temp}} als de vogel ziek lijkt of in shock is. Verwarm maar aan één kant.",
   // Keep her somewhere quiet and dim, and handle her as little as possible.
   "sitter.emergency.rule3_f": "Houd haar op een rustige, schemerige plek en pak haar zo min mogelijk op.",
   // Keep him somewhere quiet and dim, and handle him as little as possible.

@@ -9,8 +9,10 @@ import type { TFunction } from "i18next";
 import { Phone, Stethoscope, Siren, FlaskConical, Briefcase, Cross, Wallet, Plus, UserRound } from "lucide-react";
 import { K, KyaCard, KyaHeading, KyaField, KyaPrimaryButton, KyaRequiredTag, KyaSheet } from "@/components/kya";
 import { AddressInput } from "@/components/AddressInput";
-import { ASPCA_POISON_CONTROL, EMERGENCY_ROWS, REQUIRED_FIELDS, formatPhoneOnBlur, isPhoneField, phoneWarning, type EmergencyField, type EmergencyRowKey } from "@/lib/emergency";
+import { EMERGENCY_ROWS, REQUIRED_FIELDS, formatPhoneOnBlur, isPhoneField, phoneWarning, type EmergencyField, type EmergencyRowKey } from "@/lib/emergency";
 import { isAddressField } from "@/lib/address";
+import { useHomePoisonLine } from "@/lib/useHomePoisonLine";
+import type { PoisonLine } from "@/lib/poisonControl";
 
 export type EmergencyValues = Partial<Record<EmergencyField, string | null>>;
 
@@ -24,9 +26,10 @@ const HOUSE: RowKey[] = ["carrier", "first_aid", "spending"];
 
 const v = (vals: EmergencyValues, f: EmergencyField) => (vals[f] ?? "").toString().trim();
 
-/** The value shown for a field: poison control falls back to the ASPCA line. */
-export function shownValue(vals: EmergencyValues, f: EmergencyField): string {
-  return v(vals, f) || (f === "poison_control" ? ASPCA_POISON_CONTROL : "");
+/** The value shown for a field: poison control falls back to the local line
+ *  where there is one (US: ASPCA; see poisonControl.ts), else stays empty. */
+export function shownValue(vals: EmergencyValues, f: EmergencyField, poisonLine: PoisonLine | null = null): string {
+  return v(vals, f) || (f === "poison_control" ? poisonLine?.display ?? "" : "");
 }
 
 /** Required numbers a sitter needs that are still empty. */
@@ -127,11 +130,12 @@ export function EmergencyList({ values, ownerName, editable, onEdit, badge, view
   badge?: (k: RowKey) => ReactNode;
 }) {
   const { t } = useTranslation();
+  const poisonLine = useHomePoisonLine();
 
   const row = (k: RowKey, last: boolean) => {
     const fields = ROW_FIELDS[k];
     const phoneField = fields.find((f) => isPhoneField(f));
-    const phone = phoneField ? shownValue(values, phoneField) : "";
+    const phone = phoneField ? shownValue(values, phoneField, poisonLine) : "";
     const nameField = fields.find((f) => f.endsWith("_name"));
     const addressField = fields.find((f) => isAddressField(f));
     const filled = fields.some((f) => shownValue(values, f));
@@ -226,9 +230,10 @@ export function EmergencyRowSheet({ rowKey, initial, saving, onSave, onClose, ex
   extra?: ReactNode;
 }) {
   const { t } = useTranslation();
+  const poisonLine = useHomePoisonLine();
   const fields = ROW_FIELDS[rowKey];
   const [form, setForm] = useState<Record<string, string>>(() =>
-    Object.fromEntries(fields.map((f) => [f, shownValue(initial, f)])),
+    Object.fromEntries(fields.map((f) => [f, shownValue(initial, f, poisonLine)])),
   );
   const bad = fields.some((f) => isPhoneField(f) && !!phoneWarning(form[f]));
   const save = () => onSave(Object.fromEntries(fields.map((f) => [f, (form[f] ?? "").trim() || null])));
