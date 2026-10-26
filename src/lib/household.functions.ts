@@ -220,6 +220,29 @@ export const cancelHouseholdInvite = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+// A member's household permissions row (owner-wide grants: sits, invites,
+// handoffs) should only exist while they're on at least one of the owner's
+// birds. Per-bird removal used to leave it behind, so someone removed bird by
+// bird kept reading every sit and its sitter link. Call after any per-bird
+// removal.
+async function dropPermissionsIfNoBirdsLeft(sb: any, ownerId: string, memberId: string) {
+  const { data: owned } = await sb.from("birds").select("id").eq("owner_id", ownerId);
+  const ownedIds = (owned ?? []).map((b: any) => b.id);
+  if (ownedIds.length) {
+    const { count } = await sb
+      .from("bird_members")
+      .select("bird_id", { count: "exact", head: true })
+      .eq("user_id", memberId)
+      .eq("role", "household")
+      .in("bird_id", ownedIds);
+    if ((count ?? 0) > 0) return;
+  }
+  const { error } = await sb
+    .from("household_member_permissions").delete()
+    .eq("owner_id", ownerId).eq("member_user_id", memberId);
+  if (error) throw new Error(error.message);
+}
+
 // ---- Owner: remove a household member from a bird --------------------------
 export const removeHouseholdMember = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -240,6 +263,7 @@ export const removeHouseholdMember = createServerFn({ method: "POST" })
       .eq("user_id", data.userId)
       .eq("role", "household");
     if (error) throw new Error(error.message);
+    await dropPermissionsIfNoBirdsLeft(sb, ownerId, data.userId);
     return { ok: true };
   });
 
@@ -289,6 +313,7 @@ export const leaveHousehold = createServerFn({ method: "POST" })
     const sb = await getAdmin();
     const userId = context.userId as string;
     // Only removes a household role — never the owner's own row.
+    const { data: bird } = await sb.from("birds").select("owner_id").eq("id", data.birdId).maybeSingle();
     const { error } = await sb
       .from("bird_members")
       .delete()
@@ -296,6 +321,7 @@ export const leaveHousehold = createServerFn({ method: "POST" })
       .eq("user_id", userId)
       .eq("role", "household");
     if (error) throw new Error(error.message);
+    if (bird?.owner_id && bird.owner_id !== userId) await dropPermissionsIfNoBirdsLeft(sb, bird.owner_id, userId);
     return { ok: true };
   });
 
