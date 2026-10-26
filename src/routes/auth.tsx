@@ -13,6 +13,8 @@ import { FrontDoorBody, FrontDoorError, FrontDoorHeader, FrontDoorPage, LegalLin
 import { CheckEmailView, NewestLinkSent } from "@/components/CheckEmailView";
 import { CONFIRM_RESEND_COOLDOWN_S, confirmRedirectTo, takeSignInPrefill } from "@/lib/confirmResend";
 import { SocialSignInButtons } from "@/components/SocialSignInButtons";
+import { OpenInAppBar } from "@/components/OpenInAppBar";
+import { openInAppPath } from "@/lib/openInApp";
 import { authErrorMessage } from "@/lib/authErrorMessage";
 import { existingAccountSignal } from "@/lib/signupExisting";
 import { useTranslation, Trans } from "react-i18next";
@@ -352,6 +354,8 @@ function AuthPage() {
                 straight to the dashboard (gated by an account flag), so only new
                 owners see it. The provider round trip can't carry a deep link,
                 so /welcome picks it up from the stash and forwards there instead. */}
+            {/* From an email link on an iPhone: offer the app first. */}
+            <OpenInAppBar variant="card" path={openInAppPath("/auth", returnTo ? `?redirect=${encodeURIComponent(returnTo)}` : "")} />
             <SocialSignInButtons
               redirectPath="/welcome"
               beforeStart={() => stashReturnTo(returnTo)}

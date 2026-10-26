@@ -41,6 +41,9 @@
  */
 
 export const APP_LINK_HOST = "app.thekyaproject.com";
+/** The app's own URL scheme (Info.plist). Defined here, not in openInApp.ts,
+ *  which imports this file. */
+export const APP_URL_SCHEME = "kyaco";
 /** Serves only /r/ and /.well-known/. Same Vercel project as the app. */
 export const CLICK_LINK_HOST = "links.thekyaproject.com";
 
@@ -94,6 +97,12 @@ export function incomingLink(url: string): IncomingLink | null {
     u = new URL(url);
   } catch {
     return null;
+  }
+  // "Open in the Kya & Co. app" from an iPhone browser (openInApp.ts):
+  // kyaco://open/<path>. Only app screens; anything else opens the dashboard.
+  if (u.protocol === `${APP_URL_SCHEME}:`) {
+    const path = u.pathname || "/";
+    return { kind: "route", href: isAppLinkPath(path) && !u.searchParams.has("code") ? `${path}${u.search}` : "/dashboard" };
   }
   if (u.protocol !== "https:") return null;
   if (u.hostname === APP_LINK_HOST) {

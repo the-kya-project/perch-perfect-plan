@@ -7140,6 +7140,15 @@
     "notifSettings.turnOnPush": {
       "stamp": "e51ff6b84be59843"
     },
+    "openInApp.button": {
+      "stamp": "74e84aeadcc01af2"
+    },
+    "openInApp.cardBody": {
+      "stamp": "ea82df73e068da57"
+    },
+    "openInApp.dismiss": {
+      "stamp": "e09226312af9076b"
+    },
     "ownerHeader.accountSettings": {
       "stamp": "c0dc472d9a2b691d"
     },

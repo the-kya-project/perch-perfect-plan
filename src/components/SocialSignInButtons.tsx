@@ -1,4 +1,5 @@
-// "Continue with Google" and, where we offer it, "Continue with Apple": the
+// "Continue with Google" and "Continue with Apple" (everywhere but the Android
+// app; see appleSignInAvailable): the
 // one set of provider buttons for /auth and the invite and handoff
 // create-account forms, so all three offer the same methods under the same
 // conditions and go through the same sign-in code (lib/nativeOAuth).
@@ -7,7 +8,7 @@ import { Loader2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { KyaSecondaryButton } from "@/components/kya";
 import { signInWithGoogle, signInWithApple } from "@/lib/nativeOAuth";
-import { isIOSApp } from "@/lib/nativeApp";
+import { appleSignInAvailable } from "@/lib/nativeApp";
 import { authErrorMessage } from "@/lib/authErrorMessage";
 
 type Provider = "google" | "apple";
@@ -27,11 +28,11 @@ export function SocialSignInButtons({ redirectPath, beforeStart, disabled, onBus
   const { t } = useTranslation();
   const [busy, setBusy] = useState<Provider | null>(null);
   // Read after mount, not during render: the server can't tell it's rendering
-  // for the iOS app, so rendering the Apple button from isIOSApp() directly made
-  // the server HTML and the app's first render disagree whenever the app opened
-  // straight onto /auth (React errors #422/#520, recovered by a re-render).
+  // for one of the apps, so deciding during render made the server HTML and the
+  // app's first render disagree whenever the app opened straight onto /auth
+  // (React errors #422/#520, recovered by a re-render).
   const [showApple, setShowApple] = useState(false);
-  useEffect(() => setShowApple(isIOSApp()), []);
+  useEffect(() => setShowApple(appleSignInAvailable()), []);
 
   async function start(provider: Provider) {
     onError(null);
