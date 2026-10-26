@@ -33,9 +33,11 @@ type RowProps = {
   /** Where the row sits: "forest" (Emergency) or "mist" (Something's wrong).
    *  Only changes how a missing number is shown. */
   surface?: "forest" | "mist";
+  /** What follows the label when there's no number (default: not provided by owner). */
+  missingText?: string;
 };
 
-function Missing({ label, surface }: { label: string; surface: "forest" | "mist" }) {
+function Missing({ label, surface, text }: { label: string; surface: "forest" | "mist"; text?: string }) {
   const { t } = useTranslation();
   const onForest = surface === "forest";
   return (
@@ -43,14 +45,14 @@ function Missing({ label, surface }: { label: string; surface: "forest" | "mist"
       className="flex min-h-[56px] items-center rounded-[18px] px-4 py-3 text-[14px] leading-[1.4]"
       style={onForest ? { background: K.forestDeep, color: "rgba(255,255,255,0.65)" } : { background: "#fff", color: K.quiet, border: "1px solid #d5dfd5" }}
     >
-      {label}: {t("sitter.emergency.notProvided", "not provided by owner.")}
+      {label}: {text ?? t("sitter.emergency.notProvided", "not provided by owner.")}
     </div>
   );
 }
 
-function Row({ label, name, phone, tone, surface = "forest" }: RowProps & { tone: "red" | "white" }) {
+function Row({ label, name, phone, tone, surface = "forest", missingText }: RowProps & { tone: "red" | "white" }) {
   const { t } = useTranslation();
-  if (!phone) return <Missing label={label} surface={surface} />;
+  if (!phone) return <Missing label={label} surface={surface} text={missingText} />;
   const display = formatPhone(phone);
   const red = tone === "red";
   const title = name?.trim() || display;

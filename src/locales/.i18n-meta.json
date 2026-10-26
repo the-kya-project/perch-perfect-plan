@@ -4401,9 +4401,6 @@
     "emergencySetup.add": {
       "stamp": "8e40545cd3bef308"
     },
-    "emergencySetup.aspca": {
-      "stamp": "571ae6c709b670d2"
-    },
     "emergencySetup.avianVet": {
       "stamp": "0168857d0c5b19a0"
     },
@@ -8700,9 +8697,6 @@
     "sitForm.bird": {
       "stamp": "7964d14d200e7108"
     },
-    "sitForm.copyLink": {
-      "stamp": "dc4c04995ccb896a"
-    },
     "sitForm.couldNotCreate": {
       "stamp": "0b1a8b7341ed6d6d"
     },
@@ -9204,6 +9198,9 @@
     "sitter.emergency.footer": {
       "stamp": "54158112f0e708a8"
     },
+    "sitter.emergency.noPoisonLine": {
+      "stamp": "f2e4f0682d90d57e"
+    },
     "sitter.emergency.notProvided": {
       "stamp": "9297043a93aec972"
     },
@@ -9268,7 +9265,7 @@
       "stamp": "a44465bc65cdbc63"
     },
     "sitter.emergency.pb_breathing_step3": {
-      "stamp": "2bf2b8f386c9b67f"
+      "stamp": "9fad2872c161baa7"
     },
     "sitter.emergency.pb_breathing_step4": {
       "stamp": "3dabc6d8ea855120"
@@ -9384,8 +9381,11 @@
     "sitter.emergency.pb_poison_step4": {
       "stamp": "6b91f55fe0105951"
     },
-    "sitter.emergency.pb_poison_step5": {
-      "stamp": "a1b1fad0971f95a3"
+    "sitter.emergency.pb_poison_step5_line": {
+      "stamp": "45216a477f2ddaf3"
+    },
+    "sitter.emergency.pb_poison_step5_vet": {
+      "stamp": "47c230abf449d436"
     },
     "sitter.emergency.pb_poison_title": {
       "stamp": "29e0cf9a69b70877"
@@ -9421,7 +9421,7 @@
       "stamp": "c7ddb4a05afbd076"
     },
     "sitter.emergency.pb_transport_step2": {
-      "stamp": "627fc5e258962ec7"
+      "stamp": "b271d2392ffd36c2"
     },
     "sitter.emergency.pb_transport_step3": {
       "stamp": "31e7944e935cdb45"
@@ -9445,16 +9445,16 @@
       "stamp": "a9023333af75ec10"
     },
     "sitter.emergency.rule2_f": {
-      "stamp": "6ea3a5cdeb08e2fc"
+      "stamp": "e4d36182df86c05d"
     },
     "sitter.emergency.rule2_m": {
-      "stamp": "e8a94aa87694a896"
+      "stamp": "3f07a406998429e8"
     },
     "sitter.emergency.rule2_n": {
-      "stamp": "da97f7901c4e39d8"
+      "stamp": "1258a72de1ae9d02"
     },
     "sitter.emergency.rule2_your": {
-      "stamp": "8781345229a78106"
+      "stamp": "f60480a4adb4ecba"
     },
     "sitter.emergency.rule3_f": {
       "stamp": "28f9b30fd7f83bbf"

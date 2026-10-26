@@ -21,7 +21,7 @@ import { useTourDemo, DEMO_FLOCK, DEMO_FOSTERS, DEMO_HOUSEHOLD, demoGlanceFor, g
 import { deriveConcernByBird, daysAgo } from "@/lib/scanConcern";
 import { BirdPhotoCrop } from "@/components/BirdPhotoCrop";
 import { toast } from "sonner";
-import { ASPCA_POISON_CONTROL, isPhoneField, phoneWarning, formatPhoneOnBlur } from "@/lib/emergency";
+import { isPhoneField, phoneWarning, formatPhoneOnBlur } from "@/lib/emergency";
 import { isAddressField } from "@/lib/address";
 import { AddressInput } from "@/components/AddressInput";
 import { fetchScanFeed } from "@/lib/notificationsFeed";

@@ -8,6 +8,7 @@ import { K, KyaHeading } from "@/components/kya";
 import { PageHeader, useGoBack } from "@/components/headers";
 import { VetCallRow, PersonCallRow } from "@/components/sitter/CallRows";
 import { BirdAvatar } from "@/components/sitter/sitterShared";
+import { defaultPoisonLine, warmRange } from "@/lib/poisonControl";
 
 export const Route = createFileRoute("/sitter/$token/emergency")({
   component: Emergency,
@@ -20,13 +21,14 @@ function pronFor(sex: unknown): Pron {
   return c === "m" ? "m" : c === "f" ? "f" : "n";
 }
 
-/** The four rules. `name` null = several birds share this screen ("your bird"). */
-function rules(t: TFunction, name: string | null, p: Pron): string[] {
+/** The four rules. `name` null = several birds share this screen ("your bird").
+ *  `temp` is the keep-warm range in the reader's units (warmRange). */
+function rules(t: TFunction, name: string | null, p: Pron, temp: string): string[] {
   const warm = name === null
-    ? t("sitter.emergency.rule2_your", "Keep your bird warm: about 85–90°F if they seem sick or in shock. Heat on one side only.")
-    : p === "m" ? t("sitter.emergency.rule2_m", "Keep {{name}} warm: about 85–90°F if he seems sick or in shock. Heat on one side only.", { name })
-    : p === "f" ? t("sitter.emergency.rule2_f", "Keep {{name}} warm: about 85–90°F if she seems sick or in shock. Heat on one side only.", { name })
-    : t("sitter.emergency.rule2_n", "Keep {{name}} warm: about 85–90°F if they seem sick or in shock. Heat on one side only.", { name });
+    ? t("sitter.emergency.rule2_your", "Keep your bird warm: about {{temp}} if they seem sick or in shock. Heat on one side only.", { temp })
+    : p === "m" ? t("sitter.emergency.rule2_m", "Keep {{name}} warm: about {{temp}} if he seems sick or in shock. Heat on one side only.", { name, temp })
+    : p === "f" ? t("sitter.emergency.rule2_f", "Keep {{name}} warm: about {{temp}} if she seems sick or in shock. Heat on one side only.", { name, temp })
+    : t("sitter.emergency.rule2_n", "Keep {{name}} warm: about {{temp}} if they seem sick or in shock. Heat on one side only.", { name, temp });
   const quiet = name === null
     ? t("sitter.emergency.rule3_your", "Keep your bird somewhere quiet and dim, and handle them as little as possible.")
     : p === "m" ? t("sitter.emergency.rule3_m", "Keep him somewhere quiet and dim, and handle him as little as possible.")
@@ -41,11 +43,17 @@ function rules(t: TFunction, name: string | null, p: Pron): string[] {
 }
 
 function Emergency() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { token } = Route.useParams();
   const navigate = useNavigate();
   const { data: ctx } = useSitterContext(token);
   const c: Record<string, string | undefined> = (ctx.contacts ?? {}) as any;
+  // Where the bird is decides the units and whether a poison line is filled in
+  // when the owner left it empty (poisonControl.ts).
+  const homeTimeZone = (ctx as { homeTimeZone?: string | null }).homeTimeZone ?? null;
+  const temp = warmRange(homeTimeZone, i18n.language);
+  const poisonDefault = c.poison_control ? null : defaultPoisonLine(homeTimeZone);
+  const poisonPhone = c.poison_control || poisonDefault?.display || "";
   const goBack = useGoBack(useCallback(() => navigate({ to: "/sitter/$token", params: { token } }), [navigate, token]));
   const playbooks = [
     {
@@ -54,7 +62,7 @@ function Emergency() {
       steps: [
         t("sitter.emergency.pb_breathing_step1", "Stop handling — birds need chest movement to breathe."),
         t("sitter.emergency.pb_breathing_step2", "Move the bird away from fumes, smoke, heat, and stress to fresh air."),
-        t("sitter.emergency.pb_breathing_step3", "Keep warm (~85–90°F if shocky, heat on ONE side only), quiet, and dim."),
+        t("sitter.emergency.pb_breathing_step3", "Keep warm (about {{temp}} if shocky, heat on ONE side only), quiet, and dim.", { temp }),
         t("sitter.emergency.pb_breathing_step4", "Don't mist, bathe, or force water."),
         t("sitter.emergency.pb_breathing_step5", "Call the avian vet and prepare to transport."),
       ],
@@ -79,7 +87,9 @@ function Emergency() {
         t("sitter.emergency.pb_poison_step2", "Do NOT make the bird vomit."),
         t("sitter.emergency.pb_poison_step3", "Save or photograph the packaging or material."),
         t("sitter.emergency.pb_poison_step4", "Note what was eaten or chewed and when."),
-        t("sitter.emergency.pb_poison_step5", "Call the avian vet or ASPCA Animal Poison Control: (888) 426-4435."),
+        poisonPhone
+          ? t("sitter.emergency.pb_poison_step5_line", "Call the avian vet or poison control: {{phone}}.", { phone: poisonPhone })
+          : t("sitter.emergency.pb_poison_step5_vet", "Call the avian vet right away and bring the packaging with you."),
       ],
     },
     {
@@ -156,7 +166,7 @@ function Emergency() {
       signs: t("sitter.emergency.pb_transport_signs", "Any emergency requiring travel."),
       steps: [
         t("sitter.emergency.pb_transport_step1", "Use a small carrier or box lined with a towel — not loose bedding."),
-        t("sitter.emergency.pb_transport_step2", "Warm to ~85–90°F using a wrapped warm water bottle or heat pack on ONE side only."),
+        t("sitter.emergency.pb_transport_step2", "Warm to about {{temp}} using a wrapped warm water bottle or heat pack on ONE side only.", { temp }),
         t("sitter.emergency.pb_transport_step3", "Cover the carrier to keep it dark and quiet."),
         t("sitter.emergency.pb_transport_step4", "Bring the owner's care sheet, any medications, photos of abnormal droppings, and anything the bird ate or chewed (with packaging)."),
         t("sitter.emergency.pb_transport_step5", "Secure in the car. Drive calmly. No blasting music or vents at the bird."),
@@ -224,14 +234,15 @@ function Emergency() {
         {c.backup_phone && <PersonCallRow label={t("sitter.calls.backup", "Backup contact")} name={c.backup_name} phone={c.backup_phone} />}
         <PersonCallRow
           label={t("sitter.emergency.poisonControl", "Poison control")}
-          name={c.poison_control ? undefined : "ASPCA Animal Poison Control"}
-          phone={c.poison_control || "8884264435"}
+          name={poisonDefault?.name}
+          phone={c.poison_control || poisonDefault?.dial}
+          missingText={t("sitter.emergency.noPoisonLine", "no public line here. Call the avian vet.")}
         />
 
         <section className="mt-3 rounded-[20px] p-5" style={{ background: K.forestDeep }}>
           <KyaHeading size={20} className="text-[#f2b33d]">{t("sitter.emergency.whileYouWait", "While you wait for the vet")}</KyaHeading>
           <ol className="m-0 mt-3 flex list-none flex-col gap-2.5 p-0">
-            {rules(t, ruleName, pronFor((ctx.bird as any).sex)).map((r, i) => (
+            {rules(t, ruleName, pronFor((ctx.bird as any).sex), temp).map((r, i) => (
               <li key={i} className="flex gap-3 text-[15px] leading-[1.45] text-white">
                 <span className="w-4 shrink-0 font-[700]" style={{ color: K.sunflower }}>{i + 1}.</span>
                 <span className="min-w-0 flex-1">{r}</span>

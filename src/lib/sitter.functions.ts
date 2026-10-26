@@ -301,8 +301,17 @@ export const getSitterContext = createServerFn({ method: "GET" })
     // Paused = the sitter's own pause OR the owner marked the bird as passed.
     const remindersPaused = !!((sitBirdRes.data as any)?.reminders_paused_at || (activeBird as any).passed_at);
 
+    // Where the bird is, for the Emergency screen's poison line and units: the
+    // sit's time zone, else the owner's home zone (previews, older sits).
+    let homeTimeZone = (sit as any).time_zone as string | null;
+    if (!homeTimeZone) {
+      const { data: prof } = await sb.from("profiles").select("time_zone").eq("id", sit.owner_id as string).maybeSingle();
+      homeTimeZone = ((prof as any)?.time_zone as string | null) ?? null;
+    }
+
     return {
       sit,
+      homeTimeZone,
       // Newest first (owner's order). `emergencyDifferent`: this bird has its
       // own emergency details that differ from the owner's defaults, so the
       // Emergency screen shows a bird switcher.

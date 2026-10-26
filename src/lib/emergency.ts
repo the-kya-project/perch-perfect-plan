@@ -88,9 +88,7 @@ export function formatPhoneOnBlur(v: string | null | undefined): string {
   return s;
 }
 
-// ASPCA Animal Poison Control — the poison-control default, auto-filled so the
-// number is always present without the owner looking it up.
-export const ASPCA_POISON_CONTROL = "(888) 426-4435";
+// The poison-control default depends on where the bird is: see poisonControl.ts.
 
 function clean(v: unknown): string | null {
   if (typeof v !== "string") return v == null ? null : String(v);
