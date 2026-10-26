@@ -46,7 +46,10 @@ function AuthPage() {
   const [password, setPassword] = useState("");
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
-  const [marketingOptIn, setMarketingOptIn] = useState(true);
+  // Unticked until the person ticks it: a pre-ticked box isn't consent under
+  // EU rules (most of the Dutch audience). Only the Brevo marketing list
+  // depends on it; onboarding emails follow notify_onboarding instead.
+  const [marketingOptIn, setMarketingOptIn] = useState(false);
   const [loading, setLoading] = useState(false);
   // Which button started the current request, for its spinner.
   const [busy, setBusy] = useState<"email" | "reset" | null>(null);

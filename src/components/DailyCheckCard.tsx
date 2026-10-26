@@ -107,7 +107,7 @@ function PrimaryBtn({ children, onClick, disabled, tall = true, secondary = fals
 }
 
 export function DailyCheckCard({
-  birdId, name, today, surface, saveLabel, onSaved, canWeigh = true, showHeading = true, title, flat = false, saveSecondary = false,
+  birdId, name, today, surface, saveLabel, onSaved, canWeigh = true, showHeading = true, title, flat = false, saveSecondary = false, onDirtyChange,
 }: {
   birdId: string;
   name: string;
@@ -127,6 +127,10 @@ export function DailyCheckCard({
    *  (the flock check's pinned "Check [bird] next"). Home and the bird page
    *  leave this off, so Save stays sunflower there. */
   saveSecondary?: boolean;
+  /** Told whether the card holds input that isn't saved yet (a typed weight,
+   *  or "Something's different" with items or a note), so the flock check
+   *  never moves on and drops it. */
+  onDirtyChange?: (dirty: boolean) => void;
 }) {
   const { t } = useTranslation();
   const qc = useQueryClient();
@@ -156,6 +160,9 @@ export function DailyCheckCard({
   const hasWeight = canWeigh && typeof parsed === "number";
   const hint = today?.lastGrams != null ? String(today.lastGrams) : t("dailyCheck.gramsPlaceholder", "e.g. 95");
   const anyConcerning = Object.values(changes).some((v) => v === "concerning");
+  const dirty = grams.trim() !== "" || (different && (Object.keys(changes).length > 0 || note.trim() !== ""));
+  useEffect(() => { onDirtyChange?.(dirty); }, [dirty, onDirtyChange]);
+  useEffect(() => () => onDirtyChange?.(false), [onDirtyChange]);
   const concerningRed = Object.entries(changes).some(([k, v]) => v === "concerning" && RED_KEYS.has(k as ScanFieldKey));
 
   async function save(skipConfirm = false) {

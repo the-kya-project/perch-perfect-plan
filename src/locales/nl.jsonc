@@ -1315,8 +1315,8 @@
   "birdSetup.food2.next": "Volgende: Gezondheid",
   // {{name}}'s water, treats, and hygiene
   "birdSetup.food2.titleNamed": "Water, snacks en hygiëne van {{name}}",
-  // For each food, add the brand, how much, and when it's served.
-  "birdSetup.forEachFoodAdd": "Vul bij elk voer het merk in, hoeveel, en wanneer het gegeven wordt.",
+  // For each food, add the brand, how much, and when it's served. Skip anything you don't know yet.
+  "birdSetup.forEachFoodAdd": "Vul bij elk voer het merk in, hoeveel, en wanneer het gegeven wordt. Sla over wat je nog niet weet.",
   // Fresh food spoils fast and can grow bacteria. This tells your sitter when to take it out.
   "birdSetup.freshFoodSpoilsFastAnd": "Vers eten bederft snel en er kunnen bacteriën in groeien. Zo weet je oppas wanneer het eruit moet.",
   // Freshness & hygiene
@@ -1439,10 +1439,6 @@
   "birdSetup.instr.reviewSitter": "Zo leest een oppas het plan van {{name}}. Tik op iets om het aan te passen.",
   // Add short video clips, up to 60 seconds each. Record one now or upload from your phone.
   "birdSetup.instr.tips": "Voeg korte filmpjes toe, elk tot 60 seconden. Neem er nu een op of upload er een van je telefoon.",
-  // {{n}} item needs details. Add the brand, amount, and timing for: {{list}}.
-  "birdSetup.itemNeedsDetails": "{{n}} item heeft nog gegevens nodig. Vul merk, hoeveelheid en tijdstip in voor: {{list}}.",
-  // {{n}} items need details. Add the brand, amount, and timing for: {{list}}.
-  "birdSetup.itemsNeedDetails": "{{n}} items hebben nog gegevens nodig. Vul merk, hoeveelheid en tijdstip in voor: {{list}}.",
   // Keep current clip
   "birdSetup.keepCurrentClip": "Huidige clip houden",
   // Known conditions
@@ -3199,6 +3195,12 @@
   "flockCheck.checkedNotWeighed": "Gecheckt, niet gewogen",
   // Check {{name}} next →
   "flockCheck.checkNext": "Check {{name}} hierna →",
+  // Discard
+  "flockCheck.discard": "Weggooien",
+  // It hasn't been saved yet.
+  "flockCheck.discardBody": "Het is nog niet opgeslagen.",
+  // Discard what you entered for {{name}}?
+  "flockCheck.discardTitle": "Wat je voor {{name}} hebt ingevuld weggooien?",
   // Nice work. Everything's saved to each bird's health log.
   "flockCheck.doneSubhead": "Goed gedaan. Alles staat in het gezondheidslogboek van elke vogel.",
   // Done
@@ -3221,6 +3223,8 @@
   "flockCheck.headingOne": "Dagelijkse check van {{name}}",
   // A quick once-over every day helps you spot early signs of illness. Record what you see for each bird here.
   "flockCheck.intro": "Elke dag even goed kijken helpt je vroege tekenen van ziekte op te merken. Noteer hier wat je bij elke vogel ziet.",
+  // Keep editing
+  "flockCheck.keepEditing": "Verder invullen",
   // Last weighed {{count}} day ago
   "flockCheck.lastWeighedDaysAgo_one": "{{count}} dag geleden gewogen",
   // Last weighed {{count}} days ago

@@ -18,31 +18,12 @@ import { localeForUser, joinNamesLocalized, fallbackOwnerLabel } from "./emailLo
 import { realPersonName } from "./personName.server";
 import { mergeEmergency, emergencyDifferent } from "./emergency";
 import { mergeHome, homeDifferences, birdHasOwn, HOME_GROUPS } from "./homeDefaults";
-import { isCfClip, cfUid } from "./clipRef";
+import { signOwnerPhoto, resolveOwnerClipUrl } from "./mediaSigning.server";
 import { computeSetupCompleteness, type SetupCheck } from "./setupCompleteness";
 
 async function getAdmin() {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   return supabaseAdmin;
-}
-
-// Sign a clip ref to a playable URL (Cloudflare Stream iframe or signed Storage
-// URL). Mirrors the sitter helper — household reads need signed media too.
-async function resolveClipUrl(sb: any, ref: string): Promise<string | null> {
-  if (isCfClip(ref)) {
-    try {
-      const { signedIframeUrl } = await import("@/lib/cloudflareStream.server");
-      return await signedIframeUrl(cfUid(ref));
-    } catch { return null; }
-  }
-  const { data } = await sb.storage.from("bird-photos").createSignedUrl(ref, 3600);
-  return data?.signedUrl ?? null;
-}
-async function signBirdPhotoPath(sb: any, value: string | null | undefined): Promise<string | null> {
-  if (!value) return null;
-  if (value.startsWith("data:") || value.startsWith("http")) return value;
-  const { data } = await sb.storage.from("bird-photos").createSignedUrl(value, 3600);
-  return data?.signedUrl ?? null;
 }
 
 function appUrl() {
@@ -220,6 +201,29 @@ export const cancelHouseholdInvite = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+// A member's household permissions row (owner-wide grants: sits, invites,
+// handoffs) should only exist while they're on at least one of the owner's
+// birds. Per-bird removal used to leave it behind, so someone removed bird by
+// bird kept reading every sit and its sitter link. Call after any per-bird
+// removal.
+async function dropPermissionsIfNoBirdsLeft(sb: any, ownerId: string, memberId: string) {
+  const { data: owned } = await sb.from("birds").select("id").eq("owner_id", ownerId);
+  const ownedIds = (owned ?? []).map((b: any) => b.id);
+  if (ownedIds.length) {
+    const { count } = await sb
+      .from("bird_members")
+      .select("bird_id", { count: "exact", head: true })
+      .eq("user_id", memberId)
+      .eq("role", "household")
+      .in("bird_id", ownedIds);
+    if ((count ?? 0) > 0) return;
+  }
+  const { error } = await sb
+    .from("household_member_permissions").delete()
+    .eq("owner_id", ownerId).eq("member_user_id", memberId);
+  if (error) throw new Error(error.message);
+}
+
 // ---- Owner: remove a household member from a bird --------------------------
 export const removeHouseholdMember = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -240,6 +244,7 @@ export const removeHouseholdMember = createServerFn({ method: "POST" })
       .eq("user_id", data.userId)
       .eq("role", "household");
     if (error) throw new Error(error.message);
+    await dropPermissionsIfNoBirdsLeft(sb, ownerId, data.userId);
     return { ok: true };
   });
 
@@ -289,6 +294,7 @@ export const leaveHousehold = createServerFn({ method: "POST" })
     const sb = await getAdmin();
     const userId = context.userId as string;
     // Only removes a household role — never the owner's own row.
+    const { data: bird } = await sb.from("birds").select("owner_id").eq("id", data.birdId).maybeSingle();
     const { error } = await sb
       .from("bird_members")
       .delete()
@@ -296,6 +302,7 @@ export const leaveHousehold = createServerFn({ method: "POST" })
       .eq("user_id", userId)
       .eq("role", "household");
     if (error) throw new Error(error.message);
+    if (bird?.owner_id && bird.owner_id !== userId) await dropPermissionsIfNoBirdsLeft(sb, bird.owner_id, userId);
     return { ok: true };
   });
 
@@ -342,7 +349,7 @@ export const getHouseholdInvite = createServerFn({ method: "GET" })
     const birdPreviews = await Promise.all(
       (birds ?? []).filter((b: any) => b.name).map(async (b: any) => ({
         name: b.name as string,
-        photoUrl: await signBirdPhotoPath(sb, b.photo_url),
+        photoUrl: await signOwnerPhoto(sb, b.photo_url, invite.owner_id),
         photoPosition: (b.photo_position ?? null) as string | null,
       })),
     );
@@ -640,7 +647,7 @@ export const getHouseholdCarePlanView = createServerFn({ method: "GET" })
       .maybeSingle();
 
     // Sign photo + clips.
-    const signedBird = { ...bird, photo_url: await signBirdPhotoPath(sb, (bird as any).photo_url) };
+    const signedBird = { ...bird, photo_url: await signOwnerPhoto(sb, (bird as any).photo_url, (bird as any).owner_id) };
     const watchClipSlots = [
       { key: "step_up", column: "clip_step_up_path", label: "How they step up" },
       { key: "food_water", column: "clip_food_water_path", label: "How to refill food & water safely" },
@@ -657,11 +664,11 @@ export const getHouseholdCarePlanView = createServerFn({ method: "GET" })
       for (const slot of watchClipSlots) {
         const path = (plan as any)[slot.column] as string | null;
         if (!path) continue;
-        const url = await resolveClipUrl(sb, path);
+        const url = await resolveOwnerClipUrl(sb, path, (bird as any).owner_id);
         if (url) watchClips.push({ key: slot.key, label: slot.label, url });
       }
       const bcp = (plan as any).baseline_clip_path as string | null;
-      if (bcp) baselineClipUrl = await resolveClipUrl(sb, bcp);
+      if (bcp) baselineClipUrl = await resolveOwnerClipUrl(sb, bcp, (bird as any).owner_id);
     }
 
     // Shared "Your home" reminders fill in wherever this bird has none of its own.

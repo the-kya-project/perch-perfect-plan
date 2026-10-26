@@ -30,7 +30,7 @@ import { resolveOwnerClipUrl } from "@/lib/clipUrl";
 import { commitClipRef } from "@/lib/clipReplace";
 import { FEED_PREFIX, HYG_REMOVE_PREFIX, HYG_WASH_FOOD_PREFIX, HYG_WASH_WATER_PREFIX, WATER_CHANGE_PREFIX, MED_TASK_PREFIX, isDerivedTask, derivedSource, feedTimeToDaypart, taskDaypart, parseTaskMinutes, DAYPARTS, type Daypart } from "@/lib/routineTasks";
 import { FoodItemsEditor } from "@/components/careEditors/FoodItemsEditor";
-import { blankFoodItem, isFoodItemComplete, foodItemHasContent, HOMEMADE_CHOP_NAME, type FoodItem } from "@/lib/foodItems";
+import { blankFoodItem, foodItemHasContent, HOMEMADE_CHOP_NAME, type FoodItem } from "@/lib/foodItems";
 import { normalizeFeedTimes, feedTimeLabel, type FeedTime } from "@/lib/feedTimes";
 import { syncFeedingTasks } from "@/lib/feedingSync";
 import { medDescriptor, washFoodDescriptor, washWaterDescriptor, removeFreshDescriptor, changeWaterDescriptor, type DerivedTask } from "@/lib/derivedTasks";
@@ -286,12 +286,6 @@ function BirdSetup() {
   const registerFlush = useCallback((fn: (() => Promise<void>) | null) => {
     flushRef.current = fn;
   }, []);
-  // A step can register a forward-navigation gate (currently the Food step). It
-  // returns false to BLOCK Next and surface its own validation UI.
-  const validateRef = useRef<(() => boolean) | null>(null);
-  const registerValidate = useCallback((fn: (() => boolean) | null) => {
-    validateRef.current = fn;
-  }, []);
   // Returns false if the current step's pending save failed, so callers can stay
   // put rather than navigate away and lose the owner's input. The error toast is
   // raised by the autosave hook.
@@ -350,8 +344,6 @@ function BirdSetup() {
   }
 
   async function onNext() {
-    // Forward-navigation gate (Food step): block + show validation if incomplete.
-    if (validateRef.current && !validateRef.current()) return;
     // Food page 1 → page 2, within the same step.
     if (SETUP_STEPS[step - 1]?.key === "food" && foodPage === 1) {
       if (!(await flushPending())) return;
@@ -589,7 +581,6 @@ function BirdSetup() {
           onJumpToStep={jumpToStep}
           onFinish={finishAndGo}
           registerFlush={registerFlush}
-          registerValidate={registerValidate}
           foodPage={foodPage}
         />
         </SetupHomeSublineContext.Provider>
@@ -630,7 +621,6 @@ function StepBody({
   onJumpToStep,
   onFinish,
   registerFlush,
-  registerValidate,
   foodPage,
 }: {
   step: number;
@@ -640,12 +630,11 @@ function StepBody({
   onJumpToStep: (target: number) => void;
   onFinish: (opts: { to: "dashboard-newsit" | "home" }) => void;
   registerFlush: (fn: (() => Promise<void>) | null) => void;
-  registerValidate: (fn: (() => boolean) | null) => void;
   foodPage: 1 | 2;
 }) {
   // Steps are looked up by key, so the order lives only in SETUP_STEPS.
   switch (SETUP_STEPS[step - 1]?.key) {
-    case "food": return <FoodWaterStep birdId={birdId} birdName={birdName} onBlockNext={onBlockNext} registerFlush={registerFlush} registerValidate={registerValidate} page={foodPage} />;
+    case "food": return <FoodWaterStep birdId={birdId} birdName={birdName} onBlockNext={onBlockNext} registerFlush={registerFlush} page={foodPage} />;
     case "health": return <HealthBaselineStep birdId={birdId} birdName={birdName} onBlockNext={onBlockNext} registerFlush={registerFlush} />;
     case "personality": return <PersonalityStep birdId={birdId} birdName={birdName} registerFlush={registerFlush} />;
     case "clips": return <OwnerTipsClipsStep birdId={birdId} birdName={birdName} onBlockNext={onBlockNext} />;
@@ -1273,7 +1262,6 @@ export function FoodWaterStep({
   birdName,
   onBlockNext,
   registerFlush,
-  registerValidate,
   page,
 }: {
   birdId: string;
@@ -1283,9 +1271,6 @@ export function FoodWaterStep({
   page?: 1 | 2;
   onBlockNext: (block: boolean) => void;
   registerFlush?: (fn: (() => Promise<void>) | null) => void;
-  // Wizard-only: register a gate run on "Next". Returns true to proceed; on false
-  // the step shows its validation banner/flags. The tabbed editor omits this.
-  registerValidate?: (fn: (() => boolean) | null) => void;
 }) {
   const { t } = useTranslation();
   const { confirm, sheet: confirmSheet } = useConfirm();
@@ -1400,11 +1385,6 @@ export function FoodWaterStep({
   const [copyDone, setCopyDone] = useState(false);
   useEffect(() => { if (offerCopy && copySources.length) setShowCopy(true); }, [offerCopy, copySources.length]);
 
-  // ---- Completeness + wizard validation gate ----
-  const [validationActive, setValidationActive] = useState(false);
-  const [expandSignal, setExpandSignal] = useState(0);
-  const bannerRef = useRef<HTMLDivElement | null>(null);
-
   const typeLabel = useCallback(
     (item: string) => (item === "other" ? (dietOther.trim() || t("birdSetup.opt.other", "Other")) : displayLabel(t, DIET_OPTIONS.find((o) => o.value === item)?.label ?? item)),
     [dietOther, t],
@@ -1419,43 +1399,10 @@ export function FoodWaterStep({
     premade: chopItemsState.some((i) => !i.homemade),
   };
 
-  // Incomplete items across all selected types (recomputed live). For chop, not
-  // having chosen a mode yet also counts as incomplete.
-  const incomplete = useMemo(() => {
-    const labels: string[] = [];
-    let count = 0;
-    for (const t of diet) {
-      const items = dietDetails[t] ?? [];
-      if (items.length === 0) { count += 1; labels.push(typeLabel(t)); continue; }
-      const bad = items.filter((it) => !isFoodItemComplete(it));
-      if (bad.length) { count += bad.length; labels.push(typeLabel(t)); }
-    }
-    return { labels, count };
-  }, [diet, dietDetails, typeLabel]);
-
-  // The tabbed editor navigates tabs freely — never disable Next here. The wizard
-  // gates forward navigation through registerValidate (a Next-click check) so it
-  // can show the banner + field flags instead of a silently-disabled button.
+  // Brand, amount and timing are optional: Next is never blocked here, so a new
+  // owner who doesn't know the gram amount offhand can move on and fill it in
+  // later (QA pass, Oct 2026). Items left completely blank aren't saved.
   useEffect(() => { onBlockNext(false); }, [onBlockNext]);
-
-  // Once everything is complete, drop the active validation styling.
-  useEffect(() => {
-    if (validationActive && incomplete.count === 0) setValidationActive(false);
-  }, [validationActive, incomplete.count]);
-
-  // Register the wizard's Next gate (no-op in the tabbed editor, which doesn't
-  // pass registerValidate). Re-registered each render so it sees latest state.
-  useEffect(() => {
-    if (!registerValidate) return;
-    registerValidate(() => {
-      if (incomplete.count === 0) return true;
-      setValidationActive(true);
-      setExpandSignal((n) => n + 1);
-      requestAnimationFrame(() => bannerRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }));
-      return false;
-    });
-    return () => registerValidate(null);
-  });
 
   // Persist (debounced) whenever form changes after hydration.
   useDebouncedAutosave(
@@ -1520,9 +1467,13 @@ export function FoodWaterStep({
         `Wash bowl/bottle ${waterWashLabel.toLowerCase()}`,
       ].filter(Boolean).join(" — ");
 
-      // Persist only currently-selected diet types' details.
+      // Persist only currently-selected diet types' details, minus items left
+      // completely blank (details are optional, so one can be left empty).
       const detailsToSave: Record<string, DietItem[]> = {};
-      for (const t of diet) if ((dietDetails[t] ?? []).length) detailsToSave[t] = dietDetails[t];
+      for (const t of diet) {
+        const kept = (dietDetails[t] ?? []).filter((it) => it.homemade || foodItemHasContent(it));
+        if (kept.length) detailsToSave[t] = kept;
+      }
 
       // Mirror to the legacy text field too so the sitter view stays consistent.
       const freshRemovalSummary = `Remove fresh / wet food after ${removalLabel}. Fresh food spoils fast and can grow bacteria.`;
@@ -1678,14 +1629,12 @@ export function FoodWaterStep({
       {diet.length > 0 && (
         <>
           <p className="m-0 text-[15px] leading-[1.5] text-[#3d4f45]">
-            {t("birdSetup.forEachFoodAdd", "For each food, add the brand, how much, and when it's served.")}
+            {t("birdSetup.forEachFoodAdd", "For each food, add the brand, how much, and when it's served. Skip anything you don't know yet.")}
           </p>
           <FoodItemsEditor
             types={DIET_OPTIONS.filter((o) => diet.includes(o.value)).map((o) => ({ value: o.value, label: displayLabel(t, o.label) }))}
             details={dietDetails}
             onChangeType={setItemsForType}
-            validationActive={validationActive}
-            expandSignal={expandSignal}
             otherDescription={{ value: dietOther, onChange: setDietOther }}
             chop={{
               onRemoveHomemade: removeHomemadeChop,
@@ -1696,20 +1645,6 @@ export function FoodWaterStep({
               onOtherChange: setFreshOther,
             }}
           />
-          {validationActive && incomplete.count > 0 && (
-            <div
-              ref={bannerRef}
-              className="flex scroll-mt-24 items-start gap-2 rounded-2xl border p-4"
-              style={{ borderColor: "#BA7517", backgroundColor: "#f6e7c4" }}
-            >
-              <AlertTriangle className="mt-0.5 size-5 shrink-0 text-[#854F0B]" />
-              <p className="text-sm text-[#854F0B]">
-                {incomplete.count > 1
-                  ? t("birdSetup.itemsNeedDetails", "{{n}} items need details. Add the brand, amount, and timing for: {{list}}.", { n: incomplete.count, list: incomplete.labels.join(", ") })
-                  : t("birdSetup.itemNeedsDetails", "{{n}} item needs details. Add the brand, amount, and timing for: {{list}}.", { n: incomplete.count, list: incomplete.labels.join(", ") })}
-              </p>
-            </div>
-          )}
         </>
       )}
 
