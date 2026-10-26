@@ -54,7 +54,8 @@
     "test:intake-date": "npx --yes vite-node scripts/intake-date.test.ts",
     "test:check-kind": "npx --yes vite-node scripts/check-kind.test.ts",
     "test:gifts": "npx --yes vite-node scripts/gifts.test.ts",
-    "test:bereavement-note": "npx --yes vite-node scripts/bereavement-note.test.ts"
+    "test:bereavement-note": "npx --yes vite-node scripts/bereavement-note.test.ts",
+    "test:cron-telemetry": "npx --yes vite-node scripts/cron-telemetry.test.ts"
   },
   "dependencies": {
     "@capacitor/android": "^8.4.2",

@@ -60,7 +60,7 @@ export function useBirdRecord(birdId: string) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("birds")
-        .select("id, owner_id, name, species, age, sex, flight_status, birth_date, photo_url, photo_position, setup_complete, setup_step, is_foster, became_permanent_on, intake_date")
+        .select("id, owner_id, name, species, age, sex, flight_status, birth_date, photo_url, photo_position, setup_complete, setup_step, is_foster, became_permanent_on, intake_date, passed_at")
         .eq("id", birdId)
         .maybeSingle();
       if (error) throw error;
@@ -336,13 +336,17 @@ export function BirdRecordBody({ birdId }: { birdId: string }) {
   const recentShown = showAllRecent ? recent : recent.slice(0, 4);
 
   const name = bird?.name ?? t("birdRecord.thisBird", "This bird");
+  // A bird marked as passed keeps its record as a memorial: no daily check, no
+  // care-plan nudges, no handoff (QA pass, Oct 2026: Remembering → "Their
+  // record" asked for a daily check on a bird that had died).
+  const passed = !!bird?.passed_at;
 
   return (
     <>
-      <SummaryCard birdId={birdId} weights={weights} today={dailyToday?.[birdId]} canCheck={canHealth} planExists={bird ? !!bird.setup_complete : true} />
+      <SummaryCard birdId={birdId} weights={weights} today={dailyToday?.[birdId]} canCheck={canHealth && !passed} planExists={bird ? !!bird.setup_complete : true} passed={passed} />
 
       {/* Fresh bird → guide straight into the care plan. Prominent but skippable. */}
-      {bird && !bird.setup_complete && canEditPlan && (
+      {bird && !bird.setup_complete && canEditPlan && !passed && (
         // After the stop point ("Set up later") the basics are in, so the invite
         // picks up at behavior, tips, and the day instead of starting over at Food.
         <KyaCard className="p-4">
@@ -395,7 +399,7 @@ export function BirdRecordBody({ birdId }: { birdId: string }) {
       )}
 
       {/* Welcome to the flock — foster-fail, near the top (not destructive). */}
-      {canFlock && bird?.is_foster && <HandoffSection birdId={birdId} name={name} part="welcome" />}
+      {canFlock && bird?.is_foster && !passed && <HandoffSection birdId={birdId} name={name} part="welcome" />}
 
       {/* [Bird]'s record */}
       <KyaCard>
@@ -405,7 +409,7 @@ export function BirdRecordBody({ birdId }: { birdId: string }) {
             leading={<KyaIconTile size={38}><ClipboardList className="size-5" /></KyaIconTile>}
             title={t("birdRecord.carePlan", "Care plan")}
             detail={t("birdRecord.carePlanSectionsList", "Food, health, behavior, tips, and day")}
-            trailing={planStatus.loaded
+            trailing={planStatus.loaded && !passed
               ? planStatus.todo.length === 0
                 ? <KyaTag tone="lime">{t("birdRecord.planReady", "Ready")}</KyaTag>
                 : <KyaTag tone="amber">{t("birdRecord.planToFinish", "{{count}} to finish", { count: planStatus.todo.length })}</KyaTag>
@@ -474,10 +478,10 @@ export function BirdRecordBody({ birdId }: { birdId: string }) {
         <section className="flex flex-col gap-2.5 pt-1">
           <KyaHeading size={21} className="px-1">{t("birdRecord.ifThingsChangeHeading", "If things change for {{name}}", { name })}</KyaHeading>
           <KyaCard>
-            <HandoffSection birdId={birdId} name={name} part="handoff" pronoun={pronounOf(bird.sex)} />
+            {!passed && <HandoffSection birdId={birdId} name={name} part="handoff" pronoun={pronounOf(bird.sex)} />}
             {/* Mark as passed — owner-only. Opens the gentle confirm flow; the
                 record is preserved as a memorial, never deleted. */}
-            {isOwner && (
+            {isOwner && !passed && (
               <ChangeRow
                 icon={<Heart className="size-5" />}
                 tileBg={K.mist}
@@ -530,12 +534,13 @@ export function BirdRecordBody({ birdId }: { birdId: string }) {
 /** Weight, last weighed and today's check, then the two ways into a check:
  *  the daily check (sunflower) and the full health check (white). Today's
  *  status lives in the third tile, which opens the check once it's done. */
-function SummaryCard({ birdId, weights, today, canCheck, planExists }: { birdId: string; weights?: WeightRow[]; today?: BirdToday; canCheck: boolean; planExists: boolean }) {
+function SummaryCard({ birdId, weights, today, canCheck, planExists, passed = false }: { birdId: string; weights?: WeightRow[]; today?: BirdToday; canCheck: boolean; planExists: boolean; passed?: boolean }) {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const latest = weights?.[0];
   const days = latest ? daysAgo(latest.measured_at) : null;
-  const stale = days != null && days > STALE_DAYS;
+  // No "overdue" red on a bird that has passed.
+  const stale = !passed && days != null && days > STALE_DAYS;
   const check = today?.check ?? null;
   const tile = "flex min-h-[74px] flex-col justify-center rounded-[14px] px-3 py-2.5 text-left";
   const label = "block text-[12.5px]";
@@ -543,7 +548,7 @@ function SummaryCard({ birdId, weights, today, canCheck, planExists }: { birdId:
   const checkBtn = "inline-flex min-h-[48px] items-center justify-center rounded-full border-2 px-2 text-center text-[15px] font-[700] leading-tight active:scale-[0.99]";
   return (
     <KyaCard className="p-3.5" style={{ boxShadow: "0 10px 24px -16px rgba(18,41,31,.45)" }}>
-      <div className="grid grid-cols-3 gap-2">
+      <div className={`grid gap-2 ${passed ? "grid-cols-2" : "grid-cols-3"}`}>
         <button type="button" onClick={() => navigate({ to: "/birds/$birdId/weight", params: { birdId } })} className={`${tile} active:opacity-80`} style={{ background: K.mist, color: K.forest }}>
           <span className={label} style={{ color: K.quiet }}>{t("birdRecord.tileWeight", "Weight")}</span>
           <span className={value}>{latest ? t("birdRecord.grams", "{{n}} g", { n: latest.grams.toLocaleString() }) : "—"}</span>
@@ -552,7 +557,7 @@ function SummaryCard({ birdId, weights, today, canCheck, planExists }: { birdId:
           <span className={label} style={{ color: K.quiet }}>{t("birdRecord.tileLastWeighed", "Last weighed")}</span>
           <span className={value} style={stale ? { color: K.red } : undefined}>{latest ? whenLabel(t, latest.measured_at) : t("birdRecord.notYet", "Not yet")}</span>
         </div>
-        {check ? (
+        {passed ? null : check ? (
           <button type="button" onClick={() => navigate({ to: "/birds/$birdId/scans/$scanId", params: { birdId, scanId: check.id } })} className={`${tile} active:opacity-80`} style={{ background: K.mist, color: K.forest }}>
             <span className={label} style={{ color: K.quiet }}>{t("birdRecord.tileDailyCheck", "Daily check")}</span>
             <span className={value}>{t("birdRecord.checkDone", "Done")}</span>

@@ -1969,7 +1969,7 @@
       "stamp": "00bc136678aecb8e"
     },
     "birdSetup.forEachFoodAdd": {
-      "stamp": "646631c41d8a5376"
+      "stamp": "c3a07f6c879889e9"
     },
     "birdSetup.freshFoodSpoilsFastAnd": {
       "stamp": "c66b3dd24fff205c"
@@ -2153,12 +2153,6 @@
     },
     "birdSetup.instr.tips": {
       "stamp": "635bbdd2201f8f0d"
-    },
-    "birdSetup.itemNeedsDetails": {
-      "stamp": "4529a50970f8dba4"
-    },
-    "birdSetup.itemsNeedDetails": {
-      "stamp": "09b642e4d6d5b63d"
     },
     "birdSetup.keepCurrentClip": {
       "stamp": "77419b0e357dca87"
@@ -4791,6 +4785,15 @@
     "flockCheck.checkNext": {
       "stamp": "bf951034824a2a04"
     },
+    "flockCheck.discard": {
+      "stamp": "d82d887937806aed"
+    },
+    "flockCheck.discardBody": {
+      "stamp": "6e2d5ba811f42d99"
+    },
+    "flockCheck.discardTitle": {
+      "stamp": "267594af3b2edda9"
+    },
     "flockCheck.doneSubhead": {
       "stamp": "639a95727a054986"
     },
@@ -4823,6 +4826,9 @@
     },
     "flockCheck.intro": {
       "stamp": "9d20775447934dcd"
+    },
+    "flockCheck.keepEditing": {
+      "stamp": "2ea18db2ea90b63c"
     },
     "flockCheck.lastWeighedDaysAgo_one": {
       "stamp": "6aa53ee2b93a2839"
@@ -8699,9 +8705,6 @@
     },
     "sitForm.bird": {
       "stamp": "7964d14d200e7108"
-    },
-    "sitForm.copyLink": {
-      "stamp": "dc4c04995ccb896a"
     },
     "sitForm.couldNotCreate": {
       "stamp": "0b1a8b7341ed6d6d"
