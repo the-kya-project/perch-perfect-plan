@@ -229,10 +229,11 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "twitter:card", content: "summary_large_image" },
     ],
     links: [
-      // Setup screens: Newsreader for headings, DM Sans for everything else.
-      { rel: "preconnect", href: "https://fonts.googleapis.com" },
-      { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
-      { rel: "stylesheet", href: "https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,700&family=Newsreader:opsz,wght@6..72,600;6..72,700&display=swap" },
+      // Newsreader for headings, DM Sans for everything else. SELF-HOSTED
+      // (public/fonts): never link fonts.googleapis.com — it sends every
+      // visitor's IP to Google (GDPR). `npm run check:no-google-fonts` fails
+      // the build if a Google Fonts link comes back.
+      { rel: "stylesheet", href: "/fonts/fonts.css" },
       // Kya & Co. favicons — multi-size set delivered by the brand spec.
       { rel: "icon", href: "/favicon.ico", sizes: "any" },
       { rel: "icon", type: "image/png", sizes: "32x32", href: "/favicon-32.png" },

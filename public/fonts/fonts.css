@@ -1,8 +1,9 @@
 /* Self-hosted brand fonts (latin subset), so pages and emails never call
    Google Fonts and visitors' IP addresses don't go to Google. Copied from
-   fonts.gstatic.com; all three families are SIL Open Font License 1.1.
-   The Bricolage Grotesque and DM Sans files are variable fonts and cover
-   every weight the templates use. URLs are relative to this file, so it
+   fonts.gstatic.com; all four families are SIL Open Font License 1.1.
+   The Bricolage Grotesque, DM Sans and Newsreader files are variable fonts
+   and cover every weight the app and templates use (DM Sans and Newsreader
+   include the optical-size axis the app's setup look relies on). URLs are relative to this file, so it
    works from emails (absolute link) and from same-origin pages alike. */
 @font-face {
   font-family: 'Bricolage Grotesque';
@@ -31,4 +32,11 @@
   font-weight: 400;
   font-display: swap;
   src: url(fraunces-italic-latin.woff2) format('woff2');
+}
+@font-face {
+  font-family: 'Newsreader';
+  font-style: normal;
+  font-weight: 600 700;
+  font-display: swap;
+  src: url(newsreader-latin.woff2) format('woff2');
 }
