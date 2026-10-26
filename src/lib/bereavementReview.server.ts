@@ -158,10 +158,19 @@ export async function loadReview(reviewId: string): Promise<ReviewDetails | null
   };
 }
 
-/** The note exactly as the owner would receive it. */
+/** The note exactly as the owner would receive it. `names` above is for the
+ *  English review email; the owner's note joins the names in their language
+ *  ("Willow en Moxie", not "Willow and Moxie"). */
 export async function buildNoteFor(d: ReviewDetails) {
   const { buildBereavementEmail } = await import("@/lib/emailTemplates");
-  return buildBereavementEmail({ firstName: d.firstName, birdName: d.names, locale: d.locale });
+  const { joinNamesLocalized } = await import("@/lib/emailLocale.server");
+  const birdNames = d.birds.map((b) => b.name);
+  return buildBereavementEmail({
+    firstName: d.firstName,
+    birdName: joinNamesLocalized(birdNames, d.locale, "bird"),
+    birdCount: birdNames.length,
+    locale: d.locale,
+  });
 }
 
 function founderEmailHtml(

@@ -1063,6 +1063,10 @@
   "email.bereavement.signoff": "Hartelijke groet,<br>Brittany",
   // Hi,  I saw that {{birdName}} passed away, and I'm so sorry.  Losing a bird is its own kind of grief. They're with us for years, sometimes decades, and they fill a home with a personality that people who haven't lived with a parrot don't always understand. Please be gentle with yourself.  {{birdName}}'s record, journal and moments are safe in Kya & Co. whenever you want to look back. There's nothing you need to do, and you won't get any reminders about {{birdName}}.  If you ever want to share a favorite story about {{birdName}}, you can reply to this email. I'd be honored to read it.  Warmly, Brittany
   "email.bereavement.text": "Hoi,\n\nIk zag dat {{birdName}} is overleden, en het spijt me zo.\n\nEen vogel verliezen is een verdriet op zich. Ze zijn jaren bij ons, soms tientallen jaren, en ze vullen een huis met een persoonlijkheid die mensen die nooit met een papegaai hebben samengewoond niet altijd begrijpen. Wees alsjeblieft lief voor jezelf.\n\nHet dossier, dagboek en de momenten van {{birdName}} zijn veilig bewaard in Kya & Co., voor wanneer je wilt terugkijken. Je hoeft niets te doen, en je krijgt geen herinneringen meer over {{birdName}}.\n\nAls je ooit een dierbaar verhaal over {{birdName}} wilt delen, kun je op deze e-mail reageren. Ik zou het een eer vinden om het te lezen.\n\nHartelijke groet,\nBrittany",
+  // I saw that {{bird}} passed away, and I'm so sorry.
+  "email.bereavement.sorryMany": "Ik zag dat {{bird}} zijn overleden, en het spijt me zo.",
+  // Hi,  I saw that {{birdName}} passed away, and I'm so sorry.  Losing a bird is its own kind of grief. They're with us for years, sometimes decades, and they fill a home with a personality that people who haven't lived with a parrot don't always understand. Please be gentle with yourself.  {{birdName}}'s record, journal and moments are safe in Kya & Co. whenever you want to look back. There's nothing you need to do, and you won't get any reminders about {{birdName}}.  If you ever want to share a favorite story about {{birdName}}, you can reply to this email. I'd be honored to read it.  Warmly, Brittany
+  "email.bereavement.textMany": "Hoi,\n\nIk zag dat {{birdName}} zijn overleden, en het spijt me zo.\n\nEen vogel verliezen is een verdriet op zich. Ze zijn jaren bij ons, soms tientallen jaren, en ze vullen een huis met een persoonlijkheid die mensen die nooit met een papegaai hebben samengewoond niet altijd begrijpen. Wees alsjeblieft lief voor jezelf.\n\nHet dossier, dagboek en de momenten van {{birdName}} zijn veilig bewaard in Kya & Co., voor wanneer je wilt terugkijken. Je hoeft niets te doen, en je krijgt geen herinneringen meer over {{birdName}}.\n\nAls je ooit een dierbaar verhaal over {{birdName}} wilt delen, kun je op deze e-mail reageren. Ik zou het een eer vinden om het te lezen.\n\nHartelijke groet,\nBrittany",
   // your bird
   "push.common.yourBird": "je vogel",
   // Your bird
@@ -1099,8 +1103,6 @@
   "push.scan.clearTitle": "Nieuwe dagelijkse gezondheidscheck",
   // {{birdName}}'s sitter logged an all-clear health check.
   "push.scan.clearBody": "De oppas van {{birdName}} heeft een gezondheidscheck genoteerd: alles in orde.",
-
-  // ── Supabase auth emails (Send Email hook) ──
   // Your account
   "email.auth.kicker": "Je account",
   // If you didn't ask for this, you can ignore this email.
@@ -1167,8 +1169,8 @@
   "email.auth.reauthentication.heading": "Je verificatiecode",
   // Enter this code in the app to continue. It expires soon.
   "email.auth.reauthentication.body": "Vul deze code in de app in om verder te gaan. De code verloopt binnenkort.",
-  // {{heading}}\n\n{{body}}\n\n{{link}}\n\n{{foot}}
+  // {{heading}}  {{body}}  {{link}}  {{foot}}
   "email.auth.text": "{{heading}}\n\n{{body}}\n\n{{link}}\n\n{{foot}}",
-  // {{heading}}\n\n{{body}}\n\n{{code}}\n\n{{foot}}
+  // {{heading}}  {{body}}  {{code}}  {{foot}}
   "email.auth.textCode": "{{heading}}\n\n{{body}}\n\n{{code}}\n\n{{foot}}"
 }
