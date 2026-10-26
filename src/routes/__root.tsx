@@ -26,7 +26,8 @@ import { FrontDoorBody, FrontDoorHeader, FrontDoorPage } from "@/components/fron
 import appCss from "../styles.css?inline";
 import { installErrorListeners, primeAccountRole, registerErrorReportingContext, reportError } from "@/lib/errorReporting";
 import { SUPPORT_EMAIL } from "@/lib/support";
-import { ERROR_TEST_ACCOUNT, errorTestMessage } from "@/lib/errorTest"; // TEMPORARY
+import { ERROR_TEST_ACCOUNT, ERROR_TEST_INITIAL_SEARCH, errorTestMessage } from "@/lib/errorTest"; // TEMPORARY
+import { toast } from "sonner"; // TEMPORARY
 import { fireServerErrorTest } from "@/lib/errorTest.functions"; // TEMPORARY
 import { supabase } from "@/integrations/supabase/client";
 import { Toaster } from "@/components/ui/sonner";
@@ -271,12 +272,13 @@ function ThrowOnRender({ nonce }: { nonce: string }): never {
 }
 
 async function runErrorTest(setRenderTest: (n: string) => void) {
-  const params = new URLSearchParams(window.location.search);
+  const params = new URLSearchParams(ERROR_TEST_INITIAL_SEARCH);
   const kind = params.get("kya_error_test");
   const nonce = (params.get("n") ?? "").toLowerCase();
   if (!kind || !/^[a-z0-9]{4,12}$/.test(nonce)) return;
   const { data } = await supabase.auth.getSession();
   if (data.session?.user?.id !== ERROR_TEST_ACCOUNT) return;
+  toast(`Error test "${kind}" fired`);
   const make = (k: string) => {
     const e = new Error(errorTestMessage(k));
     e.name = `KyaErrorTest${k[0].toUpperCase()}${k.slice(1)}_${nonce}`;
