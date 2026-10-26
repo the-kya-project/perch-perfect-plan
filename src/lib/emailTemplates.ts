@@ -1164,8 +1164,10 @@ export function buildSitterConcernEmail(opts: { birdName: string; coveringLabel:
 // BUG-6 in docs/qa-bugs-2026-09-16.md on gendered wording in grief copy.
 // The farewell screen in the app already covers the practical steps, so this
 // deliberately mentions no necropsy, no body care, and nothing to do.
-export function buildBereavementEmail(opts: { firstName?: string; birdName: string; locale?: string }): BuiltEmail {
+export function buildBereavementEmail(opts: { firstName?: string; birdName: string; locale?: string; birdCount?: number }): BuiltEmail {
   const t = emailT(opts.locale);
+  // Several birds at once: Dutch conjugates ("zijn overleden", not "is").
+  const many = (opts.birdCount ?? 1) > 1;
   const bird = escapeHtml(opts.birdName);
   const hi = opts.firstName
     ? t("email.bereavement.hiName", { firstName: escapeHtml(opts.firstName) })
@@ -1178,11 +1180,11 @@ export function buildBereavementEmail(opts: { firstName?: string; birdName: stri
 <div style="background:#f4f1e8;padding:24px;font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;">
   <div style="max-width:520px;margin:0 auto;background:#fff;border-radius:16px;overflow:hidden;border:1px solid #e3ded0;">
     <div style="padding:30px 28px;">
-      ${p(hi)}${p(t("email.bereavement.sorry", { bird }))}${p(t("email.bereavement.grief"))}${p(t("email.bereavement.record", { bird }))}${p(t("email.bereavement.story", { bird }))}${p(t("email.bereavement.signoff"))}
+      ${p(hi)}${p(t(many ? "email.bereavement.sorryMany" : "email.bereavement.sorry", { bird }))}${p(t("email.bereavement.grief"))}${p(t("email.bereavement.record", { bird }))}${p(t("email.bereavement.story", { bird }))}${p(t("email.bereavement.signoff"))}
     </div>
   </div>
 </div>`,
-    text: t("email.bereavement.text", { birdName: opts.birdName }),
+    text: t(many ? "email.bereavement.textMany" : "email.bereavement.text", { birdName: opts.birdName }),
   };
 }
 
