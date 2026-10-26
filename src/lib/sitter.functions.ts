@@ -16,34 +16,9 @@ import { buildDailyLogEmail, buildSitterConcernEmail } from "./emailTemplates";
 import { emailT } from "./i18n/emailI18n.server";
 import { mergeEmergency, emergencyDifferent } from "./emergency";
 import { mergeHome } from "./homeDefaults";
-import { isCfClip, cfUid } from "./clipRef";
+import { signOwnerPhoto, resolveOwnerClipUrl } from "./mediaSigning.server";
 import { resolveScanPhotoUrls } from "./scanPhoto";
 import { FULL_CHECK_PHOTO_NOTE, insertWithKind } from "./checkKind";
-
-// Resolve a clip column value to a playable URL: a signed Cloudflare Stream
-// iframe URL for "cfstream:<uid>" refs, or a signed Supabase Storage URL for
-// legacy clips. Returns null if it can't be resolved.
-async function resolveClipUrl(sb: any, ref: string): Promise<string | null> {
-  if (isCfClip(ref)) {
-    try {
-      const { signedIframeUrl } = await import("@/lib/cloudflareStream.server");
-      return await signedIframeUrl(cfUid(ref));
-    } catch {
-      return null;
-    }
-  }
-  const { data } = await sb.storage.from("bird-photos").createSignedUrl(ref, 3600);
-  return data?.signedUrl ?? null;
-}
-
-// Resolve a bird's photo_url for display: sign Storage object paths, pass
-// through legacy inline data: URLs and absolute URLs unchanged.
-async function signBirdPhotoPath(sb: any, value: string | null | undefined): Promise<string | null> {
-  if (!value) return null;
-  if (value.startsWith("data:") || value.startsWith("http")) return value;
-  const { data } = await sb.storage.from("bird-photos").createSignedUrl(value, 3600);
-  return data?.signedUrl ?? null;
-}
 
 async function getAdmin() {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -224,7 +199,7 @@ export const getSitterContext = createServerFn({ method: "GET" })
       sb.from("sit_birds").select("reminders_paused_at").eq("sit_id", sit.id).eq("bird_id", activeId).maybeSingle(),
       // Sign bird profile photos (paths → signed URLs) so the sitter can load
       // them from the private bucket; legacy inline data: URLs pass through.
-      Promise.all((birds ?? []).map(async (b: any) => ({ ...b, photo_url: await signBirdPhotoPath(sb, b.photo_url) }))),
+      Promise.all((birds ?? []).map(async (b: any) => ({ ...b, photo_url: await signOwnerPhoto(sb, b.photo_url, sit.owner_id as string) }))),
     ]);
     if (birdRes.error || !birdRes.data) throw new Error("Bird not found.");
     const activeBird = birdRes.data;
@@ -247,12 +222,12 @@ export const getSitterContext = createServerFn({ method: "GET" })
         Promise.all(watchClipSlots.map(async (slot) => {
           const path = (planRes.data as any)[slot.column] as string | null;
           if (!path) return null;
-          const url = await resolveClipUrl(sb, path);
+          const url = await resolveOwnerClipUrl(sb, path, sit.owner_id as string);
           return url ? { key: slot.key, label: slot.label, url } : null;
         })),
         (async () => {
           const bcp = (planRes.data as any).baseline_clip_path as string | null;
-          return bcp ? await resolveClipUrl(sb, bcp) : null;
+          return bcp ? await resolveOwnerClipUrl(sb, bcp, sit.owner_id as string) : null;
         })(),
       ]);
       return { watchClips: slotResults.filter(Boolean) as { key: string; label: string; url: string }[], baselineClipUrl };
@@ -805,7 +780,7 @@ export const getSitterDashboard = createServerFn({ method: "GET" })
 
     // Sign photo paths → URLs (legacy data: URLs pass through).
     const signedSummary = await Promise.all(
-      summary.map(async (b: any) => ({ ...b, photo_url: await signBirdPhotoPath(sb, b.photo_url) })),
+      summary.map(async (b: any) => ({ ...b, photo_url: await signOwnerPhoto(sb, b.photo_url, sit.owner_id as string) })),
     );
 
     return { birds: signedSummary };
