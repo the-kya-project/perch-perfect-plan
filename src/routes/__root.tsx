@@ -148,7 +148,11 @@ const COLD_LAUNCH_REDIRECT = `(function(){try{` +
   // storage) must NOT swallow the redirect — that would reintroduce the exact
   // cold-launch bug on the devices least likely to report it.
   `try{sessionStorage.setItem("kya_cold_redirect",JSON.stringify({path:window.location.pathname,had_stored:true}));}catch(e2){}` +
-  `window.location.replace("/dashboard");return;}}` +
+  // Carry the campaign params so email / TikTok attribution survives the hop
+  // (same key list as src/lib/utmCarry.ts — this runs before any module loads).
+  `var q=new URLSearchParams(window.location.search),o=new URLSearchParams();` +
+  `["utm_source","utm_medium","utm_campaign","utm_content","utm_term"].forEach(function(n){var v=q.get(n);if(v)o.set(n,v.slice(0,200));});` +
+  `var qs=o.toString();window.location.replace("/dashboard"+(qs?"?"+qs:""));return;}}` +
   `}catch(e){}})();`;
 
 // Startup safety net, inline in <head> so it works even when the app's own

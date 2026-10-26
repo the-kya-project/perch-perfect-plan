@@ -1,4 +1,5 @@
 import { createFileRoute, Outlet, redirect, useLocation, useNavigate } from "@tanstack/react-router";
+import { pickUtms, withUtms } from "@/lib/utmCarry";
 import { useEffect } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -46,10 +47,13 @@ export const Route = createFileRoute("/_authenticated")({
     // by a newer email) comes back here, to /welcome, with no session. Without
     // this the guard below would bounce the reader to sign-in with no word of
     // what happened. /link-expired explains and offers a fresh link.
+    // Campaign params (email / TikTok) must stay at the TOP LEVEL of wherever
+    // we send the reader, or PostHog and first-touch attribution lose them.
+    const utms = pickUtms(location.searchStr);
     const linkError = readAuthLinkError(location.searchStr, location.hash);
     if (linkError) {
-      return leave(`/link-expired?reason=${encodeURIComponent(linkError.code)}`, () => {
-        throw redirect({ to: "/link-expired", search: { reason: linkError.code }, replace: true });
+      return leave(withUtms(`/link-expired?reason=${encodeURIComponent(linkError.code)}`, utms), () => {
+        throw redirect({ to: "/link-expired", search: { reason: linkError.code, ...utms } as never, replace: true });
       });
     }
     // Cold-start safe read: waits for the persisted session to hydrate from
@@ -67,19 +71,19 @@ export const Route = createFileRoute("/_authenticated")({
       // and signInWithPassword awaits the same stuck promise — the hang just
       // moves to the sign-in button. So leave the page entirely and let the
       // client be built again from nothing.
-      const to = `/auth?mode=signin&redirect=${encodeURIComponent(location.href)}`;
+      const to = withUtms(`/auth?mode=signin&redirect=${encodeURIComponent(location.href)}`, utms);
       if (typeof window !== "undefined") window.location.assign(to);
       // Still throw the router redirect: if the hard load is slow to take
       // effect the reader sees /auth rather than the spinner, and the full load
       // supersedes it a moment later.
-      throw redirect({ to: "/auth", search: { mode: "signin" as const, redirect: location.href } });
+      throw redirect({ to: "/auth", search: { mode: "signin" as const, redirect: location.href, ...utms } as never });
     }
     if (!session) {
       // Remember where they were headed (e.g. a /past-birds email deep-link) so
       // /auth lands them there after sign-in instead of the default dashboard.
       // `href` keeps the query string: /birds/new?next=weight must survive.
-      return leave(`/auth?mode=signin&redirect=${encodeURIComponent(location.href)}`, () => {
-        throw redirect({ to: "/auth", search: { mode: "signin" as const, redirect: location.href } });
+      return leave(withUtms(`/auth?mode=signin&redirect=${encodeURIComponent(location.href)}`, utms), () => {
+        throw redirect({ to: "/auth", search: { mode: "signin" as const, redirect: location.href, ...utms } as never });
       });
     }
     return { user: session.user };

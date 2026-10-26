@@ -25,6 +25,7 @@
     "test:blog-feed": "npx --yes vite-node scripts/blog-feed.test.ts",
     "test:url-scrub": "npx --yes vite-node scripts/url-scrub.test.ts",
     "check:no-google-fonts": "node scripts/no-google-fonts.mjs",
+    "test:utm-carry": "npx --yes vite-node scripts/utm-carry.test.ts",
     "test:signup-existing": "npx --yes vite-node scripts/signup-existing.test.ts",
     "test:confirm-links": "npx --yes vite-node scripts/confirm-links.test.ts",
     "test:person-name": "npx --yes vite-node scripts/person-name.test.ts",

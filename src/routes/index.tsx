@@ -1,4 +1,5 @@
 import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
+import { pickUtms } from "@/lib/utmCarry";
 import { useEffect } from "react";
 import { hasStoredSession, getReadySession } from "@/lib/authReady";
 import { track } from "@/lib/analytics";
@@ -12,14 +13,15 @@ export const Route = createFileRoute("/")({
   // Returning owners shouldn't land on the marketing page — send them home.
   // Client-only: the session lives in localStorage, so during SSR/prerender
   // there's no session and new visitors/crawlers still get the landing page.
-  beforeLoad: () => {
+  beforeLoad: ({ location }) => {
     if (typeof window === "undefined") return;
     // Synchronous: redirect a signed-in owner to the dashboard on the FIRST
     // tick, reading the persisted session straight from storage — no await, so
     // the marketing/sign-in page never paints while the async client hydrates
     // (that paint was the ~0.5s flash on cold launch). The authenticated guard
     // then does the authoritative check behind its clean loading spinner.
-    if (hasStoredSession()) throw redirect({ to: "/dashboard" });
+    // UTMs ride along so email / TikTok attribution survives (utmCarry).
+    if (hasStoredSession()) throw redirect({ to: "/dashboard", search: pickUtms(location.searchStr) as never });
   },
   head: () => ({
     meta: [
@@ -46,7 +48,7 @@ function Welcome() {
     getReadySession().then((session) => {
       if (cancelled) return;
       track("landing_recheck", { had_session: !!session, had_stored: hasStoredSession() });
-      if (session) navigate({ to: "/dashboard" });
+      if (session) navigate({ to: "/dashboard", search: pickUtms(window.location.search) as never });
     });
     return () => { cancelled = true; };
   }, [navigate]);
