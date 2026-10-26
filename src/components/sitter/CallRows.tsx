@@ -35,6 +35,9 @@ type RowProps = {
   surface?: "forest" | "mist";
   /** What follows the label when there's no number (default: not provided by owner). */
   missingText?: string;
+  /** The number as written locally, when formatPhone would misread it (it
+   *  formats any ten digits as a US number, e.g. Australia's 1300 lines). */
+  displayPhone?: string;
 };
 
 function Missing({ label, surface, text }: { label: string; surface: "forest" | "mist"; text?: string }) {
@@ -50,10 +53,10 @@ function Missing({ label, surface, text }: { label: string; surface: "forest" | 
   );
 }
 
-function Row({ label, name, phone, tone, surface = "forest", missingText }: RowProps & { tone: "red" | "white" }) {
+function Row({ label, name, phone, tone, surface = "forest", missingText, displayPhone }: RowProps & { tone: "red" | "white" }) {
   const { t } = useTranslation();
   if (!phone) return <Missing label={label} surface={surface} text={missingText} />;
-  const display = formatPhone(phone);
+  const display = displayPhone ?? formatPhone(phone);
   const red = tone === "red";
   const title = name?.trim() || display;
   const callLabel = t("sitter.calls.callAria", "Call {{who}}, {{phone}}", { who: name?.trim() || label, phone: display });

@@ -6151,8 +6151,8 @@
   "sitter.emergency.firstAidKit": "EHBO-kit",
   // Care guidance from The Kya Project · Parrot Care Bible for Pet Sitters.
   "sitter.emergency.footer": "Verzorgingsadvies van The Kya Project · Parrot Care Bible for Pet Sitters.",
-  // no public line here. Call the avian vet.
-  "sitter.emergency.noPoisonLine": "hier is geen openbare lijn. Bel de vogeldierenarts.",
+  // no public line here. Call the owner's vet or an emergency vet right away.
+  "sitter.emergency.noPoisonLineAnyVet": "hier is geen openbare lijn. Bel meteen de dierenarts van de eigenaar of een spoeddierenarts.",
   // not provided by owner.
   "sitter.emergency.notProvided": "niet opgegeven door de eigenaar.",
   // Emergency
@@ -6273,10 +6273,10 @@
   "sitter.emergency.pb_poison_step3": "Bewaar of fotografeer de verpakking of het materiaal.",
   // Note what was eaten or chewed and when.
   "sitter.emergency.pb_poison_step4": "Noteer wat er is gegeten of aangeknaagd en wanneer.",
+  // Call the owner's vet or an emergency vet right away, and bring the packaging with you.
+  "sitter.emergency.pb_poison_step5_anyVet": "Bel meteen de dierenarts van de eigenaar of een spoeddierenarts, en neem de verpakking mee.",
   // Call the avian vet or poison control: {{phone}}.
   "sitter.emergency.pb_poison_step5_line": "Bel de vogeldierenarts of de vergiftigingslijn: {{phone}}.",
-  // Call the avian vet right away and bring the packaging with you.
-  "sitter.emergency.pb_poison_step5_vet": "Bel meteen de vogeldierenarts en neem de verpakking mee.",
   // Suspected poisoning
   "sitter.emergency.pb_poison_title": "Vermoedelijke vergiftiging",
   // Uncontrolled movement, loss of balance, unresponsive episode.
@@ -6313,6 +6313,10 @@
   "sitter.emergency.pb_transport_title": "Vervoer naar de dierenarts",
   // Poison control
   "sitter.emergency.poisonControl": "Gifcentrum",
+  // Both poison lines charge a consultation fee.
+  "sitter.emergency.poisonFeeBoth": "Beide vergiftigingslijnen rekenen kosten voor het consult.",
+  // This poison line charges a consultation fee.
+  "sitter.emergency.poisonFeeOne": "Deze vergiftigingslijn rekent kosten voor het consult.",
   // Stay calm.
   "sitter.emergency.rule1": "Blijf rustig.",
   // Keep {{name}} warm: about {{temp}} if she seems sick or in shock. Heat on one side only.

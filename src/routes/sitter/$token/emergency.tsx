@@ -8,7 +8,7 @@ import { K, KyaHeading } from "@/components/kya";
 import { PageHeader, useGoBack } from "@/components/headers";
 import { VetCallRow, PersonCallRow } from "@/components/sitter/CallRows";
 import { BirdAvatar } from "@/components/sitter/sitterShared";
-import { defaultPoisonLine, warmRange } from "@/lib/poisonControl";
+import { defaultPoisonLines, warmRange } from "@/lib/poisonControl";
 
 export const Route = createFileRoute("/sitter/$token/emergency")({
   component: Emergency,
@@ -52,8 +52,8 @@ function Emergency() {
   // when the owner left it empty (poisonControl.ts).
   const homeTimeZone = (ctx as { homeTimeZone?: string | null }).homeTimeZone ?? null;
   const temp = warmRange(homeTimeZone, i18n.language);
-  const poisonDefault = c.poison_control ? null : defaultPoisonLine(homeTimeZone);
-  const poisonPhone = c.poison_control || poisonDefault?.display || "";
+  const poisonDefaults = c.poison_control ? [] : defaultPoisonLines(homeTimeZone);
+  const poisonPhone = c.poison_control || poisonDefaults[0]?.display || "";
   const goBack = useGoBack(useCallback(() => navigate({ to: "/sitter/$token", params: { token } }), [navigate, token]));
   const playbooks = [
     {
@@ -89,7 +89,7 @@ function Emergency() {
         t("sitter.emergency.pb_poison_step4", "Note what was eaten or chewed and when."),
         poisonPhone
           ? t("sitter.emergency.pb_poison_step5_line", "Call the avian vet or poison control: {{phone}}.", { phone: poisonPhone })
-          : t("sitter.emergency.pb_poison_step5_vet", "Call the avian vet right away and bring the packaging with you."),
+          : t("sitter.emergency.pb_poison_step5_anyVet", "Call the owner's vet or an emergency vet right away, and bring the packaging with you."),
       ],
     },
     {
@@ -232,12 +232,31 @@ function Emergency() {
         <VetCallRow label={t("sitter.calls.emergencyVet", "After-hours emergency vet")} name={c.emergency_vet_name} phone={c.emergency_vet_phone} />
         <PersonCallRow label={t("sitter.calls.owner", "Owner")} name={ownerName && ownerName !== "the owner" ? ownerName : null} phone={c.owner_phone} />
         {c.backup_phone && <PersonCallRow label={t("sitter.calls.backup", "Backup contact")} name={c.backup_name} phone={c.backup_phone} />}
-        <PersonCallRow
-          label={t("sitter.emergency.poisonControl", "Poison control")}
-          name={poisonDefault?.name}
-          phone={c.poison_control || poisonDefault?.dial}
-          missingText={t("sitter.emergency.noPoisonLine", "no public line here. Call the avian vet.")}
-        />
+        {c.poison_control || poisonDefaults.length === 0 ? (
+          <PersonCallRow
+            label={t("sitter.emergency.poisonControl", "Poison control")}
+            phone={c.poison_control}
+            missingText={t("sitter.emergency.noPoisonLineAnyVet", "no public line here. Call the owner's vet or an emergency vet right away.")}
+          />
+        ) : (
+          <>
+            {poisonDefaults.map((line) => (
+              <PersonCallRow
+                key={line.dial}
+                label={t("sitter.emergency.poisonControl", "Poison control")}
+                name={line.name}
+                phone={line.dial}
+                displayPhone={line.display}
+              />
+            ))}
+            {/* Every line we fill in charges for the call; say so before they dial. */}
+            <p className="m-0 px-1 text-[13.5px] leading-[1.4]" style={{ color: "rgba(255,255,255,0.75)" }}>
+              {poisonDefaults.length > 1
+                ? t("sitter.emergency.poisonFeeBoth", "Both poison lines charge a consultation fee.")
+                : t("sitter.emergency.poisonFeeOne", "This poison line charges a consultation fee.")}
+            </p>
+          </>
+        )}
 
         <section className="mt-3 rounded-[20px] p-5" style={{ background: K.forestDeep }}>
           <KyaHeading size={20} className="text-[#f2b33d]">{t("sitter.emergency.whileYouWait", "While you wait for the vet")}</KyaHeading>
