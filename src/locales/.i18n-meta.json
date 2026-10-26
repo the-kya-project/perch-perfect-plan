@@ -1969,7 +1969,7 @@
       "stamp": "00bc136678aecb8e"
     },
     "birdSetup.forEachFoodAdd": {
-      "stamp": "646631c41d8a5376"
+      "stamp": "c3a07f6c879889e9"
     },
     "birdSetup.freshFoodSpoilsFastAnd": {
       "stamp": "c66b3dd24fff205c"
@@ -2153,12 +2153,6 @@
     },
     "birdSetup.instr.tips": {
       "stamp": "635bbdd2201f8f0d"
-    },
-    "birdSetup.itemNeedsDetails": {
-      "stamp": "4529a50970f8dba4"
-    },
-    "birdSetup.itemsNeedDetails": {
-      "stamp": "09b642e4d6d5b63d"
     },
     "birdSetup.keepCurrentClip": {
       "stamp": "77419b0e357dca87"
