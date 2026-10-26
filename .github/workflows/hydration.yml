@@ -51,6 +51,11 @@ jobs:
       - name: Build (production build, pointed at the mock Supabase)
         run: node e2e/build.mjs
 
+      # The page HTML and bundles this build produces must not load Google
+      # Fonts (GDPR). Same guard as the "No Google Fonts" check, on the output.
+      - name: No Google Fonts in the production build
+        run: node scripts/no-google-fonts.mjs --build
+
       - name: Run the iPhone hydration check
         run: npm run test:hydration:run
 
