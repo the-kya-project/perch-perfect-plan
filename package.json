@@ -58,7 +58,8 @@
     "test:gifts": "npx --yes vite-node scripts/gifts.test.ts",
     "test:bereavement-note": "npx --yes vite-node scripts/bereavement-note.test.ts",
     "test:poison-control": "npx --yes vite-node scripts/poison-control.test.ts",
-    "test:cron-telemetry": "npx --yes vite-node scripts/cron-telemetry.test.ts"
+    "test:cron-telemetry": "npx --yes vite-node scripts/cron-telemetry.test.ts",
+    "test:account-deletion": "npx --yes vite-node scripts/account-deletion.test.ts"
   },
   "dependencies": {
     "@capacitor/android": "^8.4.2",
