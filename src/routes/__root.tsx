@@ -26,9 +26,6 @@ import { FrontDoorBody, FrontDoorHeader, FrontDoorPage } from "@/components/fron
 import appCss from "../styles.css?inline";
 import { installErrorListeners, primeAccountRole, registerErrorReportingContext, reportError } from "@/lib/errorReporting";
 import { SUPPORT_EMAIL } from "@/lib/support";
-import { ERROR_TEST_ACCOUNT, ERROR_TEST_INITIAL_SEARCH, errorTestMessage } from "@/lib/errorTest"; // TEMPORARY
-import { toast } from "sonner"; // TEMPORARY
-import { fireServerErrorTest } from "@/lib/errorTest.functions"; // TEMPORARY
 import { supabase } from "@/integrations/supabase/client";
 import { Toaster } from "@/components/ui/sonner";
 import { initAnalytics, identifyUser, resetUser } from "@/lib/analytics";
@@ -269,41 +266,9 @@ function RootShell({ children }: { children: ReactNode }) {
   );
 }
 
-// TEMPORARY — error-capture verification (see src/lib/errorTest.ts).
-function ThrowOnRender({ nonce }: { nonce: string }): never {
-  const err = new Error(errorTestMessage("render"));
-  err.name = `KyaErrorTestRender_${nonce}`;
-  throw err;
-}
-
-async function runErrorTest(setRenderTest: (n: string) => void) {
-  const params = new URLSearchParams(ERROR_TEST_INITIAL_SEARCH);
-  const kind = params.get("kya_error_test");
-  const nonce = (params.get("n") ?? "").toLowerCase();
-  if (!kind || !/^[a-z0-9]{4,12}$/.test(nonce)) return;
-  const { data } = await supabase.auth.getSession();
-  if (data.session?.user?.id !== ERROR_TEST_ACCOUNT) return;
-  toast(`Error test "${kind}" fired`);
-  const make = (k: string) => {
-    const e = new Error(errorTestMessage(k));
-    e.name = `KyaErrorTest${k[0].toUpperCase()}${k.slice(1)}_${nonce}`;
-    return e;
-  };
-  if (kind === "client") setTimeout(() => { throw make("client"); }, 0);
-  else if (kind === "unhandled") void Promise.reject(make("unhandled"));
-  else if (kind === "render") setRenderTest(nonce);
-  else if (kind === "server" || kind === "burst") {
-    const times = kind === "burst" ? 11 : 1;
-    for (let i = 0; i < times; i++) {
-      try { await fireServerErrorTest({ data: { nonce } }); } catch { /* expected */ }
-    }
-  }
-}
-
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   const router = useRouter();
-  const [renderTest, setRenderTest] = useState<string | null>(null); // TEMPORARY
   // A code file failed to load and the one automatic reload is already spent:
   // show the error screen instead of reloading again (sw-register.ts).
   const [startupFailed, setStartupFailed] = useState(false);
@@ -324,7 +289,6 @@ function RootComponent() {
     if (router.state.status === "idle" && !router.state.isLoading) ready();
     return router.subscribe("onResolved", ready);
   }, [router]);
-  useEffect(() => { void runErrorTest(setRenderTest); }, []); // TEMPORARY
   // English (hydrationI18n) for the server render and hydration, then the live
   // instance, which follows the owner's language. See hydrationI18n in
   // lib/i18n/i18n.ts: switching language while a route was still hydrating is
@@ -411,7 +375,7 @@ function RootComponent() {
     // sitter route nests its own <I18nextProvider> for its own language.
     <I18nextProvider i18n={i18n} defaultNS="translation">
       <QueryClientProvider client={queryClient}>
-        {startupFailed ? <SomethingWentWrong /> : renderTest ? <ThrowOnRender nonce={renderTest} /> : <Outlet />}
+        {startupFailed ? <SomethingWentWrong /> : <Outlet />}
         <Toaster />
       </QueryClientProvider>
     </I18nextProvider>
