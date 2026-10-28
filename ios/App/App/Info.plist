@@ -35,6 +35,17 @@
 				<string>com.googleusercontent.apps.481724773308-85q8knidtnhf5f8i9g65ha3mflhg85eb</string>
 			</array>
 		</dict>
+		<dict>
+			<!-- "Open in the Kya & Co. app" from an iPhone browser:
+			     kyaco://open/<path> (src/lib/openInApp.ts). Not "kya": that was
+			     the abandoned OAuth callback scheme. -->
+			<key>CFBundleURLName</key>
+			<string>com.thekyaproject.app.open</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>kyaco</string>
+			</array>
+		</dict>
 	</array>
 	<key>CFBundleVersion</key>
 	<string>$(CURRENT_PROJECT_VERSION)</string>

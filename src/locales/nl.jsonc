@@ -4767,6 +4767,12 @@
   "notifSettings.turnOffPush": "Push uitzetten",
   // Turn on push
   "notifSettings.turnOnPush": "Push aanzetten",
+  // Open in the Kya & Co. app
+  "openInApp.button": "Openen in de Kya & Co.-app",
+  // Have the app on this iPhone? Open this there instead.
+  "openInApp.cardBody": "Heb je de app op deze iPhone? Open dit dan daar.",
+  // Not now
+  "openInApp.dismiss": "Niet nu",
   // Account settings
   "ownerHeader.accountSettings": "Accountinstellingen",
   // Help

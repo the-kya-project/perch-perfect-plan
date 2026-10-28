@@ -83,6 +83,8 @@ export type AnalyticsEventName =
   // exchange throw when native sign-in fails a few ms after it starts.
   | "native_oauth_init"
   | "native_oauth_token"
+  // "Open in the Kya & Co. app" tapped in an iPhone browser (OpenInAppBar).
+  | "open_in_app_tapped"
   // Clip-upload diagnostics: compare picked file size app vs PWA
   | "clip_upload_picked"
   // Clip-upload timing: how long sending took (and the speed it implies), or

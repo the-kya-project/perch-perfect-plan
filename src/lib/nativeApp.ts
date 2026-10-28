@@ -31,3 +31,11 @@ export function nativePlatform(): string {
 export function isIOSApp(): boolean {
   return nativePlatform() === "ios";
 }
+
+/** Where "Continue with Apple" is offered: the iOS app (native sheet) and every
+ *  browser (Supabase's web flow, through the Services ID). Not the Android app,
+ *  whose native sign-in has no Apple setup. Without the web option, someone who
+ *  signed up with Apple in the app had no way in once an email link opened Safari. */
+export function appleSignInAvailable(): boolean {
+  return !isNativeApp() || isIOSApp();
+}

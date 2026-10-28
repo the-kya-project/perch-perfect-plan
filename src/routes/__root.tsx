@@ -41,6 +41,8 @@ import { checkStylesApplied } from "@/lib/stylesCheck";
 import { attachNativePushHandlers, syncNativePushToken } from "@/lib/pushNative";
 import { attachAppLinkHandler } from "@/lib/appLinkNative";
 import { smartAppBannerContent } from "@/lib/appLinks";
+import { openInAppPath } from "@/lib/openInApp";
+import { OpenInAppBar } from "@/components/OpenInAppBar";
 import { savePushToken } from "@/lib/push.functions";
 // Side-effect import: registers the beforeinstallprompt/appinstalled listeners
 // at app start so the native install prompt is captured (it fires once, early).
@@ -269,6 +271,7 @@ function RootShell({ children }: { children: ReactNode }) {
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   const router = useRouter();
+  const location = useRouterState({ select: (s) => s.location });
   // A code file failed to load and the one automatic reload is already spent:
   // show the error screen instead of reloading again (sw-register.ts).
   const [startupFailed, setStartupFailed] = useState(false);
@@ -375,6 +378,9 @@ function RootComponent() {
     // sitter route nests its own <I18nextProvider> for its own language.
     <I18nextProvider i18n={i18n} defaultNS="translation">
       <QueryClientProvider client={queryClient}>
+        {/* iPhone browsers on app screens: "Open in the Kya & Co. app". /auth
+            renders its own, aimed at the screen the email was for. */}
+        {!startupFailed && location.pathname !== "/auth" && <OpenInAppBar variant="bar" path={openInAppPath(location.pathname, location.searchStr)} />}
         {startupFailed ? <SomethingWentWrong /> : <Outlet />}
         <Toaster />
       </QueryClientProvider>

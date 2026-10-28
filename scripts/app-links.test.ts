@@ -214,4 +214,33 @@ await check("sitter, sign-in, invite and public pages get no banner", () => {
 });
 await check("a ?code= sign-in redirect gets no banner", () => assert.equal(L.smartAppBannerContent("/dashboard", "?code=abc"), null));
 
+console.log("open in the app (kyaco://)");
+const O = await import("@/lib/openInApp");
+await check("app screens open the same screen, query kept", () => {
+  assert.equal(O.openInAppPath("/birds/new", "?next=weight"), "/birds/new?next=weight");
+  assert.equal(O.openInAppPath("/dashboard", ""), "/dashboard");
+  assert.equal(O.appSchemeUrl("/birds/new?next=weight"), "kyaco://open/birds/new?next=weight");
+});
+await check("/auth opens the screen the email was for", () => {
+  assert.equal(O.openInAppPath("/auth", "?redirect=%2Fbirds%2Fnew%3Fnext%3Dweight"), "/birds/new?next=weight");
+  assert.equal(O.openInAppPath("/auth", ""), null, "no redirect: nothing to open");
+  assert.equal(O.openInAppPath("/auth", "?redirect=%2Fsitter%2Ftok"), null, "sitter link isn't an app screen");
+  assert.equal(O.openInAppPath("/auth", "?redirect=%2F%2Fevil.example"), null, "no open redirect");
+});
+await check("sitter, sign-in, invite and public pages don't offer it", () => {
+  for (const p of BROWSER_ONLY) if (p !== "/auth") assert.equal(O.openInAppPath(p, ""), null, p);
+  assert.equal(O.openInAppPath("/dashboard", "?code=abc"), null);
+});
+await check("the app routes kyaco:// links to app screens only", () => {
+  assert.deepEqual(L.incomingLink("kyaco://open/birds/new?next=weight"), { kind: "route", href: "/birds/new?next=weight" });
+  assert.deepEqual(L.incomingLink("kyaco://open"), { kind: "route", href: "/" });
+  assert.deepEqual(L.incomingLink("kyaco://open/sitter/tok"), { kind: "route", href: "/dashboard" });
+  assert.deepEqual(L.incomingLink("kyaco://open/dashboard?code=x"), { kind: "route", href: "/dashboard" });
+  assert.equal(L.incomingLink("kya://callback?code=x"), null, "the old OAuth scheme is ignored");
+});
+await check("Info.plist registers the scheme", () => {
+  const plist = readFileSync("ios/App/App/Info.plist", "utf8");
+  assert.ok(plist.includes(`<string>${O.APP_URL_SCHEME}</string>`));
+});
+
 console.log(`\n${passed} passed${process.exitCode ? ", some FAILED" : ""}`);
