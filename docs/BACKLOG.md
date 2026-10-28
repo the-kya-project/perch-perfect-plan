@@ -47,7 +47,7 @@ one web-push row, one APNs row. The server can't tell they're the same device.
 ## Native app
 
 ### Deep links: open email links in the native app
-Status: code built (feat/universal-links); waits on the setup below and a store build.
+Status: code built; waits on the setup below and the iOS 1.0.3 (build 11) store build.
 
 What's in the code (the list of paths lives in `src/lib/appLinks.ts`):
 - `/.well-known/apple-app-site-association` and `/.well-known/assetlinks.json`, served by
@@ -57,9 +57,14 @@ What's in the code (the list of paths lives in `src/lib/appLinks.ts`):
   `npm run test:app-links` fails if the manifest drifts from the list.
 - `attachAppLinkHandler` (`src/lib/appLinkNative.ts`) routes `appUrlOpen` and the cold-start
   launch URL. Signed out → the existing sign-in return path takes over.
-- Sign-in (`/auth`, `/welcome`), `/invite`, `/handoff`, anything with `?code=`, the sitter
-  view, `/r/` on app., unsubscribe and the store redirects stay in the browser. PKCE can only
-  finish a sign-in in the browser that started it.
+- Household invites (`/invite/…`) and the links in sign-in emails open the app on iOS
+  (2026-10-28). The send-email hook points confirm/reset/email-change links at our own
+  `/verify?token_hash=…`, which redeems the token with `verifyOtp` and so works in the app or
+  any browser (the old Supabase link came back with a PKCE `?code=` only the starting browser
+  could use). Not in the Android manifest yet.
+- Sign-in (`/auth`, `/welcome`), `/handoff`, anything with `?code=`, the sitter view, `/r/` on
+  app., unsubscribe and the store redirects stay in the browser. Sitter links are never
+  click-tracked, so no `/r/` link leads to one.
 - Tracked email links: iOS won't open the app on a same-domain redirect, so app-screen links
   go through `EMAIL_CLICK_ORIGIN` (https://links.thekyaproject.com). The app loads
   app.thekyaproject.com/r/<token> itself, so the click is still logged.

@@ -33,7 +33,7 @@ const LINKS = "https://links.thekyaproject.com";
 
 // Paths that must never open the app.
 const BROWSER_ONLY = [
-  "/auth", "/welcome", "/invite/abc", "/handoff/abc", "/r/abc.def", "/api/public/unsubscribe/x/y/z",
+  "/auth", "/welcome", "/handoff/abc", "/r/abc.def", "/api/public/unsubscribe/x/y/z",
   "/sitter/tok", "/get", "/get-app", "/review", "/reset-password", "/confirm-email", "/privacy", "/terms", "/delete-account",
 ];
 
@@ -44,8 +44,20 @@ await check("home and every app screen open the app", () => {
     assert.ok(L.isAppLinkPath(p), p);
   }
 });
-await check("sign-in, invites, tracker, sitter and public pages stay in the browser", () => {
-  for (const p of BROWSER_ONLY) assert.ok(!L.isAppLinkPath(p), p);
+// Email links that open the app on iOS but aren't app screens.
+const EMAIL_LINKS = ["/invite/abc", "/verify"];
+await check("sign-in, tracker, sitter and public pages stay in the browser", () => {
+  for (const p of BROWSER_ONLY) {
+    assert.ok(!L.isAppLinkPath(p), p);
+    assert.ok(!L.isUniversalLinkPath(p), p);
+  }
+});
+await check("household invites and sign-in email links open the app, but aren't app screens", () => {
+  for (const p of EMAIL_LINKS) {
+    assert.ok(L.isUniversalLinkPath(p), p);
+    assert.ok(!L.isAppLinkPath(p), p);
+  }
+  assert.ok(!L.isUniversalLinkPath("/invited"), "whole segments only");
 });
 await check("a prefix only matches a whole segment (/birdsong is not /birds)", () => {
   assert.ok(!L.isAppLinkPath("/birdsong"));
@@ -65,12 +77,12 @@ await check("the ?code= exclusion comes first, so sign-in redirects never open t
 });
 await check("lists home plus each prefix and its /* twin, nothing else", () => {
   const paths = comps.slice(1).map((c) => c["/"]);
-  const want = ["/", ...L.APP_LINK_PREFIXES.flatMap((p) => [p, `${p}/*`])];
+  const want = ["/", ...[...L.APP_LINK_PREFIXES, ...L.EMAIL_LINK_PREFIXES].flatMap((p) => [p, `${p}/*`])];
   assert.deepEqual(paths, want);
 });
 await check("no browser-only path appears", () => {
   const paths = comps.map((c) => String(c["/"]));
-  for (const p of ["/auth", "/welcome", "/invite", "/handoff", "/r", "/sitter", "/api"]) {
+  for (const p of ["/auth", "/welcome", "/handoff", "/r", "/sitter", "/api", "/reset-password", "/confirm-email"]) {
     assert.ok(!paths.some((x) => x === p || x.startsWith(`${p}/`)), p);
   }
 });
@@ -148,6 +160,15 @@ await check("browser-only paths, other hosts, http and junk are ignored", () => 
   assert.equal(L.incomingLink("http://app.thekyaproject.com/birds/1"), null);
   assert.equal(L.incomingLink("not a url"), null);
 });
+await check("an invite or a sign-in email link opens on its page in the app, query kept", () => {
+  assert.deepEqual(L.incomingLink(`${APP}/invite/abc`), { kind: "route", href: "/invite/abc" });
+  assert.deepEqual(L.incomingLink(`${APP}/verify?token_hash=h&type=signup&next=%2Fwelcome`), { kind: "route", href: "/verify?token_hash=h&type=signup&next=%2Fwelcome" });
+  assert.equal(L.incomingLink(`${APP}/invite/abc?code=x`), null, "a ?code= sign-in return still stays in the browser");
+});
+await check("no /r/ link can lead to a sitter page: sitter links are never tracked", () => {
+  assert.equal(C.shouldTrack(`${APP}/sitter/tok`), false);
+  assert.equal(L.clickOriginFor(`${APP}/sitter/tok`, LINKS), APP, "and even if one were, it would stay on app.");
+});
 
 console.log("tracker host for email links");
 await check("unset → every tracked link stays on app.", () => {
@@ -189,7 +210,7 @@ await check("app screens get the banner, pointing at the same page", () => {
   assert.equal(L.smartAppBannerContent("/dashboard", "next=x"), "app-id=6795267221, app-argument=https://app.thekyaproject.com/dashboard?next=x");
 });
 await check("sitter, sign-in, invite and public pages get no banner", () => {
-  for (const p of BROWSER_ONLY) assert.equal(L.smartAppBannerContent(p, ""), null, p);
+  for (const p of [...BROWSER_ONLY, ...EMAIL_LINKS]) assert.equal(L.smartAppBannerContent(p, ""), null, p);
 });
 await check("a ?code= sign-in redirect gets no banner", () => assert.equal(L.smartAppBannerContent("/dashboard", "?code=abc"), null));
 

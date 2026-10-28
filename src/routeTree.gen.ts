@@ -23,6 +23,7 @@ import { Route as RedeemRouteImport } from './routes/redeem'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as ReviewRouteImport } from './routes/review'
 import { Route as TermsRouteImport } from './routes/terms'
+import { Route as VerifyRouteImport } from './routes/verify'
 import { Route as DotwellKnownAppleAppSiteAssociationRouteImport } from './routes/[.]well-known.apple-app-site-association'
 import { Route as DotwellKnownAssetlinksDotjsonRouteImport } from './routes/[.]well-known.assetlinks[.]json'
 import { Route as AuthenticatedAccountRouteImport } from './routes/_authenticated/account'
@@ -175,6 +176,11 @@ const ReviewRoute = ReviewRouteImport.update({
 const TermsRoute = TermsRouteImport.update({
   id: '/terms',
   path: '/terms',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const VerifyRoute = VerifyRouteImport.update({
+  id: '/verify',
+  path: '/verify',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DotwellKnownAppleAppSiteAssociationRoute =
@@ -660,6 +666,7 @@ export interface FileRoutesByFullPath {
   '/reset-password': typeof ResetPasswordRoute
   '/review': typeof ReviewRoute
   '/terms': typeof TermsRoute
+  '/verify': typeof VerifyRoute
   '/sitter/$token': typeof SitterTokenRouteRouteWithChildren
   '/.well-known/apple-app-site-association': typeof DotwellKnownAppleAppSiteAssociationRoute
   '/.well-known/assetlinks.json': typeof DotwellKnownAssetlinksDotjsonRoute
@@ -759,6 +766,7 @@ export interface FileRoutesByTo {
   '/reset-password': typeof ResetPasswordRoute
   '/review': typeof ReviewRoute
   '/terms': typeof TermsRoute
+  '/verify': typeof VerifyRoute
   '/.well-known/apple-app-site-association': typeof DotwellKnownAppleAppSiteAssociationRoute
   '/.well-known/assetlinks.json': typeof DotwellKnownAssetlinksDotjsonRoute
   '/check': typeof AuthenticatedCheckRoute
@@ -853,6 +861,7 @@ export interface FileRoutesById {
   '/reset-password': typeof ResetPasswordRoute
   '/review': typeof ReviewRoute
   '/terms': typeof TermsRoute
+  '/verify': typeof VerifyRoute
   '/sitter/$token': typeof SitterTokenRouteRouteWithChildren
   '/.well-known/apple-app-site-association': typeof DotwellKnownAppleAppSiteAssociationRoute
   '/.well-known/assetlinks.json': typeof DotwellKnownAssetlinksDotjsonRoute
@@ -954,6 +963,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/review'
     | '/terms'
+    | '/verify'
     | '/sitter/$token'
     | '/.well-known/apple-app-site-association'
     | '/.well-known/assetlinks.json'
@@ -1053,6 +1063,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/review'
     | '/terms'
+    | '/verify'
     | '/.well-known/apple-app-site-association'
     | '/.well-known/assetlinks.json'
     | '/check'
@@ -1146,6 +1157,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/review'
     | '/terms'
+    | '/verify'
     | '/sitter/$token'
     | '/.well-known/apple-app-site-association'
     | '/.well-known/assetlinks.json'
@@ -1247,6 +1259,7 @@ export interface RootRouteChildren {
   ResetPasswordRoute: typeof ResetPasswordRoute
   ReviewRoute: typeof ReviewRoute
   TermsRoute: typeof TermsRoute
+  VerifyRoute: typeof VerifyRoute
   SitterTokenRouteRoute: typeof SitterTokenRouteRouteWithChildren
   DotwellKnownAppleAppSiteAssociationRoute: typeof DotwellKnownAppleAppSiteAssociationRoute
   DotwellKnownAssetlinksDotjsonRoute: typeof DotwellKnownAssetlinksDotjsonRoute
@@ -1368,6 +1381,13 @@ declare module '@tanstack/react-router' {
       path: '/terms'
       fullPath: '/terms'
       preLoaderRoute: typeof TermsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/verify': {
+      id: '/verify'
+      path: '/verify'
+      fullPath: '/verify'
+      preLoaderRoute: typeof VerifyRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/.well-known/apple-app-site-association': {
@@ -2195,6 +2215,7 @@ const rootRouteChildren: RootRouteChildren = {
   ResetPasswordRoute: ResetPasswordRoute,
   ReviewRoute: ReviewRoute,
   TermsRoute: TermsRoute,
+  VerifyRoute: VerifyRoute,
   SitterTokenRouteRoute: SitterTokenRouteRouteWithChildren,
   DotwellKnownAppleAppSiteAssociationRoute:
     DotwellKnownAppleAppSiteAssociationRoute,

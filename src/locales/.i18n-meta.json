@@ -10251,6 +10251,24 @@
     "updates.yourSitter": {
       "stamp": "1f87da8fe21f5a1a"
     },
+    "verifyLink.checking": {
+      "stamp": "c015955d0df27063"
+    },
+    "verifyLink.failedBody": {
+      "stamp": "f109a0dcf178e2e2"
+    },
+    "verifyLink.failedTitle": {
+      "stamp": "42b831e02a9634d2"
+    },
+    "verifyLink.pageTitle": {
+      "stamp": "236d785bd1335513"
+    },
+    "verifyLink.title": {
+      "stamp": "71b85967e04d36e5"
+    },
+    "verifyLink.toSignIn": {
+      "stamp": "080fc6c138699cbd"
+    },
     "vetSummary.addThem": {
       "stamp": "e9113bf03821bc94"
     },

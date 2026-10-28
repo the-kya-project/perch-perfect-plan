@@ -13,19 +13,30 @@
  * Android's intent filters can't express exclusions, and an allow list means a
  * new route stays in the browser until someone decides it belongs in the app.
  *
+ * Email links that also open the app (EMAIL_LINK_PREFIXES, iOS only for now):
+ *   /invite/…          household invites. The page works signed in or out.
+ *   /verify            the links in sign-in emails (confirm your email, reset
+ *                      your password, change your email). They redeem a
+ *                      one-time token_hash, which works in the app or any
+ *                      browser (see routes/verify.tsx), unlike the old PKCE
+ *                      ?code= redirect that only the starting browser could use.
+ * They aren't app screens, so they get no Smart App Banner and no "Open in the
+ * app" button (both point at the same page, and a /verify token is spent).
+ *
  * Deliberately NOT here, so they always open in the browser:
- *   /auth, /welcome    sign-in. Web Google/Apple sign-in and the signup
- *                      confirmation email land on /welcome?code=…, and PKCE
- *                      can only finish that exchange in the browser that
- *                      started it. If the app grabbed the redirect, the person
- *                      would be dropped mid-sign-in.
- *   /invite, /handoff  same reason: signup confirmations redirect back there
- *                      with a code, and the invitee usually has no app yet
+ *   /auth, /welcome    sign-in. Web Google/Apple sign-in lands on
+ *                      /welcome?code=…, and PKCE can only finish that exchange
+ *                      in the browser that started it. If the app grabbed the
+ *                      redirect, the person would be dropped mid-sign-in.
+ *   /handoff           a bird handoff's recipient usually has no app yet
  *   /r/… (on app.)     email click tracker — see CLICK_LINK_HOST below
  *   /api/…             unsubscribe and every other endpoint
- *   /sitter/…          sitter token links: sitters use the web, usually signed out
+ *   /sitter/…          sitter token links: sitters use the web, usually signed
+ *                      out. Never click-tracked either (emailClicks NEVER_PATHS),
+ *                      so no /r/ link can lead to one.
  *   /get, /get-app, /review   store redirects, which only make sense in a browser
- *   /reset-password, /confirm-email   Supabase auth links carrying one-time tokens
+ *   /reset-password, /confirm-email   reached from /verify or the sign-up form,
+ *                      never straight from an email
  *   /privacy, /terms, /delete-account public pages
  * Any link carrying ?code= is excluded on iOS for the same PKCE reason
  * (Android can't exclude by query; the in-app handler ignores those instead).
@@ -67,6 +78,10 @@ export const APP_LINK_PREFIXES = [
   "/covering",
 ] as const;
 
+/** Email links that open the app on iOS but aren't app screens (see above).
+ *  Not in the Android manifest yet: that needs its own store build. */
+export const EMAIL_LINK_PREFIXES = ["/invite", "/verify"] as const;
+
 /** On CLICK_LINK_HOST, only the tracker opens the app. */
 export const CLICK_LINK_PREFIX = "/r";
 
@@ -75,6 +90,12 @@ export const CLICK_LINK_PREFIX = "/r";
 export function isAppLinkPath(pathname: string): boolean {
   if (pathname === "/" || pathname === "") return true;
   return APP_LINK_PREFIXES.some((p) => pathname === p || pathname.startsWith(`${p}/`));
+}
+
+/** Does a link to this path on app.thekyaproject.com open the app on iOS?
+ *  App screens plus the email links above. */
+export function isUniversalLinkPath(pathname: string): boolean {
+  return isAppLinkPath(pathname) || EMAIL_LINK_PREFIXES.some((p) => pathname === p || pathname.startsWith(`${p}/`));
 }
 
 export type IncomingLink =
@@ -97,7 +118,7 @@ export function incomingLink(url: string): IncomingLink | null {
   }
   if (u.protocol !== "https:") return null;
   if (u.hostname === APP_LINK_HOST) {
-    if (!isAppLinkPath(u.pathname) || u.searchParams.has("code")) return null;
+    if (!isUniversalLinkPath(u.pathname) || u.searchParams.has("code")) return null;
     return { kind: "route", href: `${u.pathname}${u.search}${u.hash}` };
   }
   if (u.hostname === CLICK_LINK_HOST) {
@@ -121,6 +142,7 @@ export function appleAppSiteAssociation(host: string = APP_LINK_HOST) {
           { "/": "*", "?": { code: "*" }, exclude: true, comment: "Sign-in redirects stay in the browser" },
           { "/": "/", comment: "Home" },
           ...APP_LINK_PREFIXES.flatMap((p) => [{ "/": p }, { "/": `${p}/*` }]),
+          ...EMAIL_LINK_PREFIXES.flatMap((p) => [{ "/": p }, { "/": `${p}/*` }]),
         ];
   return { applinks: { details: [{ appIDs: [APPLE_APP_ID], components }] } };
 }
