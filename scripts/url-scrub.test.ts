@@ -24,6 +24,7 @@ import {
 } from "@/lib/errorTelemetry";
 import { routeShapeFromPath } from "@/lib/errorTags";
 import { hashUserId } from "@/lib/userHash";
+import { beforeSend } from "@/lib/analytics";
 
 let passed = 0;
 function check(name: string, fn: () => void) {
@@ -246,6 +247,43 @@ check("message, URL and person props are all scrubbed", () => {
   // Tags survive (the scrubber normalises the token placeholder; harmless).
   assert.equal(out.properties.route, "/sitter/[token]/scan");
   assert.equal(out.properties.user_role, "sitter");
+});
+
+console.log("misparsed stack frames (2026-10-26 production test)");
+check("message text a browser parsed INTO a stack frame is scrubbed by before_send", () => {
+  // The exact shape PostHog stored: the message contained " at /sitter/…", so
+  // the browser's stack parser made a frame whose function name IS the message
+  // text, and $exception_functions repeated it.
+  const misparsed = `KyaErrorTestClient_x: Kya error test (client). Failing row contains (${BIRD_NAME}, ${HEALTH_NOTE}, ${WEIGHT}) for ${OWNER_EMAIL} at `;
+  const event = {
+    event: "$exception",
+    properties: {
+      $exception_list: [{
+        type: "KyaErrorTestClient_x",
+        value: `Kya error test (client). Failing row contains (${BIRD_NAME}, ${HEALTH_NOTE}, ${WEIGHT}) for ${OWNER_EMAIL} at /sitter/${TOKEN}`,
+        stacktrace: {
+          type: "raw",
+          frames: [
+            { filename: `/sitter/${TOKEN}`, function: misparsed, in_app: true, synthetic: false },
+            { filename: `${ORIGIN}/assets/index-abc.js`, function: "runErrorTest", lineno: 9, colno: 1234, in_app: true },
+          ],
+        },
+      }],
+      $exception_functions: [misparsed, "runErrorTest"],
+      route: "/dashboard",
+    },
+  };
+  const json = JSON.stringify(beforeSend(event as any));
+  for (const secret of [OWNER_EMAIL, HEALTH_NOTE, `${BIRD_NAME},`, TOKEN]) {
+    assert.ok(!json.includes(secret), `leaked …${secret.slice(0, 12)}`);
+  }
+  assert.ok(json.includes("runErrorTest"), "real function names must survive");
+  assert.ok(json.includes("/assets/index-abc.js"), "real filenames must survive");
+});
+check("ordinary frames pass through unchanged", () => {
+  const frame = { filename: `${ORIGIN}/assets/index-abc.js`, function: "getCurrentEndpoint", lineno: 9, colno: 77, in_app: true };
+  const out = scrubExceptionProperties({ $exception_list: [{ type: "TypeError", value: "x", stacktrace: { type: "raw", frames: [frame] } }] });
+  assert.deepEqual(out.$exception_list[0].stacktrace.frames[0], frame);
 });
 
 console.log("server error helpers");

@@ -6,6 +6,7 @@ import { createServerFn } from "@tanstack/react-start";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import type { Database } from "@/integrations/supabase/types";
+import { finishAccountDeletion } from "./accountDeletion";
 
 type AdminStorage = SupabaseClient<Database>["storage"];
 
@@ -262,22 +263,20 @@ export const deleteMyAccount = createServerFn({ method: "POST" })
       console.error(`[deleteMyAccount] user=${userId}: row cleanup errors: ${JSON.stringify(rowFailures)}`);
     }
 
-    // Finally, delete the auth user (also revokes all sessions). This one IS
-    // fatal: if it fails the account still exists, and reporting success would
-    // be a lie. Everything above is CASCADEd by this delete anyway.
-    const { error } = await supabaseAdmin.auth.admin.deleteUser(userId);
-    if (error) throw new Error(error.message);
-
-    // Then their analytics and error-report data in PostHog (the privacy policy
-    // promises this). Best-effort and AWAITED — post-response work is frozen on
-    // Vercel. A failure is logged inside and never fails the deletion.
+    // Finally, delete the auth user (also revokes all sessions; fatal on
+    // failure, and everything above is CASCADEd by it anyway), then their
+    // PostHog person, events and recordings (best-effort, awaited). See
+    // accountDeletion.ts for why that order and those failure rules.
     const { deletePostHogPerson } = await import("./posthogPersons.server");
-    const analytics = await deletePostHogPerson(userId);
+    const { analyticsDeleted } = await finishAccountDeletion(
+      { deleteAuthUser: (id) => supabaseAdmin.auth.admin.deleteUser(id), deletePostHogPerson },
+      userId,
+    );
 
     return {
       ok: true,
       mediaFailures: mediaFailures.length,
       rowFailures: rowFailures.length,
-      analyticsDeleted: analytics.ok,
+      analyticsDeleted,
     };
   });

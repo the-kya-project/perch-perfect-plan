@@ -225,7 +225,8 @@ function loadScript(src: string, attrs: Record<string, string> = {}): Promise<vo
 
 // ---------------- PostHog adapter ----------------
 
-function beforeSend<T extends Record<string, any> | null>(event: T): T {
+/** PostHog `before_send`. Exported only for scripts/url-scrub.test.ts. */
+export function beforeSend<T extends Record<string, any> | null>(event: T): T {
   const out = sanitizeAnalyticsEvent(event);
   if (out && (out as Record<string, any>).event === "$exception" && out.properties) {
     scrubExceptionProperties(out.properties);

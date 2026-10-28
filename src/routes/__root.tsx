@@ -26,8 +26,6 @@ import { FrontDoorBody, FrontDoorHeader, FrontDoorPage } from "@/components/fron
 import appCss from "../styles.css?inline";
 import { installErrorListeners, primeAccountRole, registerErrorReportingContext, reportError } from "@/lib/errorReporting";
 import { SUPPORT_EMAIL } from "@/lib/support";
-import { ERROR_TEST_ACCOUNT, errorTestMessage } from "@/lib/errorTest"; // TEMPORARY
-import { fireServerErrorTest } from "@/lib/errorTest.functions"; // TEMPORARY
 import { supabase } from "@/integrations/supabase/client";
 import { Toaster } from "@/components/ui/sonner";
 import { initAnalytics, identifyUser, resetUser } from "@/lib/analytics";
@@ -149,7 +147,11 @@ const COLD_LAUNCH_REDIRECT = `(function(){try{` +
   // storage) must NOT swallow the redirect — that would reintroduce the exact
   // cold-launch bug on the devices least likely to report it.
   `try{sessionStorage.setItem("kya_cold_redirect",JSON.stringify({path:window.location.pathname,had_stored:true}));}catch(e2){}` +
-  `window.location.replace("/dashboard");return;}}` +
+  // Carry the campaign params so email / TikTok attribution survives the hop
+  // (same key list as src/lib/utmCarry.ts — this runs before any module loads).
+  `var q=new URLSearchParams(window.location.search),o=new URLSearchParams();` +
+  `["utm_source","utm_medium","utm_campaign","utm_content","utm_term"].forEach(function(n){var v=q.get(n);if(v)o.set(n,v.slice(0,200));});` +
+  `var qs=o.toString();window.location.replace("/dashboard"+(qs?"?"+qs:""));return;}}` +
   `}catch(e){}})();`;
 
 // Startup safety net, inline in <head> so it works even when the app's own
@@ -230,10 +232,11 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "twitter:card", content: "summary_large_image" },
     ],
     links: [
-      // Setup screens: Newsreader for headings, DM Sans for everything else.
-      { rel: "preconnect", href: "https://fonts.googleapis.com" },
-      { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
-      { rel: "stylesheet", href: "https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,700&family=Newsreader:opsz,wght@6..72,600;6..72,700&display=swap" },
+      // Newsreader for headings, DM Sans for everything else. SELF-HOSTED
+      // (public/fonts): never link fonts.googleapis.com — it sends every
+      // visitor's IP to Google (GDPR). `npm run check:no-google-fonts` fails
+      // the build if a Google Fonts link comes back.
+      { rel: "stylesheet", href: "/fonts/fonts.css" },
       // Kya & Co. favicons — multi-size set delivered by the brand spec.
       { rel: "icon", href: "/favicon.ico", sizes: "any" },
       { rel: "icon", type: "image/png", sizes: "32x32", href: "/favicon-32.png" },
@@ -265,40 +268,9 @@ function RootShell({ children }: { children: ReactNode }) {
   );
 }
 
-// TEMPORARY — error-capture verification (see src/lib/errorTest.ts).
-function ThrowOnRender({ nonce }: { nonce: string }): never {
-  const err = new Error(errorTestMessage("render"));
-  err.name = `KyaErrorTestRender_${nonce}`;
-  throw err;
-}
-
-async function runErrorTest(setRenderTest: (n: string) => void) {
-  const params = new URLSearchParams(window.location.search);
-  const kind = params.get("kya_error_test");
-  const nonce = (params.get("n") ?? "").toLowerCase();
-  if (!kind || !/^[a-z0-9]{4,12}$/.test(nonce)) return;
-  const { data } = await supabase.auth.getSession();
-  if (data.session?.user?.id !== ERROR_TEST_ACCOUNT) return;
-  const make = (k: string) => {
-    const e = new Error(errorTestMessage(k));
-    e.name = `KyaErrorTest${k[0].toUpperCase()}${k.slice(1)}_${nonce}`;
-    return e;
-  };
-  if (kind === "client") setTimeout(() => { throw make("client"); }, 0);
-  else if (kind === "unhandled") void Promise.reject(make("unhandled"));
-  else if (kind === "render") setRenderTest(nonce);
-  else if (kind === "server" || kind === "burst") {
-    const times = kind === "burst" ? 11 : 1;
-    for (let i = 0; i < times; i++) {
-      try { await fireServerErrorTest({ data: { nonce } }); } catch { /* expected */ }
-    }
-  }
-}
-
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   const router = useRouter();
-  const [renderTest, setRenderTest] = useState<string | null>(null); // TEMPORARY
   const location = useRouterState({ select: (s) => s.location });
   // A code file failed to load and the one automatic reload is already spent:
   // show the error screen instead of reloading again (sw-register.ts).
@@ -320,7 +292,6 @@ function RootComponent() {
     if (router.state.status === "idle" && !router.state.isLoading) ready();
     return router.subscribe("onResolved", ready);
   }, [router]);
-  useEffect(() => { void runErrorTest(setRenderTest); }, []); // TEMPORARY
   // English (hydrationI18n) for the server render and hydration, then the live
   // instance, which follows the owner's language. See hydrationI18n in
   // lib/i18n/i18n.ts: switching language while a route was still hydrating is
@@ -410,7 +381,7 @@ function RootComponent() {
         {/* iPhone browsers on app screens: "Open in the Kya & Co. app". /auth
             renders its own, aimed at the screen the email was for. */}
         {!startupFailed && location.pathname !== "/auth" && <OpenInAppBar variant="bar" path={openInAppPath(location.pathname, location.searchStr)} />}
-        {startupFailed ? <SomethingWentWrong /> : renderTest ? <ThrowOnRender nonce={renderTest} /> : <Outlet />}
+        {startupFailed ? <SomethingWentWrong /> : <Outlet />}
         <Toaster />
       </QueryClientProvider>
     </I18nextProvider>
