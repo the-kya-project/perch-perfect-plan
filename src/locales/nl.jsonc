@@ -6849,6 +6849,18 @@
   "updates.yourBird": "je vogel",
   // Your sitter
   "updates.yourSitter": "Je oppas",
+  // Checking your link…
+  "verifyLink.checking": "Je link wordt gecontroleerd…",
+  // It may have expired or already been used. Sign in, or ask for a new email.
+  "verifyLink.failedBody": "Misschien is hij verlopen of al gebruikt. Log in, of vraag een nieuwe e-mail aan.",
+  // This link didn't work
+  "verifyLink.failedTitle": "Deze link werkte niet",
+  // Opening your link — Kya & Co.
+  "verifyLink.pageTitle": "Je link openen — Kya & Co.",
+  // One moment
+  "verifyLink.title": "Een momentje",
+  // Go to sign in
+  "verifyLink.toSignIn": "Naar inloggen",
   // Add them
   "vetSummary.addThem": "Toevoegen",
   // after meal
