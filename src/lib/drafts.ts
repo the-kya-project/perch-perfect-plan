@@ -21,8 +21,9 @@ export { DRAFT_TTL_MS } from "./draftStore";
 
 // ── The hook ────────────────────────────────────────────────────────────────
 
-/** The signed-in user's id from the local session (no network), or null. */
-function useLocalUserId(): string | null | undefined {
+/** The signed-in user's id from the local session (no network), or null
+ *  (undefined while it's being read). */
+export function useLocalUserId(): string | null | undefined {
   const [id, setId] = useState<string | null | undefined>(undefined);
   useEffect(() => {
     let live = true;

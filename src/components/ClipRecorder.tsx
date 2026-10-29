@@ -1,9 +1,12 @@
 import { useEffect, useRef, useState } from "react";
-import { Video, Square, RotateCcw, Check, AlertTriangle, Upload, Loader2 } from "lucide-react";
+import { Video, Square, RotateCcw, Check, AlertTriangle, Upload, Loader2, X } from "lucide-react";
 import { createClipUpload, getClipStatus } from "@/lib/clips.functions";
 import { cfRef } from "@/lib/clipRef";
 import { track } from "@/lib/analytics";
 import { useFormInProgress } from "@/lib/formsInProgress";
+import { useLocalUserId } from "@/lib/drafts";
+import { canKeepInterrupted, capturedSeconds, recorderKeepable, SUSPEND_GAP_MS, type RecorderPhase } from "@/lib/clipCapture";
+import { deleteClipDraft, draftKey, loadClipDraft, saveClipDraft, sitDraftKey, sweepExpiredClipDrafts } from "@/lib/draftStore";
 import { nativePlatform } from "@/lib/nativeApp";
 import i18next from "i18next";
 import { useTranslation } from "react-i18next";
@@ -27,6 +30,16 @@ import { friendlyError } from "@/lib/errorMessage";
  * compression. The recorder shows "Uploading…" then "Processing…", then hands
  * the resulting "cfstream:<uid>" reference to onUploaded for the parent to
  * persist on the clip column.
+ *
+ * Camera interruptions (a fold or unfold on a foldable, a call, switching
+ * apps): the camera feed ending, muting or freezing is noticed. Mid-recording,
+ * the recording stops cleanly and keeps what was captured ("Keep this clip" /
+ * "Record again"). In the preview, the camera is restarted once, quietly.
+ *
+ * A recorded clip is saved on the device (IndexedDB, lib/draftStore.ts) the
+ * moment recording stops, when the caller names a `draftSlot`: offered back on
+ * reopen ("We saved your unuploaded clip…" with Upload / Discard), never
+ * uploaded on its own, deleted once it uploads or is discarded.
  */
 export const MAX_SECONDS = 60; // 1 min cap — bounds file size and keeps clips short
 // Generous raw limit so a 1-minute iPhone original (HEVC .mov, often 80–150MB at
@@ -115,6 +128,30 @@ async function tusUpload(uploadURL: string, file: File, onProgress: (pct: number
   });
 }
 
+/** Frames frozen this long (page visible, element playing) = the feed stalled.
+ *  Generous, so a busy phone's hiccup never stops a recording. */
+const STALL_MS = 4000;
+/** A preview that drops again this soon after a restart: give up. */
+const RESTART_GIVE_UP_MS = 4000;
+/** The preview and review player never grow taller than this share of the
+ *  screen, so a tall clip keeps the buttons in view on a short display. */
+const MAX_FRAME_VH = 45;
+
+const keepNothing = () => {};
+
+/** Style for a video frame that takes the clip's real shape, capped in height. */
+function frameStyle(ratio: number): React.CSSProperties {
+  const r = Number.isFinite(ratio) && ratio > 0 ? ratio : 16 / 9;
+  return { aspectRatio: String(r), width: `min(100%, ${MAX_FRAME_VH}vh * ${r.toFixed(4)})` };
+}
+
+/** "2:14 PM", or "yesterday at 2:14 PM". */
+function savedWhen(savedAt: number, lang: string, t: ReturnType<typeof useTranslation>["t"]): string {
+  const d = new Date(savedAt);
+  const time = d.toLocaleTimeString(lang, { hour: "numeric", minute: "2-digit" });
+  return d.toDateString() === new Date().toDateString() ? time : t("draft.yesterdayAt", "yesterday at {{time}}", { time });
+}
+
 class UploadCancelled extends Error {
   constructor() { super("cancelled"); }
 }
@@ -199,6 +236,8 @@ export function ClipRecorder({
   cancelRef,
   onUploaded,
   inPage = false,
+  draftSlot,
+  draftSit,
 }: {
   /** The bird this clip belongs to. Sent to createClipUpload, which registers
    *  the minted uid against it in clip_assets — the server-authored binding
@@ -223,9 +262,16 @@ export function ClipRecorder({
   /** Shown in a page next to the footer's Next/Save (not in a sheet): the
    *  recorder's buttons are white so the footer keeps the one sunflower button. */
   inPage?: boolean;
+  /** Which clip this is (e.g. "baseline", a tip slot): names the saved copy of
+   *  a recorded clip, so it comes back in the same place. Omitted = not saved. */
+  draftSlot?: string;
+  /** A sitter's recorder: save under the sit link instead of an account, and
+   *  drop the saved clip when the sit ends (epoch ms). */
+  draftSit?: { token: string; endsAt: number | null };
 }) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const videoRef = useRef<HTMLVideoElement | null>(null);
+  const frameRef = useRef<HTMLDivElement | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const recorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<BlobPart[]>([]);
@@ -234,46 +280,115 @@ export function ClipRecorder({
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const recordedFileRef = useRef<File | null>(null);
   const recordedUrlRef = useRef<string | null>(null);
+  // Camera watching: the cleanup for the current stream's listeners, when the
+  // recording started, the last tick (to tell a suspended page), and whether
+  // the stop under way was the camera dropping.
+  const unwatchRef = useRef<(() => void) | null>(null);
+  const startedAtRef = useRef(0);
+  const lastTickRef = useRef(0);
+  const interruptedRef = useRef<{ seconds: number } | null>(null);
+  const restartingRef = useRef(false);
+  const lastRestartRef = useRef(0);
+  const unmountedRef = useRef(false);
 
-  const [phase, setPhase] = useState<"idle" | "ready" | "recording" | "stopping" | "review">("idle");
+  type Phase = RecorderPhase;
+  const [phase, setPhase] = useState<Phase>("idle");
+  const phaseRef = useRef<Phase>("idle");
+  phaseRef.current = phase;
   const [elapsed, setElapsed] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [note, setNote] = useState<string | null>(null);
   const [checking, setChecking] = useState(false);
   const [stage, setStage] = useState<{ kind: "uploading" | "processing"; pct?: number } | null>(null);
   const [recordedUrl, setRecordedUrl] = useState<string | null>(null);
+  const [captured, setCaptured] = useState(0);
+  const [ratio, setRatio] = useState(16 / 9);
+  // The recorded clip is safely on the device (so an app update needn't wait).
+  const [draftSaved, setDraftSaved] = useState(false);
+  // When the clip offered back on reopen was saved.
+  const [savedAt, setSavedAt] = useState<number | null>(null);
   const abortRef = useRef<(() => void) | null>(null);
 
+  // Where the recorded clip is kept: the account (or the sit link) + bird +
+  // which clip. Null = not kept (no slot, or no one to tie it to yet).
+  const userId = useLocalUserId();
+  const sitToken = draftSit?.token ?? null;
+  const clipKey = !draftSlot
+    ? null
+    : sitToken
+      ? sitDraftKey({ token: sitToken, birdId, kind: `clip:${draftSlot}` })
+      : userId ? draftKey({ userId, birdId, kind: `clip:${draftSlot}` }) : null;
+  const clipKeyRef = useRef(clipKey);
+  clipKeyRef.current = clipKey;
+  const sitEndsRef = useRef(draftSit?.endsAt ?? null);
+  sitEndsRef.current = draftSit?.endsAt ?? null;
+
   useEffect(() => {
-    return () => { stopAll(); revokeRecorded(); onBusy?.(false); onUploading?.(false); onProgress?.(null); };
+    return () => {
+      unmountedRef.current = true;
+      stopAll(); revokeRecorded(); onBusy?.(false); onUploading?.(false); onProgress?.(null);
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // A clip recorded earlier that never uploaded (the page reloaded, the app
+  // was closed): offer it back. Never uploaded on its own.
+  useEffect(() => {
+    if (!clipKey) return;
+    let live = true;
+    void (async () => {
+      await sweepExpiredClipDrafts();
+      // The sit already ended: drop it and show nothing.
+      const ends = sitEndsRef.current;
+      if (typeof ends === "number" && Date.now() >= ends) { await deleteClipDraft(clipKey); return; }
+      const saved = await loadClipDraft(clipKey);
+      if (!live || !saved || phaseRef.current !== "idle") return;
+      const ext = saved.type === "video/mp4" ? "mp4" : "webm";
+      recordedFileRef.current = new File([saved.blob], saved.name || `clip.${ext}`, { type: saved.type || saved.blob.type });
+      revokeRecorded();
+      const url = URL.createObjectURL(saved.blob);
+      recordedUrlRef.current = url;
+      setRecordedUrl(url);
+      setSavedAt(saved.savedAt);
+      setDraftSaved(true);
+      setPhase("saved");
+    })();
+    return () => { live = false; };
+  }, [clipKey]);
 
   // Attach the live stream once the <video> is actually mounted (it only renders
   // outside the "idle" phase). Doing this in start() failed because the element
   // wasn't in the DOM yet — the classic black-preview bug.
   useEffect(() => {
     if ((phase === "ready" || phase === "recording") && streamRef.current && videoRef.current) {
-      const v = videoRef.current;
-      if (v.srcObject !== streamRef.current) {
-        v.srcObject = streamRef.current;
-        v.muted = true;
-        v.play().catch(() => {}); // autoplay promise can reject on iOS — safe to ignore
-      }
+      attachPreview(streamRef.current);
     }
   }, [phase]);
 
-  // A clip being recorded, reviewed or uploaded can't be kept as a draft, so
-  // an app update waits for it (formsInProgress.ts; no flush = Update waits).
-  useFormInProgress(checking || !!stage || phase !== "idle");
+  // Bring the camera or the recorded clip into view with its buttons, clear of
+  // a pinned footer (a short display, a sheet opened low). Again once the
+  // video's real shape is known: an upright clip makes the frame taller.
+  useEffect(() => {
+    if (phase === "ready" || phase === "review" || phase === "interrupted" || phase === "saved") {
+      try { frameRef.current?.scrollIntoView({ block: "nearest", behavior: "smooth" }); } catch { /* ignore */ }
+    }
+  }, [phase, ratio]);
+
+  // An app update waits while a clip is recording or uploading (nothing could
+  // keep it). Once a recorded clip is safely saved on the device, or there's
+  // only a live preview with nothing to lose, Update may go ahead
+  // (formsInProgress.ts: no flush = Update waits).
+  const uploadingNow = checking || !!stage;
+  const keepable = recorderKeepable({ phase, uploading: uploadingNow, draftSaved });
+  useFormInProgress(uploadingNow || phase !== "idle", keepable ? keepNothing : undefined);
 
   // Let the parent disable Next while the recorder is busy (camera live,
   // recording, or compressing). Upload-to-storage is signalled separately via
   // the `uploading` prop the parent already controls.
   useEffect(() => {
-    const busy = checking || !!stage || phase === "ready" || phase === "recording" || phase === "stopping" || phase === "review";
+    const busy = uploadingNow || phase !== "idle";
     onBusy?.(busy);
-    onUploading?.(checking || !!stage);
+    onUploading?.(uploadingNow);
     onProgress?.(stage?.kind === "uploading" ? stage.pct ?? 0 : checking ? 0 : null);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [checking, stage, phase]);
@@ -282,14 +397,169 @@ export function ClipRecorder({
     if (recordedUrlRef.current) { try { URL.revokeObjectURL(recordedUrlRef.current); } catch {} recordedUrlRef.current = null; }
   }
 
-  function stopAll() {
-    if (tickRef.current) { clearInterval(tickRef.current); tickRef.current = null; }
-    try { recorderRef.current?.state !== "inactive" && recorderRef.current?.stop(); } catch {}
-    recorderRef.current = null;
+  function stopTracks() {
+    unwatchRef.current?.();
+    unwatchRef.current = null;
     streamRef.current?.getTracks().forEach((tr) => tr.stop());
     streamRef.current = null;
     if (videoRef.current) videoRef.current.srcObject = null;
   }
+
+  function stopAll() {
+    if (tickRef.current) { clearInterval(tickRef.current); tickRef.current = null; }
+    try { recorderRef.current?.state !== "inactive" && recorderRef.current?.stop(); } catch {}
+    recorderRef.current = null;
+    stopTracks();
+  }
+
+  function attachPreview(stream: MediaStream) {
+    const v = videoRef.current;
+    if (!v) return;
+    if (v.srcObject !== stream) {
+      v.srcObject = stream;
+      v.muted = true;
+      v.play().catch(() => {}); // autoplay promise can reject on iOS — safe to ignore
+    }
+  }
+
+  /** The preview or recording's shape, from the frames actually arriving. */
+  function readRatio(v: HTMLVideoElement | null) {
+    if (v && v.videoWidth > 0 && v.videoHeight > 0) setRatio(v.videoWidth / v.videoHeight);
+  }
+
+  // ---- Camera interruptions -------------------------------------------------
+
+  /** Watch a live stream for the camera going away: the track ending or
+   *  muting, the frames freezing, or the page being hidden (iOS stops the
+   *  camera with it). */
+  function watchStream(stream: MediaStream) {
+    unwatchRef.current?.();
+    const track = stream.getVideoTracks()[0];
+    if (!track) return;
+    let muteTimer: ReturnType<typeof setTimeout> | null = null;
+    const onEnded = () => onCameraDrop();
+    const onMute = () => {
+      // Mid-recording, stop now: no frames are arriving. In the preview, give
+      // it a moment to come back on its own before restarting it.
+      if (phaseRef.current === "recording") { onCameraDrop(); return; }
+      if (muteTimer) clearTimeout(muteTimer);
+      muteTimer = setTimeout(() => { if (track.muted) onCameraDrop(); }, 1500);
+    };
+    let lastTime = -1;
+    let lastChange = Date.now();
+    const stall = setInterval(() => {
+      const v = videoRef.current;
+      if (!v || document.visibilityState !== "visible" || phaseRef.current === "stopping") { lastChange = Date.now(); return; }
+      if (v.paused) { v.play().catch(() => {}); lastChange = Date.now(); return; }
+      if (v.currentTime !== lastTime) { lastTime = v.currentTime; lastChange = Date.now(); return; }
+      if (Date.now() - lastChange > STALL_MS) { lastChange = Date.now(); onCameraDrop(); }
+    }, 500);
+    const onVisibility = () => {
+      if (document.visibilityState === "hidden") {
+        // Leaving the app mid-recording: the camera is about to stop, so stop
+        // the recording now while the page can still keep what it has.
+        if (phaseRef.current === "recording") onCameraDrop();
+        return;
+      }
+      // Back from elsewhere with only the preview: restart it if the camera
+      // didn't come back by itself.
+      if (phaseRef.current === "ready" && (track.readyState === "ended" || track.muted)) onCameraDrop();
+    };
+    track.addEventListener("ended", onEnded);
+    track.addEventListener("mute", onMute);
+    document.addEventListener("visibilitychange", onVisibility);
+    unwatchRef.current = () => {
+      track.removeEventListener("ended", onEnded);
+      track.removeEventListener("mute", onMute);
+      document.removeEventListener("visibilitychange", onVisibility);
+      clearInterval(stall);
+      if (muteTimer) clearTimeout(muteTimer);
+    };
+  }
+
+  function onCameraDrop() {
+    const p = phaseRef.current;
+    if (p === "recording") { interruptRecording(); return; }
+    if (p === "ready") void restartPreview();
+  }
+
+  /** The camera dropped mid-recording: stop cleanly, keep what was captured. */
+  function interruptRecording() {
+    if (interruptedRef.current) return;
+    interruptedRef.current = { seconds: capturedSeconds(startedAtRef.current, lastTickRef.current, Date.now()) };
+    if (tickRef.current) { clearInterval(tickRef.current); tickRef.current = null; }
+    unwatchRef.current?.();
+    unwatchRef.current = null;
+    setPhase("stopping");
+    const rec = recorderRef.current;
+    if (rec && rec.state !== "inactive") {
+      try { rec.stop(); return; } catch { /* fall through */ }
+    }
+    finalize(); // the recorder had already stopped (or never will): keep what arrived
+  }
+
+  /** The preview lost the camera: quietly start it again, once. */
+  async function restartPreview() {
+    if (restartingRef.current) return;
+    const tooSoon = lastRestartRef.current > 0 && Date.now() - lastRestartRef.current < RESTART_GIVE_UP_MS;
+    if (tooSoon) { cameraUnreachable(); return; }
+    restartingRef.current = true;
+    lastRestartRef.current = Date.now();
+    stopTracks();
+    try {
+      const stream = await openCamera();
+      if (unmountedRef.current || phaseRef.current !== "ready") { stream.getTracks().forEach((tr) => tr.stop()); return; }
+      if (!stream.getVideoTracks().length) throw new Error("no video track");
+      streamRef.current = stream;
+      watchStream(stream);
+      attachPreview(stream);
+    } catch {
+      cameraUnreachable();
+    } finally {
+      restartingRef.current = false;
+    }
+  }
+
+  function cameraUnreachable() {
+    stopAll();
+    setPhase("idle");
+    setError(t("clipRecorder.cameraUnreachable", "We couldn't reach the camera. Try closing and reopening this screen."));
+  }
+
+  function openCamera(): Promise<MediaStream> {
+    return navigator.mediaDevices.getUserMedia({
+      video: {
+        width: { ideal: 1280 },
+        height: { ideal: 720 },
+        facingMode: { ideal: "environment" },
+      },
+      audio: true,
+    });
+  }
+
+  // ---- Saved clip (on the device, before it uploads) -------------------------
+
+  /** Keep the recorded clip on the device until it uploads. Silent: a full or
+   *  blocked device just means it isn't kept (the Update button then waits). */
+  function saveRecorded(file: File, seconds: number | null) {
+    const key = clipKeyRef.current;
+    setDraftSaved(false);
+    if (!key) return;
+    void saveClipDraft(key, { blob: file, name: file.name, type: file.type, seconds, expiresAt: sitEndsRef.current })
+      .then((ok) => { if (!unmountedRef.current && ok && recordedFileRef.current === file) setDraftSaved(true); });
+  }
+
+  function forgetRecorded() {
+    const key = clipKeyRef.current;
+    if (key) void deleteClipDraft(key);
+    setDraftSaved(false);
+    setSavedAt(null);
+    revokeRecorded();
+    setRecordedUrl(null);
+    recordedFileRef.current = null;
+  }
+
+  // ---- Recording ------------------------------------------------------------
 
   async function start() {
     setError(null);
@@ -298,22 +568,17 @@ export function ClipRecorder({
     const cand = pickCandidate();
     if (!cand) { setError(t("clipRecorder.cantRecord", "Your browser can't record video here. Try Safari on iPhone or Chrome.")); return; }
     candidateRef.current = cand;
+    lastRestartRef.current = 0;
 
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: {
-          width: { ideal: 1280 },
-          height: { ideal: 720 },
-          facingMode: { ideal: "environment" },
-        },
-        audio: true,
-      });
+      const stream = await openCamera();
       if (!stream.getVideoTracks().length) {
         stream.getTracks().forEach((tr) => tr.stop());
         setError(t("clipRecorder.noCamera", "No camera was found. Check that another app isn't using it."));
         return;
       }
       streamRef.current = stream;
+      watchStream(stream);
       setPhase("ready"); // mounts the <video>; the effect above attaches the stream
     } catch (e: any) {
       const denied = e?.name === "NotAllowedError" || e?.name === "SecurityError";
@@ -331,6 +596,7 @@ export function ClipRecorder({
     const cand = candidateRef.current;
     if (!stream || !cand) return;
     chunksRef.current = [];
+    interruptedRef.current = null;
     // Cap the bitrate so a 60s 720p clip stays small (~2.5 Mbps ≈ ~19 MB),
     // keeping uploads fast; Cloudflare transcodes to its own renditions anyway.
     const recOpts: MediaRecorderOptions = { videoBitsPerSecond: 2_500_000 };
@@ -345,14 +611,25 @@ export function ClipRecorder({
     }
     recorderRef.current = rec;
     rec.ondataavailable = (e) => { if (e.data && e.data.size) chunksRef.current.push(e.data); };
-    rec.onerror = () => setError(t("clipRecorder.recordingFailed", "Recording failed. Please try again."));
+    // A camera that drops can also make the recorder error: that's handled as
+    // an interruption (keep what arrived), not a failure.
+    rec.onerror = () => {
+      if (phaseRef.current === "recording") { interruptRecording(); return; }
+      if (!interruptedRef.current) setError(t("clipRecorder.recordingFailed", "Recording failed. Please try again."));
+    };
     rec.onstop = () => finalize();
     rec.start(1000); // 1s chunks so we get data even on early stop
     setElapsed(0);
     setPhase("recording");
     const startedAt = Date.now();
+    startedAtRef.current = startedAt;
+    lastTickRef.current = startedAt;
     tickRef.current = setInterval(() => {
-      const s = Math.floor((Date.now() - startedAt) / 1000);
+      const now = Date.now();
+      // A long gap: the page was suspended (the camera stopped with it).
+      if (now - lastTickRef.current > SUSPEND_GAP_MS && phaseRef.current === "recording") { interruptRecording(); return; }
+      lastTickRef.current = now;
+      const s = Math.floor((now - startedAt) / 1000);
       setElapsed(s);
       if (s >= MAX_SECONDS) stop();
     }, 250);
@@ -366,26 +643,43 @@ export function ClipRecorder({
   }
 
   // Build the captured file and move to the review step (playback) — don't hand
-  // off until the owner confirms.
+  // off until the owner confirms. After a camera drop, ask first.
   function finalize() {
+    const interrupted = interruptedRef.current;
+    interruptedRef.current = null;
     const cand = candidateRef.current!;
     const blob = new Blob(chunksRef.current, { type: cand.contentType });
     chunksRef.current = [];
     if (tickRef.current) { clearInterval(tickRef.current); tickRef.current = null; }
     recorderRef.current = null;
-    streamRef.current?.getTracks().forEach((tr) => tr.stop());
-    streamRef.current = null;
-    if (videoRef.current) videoRef.current.srcObject = null;
+    stopTracks();
+    if (unmountedRef.current) return;
 
+    if (interrupted && !canKeepInterrupted(interrupted.seconds, blob.size > 0)) {
+      // Too little to keep: only "Record again".
+      recordedFileRef.current = null;
+      setCaptured(blob.size ? interrupted.seconds : 0);
+      setPhase("interrupted");
+      return;
+    }
     if (!blob.size) { setPhase("idle"); setError(t("clipRecorder.nothingCaptured", "No video was captured. Please try recording again.")); return; }
     if (blob.size > MAX_BYTES) { setPhase("idle"); setError(t("clipRecorder.recordingTooLarge", "That recording is too large. Please record a shorter clip.")); return; }
 
-    recordedFileRef.current = new File([blob], `${baseName ?? "clip"}.${cand.ext}`, { type: cand.contentType });
+    const file = new File([blob], `${baseName ?? "clip"}.${cand.ext}`, { type: cand.contentType });
+    recordedFileRef.current = file;
     revokeRecorded();
     const url = URL.createObjectURL(blob);
     recordedUrlRef.current = url;
     setRecordedUrl(url);
-    setPhase("review");
+    setSavedAt(null);
+    // Kept on the device straight away, before anyone decides anything.
+    saveRecorded(file, interrupted ? Math.round(interrupted.seconds) : null);
+    if (interrupted) {
+      setCaptured(interrupted.seconds);
+      setPhase("interrupted");
+    } else {
+      setPhase("review");
+    }
   }
 
   // Upload the raw clip to Cloudflare Stream, wait for transcode, hand the
@@ -447,19 +741,21 @@ export function ClipRecorder({
     if (!file) return;
     const ok = await uploadToStream(file, "recorded");
     if (ok) {
-      revokeRecorded();
-      setRecordedUrl(null);
-      recordedFileRef.current = null;
+      // Uploaded: the saved copy on the device goes too.
+      forgetRecorded();
       setPhase("idle");
     }
-    // On failure, stay on the review screen so they can retry "Use this clip".
+    // On failure, stay put (the clip is still saved) so they can retry.
   }
 
   function reRecord() {
-    revokeRecorded();
-    setRecordedUrl(null);
-    recordedFileRef.current = null;
+    forgetRecorded();
     start();
+  }
+
+  function discardSaved() {
+    forgetRecorded();
+    setPhase("idle");
   }
 
   function cancel() {
@@ -520,6 +816,8 @@ export function ClipRecorder({
   // border for the other. Inside a page (`inPage`) the footer's Next/Save is
   // the screen's one sunflower button, so the recorder's own buttons are white.
   const MAIN_BTN = `inline-flex min-h-[52px] min-w-0 items-center justify-center gap-2 rounded-full border-2 border-[#1a3d2e] ${inPage ? "bg-white" : "bg-[#f2b33d]"} px-5 text-[16px] font-[700] text-[#1a3d2e] disabled:opacity-45`;
+  // The recorder's block: scrolled into view with room for a pinned footer.
+  const BLOCK = "flex scroll-mb-[132px] flex-col gap-2.5";
   const SECOND_BTN = "inline-flex min-h-[52px] shrink-0 items-center justify-center gap-1.5 rounded-full border-2 border-[#1a3d2e] bg-white px-4 text-[15px] font-[700] text-[#1a3d2e] disabled:opacity-45";
 
   const noteEl = note && (
@@ -533,6 +831,23 @@ export function ClipRecorder({
       <AlertTriangle className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
       <span>{error}</span>
     </p>
+  );
+
+  // The recorded clip, shaped like the video itself (an upright clip stays
+  // upright), never taller than MAX_FRAME_VH of the screen.
+  const playback = (
+    <div className="mx-auto max-w-full overflow-hidden rounded-[16px] bg-black" style={frameStyle(ratio)}>
+      {recordedUrl && (
+        <video
+          src={recordedUrl}
+          controls
+          playsInline
+          className="size-full object-contain"
+          onLoadedMetadata={(e) => readRatio(e.currentTarget)}
+          onResize={(e) => readRatio(e.currentTarget)}
+        />
+      )}
+    </div>
   );
 
   // Progress states take over the whole control (no record/upload affordances to
@@ -554,12 +869,54 @@ export function ClipRecorder({
     return <UploadProgress label={t("clipRecorder.checking", "Checking video…")} hint={t("clipRecorder.checkingHint", "Making sure the clip is under 60 seconds.")} />;
   }
 
+  if (phase === "interrupted") {
+    const canKeep = canKeepInterrupted(captured, !!recordedFileRef.current);
+    return (
+      <div ref={frameRef} className={BLOCK}>
+        <div role="status" className="rounded-[16px] bg-[#f6e7c4] p-4 text-[15px] font-[700] leading-[1.45] text-[#854f0b]">
+          {canKeep
+            ? t("clipRecorder.cameraPaused", "The camera paused, so we stopped recording. You can keep what you have or try again.")
+            : t("clipRecorder.cameraPausedTooShort", "The camera paused, so we stopped recording. There wasn't enough to keep, so please try again.")}
+        </div>
+        <div className="flex gap-2.5">
+          {canKeep && (
+            <button type="button" onClick={() => setPhase("review")} disabled={disabled} className={`${MAIN_BTN} flex-1`}>
+              <Check className="size-5" aria-hidden="true" /> {t("clipRecorder.keepThisClip", "Keep this clip")}
+            </button>
+          )}
+          <button type="button" onClick={reRecord} disabled={disabled} className={canKeep ? `${SECOND_BTN} min-w-0 flex-1 shrink` : `${MAIN_BTN} flex-1`}>
+            <RotateCcw className="size-4" aria-hidden="true" /> {t("clipRecorder.recordAgain", "Record again")}
+          </button>
+        </div>
+        {errorEl}
+      </div>
+    );
+  }
+
+  if (phase === "saved") {
+    return (
+      <div ref={frameRef} className={BLOCK}>
+        <p role="status" className="m-0 text-[15px] font-[700] leading-[1.4] text-[#1a3d2e]">
+          {t("clipRecorder.savedClip", "We saved your unuploaded clip from {{when}}.", { when: savedWhen(savedAt ?? Date.now(), i18n.language, t) })}
+        </p>
+        {playback}
+        <div className="flex gap-2.5">
+          <button type="button" onClick={useRecorded} disabled={disabled} className={`${MAIN_BTN} flex-1`}>
+            <Upload className="size-5" aria-hidden="true" /> {t("clipRecorder.upload", "Upload")}
+          </button>
+          <button type="button" onClick={discardSaved} disabled={disabled} className={SECOND_BTN}>
+            <X className="size-4" aria-hidden="true" /> {t("draft.discard", "Discard")}
+          </button>
+        </div>
+        {errorEl}
+      </div>
+    );
+  }
+
   if (phase === "review") {
     return (
-      <div className="flex flex-col gap-2.5">
-        <div className="overflow-hidden rounded-[16px] bg-black">
-          {recordedUrl && <video src={recordedUrl} controls playsInline className="aspect-video w-full object-contain" />}
-        </div>
+      <div ref={frameRef} className={BLOCK}>
+        {playback}
         <p className="m-0 flex items-center gap-1.5 text-[13.5px] font-[700] text-[#5f5e5a]"><Check className="size-4" aria-hidden="true" /> {t("clipRecorder.recordedReview", "Clip recorded — review it below.")}</p>
         <div className="flex gap-2.5">
           <button type="button" onClick={useRecorded} disabled={disabled} className={`${MAIN_BTN} flex-1`}>
@@ -611,17 +968,20 @@ export function ClipRecorder({
     );
   }
 
-  // ready | recording | stopping — live camera preview
+  // ready | recording | stopping — live camera preview, shaped like the
+  // camera's actual picture (upright on an upright phone).
   return (
-    <div className="flex flex-col gap-2.5">
-      <div className="relative overflow-hidden rounded-[16px] bg-black">
+    <div ref={frameRef} className={BLOCK}>
+      <div className="relative mx-auto max-w-full overflow-hidden rounded-[16px] bg-black" style={frameStyle(ratio)}>
         <video
           ref={videoRef}
           autoPlay
           playsInline
           muted
           webkit-playsinline="true"
-          className="aspect-video w-full object-contain"
+          className="size-full object-contain"
+          onLoadedMetadata={(e) => readRatio(e.currentTarget)}
+          onResize={(e) => readRatio(e.currentTarget)}
         />
         {phase === "recording" && (
           <div className="absolute left-2 top-2 flex items-center gap-1.5 rounded-full bg-[#a32d2d] px-2.5 py-1 text-[12px] font-[700] text-white">

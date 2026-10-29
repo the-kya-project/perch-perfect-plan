@@ -3522,6 +3522,15 @@
     "clipRecorder.cameraBlocked": {
       "stamp": "5a45e9d697fd6caa"
     },
+    "clipRecorder.cameraPaused": {
+      "stamp": "292b1c43cbc1dcfa"
+    },
+    "clipRecorder.cameraPausedTooShort": {
+      "stamp": "b8debfef53536379"
+    },
+    "clipRecorder.cameraUnreachable": {
+      "stamp": "4ac3cfc611a0383e"
+    },
     "clipRecorder.cancel": {
       "stamp": "06c80f8b6f9f2b3b"
     },
@@ -3555,6 +3564,9 @@
     "clipRecorder.keepScreenOpen": {
       "stamp": "99d568cb7a94e528"
     },
+    "clipRecorder.keepThisClip": {
+      "stamp": "b305d5c49c0a4818"
+    },
     "clipRecorder.livePreview": {
       "stamp": "0bf27f3d713262a4"
     },
@@ -3572,6 +3584,9 @@
     },
     "clipRecorder.record": {
       "stamp": "e74904bc8b002db1"
+    },
+    "clipRecorder.recordAgain": {
+      "stamp": "3fe5d9423114e3ac"
     },
     "clipRecorder.recordedReview": {
       "stamp": "50c24295be4389dc"
@@ -3593,6 +3608,9 @@
     },
     "clipRecorder.reRecord": {
       "stamp": "397e4ca81533bef6"
+    },
+    "clipRecorder.savedClip": {
+      "stamp": "254e31b90ab58fd7"
     },
     "clipRecorder.serviceError": {
       "stamp": "9ce09b9881f13a17"
