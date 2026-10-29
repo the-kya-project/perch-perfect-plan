@@ -1,9 +1,9 @@
 diff --git a/node_modules/@capgo/capacitor-social-login/ios/Sources/SocialLoginPlugin/AppleProvider.swift b/node_modules/@capgo/capacitor-social-login/ios/Sources/SocialLoginPlugin/AppleProvider.swift
-index 87e76b9..b53ab46 100644
+index f322d74..606ce0b 100644
 --- a/node_modules/@capgo/capacitor-social-login/ios/Sources/SocialLoginPlugin/AppleProvider.swift
 +++ b/node_modules/@capgo/capacitor-social-login/ios/Sources/SocialLoginPlugin/AppleProvider.swift
-@@ -106,6 +106,12 @@ extension AppleProviderError: LocalizedError {
- class AppleProvider: NSObject, ASAuthorizationControllerDelegate, ASAuthorizationControllerPresentationContextProviding {
+@@ -149,6 +149,12 @@ class AppleProvider: NSObject, ASAuthorizationControllerDelegate, ASAuthorizatio
+     weak var hostViewController: UIViewController?
      private var completion: ((Result<AppleProviderResponse, Error>) -> Void)?
  
 +    // ASAuthorizationController does not reliably keep itself alive for the
@@ -15,15 +15,15 @@ index 87e76b9..b53ab46 100644
      // Instance variables
      var idToken: String?
      var refreshToken: String?
-@@ -213,6 +219,7 @@ class AppleProvider: NSObject, ASAuthorizationControllerDelegate, ASAuthorizatio
-         let authorizationController = ASAuthorizationController(authorizationRequests: [request])
-         authorizationController.delegate = self
-         authorizationController.presentationContextProvider = self
-+        self.authorizationControllerRef = authorizationController
-         authorizationController.performRequests()
+@@ -256,6 +262,7 @@ class AppleProvider: NSObject, ASAuthorizationControllerDelegate, ASAuthorizatio
+             let authorizationController = ASAuthorizationController(authorizationRequests: [request])
+             authorizationController.delegate = self
+             authorizationController.presentationContextProvider = self
++            self.authorizationControllerRef = authorizationController
+             authorizationController.performRequests()
+         }
      }
- 
-@@ -323,6 +330,10 @@ class AppleProvider: NSObject, ASAuthorizationControllerDelegate, ASAuthorizatio
+@@ -371,6 +378,10 @@ class AppleProvider: NSObject, ASAuthorizationControllerDelegate, ASAuthorizatio
                      self.completion?(.failure(AppleProviderError.specificJsonWritingError(error)))
                  }
              }
