@@ -100,6 +100,11 @@ Vercel's Preview scope holds **no** third-party production credentials: no Brevo
   `git checkout`, `reset`, `stash` or rebase, run `git status` and stop if there are
   modified or untracked files you did not create — an uncommitted binary asset that
   reverts is invisible in a diff summary.
+- **One new, uniquely named branch per piece of work.** Start each change on a fresh
+  branch from the latest `main`. Never reuse a branch name that has already been
+  merged, even when it still exists on GitHub (cloud sessions often can't delete a
+  merged branch). Reusing one drags the old, already-squashed commits back in and
+  would need a force-push to clean up.
 - Static assets must live in `public/` and be referenced by root path, e.g. `/kya_parrot_icon_teal.png`. Do not use Lovable `__l5e/...asset.json` pointers — they resolve only on Lovable's host and 404 in production. Some dead `src/assets/*.png.asset.json` files remain from the Lovable origin and can be ignored or removed.
 - Product copy uses sentence case for titles, headings, and subheadings (only the first letter capitalized). Avoid the phrasing "it's not about X, it's about Y."
 - **A new release never reloads an open page on its own.** The service worker (`src/sw.ts`) waits until the page sends `SKIP_WAITING`. `src/lib/sw-register.ts` sends it only at a quiet moment with no form in progress (a fresh open, with no reload, or a return after 30+ minutes away, with a reload). Otherwise `UpdateBanner` shows "A new version is ready", and its Update saves drafts first. A form registers itself with `useFormInProgress` (`src/lib/formsInProgress.ts`). The full health check and the weight entry keep local drafts (`src/lib/drafts.ts`), scoped to account + bird and expiring after 24 hours. A sitter's check keeps one scoped to the sit link + bird instead (the key holds a hash of the token, never the token). It ends when the sit does (`token_expires_at`) or after 24 hours, whichever comes first, and is removed when the link shows as expired, revoked or invalid. `npm run test:drafts` pins the storage rules.
