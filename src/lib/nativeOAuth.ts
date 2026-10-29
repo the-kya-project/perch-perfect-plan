@@ -166,7 +166,7 @@ class NativeLoginTimeout extends Error {
  * ASAuthorizationAppleIDCredential. Either case leaves this promise pending
  * forever: no toast, no analytics, and the user just sits on an unchanged
  * sign-in screen -- which is exactly how App Review saw it. We patch the plugin
- * (patches/@capgo+capacitor-social-login+8.3.39.patch), but keep this so a hang
+ * (patches/@capgo+capacitor-social-login+8.7.5.patch), but keep this so a hang
  * can never again be silent and untracked.
  */
 function withNativeTimeout<T>(work: Promise<T>): Promise<T> {
