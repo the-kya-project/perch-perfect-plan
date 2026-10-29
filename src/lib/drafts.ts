@@ -15,7 +15,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { notifyFormsChanged, useFormInProgress } from "./formsInProgress";
-import { deletePhoto, draftKey, loadPhoto, readDraft, removeDraft, savePhoto, sweepExpiredDrafts, writeDraftText } from "./draftStore";
+import { deletePhoto, draftKey, loadPhoto, sitDraftKey, readDraft, removeDraft, savePhoto, sweepExpiredDrafts, writeDraftText } from "./draftStore";
 
 export { DRAFT_TTL_MS } from "./draftStore";
 
@@ -52,7 +52,7 @@ export type Restored<T> = { data: T; photo: string | null; savedAt: number };
 /**
  * Keep a form's input in a local draft.
  *
- * - On mount, a saved draft for this account + bird + kind is handed to
+ * - On mount, a saved draft for this account (or sit) + bird + kind is handed to
  *   `onRestore` (once), and `restoredAt` is set so the form can show the
  *   "We saved your unfinished …" line with Continue / Discard.
  * - After that, `data` (and `photo`) are saved 500 ms after the last change,
@@ -60,13 +60,16 @@ export type Restored<T> = { data: T; photo: string | null; savedAt: number };
  * - `empty` = nothing worth keeping: the draft is removed instead.
  * - clear() after a successful save; discard() when the owner says so.
  *
- * `enabled: false` (e.g. the sitter's check, which has no account) turns all
- * of it off.
+ * `sit` scopes the draft to a sit link instead of the signed-in account (a
+ * sitter has none) and ends it when the sit ends, if that's sooner than 24
+ * hours. `enabled: false` turns all of it off.
  */
-export function useFormDraft<T>({ kind, birdId, enabled = true, data, photo = null, empty, onRestore }: {
+export function useFormDraft<T>({ kind, birdId, enabled = true, sit, data, photo = null, empty, onRestore }: {
   kind: string;
   birdId: string;
   enabled?: boolean;
+  /** Sitter: the sit link's token and when the sit ends (epoch ms, or null). */
+  sit?: { token: string; endsAt: number | null };
   data: T;
   photo?: string | null;
   empty: boolean;
@@ -75,7 +78,15 @@ export function useFormDraft<T>({ kind, birdId, enabled = true, data, photo = nu
   onRestore: (r: Restored<T>) => boolean | void;
 }) {
   const userId = useLocalUserId();
-  const key = enabled && userId ? draftKey({ userId, birdId, kind }) : null;
+  const sitToken = sit?.token ?? null;
+  const sitEndsAt = sit?.endsAt ?? null;
+  const key = !enabled
+    ? null
+    : sitToken
+      ? sitDraftKey({ token: sitToken, birdId, kind })
+      : userId ? draftKey({ userId, birdId, kind }) : null;
+  const endsAtRef = useRef(sitEndsAt);
+  endsAtRef.current = sitEndsAt;
   // Writes wait until the restore check has run: otherwise the form's empty
   // first render would overwrite the very draft we're about to offer.
   const [ready, setReady] = useState(false);
@@ -97,6 +108,10 @@ export function useFormDraft<T>({ kind, birdId, enabled = true, data, photo = nu
     let live = true;
     setReady(false);
     sweepExpiredDrafts();
+    // The sit has ended (it can end sooner than the stored date, if the owner
+    // shortened it): drop the draft and show nothing.
+    const ends = endsAtRef.current;
+    if (typeof ends === "number" && Date.now() >= ends) { removeDraft(key); setReady(true); return; }
     const saved = readDraft<T>(key);
     if (!saved) { setReady(true); return; }
     (async () => {
@@ -124,7 +139,7 @@ export function useFormDraft<T>({ kind, birdId, enabled = true, data, photo = nu
     }
     const json = JSON.stringify(d);
     if (json !== writtenRef.current || !!p !== !!photoWrittenRef.current) {
-      if (writeDraftText(key, { savedAt: Date.now(), data: d, hasPhoto: !!p })) writtenRef.current = json;
+      if (writeDraftText(key, { savedAt: Date.now(), data: d, hasPhoto: !!p, expiresAt: endsAtRef.current })) writtenRef.current = json;
     }
     if (p !== photoWrittenRef.current) {
       const gen = genRef.current;

@@ -97,7 +97,7 @@ function weighLine(t: TFunction, sex: Sex): string {
   return t("fullCheck.weighLine_other", "Optional. It goes straight to their weight history.");
 }
 
-export function FullHealthCheck({ birdId, name, sex, vet, submitting, onSubmit, onLeave, variant = "owner", extra, ownerName }: {
+export function FullHealthCheck({ birdId, name, sex, vet, submitting, onSubmit, onLeave, variant = "owner", extra, ownerName, draftSit }: {
   birdId: string;
   name: string;
   /** The birds.sex column as stored ("Male" / "Female" / null). */
@@ -121,6 +121,9 @@ export function FullHealthCheck({ birdId, name, sex, vet, submitting, onSubmit, 
   extra?: ReactNode;
   /** Sitter variant: the owner's first name ("Call [owner]'s avian vet"). */
   ownerName?: string;
+  /** Sitter variant: keep a local draft for this sit link, ending when the
+   *  sit does (epoch ms). Omitted (e.g. an owner's preview) = no draft. */
+  draftSit?: { token: string; endsAt: number | null };
 }) {
   const { t } = useTranslation();
   const sx = sexOf(sex);
@@ -139,13 +142,15 @@ export function FullHealthCheck({ birdId, name, sex, vet, submitting, onSubmit, 
   const weightInvalid = parsedWeight === undefined;
   const dirty = answered > 0 || Object.values(itemNotes).some((v) => (v ?? "").trim()) || !!notes.trim() || !!grams.trim() || !!photo;
 
-  // The owner's check survives a reload (an app update, the OS reclaiming the
-  // page): saved locally as they go, offered back on reopen, never submitted on
-  // its own. Not for sitters: a sit link has no account to scope it to.
+  // The check survives a reload (an app update, the OS reclaiming the page):
+  // saved locally as they go, offered back on reopen, never submitted on its
+  // own. An owner's draft belongs to their account; a sitter's to the sit link
+  // (they have no account), and it ends with the sit.
   const draft = useFormDraft<CheckDraft>({
     kind: "full-check",
     birdId,
-    enabled: !sitter,
+    enabled: !sitter || !!draftSit,
+    sit: sitter ? draftSit : undefined,
     data: { answers, itemNotes, notes, grams, meal },
     photo,
     empty: !dirty,
@@ -230,7 +235,16 @@ export function FullHealthCheck({ birdId, name, sex, vet, submitting, onSubmit, 
       <main className={`relative mx-auto -mt-[26px] flex max-w-md flex-col rounded-t-[26px] bg-white px-5 pt-3 ${TASK_FOOTER_SPACE}`} style={{ color: K.forest }}>
         {!sitter && <MemberContextBanner birdId={birdId} className="mt-2" />}
         {draft.restoredAt != null && (
-          <DraftRestoredNote className="mt-3" what="check" savedAt={draft.restoredAt} onContinue={draft.dismiss} onDiscard={discardDraft} />
+          <DraftRestoredNote
+            className="mt-3"
+            what="check"
+            savedAt={draft.restoredAt}
+            hint={sitter ? (ownerName
+              ? t("draft.restoredHintSitter", "{{owner}} won't see it until you save it.", { owner: ownerName })
+              : t("draft.restoredHintSitterNoName", "It won't be shared until you save it.")) : undefined}
+            onContinue={draft.dismiss}
+            onDiscard={discardDraft}
+          />
         )}
 
         {SCAN_FIELDS.map((f, i) => {

@@ -1,10 +1,12 @@
 // "A new version is ready. Update when you're done." Shown only while a new
 // build is waiting AND a form is in progress (sw-register.ts applies updates
 // quietly otherwise). Update saves every draft, then reloads. If something on
-// screen can't be kept as a draft (a clip mid-upload, a sitter's check), the
-// button waits until it's finished.
+// screen can't be kept as a draft (a clip mid-upload), the button waits until
+// it's finished.
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { useLocation } from "@tanstack/react-router";
+import { sitterI18n } from "@/lib/i18n";
 import { Loader2 } from "lucide-react";
 import { K } from "@/components/kya";
 import { subscribeUpdate, updateIsReady, updateNow } from "@/lib/sw-register";
@@ -15,7 +17,10 @@ function read() {
 }
 
 export function UpdateBanner() {
-  const { t } = useTranslation();
+  // Mounted at the root, outside the sitter page's own language: on a sit link
+  // use the sitter's (their toggle can differ from the browser's).
+  const onSitLink = useLocation({ select: (l) => l.pathname.startsWith("/sitter/") });
+  const { t } = useTranslation(undefined, onSitLink && sitterI18n.isInitialized ? { i18n: sitterI18n } : undefined);
   // Starts hidden on the server and the first client render (no hydration
   // difference); the real state arrives from the subscriptions after mount.
   const [state, setState] = useState({ ready: false, busy: false, blocked: false });

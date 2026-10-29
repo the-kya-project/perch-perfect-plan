@@ -4,8 +4,9 @@
  *
  *   npm run test:drafts
  *
- * Pins src/lib/draftStore.ts: a draft is scoped to one account AND one bird,
- * expires after 24 hours, and broken storage (private mode, a full quota, no
+ * Pins src/lib/draftStore.ts: an owner's draft is scoped to one account AND
+ * one bird, a sitter's to one sit link AND one bird; a draft expires after 24
+ * hours, and a sitter's also when the sit ends, whichever is first; and broken storage (private mode, a full quota, no
  * IndexedDB) means "no draft" rather than an error. Pins
  * src/lib/formsInProgress.ts: only forms that can't keep a draft hold the
  * Update button back, and flushAllDrafts never waits on a stuck save.
@@ -14,7 +15,7 @@
  * failure so it can gate a merge.
  */
 import assert from "node:assert/strict";
-import { DRAFT_TTL_MS, deletePhoto, draftKey, loadPhoto, readDraft, removeDraft, savePhoto, sweepExpiredDrafts, writeDraftText } from "@/lib/draftStore";
+import { DRAFT_TTL_MS, deletePhoto, draftKey, loadPhoto, readDraft, removeDraft, removeSitDrafts, savePhoto, sitDraftKey, sitTag, sweepExpiredDrafts, writeDraftText } from "@/lib/draftStore";
 import { flushAllDrafts, formInProgress, registerForm, unsavedWorkWithoutDraft } from "@/lib/formsInProgress";
 
 let passed = 0;
@@ -104,6 +105,79 @@ await check("no IndexedDB: photo calls resolve quietly", async () => {
   assert.equal(await savePhoto(owner, "data:image/jpeg;base64,AAAA"), false);
   assert.equal(await loadPhoto(owner), null);
   await deletePhoto(owner);
+});
+
+// ── Sitter drafts: scoped to the sit link + bird, ending with the sit ──
+
+const TOKEN_A = "a1b2c3d4e5f60718293a4b5c6d7e8f90a1b2c3d4e5f60718293a4b5c6d7e8f90";
+const TOKEN_B = "f0e9d8c7b6a5948372615049382716051f0e9d8c7b6a5948372615049382716";
+const sitA = sitDraftKey({ token: TOKEN_A, birdId: "bird-kiwi", kind: "full-check" });
+const sitB = sitDraftKey({ token: TOKEN_B, birdId: "bird-kiwi", kind: "full-check" });
+const sitAMango = sitDraftKey({ token: TOKEN_A, birdId: "bird-mango", kind: "full-check" });
+
+await check("sit keys differ by sit and by bird, and never match an owner key", () => {
+  assert.notEqual(sitA, sitB);
+  assert.notEqual(sitA, sitAMango);
+  assert.notEqual(sitA, owner);
+  assert.ok(sitA.includes(":sit-"));
+});
+
+await check("a sit key is stable and doesn't contain the link token", () => {
+  assert.equal(sitA, sitDraftKey({ token: TOKEN_A, birdId: "bird-kiwi", kind: "full-check" }));
+  assert.equal(sitTag(TOKEN_A), sitTag(TOKEN_A));
+  assert.ok(!sitA.includes(TOKEN_A));
+  assert.ok(!sitA.includes(TOKEN_A.slice(0, 12)));
+});
+
+await check("two sits on one phone don't share a draft", () => {
+  installStorage();
+  writeDraftText(sitA, { savedAt: NOW, data: { notes: "sit A" }, expiresAt: NOW + 3 * DRAFT_TTL_MS });
+  assert.equal(readDraft(sitB, NOW), null);
+  assert.equal(readDraft(sitAMango, NOW), null);
+  assert.deepEqual(readDraft<{ notes: string }>(sitA, NOW)?.data, { notes: "sit A" });
+});
+
+await check("a sitter draft ends when the sit ends, even inside 24 hours", () => {
+  const m = installStorage();
+  const sitEnds = NOW + 2 * 3600e3; // the sit ends in two hours
+  writeDraftText(sitA, { savedAt: NOW, data: {}, expiresAt: sitEnds });
+  assert.ok(readDraft(sitA, sitEnds - 1));
+  assert.equal(readDraft(sitA, sitEnds), null);
+  assert.equal(m.has(sitA), false, "removed, not just hidden");
+});
+
+await check("a sitter draft still ends after 24 hours when the sit runs longer", () => {
+  installStorage();
+  writeDraftText(sitA, { savedAt: NOW, data: {}, expiresAt: NOW + 5 * DRAFT_TTL_MS });
+  assert.ok(readDraft(sitA, NOW + DRAFT_TTL_MS - 1));
+  assert.equal(readDraft(sitA, NOW + DRAFT_TTL_MS), null);
+});
+
+await check("sweep removes a draft whose sit has ended, without opening the sit", () => {
+  const m = installStorage();
+  writeDraftText(sitA, { savedAt: NOW - 1000, data: {}, expiresAt: NOW - 1 });
+  writeDraftText(sitB, { savedAt: NOW - 1000, data: {}, expiresAt: NOW + 3600e3 });
+  sweepExpiredDrafts(NOW);
+  assert.equal(m.has(sitA), false);
+  assert.equal(m.has(sitB), true);
+});
+
+await check("an expired link removes that sit's drafts only", () => {
+  const m = installStorage();
+  writeDraftText(sitA, { savedAt: NOW, data: {} });
+  writeDraftText(sitAMango, { savedAt: NOW, data: {} });
+  writeDraftText(sitB, { savedAt: NOW, data: {} });
+  writeDraftText(owner, { savedAt: NOW, data: {} });
+  removeSitDrafts(TOKEN_A);
+  assert.equal(m.has(sitA), false);
+  assert.equal(m.has(sitAMango), false);
+  assert.equal(m.has(sitB), true);
+  assert.equal(m.has(owner), true);
+});
+
+await check("blocked storage: removing a sit's drafts doesn't throw", () => {
+  installStorage(true);
+  removeSitDrafts(TOKEN_A);
 });
 
 await check("forms: nothing registered = nothing in progress", () => {

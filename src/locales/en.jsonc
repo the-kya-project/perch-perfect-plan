@@ -1429,6 +1429,8 @@
   "draft.discard": "Discard",
   "draft.restoredCheck": "We saved your unfinished check from {{when}}.",
   "draft.restoredHintCheck": "It isn't in the health log yet.",
+  "draft.restoredHintSitter": "{{owner}} won't see it until you save it.",
+  "draft.restoredHintSitterNoName": "It won't be shared until you save it.",
   "draft.restoredHintWeight": "It isn't in the weight history yet.",
   "draft.restoredWeight": "We saved your unfinished weight from {{when}}.",
   "draft.yesterdayAt": "yesterday at {{time}}",

@@ -17,8 +17,16 @@ import { useTranslation } from "react-i18next";
 import type { TFunction } from "i18next";
 import { friendlyError } from "@/lib/errorMessage";
 import { pickVet } from "@/lib/emergency";
-import { ownerFirstName } from "@/components/sitter/sitterShared";
+import { isBirdPreview, ownerFirstName } from "@/components/sitter/sitterShared";
 import { localDateISO } from "@/lib/localDay";
+
+/** When the sit ends: the link's expiry, the end of its last day in the
+ *  owner's time zone (enforce_sit_token_rules). Null if unknown. */
+function sitEndsAt(sit: unknown): number | null {
+  const v = (sit as { token_expires_at?: string | null } | null)?.token_expires_at;
+  const ms = v ? Date.parse(v) : NaN;
+  return Number.isFinite(ms) ? ms : null;
+}
 
 export const Route = createFileRoute("/sitter/$token/scan")({
   component: ScanPage,
@@ -117,6 +125,7 @@ function ScanPage() {
 
   // One vet record (avian, else after-hours), so the name and number match.
   const vet = pickVet(ctx.contacts as any);
+  const preview = isOwnerPreview() || isBirdPreview(ctx);
 
   return (
     <>
@@ -131,7 +140,11 @@ function ScanPage() {
           vet={vet}
           ownerName={ownerFirstName(ctx, t)}
           submitting={m.isPending}
-          onSubmit={(p) => m.mutate(p)}
+          // Resolves true once saved, which drops the local draft.
+          onSubmit={(p) => m.mutateAsync(p).then(() => true, () => false)}
+          // The sitter's draft is kept per sit link and bird, and ends with the
+          // sit. Not in a preview: nothing there is saved anyway.
+          draftSit={preview ? undefined : { token, endsAt: sitEndsAt(ctx.sit) }}
           onLeave={() => toToday()}
           extra={
             <button

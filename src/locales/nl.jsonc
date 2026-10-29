@@ -2863,6 +2863,10 @@
   "draft.restoredCheck": "We hebben je onafgemaakte check van {{when}} bewaard.",
   // It isn't in the health log yet.
   "draft.restoredHintCheck": "Hij staat nog niet in het gezondheidslogboek.",
+  // {{owner}} won't see it until you save it.
+  "draft.restoredHintSitter": "{{owner}} ziet het pas als je het opslaat.",
+  // It won't be shared until you save it.
+  "draft.restoredHintSitterNoName": "Het wordt pas gedeeld als je het opslaat.",
   // It isn't in the weight history yet.
   "draft.restoredHintWeight": "Het staat nog niet in de gewichtsgeschiedenis.",
   // We saved your unfinished weight from {{when}}.

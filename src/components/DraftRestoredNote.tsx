@@ -13,10 +13,12 @@ function when(savedAt: number, lang: string, t: ReturnType<typeof useTranslation
   return t("draft.yesterdayAt", "yesterday at {{time}}", { time });
 }
 
-export function DraftRestoredNote({ savedAt, what, onContinue, onDiscard, className = "" }: {
+export function DraftRestoredNote({ savedAt, what, hint, onContinue, onDiscard, className = "" }: {
   savedAt: number;
   /** "check" or "weight": picks the line's wording. */
   what: "check" | "weight";
+  /** Replaces the second line (the sitter's says the owner can't see it yet). */
+  hint?: string;
   onContinue: () => void;
   onDiscard: () => void;
   className?: string;
@@ -34,9 +36,9 @@ export function DraftRestoredNote({ savedAt, what, onContinue, onDiscard, classN
     >
       <p className="m-0 text-[15px] font-[700] leading-[1.4]">{line}</p>
       <p className="m-0 -mt-1.5 text-[13.5px] leading-[1.45]" style={{ color: K.quiet }}>
-        {what === "check"
+        {hint ?? (what === "check"
           ? t("draft.restoredHintCheck", "It isn't in the health log yet.")
-          : t("draft.restoredHintWeight", "It isn't in the weight history yet.")}
+          : t("draft.restoredHintWeight", "It isn't in the weight history yet."))}
       </p>
       <div className="grid grid-cols-2 gap-2">
         <button

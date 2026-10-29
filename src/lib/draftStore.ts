@@ -10,14 +10,40 @@ const DB_NAME = "kya-drafts";
 const STORE = "photos";
 
 export type DraftScope = { userId: string; birdId: string; kind: string };
+/** A sitter has no account: their drafts belong to the sit link and the bird. */
+export type SitDraftScope = { token: string; birdId: string; kind: string };
 
-export type Stored<T> = { savedAt: number; data: T; hasPhoto?: boolean };
+/** `expiresAt`: a hard end besides the 24 hours (a sitter draft's sit end). */
+export type Stored<T> = { savedAt: number; data: T; hasPhoto?: boolean; expiresAt?: number | null };
 
 export function draftKey(s: DraftScope): string {
   return `${PREFIX}${s.userId}:${s.birdId}:${s.kind}`;
 }
 
-function fresh(savedAt: unknown, now = Date.now()): boolean {
+/** Short, stable, non-reversible tag for a sit link token, so the key names
+ *  the sit without copying the link's secret into storage. Not security: it
+ *  only has to keep two sits on one phone apart. (cyrb53) */
+export function sitTag(token: string): string {
+  let h1 = 0xdeadbeef;
+  let h2 = 0x41c6ce57;
+  for (let i = 0; i < token.length; i++) {
+    const c = token.charCodeAt(i);
+    h1 = Math.imul(h1 ^ c, 2654435761);
+    h2 = Math.imul(h2 ^ c, 1597334677);
+  }
+  h1 = Math.imul(h1 ^ (h1 >>> 16), 2246822507) ^ Math.imul(h2 ^ (h2 >>> 13), 3266489909);
+  h2 = Math.imul(h2 ^ (h2 >>> 16), 2246822507) ^ Math.imul(h1 ^ (h1 >>> 13), 3266489909);
+  return (4294967296 * (2097151 & h2) + (h1 >>> 0)).toString(36);
+}
+
+/** Owner keys start with the account's uuid; sit keys with "sit-", so the two
+ *  can never collide. */
+export function sitDraftKey(s: SitDraftScope): string {
+  return `${PREFIX}sit-${sitTag(s.token)}:${s.birdId}:${s.kind}`;
+}
+
+function fresh(savedAt: unknown, now = Date.now(), expiresAt?: number | null): boolean {
+  if (typeof expiresAt === "number" && now >= expiresAt) return false;
   return typeof savedAt === "number" && now - savedAt >= 0 && now - savedAt < DRAFT_TTL_MS;
 }
 
@@ -28,7 +54,7 @@ export function readDraft<T>(key: string, now = Date.now()): Stored<T> | null {
     const raw = localStorage.getItem(key);
     if (!raw) return null;
     const parsed = JSON.parse(raw) as Stored<T>;
-    if (!parsed || !fresh(parsed.savedAt, now)) {
+    if (!parsed || !fresh(parsed.savedAt, now, parsed.expiresAt)) {
       removeDraft(key);
       return null;
     }
@@ -61,12 +87,25 @@ export function sweepExpiredDrafts(now = Date.now()) {
       if (!k || !k.startsWith(PREFIX)) continue;
       try {
         const v = JSON.parse(localStorage.getItem(k) ?? "null") as Stored<unknown> | null;
-        if (!v || !fresh(v.savedAt, now)) stale.push(k);
+        if (!v || !fresh(v.savedAt, now, v.expiresAt)) stale.push(k);
       } catch {
         stale.push(k);
       }
     }
     stale.forEach(removeDraft);
+  } catch { /* ignore */ }
+}
+
+/** Remove every draft of one sit link (its link has expired or was revoked). */
+export function removeSitDrafts(token: string) {
+  try {
+    const prefix = `${PREFIX}sit-${sitTag(token)}:`;
+    const keys: string[] = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      if (k && k.startsWith(prefix)) keys.push(k);
+    }
+    keys.forEach(removeDraft);
   } catch { /* ignore */ }
 }
 
