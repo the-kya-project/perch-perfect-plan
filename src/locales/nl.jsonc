@@ -2351,6 +2351,12 @@
   "clipRecorder.cameraAccessFailed": "Kon de camera niet openen. Controleer de toestemmingen van je browser.",
   // Camera access was blocked. Allow camera access in your browser settings, then try again.
   "clipRecorder.cameraBlocked": "Toegang tot de camera is geblokkeerd. Sta cameratoegang toe in de instellingen van je browser en probeer het opnieuw.",
+  // The camera paused, so we stopped recording. You can keep what you have or try again.
+  "clipRecorder.cameraPaused": "De camera pauzeerde, dus we zijn gestopt met opnemen. Je kunt houden wat je hebt of het opnieuw proberen.",
+  // The camera paused, so we stopped recording. There wasn't enough to keep, so please try again.
+  "clipRecorder.cameraPausedTooShort": "De camera pauzeerde, dus we zijn gestopt met opnemen. Er was te weinig om te bewaren, dus probeer het opnieuw.",
+  // We couldn't reach the camera. Try closing and reopening this screen.
+  "clipRecorder.cameraUnreachable": "We konden de camera niet bereiken. Sluit dit scherm en open het opnieuw.",
   // Cancel
   "clipRecorder.cancel": "Annuleren",
   // Cancel upload
@@ -2373,6 +2379,8 @@
   "clipRecorder.gettingItReady": "Bezig met klaarmaken…",
   // Keep this screen open. You can move on once it's done.
   "clipRecorder.keepScreenOpen": "Houd dit scherm open. Je kunt verder als het klaar is.",
+  // Keep this clip
+  "clipRecorder.keepThisClip": "Deze clip houden",
   // Live preview
   "clipRecorder.livePreview": "Live voorbeeld",
   // No camera was found. Check that another app isn't using it.
@@ -2385,6 +2393,8 @@
   "clipRecorder.previewUnavailable": "Clips zijn niet beschikbaar in voorbeeldlinks.",
   // Record
   "clipRecorder.record": "Opnemen",
+  // Record again
+  "clipRecorder.recordAgain": "Opnieuw opnemen",
   // Clip recorded — review it below.
   "clipRecorder.recordedReview": "Clip opgenomen — bekijk hem hieronder.",
   // Couldn't start the recorder.
@@ -2399,6 +2409,8 @@
   "clipRecorder.recordingTooLarge": "Die opname is te groot. Neem een kortere clip op.",
   // Re-record
   "clipRecorder.reRecord": "Opnieuw opnemen",
+  // We saved your unuploaded clip from {{when}}.
+  "clipRecorder.savedClip": "We hebben je niet-geüploade clip van {{when}} bewaard.",
   // Video service error — {{detail}}
   "clipRecorder.serviceError": "Fout bij de videodienst — {{detail}}",
   // Start recording

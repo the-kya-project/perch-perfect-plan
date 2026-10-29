@@ -11,11 +11,17 @@
  * src/lib/formsInProgress.ts: only forms that can't keep a draft hold the
  * Update button back, and flushAllDrafts never waits on a stuck save.
  *
+ * Recorded clips (ClipRecorder): saved under the same account/sit + bird keys
+ * plus the clip slot, with the same expiry; skipped when the device has no
+ * room; and src/lib/clipCapture.ts decides what a camera drop keeps and when
+ * an app update may go ahead.
+ *
  * Plain asserts, since the repo carries no test runner. Exits non-zero on
  * failure so it can gate a merge.
  */
 import assert from "node:assert/strict";
-import { DRAFT_TTL_MS, deletePhoto, draftKey, loadPhoto, readDraft, removeDraft, removeSitDrafts, savePhoto, sitDraftKey, sitTag, sweepExpiredDrafts, writeDraftText } from "@/lib/draftStore";
+import { DRAFT_TTL_MS, clipFitsStorage, deleteClipDraft, deletePhoto, draftKey, isDraftFresh, loadClipDraft, loadPhoto, readDraft, removeDraft, removeSitDrafts, saveClipDraft, savePhoto, sitDraftKey, sitTag, sweepExpiredClipDrafts, sweepExpiredDrafts, writeDraftText } from "@/lib/draftStore";
+import { MIN_KEEP_SECONDS, SUSPEND_GAP_MS, canKeepInterrupted, capturedSeconds, recorderKeepable } from "@/lib/clipCapture";
 import { flushAllDrafts, formInProgress, registerForm, unsavedWorkWithoutDraft } from "@/lib/formsInProgress";
 
 let passed = 0;
@@ -178,6 +184,79 @@ await check("an expired link removes that sit's drafts only", () => {
 await check("blocked storage: removing a sit's drafts doesn't throw", () => {
   installStorage(true);
   removeSitDrafts(TOKEN_A);
+});
+
+// ── Recorded clips ──
+
+const ownerBaseline = draftKey({ userId: "user-owner", birdId: "bird-kiwi", kind: "clip:baseline" });
+const ownerTip = draftKey({ userId: "user-owner", birdId: "bird-kiwi", kind: "clip:tip:stepUp" });
+const householdBaseline = draftKey({ userId: "user-household", birdId: "bird-kiwi", kind: "clip:baseline" });
+const ownerMangoBaseline = draftKey({ userId: "user-owner", birdId: "bird-mango", kind: "clip:baseline" });
+const sitClipA = sitDraftKey({ token: TOKEN_A, birdId: "bird-kiwi", kind: "clip:baseline" });
+const sitClipB = sitDraftKey({ token: TOKEN_B, birdId: "bird-kiwi", kind: "clip:baseline" });
+
+await check("clip keys differ by account, bird, clip slot and sit", () => {
+  const keys = [ownerBaseline, ownerTip, householdBaseline, ownerMangoBaseline, sitClipA, sitClipB];
+  assert.equal(new Set(keys).size, keys.length);
+  assert.notEqual(ownerBaseline, owner, "a clip never shares a key with the health check");
+  assert.ok(!sitClipA.includes(TOKEN_A), "no link token in a clip key");
+});
+
+await check("a saved clip keeps 24 hours, a sitter's also ends with the sit", () => {
+  assert.ok(isDraftFresh(NOW, NOW + DRAFT_TTL_MS - 1));
+  assert.equal(isDraftFresh(NOW, NOW + DRAFT_TTL_MS), false);
+  const sitEnds = NOW + 3600e3;
+  assert.ok(isDraftFresh(NOW, sitEnds - 1, sitEnds));
+  assert.equal(isDraftFresh(NOW, sitEnds, sitEnds), false);
+  assert.equal(isDraftFresh(NOW + 60_000, NOW), false, "dated in the future");
+});
+
+await check("a clip too big for the device's free space isn't saved", () => {
+  const MB = 1024 * 1024;
+  assert.equal(clipFitsStorage(20 * MB, { quota: 100 * MB, usage: 90 * MB }), false);
+  assert.equal(clipFitsStorage(20 * MB, { quota: 1000 * MB, usage: 100 * MB }), true);
+  assert.equal(clipFitsStorage(20 * MB, { quota: 40 * MB, usage: 0 }), true, "1.5x plus 5 MB headroom fits");
+  assert.equal(clipFitsStorage(20 * MB, { quota: 34 * MB, usage: 0 }), false);
+  assert.equal(clipFitsStorage(20 * MB, null), true, "unknown quota: try, the save is guarded");
+});
+
+await check("no IndexedDB: saving a clip fails quietly, nothing comes back", async () => {
+  delete (globalThis as any).indexedDB;
+  const blob = new Blob([new Uint8Array(1024)], { type: "video/mp4" });
+  assert.equal(await saveClipDraft(ownerBaseline, { blob, name: "clip.mp4", type: "video/mp4", seconds: 12 }), false);
+  assert.equal(await loadClipDraft(ownerBaseline), null);
+  await deleteClipDraft(ownerBaseline);
+  await sweepExpiredClipDrafts();
+});
+
+await check("camera drop: time while the page was suspended isn't counted", () => {
+  const start = NOW;
+  // Ticking normally: everything up to now counts.
+  assert.equal(capturedSeconds(start, start + 9_900, start + 10_000), 10);
+  // Last tick 9 s in, page suspended, back 2 minutes later: 9 s captured.
+  assert.equal(capturedSeconds(start, start + 9_000, start + 129_000), 9);
+  // A hiccup shorter than the suspend gap still counts as running.
+  assert.equal(capturedSeconds(start, start + 5_000, start + 5_000 + SUSPEND_GAP_MS), 5 + SUSPEND_GAP_MS / 1000);
+});
+
+await check("camera drop: keep only with real video and at least 2 seconds", () => {
+  assert.equal(MIN_KEEP_SECONDS, 2);
+  assert.equal(canKeepInterrupted(1.9, true), false);
+  assert.equal(canKeepInterrupted(2, true), true);
+  assert.equal(canKeepInterrupted(30, false), false, "no video arrived");
+});
+
+await check("update banner: waits while recording or uploading, not for a saved clip", () => {
+  const k = (phase: Parameters<typeof recorderKeepable>[0]["phase"], uploading = false, draftSaved = false) => recorderKeepable({ phase, uploading, draftSaved });
+  assert.equal(k("recording"), false);
+  assert.equal(k("stopping"), false);
+  assert.equal(k("review", true, true), false, "mid-upload");
+  assert.equal(k("review", false, false), false, "recorded but not saved on the device (too big, storage blocked)");
+  assert.equal(k("review", false, true), true);
+  assert.equal(k("interrupted", false, true), true);
+  assert.equal(k("saved", false, true), true);
+  assert.equal(k("ready"), true, "a live preview has nothing to lose");
+  assert.equal(k("idle"), true);
 });
 
 await check("forms: nothing registered = nothing in progress", () => {

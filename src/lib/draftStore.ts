@@ -7,7 +7,10 @@
 export const DRAFT_TTL_MS = 24 * 60 * 60 * 1000;
 const PREFIX = "kya-draft:v1:";
 const DB_NAME = "kya-drafts";
+/** v1 held photos only; v2 adds recorded clips that haven't uploaded yet. */
+const DB_VERSION = 2;
 const STORE = "photos";
+const CLIP_STORE = "clips";
 
 export type DraftScope = { userId: string; birdId: string; kind: string };
 /** A sitter has no account: their drafts belong to the sit link and the bird. */
@@ -40,6 +43,11 @@ export function sitTag(token: string): string {
  *  can never collide. */
 export function sitDraftKey(s: SitDraftScope): string {
   return `${PREFIX}sit-${sitTag(s.token)}:${s.birdId}:${s.kind}`;
+}
+
+/** Kept: saved within the last 24 hours and before any hard end (a sit's). */
+export function isDraftFresh(savedAt: unknown, now = Date.now(), expiresAt?: number | null): boolean {
+  return fresh(savedAt, now, expiresAt);
 }
 
 function fresh(savedAt: unknown, now = Date.now(), expiresAt?: number | null): boolean {
@@ -107,6 +115,7 @@ export function removeSitDrafts(token: string) {
     }
     keys.forEach(removeDraft);
   } catch { /* ignore */ }
+  void deleteClipDraftsWithPrefix(`${PREFIX}sit-${sitTag(token)}:`);
 }
 
 // ── IndexedDB (photo) ───────────────────────────────────────────────────────
@@ -115,9 +124,11 @@ function openDb(): Promise<IDBDatabase | null> {
   return new Promise((resolve) => {
     try {
       if (typeof indexedDB === "undefined") return resolve(null);
-      const req = indexedDB.open(DB_NAME, 1);
+      const req = indexedDB.open(DB_NAME, DB_VERSION);
       req.onupgradeneeded = () => {
-        try { req.result.createObjectStore(STORE); } catch { /* exists */ }
+        for (const name of [STORE, CLIP_STORE]) {
+          try { if (!req.result.objectStoreNames.contains(name)) req.result.createObjectStore(name); } catch { /* exists */ }
+        }
       };
       req.onsuccess = () => resolve(req.result);
       req.onerror = () => resolve(null);
@@ -128,13 +139,13 @@ function openDb(): Promise<IDBDatabase | null> {
   });
 }
 
-async function withStore<R>(mode: IDBTransactionMode, run: (s: IDBObjectStore) => IDBRequest<R> | void): Promise<R | null> {
+async function withStore<R>(mode: IDBTransactionMode, run: (s: IDBObjectStore) => IDBRequest<R> | void, store = STORE): Promise<R | null> {
   const db = await openDb();
   if (!db) return null;
   return new Promise<R | null>((resolve) => {
     try {
-      const tx = db.transaction(STORE, mode);
-      const req = run(tx.objectStore(STORE));
+      const tx = db.transaction(store, mode);
+      const req = run(tx.objectStore(store));
       tx.oncomplete = () => { db.close(); resolve(req ? (req.result as R) : null); };
       tx.onerror = () => { db.close(); resolve(null); };
       tx.onabort = () => { db.close(); resolve(null); };
@@ -163,4 +174,99 @@ export async function loadPhoto(key: string): Promise<string | null> {
 
 export async function deletePhoto(key: string): Promise<void> {
   await withStore("readwrite", (s) => s.delete(key));
+}
+
+// ── IndexedDB (recorded clip) ───────────────────────────────────────────────
+// A clip recorded in the app but not uploaded yet (ClipRecorder). Saved the
+// moment recording stops, so a reload, an app update or the OS reclaiming the
+// page can't lose it. Same keys and expiry as the text drafts (account or sit
+// link + bird, 24 hours, a sitter's also the sit's end); deleted once it
+// uploads or is discarded.
+
+export type ClipDraft = {
+  savedAt: number;
+  /** A sitter's: when the sit ends. */
+  expiresAt?: number | null;
+  blob: Blob;
+  name: string;
+  type: string;
+  /** Seconds captured, when known. */
+  seconds?: number | null;
+};
+
+/** Is there room for a clip this size? Leaves headroom so a full device
+ *  doesn't fail the save half-way. Unknown quota: try (the put is guarded). */
+export function clipFitsStorage(size: number, estimate: { quota?: number; usage?: number } | null): boolean {
+  if (!estimate || typeof estimate.quota !== "number") return true;
+  const free = estimate.quota - (estimate.usage ?? 0);
+  return free > size * 1.5 + 5 * 1024 * 1024;
+}
+
+/** Save a recorded clip. False (and nothing kept) when storage is missing,
+ *  blocked or too full; recording carries on regardless. */
+export async function saveClipDraft(key: string, clip: Omit<ClipDraft, "savedAt">): Promise<boolean> {
+  try {
+    let estimate: { quota?: number; usage?: number } | null = null;
+    try { estimate = (await navigator.storage?.estimate?.()) ?? null; } catch { estimate = null; }
+    if (!clipFitsStorage(clip.blob.size, estimate)) return false;
+    const value: ClipDraft = { ...clip, savedAt: Date.now() };
+    const ok = await withStore("readwrite", (s) => s.put(value, key), CLIP_STORE);
+    return ok !== null;
+  } catch {
+    return false;
+  }
+}
+
+/** The saved clip, or null. An expired one is deleted, not returned. */
+export async function loadClipDraft(key: string, now = Date.now()): Promise<ClipDraft | null> {
+  try {
+    const v = (await withStore<ClipDraft | undefined>("readonly", (s) => s.get(key), CLIP_STORE)) ?? null;
+    if (!v) return null;
+    if (!(v.blob instanceof Blob) || !v.blob.size || !fresh(v.savedAt, now, v.expiresAt)) {
+      void deleteClipDraft(key);
+      return null;
+    }
+    return v;
+  } catch {
+    return null;
+  }
+}
+
+export async function deleteClipDraft(key: string): Promise<void> {
+  try { await withStore("readwrite", (s) => s.delete(key), CLIP_STORE); } catch { /* ignore */ }
+}
+
+/** Walk the saved clips; delete those `drop` picks. Best-effort. */
+async function pruneClips(drop: (key: string, v: ClipDraft | undefined) => boolean): Promise<void> {
+  try {
+    const db = await openDb();
+    if (!db) return;
+    await new Promise<void>((resolve) => {
+      try {
+        const tx = db.transaction(CLIP_STORE, "readwrite");
+        const req = tx.objectStore(CLIP_STORE).openCursor();
+        req.onsuccess = () => {
+          const c = req.result;
+          if (!c) return;
+          try { if (drop(String(c.key), c.value as ClipDraft | undefined)) c.delete(); } catch { /* keep */ }
+          c.continue();
+        };
+        tx.oncomplete = () => { db.close(); resolve(); };
+        tx.onerror = () => { db.close(); resolve(); };
+        tx.onabort = () => { db.close(); resolve(); };
+      } catch {
+        try { db.close(); } catch { /* ignore */ }
+        resolve();
+      }
+    });
+  } catch { /* ignore */ }
+}
+
+/** Drop every expired saved clip on this device (any account or sit). */
+export function sweepExpiredClipDrafts(now = Date.now()): Promise<void> {
+  return pruneClips((_k, v) => !v || !fresh(v.savedAt, now, v.expiresAt));
+}
+
+function deleteClipDraftsWithPrefix(prefix: string): Promise<void> {
+  return pruneClips((k) => k.startsWith(prefix));
 }

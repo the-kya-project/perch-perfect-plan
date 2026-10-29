@@ -2693,7 +2693,7 @@ export function HealthBaselineStep({ birdId, birdName, onBlockNext, registerFlus
           </div>
         ) : (
           <div className="flex flex-col gap-1">
-            <ClipRecorder inPage birdId={birdId} onBusy={setClipBusy} onUploading={setClipUploading} onUploaded={uploadClip} />
+            <ClipRecorder inPage birdId={birdId} draftSlot="baseline" onBusy={setClipBusy} onUploading={setClipUploading} onUploaded={uploadClip} />
             {clipPath && replacingClip && (
               <div>
                 <SetupTextButton onClick={() => setReplacingClip(false)}>{t("birdSetup.keepCurrentClip", "Keep current clip")}</SetupTextButton>
@@ -3161,6 +3161,7 @@ function ClipSlotRow({
               <>
                 <ClipRecorder
                   birdId={birdId}
+                  draftSlot={`tip:${slot.key}`}
                   onBusy={(b) => onBusy(`${slot.key}:rec`, b)}
                   onProgress={setProgress}
                   cancelRef={cancelRef}
