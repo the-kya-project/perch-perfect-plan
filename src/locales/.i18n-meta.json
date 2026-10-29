@@ -4272,6 +4272,27 @@
     "disclaimer.noteLabel": {
       "stamp": "f1b62af1ae02f79d"
     },
+    "draft.continue": {
+      "stamp": "f5d8735d0e2ff713"
+    },
+    "draft.discard": {
+      "stamp": "d82d887937806aed"
+    },
+    "draft.restoredCheck": {
+      "stamp": "c172a94eadf3fbb9"
+    },
+    "draft.restoredHintCheck": {
+      "stamp": "6cad5659ef0b07cc"
+    },
+    "draft.restoredHintWeight": {
+      "stamp": "65d5916a4ee13293"
+    },
+    "draft.restoredWeight": {
+      "stamp": "a247b7b75a408ba3"
+    },
+    "draft.yesterdayAt": {
+      "stamp": "95c74c256d25dc39"
+    },
     "emergencyBar.emergency": {
       "stamp": "16fdfafb12402299"
     },
@@ -10181,6 +10202,15 @@
     },
     "tourDemo.willowHatchDay": {
       "stamp": "8927fc1ba2186989"
+    },
+    "update.ready": {
+      "stamp": "45eaf017f1d4337a"
+    },
+    "update.readyFinishFirst": {
+      "stamp": "5a5ecb160a32ee44"
+    },
+    "update.update": {
+      "stamp": "cbac30d75d0cf5ac"
     },
     "updates.careplanTitle": {
       "stamp": "68599b911afa4d77"

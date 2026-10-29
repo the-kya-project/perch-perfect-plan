@@ -2855,6 +2855,20 @@
   "disclaimer.compactBody": "Geen vervanging voor diergeneeskundige zorg. Bel een dierenarts bij elk medisch probleem.",
   // Note:
   "disclaimer.noteLabel": "Let op:",
+  // Continue
+  "draft.continue": "Doorgaan",
+  // Discard
+  "draft.discard": "Weggooien",
+  // We saved your unfinished check from {{when}}.
+  "draft.restoredCheck": "We hebben je onafgemaakte check van {{when}} bewaard.",
+  // It isn't in the health log yet.
+  "draft.restoredHintCheck": "Hij staat nog niet in het gezondheidslogboek.",
+  // It isn't in the weight history yet.
+  "draft.restoredHintWeight": "Het staat nog niet in de gewichtsgeschiedenis.",
+  // We saved your unfinished weight from {{when}}.
+  "draft.restoredWeight": "We hebben je onafgemaakte gewicht van {{when}} bewaard.",
+  // yesterday at {{time}}
+  "draft.yesterdayAt": "gisteren om {{time}}",
   // Emergency
   "emergencyBar.emergency": "Noodgeval",
   // Parrots 101
@@ -6803,6 +6817,12 @@
   "tourDemo.turning": "Wordt {{n}}",
   // Willow's hatch day Saturday
   "tourDemo.willowHatchDay": "Uitkomstdag van Willow op zaterdag",
+  // A new version is ready. Update when you're done.
+  "update.ready": "Er is een nieuwe versie klaar. Werk bij als je klaar bent.",
+  // A new version is ready. Finish what you're doing, then update.
+  "update.readyFinishFirst": "Er is een nieuwe versie klaar. Maak eerst af waar je mee bezig bent en werk dan bij.",
+  // Update
+  "update.update": "Bijwerken",
   // Review {{bird}}'s care plan before {{sit}}
   "updates.careplanTitle": "Bekijk het zorgplan van {{bird}} voor {{sit}}",
   // You're all caught up.
