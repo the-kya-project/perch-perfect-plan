@@ -43,6 +43,7 @@ import { LoadError } from "@/components/LoadError";
 import { useConfirm } from "@/components/ConfirmSheet";
 import { useLoadState, useTooLong } from "@/lib/useTooLong";
 import { mergeEmergency } from "@/lib/emergency";
+import { useFormInProgress } from "@/lib/formsInProgress";
 
 const setupSearch = z.object({
   step: z.coerce.number().int().min(1).max(TOTAL_STEPS).optional(),
@@ -186,6 +187,15 @@ function useDebouncedAutosave(
     return () => registerFlush(null);
   }, [registerFlush]);
 
+  // Edits still waiting on the debounce hold back a quiet app update, and the
+  // update banner's Update saves them before reloading (formsInProgress.ts).
+  useFormInProgress(() => pendingRef.current, async () => {
+    if (timerRef.current) { clearTimeout(timerRef.current); timerRef.current = null; }
+    await saveRef.current();
+    pendingRef.current = false;
+    setDirtyRef.current(false);
+  });
+
   // Persist pending edits when this step unmounts by any path that didn't
   // already flush — notably leaving setup via the bottom nav. Fire-and-forget:
   // client-side navigation keeps the request alive. No-op (so no double save)
@@ -231,7 +241,9 @@ function BirdSetup() {
   const birdLoad = useLoadState([birdQ]);
   const birdMissing = birdQ.isSuccess && !bird;
 
-  const [step, setStep] = useState<number>(1);
+  // Starts at the linked step, so the URL mirror below never overwrites a
+  // ?step= link with the default before it's applied.
+  const [step, setStep] = useState<number>(() => Math.min(TOTAL_STEPS, Math.max(1, stepParam ?? 1)));
   const [blockNext, setBlockNext] = useState(false);
   const [footerNote, setFooterNote] = useState<string | null>(null);
   const [homeSubline, setHomeSubline] = useState<string | null>(null);
@@ -314,6 +326,15 @@ function BirdSetup() {
     if (stepParam != null) return;
     setStep(1);
   }, [bird, stepParam]);
+
+  // Mirror the current step into ?step= (replacing the history entry, not
+  // adding one), so a reload or the OS reclaiming the page lands back here.
+  // The effect above then sees a ?step= that equals the step: no bounce.
+  useEffect(() => {
+    if (stepParam === step) return;
+    navigate({ to: "/birds/$birdId/setup", params: { birdId }, search: (prev) => ({ ...prev, step }), replace: true });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [step]);
 
   async function persistStep(nextStep: number, complete = false) {
     setSaving(true);

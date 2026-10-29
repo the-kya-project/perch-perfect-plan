@@ -15,6 +15,8 @@ import { scanHint, scanQuestionFor } from "@/lib/scanFieldLabels";
 import { weightToSave, MIN_WEIGHT_G, MAX_WEIGHT_G } from "@/lib/dailyLog";
 import type { Meal } from "@/lib/dailyCheck";
 import { compressImageToDataUrl, dataUrlBytes, MAX_UPLOAD_BYTES } from "@/lib/imageUpload";
+import { useFormDraft } from "@/lib/drafts";
+import { DraftRestoredNote } from "@/components/DraftRestoredNote";
 
 export type FullCheckSubmit = {
   answers: Record<ScanFieldKey, ScanAnswer>;
@@ -24,6 +26,15 @@ export type FullCheckSubmit = {
   photoDataUrl?: string;
   /** Validated grams (weightToSave), or undefined for no weigh-in. */
   weightGrams?: number;
+  meal: Meal;
+};
+
+/** What the local draft keeps (the photo goes to IndexedDB separately). */
+type CheckDraft = {
+  answers: Partial<Record<ScanFieldKey, ScanAnswer>>;
+  itemNotes: Partial<Record<ScanFieldKey, string>>;
+  notes: string;
+  grams: string;
   meal: Meal;
 };
 
@@ -86,7 +97,7 @@ function weighLine(t: TFunction, sex: Sex): string {
   return t("fullCheck.weighLine_other", "Optional. It goes straight to their weight history.");
 }
 
-export function FullHealthCheck({ birdId, name, sex, vet, submitting, onSubmit, onLeave, variant = "owner", extra, ownerName }: {
+export function FullHealthCheck({ birdId, name, sex, vet, submitting, onSubmit, onLeave, variant = "owner", extra, ownerName, draftSit }: {
   birdId: string;
   name: string;
   /** The birds.sex column as stored ("Male" / "Female" / null). */
@@ -95,7 +106,8 @@ export function FullHealthCheck({ birdId, name, sex, vet, submitting, onSubmit, 
    *  pickVet), or null / no phone to hide Call vet. */
   vet: { name: string | null; phone: string | null } | null;
   submitting: boolean;
-  onSubmit: (p: FullCheckSubmit) => void;
+  /** Resolve true once the check is saved: that clears the local draft. */
+  onSubmit: (p: FullCheckSubmit) => void | Promise<boolean | void>;
   onLeave: () => void;
   /**
    * "sitter" = the sitter's daily check through a sit link: titled "[Bird]'s
@@ -109,6 +121,9 @@ export function FullHealthCheck({ birdId, name, sex, vet, submitting, onSubmit, 
   extra?: ReactNode;
   /** Sitter variant: the owner's first name ("Call [owner]'s avian vet"). */
   ownerName?: string;
+  /** Sitter variant: keep a local draft for this sit link, ending when the
+   *  sit does (epoch ms). Omitted (e.g. an owner's preview) = no draft. */
+  draftSit?: { token: string; endsAt: number | null };
 }) {
   const { t } = useTranslation();
   const sx = sexOf(sex);
@@ -126,7 +141,41 @@ export function FullHealthCheck({ birdId, name, sex, vet, submitting, onSubmit, 
   const parsedWeight = weightToSave(grams);
   const weightInvalid = parsedWeight === undefined;
   const dirty = answered > 0 || Object.values(itemNotes).some((v) => (v ?? "").trim()) || !!notes.trim() || !!grams.trim() || !!photo;
-  const { requestClose, guard } = useLeaveGuard(dirty, onLeave);
+
+  // The check survives a reload (an app update, the OS reclaiming the page):
+  // saved locally as they go, offered back on reopen, never submitted on its
+  // own. An owner's draft belongs to their account; a sitter's to the sit link
+  // (they have no account), and it ends with the sit.
+  const draft = useFormDraft<CheckDraft>({
+    kind: "full-check",
+    birdId,
+    enabled: !sitter || !!draftSit,
+    sit: sitter ? draftSit : undefined,
+    data: { answers, itemNotes, notes, grams, meal },
+    photo,
+    empty: !dirty,
+    onRestore: ({ data, photo: savedPhoto }) => {
+      setAnswers(data.answers ?? {});
+      setItemNotes(data.itemNotes ?? {});
+      setNotes(data.notes ?? "");
+      setGrams(data.grams ?? "");
+      setMeal(data.meal ?? null);
+      setPhoto(savedPhoto);
+    },
+  });
+  function discardDraft() {
+    setAnswers({});
+    setItemNotes({});
+    setNotes("");
+    setGrams("");
+    setMeal(null);
+    setPhoto(null);
+    draft.clear();
+  }
+  // "Leave without saving?" → Leave means the owner chose to drop it.
+  const clearDraft = draft.clear;
+  const leave = useCallback(() => { clearDraft(); onLeave(); }, [clearDraft, onLeave]);
+  const { requestClose, guard } = useLeaveGuard(dirty, leave);
 
   const flagged = SCAN_FIELDS.filter((f) => answers[f.key] === "not_sure" || answers[f.key] === "concerning");
   const telHref = vet?.phone ? `tel:${vet.phone.replace(/[^\d+]/g, "")}` : null;
@@ -160,14 +209,14 @@ export function FullHealthCheck({ birdId, name, sex, vet, submitting, onSubmit, 
       const note = (itemNotes[f.key] ?? "").trim();
       if ((a === "concerning" || a === "not_sure") && note) cleaned[f.key] = note;
     }
-    onSubmit({
+    void Promise.resolve(onSubmit({
       answers: Object.fromEntries(SCAN_FIELDS.map((f) => [f.key, answers[f.key]!])) as Record<ScanFieldKey, ScanAnswer>,
       itemNotes: Object.keys(cleaned).length ? cleaned : undefined,
       notes: notes || undefined,
       photoDataUrl: photo || undefined,
       weightGrams: typeof parsedWeight === "number" ? parsedWeight : undefined,
       meal: typeof parsedWeight === "number" && !sitter ? meal : null,
-    });
+    })).then((saved) => { if (saved === true) draft.clear(); }, () => {});
   }
 
   const optionLabel = (o: ScanAnswer) =>
@@ -185,6 +234,18 @@ export function FullHealthCheck({ birdId, name, sex, vet, submitting, onSubmit, 
       />
       <main className={`relative mx-auto -mt-[26px] flex max-w-md flex-col rounded-t-[26px] bg-white px-5 pt-3 ${TASK_FOOTER_SPACE}`} style={{ color: K.forest }}>
         {!sitter && <MemberContextBanner birdId={birdId} className="mt-2" />}
+        {draft.restoredAt != null && (
+          <DraftRestoredNote
+            className="mt-3"
+            what="check"
+            savedAt={draft.restoredAt}
+            hint={sitter ? (ownerName
+              ? t("draft.restoredHintSitter", "{{owner}} won't see it until you save it.", { owner: ownerName })
+              : t("draft.restoredHintSitterNoName", "It won't be shared until you save it.")) : undefined}
+            onContinue={draft.dismiss}
+            onDiscard={discardDraft}
+          />
+        )}
 
         {SCAN_FIELDS.map((f, i) => {
           const a = answers[f.key];

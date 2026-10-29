@@ -3,6 +3,7 @@ import { Video, Square, RotateCcw, Check, AlertTriangle, Upload, Loader2 } from 
 import { createClipUpload, getClipStatus } from "@/lib/clips.functions";
 import { cfRef } from "@/lib/clipRef";
 import { track } from "@/lib/analytics";
+import { useFormInProgress } from "@/lib/formsInProgress";
 import { nativePlatform } from "@/lib/nativeApp";
 import i18next from "i18next";
 import { useTranslation } from "react-i18next";
@@ -261,6 +262,10 @@ export function ClipRecorder({
       }
     }
   }, [phase]);
+
+  // A clip being recorded, reviewed or uploaded can't be kept as a draft, so
+  // an app update waits for it (formsInProgress.ts; no flush = Update waits).
+  useFormInProgress(checking || !!stage || phase !== "idle");
 
   // Let the parent disable Next while the recorder is busy (camera live,
   // recording, or compressing). Upload-to-storage is signalled separately via

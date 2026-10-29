@@ -28,6 +28,7 @@ import { installErrorListeners, primeAccountRole, registerErrorReportingContext,
 import { SUPPORT_EMAIL } from "@/lib/support";
 import { supabase } from "@/integrations/supabase/client";
 import { Toaster } from "@/components/ui/sonner";
+import { UpdateBanner } from "@/components/UpdateBanner";
 import { initAnalytics, identifyUser, resetUser } from "@/lib/analytics";
 import { ensureProfileLocale } from "@/lib/ensureProfileLocale";
 import { applyOwnerLocale } from "@/lib/i18n/ownerLocale";
@@ -383,6 +384,8 @@ function RootComponent() {
         {!startupFailed && location.pathname !== "/auth" && <OpenInAppBar variant="bar" path={openInAppPath(location.pathname, location.searchStr)} />}
         {startupFailed ? <SomethingWentWrong /> : <Outlet />}
         <Toaster />
+        {/* "A new version is ready": only while a form is in progress (sw-register.ts). */}
+        <UpdateBanner />
       </QueryClientProvider>
     </I18nextProvider>
   );

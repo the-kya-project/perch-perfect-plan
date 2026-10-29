@@ -20,6 +20,8 @@ import { K, SERIF, KyaPage, KyaBody, KyaCard, KyaField, KyaHeading, KyaLabel, Ky
 import { PageHeader } from "@/components/headers";
 import { LoadError } from "@/components/LoadError";
 import { useLoadState } from "@/lib/useTooLong";
+import { peekDraft, useFormDraft } from "@/lib/drafts";
+import { DraftRestoredNote } from "@/components/DraftRestoredNote";
 import i18next from "i18next";
 import type { TFunction } from "i18next";
 import { useTranslation } from "react-i18next";
@@ -45,6 +47,11 @@ const pad = (x: number) => String(x).padStart(2, "0");
 // "YYYY-MM-DDTHH:MM" in local time, for <input type="datetime-local"> + its max.
 const toLocalInput = (d: Date) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
 const nowLocal = () => toLocalInput(new Date());
+
+/** The weight entry's local draft (lib/drafts.ts): one per account and bird.
+ *  `entryId` is the weight being edited, or null for a new one. */
+const WEIGHT_DRAFT = "weight";
+type WeightDraft = { entryId: string | null; grams: string; when: string; meal: Meal };
 
 function windowLabel(t: TFunction, days: WindowDays): string {
   switch (days) {
@@ -134,6 +141,20 @@ function WeightFacet() {
   });
 
   const entries = entriesQ.data;
+
+  // A weight left unfinished (the page reloaded, the app was closed): reopen
+  // its entry so LogPanel can offer the draft back. Once per visit.
+  const draftChecked = useRef(false);
+  useEffect(() => {
+    if (draftChecked.current || !canLogCare || !entries) return;
+    draftChecked.current = true;
+    void peekDraft<WeightDraft>(birdId, WEIGHT_DRAFT).then((d) => {
+      if (!d) return;
+      if (!d.data.entryId) { setLogOpen(true); return; }
+      const e = entries.find((x) => x.id === d.data.entryId);
+      if (e) { setEditing(e); setLogOpen(false); }
+    });
+  }, [canLogCare, entries, birdId]);
   // "No weights yet" only once the entries are actually known; a failed load
   // gets a retry instead.
   const load = useLoadState([entriesQ]);
@@ -441,10 +462,41 @@ function LogPanel({ birdId, entry, lastGrams, onClose, onSaved }: { birdId: stri
   const { t } = useTranslation();
   const activeSitId = useActiveSitIdForBird(birdId);
   const role = useBirdRole(birdId);
-  const [gramsIn, setGrams] = useState<string>(entry ? String(entry.grams) : lastGrams ? String(lastGrams) : "");
-  const [when, setWhen] = useState<string>(entry ? toLocalInput(new Date(entry.measured_at)) : nowLocal());
-  const [meal, setMeal] = useState<Meal>((entry?.meal_relation as Meal) ?? null);
+  // What the panel opened with, so "nothing changed" isn't saved as a draft.
+  const [initial] = useState<WeightDraft>(() => ({
+    entryId: entry?.id ?? null,
+    grams: entry ? String(entry.grams) : lastGrams ? String(lastGrams) : "",
+    when: entry ? toLocalInput(new Date(entry.measured_at)) : nowLocal(),
+    meal: (entry?.meal_relation as Meal) ?? null,
+  }));
+  const [gramsIn, setGrams] = useState<string>(initial.grams);
+  const [when, setWhen] = useState<string>(initial.when);
+  const [meal, setMeal] = useState<Meal>(initial.meal);
   const [saving, setSaving] = useState(false);
+  const unchanged = gramsIn === initial.grams && when === initial.when && meal === initial.meal;
+  const draft = useFormDraft<WeightDraft>({
+    kind: WEIGHT_DRAFT,
+    birdId,
+    data: { entryId: initial.entryId, grams: gramsIn, when, meal },
+    empty: unchanged,
+    onRestore: ({ data }) => {
+      // The one slot belongs to another entry (or a new one): leave it be.
+      if ((data.entryId ?? null) !== initial.entryId) return false;
+      setGrams(data.grams ?? "");
+      setWhen(data.when || initial.when);
+      setMeal(data.meal ?? null);
+    },
+  });
+  function discardDraft() {
+    setGrams(initial.grams);
+    setWhen(initial.when);
+    setMeal(initial.meal);
+    draft.clear();
+  }
+  function cancel() {
+    draft.clear();
+    onClose();
+  }
   // Opened from a row further down the page: bring the form into view.
   const ref = useRef<HTMLDivElement>(null);
   useEffect(() => { ref.current?.scrollIntoView({ behavior: "smooth", block: "start" }); }, []);
@@ -476,6 +528,7 @@ function LogPanel({ birdId, entry, lastGrams, onClose, onSaved }: { birdId: stri
         toast.success(t("birdWeight.logged", "Weight logged."));
         track("weight_logged", { grams: n, has_meal_relation: !!meal, source: role === "household" ? "household" : "owner" });
       }
+      draft.clear();
       onSaved();
     } catch (e: any) {
       toast.error(friendlyError(e, t("birdWeight.saveFailed", "Couldn't save the weight.")));
@@ -488,6 +541,9 @@ function LogPanel({ birdId, entry, lastGrams, onClose, onSaved }: { birdId: stri
     <div ref={ref} className="scroll-mt-4">
     <KyaCard className="flex flex-col gap-4 p-4">
       <KyaHeading size={21}>{entry ? t("birdWeight.editWeight", "Edit weight") : t("birdWeight.logAWeight", "Log a weight")}</KyaHeading>
+      {draft.restoredAt != null && (
+        <DraftRestoredNote what="weight" savedAt={draft.restoredAt} onContinue={draft.dismiss} onDiscard={discardDraft} />
+      )}
 
       <div>
         <KyaField
@@ -537,7 +593,7 @@ function LogPanel({ birdId, entry, lastGrams, onClose, onSaved }: { birdId: stri
         <KyaPrimaryButton onClick={save} disabled={!valid || saving} icon={<Check className="size-5" />}>
           {saving ? t("birdWeight.saving", "Saving…") : t("birdWeight.save", "Save")}
         </KyaPrimaryButton>
-        <KyaLink color={K.quiet} onClick={onClose}>{t("birdWeight.cancel", "Cancel")}</KyaLink>
+        <KyaLink color={K.quiet} onClick={cancel}>{t("birdWeight.cancel", "Cancel")}</KyaLink>
       </div>
     </KyaCard>
     </div>

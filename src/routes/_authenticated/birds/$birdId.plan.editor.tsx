@@ -115,6 +115,13 @@ function BirdEditor() {
   }, [role, perms, canEdit, canEmergency, birdId, navigate]);
   const [tab, setTab] = useState<Tab>(tabParam ?? (scanParam ? "logs" : "food"));
   useEffect(() => { if (tabParam) setTab(tabParam); else if (scanParam) setTab("logs"); }, [tabParam, scanParam]);
+  // Mirror the open tab into ?tab= (replacing the history entry), so a reload
+  // reopens the same section.
+  useEffect(() => {
+    if (tabParam === tab) return;
+    navigate({ to: "/birds/$birdId/plan/editor", params: { birdId }, search: (prev) => ({ ...prev, tab }), replace: true });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tab]);
 
   // Edge fades so the tab strip reads as scrollable.
   const tabStripRef = useRef<HTMLDivElement>(null);

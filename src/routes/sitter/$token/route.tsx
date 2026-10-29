@@ -18,6 +18,7 @@ import { I18nextProvider, useTranslation } from "react-i18next";
 import { sitterI18n, ensureSitterI18n, resolveSitterLocale } from "@/lib/i18n";
 import { localDateISO } from "@/lib/localDay";
 import { isOwnerPreview } from "@/lib/sitterPreviewMode";
+import { removeSitDrafts } from "@/lib/draftStore";
 
 // `saved`: set by the daily health check after a save (Today shows the
 // "Saved. Next: …" confirmation once, then clears it). Never retained.
@@ -61,6 +62,13 @@ class SitterNoBirdsError extends Error {
 
 function SitterLinkError({ error }: { error: Error }) {
   const code = error.message;
+  // A link that has ended (or was turned off, or never was) can't save a
+  // check: drop any unfinished one kept on this phone for it (lib/drafts.ts).
+  useEffect(() => {
+    if (code !== "SITTER_LINK_EXPIRED" && code !== "SITTER_LINK_REVOKED" && code !== "SITTER_LINK_INVALID") return;
+    const m = window.location.pathname.match(/^\/sitter\/([^/]+)/);
+    if (m) removeSitDrafts(decodeURIComponent(m[1]));
+  }, [code]);
   const noBirdsOwner = error instanceof SitterNoBirdsError ? error.ownerFirstName : null;
   // Rendered outside the sitter <I18nextProvider> in the router case, so read
   // the sitter instance directly. Resolve the locale from the browser (no token
