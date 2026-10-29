@@ -3,8 +3,8 @@ import { useNavigate } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { getLocalUser } from "@/integrations/supabase/currentUser";
 import { BrandLockup } from "@/components/BrandLogo";
-import { K, KyaHeader, KyaHeading, KyaIconButton, KyaLink, KyaPrimaryButton } from "@/components/kya";
-import { ChevronLeft, ArrowRight, Feather, X } from "lucide-react";
+import { K, KyaCard, KyaGroupLabel, KyaHeader, KyaHeading, KyaIconButton, KyaIconTile, KyaLink, KyaPrimaryButton } from "@/components/kya";
+import { ChevronLeft, ArrowRight, Feather, ListChecks, Users, X } from "lucide-react";
 import { setTourDemo } from "@/lib/tourDemo";
 import { useTranslation } from "react-i18next";
 import { useCoachSpot } from "@/lib/useCoachSpot";
@@ -76,6 +76,49 @@ function ProgressDots({ n, total, label }: { n: number; total: number; label: st
           style={{ background: i < n ? K.forest : "#c9d6c9" }}
         />
       ))}
+    </div>
+  );
+}
+
+/** A new owner's welcome: a photo and the three things that happen next, in
+ *  the space between the header and the buttons (it used to be empty, which
+ *  read as a page that hadn't loaded). The photo takes whatever height is left,
+ *  so nothing scrolls; on tall phones it stops growing and the block centres.
+ *  Below 620px of height (an iPhone SE in Safari is 548) there's no room for
+ *  it, so it's left out and the rows stand alone. */
+function WelcomePreview() {
+  const { t } = useTranslation();
+  const rows = [
+    { icon: <Feather className="size-4" />, text: t("ownerOnboarding.previewAddBird", "Add your bird") },
+    { icon: <ListChecks className="size-4" />, text: t("ownerOnboarding.previewDailyCare", "Set up their daily care") },
+    { icon: <Users className="size-4" />, text: t("ownerOnboarding.previewShareCare", "Share care with a sitter or household") },
+  ];
+  return (
+    <div className="flex min-h-0 flex-1 flex-col justify-center pb-5 sm:flex-none">
+      <div className="relative mb-4 min-h-[72px] flex-1 overflow-hidden rounded-[20px] sm:h-[200px] sm:flex-none [@media(max-height:619px)]:hidden" style={{ maxHeight: 280, background: K.lime }}>
+        <img
+          src="/brand/email/welcome.jpg"
+          alt=""
+          aria-hidden="true"
+          className="absolute inset-0 size-full object-cover"
+          style={{ objectPosition: "40% 18%" }}
+        />
+      </div>
+      <KyaGroupLabel>{t("ownerOnboarding.previewLabel", "What happens next")}</KyaGroupLabel>
+      <KyaCard className="mt-2 shrink-0">
+        <ul className="m-0 list-none p-0">
+          {rows.map((r, i) => (
+            <li
+              key={i}
+              className="flex min-h-[48px] items-center gap-3 px-3.5 py-1.5"
+              style={{ borderBottom: i < rows.length - 1 ? `1px solid ${K.line}` : undefined }}
+            >
+              <KyaIconTile size={32}>{r.icon}</KyaIconTile>
+              <span className="min-w-0 text-[15px] font-[600] leading-[1.3]">{r.text}</span>
+            </li>
+          ))}
+        </ul>
+      </KyaCard>
     </div>
   );
 }
@@ -208,7 +251,7 @@ export function OwnerOnboarding() {
           )}
         </KyaHeader>
         <main className="relative mx-auto -mt-[26px] flex w-full max-w-md flex-1 flex-col rounded-t-[26px] px-4 pb-[max(env(safe-area-inset-bottom),24px)] pt-5 sm:flex-none" style={{ background: K.mist }}>
-          <div className="flex-1 sm:hidden" />
+          {hasBird ? <div className="flex-1 sm:hidden" /> : <WelcomePreview />}
           <KyaPrimaryButton onClick={startCoach}>{t("ownerOnboarding.showMeAround", "Show me around")}</KyaPrimaryButton>
           <div className="mt-1 text-center">
             {hasBird ? (

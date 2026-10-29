@@ -4827,6 +4827,14 @@
   "ownerOnboarding.notNow": "Niet nu",
   // Now the fun part — let's set up your first bird.
   "ownerOnboarding.nowTheFunPart": "Nu het leuke deel — laten we je eerste vogel toevoegen.",
+  // Add your bird
+  "ownerOnboarding.previewAddBird": "Voeg je vogel toe",
+  // Set up their daily care
+  "ownerOnboarding.previewDailyCare": "Stel de dagelijkse verzorging in",
+  // What happens next
+  "ownerOnboarding.previewLabel": "Zo gaat het verder",
+  // Share care with a sitter or household
+  "ownerOnboarding.previewShareCare": "Deel de zorg met oppas of gezin",
   // Anytime you need a refresher, the ? is right up top.
   "ownerOnboarding.refresher": "Wil je het nog eens zien? De ? staat altijd bovenin.",
   // Show me around
