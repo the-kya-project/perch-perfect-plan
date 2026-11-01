@@ -11,13 +11,14 @@
 -- Mango. C is a care_manager on Kiwi and Mango. G is the assigned household
 -- caregiver on a Kiwi-only sit. X is a stranger.
 -- Sits: s_km (Kiwi+Mango), s_kp (Kiwi+Prof), s_p (Prof only), s_g (Kiwi, G
--- caregiving), s_empty (no birds yet).
+-- caregiving), s_empty (no birds yet). Checks 10–12 add s_new_k (Kiwi) and
+-- s_new_p (Prof), created by O through RLS the way the app does it.
 do $$
 declare
   o uuid := gen_random_uuid(); h uuid := gen_random_uuid(); c uuid := gen_random_uuid();
   g uuid := gen_random_uuid(); x uuid := gen_random_uuid();
   kiwi uuid; mango uuid; prof uuid;
-  s_km uuid; s_kp uuid; s_p uuid; s_g uuid; s_empty uuid;
+  s_km uuid; s_kp uuid; s_p uuid; s_g uuid; s_empty uuid; s_new_k uuid; s_new_p uuid;
   task uuid;
   passed int := 0; failed text[] := '{}';
   n int; ok boolean;
@@ -135,6 +136,47 @@ begin
   select count(*) into n from public.task_completions where sit_id in (s_km, s_g);
   reset role;
   if n = 2 then passed := passed + 1; else failed := array_append(failed, format('owner reads task completions (%s)', n)::text); end if;
+
+  -- The sits above are made as the migration owner, past RLS. These are made
+  -- the way SitForm does it: as the owner, insert and read the row back in one
+  -- statement, then link the birds. 20261026120000 broke exactly this
+  -- (fixed in 20261101234500_sits_read_owner).
+  -- 10) Owner creates a Kiwi sit and a Prof sit and gets each row back.
+  set local role authenticated;
+  begin
+    insert into public.sits (owner_id, sitter_name, start_date, end_date) values (o, 'New K', current_date, current_date + 3) returning id into s_new_k;
+    insert into public.sits (owner_id, sitter_name, start_date, end_date) values (o, 'New P', current_date, current_date + 3) returning id into s_new_p;
+    insert into public.sit_birds (sit_id, bird_id) values (s_new_k, kiwi), (s_new_p, prof);
+    ok := s_new_k is not null and s_new_p is not null;
+  exception when others then ok := false;
+  end;
+  reset role;
+  if ok then passed := passed + 1; else failed := array_append(failed, 'owner creates a sit and reads it back'::text); end if;
+
+  -- 11) Viewer H sees the new Kiwi sit, not the new Prof sit.
+  perform set_config('request.jwt.claims', json_build_object('sub', h, 'role', 'authenticated')::text, true);
+  set local role authenticated;
+  select count(*) into n from public.sits where id = s_new_k;
+  ok := n = 1;
+  select count(*) into n from public.sits where id = s_new_p;
+  ok := ok and n = 0;
+  reset role;
+  if ok then passed := passed + 1; else failed := array_append(failed, 'viewer sees new Kiwi sit, not new Prof sit'::text); end if;
+
+  -- 12) X, who owns a bird of their own (another household), can't read the
+  -- new sits or create one in O's name.
+  insert into public.birds (owner_id, name) values (x, 'Other');
+  perform set_config('request.jwt.claims', json_build_object('sub', x, 'role', 'authenticated')::text, true);
+  set local role authenticated;
+  select count(*) into n from public.sits where id in (s_new_k, s_new_p);
+  ok := n = 0;
+  begin
+    insert into public.sits (owner_id, sitter_name, start_date, end_date) values (o, 'Forged', current_date, current_date + 3);
+    ok := false;
+  exception when others then null;
+  end;
+  reset role;
+  if ok then passed := passed + 1; else failed := array_append(failed, 'other household cannot read or create the owner''s sits'::text); end if;
 
   raise exception 'SIT ACCESS CHECKS: % passed, % failed%', passed, coalesce(array_length(failed, 1), 0),
     case when array_length(failed, 1) > 0 then ': ' || array_to_string(failed, '; ') else '' end;
