@@ -19,12 +19,12 @@ import { safeInternalPath } from "./returnTo";
 export { APP_URL_SCHEME };
 
 /**
- * Whether the installed app can answer APP_URL_SCHEME. False until the iOS
- * build that registers it is live on the App Store: before then, tapping the
- * button would show Safari's "address is invalid" alert to everyone with the
- * current app. Flip to true in the release that follows that build's approval.
+ * Whether the installed app can answer APP_URL_SCHEME. iOS 1.0.3 (11), the
+ * first build that registers it, is live on the App Store. Anyone still on an
+ * older build sees Safari's "address is invalid" alert and then the App Store,
+ * where the update is waiting.
  */
-export const APP_URL_SCHEME_LIVE = false;
+export const APP_URL_SCHEME_LIVE = true;
 
 /** The app screen this page should open in the app, or null when the page
  *  shouldn't offer it. Keeps the query string. */
