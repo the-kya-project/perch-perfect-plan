@@ -1,0 +1,42 @@
+# Runs the database access checks in supabase/checks on every pull request that
+# touches supabase/.
+#
+# Each check file is one self-contained block that makes its own people, birds
+# and sits, tests what each person can see and do through RLS, then raises
+# "<NAME> CHECKS: n passed, k failed" so everything rolls back. They used to be
+# run by hand only, so a policy change that stopped owners creating sits
+# (20261026120000) reached production unnoticed for six days.
+#
+# The job starts a local, throwaway Postgres with the Supabase CLI and applies
+# every migration from scratch, the same way a Supabase preview branch is
+# built. No secrets, and nothing outside the runner is touched.
+#
+# To block merging on it: Settings → Rules → Rulesets (or Branches) → main →
+# Require status checks to pass → add "Database checks".
+name: Database checks
+
+on:
+  pull_request:
+    paths: ["supabase/**", ".github/workflows/db-checks.yml", "scripts/db-checks.sh"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  db-checks:
+    name: Database checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: supabase/setup-cli@v1
+        with:
+          version: 2.108.0
+
+      - name: Start a local database with every migration
+        run: supabase db start
+
+      - name: Run the access checks
+        run: bash scripts/db-checks.sh
