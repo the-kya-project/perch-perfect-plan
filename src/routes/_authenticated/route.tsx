@@ -1,6 +1,6 @@
 import { createFileRoute, Outlet, redirect, useLocation, useNavigate } from "@tanstack/react-router";
 import { pickUtms, withUtms } from "@/lib/utmCarry";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { AuthClientStalled, getReadySession } from "@/lib/authReady";
@@ -10,6 +10,8 @@ import { ensureAccountTimeZone } from "@/lib/sitTimeZoneBackfill";
 import { PullToRefresh } from "@/components/PullToRefresh";
 import { OwnerTabBar, isTaskPath } from "@/components/OwnerTabBar";
 import { StartupSplash } from "@/components/StartupSplash";
+import { DuoRail, DuoRailProvider } from "@/components/DuoRail";
+import { useDuoMode } from "@/lib/duo";
 import { FLOCK_ENABLED_QUERY, rememberMode, rememberedMode } from "@/lib/flock";
 
 /**
@@ -177,24 +179,43 @@ function AuthenticatedLayout() {
   // Persistent owner bottom nav on every authenticated screen. Two deliberate
   // exceptions: the add-bird/setup wizard (SetupShell renders its own nav stacked
   // with the wizard footer), and the one-time welcome splash.
-  const hideNav = useLocation({ select: (l) =>
+  const ownChrome = useLocation({ select: (l) =>
     l.pathname === "/welcome" || l.pathname === "/birds/new" ||
     l.pathname.endsWith("/setup") || l.pathname.endsWith("/view-as-sitter") ||
     // The sitter preview renders the sitter's OWN chrome (its iframe) — the
     // owner's bottom nav must not show under it.
     l.pathname.startsWith("/sit-preview") ||
     // The Flock has its own bar (FlockShell).
-    l.pathname === "/flock" || l.pathname.startsWith("/flock/") ||
-    // Tasks (daily check, full health check, set up / edit a sit, edit a
-    // bird's identity) end with one pinned button instead of the nav.
-    isTaskPath(l.pathname, l.search as Record<string, unknown>) });
+    l.pathname === "/flock" || l.pathname.startsWith("/flock/") });
+  // Tasks (daily check, full health check, set up / edit a sit, edit a
+  // bird's identity) end with one pinned button instead of the nav.
+  const task = useLocation({ select: (l) => isTaskPath(l.pathname, l.search as Record<string, unknown>) });
+  const hideNav = ownChrome || task;
 
+  // Landscape with room for two panes (iPhone Duo unfolded and sideways, see
+  // lib/duo.ts): the nav moves into a column on the right edge (DuoRail) on
+  // every regular page and task.
+  // Screens with their own chrome keep it, exactly as today.
+  const duoMode = useDuoMode();
+  const rail = duoMode && !ownChrome ? duoMode : null;
+  const [railTop, setRailTop] = useState<HTMLElement | null>(null);
+  const [railAction, setRailAction] = useState<HTMLElement | null>(null);
+  useEffect(() => {
+    const html = document.documentElement;
+    html.classList.toggle("duo", !!rail);
+    return () => html.classList.remove("duo");
+  }, [rail]);
+
+  // One tree either way, so turning the phone doesn't remount the page (and
+  // lose what's half-typed in it).
   return (
-    <>
-      <PullToRefresh>
-        <Outlet />
-      </PullToRefresh>
-      {!hideNav && <OwnerTabBar />}
-    </>
+    <DuoRailProvider value={rail ? { mode: rail, task, top: railTop, action: task ? railAction : null } : null}>
+      <div className={rail ? "duo-content" : undefined}>
+        <PullToRefresh>
+          <Outlet />
+        </PullToRefresh>
+      </div>
+      {rail ? <DuoRail task={task} setTop={setRailTop} setAction={setRailAction} /> : !hideNav && <OwnerTabBar />}
+    </DuoRailProvider>
   );
 }

@@ -12,6 +12,7 @@ import { useTranslation } from "react-i18next";
 import { K, KyaHeader, KyaHeading, KyaIconButton, KyaPrimaryButton, KyaSecondaryButton, KyaSheet } from "@/components/kya";
 import { BrandLockup } from "@/components/BrandLogo";
 import { OwnerHeaderIcons } from "@/components/OwnerHeader";
+import { RailAction, RailActionButton, RailBack, RailClose, useDuoRail, type RailActionSpec } from "@/components/DuoRail";
 
 /** Back in history, or to `fallback` when there's none (deep link, push). */
 export function useGoBack(fallback: () => void) {
@@ -63,12 +64,15 @@ export function PageHeader({ title, line, onBack, action, children, titleSize = 
   titleSize?: number;
 }) {
   const { t } = useTranslation();
+  // iPhone Duo side column: Back lives there instead.
+  const inRail = !!useDuoRail()?.top;
   return (
     <KyaHeader>
-      <div className="mt-1.5 flex items-center justify-between gap-3">
-        <KyaIconButton label={t("headers.back", "Back")} onClick={onBack}><ArrowLeft className="size-5" /></KyaIconButton>
+      <div className={`mt-1.5 flex items-center justify-between gap-3${inRail && !action ? " hidden" : ""}`}>
+        {inRail ? <span /> : <KyaIconButton label={t("headers.back", "Back")} onClick={onBack}><ArrowLeft className="size-5" /></KyaIconButton>}
         {action && <HeaderPill action={action} />}
       </div>
+      <RailBack onBack={onBack} />
       <KyaHeading as="h1" size={titleSize} className="mt-5 text-white">{title}</KyaHeading>
       {line && <p className="m-0 mt-2 text-[15px] leading-[1.5]" style={{ color: K.paleGreen }}>{line}</p>}
       {children}
@@ -86,12 +90,15 @@ export function TaskHeader({ title, line, onClose, progress, children }: {
   children?: ReactNode;
 }) {
   const { t } = useTranslation();
+  // iPhone Duo side column: Close lives there instead.
+  const inRail = !!useDuoRail()?.top;
   return (
     <KyaHeader>
       <div className="mt-1.5 flex items-center justify-between gap-3">
-        <KyaIconButton label={t("headers.close", "Close")} onClick={onClose}><X className="size-5" /></KyaIconButton>
+        {inRail ? <span /> : <KyaIconButton label={t("headers.close", "Close")} onClick={onClose}><X className="size-5" /></KyaIconButton>}
         {progress && <span className="text-[14px] font-[700]" style={{ color: K.lime }}>{progress.label}</span>}
       </div>
+      <RailClose onClose={onClose} />
       <KyaHeading as="h1" size={30} className="mt-5 text-white">{title}</KyaHeading>
       {line && <p className="m-0 mt-2 text-[15px] leading-[1.5]" style={{ color: K.paleGreen }}>{line}</p>}
       {progress?.value !== undefined && (
@@ -104,8 +111,14 @@ export function TaskHeader({ title, line, onClose, progress, children }: {
   );
 }
 
-/** The white footer pinned to the bottom of a task, holding one main button. */
-export function TaskFooter({ children }: { children: ReactNode }) {
+/** The white footer pinned to the bottom of a task, holding one main button.
+ *  `rail`: the same action as a short tile for the iPhone Duo side column
+ *  ("Save", with the full label kept for screen readers). */
+export function TaskFooter({ children, rail }: { children: ReactNode; rail?: RailActionSpec }) {
+  // iPhone Duo side column: the main action sits at the bottom of the column.
+  if (useDuoRail()?.action) {
+    return <RailAction>{rail ? <RailActionButton {...rail} /> : <div className="duo-rail-fallback">{children}</div>}</RailAction>;
+  }
   return (
     <div className="fixed inset-x-0 bottom-0 z-40 border-t bg-white pb-[max(env(safe-area-inset-bottom),12px)] pt-3" style={{ borderColor: K.line }}>
       <div className="mx-auto max-w-md px-4">{children}</div>

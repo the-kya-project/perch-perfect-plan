@@ -3,7 +3,7 @@ import { speciesLabel } from "@/lib/speciesLabel";
 import { friendlyError } from "@/lib/errorMessage";
 import { createFileRoute, Link, redirect, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { z } from "zod";
 import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
@@ -32,6 +32,8 @@ import { useDailyCheckToday } from "@/lib/dailyCheck";
 import { birdNames, namesAsCount } from "@/lib/birdNames";
 import { K, KyaPage, KyaBody, KyaCard, KyaHeading, KyaLink, KyaPrimaryButton, KyaAvatarStack, KyaRow, KyaIconTile } from "@/components/kya";
 import { TabHeader } from "@/components/headers";
+import { useDuoMode } from "@/lib/duo";
+import { BirdRecordPane } from "@/routes/_authenticated/birds/$birdId.index";
 import { HomePushBanner } from "@/components/HomePushBanner";
 import { getHouseholdHome, resolveOwnerNames, type HomeHousehold } from "@/lib/home.functions";
 import { useMyPermissions } from "@/lib/useCapability";
@@ -62,6 +64,8 @@ export const Route = createFileRoute("/_authenticated/dashboard")({
 function Dashboard() {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  // iPhone Duo, sideways: the bird picked in the flock list (see `wide` below).
+  const [picked, setPicked] = useState<string | null>(null);
 
   // One-shot: the inline pre-hydration head script (see __root.tsx) redirects a
   // signed-in owner from "/" to here on cold launch and drops a sessionStorage
@@ -269,8 +273,15 @@ function Dashboard() {
   // as the CaregiverCoveringSection overlay below, never a full-screen takeover
   // that would hide their birds or the add-bird affordance.
 
-  return (
-    <KyaPage>
+  // iPhone Duo unfolded and sideways: the flock list on the left of the fold,
+  // the selected bird's record on the right (like Mail). Tapping a bird swaps
+  // the right pane instead of leaving Home.
+  const wide = useDuoMode() === "sideways";
+  const listedBirds = [...flockBirds, ...(showHouseholds ? memberGroups.flatMap((g) => g.birds) : []), ...fosterBirds];
+  const selectedId = wide ? (listedBirds.find((b) => b.id === picked) ?? listedBirds[0])?.id ?? null : null;
+  const pick = wide ? { onSelect: setPicked, selectedId } : {};
+
+  const home = (
       <div className="mx-auto max-w-md">
       <HomeHeader firstName={firstName} stateCopy={stateCopy} />
 
@@ -341,7 +352,7 @@ function Dashboard() {
               ) : (
                 <KyaCard>
                   {flockBirds.map((b, i) => (
-                    <BirdRow key={b.id} bird={b} photo={photoFor(b)} latest={latestFor(b)} concern={concernByBird.has(b.id)} last={i === flockBirds.length - 1} />
+                    <BirdRow {...pick} key={b.id} bird={b} photo={photoFor(b)} latest={latestFor(b)} concern={concernByBird.has(b.id)} last={i === flockBirds.length - 1} />
                   ))}
                 </KyaCard>
               )}
@@ -364,10 +375,10 @@ function Dashboard() {
                   {g.birds.map((b, bi) =>
                     gi === 0 && bi === 0 ? (
                       <div key={b.id} data-coach="member-household-bird">
-                        <BirdRow bird={b} photo={photoFor(b)} latest={latestFor(b)} concern={concernByBird.has(b.id)} last={bi === g.birds.length - 1} />
+                        <BirdRow {...pick} bird={b} photo={photoFor(b)} latest={latestFor(b)} concern={concernByBird.has(b.id)} last={bi === g.birds.length - 1} />
                       </div>
                     ) : (
-                      <BirdRow key={b.id} bird={b} photo={photoFor(b)} latest={latestFor(b)} concern={concernByBird.has(b.id)} last={bi === g.birds.length - 1} />
+                      <BirdRow {...pick} key={b.id} bird={b} photo={photoFor(b)} latest={latestFor(b)} concern={concernByBird.has(b.id)} last={bi === g.birds.length - 1} />
                     ),
                   )}
                 </KyaCard>
@@ -386,7 +397,7 @@ function Dashboard() {
                 />
                 <KyaCard>
                   {fosterBirds.map((b, i) => (
-                    <BirdRow key={b.id} bird={b} photo={photoFor(b)} latest={latestFor(b)} foster concern={concernByBird.has(b.id)} last={i === fosterBirds.length - 1} />
+                    <BirdRow {...pick} key={b.id} bird={b} photo={photoFor(b)} latest={latestFor(b)} foster concern={concernByBird.has(b.id)} last={i === fosterBirds.length - 1} />
                   ))}
                 </KyaCard>
               </section>
@@ -402,6 +413,18 @@ function Dashboard() {
         </p>
       </KyaBody>
       </div>
+  );
+
+  return (
+    <KyaPage>
+      {selectedId ? (
+        <div className="duo-split">
+          <div className="duo-pane pb-nav">{home}</div>
+          <div className="duo-pane pb-nav" aria-live="polite">
+            <BirdRecordPane key={selectedId} birdId={selectedId} />
+          </div>
+        </div>
+      ) : home}
 
       <AppOnboarding />
     </KyaPage>
@@ -674,7 +697,7 @@ function householdHeading(t: TFunction, ownerName: string | null | undefined): s
 /** One bird in the Home list: photo, name and species, then the latest weight
  *  and when it was taken (red past a week). The weight trend lives on the
  *  weight page. */
-function BirdRow({ bird, photo, latest, foster, concern, last }: { bird: HomeBird; photo: SignedPhoto | null; latest: LatestWeight; foster?: boolean; concern?: boolean; last?: boolean }) {
+function BirdRow({ bird, photo, latest, foster, concern, last, onSelect, selectedId }: { bird: HomeBird; photo: SignedPhoto | null; latest: LatestWeight; foster?: boolean; concern?: boolean; last?: boolean; onSelect?: (id: string) => void; selectedId?: string | null }) {
   const { t } = useTranslation();
   const days = latest?.at ? daysAgo(latest.at) : null;
   const stale = days != null && days > HOME_STALE_DAYS;
@@ -682,12 +705,8 @@ function BirdRow({ bird, photo, latest, foster, concern, last }: { bird: HomeBir
     : days <= 0 ? t("dashboard.weighedToday", "Weighed today")
     : days === 1 ? t("dashboard.weighedYesterday", "Yesterday")
     : t("dashboard.weighedDaysAgo", "{{count}} days ago", { count: days });
-  return (
-    <Link
-      to="/birds/$birdId" params={{ birdId: bird.id }}
-      className="flex min-h-[72px] items-center gap-3 px-4 py-2.5 active:bg-black/[0.03]"
-      style={{ borderBottom: last ? undefined : `1px solid ${K.line}`, color: K.forest }}
-    >
+  const inner = (
+    <>
       <BirdThumb photo={photo} name={bird.name} seed={bird.id} position={bird.photo_position} />
       <span className="min-w-0 flex-1">
         <span className="block truncate text-[15px] font-[700]">{bird.name}</span>
@@ -711,6 +730,22 @@ function BirdRow({ bird, photo, latest, foster, concern, last }: { bird: HomeBir
           <span className="block text-[13px]" style={{ color: K.quiet }}>{t("dashboard.noWeightsYet", "No weights yet")}</span>
         )}
       </span>
+    </>
+  );
+  const rowClass = "flex min-h-[72px] items-center gap-3 px-4 py-2.5 active:bg-black/[0.03]";
+  const rowStyle = { borderBottom: last ? undefined : `1px solid ${K.line}`, color: K.forest };
+  // iPhone Duo, sideways: the row picks the bird for the record beside the list.
+  if (onSelect) {
+    const on = selectedId === bird.id;
+    return (
+      <button type="button" aria-pressed={on} onClick={() => onSelect(bird.id)} className={`${rowClass} w-full text-left`} style={{ ...rowStyle, background: on ? "#d6ebc4" : undefined }}>
+        {inner}
+      </button>
+    );
+  }
+  return (
+    <Link to="/birds/$birdId" params={{ birdId: bird.id }} className={rowClass} style={rowStyle}>
+      {inner}
     </Link>
   );
 }

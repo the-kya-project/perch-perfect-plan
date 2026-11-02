@@ -32,6 +32,7 @@
     "test:hydration": "node e2e/build.mjs && playwright test -c e2e",
     "test:hydration:run": "playwright test -c e2e",
     "test:hydration:dev": "E2E_DEV=1 E2E_BROWSERS=chromium playwright test -c e2e",
+    "screens:duo": "node e2e/build.mjs && playwright test -c e2e/duo.config.ts",
     "test:onboarding-plan": "npx --yes vite-node scripts/onboarding-plan.test.ts",
     "test:onboarding-welcome": "npx --yes vite-node scripts/onboarding-welcome.test.ts",
     "test:local-day": "npx --yes vite-node scripts/local-day.test.ts",

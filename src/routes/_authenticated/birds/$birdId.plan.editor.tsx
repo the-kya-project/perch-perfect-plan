@@ -342,7 +342,7 @@ function BirdEditor() {
           returns to the overview. Everyone who reaches the editor is an editor
           (others are redirected), so it's shown for editors only. This route is
           a task path (isTaskPath), so the bottom nav never shows here. */}
-      <TaskFooter>{doneButton}</TaskFooter>
+      <TaskFooter rail={{ label: t("planEditor.done", "Done"), onClick: done }}>{doneButton}</TaskFooter>
     </div>
   );
 }
