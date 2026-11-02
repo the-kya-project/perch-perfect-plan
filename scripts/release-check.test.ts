@@ -28,22 +28,15 @@ function check(name: string, fn: () => void) {
   }
 }
 
-const where = { running: "c8d60bf", prod: true, inFrame: false, native: false, hasServiceWorker: true };
+const where = { running: "c8d60bf", prod: true, inFrame: false };
 
-check("the iOS app (no worker) checks", () => {
-  assert.equal(shouldCheckVersion({ ...where, native: true, hasServiceWorker: false }), true);
-});
-check("the Android app (worker present) checks too, as a second line", () => {
-  assert.equal(shouldCheckVersion({ ...where, native: true, hasServiceWorker: true }), true);
-});
-check("a browser with a worker leaves it to the worker; one without checks", () => {
-  assert.equal(shouldCheckVersion(where), false);
-  assert.equal(shouldCheckVersion({ ...where, hasServiceWorker: false }), true);
+check("every open production page checks (Skew Protection pins the worker's own check too)", () => {
+  assert.equal(shouldCheckVersion(where), true);
 });
 check("never in a frame, a dev build, or a build without a real id", () => {
-  assert.equal(shouldCheckVersion({ ...where, native: true, inFrame: true }), false);
-  assert.equal(shouldCheckVersion({ ...where, native: true, prod: false }), false);
-  assert.equal(shouldCheckVersion({ ...where, native: true, running: "local" }), false);
+  assert.equal(shouldCheckVersion({ ...where, inFrame: true }), false);
+  assert.equal(shouldCheckVersion({ ...where, prod: false }), false);
+  assert.equal(shouldCheckVersion({ ...where, running: "local" }), false);
 });
 
 check("a different live build is newer; the same one isn't", () => {

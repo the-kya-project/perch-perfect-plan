@@ -8,9 +8,9 @@
  * screen the app hadn't loaded yet couldn't load (the sitter preview stalled
  * and its Close button did nothing) until the owner restarted the app.
  *
- * So the native apps (and any browser without a worker) ask
- * /api/public/version which build is live, when they come back to the
- * foreground and once an hour. A different build is handled exactly like a
+ * So every open app (the native apps and browsers alike, see
+ * shouldCheckVersion) asks /api/public/version which build is live, when it
+ * comes back to the foreground and once an hour. A different build is handled exactly like a
  * service-worker update (sw-register.ts): quietly at a safe moment, behind the
  * "A new version is ready" banner while a form is in progress, never
  * mid-recording or mid-upload.
@@ -38,20 +38,15 @@ export function isNewerBuild(running: string, live: unknown): boolean {
   return live.toLowerCase() !== running.toLowerCase();
 }
 
-/** Should this page run its own version check? Only a production build
- *  with a real build id, at the top of the window (a frame belongs to the
- *  page around it), and only where the service worker can't do the job: the
- *  native apps (iOS has none; Android's is kept as a second line) and any
- *  browser without one. */
-export function shouldCheckVersion(p: {
-  running: string;
-  prod: boolean;
-  inFrame: boolean;
-  native: boolean;
-  hasServiceWorker: boolean;
-}): boolean {
-  if (!p.prod || p.inFrame || !BUILD_SHAPE.test(p.running)) return false;
-  return p.native || !p.hasServiceWorker;
+/** Should this page run its own version check? Every production build with
+ *  a real build id, at the top of the window (a frame belongs to the page
+ *  around it). Not only where there's no service worker: Vercel's Skew
+ *  Protection pins an open page's requests to its own build, the worker's
+ *  update check included (/sw.js comes back as the old worker, seen on
+ *  Nov 2, 2026), so in a browser or the Android app the worker alone can't
+ *  see a release either. */
+export function shouldCheckVersion(p: { running: string; prod: boolean; inFrame: boolean }): boolean {
+  return p.prod && !p.inFrame && BUILD_SHAPE.test(p.running);
 }
 
 /** Is it time for another check? */
