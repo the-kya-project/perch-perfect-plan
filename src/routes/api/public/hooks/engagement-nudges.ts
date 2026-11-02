@@ -28,12 +28,14 @@
  * Every send is awaited and logged to notification_log AFTER a confirmed
  * send (sent > 0), so failures retry next run — same rails as the drip.
  *
- * Auth: `Authorization: Bearer <CARE_PLAN_REMINDER_SECRET>`.
+ * Auth: `Authorization: Bearer <cron_hook_token>`, the Vault secret pg_cron sends
+ * (src/lib/cronAuth.ts).
  * Body { "dryRun": true } → returns planned nudges, sends/logs nothing.
  */
 import { withErrorTelemetry } from "@/lib/errorTelemetry";
 import { createFileRoute } from "@tanstack/react-router";
 import { withCronTelemetry } from "@/lib/cronTelemetry";
+import { cronAuthFailure } from "@/lib/cronAuth";
 
 const DAY = 1000 * 60 * 60 * 24;
 
@@ -62,14 +64,8 @@ export const Route = createFileRoute("/api/public/hooks/engagement-nudges")({
   server: {
     handlers: {
       POST: withCronTelemetry("engagement-nudges", withErrorTelemetry("/api/public/hooks/engagement-nudges", async ({ request }) => {
-        const secret = process.env.CARE_PLAN_REMINDER_SECRET;
-        if (!secret) {
-          return Response.json({ ok: false, error: "CARE_PLAN_REMINDER_SECRET not configured" }, { status: 503 });
-        }
-        const auth = request.headers.get("authorization") ?? "";
-        if (auth !== `Bearer ${secret}`) {
-          return new Response("Unauthorized", { status: 401 });
-        }
+        const denied = await cronAuthFailure(request, "engagement-nudges");
+        if (denied) return denied;
         const body = (await request.json().catch(() => ({}))) as { dryRun?: boolean };
         const dryRun = body.dryRun === true;
 
