@@ -12,6 +12,10 @@
 // different effective aspect than the 800px the hero/preview use, so the tile
 // diverged from the preview. Resolve tile photos at the same width the
 // reposition preview uses.
+//
+// No stored focal point: BIRD_PHOTO_FOCUS (upper part, where the head is).
+import { BIRD_PHOTO_FOCUS } from "@/lib/birdPhotoFocus";
+
 export function BirdPhotoCrop({
   url,
   original,
@@ -34,7 +38,7 @@ export function BirdPhotoCrop({
       onError={(e) => {
         if (original && e.currentTarget.src !== original) e.currentTarget.src = original;
       }}
-      style={{ objectPosition: position ?? "50% 50%" }}
+      style={{ objectPosition: position || BIRD_PHOTO_FOCUS }}
       className="absolute inset-0 block size-full object-cover"
     />
   );

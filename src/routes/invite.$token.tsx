@@ -20,6 +20,7 @@ import { useTranslation, Trans } from "react-i18next";
 import type { TFunction } from "i18next";
 import i18next from "i18next";
 import { birdNames } from "@/lib/birdNames";
+import { BIRD_PHOTO_FOCUS } from "@/lib/birdPhotoFocus";
 
 // Public household-invite accept screen. Renders for logged-out visitors too;
 // the token is the access check. Never reveals bird data for an
@@ -242,7 +243,7 @@ function BirdAvatars({ birds }: { birds: BirdPreview[] }) {
       {shown.map((b, i) => (
         <span key={i} className={circle} style={{ ...ring, background: K.teal, color: K.forest, zIndex: shown.length - i }}>
           {b.photoUrl
-            ? <img src={b.photoUrl} alt="" className="size-full object-cover" style={{ objectPosition: b.photoPosition ?? "50% 20%" }} />
+            ? <img src={b.photoUrl} alt="" className="size-full object-cover" style={{ objectPosition: b.photoPosition ?? BIRD_PHOTO_FOCUS }} />
             : <span className="text-[20px] font-[700]" style={{ fontFamily: SERIF }}>{(b.name.trim()[0] ?? "?").toUpperCase()}</span>}
         </span>
       ))}

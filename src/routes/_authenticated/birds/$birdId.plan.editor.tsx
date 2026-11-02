@@ -26,6 +26,7 @@ import { BirdPhotoCrop } from "@/components/BirdPhotoCrop";
 import { formatLocalDateTime } from "@/lib/dates";
 import { LoadError } from "@/components/LoadError";
 import { useLoadState, useTooLong } from "@/lib/useTooLong";
+import { BIRD_PHOTO_FOCUS } from "@/lib/birdPhotoFocus";
 
 
 // The care-plan editor is reached via the new overview front door (/plan).
@@ -254,7 +255,7 @@ function BirdEditor() {
           <span className="flex items-center gap-3">
             {headerPhoto && (
               <span className="relative block size-11 shrink-0 overflow-hidden rounded-full">
-                <BirdPhotoCrop url={headerPhoto.url} original={headerPhoto.original} position={bird.photo_position ?? "50% 20%"} alt={bird.name} />
+                <BirdPhotoCrop url={headerPhoto.url} original={headerPhoto.original} position={bird.photo_position ?? BIRD_PHOTO_FOCUS} alt={bird.name} />
               </span>
             )}
             <span className="min-w-0 flex-1">{t("planEditor.editTitleNamed", "Edit {{name}}'s care plan", { name: bird.name })}</span>
@@ -342,7 +343,7 @@ function BirdEditor() {
           returns to the overview. Everyone who reaches the editor is an editor
           (others are redirected), so it's shown for editors only. This route is
           a task path (isTaskPath), so the bottom nav never shows here. */}
-      <TaskFooter rail={{ label: t("planEditor.done", "Done"), onClick: done }}>{doneButton}</TaskFooter>
+      <TaskFooter>{doneButton}</TaskFooter>
     </div>
   );
 }

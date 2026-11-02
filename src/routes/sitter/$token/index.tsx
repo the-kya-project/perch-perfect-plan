@@ -25,6 +25,7 @@ import {
 } from "@/components/sitter/sitterShared";
 import { useSitterDashboard } from "@/components/SitterDashboard";
 import { VetCallRow } from "@/components/sitter/CallRows";
+import { BIRD_PHOTO_FOCUS } from "@/lib/birdPhotoFocus";
 
 export const Route = createFileRoute("/sitter/$token/")({
   component: SitterHome,
@@ -644,7 +645,7 @@ function SinglePhotoCard({ bird, species, token }: { bird: any; species: string;
           // Not lazy: first thing on the page, and inside the owner's preview
           // frame on iPhone a lazy image may never load.
           loading="eager"
-          style={{ objectPosition: bird.photo_position ?? "50% 20%" }}
+          style={{ objectPosition: bird.photo_position ?? BIRD_PHOTO_FOCUS }}
           className="absolute inset-0 size-full object-cover"
         />
       ) : (

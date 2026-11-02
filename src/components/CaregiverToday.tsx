@@ -18,6 +18,7 @@ import { localDateISO } from "@/lib/localDay";
 import { useTranslation } from "react-i18next";
 import i18next, { type TFunction } from "i18next";
 import { birdNames } from "@/lib/birdNames";
+import { BIRD_PHOTO_FOCUS } from "@/lib/birdPhotoFocus";
 
 // Kya-styled versions of the active-caregiver views used by the /today and
 // /covering/$sitId/$birdId pages. Same data and the same task-completion path
@@ -119,7 +120,7 @@ function KyaCoveringBirds({ sit }: { sit: ActiveCaregiverSit }) {
           >
             {photo ? (
               <div className="relative size-14 shrink-0 overflow-hidden rounded-[14px]">
-                <BirdPhotoCrop url={photo} original={photo} position={b.photo_position ?? "50% 20%"} alt={b.name} />
+                <BirdPhotoCrop url={photo} original={photo} position={b.photo_position ?? BIRD_PHOTO_FOCUS} alt={b.name} />
               </div>
             ) : (
               <span className="grid size-14 shrink-0 place-items-center rounded-[14px] text-[22px] font-[700] text-white" style={{ background: K.forest }}>

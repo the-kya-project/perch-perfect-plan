@@ -12,6 +12,7 @@ import { formatLocalDate } from "@/lib/dates";
 import { parseCalendarDate } from "@/lib/localDay";
 import i18next from "i18next";
 import { useTranslation } from "react-i18next";
+import { BIRD_PHOTO_FOCUS } from "@/lib/birdPhotoFocus";
 
 // Past birds archive — read-only, sender-side memory of birds handed off.
 // Snapshots only (not linked to live records). Newest departures first.
@@ -77,7 +78,7 @@ function PastBirdCard({ bird: b, last }: { bird: any; last: boolean }) {
     <div className="px-4 py-3.5" style={{ borderBottom: last ? undefined : `1px solid ${K.line}` }}>
       <div className="flex items-start gap-3">
         {b.photo_thumb ? (
-          <img src={b.photo_thumb} alt="" className="size-10 shrink-0 rounded-full object-cover" />
+          <img src={b.photo_thumb} alt="" className="size-10 shrink-0 rounded-full object-cover" style={{ objectPosition: b.photo_position ?? BIRD_PHOTO_FOCUS }} />
         ) : (
           <KyaIconTile tone="mist"><Feather className="size-5" /></KyaIconTile>
         )}

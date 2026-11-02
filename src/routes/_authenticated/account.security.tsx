@@ -10,11 +10,19 @@ import { joinNamesDisplay } from "@/lib/i18n/joinNames";
 import { isIOSApp } from "@/lib/nativeApp";
 import { useTranslation } from "react-i18next";
 import i18next from "i18next";
+import { useDuoMode } from "@/lib/duo";
+import { AccountDuo } from "@/components/duo/AccountDuo";
 
 export const Route = createFileRoute("/_authenticated/account/security")({
   head: () => ({ meta: [{ title: i18next.t("accountSecurity.pageTitle", "Password & sign-in — Kya & Co.") }] }),
-  component: SecurityPage,
+  component: SecurityPageRoute,
 });
+
+// iPhone Duo, two panes: this page in the account's pop-out card (AccountDuo).
+function SecurityPageRoute() {
+  if (useDuoMode() === "sideways") return <AccountDuo selected="password"><SecurityPage /></AccountDuo>;
+  return <SecurityPage />;
+}
 
 function SecurityPage() {
   const { t } = useTranslation();

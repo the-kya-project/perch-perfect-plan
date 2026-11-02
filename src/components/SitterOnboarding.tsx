@@ -8,6 +8,7 @@ import { AlertTriangle, ChevronLeft, Check, X } from "lucide-react";
 import { K, SERIF } from "@/components/kya";
 import { birdNames } from "@/lib/birdNames";
 import { useCoachSpot } from "@/lib/useCoachSpot";
+import { BIRD_PHOTO_FOCUS } from "@/lib/birdPhotoFocus";
 
 // First-visit sitter onboarding: a two-screen welcome, then a coach-mark bubble
 // walkthrough that points at the REAL on-screen elements (tagged with
@@ -362,7 +363,7 @@ export function SitterOnboarding({ birds, bird, careSections, hasClips, token }:
                         key={b.id ?? i}
                         src={b.photo_url}
                         alt={b.name ?? ""}
-                        style={{ objectPosition: b.photo_position ?? "50% 20%" }}
+                        style={{ objectPosition: b.photo_position ?? BIRD_PHOTO_FOCUS }}
                         className="size-16 rounded-[16px] object-cover ring-[3px] ring-white"
                       />
                     ) : (

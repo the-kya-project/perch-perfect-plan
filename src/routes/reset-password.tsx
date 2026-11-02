@@ -82,7 +82,7 @@ function ResetPasswordPage() {
   const backToSignIn = () => navigate({ to: "/auth", search: { mode: "signin" } });
 
   return (
-    <FrontDoorPage>
+    <FrontDoorPage duoForm>
       <FrontDoorHeader
         onBack={backToSignIn}
         title={t("resetPassword.headlineV2", "Set a new password")}

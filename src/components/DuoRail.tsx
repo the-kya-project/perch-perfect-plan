@@ -1,12 +1,14 @@
 // The iPhone Duo side column (see lib/duo.ts for when it shows). It replaces
 // the bottom tab bar on the edge where the status bar and camera sit (the
 // right, unless the native app names the left; data-duo-rail on <html>): room for those at the top, then Back (or Close on a task), and the tabs
-// at the bottom. A task screen shows only Close and its main action, no tabs.
+// at the bottom. The tabs show on every signed-in screen, tasks included, so a
+// task's main button stays in the screen (TaskFooter, bottom of the right half)
+// and the column never holds one.
 //
-// Headers don't know about the column: PageHeader / TaskHeader / TaskFooter ask
-// useDuoRail() and, when there is one, send their Back, Close and main button
-// into its slots with a portal. With no column (every other screen size, and
-// the sitter view, which has no AuthenticatedLayout) nothing changes.
+// Headers don't know about the column: PageHeader / TaskHeader ask useDuoRail()
+// and, when there is one, send their Back or Close into its top slot with a
+// portal. With no column (every other screen size, and the sitter view, which
+// has no AuthenticatedLayout) nothing changes.
 import { createContext, useContext, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { Link } from "@tanstack/react-router";
@@ -18,11 +20,8 @@ import { rememberMode } from "@/lib/flock";
 export type DuoRailSlots = {
   /** The edge the column sits on. */
   edge: "left" | "right";
-  task: boolean;
   /** Under the status bar: Back, or Close on a task. */
   top: HTMLElement | null;
-  /** A task's main action (Save / Done). Null on regular pages. */
-  action: HTMLElement | null;
 };
 
 const RailContext = createContext<DuoRailSlots | null>(null);
@@ -34,17 +33,16 @@ export function useDuoRail(): DuoRailSlots | null {
 }
 
 const FOREST = "#1a3d2e";
-const FOREST_DEEP = "#10291e";
 
-/** 52px round button for the column's top slot. */
-function RailRoundButton({ label, onClick, task, children }: { label: string; onClick: () => void; task: boolean; children: ReactNode }) {
+/** 52px forest circle for the column's top slot. */
+function RailRoundButton({ label, onClick, children }: { label: string; onClick: () => void; children: ReactNode }) {
   return (
     <button
       type="button"
       aria-label={label}
       onClick={onClick}
       className="grid size-[52px] shrink-0 place-items-center rounded-full text-white active:scale-95"
-      style={{ background: task ? FOREST_DEEP : FOREST }}
+      style={{ background: FOREST }}
     >
       {children}
     </button>
@@ -57,7 +55,7 @@ export function RailBack({ onBack }: { onBack: () => void }) {
   const rail = useDuoRail();
   if (!rail?.top) return null;
   return createPortal(
-    <RailRoundButton label={t("headers.back", "Back")} onClick={onBack} task={rail.task}>
+    <RailRoundButton label={t("headers.back", "Back")} onClick={onBack}>
       <ArrowLeft className="size-[22px]" strokeWidth={2.2} aria-hidden="true" />
     </RailRoundButton>,
     rail.top,
@@ -70,63 +68,25 @@ export function RailClose({ onClose }: { onClose: () => void }) {
   const rail = useDuoRail();
   if (!rail?.top) return null;
   return createPortal(
-    <RailRoundButton label={t("headers.close", "Close")} onClick={onClose} task={rail.task}>
+    <RailRoundButton label={t("headers.close", "Close")} onClick={onClose}>
       <X className="size-[22px]" strokeWidth={2.2} aria-hidden="true" />
     </RailRoundButton>,
     rail.top,
   );
 }
 
-/** A task's main action, sent into the column's bottom slot. */
-export function RailAction({ children }: { children: ReactNode }) {
-  const rail = useDuoRail();
-  if (!rail?.action) return null;
-  return createPortal(children, rail.action);
-}
-
-export type RailActionSpec = {
-  /** Fits the 104px column: "Save", "Done", "Next". */
-  label: string;
-  /** The full label, for screen readers ("Save Echo's check"). */
-  ariaLabel?: string;
-  onClick: () => void;
-  disabled?: boolean;
-};
-
-/** A task's main action as a column tile. Ready: gold with the forest border,
- *  as everywhere else. Not ready: an outline on the forest column, legible but
- *  plainly not tappable yet. */
-export function RailActionButton({ label, ariaLabel, onClick, disabled }: RailActionSpec) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      disabled={disabled}
-      aria-label={ariaLabel && ariaLabel !== label ? ariaLabel : undefined}
-      className="min-h-[56px] w-[84px] rounded-[18px] border-2 px-1.5 text-[15px] font-[700] leading-tight active:scale-95 disabled:active:scale-100"
-      style={disabled
-        ? { background: "transparent", borderColor: "rgba(255,255,255,0.35)", color: "rgba(255,255,255,0.6)" }
-        : { background: "#f2b33d", borderColor: FOREST, color: FOREST }}
-    >
-      {label}
-    </button>
-  );
-}
-
-/** The column itself. `setTop` / `setAction` are callback refs for the slots. */
-export function DuoRail({ task, setTop, setAction }: { task: boolean; setTop: (el: HTMLElement | null) => void; setAction: (el: HTMLElement | null) => void }) {
+/** The column itself. `setTop` is a callback ref for the Back / Close slot. */
+export function DuoRail({ setTop }: { setTop: (el: HTMLElement | null) => void }) {
   const { t } = useTranslation();
   return (
-    <nav
-      aria-label={task ? t("ownerTabs.screenControls", "Screen controls") : t("ownerTabs.navAria", "Primary")}
-      className={`duo-rail${task ? " duo-rail-task" : ""}`}
-    >
+    <nav aria-label={t("ownerTabs.navAria", "Primary")} className="duo-rail">
       <div ref={setTop} className="flex shrink-0 flex-col items-center gap-2" />
       <div className="duo-rail-spacer" />
-      {task ? <div ref={setAction} className="duo-rail-action shrink-0" /> : <RailTabs />}
+      <RailTabs />
     </nav>
   );
 }
+
 
 type Fit = "comfortable" | "tight" | "icons" | "scroll";
 

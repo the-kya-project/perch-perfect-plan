@@ -306,7 +306,7 @@ function AuthPage() {
   const legalLinkCls = "inline-flex min-h-[44px] items-center px-0.5 align-middle font-[700] underline underline-offset-2";
 
   return (
-    <FrontDoorPage>
+    <FrontDoorPage duoForm>
       <FrontDoorHeader
         onBack={forgot ? backToSignInForm : () => navigate({ to: "/" })}
         title={title}

@@ -24,6 +24,8 @@ import { localDateISO } from "@/lib/localDay";
 import { encodeSetupStep } from "@/lib/setupProgress";
 import { useConfirm } from "@/components/ConfirmSheet";
 import { isMissingColumn } from "@/lib/missingColumn";
+import { useFormDraft } from "@/lib/drafts";
+import { BIRD_PHOTO_FOCUS } from "@/lib/birdPhotoFocus";
 
 export const Route = createFileRoute("/_authenticated/birds/new")({
   head: () => ({ meta: [{ title: i18next.t("newBird.metaTitle", "Add a bird — Kya & Co.") }] }),
@@ -52,7 +54,7 @@ function NewBird() {
   const [sex, setSex] = useState("");
   const [flight, setFlight] = useState("unknown");
   const [photo, setPhoto] = useState<string | null>(null);
-  const [photoPos, setPhotoPos] = useState<string>("50% 50%");
+  const [photoPos, setPhotoPos] = useState<string>(BIRD_PHOTO_FOCUS);
   const [saving, setSaving] = useState(false);
   // Set once the bird is created — a retry must never insert a second bird,
   // even if the post-save navigation failed (see onAddBird).
@@ -78,6 +80,25 @@ function NewBird() {
   const todayStr = localDateISO();
   const [isFoster, setIsFoster] = useState(!!fosterParam);
   const [intakeDate, setIntakeDate] = useState<string>(todayStr);
+
+  // A local draft: with the iPhone Duo's side column the tabs are always a tap
+  // away, so leaving mid-way and coming back puts every choice back (the photo
+  // too). Cleared once the bird is added, and on Cancel.
+  const hasInput = !!(name.trim() || species.trim() || age || birthDate || sex || photo || flight !== "unknown");
+  type BirdDraft = { name: string; species: string; age: string; birthDate: string; sex: string; flight: string; photoPos: string; isFoster: boolean; intakeDate: string };
+  const draft = useFormDraft<BirdDraft>({
+    kind: "bird-new",
+    birdId: "new",
+    data: { name, species, age, birthDate, sex, flight, photoPos, isFoster, intakeDate },
+    photo,
+    empty: !hasInput,
+    onRestore: ({ data: d, photo: p }) => {
+      setName(d.name); setSpecies(d.species); setAge(d.age); setBirthDate(d.birthDate);
+      setSex(d.sex); setFlight(d.flight); setPhotoPos(d.photoPos);
+      setIsFoster(d.isFoster); setIntakeDate(d.intakeDate);
+      if (p) setPhoto(p);
+    },
+  });
 
   async function onPhoto(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -209,6 +230,7 @@ function NewBird() {
       id = await createBird(1);
       if (!id) return;
       createdIdRef.current = id;
+      draft.clear();
       toast.success(t("newBird.added", "{{name}} added.", { name }));
       track("bird_added", { species, is_foster: isFoster, has_photo: !!photo });
       // Offer to share the new bird with people already in the household. Only
@@ -227,7 +249,6 @@ function NewBird() {
   // if they've started entering details, so a stray tap doesn't discard work.
   // If the bird WAS created (a prior tap saved it but navigation failed), leaving
   // is safe — never warn about discarding a bird that's already saved.
-  const hasInput = !!(name.trim() || species.trim() || age || birthDate || sex || photo || flight !== "unknown");
   async function onCancel() {
     if (createdIdRef.current) { navigate({ to: "/dashboard" }); return; }
     if (!hasInput || await confirm({
@@ -236,6 +257,7 @@ function NewBird() {
       confirmLabel: t("newBird.discardConfirmAction", "Discard"),
       cancelLabel: t("newBird.discardConfirmKeep", "Keep editing"),
     })) {
+      draft.clear();
       navigate({ to: "/dashboard" });
     }
   }
@@ -289,7 +311,7 @@ function NewBird() {
               <input type="file" accept="image/*,.heic,.heif" disabled={photoBusy} className="hidden" onChange={onPhoto} />
             </label>
             {photo && (
-              <button type="button" onClick={() => { setPhoto(null); setPhotoPos("50% 50%"); }} className="min-h-[44px] text-[15px] font-[700] text-[#a32d2d]">{t("newBird.remove", "Remove")}</button>
+              <button type="button" onClick={() => { setPhoto(null); setPhotoPos(BIRD_PHOTO_FOCUS); }} className="min-h-[44px] text-[15px] font-[700] text-[#a32d2d]">{t("newBird.remove", "Remove")}</button>
             )}
           </div>
         </div>

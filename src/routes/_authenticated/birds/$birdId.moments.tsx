@@ -18,6 +18,7 @@ import { formatLocalDate } from "@/lib/dates";
 import { localDateISO } from "@/lib/localDay";
 import i18next from "i18next";
 import { useTranslation } from "react-i18next";
+import { BIRD_PHOTO_FOCUS } from "@/lib/birdPhotoFocus";
 
 export const Route = createFileRoute("/_authenticated/birds/$birdId/moments")({
   head: () => ({ meta: [{ title: i18next.t("birdMoments.metaTitle", "Moments — Kya & Co.") }] }),
@@ -175,7 +176,7 @@ function MomentsFacet() {
   // gradient when there's no milestone photo for the featured anchor.
   const featuredFromBird = !featuredAnchorPhoto && !!birdPhoto?.url;
   const featuredPhoto = featuredAnchorPhoto ?? birdPhoto?.url ?? null;
-  const featuredPosition = featuredFromBird ? (bird?.photo_position ?? "50% 50%") : "50% 50%";
+  const featuredPosition = featuredFromBird ? (bird?.photo_position ?? BIRD_PHOTO_FOCUS) : "50% 50%";
   // The gotcha-day card states how long they've been together now; hatch-day
   // names the coming birthday, counted from the saved hatch date (the same
   // date the bird page's age comes from, via lib/birdAge).

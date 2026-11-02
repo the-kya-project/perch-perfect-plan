@@ -153,6 +153,30 @@
   "account.yourAccountAndAllData": "Je account en alle gegevens zijn verwijderd.",
   // Your name
   "account.yourName": "Je naam",
+  // Backup contact, first-aid kit and more
+  "accountDuo.allEmergency": "Back-upcontact, EHBO-doos en meer",
+  // Complete
+  "accountDuo.complete": "Compleet",
+  // What a sitter sees if something goes wrong. Saved for all your birds.
+  "accountDuo.emergencyLine": "Wat een oppas ziet als er iets misgaat. Opgeslagen voor al je vogels.",
+  // People who help care for your birds all the time.
+  "accountDuo.householdLine": "Mensen die altijd helpen met de zorg voor je vogels.",
+  // Manage household
+  "accountDuo.manageHousehold": "Huishouden beheren",
+  // Language, time zone and more
+  "accountDuo.moreSettings": "Taal, tijdzone en meer",
+  // More settings
+  "accountDuo.moreTitle": "Meer instellingen",
+  // That didn't save. Try again.
+  "accountDuo.notSaved": "Dat is niet opgeslagen. Probeer het opnieuw.",
+  // Password
+  "accountDuo.password": "Wachtwoord",
+  // Not set
+  "accountDuo.passwordNotSet": "Niet ingesteld",
+  // Set
+  "accountDuo.passwordSet": "Ingesteld",
+  // Regular vet
+  "accountDuo.regularVet": "Vaste dierenarts",
   // What a sitter sees if something goes wrong. Tap any line to change it.
   "accountEmergency.line": "Wat een oppas ziet als er iets misgaat. Tik op een regel om die te wijzigen.",
   // Loading…
@@ -1201,6 +1225,20 @@
   "birdRecord.youMayHaveHandedThis": "Misschien heb je deze vogel overgedragen, of is je toegang ingetrokken. Denk je dat dat niet klopt? Vraag het dan aan degene die nu over het dossier gaat.",
   // You're offline
   "birdRecord.youReOffline": "Je bent offline",
+  // Who can see this bird
+  "birdSettingsDuo.access": "Wie deze vogel kan zien",
+  // Settings
+  "birdSettingsDuo.eyebrow": "Instellingen",
+  // Identity
+  "birdSettingsDuo.identity": "Identiteit",
+  // {{name}}'s settings
+  "birdSettingsDuo.listLabel": "Instellingen van {{name}}",
+  // Add species
+  "birdSettingsDuo.noSpecies": "Soort toevoegen",
+  // You and {{count}} more
+  "birdSettingsDuo.youAndCount_one": "Jij en nog {{count}}",
+  // You and {{count}} more
+  "birdSettingsDuo.youAndCount_other": "Jij en nog {{count}}",
   // Add a name and species to continue.
   "birdSetup.addANameAndSpecies": "Vul een naam en soort in om verder te gaan.",
   // Add a note (optional)
@@ -1921,10 +1959,10 @@
   "birdWeight.noChange": "Geen verschil",
   // No weights in the last {{range}}.
   "birdWeight.noneInRange": "Geen gewichten in de laatste {{range}}.",
-  // No weight then
-  "birdWeight.noWeightThen": "Toen geen gewicht",
   // now, {{time}}
   "birdWeight.nowAt": "nu, {{time}}",
+  // No weight then
+  "birdWeight.noWeightThen": "Toen geen gewicht",
   // +{{n}} g
   "birdWeight.plusG": "+{{n}} g",
   // Enter a weight between {{min}} and {{max}} grams.
@@ -2929,6 +2967,8 @@
   "draft.restoredWeight": "We hebben je onafgemaakte gewicht van {{when}} bewaard.",
   // yesterday at {{time}}
   "draft.yesterdayAt": "gisteren om {{time}}",
+  // Calm, clear care for your bird.
+  "duoFrontDoor.tagline": "Rustige, duidelijke zorg voor je vogel.",
   // Emergency
   "emergencyBar.emergency": "Noodgeval",
   // Parrots 101
@@ -3275,8 +3315,6 @@
   "flockCheck.discardBody": "Het is nog niet opgeslagen.",
   // Discard what you entered for {{name}}?
   "flockCheck.discardTitle": "Wat je voor {{name}} hebt ingevuld weggooien?",
-  // Done
-  "flockCheck.doneShort": "Klaar",
   // Nice work. Everything's saved to each bird's health log.
   "flockCheck.doneSubhead": "Goed gedaan. Alles staat in het gezondheidslogboek van elke vogel.",
   // Done
@@ -3315,8 +3353,6 @@
   "flockCheck.looksNormal": "ziet er normaal uit",
   // Flock check — Kya & Co.
   "flockCheck.metaTitle": "Check van je vogels — Kya & Co.",
-  // Next
-  "flockCheck.nextShort": "Volgende",
   // Noticed something
   "flockCheck.noticedSomething": "Iets opgemerkt",
   // Not weighed in {{count}} day
@@ -3335,8 +3371,6 @@
   "flockCheck.seeSummary": "Bekijk het overzicht van vandaag →",
   // Start
   "flockCheck.start": "Begin",
-  // Summary
-  "flockCheck.summaryShort": "Overzicht",
   // Today's weights
   "flockCheck.todaysWeights": "Gewichten van vandaag",
   // Up next · {{n}}
@@ -3769,14 +3803,10 @@
   "fullCheck.removePhoto": "Verwijderen",
   // Save {{name}}'s check
   "fullCheck.save": "Check van {{name}} opslaan",
-  // Save
-  "fullCheck.saveShort": "Opslaan",
   // {{name}}'s check is saved to the health log.
   "fullCheck.savedLine": "De check van {{name}} staat in het gezondheidslogboek.",
   // Saving…
   "fullCheck.saving": "Opslaan…",
-  // Saving…
-  "fullCheck.savingShort": "Opslaan…",
   // {{name}}'s daily check
   "fullCheck.sitterTitle": "Dagelijkse check van {{name}}",
   // {{name}}'s full health check
@@ -4313,6 +4343,18 @@
   "household.whichBirds": "Welke vogels?",
   // You
   "household.you": "Jij",
+  // Invited
+  "householdDuo.invited": "Uitgenodigd",
+  // Invited to help with {{birds}}. They join once they accept the email.
+  "householdDuo.invitedLine": "Uitgenodigd om te helpen met {{birds}}. Ze doen mee zodra ze de e-mail accepteren.",
+  // People who help care for your birds all the time.
+  "householdDuo.line": "Mensen die altijd helpen met de zorg voor je vogels.",
+  // Owner
+  "householdDuo.owner": "Eigenaar",
+  // People
+  "householdDuo.people": "Mensen",
+  // Household
+  "householdDuo.title": "Huishouden",
   // Add
   "householdInvite.add": "Toevoegen",
   // {{name}} added.
@@ -4983,8 +5025,6 @@
   "ownerTabs.home": "Home",
   // Primary
   "ownerTabs.navAria": "Hoofdmenu",
-  // Screen controls
-  "ownerTabs.screenControls": "Schermknoppen",
   // Sits
   "ownerTabs.sits": "Oppasperiodes",
   // Do what feels right. Your avian vet can guide anything else.

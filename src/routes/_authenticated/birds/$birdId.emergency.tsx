@@ -6,17 +6,31 @@ import { supabase } from "@/integrations/supabase/client";
 import { useBirdRole } from "@/lib/useBirdRole";
 import { useCapability } from "@/lib/useCapability";
 import { K, KyaPage, KyaBody } from "@/components/kya";
-import { PageHeader } from "@/components/headers";
+import { PageHeader, useGoBack } from "@/components/headers";
+import { useCallback } from "react";
 import { EmergencyInfo } from "@/components/EmergencyInfo";
 import { useBirdOwnerEmergency } from "@/lib/useOwnerEmergency";
 import { LoadError } from "@/components/LoadError";
 import { useTooLong } from "@/lib/useTooLong";
+import { useDuoMode } from "@/lib/duo";
+import { BirdSettingsDuo } from "@/components/duo/BirdSettingsDuo";
 
 // A bird's emergency info page (from the bird's record list).
 export const Route = createFileRoute("/_authenticated/birds/$birdId/emergency")({
   head: () => ({ meta: [{ title: i18next.t("birdEmergency.metaTitle", "Emergency info — Kya & Co.") }] }),
-  component: BirdEmergency,
+  component: BirdEmergencyRoute,
 });
+
+
+// iPhone Duo, two panes: this page in the card beside the bird's settings
+// tiles (BirdSettingsDuo).
+function BirdEmergencyRoute() {
+  const { birdId } = Route.useParams();
+  const navigate = useNavigate();
+  const goBack = useGoBack(useCallback(() => navigate({ to: "/birds/$birdId", params: { birdId } }), [navigate, birdId]));
+  if (useDuoMode() === "sideways") return <BirdSettingsDuo birdId={birdId} selected="emergency" onBack={goBack}><BirdEmergency /></BirdSettingsDuo>;
+  return <BirdEmergency />;
+}
 
 function BirdEmergency() {
   const { t } = useTranslation();

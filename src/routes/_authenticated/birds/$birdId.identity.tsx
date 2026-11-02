@@ -25,6 +25,9 @@ import { formatLocalDate } from "@/lib/dates";
 import { localDateISO } from "@/lib/localDay";
 import { ownerIntakeDate } from "@/lib/intakeDate";
 import { isMissingColumn } from "@/lib/missingColumn";
+import { BIRD_PHOTO_FOCUS } from "@/lib/birdPhotoFocus";
+import { useDuoMode } from "@/lib/duo";
+import { BirdSettingsDuo } from "@/components/duo/BirdSettingsDuo";
 
 type IdentitySearch = { edit?: 1 };
 
@@ -37,7 +40,7 @@ export const Route = createFileRoute("/_authenticated/birds/$birdId/identity")({
     const e = search.edit;
     return e === 1 || e === "1" || e === true ? { edit: 1 } : {};
   },
-  component: IdentityFacet,
+  component: IdentityFacetRoute,
 });
 
 type Identity = {
@@ -91,6 +94,18 @@ function flightLabel(t: TFunction, v: string | null | undefined): string | null 
   }
 }
 const blank = (v: string | null | undefined) => !((v ?? "").trim());
+
+
+// iPhone Duo, two panes: this page in the card beside the bird's settings
+// tiles (BirdSettingsDuo). Editing stays a full task.
+function IdentityFacetRoute() {
+  const { birdId } = Route.useParams();
+  const search = Route.useSearch();
+  const navigate = useNavigate();
+  const goBack = useGoBack(useCallback(() => navigate({ to: "/birds/$birdId", params: { birdId } }), [navigate, birdId]));
+  if (useDuoMode() === "sideways" && !search.edit) return <BirdSettingsDuo birdId={birdId} selected="identity" onBack={goBack}><IdentityFacet /></BirdSettingsDuo>;
+  return <IdentityFacet />;
+}
 
 function IdentityFacet() {
   const { t } = useTranslation();
@@ -202,7 +217,7 @@ function IdentityFacet() {
                   birds never repositioned) instead of centering on feet. */}
               <div className="relative grid size-14 shrink-0 place-items-center overflow-hidden rounded-[16px]" style={{ background: K.forest }}>
                 {photo ? (
-                  <BirdPhotoCrop url={photo.url} original={photo.original} position={bird.photo_position ?? "50% 20%"} alt={name} />
+                  <BirdPhotoCrop url={photo.url} original={photo.original} position={bird.photo_position ?? BIRD_PHOTO_FOCUS} alt={name} />
                 ) : (
                   <span className="text-[22px] font-[700]" style={{ color: K.lime, fontFamily: "'Newsreader', Georgia, serif" }}>{initial}</span>
                 )}
@@ -445,7 +460,7 @@ function IdentityForm({ birdId, bird, onSaved, onDirtyChange }: { birdId: string
 
       {/* Pinned Save, the one task button (Close top left leaves, with the
           leave-without-saving guard when something changed). */}
-      <TaskFooter rail={{ label: saving ? t("birdIdentity.saving", "Saving…") : t("birdIdentity.save", "Save"), onClick: save, disabled: saving }}>
+      <TaskFooter>
         <KyaPrimaryButton onClick={save} disabled={saving}>
           {saving ? t("birdIdentity.saving", "Saving…") : t("birdIdentity.save", "Save")}
         </KyaPrimaryButton>

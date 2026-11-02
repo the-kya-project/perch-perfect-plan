@@ -2,7 +2,7 @@
 // Same system as the new-bird setup and the daily health check — a forest
 // header, a mist body with rounded top corners, white cards, Newsreader
 // headings, DM Sans text, sunflower main buttons and moss text links.
-import { useEffect, useRef, type CSSProperties, type InputHTMLAttributes, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useRef, type CSSProperties, type InputHTMLAttributes, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { ChevronRight, X } from "lucide-react";
 
@@ -24,8 +24,14 @@ export const K = {
 };
 export const SERIF = "'Newsreader', Georgia, serif";
 
+/** True inside an iPhone Duo pop-out card (components/duo/DuoBlocks.tsx): a
+ *  whole page rendered there drops its own shell and header, since the card
+ *  carries the title. False everywhere else, so nothing changes there. */
+export const KyaInCard = createContext(false);
+
 /** Page shell: DM Sans, mist background, room for the tab bar. */
 export function KyaPage({ children }: { children: ReactNode }) {
+  if (useContext(KyaInCard)) return <>{children}</>;
   return (
     <div className="setup-frame min-h-screen pb-nav" style={{ background: K.mist, color: K.forest }}>
       {children}
@@ -45,6 +51,7 @@ export function KyaHeader({ children, className = "" }: { children: ReactNode; c
 
 /** The mist body that sits under the header with 26px rounded top corners. */
 export function KyaBody({ children, className = "" }: { children: ReactNode; className?: string }) {
+  if (useContext(KyaInCard)) return <div className={`flex flex-col gap-4 ${className}`}>{children}</div>;
   return (
     <main className={`relative mx-auto -mt-[26px] flex max-w-md flex-col gap-4 rounded-t-[26px] px-4 pb-6 pt-5 ${className}`} style={{ background: K.mist }}>
       {children}
@@ -241,25 +248,43 @@ export function isTopmostDialog(el: HTMLElement | null): boolean {
   return all.length === 0 || all[all.length - 1] === el;
 }
 
-export function KyaSheet({ open = true, onClose, title, closeLabel, children, footer }: {
+export function KyaSheet({ open = true, onClose, title, closeLabel, children, footer, inline = false }: {
   open?: boolean;
   onClose: () => void;
   title?: ReactNode;
   closeLabel: string;
   children: ReactNode;
   footer?: ReactNode;
+  /** iPhone Duo: the same content as a card in the right pane, in place of a
+   *  sheet over the screen (no backdrop, no scroll lock). */
+  inline?: boolean;
 }) {
   const dialogRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
-    if (!open) return;
+    if (!open || inline) return;
     // Only the topmost sheet closes on Escape (a confirm can open over another sheet).
     const onKey = (e: KeyboardEvent) => { if (e.key === "Escape" && isTopmostDialog(dialogRef.current)) onClose(); };
     window.addEventListener("keydown", onKey);
     const prev = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     return () => { window.removeEventListener("keydown", onKey); document.body.style.overflow = prev; };
-  }, [open, onClose]);
-  if (!open || typeof document === "undefined") return null;
+  }, [open, onClose, inline]);
+  if (!open) return null;
+  if (inline) {
+    return (
+      <section className="duo-popout setup-frame flex min-h-full flex-col rounded-[28px] bg-white p-6" style={{ color: K.forest, boxShadow: "0 18px 40px rgba(26,61,46,0.12), 0 2px 6px rgba(26,61,46,0.06)" }}>
+        <div className="flex items-start gap-3">
+          <div className="min-w-0 flex-1">{title}</div>
+          <button type="button" aria-label={closeLabel} onClick={onClose} className="grid size-11 shrink-0 place-items-center rounded-full active:scale-95" style={{ background: K.mist, color: K.forest }}>
+            <X className="size-5" />
+          </button>
+        </div>
+        <div className="mt-3 flex-1">{children}</div>
+        {footer && <div className="mt-6">{footer}</div>}
+      </section>
+    );
+  }
+  if (typeof document === "undefined") return null;
   return createPortal(
     <div className="setup-frame fixed inset-0 z-[70] flex items-end justify-center">
       <button type="button" aria-label={closeLabel} tabIndex={-1} onClick={onClose} className="absolute inset-0 bg-black/50" />

@@ -9,6 +9,7 @@ import { speciesLabel } from "@/lib/speciesLabel";
 import { birdAgeLabel } from "@/lib/birdAge";
 import { firstName } from "@/lib/memberDisplay";
 import { track } from "@/lib/analytics";
+import { BIRD_PHOTO_FOCUS } from "@/lib/birdPhotoFocus";
 
 export const Route = createFileRoute("/sitter/$token/care-sheet")({
   component: CareSheet,
@@ -82,7 +83,7 @@ function CareSheet() {
             contextBanner={showIdentity ? (
               <KyaCard className="flex items-center gap-4 p-4">
                 {bird?.photo_url ? (
-                  <img src={bird.photo_url} alt={name} className="block size-16 shrink-0 rounded-[16px] object-cover" style={{ objectPosition: bird.photo_position ?? "50% 20%" }} />
+                  <img src={bird.photo_url} alt={name} className="block size-16 shrink-0 rounded-[16px] object-cover" style={{ objectPosition: bird.photo_position ?? BIRD_PHOTO_FOCUS }} />
                 ) : (
                   <div className="grid size-16 shrink-0 place-items-center rounded-[16px] text-[22px] font-[700]" style={{ background: K.lime, color: K.forest }}>{(name || "?").slice(0, 1).toUpperCase()}</div>
                 )}

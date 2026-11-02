@@ -5,14 +5,14 @@
 //   TaskHeader — something you do and finish: Close top left, progress top
 //                right, no bottom nav, one pinned button (TaskFooter).
 //   Sheets use KyaSheet (components/kya.tsx).
-import { useCallback, useState, type ReactNode } from "react";
+import { useCallback, useContext, useState, type ReactNode } from "react";
 import { useCanGoBack, useRouter } from "@tanstack/react-router";
 import { ArrowLeft, X } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import { K, KyaHeader, KyaHeading, KyaIconButton, KyaPrimaryButton, KyaSecondaryButton, KyaSheet } from "@/components/kya";
+import { K, KyaHeader, KyaHeading, KyaIconButton, KyaInCard, KyaPrimaryButton, KyaSecondaryButton, KyaSheet } from "@/components/kya";
 import { BrandLockup } from "@/components/BrandLogo";
 import { OwnerHeaderIcons } from "@/components/OwnerHeader";
-import { RailAction, RailActionButton, RailBack, RailClose, useDuoRail, type RailActionSpec } from "@/components/DuoRail";
+import { RailBack, RailClose, useDuoRail } from "@/components/DuoRail";
 
 /** Back in history, or to `fallback` when there's none (deep link, push). */
 export function useGoBack(fallback: () => void) {
@@ -66,6 +66,8 @@ export function PageHeader({ title, line, onBack, action, children, titleSize = 
   const { t } = useTranslation();
   // iPhone Duo side column: Back lives there instead.
   const inRail = !!useDuoRail()?.top;
+  // Inside a Duo pop-out card the card is the header (KyaInCard).
+  if (useContext(KyaInCard)) return null;
   return (
     <KyaHeader>
       <div className={`mt-1.5 flex items-center justify-between gap-3${inRail && !action ? " hidden" : ""}`}>
@@ -112,12 +114,12 @@ export function TaskHeader({ title, line, onClose, progress, children }: {
 }
 
 /** The white footer pinned to the bottom of a task, holding one main button.
- *  `rail`: the same action as a short tile for the iPhone Duo side column
- *  ("Save", with the full label kept for screen readers). */
-export function TaskFooter({ children, rail }: { children: ReactNode; rail?: RailActionSpec }) {
-  // iPhone Duo side column: the main action sits at the bottom of the column.
-  if (useDuoRail()?.action) {
-    return <RailAction>{rail ? <RailActionButton {...rail} /> : <div className="duo-rail-fallback">{children}</div>}</RailAction>;
+ *  With the iPhone Duo side column it pins to the bottom of the right half
+ *  instead (.duo-task-footer): the screen's one main button, never a tile in
+ *  the column. */
+export function TaskFooter({ children }: { children: ReactNode }) {
+  if (useDuoRail()) {
+    return <div className="duo-task-footer">{children}</div>;
   }
   return (
     <div className="fixed inset-x-0 bottom-0 z-40 border-t bg-white pb-[max(env(safe-area-inset-bottom),12px)] pt-3" style={{ borderColor: K.line }}>

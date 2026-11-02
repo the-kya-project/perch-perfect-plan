@@ -255,7 +255,7 @@ function FlockCheck() {
             </p>
           )}
         </main>
-        <TaskFooter rail={{ label: t("flockCheck.doneShort", "Done"), ariaLabel: t("flockCheck.backToHome", "Back to home"), onClick: goHome }}>
+        <TaskFooter>
           <KyaPrimaryButton onClick={goHome}>{t("flockCheck.backToHome", "Back to home")}</KyaPrimaryButton>
         </TaskFooter>
       </div>
@@ -403,9 +403,7 @@ function FlockCheck() {
       </main>
       {sheet}
       {footerActive && (
-        <TaskFooter rail={footerNext
-          ? { label: t("flockCheck.nextShort", "Next"), ariaLabel: t("flockCheck.checkNext", "Check {{name}} next →", { name: footerNext.name }), onClick: () => openBird(footerNext.id) }
-          : { label: t("flockCheck.summaryShort", "Summary"), ariaLabel: t("flockCheck.seeSummary", "See today's summary →"), onClick: () => navigate({ to: "/check", search: { view: "done" } }) }}>
+        <TaskFooter>
           {footerNext ? (
             <KyaPrimaryButton onClick={() => openBird(footerNext.id)}>{t("flockCheck.checkNext", "Check {{name}} next →", { name: footerNext.name })}</KyaPrimaryButton>
           ) : (
