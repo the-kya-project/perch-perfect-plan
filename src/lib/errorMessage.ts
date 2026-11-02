@@ -23,9 +23,14 @@
  * own `fallback` is passed through as given — key it at the call site. English
  * output is byte-identical. Pass `t` from useTranslation() on a surface with
  * its own i18n instance (the sitter subtree); owner code can omit it.
+ *
+ * ALERTING: every error that passes through here is also handed to
+ * noteSaveError (src/lib/saveErrors.ts), which records an anonymous row when it
+ * came from the server, so a save that fails for everyone is noticed.
  */
 import i18next, { type TFunction } from "i18next";
 import { translateServerError } from "@/lib/i18n/serverErrors";
+import { noteSaveError } from "@/lib/saveErrors";
 
 /** SQLSTATEs worth explaining specifically rather than generically. */
 function sqlstateCopy(code: string, t: TFunction): string | undefined {
@@ -85,6 +90,7 @@ function logRaw(raw: string, code: string) {
  * @param tr       optional translator (a scoped instance's t); defaults to the global one
  */
 export function friendlyError(err: unknown, fallback?: string, tr?: TFunction): string {
+  noteSaveError(err);
   const t: TFunction = tr ?? i18next.t.bind(i18next);
   const fb = fallback ?? defaultFallback(t);
   const e = err as { message?: unknown; code?: unknown } | null | undefined;

@@ -100,6 +100,7 @@ import { Route as ApiPublicHooksGiftEmailsRouteImport } from './routes/api/publi
 import { Route as ApiPublicHooksMonthlyLetterRouteImport } from './routes/api/public/hooks/monthly-letter'
 import { Route as ApiPublicHooksOnboardingEmailsRouteImport } from './routes/api/public/hooks/onboarding-emails'
 import { Route as ApiPublicHooksOnboardingWelcomeRouteImport } from './routes/api/public/hooks/onboarding-welcome'
+import { Route as ApiPublicHooksSaveErrorAlertsRouteImport } from './routes/api/public/hooks/save-error-alerts'
 import { Route as ApiPublicHooksSendEmailRouteImport } from './routes/api/public/hooks/send-email'
 import { Route as ApiPublicStripeWebhookRouteImport } from './routes/api/public/stripe/webhook'
 import { Route as AuthenticatedBirdsBirdIdPlanIndexRouteImport } from './routes/_authenticated/birds/$birdId.plan.index'
@@ -605,6 +606,12 @@ const ApiPublicHooksOnboardingWelcomeRoute =
     path: '/api/public/hooks/onboarding-welcome',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicHooksSaveErrorAlertsRoute =
+  ApiPublicHooksSaveErrorAlertsRouteImport.update({
+    id: '/api/public/hooks/save-error-alerts',
+    path: '/api/public/hooks/save-error-alerts',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicHooksSendEmailRoute = ApiPublicHooksSendEmailRouteImport.update({
   id: '/api/public/hooks/send-email',
   path: '/api/public/hooks/send-email',
@@ -742,6 +749,7 @@ export interface FileRoutesByFullPath {
   '/api/public/hooks/monthly-letter': typeof ApiPublicHooksMonthlyLetterRoute
   '/api/public/hooks/onboarding-emails': typeof ApiPublicHooksOnboardingEmailsRoute
   '/api/public/hooks/onboarding-welcome': typeof ApiPublicHooksOnboardingWelcomeRoute
+  '/api/public/hooks/save-error-alerts': typeof ApiPublicHooksSaveErrorAlertsRoute
   '/api/public/hooks/send-email': typeof ApiPublicHooksSendEmailRoute
   '/api/public/stripe/webhook': typeof ApiPublicStripeWebhookRoute
   '/birds/$birdId/': typeof AuthenticatedBirdsBirdIdIndexRoute
@@ -835,6 +843,7 @@ export interface FileRoutesByTo {
   '/api/public/hooks/monthly-letter': typeof ApiPublicHooksMonthlyLetterRoute
   '/api/public/hooks/onboarding-emails': typeof ApiPublicHooksOnboardingEmailsRoute
   '/api/public/hooks/onboarding-welcome': typeof ApiPublicHooksOnboardingWelcomeRoute
+  '/api/public/hooks/save-error-alerts': typeof ApiPublicHooksSaveErrorAlertsRoute
   '/api/public/hooks/send-email': typeof ApiPublicHooksSendEmailRoute
   '/api/public/stripe/webhook': typeof ApiPublicStripeWebhookRoute
   '/birds/$birdId': typeof AuthenticatedBirdsBirdIdIndexRoute
@@ -937,6 +946,7 @@ export interface FileRoutesById {
   '/api/public/hooks/monthly-letter': typeof ApiPublicHooksMonthlyLetterRoute
   '/api/public/hooks/onboarding-emails': typeof ApiPublicHooksOnboardingEmailsRoute
   '/api/public/hooks/onboarding-welcome': typeof ApiPublicHooksOnboardingWelcomeRoute
+  '/api/public/hooks/save-error-alerts': typeof ApiPublicHooksSaveErrorAlertsRoute
   '/api/public/hooks/send-email': typeof ApiPublicHooksSendEmailRoute
   '/api/public/stripe/webhook': typeof ApiPublicStripeWebhookRoute
   '/_authenticated/birds/$birdId/': typeof AuthenticatedBirdsBirdIdIndexRoute
@@ -1039,6 +1049,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/monthly-letter'
     | '/api/public/hooks/onboarding-emails'
     | '/api/public/hooks/onboarding-welcome'
+    | '/api/public/hooks/save-error-alerts'
     | '/api/public/hooks/send-email'
     | '/api/public/stripe/webhook'
     | '/birds/$birdId/'
@@ -1132,6 +1143,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/monthly-letter'
     | '/api/public/hooks/onboarding-emails'
     | '/api/public/hooks/onboarding-welcome'
+    | '/api/public/hooks/save-error-alerts'
     | '/api/public/hooks/send-email'
     | '/api/public/stripe/webhook'
     | '/birds/$birdId'
@@ -1233,6 +1245,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/monthly-letter'
     | '/api/public/hooks/onboarding-emails'
     | '/api/public/hooks/onboarding-welcome'
+    | '/api/public/hooks/save-error-alerts'
     | '/api/public/hooks/send-email'
     | '/api/public/stripe/webhook'
     | '/_authenticated/birds/$birdId/'
@@ -1276,6 +1289,7 @@ export interface RootRouteChildren {
   ApiPublicHooksMonthlyLetterRoute: typeof ApiPublicHooksMonthlyLetterRoute
   ApiPublicHooksOnboardingEmailsRoute: typeof ApiPublicHooksOnboardingEmailsRoute
   ApiPublicHooksOnboardingWelcomeRoute: typeof ApiPublicHooksOnboardingWelcomeRoute
+  ApiPublicHooksSaveErrorAlertsRoute: typeof ApiPublicHooksSaveErrorAlertsRoute
   ApiPublicHooksSendEmailRoute: typeof ApiPublicHooksSendEmailRoute
   ApiPublicStripeWebhookRoute: typeof ApiPublicStripeWebhookRoute
   ApiPublicBereavementReviewReviewIdSigRoute: typeof ApiPublicBereavementReviewReviewIdSigRoute
@@ -1922,6 +1936,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksOnboardingWelcomeRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/save-error-alerts': {
+      id: '/api/public/hooks/save-error-alerts'
+      path: '/api/public/hooks/save-error-alerts'
+      fullPath: '/api/public/hooks/save-error-alerts'
+      preLoaderRoute: typeof ApiPublicHooksSaveErrorAlertsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/hooks/send-email': {
       id: '/api/public/hooks/send-email'
       path: '/api/public/hooks/send-email'
@@ -2233,6 +2254,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicHooksMonthlyLetterRoute: ApiPublicHooksMonthlyLetterRoute,
   ApiPublicHooksOnboardingEmailsRoute: ApiPublicHooksOnboardingEmailsRoute,
   ApiPublicHooksOnboardingWelcomeRoute: ApiPublicHooksOnboardingWelcomeRoute,
+  ApiPublicHooksSaveErrorAlertsRoute: ApiPublicHooksSaveErrorAlertsRoute,
   ApiPublicHooksSendEmailRoute: ApiPublicHooksSendEmailRoute,
   ApiPublicStripeWebhookRoute: ApiPublicStripeWebhookRoute,
   ApiPublicBereavementReviewReviewIdSigRoute:

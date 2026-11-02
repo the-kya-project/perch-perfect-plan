@@ -61,6 +61,7 @@ if (!DRY && !process.env.BREVO_SENDER_EMAIL) {
   console.log(`Sending as: ${pick.name} <${pick.email}>\n`);
 }
 import { sendTransactionalEmail, founderReplyTo } from "@/lib/brevoEmail.server";
+import { buildDailyEmail, buildUrgentEmail, sampleSaveErrorGroups } from "@/lib/saveErrorAlerts";
 
 // Recipient: first CLI arg, else Brittany's founder address.
 const TO = process.argv.find((a) => a.includes("@")) ?? "brittany@thekyaproject.com";
@@ -114,6 +115,10 @@ const all: Array<[string, { subject: string; html: string; text: string }, boole
   ["24 sitter link · invite", T.buildSitterInviteEmail({ ownerName: "Brittany", birdNames: BIRD, dateRange: RANGE, link: `${APP}/sitter/demo` })],
   ["25 sitter link · updated", T.buildSitterInviteUpdatedEmail({ ownerName: "Brittany", birdNames: BIRD, dateRange: RANGE, changeSummary: "The dates moved by two days.", link: `${APP}/sitter/demo` })],
   ["26 sitter link · cancelled", T.buildSitterInviteCancelledEmail({ ownerName: "Brittany", birdNames: BIRD, dateRange: RANGE })],
+
+  // To Brittany only (save-error-alerts hook), with the Oct 26 sits failure as sample data.
+  ["27 ops · save errors urgent", buildUrgentEmail([{ group: sampleSaveErrorGroups()[0], reasons: ["new", "spike"] }])],
+  ["28 ops · save errors daily", buildDailyEmail(sampleSaveErrorGroups(), { urgentToday: new Set() })!],
 ];
 
 const dry = DRY;
