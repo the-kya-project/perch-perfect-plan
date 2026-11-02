@@ -561,4 +561,11 @@ function watchForeground(check: () => void) {
     if (document.visibilityState === "hidden") hiddenAt = Date.now();
     else back();
   });
+  // The native shells: Capacitor fires "pause" and "resume" on the document
+  // when the app goes to the background and comes back. The iOS web view
+  // doesn't reliably report that as a visibility change (Nov 2, 2026: an app
+  // brought back from the background never re-checked for a release).
+  // Running back() twice is harmless: the second finds nothing new.
+  document.addEventListener("pause", () => { hiddenAt ??= Date.now(); });
+  document.addEventListener("resume", () => { back(); });
 }
