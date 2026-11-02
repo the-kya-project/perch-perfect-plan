@@ -391,13 +391,28 @@ async function applyUpdate(reload: boolean) {
   }
   if (reload) {
     noteBuildReload();
-    window.location.reload();
+    reloadFresh();
     return;
   }
   updateReady = false;
   pageBehind = false;
   applying = false;
   notifyUpdate();
+}
+
+/** Reload onto the live build. A plain reload can be answered "not modified"
+ *  from the web view's cache, which keeps the old page and Vercel's pin to
+ *  the old build (__vdpl), so the reload changes nothing (Nov 2, 2026). A
+ *  cache-busted address always fetches the page afresh, and the fresh page
+ *  pins this page to the live build. */
+function reloadFresh() {
+  try {
+    const u = new URL(window.location.href);
+    u.searchParams.set("_r", String(Date.now()));
+    window.location.replace(u.toString());
+  } catch {
+    window.location.reload();
+  }
 }
 
 /** The banner's Update: save every draft, then move onto the new build. */
