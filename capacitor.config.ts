@@ -17,6 +17,13 @@ const config: CapacitorConfig = {
     // a mobile browser. Takes effect with the next store build.
     appendUserAgent: 'KyaApp',
   },
+  ios: {
+    // The web view's color before the first page paints: the forest of the
+    // launch screen (LaunchBackground) and the web splash, so launch shows no
+    // white flash between them. Capacitor turns off the web view's bounce, so
+    // this never shows behind a loaded page.
+    backgroundColor: '#1a3d2e',
+  },
   plugins: {
     // Kya signs in with Google and Apple only. The Facebook provider is unused,
     // and on Android its SDK (com.facebook.android:facebook-login) transitively
@@ -26,8 +33,9 @@ const config: CapacitorConfig = {
     // swaps in the plugin's stub FacebookProvider (no com.facebook.* ships).
     // NOTE: the hook writes this into the plugin's node_modules gradle.properties,
     // so `npx cap sync android` MUST run after any `npm install` and before
-    // `./gradlew bundleRelease`, or Facebook re-enables. iOS is unaffected — the
-    // SPM manifest links FBSDK unconditionally and no hook removes it there.
+    // `./gradlew bundleRelease`, or Facebook re-enables. Since plugin 8.7 the
+    // hook does the same for iOS (the plugin's Package.swift and podspec), so
+    // run `npx cap sync ios` after any `npm install` and before archiving too.
     SocialLogin: {
       providers: {
         facebook: false,
