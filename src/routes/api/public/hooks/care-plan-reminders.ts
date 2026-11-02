@@ -10,19 +10,14 @@ import { withErrorTelemetry } from "@/lib/errorTelemetry";
 import { createFileRoute } from "@tanstack/react-router";
 import { realFullName } from "@/lib/personName";
 import { withCronTelemetry } from "@/lib/cronTelemetry";
+import { cronAuthFailure } from "@/lib/cronAuth";
 
 export const Route = createFileRoute("/api/public/hooks/care-plan-reminders")({
   server: {
     handlers: {
       POST: withCronTelemetry("care-plan-reminders", withErrorTelemetry("/api/public/hooks/care-plan-reminders", async ({ request }) => {
-        const secret = process.env.CARE_PLAN_REMINDER_SECRET;
-        if (!secret) {
-          return Response.json({ ok: false, error: "CARE_PLAN_REMINDER_SECRET not configured" }, { status: 503 });
-        }
-        const auth = request.headers.get("authorization") ?? "";
-        if (auth !== `Bearer ${secret}`) {
-          return new Response("Unauthorized", { status: 401 });
-        }
+        const denied = await cronAuthFailure(request, "care-plan-reminders");
+        if (denied) return denied;
 
         const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
         const { sendPushToOwner } = await import("@/lib/pushSender.server");

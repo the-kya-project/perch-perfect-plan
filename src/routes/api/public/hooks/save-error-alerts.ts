@@ -28,7 +28,8 @@
  * Settings (Vercel env): SAVE_ERROR_ALERTS = all | daily | off,
  * SAVE_ERROR_ALERT_TO, SAVE_ERROR_SPIKE_USERS (see saveErrorAlerts.ts).
  *
- * Auth: `Authorization: Bearer <CARE_PLAN_REMINDER_SECRET>`. JSON body:
+ * Auth: `Authorization: Bearer <cron_hook_token>`, the Vault secret pg_cron sends
+ * (src/lib/cronAuth.ts). JSON body:
  *   { "mode": "urgent" | "daily", "dryRun": true }  → what would be sent, as
  *                                                     JSON; nothing sent or logged
  *   { "testPush": true }  → a TEST version of that push, to check it arrives
@@ -36,6 +37,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { withErrorTelemetry } from "@/lib/errorTelemetry";
 import { withCronTelemetry } from "@/lib/cronTelemetry";
+import { cronAuthFailure } from "@/lib/cronAuth";
 import {
   ALERT_SENDER_NAME,
   alertSettings,
@@ -60,13 +62,8 @@ export const Route = createFileRoute("/api/public/hooks/save-error-alerts")({
   server: {
     handlers: {
       POST: withCronTelemetry("save-error-alerts", withErrorTelemetry("/api/public/hooks/save-error-alerts", async ({ request }) => {
-        const secret = process.env.CARE_PLAN_REMINDER_SECRET;
-        if (!secret) {
-          return Response.json({ ok: false, error: "CARE_PLAN_REMINDER_SECRET not configured" }, { status: 503 });
-        }
-        if ((request.headers.get("authorization") ?? "") !== `Bearer ${secret}`) {
-          return new Response("Unauthorized", { status: 401 });
-        }
+        const denied = await cronAuthFailure(request, "save-error-alerts");
+        if (denied) return denied;
         let mode: "urgent" | "daily" = "urgent";
         let dryRun = false;
         let testPush = false;

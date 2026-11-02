@@ -3,25 +3,21 @@
  * gift_purchases migration on production only).
  *
  * Sends each recipient email whose date has come (Indianapolis), and retries
- * any receipt or recipient email a webhook couldn't send. Same bearer secret as
- * the other /api/public/hooks/* endpoints: CARE_PLAN_REMINDER_SECRET, whose
- * value pg_cron reads from the Vault secret `cron_function_token`.
+ * any receipt or recipient email a webhook couldn't send. Same auth as the
+ * other /api/public/hooks/* endpoints: the Vault secret `cron_hook_token`
+ * (src/lib/cronAuth.ts).
  */
 import { createFileRoute } from "@tanstack/react-router";
 import { withErrorTelemetry } from "@/lib/errorTelemetry";
 import { withCronTelemetry } from "@/lib/cronTelemetry";
+import { cronAuthFailure } from "@/lib/cronAuth";
 
 export const Route = createFileRoute("/api/public/hooks/gift-emails")({
   server: {
     handlers: {
       POST: withCronTelemetry("gift-emails", withErrorTelemetry("/api/public/hooks/gift-emails", async ({ request }) => {
-        const secret = process.env.CARE_PLAN_REMINDER_SECRET;
-        if (!secret) {
-          return Response.json({ ok: false, error: "CARE_PLAN_REMINDER_SECRET not configured" }, { status: 503 });
-        }
-        if ((request.headers.get("authorization") ?? "") !== `Bearer ${secret}`) {
-          return new Response("Unauthorized", { status: 401 });
-        }
+        const denied = await cronAuthFailure(request, "gift-emails");
+        if (denied) return denied;
 
         const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
         const { deliverGiftEmails } = await import("@/lib/giftEmails.server");

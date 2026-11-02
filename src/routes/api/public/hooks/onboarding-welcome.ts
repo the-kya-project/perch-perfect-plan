@@ -27,7 +27,8 @@
  * welcome is settled, and skips it `welcome_missed` only after the 48-hour
  * window here has closed.
  *
- * Auth: `Authorization: Bearer <CARE_PLAN_REMINDER_SECRET>`. JSON body options:
+ * Auth: `Authorization: Bearer <cron_hook_token>`, the Vault secret pg_cron sends
+ * (src/lib/cronAuth.ts). JSON body options:
  *   { "dryRun": true }   → who would get the welcome now, and who is waiting
  *                          (and until when); nothing sent or logged
  *
@@ -36,6 +37,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { withErrorTelemetry } from "@/lib/errorTelemetry";
 import { withCronTelemetry } from "@/lib/cronTelemetry";
+import { cronAuthFailure } from "@/lib/cronAuth";
 import { buildAccounts, WELCOME_WINDOW_HOURS, type CtaVariant, type RawRows } from "@/lib/onboardingPlan";
 import { welcomeDecision, type WelcomeHold } from "@/lib/welcomeTiming";
 
@@ -56,13 +58,8 @@ export const Route = createFileRoute("/api/public/hooks/onboarding-welcome")({
   server: {
     handlers: {
       POST: withCronTelemetry("onboarding-welcome", withErrorTelemetry("/api/public/hooks/onboarding-welcome", async ({ request }) => {
-        const secret = process.env.CARE_PLAN_REMINDER_SECRET;
-        if (!secret) {
-          return Response.json({ ok: false, error: "CARE_PLAN_REMINDER_SECRET not configured" }, { status: 503 });
-        }
-        if ((request.headers.get("authorization") ?? "") !== `Bearer ${secret}`) {
-          return new Response("Unauthorized", { status: 401 });
-        }
+        const denied = await cronAuthFailure(request, "onboarding-welcome");
+        if (denied) return denied;
         let dryRun = false;
         try {
           const body = await request.clone().json();
