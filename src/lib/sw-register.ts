@@ -391,7 +391,7 @@ async function applyUpdate(reload: boolean) {
   }
   if (reload) {
     noteBuildReload();
-    reloadFresh();
+    await reloadFresh();
     return;
   }
   updateReady = false;
@@ -400,12 +400,19 @@ async function applyUpdate(reload: boolean) {
   notifyUpdate();
 }
 
-/** Reload onto the live build. A plain reload can be answered "not modified"
- *  from the web view's cache, which keeps the old page and Vercel's pin to
- *  the old build (__vdpl), so the reload changes nothing (Nov 2, 2026). A
- *  cache-busted address always fetches the page afresh, and the fresh page
- *  pins this page to the live build. */
-function reloadFresh() {
+/** Reload onto the live build. Vercel pins this page to the build it opened
+ *  with (the __vdpl cookie), and on Nov 2, 2026 the iOS web view kept that
+ *  pin through a reload, so the "new" page still got the old build's files.
+ *  So: expire the pin first (/api/public/unpin), then load a cache-busted
+ *  address, which the web view can't answer from its cache and which pins the
+ *  fresh page to the live build. */
+async function reloadFresh() {
+  const ctrl = typeof AbortController !== "undefined" ? new AbortController() : null;
+  const timer = window.setTimeout(() => ctrl?.abort(), 3000);
+  try {
+    await fetch("/api/public/unpin", { method: "POST", cache: "no-store", signal: ctrl?.signal });
+  } catch { /* an old build without it, or offline: reload anyway */ }
+  window.clearTimeout(timer);
   try {
     const u = new URL(window.location.href);
     u.searchParams.set("_r", String(Date.now()));
