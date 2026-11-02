@@ -568,11 +568,4 @@ function watchForeground(check: () => void) {
   // Running back() twice is harmless: the second finds nothing new.
   document.addEventListener("pause", () => { hiddenAt ??= Date.now(); });
   document.addEventListener("resume", () => { back(); });
-  // TEMP-DIAG (to be reverted): which foreground signals arrive.
-  const diag = (k: string) => { void fetch(`/api/public/version?diag=${k}`, { cache: "no-store" }).catch(() => {}); };
-  document.addEventListener("visibilitychange", () => diag(`vis-${document.visibilityState}`));
-  document.addEventListener("resume", () => diag("resume"));
-  document.addEventListener("pause", () => diag("pause"));
-  window.addEventListener("pageshow", () => diag("pageshow"));
-  window.addEventListener("focus", () => diag("focus"));
 }
