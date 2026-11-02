@@ -63,7 +63,8 @@
     "test:cron-telemetry": "npx --yes vite-node scripts/cron-telemetry.test.ts",
     "test:account-deletion": "npx --yes vite-node scripts/account-deletion.test.ts",
     "test:save-errors": "npx --yes vite-node scripts/save-errors.test.ts",
-    "test:cron-auth": "npx --yes vite-node scripts/cron-auth.test.ts"
+    "test:cron-auth": "npx --yes vite-node scripts/cron-auth.test.ts",
+    "test:release-check": "npx --yes vite-node scripts/release-check.test.ts"
   },
   "dependencies": {
     "@capacitor/android": "^8.4.2",

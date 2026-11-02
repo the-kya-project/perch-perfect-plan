@@ -108,6 +108,9 @@ export type AnalyticsEventName =
   // Home "turn on reminders" card: shown, then enabled / not_now / denied
   | "push_banner_shown"
   | "push_banner_result"
+  // A code file failed to load (a release removed it): where it was noticed
+  // and what the app did (reload / banner / error). See sw-register.ts.
+  | "stale_code_detected"
   // Daily weight & health check box (bird page, one-bird Home, flock check)
   | "daily_check_viewed"
   | "daily_check_saved"

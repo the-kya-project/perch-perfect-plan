@@ -8,8 +8,10 @@
  *
  * Inside the shell, PWA-isms must not apply: no "add to home screen"
  * prompts (you ARE the installed app) and no web-push (native push replaces
- * it). The service worker DOES run in the shell — it caches hashed assets so
- * cold launches don't re-download the whole bundle (see sw-register.ts).
+ * it). The service worker runs in the Android shell only: WKWebView offers
+ * none to an app without app-bound domains, so the iOS app has no worker and
+ * notices releases through its version check instead (sw-register.ts,
+ * releaseCheck.ts).
  */
 type CapacitorGlobal = { isNativePlatform?: () => boolean; getPlatform?: () => string };
 

@@ -59,11 +59,13 @@ jobs:
       - name: Run the iPhone hydration check
         run: npm run test:hydration:run
 
-      # Tapping a link while the app is still loading is a race (the startup
-      # safety net, e2e/navigation.spec.ts): run it ten more times per
-      # language on WebKit, Safari's engine, so a lucky pass can't hide it.
-      - name: Repeat the tap-while-loading test on WebKit
-        run: npx playwright test -c e2e navigation.spec.ts --repeat-each 10 --project 'webkit-*'
+      # Tapping a link while the app is still loading, and a file that fails
+      # while the page's other files are still loading, are races (the
+      # startup safety net, e2e/navigation.spec.ts and startup-guard.spec.ts):
+      # run them ten more times on WebKit, Safari's engine, so a lucky pass
+      # can't hide one.
+      - name: Repeat the startup safety net tests on WebKit
+        run: npx playwright test -c e2e navigation.spec.ts startup-guard.spec.ts --repeat-each 10 --project 'webkit-*'
 
       - name: Upload the report (screenshots and traces of failures)
         if: failure()

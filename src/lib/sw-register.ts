@@ -10,8 +10,14 @@
  * data on every navigation (denylisted in workbox config). Installation only
  * makes sense for owners using the app repeatedly.
  */
-import { isNativeApp } from "./nativeApp";
+import { isNativeApp, nativePlatform } from "./nativeApp";
 import { flushAllDrafts, formInProgress } from "./formsInProgress";
+import { WEB_BUILD } from "./errorTags";
+import { track } from "./analytics";
+import {
+  CHECK_EVERY_MS, CHECK_TIMEOUT_MS, checkDue, isNewerBuild, mayReloadFor, parseBuildReload,
+  shouldCheckVersion, staleCodeAction, type BuildReload,
+} from "./releaseCheck";
 
 const SW_URL = "/sw.js";
 
@@ -124,11 +130,32 @@ function leavingPage(): boolean {
   }
 }
 
-/** Recover from a code file that failed to load: one hard reset, then the
- *  error screen. */
-export function reloadForStaleChunk() {
+/** Where a failed code file was noticed (for the report). */
+export type StaleCodeSource = "boundary" | "preload" | "import";
+
+/** One report per page: a broken page can raise the same failure many times. */
+let staleCodeReported = false;
+
+/** A code file failed to load. Production serves only the live build's files,
+ *  so this means a new version is out (lib/releaseCheck.ts, staleCodeAction):
+ *  apply it like an update, at once if nothing is in progress, behind the
+ *  banner if a form is, and never more than the one automatic attempt.
+ *  Reported to PostHog (`stale_code_detected`), so a rise is visible. */
+export function reloadForStaleChunk(source: StaleCodeSource = "boundary") {
   if (typeof window === "undefined" || reloadScheduled || leavingPage()) return;
-  if (!claimAutoReload()) {
+  updateReady = true;
+  pageBehind = true;
+  const action = staleCodeAction({
+    formInProgress: formInProgress(),
+    attemptSpent: readAutoReloadAt() > 0,
+    appGone: source === "boundary",
+  });
+  if (!staleCodeReported) {
+    staleCodeReported = true;
+    track("stale_code_detected", { source, action, platform: nativePlatform(), build: WEB_BUILD });
+  }
+  if (action === "banner") { notifyUpdate(); return; }
+  if (action === "error" || !claimAutoReload()) {
     window.dispatchEvent(new Event(STARTUP_FAILED_EVENT));
     return;
   }
@@ -158,7 +185,12 @@ export function installChunkErrorRecovery() {
   if (typeof window === "undefined") return;
   window.addEventListener("vite:preloadError", (e) => {
     e.preventDefault(); // don't let it surface as an unhandled error; we handle it here
-    reloadForStaleChunk();
+    reloadForStaleChunk("preload");
+  });
+  // A code file imported outside the router (a lazily loaded dialog, a
+  // preload on intent) fails as a promise nobody catches: same handling.
+  window.addEventListener("unhandledrejection", (e) => {
+    if (isStaleChunkError(e.reason)) reloadForStaleChunk("import");
   });
 }
 
@@ -174,13 +206,18 @@ export function installChunkErrorRecovery() {
  * step can fail (private mode, blocked storage) without stopping the reload.
  */
 export async function hardResetAndReload(): Promise<void> {
-  await unregisterAppWorkers();
-  try {
-    if ("caches" in window) {
-      const keys = await caches.keys();
-      await Promise.all(keys.map((k) => caches.delete(k)));
-    }
-  } catch { /* ignore */ }
+  // Inside a frame (the owner's sitter preview) the worker and caches belong
+  // to the app around it: only reload the frame.
+  const inFrame = (() => { try { return window.self !== window.top; } catch { return true; } })();
+  if (!inFrame) {
+    await unregisterAppWorkers();
+    try {
+      if ("caches" in window) {
+        const keys = await caches.keys();
+        await Promise.all(keys.map((k) => caches.delete(k)));
+      }
+    } catch { /* ignore */ }
+  }
   // Cache-bust the document fetch too, in case an intermediary cached the HTML.
   try {
     const u = new URL(window.location.href);
@@ -245,7 +282,7 @@ export function registerServiceWorker() {
         const check = () => { reg.update().catch(() => {}); };
         check();
         setInterval(check, 60 * 60 * 1000);
-        watchForeground(check);
+        onForeground(check);
       })
       .catch(() => { /* swallow */ });
   };
@@ -353,6 +390,7 @@ async function applyUpdate(reload: boolean) {
     activating = false;
   }
   if (reload) {
+    noteBuildReload();
     window.location.reload();
     return;
   }
@@ -377,8 +415,18 @@ export async function updateNow(): Promise<void> {
  * waits more than about timeoutMs, and never moves while a form is in progress.
  */
 export async function catchUpBeforePreview(timeoutMs = 6_000): Promise<boolean> {
+  if (formInProgress()) return false;
   const reg = swReg;
-  if (!reg || formInProgress()) return false;
+  if (!reg) {
+    // No worker (the iOS app): ask which build is live. Behind = a full
+    // reload, which lands back on this preview (it re-reads the sit when the
+    // router state is gone) on the live build.
+    if (!pageBehind && !(await liveBuildIsNewer(timeoutMs))) return false;
+    pageBehind = true;
+    updateReady = true;
+    await updateNow();
+    return true;
+  }
   const deadline = Date.now() + timeoutMs;
   const until = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, Math.max(0, ms)));
   try { await Promise.race([reg.update(), until(timeoutMs)]); } catch { /* offline: go ahead */ }
@@ -397,6 +445,92 @@ export async function catchUpBeforePreview(timeoutMs = 6_000): Promise<boolean> 
   updateReady = true;
   await updateNow();
   return true;
+}
+
+// ── Version check without a worker ──────────────────────────────────────────
+// lib/releaseCheck.ts explains why. A newer live build is treated exactly like
+// a waiting worker (onUpdateReady), with pageBehind set so applying it reloads.
+
+let lastVersionCheckAt = 0;
+let versionCheckInFlight: Promise<boolean> | null = null;
+/** The newer build the last check found, to record a reload against. */
+let liveBuild: string | null = null;
+const BUILD_RELOAD_KEY = "kya-build-reload";
+
+function readBuildReload(): BuildReload | null {
+  try { return parseBuildReload(localStorage.getItem(BUILD_RELOAD_KEY)); } catch { return null; }
+}
+
+/** Remember that this page is reloading onto `liveBuild`. */
+function noteBuildReload() {
+  if (!liveBuild) return;
+  try { localStorage.setItem(BUILD_RELOAD_KEY, JSON.stringify({ build: liveBuild, at: Date.now() })); } catch { /* ignore */ }
+}
+
+/** Ask /api/public/version whether a newer build is live. False on any
+ *  failure (offline, timeout, odd answer): not knowing is not "behind". Also
+ *  false when this page already reloaded for that build a moment ago and
+ *  still isn't on it (mayReloadFor): one try per build, never a loop. */
+function liveBuildIsNewer(timeoutMs = CHECK_TIMEOUT_MS): Promise<boolean> {
+  if (versionCheckInFlight) return versionCheckInFlight;
+  lastVersionCheckAt = Date.now();
+  versionCheckInFlight = (async () => {
+    const ctrl = typeof AbortController !== "undefined" ? new AbortController() : null;
+    const timer = window.setTimeout(() => ctrl?.abort(), timeoutMs);
+    try {
+      const res = await fetch("/api/public/version", {
+        cache: "no-store",
+        headers: { accept: "application/json" },
+        signal: ctrl?.signal,
+      });
+      if (!res.ok) return false;
+      const body = (await res.json()) as { build?: unknown } | null;
+      const live = body?.build;
+      if (!isNewerBuild(WEB_BUILD, live)) return false;
+      if (!mayReloadFor(readBuildReload(), live as string, Date.now())) return false;
+      liveBuild = live as string;
+      return true;
+    } catch {
+      return false;
+    } finally {
+      window.clearTimeout(timer);
+      versionCheckInFlight = null;
+    }
+  })();
+  return versionCheckInFlight;
+}
+
+async function checkVersion(force: boolean) {
+  if (pageBehind || !checkDue(lastVersionCheckAt, Date.now(), force)) return;
+  if (await liveBuildIsNewer()) {
+    pageBehind = true;
+    onUpdateReady();
+  }
+}
+
+/** Start the worker-less version check where it's needed (shouldCheckVersion):
+ *  now, hourly, and on every return to the foreground. Called once at boot. */
+export function startReleaseCheck() {
+  if (typeof window === "undefined") return;
+  const inFrame = (() => { try { return window.self !== window.top; } catch { return true; } })();
+  if (!shouldCheckVersion({
+    running: WEB_BUILD,
+    prod: import.meta.env.PROD,
+    inFrame,
+    native: isNativeApp(),
+    hasServiceWorker: "serviceWorker" in navigator,
+  })) return;
+  void checkVersion(false);
+  window.setInterval(() => { void checkVersion(false); }, CHECK_EVERY_MS);
+  onForeground(() => { void checkVersion(true); });
+}
+
+/** Run `check` whenever the app comes back to the foreground. Both update
+ *  paths (worker and version check) share one watcher. */
+const foregroundChecks: Array<() => void> = [];
+function onForeground(check: () => void) {
+  foregroundChecks.push(check);
+  if (foregroundChecks.length === 1) watchForeground(() => foregroundChecks.forEach((fn) => fn()));
 }
 
 /** Track time in the background. visibilitychange is the signal; a heartbeat
