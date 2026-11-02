@@ -26,6 +26,11 @@ const SIZES = {
   // iPhone Duo unfolded, sideways; and a wider landscape screen.
   sideways: { width: 951, height: 669, column: true },
   "sideways-1100": { width: 1100, height: 750, column: true },
+  // iPads: sideways they have the room, so they get the column; upright keeps
+  // today's layout.
+  "ipad-air-sideways": { width: 1180, height: 820, column: true },
+  "ipad-pro-sideways": { width: 1366, height: 1024, column: true },
+  "ipad-air-upright": { width: 820, height: 1180, column: false },
 } as const;
 
 const PAGES = {
