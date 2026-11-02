@@ -475,17 +475,8 @@ function liveBuildIsNewer(timeoutMs = CHECK_TIMEOUT_MS): Promise<boolean> {
   if (versionCheckInFlight) return versionCheckInFlight;
   lastVersionCheckAt = Date.now();
   versionCheckInFlight = (async () => {
-    const ctrl = typeof AbortController !== "undefined" ? new AbortController() : null;
-    const timer = window.setTimeout(() => ctrl?.abort(), timeoutMs);
     try {
-      const res = await fetch("/api/public/version", {
-        cache: "no-store",
-        headers: { accept: "application/json" },
-        signal: ctrl?.signal,
-      });
-      if (!res.ok) return false;
-      const body = (await res.json()) as { build?: unknown } | null;
-      const live = body?.build;
+      const live = await readLiveBuild(timeoutMs);
       if (!isNewerBuild(WEB_BUILD, live)) return false;
       if (!mayReloadFor(readBuildReload(), live as string, Date.now())) return false;
       liveBuild = live as string;
@@ -493,11 +484,44 @@ function liveBuildIsNewer(timeoutMs = CHECK_TIMEOUT_MS): Promise<boolean> {
     } catch {
       return false;
     } finally {
-      window.clearTimeout(timer);
       versionCheckInFlight = null;
     }
   })();
   return versionCheckInFlight;
+}
+
+/** The live build, read as a hidden same-origin page load, not a fetch.
+ *  Vercel's Skew Protection pins every fetch from this page to the build the
+ *  page opened with (the __vdpl cookie), so a fetch would only ever answer
+ *  with this page's own build. Page loads, frames included, are never pinned
+ *  (checked on Nov 2, 2026), and still carry the page's cookies. Null when it
+ *  can't tell (offline, timeout, an odd answer). */
+function readLiveBuild(timeoutMs: number): Promise<string | null> {
+  return new Promise((resolve) => {
+    const frame = document.createElement("iframe");
+    frame.setAttribute("aria-hidden", "true");
+    frame.tabIndex = -1;
+    frame.style.cssText = "position:absolute;width:0;height:0;border:0;visibility:hidden";
+    let done = false;
+    const finish = (build: string | null) => {
+      if (done) return;
+      done = true;
+      window.clearTimeout(timer);
+      frame.remove();
+      resolve(build);
+    };
+    const timer = window.setTimeout(() => finish(null), timeoutMs);
+    frame.onload = () => {
+      try {
+        const text = frame.contentDocument?.body?.textContent ?? "";
+        finish(text.match(/"build"\s*:\s*"([0-9A-Za-z]{1,40})"/)?.[1] ?? null);
+      } catch {
+        finish(null);
+      }
+    };
+    frame.src = `/api/public/version?t=${Date.now()}`;
+    document.body.appendChild(frame);
+  });
 }
 
 async function checkVersion(force: boolean) {
