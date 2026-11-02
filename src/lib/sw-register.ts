@@ -415,13 +415,15 @@ export async function updateNow(): Promise<void> {
  * waits more than about timeoutMs, and never moves while a form is in progress.
  */
 export async function catchUpBeforePreview(timeoutMs = 6_000): Promise<boolean> {
-  if (formInProgress()) return false;
+  tdiag("cu-start");
+  if (formInProgress()) { tdiag("cu-form"); return false; }
   const reg = swReg;
   if (!reg) {
     // No worker (the iOS app): ask which build is live. Behind = a full
     // reload, which lands back on this preview (it re-reads the sit when the
     // router state is gone) on the live build.
-    if (!pageBehind && !(await liveBuildIsNewer(timeoutMs))) return false;
+    if (!pageBehind && !(await liveBuildIsNewer(timeoutMs))) { tdiag("cu-current"); return false; }
+    tdiag("cu-behind");
     pageBehind = true;
     updateReady = true;
     await updateNow();
@@ -490,6 +492,9 @@ function liveBuildIsNewer(timeoutMs = CHECK_TIMEOUT_MS): Promise<boolean> {
   return versionCheckInFlight;
 }
 
+// TEMP-DIAG (to be reverted)
+function tdiag(k: string) { void fetch(`/api/public/version?diag=${k}`, { cache: "no-store" }).catch(() => {}); }
+
 /** The live build, read as a hidden same-origin page load, not a fetch.
  *  Vercel's Skew Protection pins every fetch from this page to the build the
  *  page opened with (the __vdpl cookie), so a fetch would only ever answer
@@ -514,6 +519,7 @@ function readLiveBuild(timeoutMs: number): Promise<string | null> {
     frame.onload = () => {
       try {
         const text = frame.contentDocument?.body?.textContent ?? "";
+        tdiag(`rl-len-${text.length > 0 ? "some" : "none"}-${/"build"/.test(text) ? "json" : "nojson"}`);
         finish(text.match(/"build"\s*:\s*"([0-9A-Za-z]{1,40})"/)?.[1] ?? null);
       } catch {
         finish(null);
