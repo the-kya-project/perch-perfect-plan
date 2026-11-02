@@ -25,6 +25,7 @@ import { FrontDoorBody, FrontDoorHeader, FrontDoorPage } from "@/components/fron
 // arrive with the page itself and can't go missing.
 import appCss from "../styles.css?inline";
 import { installErrorListeners, primeAccountRole, registerErrorReportingContext, reportError } from "@/lib/errorReporting";
+import { installSaveErrorRecorder } from "@/lib/saveErrorReporting";
 import { SUPPORT_EMAIL } from "@/lib/support";
 import { supabase } from "@/integrations/supabase/client";
 import { Toaster } from "@/components/ui/sonner";
@@ -307,6 +308,7 @@ function RootComponent() {
     // caught. Reports queue until PostHog has loaded (analytics.ts).
     registerErrorReportingContext({ router, queryClient });
     installErrorListeners();
+    installSaveErrorRecorder(); // failed saves → public.save_errors (alerting)
     captureFirstTouch(); // first-touch attribution — record source before signup
     if (window.location.hash.includes("access_token=")) {
       // Supabase's implicit auth flow lands with live tokens in the URL hash.

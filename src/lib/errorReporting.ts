@@ -100,6 +100,28 @@ function platform(): ErrorPlatform {
   return p === "ios" || p === "android" ? p : "web";
 }
 
+/** The tags a report would carry right now, for other recorders of failures
+ *  (saveErrorReporting.ts). `token` is the sitter/invite/handoff link token
+ *  when the route has one: callers may hash it, never send it. */
+export function currentErrorContext(): {
+  route: string;
+  platform: ErrorPlatform;
+  role: ErrorUserRole;
+  environment: "production" | "preview";
+  token?: string;
+} {
+  const { route, birdId } = currentRoute();
+  let token: string | undefined;
+  try {
+    const matches = router?.state.matches ?? [];
+    const raw = (matches[matches.length - 1]?.params as Record<string, string> | undefined)?.token;
+    if (typeof raw === "string" && raw) token = raw;
+  } catch {
+    /* no token */
+  }
+  return { route, platform: platform(), role: currentRole(route, birdId), environment: environment(), token };
+}
+
 function readCount(): number {
   try {
     return Number(sessionStorage.getItem(CAP_KEY) ?? "0") || 0;

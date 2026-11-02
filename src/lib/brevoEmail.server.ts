@@ -74,6 +74,9 @@ export interface TransactionalEmail {
    *  bereavement note are written as personal notes that invite a reply, so the
    *  reply has to reach a mailbox someone reads. Omit for everything else. */
   replyTo?: { email: string; name?: string };
+  /** Display name for this send, when it isn't BREVO_SENDER_NAME (the alerts
+   *  come from "Kya & Co. Alerts"). The address is always the verified sender. */
+  senderName?: string;
   /** Extra SMTP headers. Used for List-Unsubscribe and List-Unsubscribe-Post,
    *  which is what makes the one-click button appear in Gmail and Apple Mail. */
   headers?: Record<string, string>;
@@ -150,7 +153,7 @@ export async function sendTransactionalEmail(
 ): Promise<{ ok: boolean; skipped?: string; status?: number; messageId?: string; error?: string }> {
   const apiKey = process.env.BREVO_API_KEY;
   const senderEmail = process.env.BREVO_SENDER_EMAIL;
-  const senderName = process.env.BREVO_SENDER_NAME || "The Kya Project";
+  const senderName = email.senderName || process.env.BREVO_SENDER_NAME || "The Kya Project";
   // Previews never email anyone, even if a Brevo key reappears in Vercel's
   // Preview scope: they run unreviewed PR code against staging data.
   if (process.env.VERCEL_ENV === "preview") { console.warn("[brevoEmail] skipped: Vercel preview (email is off in previews)", { tag: email.tag }); return { ok: false, skipped: "preview-deployment" }; }
