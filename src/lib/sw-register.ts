@@ -181,6 +181,36 @@ export function isStaleChunkError(error: unknown): boolean {
   return /failed to fetch dynamically imported module|error loading dynamically imported module|importing a module script failed|failed to load module script|unable to preload/i.test(msg);
 }
 
+/** Is one of this page's own code files gone from the server? For the root
+ *  error screen, when the error it caught isn't recognisably a missing file:
+ *  React can report a code file that failed to load during the first render
+ *  as a generic error (#520), and WebKit doesn't always report the failed
+ *  file to the startup guard either (CI, Nov 2, 2026). Asks the server about
+ *  the page's module scripts (HEAD, uncached, at most 25). False on any doubt. */
+export async function pageCodeMissing(timeoutMs = 5000): Promise<boolean> {
+  if (typeof document === "undefined") return false;
+  const urls = new Set<string>();
+  const add = (u: string) => { if (u.startsWith(`${location.origin}/assets/`) && u.endsWith(".js")) urls.add(u); };
+  // Files the startup guard saw fail, then every code file the page asked
+  // for (the error screen can already have removed the failed route's tags),
+  // then the module tags still on the page.
+  try { ((window as unknown as { __kyaFailedAssets?: string[] }).__kyaFailedAssets ?? []).forEach(add); } catch { /* ignore */ }
+  try { performance.getEntriesByType("resource").forEach((e) => add(e.name)); } catch { /* ignore */ }
+  document.querySelectorAll<HTMLScriptElement | HTMLLinkElement>('script[type="module"][src], link[rel="modulepreload"][href]').forEach((el) => {
+    add((el as HTMLScriptElement).src || (el as HTMLLinkElement).href || "");
+  });
+  const ctrl = typeof AbortController !== "undefined" ? new AbortController() : null;
+  const timer = window.setTimeout(() => ctrl?.abort(), timeoutMs);
+  try {
+    const answers = await Promise.all([...urls].slice(0, 25).map((u) =>
+      fetch(u, { method: "HEAD", cache: "no-store", signal: ctrl?.signal })
+        .then((r) => r.status === 404 || r.status === 410, () => false)));
+    return answers.some(Boolean);
+  } finally {
+    window.clearTimeout(timer);
+  }
+}
+
 export function installChunkErrorRecovery() {
   if (typeof window === "undefined") return;
   window.addEventListener("vite:preloadError", (e) => {

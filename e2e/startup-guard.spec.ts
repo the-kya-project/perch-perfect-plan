@@ -37,7 +37,9 @@ test("a file that's missing from the server resets the page once", async ({ page
   const chunk = await pickChunk(page);
   let missing = true;
   await page.route(`**${chunk}`, async (route) => {
-    if (missing) await route.fulfill({ status: 404, contentType: "text/plain", body: "not found" });
+    // A real 404 to HEAD has no body; one with a body is sometimes rejected
+    // as a network error, which the guard rightly reads as "can't tell".
+    if (missing) await route.fulfill({ status: 404, contentType: "text/plain", body: route.request().method() === "HEAD" ? "" : "not found" });
     else await route.continue();
   });
   const seen = resets(page);

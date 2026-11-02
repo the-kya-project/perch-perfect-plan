@@ -36,7 +36,7 @@ import { applyOwnerLocale } from "@/lib/i18n/ownerLocale";
 import {
   registerServiceWorker, startReleaseCheck, installChunkErrorRecovery, hardResetAndReload,
   isStaleChunkError, staleChunkRecoveryExhausted, reloadForStaleChunk,
-  markAppHealthySoon, STARTUP_FAILED_EVENT,
+  markAppHealthySoon, STARTUP_FAILED_EVENT, pageCodeMissing,
 } from "@/lib/sw-register";
 import { captureFirstTouch } from "@/lib/attribution";
 import { checkStylesApplied } from "@/lib/stylesCheck";
@@ -84,11 +84,22 @@ function ErrorComponent({ error }: ErrorComponentProps) {
   // automatic attempt (see reloadForStaleChunk); if the page that comes back
   // still can't load, this shows the error screen and never reloads again.
   const recovering = isStaleChunkError(error) && !staleChunkRecoveryExhausted();
+  // Not recognisably a missing file: React can report one as a generic error
+  // (#520). Before showing the error screen, ask the server whether one of
+  // this page's code files is gone; if so it's the same recovery.
+  const [checking, setChecking] = useState(!recovering && !staleChunkRecoveryExhausted());
   useEffect(() => {
-    if (recovering) reloadForStaleChunk();
-    else reportError(error, { mechanism: "react_error_boundary", boundary: "root" });
+    if (recovering) { reloadForStaleChunk(); return; }
+    let live = true;
+    void pageCodeMissing().then((missing) => {
+      if (!live) return;
+      if (missing) { reloadForStaleChunk(); return; }
+      setChecking(false);
+      reportError(error, { mechanism: "react_error_boundary", boundary: "root" });
+    });
+    return () => { live = false; };
   }, [error, recovering]);
-  if (recovering) {
+  if (recovering || checking) {
     return (
       <StartupSplash />
     );
@@ -215,8 +226,8 @@ const STARTUP_GUARD = `(function(){try{` +
   // Is the file really gone? 1 = 404/410, 0 = it's there, 2 = couldn't tell.
   `function gone(u,cb){var x=false;function fin(m){if(!x){x=true;cb(m)}}setTimeout(function(){fin(2)},8000);` +
   `try{fetch(u,{method:"HEAD",cache:"no-store",credentials:"same-origin"}).then(function(r){fin(r.status===404||r.status===410?1:0)},function(){fin(2)})}catch(e){fin(2)}}` +
-  `addEventListener("error",function(e){if(leaving||checking)return;var el=e&&e.target;if(!el||(el.tagName!=="SCRIPT"&&el.tagName!=="LINK"))return;` +
-  `var u=el.src||el.href||"";if(u.indexOf(location.origin+"/assets/")!==0||window.__kyaReady)return;checking=true;` +
+  `addEventListener("error",function(e){if(leaving)return;var el=e&&e.target;if(!el||(el.tagName!=="SCRIPT"&&el.tagName!=="LINK"))return;` +
+  `var u=el.src||el.href||"";if(u.indexOf(location.origin+"/assets/")!==0)return;try{(window.__kyaFailedAssets=window.__kyaFailedAssets||[]).push(u)}catch(x){}if(window.__kyaReady&&performance.now()>S)return;if(checking)return;checking=true;` +
   `settled(function(){if(leaving||(window.__kyaReady&&performance.now()>S)){checking=false;return}gone(u,function(m){` +
   `function act(){if(leaving||(window.__kyaReady&&!(m===1&&performance.now()<S))){checking=false;return}` +
   `var at=0;try{at=Number(localStorage.getItem(K))||0}catch(x){}` +
