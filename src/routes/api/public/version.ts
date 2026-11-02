@@ -18,14 +18,16 @@ import { WEB_BUILD } from "@/lib/errorTags";
 export const Route = createFileRoute("/api/public/version")({
   server: {
     handlers: {
-      GET: () =>
-        new Response(JSON.stringify({ build: WEB_BUILD }), {
+      GET: ({ request }) => {
+        console.info(`[version] TEMP-DIAG app=${/KyaApp/.test(request.headers.get("user-agent") ?? "")} build=${WEB_BUILD}`);
+        return new Response(JSON.stringify({ build: WEB_BUILD }), {
           status: 200,
           headers: {
             "content-type": "application/json; charset=utf-8",
             "cache-control": "no-store, max-age=0",
           },
-        }),
+        });
+      },
     },
   },
 });
