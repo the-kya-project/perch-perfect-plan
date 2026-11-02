@@ -49,6 +49,9 @@ export type SaveErrorGroup = {
   versions: string[];
   first: string;
   last: string;
+  /** Made-up data (sampleSaveErrorGroups). An email built from it is always
+   *  marked TEST, so a sample can't be mistaken for a real outage. */
+  sample?: true;
 };
 
 export type AlertMode = "all" | "daily" | "off";
@@ -210,7 +213,24 @@ ${items}
 
 export type BuiltEmail = { subject: string; html: string; text: string };
 
-export function buildUrgentEmail(items: UrgentItem[]): BuiltEmail {
+/** Who the alerts come from (the address stays the verified Brevo sender). */
+export const ALERT_SENDER_NAME = "Kya & Co. Alerts";
+
+export const TEST_LABEL = "TEST · SAMPLE DATA, NOT A REAL OUTAGE";
+
+/** Test sends and samples: "TEST:" leads the subject, a label tops the email. */
+function markTest(email: BuiltEmail): BuiltEmail {
+  return {
+    subject: `TEST: ${email.subject}`,
+    html: email.html.replace(
+      '<table role="presentation"',
+      `<div style="max-width:600px;margin:0 auto 12px;padding:10px 14px;border-radius:6px;background:#1f2937;color:#ffffff;font-size:14px;font-weight:700;letter-spacing:.04em;text-align:center">${TEST_LABEL}</div>\n<table role="presentation"`,
+    ),
+    text: `${TEST_LABEL}\n\n${email.text}`,
+  };
+}
+
+export function buildUrgentEmail(items: UrgentItem[], opts: { test?: boolean } = {}): BuiltEmail {
   const people = items.reduce((n, i) => n + i.group.people, 0);
   const lead = items[0];
   const subject =
@@ -234,18 +254,19 @@ export function buildUrgentEmail(items: UrgentItem[]): BuiltEmail {
     ...items.flatMap((i) => [...groupLines(i.group).map((l, k) => (k === 0 ? `- ${l}` : `  ${l}`)), `  ${note(i)}`, ""]),
     footer,
   ].join("\n");
-  return { subject, html: layout({ text: "URGENT", color: "#b91c1c" }, intro, items.map((i) => ({ g: i.group, note: note(i) })), footer), text };
+  const built = { subject, html: layout({ text: "URGENT", color: "#b91c1c" }, intro, items.map((i) => ({ g: i.group, note: note(i) })), footer), text };
+  return opts.test || items.some((i) => i.group.sample) ? markTest(built) : built;
 }
 
 /** The daily summary, or null when there were no errors (nothing is sent). */
-export function buildDailyEmail(groups: SaveErrorGroup[], opts: { urgentToday: Set<string>; spikeUsers?: number }): BuiltEmail | null {
+export function buildDailyEmail(groups: SaveErrorGroup[], opts: { urgentToday: Set<string>; spikeUsers?: number; test?: boolean }): BuiltEmail | null {
   if (groups.length === 0) return null;
   const total = groups.reduce((n, g) => n + g.count, 0);
   const anyUrgent = groups.some((g) => opts.urgentToday.has(g.signature));
   const subject = `Daily save errors: ${plural(total, "failure")} in the last 24 hours${anyUrgent ? " (includes an urgent one)" : " (nothing urgent)"}`;
   const intro = anyUrgent
     ? "Some saves failed in the last 24 hours, and at least one of them already had an urgent email. Check it's fixed."
-    : "Some saves failed in the last 24 hours. Nothing reached the urgent level (a new kind of error, or ${opts.spikeUsers ?? 3}+ people in an hour), so this can wait for a normal working day.";
+    : `Some saves failed in the last 24 hours. Nothing reached the urgent level (a new kind of error, or ${opts.spikeUsers ?? 3}+ people in an hour), so this can wait for a normal working day.`;
   const footer = NEXT_STEPS;
   const note = (g: SaveErrorGroup) => (opts.urgentToday.has(g.signature) ? "Already sent as urgent today." : undefined);
   const text = [
@@ -256,24 +277,26 @@ export function buildDailyEmail(groups: SaveErrorGroup[], opts: { urgentToday: S
     ...groups.flatMap((g) => [...groupLines(g).map((l, k) => (k === 0 ? `- ${l}` : `  ${l}`)), ...(note(g) ? [`  ${note(g)}`] : []), ""]),
     footer,
   ].join("\n");
-  return {
+  const built = {
     subject,
     html: layout(anyUrgent ? { text: "DAILY · CHECK THE URGENT ONE", color: "#b45309" } : { text: "DAILY · NOT URGENT", color: "#047857" }, intro, groups.map((g) => ({ g, note: note(g) })), footer),
     text,
   };
+  return opts.test || groups.some((g) => g.sample) ? markTest(built) : built;
 }
 
 // Sample data for the QA sender and the tests: the Oct 26 sits failure.
+// Marked `sample`, so every email built from it says TEST.
 export function sampleSaveErrorGroups(now = new Date("2026-10-27T15:00:00Z")): SaveErrorGroup[] {
   const at = (minAgo: number) => new Date(now.getTime() - minAgo * 60_000).toISOString();
   return [
     {
       signature: "permission|42501|sits|write", category: "permission", sqlstate: "42501", target: "sits", operation: "write",
-      count: 7, people: 4, platforms: { ios: 4, web: 3 }, routes: ["/sits/new"], versions: ["1.4.2"], first: at(52), last: at(3),
+      count: 7, people: 4, platforms: { ios: 4, web: 3 }, routes: ["/sits/new"], versions: ["1.4.2"], first: at(52), last: at(3), sample: true,
     },
     {
       signature: "network|-|-|-", category: "network", sqlstate: null, target: null, operation: null,
-      count: 2, people: 2, platforms: { android: 1, ios: 1 }, routes: ["/sitter/$token/scan"], versions: ["1.4.2"], first: at(600), last: at(90),
+      count: 2, people: 2, platforms: { android: 1, ios: 1 }, routes: ["/sitter/$token/scan"], versions: ["1.4.2"], first: at(600), last: at(90), sample: true,
     },
   ];
 }

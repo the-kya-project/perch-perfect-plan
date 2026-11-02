@@ -4,7 +4,7 @@ import assert from "node:assert/strict";
 import { classifySaveError, noteSaveError, saveErrorSignature, setSaveErrorRecorder, type SaveErrorShape } from "@/lib/saveErrors";
 import { friendlyError } from "@/lib/errorMessage";
 import {
-  alertSettings, buildDailyEmail, buildUrgentEmail, describeGroup, groupSaveErrors, planUrgent, sampleSaveErrorGroups,
+  ALERT_SENDER_NAME, alertSettings, buildDailyEmail, buildUrgentEmail, describeGroup, groupSaveErrors, planUrgent, sampleSaveErrorGroups,
   type SaveErrorRow,
 } from "@/lib/saveErrorAlerts";
 
@@ -175,7 +175,7 @@ check("plain-language description", () => {
 check("urgent email: says URGENT, what failed, how many, where", () => {
   const [g] = sampleSaveErrorGroups(NOW);
   const e = buildUrgentEmail([{ group: g, reasons: ["new", "spike"] }]);
-  assert.match(e.subject, /^URGENT: saves failing in Kya & Co\. \(4 people in the last hour\)/);
+  assert.match(e.subject, /^TEST: URGENT: saves failing in Kya & Co\. \(4 people in the last hour\)/);
   assert.match(e.text, /7 times, 4 people\. Platforms: iOS app 4, web 3\./);
   assert.match(e.text, /Screens: \/sits\/new/);
   assert.match(e.html, /URGENT/);
@@ -186,7 +186,9 @@ check("daily email: nothing at all when nothing failed", () => {
 check("daily email: says it isn't urgent, and lists every kind", () => {
   const groups = sampleSaveErrorGroups(NOW);
   const e = buildDailyEmail(groups, { urgentToday: new Set() })!;
-  assert.equal(e.subject, "Daily save errors: 9 failures in the last 24 hours (nothing urgent)");
+  assert.equal(e.subject, "TEST: Daily save errors: 9 failures in the last 24 hours (nothing urgent)");
+  assert.match(e.text, /or 3\+ people in an hour/);
+  assert.match(buildDailyEmail(groups, { urgentToday: new Set(), spikeUsers: 5 })!.text, /or 5\+ people in an hour/);
   assert.match(e.html, /NOT URGENT/);
   assert.match(e.text, /The save never reached the server/);
   const withUrgent = buildDailyEmail(groups, { urgentToday: new Set([SITS]) })!;
@@ -198,6 +200,38 @@ check("emails escape HTML and carry no personal data fields", () => {
   const e = buildUrgentEmail([{ group: g, reasons: ["new"] }]);
   assert.ok(e.html.includes("/a&lt;b&gt;"));
   assert.ok(!/@/.test(e.text.replace(/@thekyaproject\.com/g, "")));
+});
+
+// ---- Test sends can't be mistaken for an outage ---------------------------------------
+
+const real = (g: ReturnType<typeof sampleSaveErrorGroups>[number]) => { const { sample: _s, ...rest } = g; return rest; };
+check("sample data is always marked TEST: subject first, label at the top", () => {
+  for (const e of [
+    buildUrgentEmail([{ group: sampleSaveErrorGroups(NOW)[0], reasons: ["new"] }]),
+    buildDailyEmail(sampleSaveErrorGroups(NOW), { urgentToday: new Set() })!,
+  ]) {
+    assert.match(e.subject, /^TEST: /);
+    assert.match(e.text, /^TEST · SAMPLE DATA, NOT A REAL OUTAGE\n/);
+    // The label sits above the email's own content.
+    assert.ok(e.html.indexOf("TEST · SAMPLE DATA") < e.html.indexOf('<table role="presentation"'));
+  }
+});
+check("test: true marks real-shaped data too", () => {
+  const g = real(sampleSaveErrorGroups(NOW)[0]);
+  assert.match(buildUrgentEmail([{ group: g, reasons: ["new"] }], { test: true }).subject, /^TEST: /);
+  assert.match(buildDailyEmail([g], { urgentToday: new Set(), test: true })!.subject, /^TEST: /);
+});
+check("a real alert is never marked TEST", () => {
+  const groups = sampleSaveErrorGroups(NOW).map(real);
+  const u = buildUrgentEmail([{ group: groups[0], reasons: ["spike"] }]);
+  const d = buildDailyEmail(groups, { urgentToday: new Set() })!;
+  for (const e of [u, d]) {
+    assert.ok(!/TEST/.test(e.subject) && !/TEST/.test(e.html) && !/TEST/.test(e.text));
+  }
+  assert.match(u.subject, /^URGENT: /);
+});
+check("alerts come from Kya & Co. Alerts", () => {
+  assert.equal(ALERT_SENDER_NAME, "Kya & Co. Alerts");
 });
 
 if (failed) process.exit(1);

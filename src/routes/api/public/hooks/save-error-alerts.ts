@@ -29,6 +29,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { withErrorTelemetry } from "@/lib/errorTelemetry";
 import { withCronTelemetry } from "@/lib/cronTelemetry";
 import {
+  ALERT_SENDER_NAME,
   alertSettings,
   buildDailyEmail,
   buildUrgentEmail,
@@ -85,7 +86,14 @@ export const Route = createFileRoute("/api/public/hooks/save-error-alerts")({
         if (alertsRes.error) return Response.json({ ok: false, error: alertsRes.error.message }, { status: 500 });
         const rows = (rowsRes.data ?? []) as SaveErrorRow[];
         const alerts = (alertsRes.data ?? []) as AlertRow[];
-        const { sendTransactionalEmail } = await import("@/lib/brevoEmail.server");
+        const { sendTransactionalEmail, brevoBlockedAddresses } = await import("@/lib/brevoEmail.server");
+        // Brevo adds its own List-Unsubscribe to every transactional email, so
+        // one tap on "Unsubscribe" would put the alert inbox on its blocklist
+        // and every alert after that would vanish. Check before each send and
+        // fail loudly instead (a non-200 run shows in the cron_hook_run events).
+        const recipientBlocked = async () => (await brevoBlockedAddresses())?.get(settings.to.toLowerCase()) ?? null;
+        const send = (email: { subject: string; html: string; text: string }) =>
+          sendTransactionalEmail({ to: settings.to, subject: email.subject, htmlContent: email.html, textContent: email.text, tag: "save_error_alert", senderName: ALERT_SENDER_NAME });
 
         if (mode === "urgent") {
           const known = new Set(alerts.flatMap((a) => (a.kind === "urgent" ? [a.signature, ...a.signatures] : a.signatures)));
@@ -95,6 +103,8 @@ export const Route = createFileRoute("/api/public/hooks/save-error-alerts")({
             return Response.json({ ok: true, dryRun: true, mode, rows: rows.length, urgent: items.map((i) => ({ signature: i.group.signature, reasons: i.reasons, people: i.group.people, count: i.group.count })), email: items.length ? buildUrgentEmail(items) : null });
           }
           if (items.length === 0) return Response.json({ ok: true, mode, rows: rows.length, sent: 0 });
+          const blockedReason = await recipientBlocked();
+          if (blockedReason) return Response.json({ ok: false, mode, error: `alert recipient is on Brevo's blocklist (${blockedReason})` }, { status: 502 });
 
           // Claim each kind for today; one that another run already holds is dropped.
           const claimed: typeof items = [];
@@ -108,7 +118,7 @@ export const Route = createFileRoute("/api/public/hooks/save-error-alerts")({
           if (claimed.length === 0) return Response.json({ ok: true, mode, rows: rows.length, sent: 0, alreadySent: items.length });
 
           const email = buildUrgentEmail(claimed);
-          const res = await sendTransactionalEmail({ to: settings.to, subject: email.subject, htmlContent: email.html, textContent: email.text, tag: "save_error_alert" });
+          const res = await send(email);
           if (!res.ok) {
             await db.from("save_error_alerts").delete().eq("kind", "urgent").eq("alert_day", today).in("signature", claimed.map((i) => i.group.signature));
             return Response.json({ ok: false, mode, error: `send failed: ${res.skipped ?? res.error ?? res.status}` }, { status: 502 });
@@ -130,6 +140,8 @@ export const Route = createFileRoute("/api/public/hooks/save-error-alerts")({
         if (alerts.some((a) => a.kind === "daily" && a.alert_day === today)) {
           return Response.json({ ok: true, mode, rows: rows.length, sent: 0, alreadySent: 1 });
         }
+        const dailyBlocked = await recipientBlocked();
+        if (dailyBlocked) return Response.json({ ok: false, mode, error: `alert recipient is on Brevo's blocklist (${dailyBlocked})` }, { status: 502 });
         const { error: claimErr } = await db.from("save_error_alerts").insert({
           kind: "daily", signature: "daily", alert_day: today, signatures: groups.map((g) => g.signature),
         });
@@ -137,7 +149,7 @@ export const Route = createFileRoute("/api/public/hooks/save-error-alerts")({
           if (claimErr.code === "23505") return Response.json({ ok: true, mode, rows: rows.length, sent: 0, alreadySent: 1 });
           return Response.json({ ok: false, mode, error: claimErr.message }, { status: 500 });
         }
-        const res = await sendTransactionalEmail({ to: settings.to, subject: email.subject, htmlContent: email.html, textContent: email.text, tag: "save_error_alert" });
+        const res = await send(email);
         if (!res.ok) {
           await db.from("save_error_alerts").delete().eq("kind", "daily").eq("alert_day", today);
           return Response.json({ ok: false, mode, error: `send failed: ${res.skipped ?? res.error ?? res.status}` }, { status: 502 });
