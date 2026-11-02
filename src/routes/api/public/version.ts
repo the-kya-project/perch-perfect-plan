@@ -19,7 +19,8 @@ export const Route = createFileRoute("/api/public/version")({
   server: {
     handlers: {
       GET: ({ request }) => {
-        console.info(`[version] TEMP-DIAG app=${/KyaApp/.test(request.headers.get("user-agent") ?? "")} build=${WEB_BUILD}`);
+        const diag = (new URL(request.url).searchParams.get("diag") ?? "check").replace(/[^a-z-]/g, "").slice(0, 20);
+        console.info(`[version] TEMP-DIAG ${diag} app=${/KyaApp/.test(request.headers.get("user-agent") ?? "")} build=${WEB_BUILD}`);
         return new Response(JSON.stringify({ build: WEB_BUILD }), {
           status: 200,
           headers: {
