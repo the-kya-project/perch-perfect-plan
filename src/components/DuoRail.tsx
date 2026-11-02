@@ -7,7 +7,7 @@
 // useDuoRail() and, when there is one, send their Back, Close and main button
 // into its slots with a portal. With no column (every other screen size, and
 // the sitter view, which has no AuthenticatedLayout) nothing changes.
-import { createContext, useContext, type ReactNode } from "react";
+import { createContext, useContext, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { Link } from "@tanstack/react-router";
 import { ArrowLeft, Users, X } from "lucide-react";
@@ -121,18 +121,60 @@ export function DuoRail({ task, setTop, setAction }: { task: boolean; setTop: (e
       aria-label={task ? t("ownerTabs.screenControls", "Screen controls") : t("ownerTabs.navAria", "Primary")}
       className={`duo-rail${task ? " duo-rail-task" : ""}`}
     >
-      <div ref={setTop} className="flex flex-col items-center gap-2" />
-      <div className="flex-1" />
-      {task ? <div ref={setAction} className="duo-rail-action" /> : <RailTabs />}
+      <div ref={setTop} className="flex shrink-0 flex-col items-center gap-2" />
+      <div className="duo-rail-spacer" />
+      {task ? <div ref={setAction} className="duo-rail-action shrink-0" /> : <RailTabs />}
     </nav>
   );
 }
 
+type Fit = "comfortable" | "tight" | "icons" | "scroll";
+
+// Each step's height for n tabs (px): tab height × n + the gaps between.
+const FIT_HEIGHT: Record<Exclude<Fit, "scroll">, (n: number) => number> = {
+  comfortable: (n) => n * 69 + (n - 1) * 8,
+  tight: (n) => n * 58 + (n - 1) * 2,
+  icons: (n) => n * 44 + (n - 1) * 4,
+};
+
+/**
+ * The first step whose tabs fit the height left under Back: comfortable,
+ * then tight spacing, then icons only, else the group scrolls. Only with the
+ * native bridge's geometry (html[data-bar-geometry]); Safari and the PWA keep
+ * today's layout.
+ */
+function useTabFit(group: React.RefObject<HTMLDivElement | null>, count: number): Fit {
+  const [fit, setFit] = useState<Fit>("comfortable");
+  useLayoutEffect(() => {
+    const el = group.current;
+    const nav = el?.parentElement;
+    if (!el || !nav || typeof ResizeObserver === "undefined") return;
+    const measure = () => {
+      if (!document.documentElement.hasAttribute("data-bar-geometry")) { setFit("comfortable"); return; }
+      const cs = getComputedStyle(nav);
+      const top = nav.firstElementChild as HTMLElement | null;
+      const available = nav.clientHeight - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom) - (top?.offsetHeight ?? 0) - 8;
+      const next = (["comfortable", "tight", "icons"] as const).find((f) => FIT_HEIGHT[f](count) <= available) ?? "scroll";
+      setFit(next);
+    };
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(nav);
+    if (nav.firstElementChild) ro.observe(nav.firstElementChild);
+    const mo = new MutationObserver(measure);
+    mo.observe(document.documentElement, { attributes: true, attributeFilter: ["data-bar-geometry", "style"] });
+    return () => { ro.disconnect(); mo.disconnect(); };
+  }, [group, count]);
+  return fit;
+}
+
 function RailTabs() {
   const { tabs, current, flock, flockLabel } = useOwnerTabs();
-  const tabClass = "flex w-20 flex-col items-center gap-[5px] rounded-[18px] pb-2.5 pt-3 text-[13px] leading-tight";
+  const group = useRef<HTMLDivElement>(null);
+  const fit = useTabFit(group, tabs.length + (flock ? 1 : 0));
+  const tabClass = "duo-rail-tab relative flex w-20 flex-col items-center gap-[5px] rounded-[18px] pb-2.5 pt-3 text-[13px] leading-tight";
   return (
-    <div className="flex flex-col items-center gap-2">
+    <div ref={group} className="duo-rail-tabs flex flex-col items-center gap-2" data-fit={fit}>
       {tabs.map(({ key, label, to, Icon }) => {
         const on = key === current;
         return (
@@ -144,15 +186,15 @@ function RailTabs() {
             className={`${tabClass} ${on ? "font-bold" : "font-medium"}`}
             style={on ? { background: "#d6ebc4", color: FOREST } : { color: "#5f5e5a" }}
           >
-            <Icon className="size-[26px]" strokeWidth={on ? 2.4 : 1.9} aria-hidden="true" />
-            {label}
+            <Icon className="size-[26px] shrink-0" strokeWidth={on ? 2.4 : 1.9} aria-hidden="true" />
+            <span className="duo-rail-tab-label">{label}</span>
           </Link>
         );
       })}
       {flock && (
         <Link to="/flock" onClick={() => rememberMode("flock")} data-coach="owner-tab-flock" className={`${tabClass} font-medium`} style={{ color: "#5f5e5a" }}>
-          <Users className="size-[26px]" strokeWidth={1.9} aria-hidden="true" />
-          {flockLabel}
+          <Users className="size-[26px] shrink-0" strokeWidth={1.9} aria-hidden="true" />
+          <span className="duo-rail-tab-label">{flockLabel}</span>
         </Link>
       )}
     </div>

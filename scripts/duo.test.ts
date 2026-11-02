@@ -13,7 +13,7 @@
  */
 import assert from "node:assert/strict";
 import { resolveDuoLayout } from "@/lib/duo";
-import { applyToHtml, normalizeNativeDuoState, type NativeDuoState } from "@/lib/duoNative";
+import { applyToHtml, barGeometry, normalizeNativeDuoState, type NativeDuoState } from "@/lib/duoNative";
 
 let passed = 0;
 function check(name: string, fn: () => void) {
@@ -24,7 +24,7 @@ function check(name: string, fn: () => void) {
   }
 }
 
-const state = (s: Partial<NativeDuoState>): NativeDuoState => ({ verticalBarEdge: null, hingeStatus: null, hingeAngleDegrees: null, fold: null, ...s });
+const state = (s: Partial<NativeDuoState>): NativeDuoState => ({ verticalBarEdge: null, hingeStatus: null, hingeAngleDegrees: null, fold: null, safeArea: null, statusBar: null, occlusions: [], ...s });
 const crease = { x: 471.5, y: 0, width: 8, height: 669, active: true };
 
 console.log("iPhone Duo, iOS app 1.2");
@@ -64,8 +64,65 @@ check("unknown or missing values read as null", () => {
   assert.deepEqual(normalizeNativeDuoState(undefined), state({}));
 });
 check("good values come through", () => {
-  const s = state({ verticalBarEdge: "left", hingeStatus: "partiallyOpen", hingeAngleDegrees: 92.5, fold: crease });
+  const s = state({
+    verticalBarEdge: "left", hingeStatus: "partiallyOpen", hingeAngleDegrees: 92.5, fold: crease,
+    safeArea: { top: 0, left: 84, bottom: 34, right: 0 }, statusBar: { x: 0, y: 0, width: 951, height: 2, active: true },
+    occlusions: [{ x: 0, y: 0, width: 84, height: 124, active: true }],
+  });
   assert.deepEqual(normalizeNativeDuoState(JSON.parse(JSON.stringify(s))), s);
+});
+
+// What the iPhone Duo simulator (iOS 27.2) reported, Nov 2026.
+const STRIP_SIDEWAYS = { x: 867, y: 0, width: 84, height: 124, active: true }; // time + Wi-Fi block, unfolded sideways
+const INNER_CAMERA = { x: 215.7, y: 611, width: 58, height: 37, active: false };
+const SAFE = { top: 0, left: 0, bottom: 34, right: 84 };
+const unfoldedSideways = state({ verticalBarEdge: "right", hingeStatus: "fullyOpen", safeArea: SAFE, statusBar: { x: 0, y: 0, width: 951, height: 2, active: true }, occlusions: [INNER_CAMERA, STRIP_SIDEWAYS] });
+const coverUpright = state({ verticalBarEdge: "right", hingeStatus: "closed", safeArea: SAFE, occlusions: [
+  { x: 399.7, y: 29.3, width: 37, height: 37, active: true }, // camera
+  { x: 382, y: 0, width: 84, height: 174, active: true }, // status block
+] });
+const coverSideways = state({ verticalBarEdge: "right", hingeStatus: "closed", safeArea: SAFE, occlusions: [
+  { x: 611.7, y: 399.7, width: 37, height: 37, active: true }, // camera, bottom right
+  { x: 594, y: 384, width: 84, height: 82, active: true }, // status block, bottom right
+] });
+
+console.log("Side column geometry (where the status items are)");
+const near = (a: number, b: number) => assert.ok(Math.abs(a - b) < 0.2, `${a} ≠ ${b}`);
+check("unfolded sideways: the status block's middle, below its 124px", () => {
+  const g = barGeometry(unfoldedSideways, { width: 951, height: 669 })!;
+  assert.equal(g.source, "occlusion");
+  near(g.axisOffset, 42);
+  near(g.axisX, 909);
+  near(g.topClear, 124);
+  near(g.bottomClear, 34);
+});
+check("cover screen upright: the camera's line (the time and Wi-Fi are drawn on it), below the block", () => {
+  const g = barGeometry(coverUpright, { width: 466, height: 678 })!;
+  assert.equal(g.source, "camera");
+  near(g.axisOffset, 47.8);
+  near(g.topClear, 174);
+});
+check("cover screen sideways: the block and camera are at the bottom, so nothing to clear at the top", () => {
+  const g = barGeometry(coverSideways, { width: 678, height: 466 })!;
+  assert.equal(g.source, "camera");
+  near(g.axisOffset, 47.8);
+  near(g.topClear, 0);
+  near(g.bottomClear, 82);
+});
+check("no occlusion reported: half the safe-area inset on the bar edge", () => {
+  const g = barGeometry(state({ verticalBarEdge: "left", safeArea: { top: 20, left: 80, bottom: 0, right: 0 } }), { width: 951, height: 669 })!;
+  assert.equal(g.source, "safeArea");
+  near(g.axisOffset, 40);
+  near(g.axisX, 40);
+  near(g.topClear, 20);
+});
+check("an inactive camera elsewhere is ignored", () => {
+  const g = barGeometry(unfoldedSideways, { width: 951, height: 669 })!;
+  near(g.bottomClear, 34);
+});
+check("no edge, or no safe area: no geometry (today's column)", () => {
+  assert.equal(barGeometry(state({ safeArea: SAFE }), { width: 951, height: 669 }), null);
+  assert.equal(barGeometry(state({ verticalBarEdge: "right" }), { width: 951, height: 669 }), null);
 });
 
 console.log("<html> attributes and fold variables");
@@ -91,6 +148,18 @@ check("unfolded with an active crease: --fold-x and --fold-width in px", () => {
   applyToHtml(state({ verticalBarEdge: "right", hingeStatus: "fullyOpen", fold: crease }), r);
   assert.equal(r.props.get("--fold-x"), "471.5px");
   assert.equal(r.props.get("--fold-width"), "8px");
+});
+check("the column's geometry and the active occlusions go on <html>", () => {
+  const r = fakeRoot();
+  applyToHtml(coverUpright, r, { width: 466, height: 678 });
+  assert.equal(r.attrs.get("data-bar-geometry"), "camera");
+  assert.equal(r.props.get("--bar-top-clear"), "174px");
+  assert.equal(r.props.get("--occlusion-1-height"), "174px");
+  assert.equal(r.attrs.get("data-occlusions"), "2");
+  applyToHtml(state({}), r, { width: 466, height: 678 });
+  assert.equal(r.attrs.has("data-bar-geometry"), false);
+  assert.equal(r.props.has("--bar-axis-offset"), false);
+  assert.equal(r.props.has("--occlusion-1-height"), false);
 });
 check("everything null clears what was set", () => {
   const r = fakeRoot();

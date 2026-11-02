@@ -12,6 +12,9 @@ import Capacitor
 ///   hingeAngleDegrees  number | null
 ///   fold               { x, y, width, height, active } in web (CSS) points, or null
 ///                      (the web view's .division reserved region: the crease)
+///   safeArea           { top, left, bottom, right } in CSS points
+///   statusBar          { x, y, width, height, active } or null (UIStatusBarManager)
+///   occlusions         [{ x, y, width, height, active }] (.occlusion regions: the camera)
 ///
 /// Everything is null on devices without a hinge and before iOS 27.1, where the
 /// APIs don't exist; the web app then keeps its own space-based rule
@@ -24,19 +27,47 @@ public class DuoBridgePlugin: CAPPlugin, CAPBridgedPlugin {
         CAPPluginMethod(name: "getState", returnType: CAPPluginReturnPromise)
     ]
 
-    struct Fold: Equatable {
+    /// A rect in the web view's coordinates (= CSS px): the fold, the status
+    /// bar, a camera cutout.
+    struct Region: Equatable {
         var x: Double
         var y: Double
         var width: Double
         var height: Double
         var active: Bool
+        /// The part of the frame that's margin around the reserved area
+        /// itself (UIViewReservedRegion.margins); nil when there's none.
+        var margins: Insets? = nil
+
+        var payload: [String: Any] {
+            var p: [String: Any] = ["x": x, "y": y, "width": width, "height": height, "active": active]
+            if let margins { p["margins"] = margins.payload }
+            return p
+        }
+    }
+
+    struct Insets: Equatable {
+        var top: Double
+        var left: Double
+        var bottom: Double
+        var right: Double
+
+        var payload: [String: Any] { ["top": top, "left": left, "bottom": bottom, "right": right] }
     }
 
     struct State: Equatable {
         var verticalBarEdge: String?
         var hingeStatus: String?
         var hingeAngleDegrees: Double?
-        var fold: Fold?
+        var fold: Region?
+        /// The web view's safe-area insets: on a vertical-bar screen, the
+        /// strip the system status bar lives in is the inset on that edge.
+        var safeArea: Insets?
+        /// The system status bar's frame (UIStatusBarManager), or nil when hidden.
+        var statusBar: Region?
+        /// .occlusion reserved regions: the camera cutout and anything else
+        /// the system draws over.
+        var occlusions: [Region] = []
 
         /// Only the angle differs: the one change that's throttled.
         func differsOnlyInAngle(from other: State) -> Bool {
@@ -51,7 +82,10 @@ public class DuoBridgePlugin: CAPPlugin, CAPBridgedPlugin {
                 "verticalBarEdge": verticalBarEdge ?? NSNull(),
                 "hingeStatus": hingeStatus ?? NSNull(),
                 "hingeAngleDegrees": hingeAngleDegrees ?? NSNull(),
-                "fold": fold.map { ["x": $0.x, "y": $0.y, "width": $0.width, "height": $0.height, "active": $0.active] as [String: Any] } ?? NSNull(),
+                "fold": fold?.payload ?? NSNull(),
+                "safeArea": safeArea?.payload ?? NSNull(),
+                "statusBar": statusBar?.payload ?? NSNull(),
+                "occlusions": occlusions.map { $0.payload },
             ]
         }
     }
@@ -106,7 +140,10 @@ public class DuoBridgePlugin: CAPPlugin, CAPBridgedPlugin {
             verticalBarEdge: Self.edgeName(viewController),
             hingeStatus: hinge?.status,
             hingeAngleDegrees: hinge?.degrees,
-            fold: Self.fold(in: webView)
+            fold: Self.regions(.division, in: webView).first,
+            safeArea: Self.insets(webView),
+            statusBar: Self.statusBar(in: webView),
+            occlusions: Self.regions(.occlusion, in: webView)
         )
         guard next != state else { return }
         let angleOnly = next.differsOnlyInAngle(from: state)
@@ -168,12 +205,30 @@ public class DuoBridgePlugin: CAPPlugin, CAPBridgedPlugin {
         }
     }
 
-    /// The crease as a division region of the web view. The web view isn't
-    /// zoomed, so its points are the page's CSS pixels.
+    /// Reserved regions of one kind (.division: the crease; .occlusion: the
+    /// camera cutout), inactive ones included, in the web view's points. The
+    /// web view isn't zoomed, so its points are the page's CSS pixels.
     @MainActor @available(iOS 27.1, *)
-    private static func fold(in webView: UIView) -> Fold? {
-        guard let region = webView.reservedRegions(kind: .division, options: .includeInactive).first else { return nil }
-        let f = region.frame
-        return Fold(x: Double(f.minX), y: Double(f.minY), width: Double(f.width), height: Double(f.height), active: region.isActive)
+    private static func regions(_ kind: UIView.ReservedRegion.Kind, in webView: UIView) -> [Region] {
+        webView.reservedRegions(kind: kind, options: .includeInactive).map { r in
+            Region(x: Double(r.frame.minX), y: Double(r.frame.minY), width: Double(r.frame.width), height: Double(r.frame.height), active: r.isActive,
+                   margins: Insets(top: Double(r.margins.top), left: Double(r.margins.left), bottom: Double(r.margins.bottom), right: Double(r.margins.right)))
+        }
+    }
+
+    @MainActor
+    private static func insets(_ webView: UIView) -> Insets {
+        let i = webView.safeAreaInsets
+        return Insets(top: Double(i.top), left: Double(i.left), bottom: Double(i.bottom), right: Double(i.right))
+    }
+
+    /// The status bar's frame (reported in window coordinates), converted to
+    /// the web view's. Nil when the status bar is hidden.
+    @MainActor
+    private static func statusBar(in webView: UIView) -> Region? {
+        guard let window = webView.window, let frame = window.windowScene?.statusBarManager?.statusBarFrame,
+              frame.width > 0, frame.height > 0 else { return nil }
+        let f = webView.convert(frame, from: window)
+        return Region(x: Double(f.minX), y: Double(f.minY), width: Double(f.width), height: Double(f.height), active: true)
     }
 }

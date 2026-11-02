@@ -434,3 +434,79 @@ html.duo:not(.duo-two-pane) .kya-answer-pills {
 html.duo:not(.duo-two-pane) .kya-answer-pills > :nth-child(3) {
   grid-column: 1 / -1;
 }
+/* With the native bridge (iOS app 1.2, html[data-bar-geometry]): the column
+   shares the system status bar's strip instead of sitting beside it. It runs
+   to the screen edge, one continuous white surface, and its controls sit on
+   the status items' center line (--bar-axis-offset from the edge), starting
+   below them and any camera cutout (--bar-top-clear). It's as wide as that
+   strip, widened only as far as a tab needs (half a tab, 44px, each side of
+   the line). Safari and the PWA have no bridge and keep the rules above. */
+html.duo[data-bar-geometry] {
+  --duo-rail-w: calc(var(--bar-axis-offset) + max(var(--bar-axis-offset), 44px));
+}
+html.duo[data-bar-geometry][data-duo-rail="right"] {
+  --duo-right: var(--duo-rail-w);
+}
+html.duo[data-bar-geometry][data-duo-rail="left"] {
+  --duo-left: var(--duo-rail-w);
+}
+html.duo[data-bar-geometry] .duo-rail {
+  width: var(--duo-rail-w);
+  /* Overflow goes to the tab group (see .duo-rail-tabs), never over Back. */
+  overflow: hidden;
+  padding-top: calc(var(--bar-top-clear) + 10px);
+  padding-bottom: calc(var(--bar-bottom-clear) + 10px);
+  /* The content box is centered on the status items' line: twice the line's
+     distance from the edge, against the edge. */
+  padding-right: 0;
+  padding-left: calc(var(--duo-rail-w) - 2 * var(--bar-axis-offset));
+}
+html.duo[data-bar-geometry][data-duo-rail="left"] .duo-rail {
+  padding-left: 0;
+  padding-right: calc(var(--duo-rail-w) - 2 * var(--bar-axis-offset));
+}
+html.duo[data-bar-geometry] .duo-rail-tab {
+  width: min(80px, calc(2 * var(--bar-axis-offset) - 4px));
+}
+/* The tabs fit the height left under Back (DuoRail picks the step): first
+   tighter spacing, then icons only (labels kept for screen readers), and as a
+   last resort the group scrolls. */
+.duo-rail-spacer {
+  flex: 1 1 8px;
+  min-height: 8px;
+}
+html.duo[data-bar-geometry] .duo-rail-tabs {
+  min-height: 0;
+  flex-shrink: 1;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: none;
+}
+.duo-rail-tabs[data-fit="tight"] {
+  gap: 2px;
+}
+.duo-rail-tabs[data-fit="tight"] .duo-rail-tab {
+  padding-top: 7px;
+  padding-bottom: 6px;
+  gap: 3px;
+}
+.duo-rail-tabs[data-fit="icons"],
+.duo-rail-tabs[data-fit="scroll"] {
+  gap: 4px;
+}
+.duo-rail-tabs[data-fit="icons"] .duo-rail-tab,
+.duo-rail-tabs[data-fit="scroll"] .duo-rail-tab {
+  min-height: 44px;
+  padding-top: 9px;
+  padding-bottom: 9px;
+  justify-content: center;
+}
+.duo-rail-tabs[data-fit="icons"] .duo-rail-tab-label,
+.duo-rail-tabs[data-fit="scroll"] .duo-rail-tab-label {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
