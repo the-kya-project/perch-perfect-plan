@@ -43,8 +43,10 @@ test("a file that's missing from the server resets the page once", async ({ page
   const seen = resets(page);
   page.on("framenavigated", (f) => { if (f === page.mainFrame() && f.url().includes("_r=")) missing = false; });
 
-  await page.goto("/auth?mode=signin", { waitUntil: "commit" });
-  await page.waitForURL((u) => u.searchParams.has("_r"), { timeout: 20_000 });
+  // The reset can interrupt this first load (Chromium then reports
+  // ERR_ABORTED), so wait on the reset itself rather than on navigation.
+  await page.goto("/auth?mode=signin", { waitUntil: "commit" }).catch(() => { /* interrupted by the reset */ });
+  await expect.poll(() => seen.size, { timeout: 20_000 }).toBeGreaterThanOrEqual(1);
   await page.waitForTimeout(3000);
   expect(seen.size, "exactly one automatic reset").toBe(1);
   // Whether the reloaded page starts is up to the browser's cache: WebKit

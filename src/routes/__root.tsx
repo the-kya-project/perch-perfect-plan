@@ -177,6 +177,10 @@ const COLD_LAUNCH_REDIRECT = `(function(){try{` +
 // gets 3 more seconds to start; only if it still hasn't does it reset (the
 // 2026-10-21 case: a bad copy on the device, fixed by clearing the caches).
 // One check at a time, and never while the page's own files are loading.
+// A file confirmed gone still resets in the page's first 20 seconds even if
+// the app has marked itself started: the failure can reach React as a
+// generic error (#520) that the root error screen can't recognise as a
+// missing file, which left the page on "Something went wrong" (CI, Nov 2).
 // Inside a frame (the owner's sitter preview) the reset is a plain cache-busted
 // reload: the worker and caches belong to the app around it.
 // Leaving the page doesn't count as a failure: when a navigation starts
@@ -188,7 +192,7 @@ const COLD_LAUNCH_REDIRECT = `(function(){try{` +
 // The app sets window.__kyaReady once the first screen has loaded (see
 // RootComponent), which also removes the screen if it's showing.
 const STARTUP_GUARD = `(function(){try{` +
-  `var K="kya-auto-reload",W=300000,shown=false,leaving=false,checking=false,inFrame=true;` +
+  `var K="kya-auto-reload",W=300000,S=20000,shown=false,leaving=false,checking=false,inFrame=true;` +
   `try{inFrame=window.self!==window.top}catch(e){}` +
   `addEventListener("beforeunload",function(){leaving=true});addEventListener("pagehide",function(){leaving=true});` +
   `addEventListener("pageshow",function(){leaving=false});window.__kyaLeaving=function(){return leaving};` +
@@ -213,8 +217,8 @@ const STARTUP_GUARD = `(function(){try{` +
   `try{fetch(u,{method:"HEAD",cache:"no-store",credentials:"same-origin"}).then(function(r){fin(r.status===404||r.status===410?1:0)},function(){fin(2)})}catch(e){fin(2)}}` +
   `addEventListener("error",function(e){if(leaving||checking)return;var el=e&&e.target;if(!el||(el.tagName!=="SCRIPT"&&el.tagName!=="LINK"))return;` +
   `var u=el.src||el.href||"";if(u.indexOf(location.origin+"/assets/")!==0||window.__kyaReady)return;checking=true;` +
-  `settled(function(){if(leaving||window.__kyaReady){checking=false;return}gone(u,function(m){` +
-  `function act(){if(leaving||window.__kyaReady){checking=false;return}` +
+  `settled(function(){if(leaving||(window.__kyaReady&&performance.now()>S)){checking=false;return}gone(u,function(m){` +
+  `function act(){if(leaving||(window.__kyaReady&&!(m===1&&performance.now()<S))){checking=false;return}` +
   `var at=0;try{at=Number(localStorage.getItem(K))||0}catch(x){}` +
   `if(navigator.onLine!==false&&!(Date.now()-at<W)){try{localStorage.setItem(K,String(Date.now()));reset();return}catch(x){}}` +
   `showSoon()}` +
