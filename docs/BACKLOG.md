@@ -3,7 +3,7 @@
 Things we know about and chose not to do yet. Each entry is written to be picked up
 cold: what the problem is, where the code lives, and what "done" looks like.
 
-Nothing here is blocking a release. Last updated 2026-09-23.
+Nothing here is blocking a release. Last updated 2026-11-02.
 
 ---
 
@@ -114,6 +114,22 @@ nowhere.
 - Needs a store rebuild, so it rides along with the deep-links work rather than shipping
   on its own.
 
+### Cover screen side column — needs native screen detection, version 1.2
+**Status:** deferred to 1.2. The iPhone Duo side column shipped for the unfolded screen
+held sideways in #433; the folded cover screen still gets the regular iPhone layout.
+
+The web app can't tell the Duo's cover screen (382×837) apart from a regular iPhone held
+upright, and a regular iPhone must never get the side column, so `src/lib/duo.ts` decides
+by available space only (landscape, room for two panes) and the cover screen doesn't
+qualify.
+
+- Fix: have the native app report which screen it's on (cover or inner display) to the web
+  layer, e.g. a class on `<html>` or a value the `useDuoMode()` hook reads, and show the side
+  column (`DuoRail`) on the cover screen when it says so.
+- Approved design: the "Proposed: Home folded (cover screen)" artboard in the Duo mockups
+  (https://claude.ai/artifact/Xhu4izWBxtHMNbpkfYt2df).
+- **Needs a new native build**, so it rides along with other 1.2 native work.
+
 ---
 
 ## Security / infrastructure
@@ -140,6 +156,27 @@ was deliberately left so build 6 wouldn't need rebuilding.
 ---
 
 ## Product
+
+### iPad landscape polish
+**Status:** found reviewing #433's iPad screenshots (`npm run screens:duo`, iPad Air
+1180×820 and iPad Pro 1366×1024 sideways). iPads held sideways get the iPhone Duo side
+column and two-pane layouts (`src/lib/duo.ts`), which work but were tuned for the Duo.
+
+- **Weight log card stretches too wide.** On the weight page the "Log a weight" card fills
+  the left half (about 560–650px on iPad), so the weight field and the Before/After meal
+  buttons stretch very wide with empty space below. (`LogPanel` wide variant,
+  `$birdId.weight.tsx`.)
+- **Empty space beside the Home list.** Home's left pane is wider than the phone-width
+  column inside it (`mx-auto max-w-md` in `dashboard.tsx`), leaving a strip on each side
+  under a full-width header. The full health check's left pane does the same.
+- **Long empty middle in the side column on tall screens.** On a 1024px-tall iPad Pro, Back
+  sits at the top and the tabs at the bottom with about 500px of nothing between them
+  (`DuoRail`, `.duo-rail` in `styles.css`).
+- **Phone-sized text on large screens.** Type and controls stay at phone sizes, so both
+  panes look sparse on a 13-inch screen.
+
+Done means: the four pages in `screens:duo` look intentional at both iPad sizes, while the
+split stays on the screen's center and the Duo sizes don't change.
 
 ### Vet summary PDF export was never merged
 `main` uses `window.print()`, which is a **no-op inside both native shells** — the button
