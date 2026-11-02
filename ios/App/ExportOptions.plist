@@ -21,10 +21,17 @@
            aps-environment            = production
            com.apple.developer.applesignin = Default
        Both must be present. Sign in with Apple silently missing from the signed
-       binary is what got build 4 rejected under guideline 2.1(a). -->
+       binary is what got build 4 rejected under guideline 2.1(a).
+
+       Repinned 2026-10-29: App.entitlements now declares Associated Domains
+       (applinks for universal links), which the 2026-09-21 profile did not carry.
+       Regenerated as "Kya App Store Links 2026-10-29" (replaces 9682294d-...) and
+       verified it still carries aps-environment = production and Sign in with
+       Apple alongside com.apple.developer.associated-domains. 1.0.3 (11) was the
+       first upload signed with it. -->
   <key>provisioningProfiles</key>
   <dict>
-    <key>com.thekyaproject.app</key><string>9682294d-4253-4060-8fa4-2787f18b8b86</string>
+    <key>com.thekyaproject.app</key><string>46e4288b-3b8a-451b-8ae4-63092510403a</string>
   </dict>
 </dict>
 </plist>

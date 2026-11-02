@@ -1,9 +1,14 @@
-import { QueryClient } from "@tanstack/react-query";
+import { MutationCache, QueryClient } from "@tanstack/react-query";
 import { createRouter } from "@tanstack/react-router";
 import { routeTree } from "./routeTree.gen";
+import { noteSaveError } from "./lib/saveErrors";
 
 export const getRouter = () => {
   const queryClient = new QueryClient({
+    // Every failed mutation is a candidate save error, including the ones that
+    // show their own copy instead of friendlyError (e.g. the sitter checklist).
+    // noteSaveError keeps only server-side failures and counts each error once.
+    mutationCache: new MutationCache({ onError: (error) => noteSaveError(error) }),
     defaultOptions: {
       queries: {
         // Treat data as fresh for a minute so navigating back to a screen

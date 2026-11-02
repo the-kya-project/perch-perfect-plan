@@ -368,6 +368,37 @@ export async function updateNow(): Promise<void> {
   await applyUpdate(true);
 }
 
+/**
+ * Before the owner's sitter preview opens. Its frame loads the live build, and
+ * a page left open across a release is older: the frame then never started
+ * (lib/sitPreviewRecovery.ts). Check for a new build now, without waiting for
+ * the hourly or foreground check, and if there is one, move onto it first.
+ * Resolves true when the page is reloading, false to go ahead as it is. Never
+ * waits more than about timeoutMs, and never moves while a form is in progress.
+ */
+export async function catchUpBeforePreview(timeoutMs = 6_000): Promise<boolean> {
+  const reg = swReg;
+  if (!reg || formInProgress()) return false;
+  const deadline = Date.now() + timeoutMs;
+  const until = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, Math.max(0, ms)));
+  try { await Promise.race([reg.update(), until(timeoutMs)]); } catch { /* offline: go ahead */ }
+  const installing = reg.installing;
+  if (installing) {
+    await Promise.race([
+      new Promise<void>((resolve) => {
+        const settle = () => { if (installing.state !== "installing") resolve(); };
+        installing.addEventListener("statechange", settle);
+        settle();
+      }),
+      until(deadline - Date.now()),
+    ]);
+  }
+  if (!(reg.waiting && navigator.serviceWorker.controller) && !pageBehind) return false;
+  updateReady = true;
+  await updateNow();
+  return true;
+}
+
 /** Track time in the background. visibilitychange is the signal; a heartbeat
  *  covers shells that don't fire it (timers stop while the app is suspended,
  *  so a long gap between beats is time away too). */

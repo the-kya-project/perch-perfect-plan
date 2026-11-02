@@ -52,6 +52,7 @@
     "test:sit-time-zone": "npx --yes vite-node scripts/sit-time-zone.test.ts",
     "test:weight-then": "npx --yes vite-node scripts/weight-then.test.ts",
     "test:drafts": "npx --yes vite-node scripts/drafts.test.ts",
+    "test:sit-preview-recovery": "npx --yes vite-node scripts/sit-preview-recovery.test.ts",
     "test:bird-names": "npx --yes vite-node scripts/bird-names.test.ts",
     "test:emergency-merge": "npx --yes vite-node scripts/emergency-merge.test.ts",
     "test:intake-date": "npx --yes vite-node scripts/intake-date.test.ts",
@@ -60,7 +61,9 @@
     "test:bereavement-note": "npx --yes vite-node scripts/bereavement-note.test.ts",
     "test:poison-control": "npx --yes vite-node scripts/poison-control.test.ts",
     "test:cron-telemetry": "npx --yes vite-node scripts/cron-telemetry.test.ts",
-    "test:account-deletion": "npx --yes vite-node scripts/account-deletion.test.ts"
+    "test:account-deletion": "npx --yes vite-node scripts/account-deletion.test.ts",
+    "test:save-errors": "npx --yes vite-node scripts/save-errors.test.ts",
+    "test:cron-auth": "npx --yes vite-node scripts/cron-auth.test.ts"
   },
   "dependencies": {
     "@capacitor/android": "^8.5.3",

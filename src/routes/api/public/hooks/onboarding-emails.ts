@@ -40,7 +40,8 @@
  * a push nudge (engagement-nudges reads this log the same way), or The Flock
  * Report.
  *
- * Auth: `Authorization: Bearer <CARE_PLAN_REMINDER_SECRET>`. JSON body options:
+ * Auth: `Authorization: Bearer <cron_hook_token>`, the Vault secret pg_cron sends
+ * (src/lib/cronAuth.ts). JSON body options:
  *   { "dryRun": true }                       → today's plan; nothing sent/logged
  *   { "dryRun": true, "simulateDays": 30 }   → the plan run forward N days,
  *                                              assuming every send succeeds and
@@ -61,6 +62,7 @@ import { withErrorTelemetry } from "@/lib/errorTelemetry";
 import { createFileRoute } from "@tanstack/react-router";
 import { realFirstName, realFullName } from "@/lib/personName";
 import { withCronTelemetry } from "@/lib/cronTelemetry";
+import { cronAuthFailure } from "@/lib/cronAuth";
 import {
   SLOTS,
   STAGE_FEATURE,
@@ -108,14 +110,8 @@ export const Route = createFileRoute("/api/public/hooks/onboarding-emails")({
   server: {
     handlers: {
       POST: withCronTelemetry("onboarding-emails", withErrorTelemetry("/api/public/hooks/onboarding-emails", async ({ request }) => {
-        const secret = process.env.CARE_PLAN_REMINDER_SECRET;
-        if (!secret) {
-          return Response.json({ ok: false, error: "CARE_PLAN_REMINDER_SECRET not configured" }, { status: 503 });
-        }
-        const auth = request.headers.get("authorization") ?? "";
-        if (auth !== `Bearer ${secret}`) {
-          return new Response("Unauthorized", { status: 401 });
-        }
+        const denied = await cronAuthFailure(request, "onboarding-emails");
+        if (denied) return denied;
         let dryRun = false;
         let audit: string | null = null;
         let simulateDays = 0;
