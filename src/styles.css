@@ -309,3 +309,106 @@ input[type="date"]::-webkit-date-and-time-value {
 }
 /* Fields show focus with their own forest border. */
 .setup-frame .kya-input:focus-visible { outline: none; }
+
+/* ---- iPhone Duo (lib/duo.ts, components/DuoRail.tsx) --------------------
+   html.duo is set by the authenticated layout only while the side column is
+   on screen (folded cover screen, or unfolded and sideways). Nothing here
+   applies anywhere else, so every other screen keeps today's layout. */
+html.duo {
+  /* No bottom bar: the reserved nav space shrinks to the safe area. */
+  --nav-h: 0px;
+  --duo-rail: calc(104px + env(safe-area-inset-right));
+  /* Full-bleed headers (KyaHeader) span the content area, not the column. */
+  --bleed: calc(100vw - var(--duo-rail) - env(safe-area-inset-left));
+}
+.duo-content {
+  padding-right: var(--duo-rail);
+  padding-left: env(safe-area-inset-left);
+}
+/* Bars pinned to the bottom (Hand off, Export…) stop at the column. */
+html.duo .duo-content .fixed.inset-x-0 {
+  left: env(safe-area-inset-left);
+  right: var(--duo-rail);
+}
+.duo-rail {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 45;
+  width: var(--duo-rail);
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  /* Room for the status bar and camera at the top. */
+  padding: max(calc(env(safe-area-inset-top) + 8px), 56px) env(safe-area-inset-right) calc(env(safe-area-inset-bottom) + 20px) 0;
+  background: #fff;
+  border-left: 1px solid #dfe7df;
+  font-family: "DM Sans", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+  overflow-y: auto;
+}
+.duo-rail-task {
+  background: #1a3d2e;
+  border-left-color: #1a3d2e;
+}
+/* A task's main button (TaskFooter's children) as a column-sized tile. */
+.duo-rail-action {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+.duo-rail-action button {
+  width: 84px;
+  min-height: 64px;
+  padding: 10px 6px;
+  border-radius: 18px;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 13px;
+  line-height: 1.2;
+  text-align: center;
+  white-space: normal;
+}
+/* Side-by-side panes: two columns split exactly on the fold (the middle of
+   the screen), each scrolling on its own. */
+.duo-split {
+  display: grid;
+  grid-template-columns: calc(50vw - env(safe-area-inset-left)) minmax(0, 1fr);
+  height: 100dvh;
+}
+.duo-pane {
+  min-width: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+/* Headers inside a pane bleed to the pane's edges, not the screen's. */
+.duo-split > .duo-pane:first-child {
+  --bleed: calc(50vw - env(safe-area-inset-left));
+}
+.duo-split > .duo-pane:last-child {
+  --bleed: calc(50vw - var(--duo-rail));
+}
+/* The bird summary's tiles in a narrow Duo pane (the cover screen, or the
+   record beside Home's list): as many as fit whole, so "Yesterday" never
+   breaks mid-word. */
+html.duo .kya-summary-tiles {
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+}
+/* The full check's Normal / Not sure / Concerning on the cover screen: two
+   on a row and Concerning on its own, so no word breaks. */
+html.duo:not(.duo-sideways) .kya-answer-pills {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+html.duo:not(.duo-sideways) .kya-answer-pills > :nth-child(3) {
+  grid-column: 1 / -1;
+}
+/* The folded cover screen leaves ~278px beside the column: the tab header's
+   logo gives way so the help, updates and account buttons still fit. */
+html.duo .kya-tab-lockup {
+  flex-shrink: 1;
+  min-width: 0;
+  width: auto !important;
+  max-width: 118px;
+}

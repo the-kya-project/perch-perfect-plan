@@ -37,7 +37,7 @@ export function KyaPage({ children }: { children: ReactNode }) {
  *  bottom for the body's rounded top to tuck under. */
 export function KyaHeader({ children, className = "" }: { children: ReactNode; className?: string }) {
   return (
-    <header className="mx-[calc(50%-50vw)] text-white" style={{ background: K.forest }}>
+    <header className="mx-[calc(50%-var(--bleed,100vw)/2)] text-white" style={{ background: K.forest }}>
       <div className={`mx-auto max-w-md px-5 pb-[46px] pt-[calc(env(safe-area-inset-top)+14px)] ${className}`}>{children}</div>
     </header>
   );

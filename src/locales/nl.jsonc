@@ -1857,6 +1857,8 @@
   "birdWeight.bodyEmpty": "Nog geen gewichten. Zet {{name}} op de weegschaal en noteer de eerste.",
   // Cancel
   "birdWeight.cancel": "Annuleren",
+  // Change
+  "birdWeight.change": "Wijzigen",
   // Weight chart
   "birdWeight.chartAria": "Gewichtsgrafiek",
   // Close
@@ -1877,6 +1879,10 @@
   "birdWeight.edit": "Bewerken",
   // Edit weight
   "birdWeight.editWeight": "Gewicht bewerken",
+  // {{count}} entry
+  "birdWeight.entriesPill_one": "{{count}} meting",
+  // {{count}} entries
+  "birdWeight.entriesPill_other": "{{count}} metingen",
   // {{n}} g
   "birdWeight.grams": "{{n}} g",
   // Weight (grams)
@@ -1889,6 +1895,8 @@
   "birdWeight.history": "Geschiedenis",
   // Keep
   "birdWeight.keep": "Bewaren",
+  // Latest
+  "birdWeight.latest": "Laatste",
   // Sitter or household
   "birdWeight.legendOthers": "Oppas of huisgenoot",
   // You
@@ -1897,6 +1905,8 @@
   "birdWeight.logAWeight": "Gewicht noteren",
   // Weight logged.
   "birdWeight.logged": "Gewicht genoteerd.",
+  // Logged as
+  "birdWeight.loggedAs": "Genoteerd als",
   // Logged by {{who}}
   "birdWeight.loggedBy": "Genoteerd door {{who}}",
   // Lowest
@@ -1913,6 +1923,8 @@
   "birdWeight.noneInRange": "Geen gewichten in de laatste {{range}}.",
   // No weight then
   "birdWeight.noWeightThen": "Toen geen gewicht",
+  // now, {{time}}
+  "birdWeight.nowAt": "nu, {{time}}",
   // +{{n}} g
   "birdWeight.plusG": "+{{n}} g",
   // Enter a weight between {{min}} and {{max}} grams.
@@ -2337,6 +2349,38 @@
   "checkEmail.title": "Check je e-mail",
   // Use a different email
   "checkEmail.useDifferentEmail": "Gebruik een ander e-mailadres",
+  // All normal
+  "checkReference.allNormal": "Alles normaal",
+  // Concern flagged
+  "checkReference.concern": "Zorg gemeld",
+  // Daily check
+  "checkReference.dailyCheck": "Dagelijkse check",
+  // For reference
+  "checkReference.eyebrow": "Ter vergelijking",
+  // Full health check
+  "checkReference.fullCheck": "Volledige gezondheidscheck",
+  // {{n}} g
+  "checkReference.grams": "{{n}} g",
+  // Last checks
+  "checkReference.lastChecks": "Laatste checks",
+  // Last weight
+  "checkReference.lastWeight": "Laatste gewicht",
+  // No checks yet
+  "checkReference.noChecks": "Nog geen checks",
+  // No weights yet
+  "checkReference.noWeight": "Nog geen gewichten",
+  // Choose "Not sure" or "Concerning" and add a photo at the end of the check.
+  "checkReference.offBody": "Kies \"Niet zeker\" of \"Zorgelijk\" en voeg aan het eind van de check een foto toe.",
+  // Something look off?
+  "checkReference.offTitle": "Ziet iets er niet goed uit?",
+  // Something to check
+  "checkReference.somethingToCheck": "Iets om na te kijken",
+  // What's recent for {{name}}
+  "checkReference.title": "Recent bij {{name}}",
+  // Today
+  "checkReference.today": "Vandaag",
+  // Yesterday
+  "checkReference.yesterday": "Gisteren",
   // Clip
   "clipPlayer.clip": "Clip",
   // This clip didn't load. Try uploading it again.
@@ -4929,6 +4973,8 @@
   "ownerTabs.home": "Home",
   // Primary
   "ownerTabs.navAria": "Hoofdmenu",
+  // Screen controls
+  "ownerTabs.screenControls": "Schermknoppen",
   // Sits
   "ownerTabs.sits": "Oppasperiodes",
   // Do what feels right. Your avian vet can guide anything else.

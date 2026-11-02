@@ -486,7 +486,7 @@ export function CarePlanView({
         <div
           ref={topRef}
           style={{ top: `calc(env(safe-area-inset-top) + ${stickyTopPx}px)`, background: K.forest }}
-          className="sticky z-20 -mb-2.5 mx-[calc(50%-50vw)]"
+          className="sticky z-20 -mb-2.5 mx-[calc(50%-var(--bleed,100vw)/2)]"
         >
           <div className="mx-auto max-w-md">
             {header && <div className="px-4 pb-2">{header}</div>}

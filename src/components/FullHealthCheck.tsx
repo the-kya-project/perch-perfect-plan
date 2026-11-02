@@ -9,6 +9,8 @@ import { Camera, Loader2, Phone, Upload } from "lucide-react";
 import { toast } from "sonner";
 import { K, KyaField, KyaHeading, KyaPage, KyaPrimaryButton } from "@/components/kya";
 import { TaskFooter, TaskHeader, TASK_FOOTER_SPACE, useLeaveGuard } from "@/components/headers";
+import { CheckReference } from "@/components/CheckReference";
+import { useDuoMode } from "@/lib/duo";
 import { MemberContextBanner } from "@/components/MemberContextBanner";
 import { SCAN_FIELDS, type ScanAnswer, type ScanFieldKey } from "@/lib/triage";
 import { scanHint, scanQuestionFor } from "@/lib/scanFieldLabels";
@@ -128,6 +130,9 @@ export function FullHealthCheck({ birdId, name, sex, vet, submitting, onSubmit, 
   const { t } = useTranslation();
   const sx = sexOf(sex);
   const sitter = variant === "sitter";
+  // iPhone Duo unfolded and sideways: the check on the left of the fold, what's
+  // recent for the bird on the right. The sitter view never has the column.
+  const wide = useDuoMode() === "sideways" && !sitter;
   const [answers, setAnswers] = useState<Partial<Record<ScanFieldKey, ScanAnswer>>>({});
   const [itemNotes, setItemNotes] = useState<Partial<Record<ScanFieldKey, string>>>({});
   const [notes, setNotes] = useState("");
@@ -226,6 +231,8 @@ export function FullHealthCheck({ birdId, name, sex, vet, submitting, onSubmit, 
 
   return (
     <KyaPage>
+      <div className={wide ? "duo-split" : "contents"}>
+      <div className={wide ? "duo-pane" : "contents"}>
       <TaskHeader
         title={sitter ? t("fullCheck.sitterTitle", "{{name}}'s daily check", { name }) : t("fullCheck.title", "{{name}}'s full health check", { name })}
         line={headerLine(t, name, sx)}
@@ -255,7 +262,7 @@ export function FullHealthCheck({ birdId, name, sex, vet, submitting, onSubmit, 
             <section key={f.key} className="py-5" style={i > 0 ? { borderTop: `1px solid ${LINE}` } : undefined}>
               <p id={qid} className="m-0 text-[15.5px] font-[700] leading-[1.35]">{scanQuestionFor(t, f, name)}</p>
               {hint && <p className="m-0 mt-1 text-[13px] leading-[1.4]" style={{ color: K.quiet }}>{hint}</p>}
-              <div role="radiogroup" aria-labelledby={qid} className="mt-3 grid grid-cols-3 gap-2">
+              <div role="radiogroup" aria-labelledby={qid} className="kya-answer-pills mt-3 grid grid-cols-3 gap-2">
                 {(["normal", "not_sure", "concerning"] as ScanAnswer[]).map((o) => {
                   const on = a === o;
                   const style = on
@@ -396,6 +403,13 @@ export function FullHealthCheck({ birdId, name, sex, vet, submitting, onSubmit, 
         )}
         {extra}
       </main>
+      </div>
+      {wide && (
+        <aside className="duo-pane">
+          <CheckReference birdId={birdId} name={name} />
+        </aside>
+      )}
+      </div>
 
       <TaskFooter>
         <KyaPrimaryButton onClick={submit} disabled={!allAnswered || submitting || photoBusy || weightInvalid}>{saveLabel}</KyaPrimaryButton>
