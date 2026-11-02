@@ -12,7 +12,7 @@ import { useTranslation } from "react-i18next";
 import { K, KyaHeader, KyaHeading, KyaIconButton, KyaPrimaryButton, KyaSecondaryButton, KyaSheet } from "@/components/kya";
 import { BrandLockup } from "@/components/BrandLogo";
 import { OwnerHeaderIcons } from "@/components/OwnerHeader";
-import { RailAction, RailBack, RailClose, useDuoRail } from "@/components/DuoRail";
+import { RailAction, RailActionButton, RailBack, RailClose, useDuoRail, type RailActionSpec } from "@/components/DuoRail";
 
 /** Back in history, or to `fallback` when there's none (deep link, push). */
 export function useGoBack(fallback: () => void) {
@@ -26,7 +26,7 @@ export function TabHeader({ title, line, children }: { title: ReactNode; line?: 
   return (
     <KyaHeader>
       <div className="mt-1.5 flex items-center gap-2">
-        <BrandLockup orientation="horizontal" variant="ink" size={118} className="kya-tab-lockup" />
+        <BrandLockup orientation="horizontal" variant="ink" size={118} />
         <div className="flex-1" />
         <OwnerHeaderIcons />
       </div>
@@ -111,10 +111,14 @@ export function TaskHeader({ title, line, onClose, progress, children }: {
   );
 }
 
-/** The white footer pinned to the bottom of a task, holding one main button. */
-export function TaskFooter({ children }: { children: ReactNode }) {
+/** The white footer pinned to the bottom of a task, holding one main button.
+ *  `rail`: the same action as a short tile for the iPhone Duo side column
+ *  ("Save", with the full label kept for screen readers). */
+export function TaskFooter({ children, rail }: { children: ReactNode; rail?: RailActionSpec }) {
   // iPhone Duo side column: the main action sits at the bottom of the column.
-  if (useDuoRail()?.action) return <RailAction>{children}</RailAction>;
+  if (useDuoRail()?.action) {
+    return <RailAction>{rail ? <RailActionButton {...rail} /> : <div className="duo-rail-fallback">{children}</div>}</RailAction>;
+  }
   return (
     <div className="fixed inset-x-0 bottom-0 z-40 border-t bg-white pb-[max(env(safe-area-inset-bottom),12px)] pt-3" style={{ borderColor: K.line }}>
       <div className="mx-auto max-w-md px-4">{children}</div>

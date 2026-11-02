@@ -445,7 +445,7 @@ function IdentityForm({ birdId, bird, onSaved, onDirtyChange }: { birdId: string
 
       {/* Pinned Save, the one task button (Close top left leaves, with the
           leave-without-saving guard when something changed). */}
-      <TaskFooter>
+      <TaskFooter rail={{ label: saving ? t("birdIdentity.saving", "Saving…") : t("birdIdentity.save", "Save"), onClick: save, disabled: saving }}>
         <KyaPrimaryButton onClick={save} disabled={saving}>
           {saving ? t("birdIdentity.saving", "Saving…") : t("birdIdentity.save", "Save")}
         </KyaPrimaryButton>

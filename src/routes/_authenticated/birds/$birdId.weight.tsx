@@ -238,7 +238,8 @@ function WeightFacet() {
                 <p className="m-0 text-[13px]" style={{ color: K.quiet }}>
                   {[`${dayText(t, openEntry.measured_at, lang)}, ${timeText(openEntry.measured_at, lang)}`, mealText(t, openEntry.meal_relation)].filter(Boolean).join(" · ")}
                 </p>
-                <p className="m-0 mt-1 text-[34px] font-[700] leading-none" style={{ fontFamily: SERIF }}>{grams(t, openEntry.grams)}</p>
+                {/* Side-column layout: no large weight number anywhere on this page. */}
+                <p className={`m-0 mt-1 font-[700] leading-none ${wide ? "text-[20px]" : "text-[34px]"}`} style={{ fontFamily: SERIF }}>{grams(t, openEntry.grams)}</p>
                 <p className="m-0 mt-2 text-[14px]" style={{ color: K.quiet }}>{t("birdWeight.loggedBy", "Logged by {{who}}", { who: loggedBy(t, { by: openEntry.logged_by, source: openEntry.source, sitId: openEntry.sit_id }) })}</p>
               </div>
               <button type="button" onClick={() => setOpenEntry(null)} aria-label={t("birdWeight.close", "Close")} className="grid size-11 shrink-0 place-items-center rounded-full" style={{ background: K.mist }}>
@@ -290,10 +291,14 @@ function WeightFacet() {
 
         <main
           className="relative -mt-9 grid gap-5 rounded-t-[36px] px-[26px] pb-6 pt-[22px]"
-          style={{ background: "#f0f4f0", gridTemplateColumns: canLogCare ? "360px minmax(0, 1fr)" : "minmax(0, 1fr)" }}
+          // The log card fills the left half: its column ends half the 20px
+          // gap before the middle of the screen (the fold), whatever the width.
+          // 26px = this sheet's left padding; the content starts after the
+          // left safe-area inset.
+          style={{ background: "#f0f4f0", gridTemplateColumns: canLogCare ? "calc(50vw - env(safe-area-inset-left) - 26px - 10px) minmax(0, 1fr)" : "minmax(0, 1fr)" }}
         >
           {canLogCare && (
-            <section className="self-start">
+            <section className="self-start" data-duo-pane="left">
               <LogPanel
                 wide
                 key={editing?.id ?? `new-${savedCount}`}
@@ -305,7 +310,7 @@ function WeightFacet() {
               />
             </section>
           )}
-          <section className="flex min-w-0 flex-col gap-3.5">
+          <section className="flex min-w-0 flex-col gap-3.5" data-duo-pane="right">
             <MemberContextBanner birdId={birdId} />
             {load.failed && <LoadError onRetry={load.retry} />}
             {all.length > 0 && (

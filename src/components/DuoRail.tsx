@@ -84,6 +84,35 @@ export function RailAction({ children }: { children: ReactNode }) {
   return createPortal(children, rail.action);
 }
 
+export type RailActionSpec = {
+  /** Fits the 104px column: "Save", "Done", "Next". */
+  label: string;
+  /** The full label, for screen readers ("Save Echo's check"). */
+  ariaLabel?: string;
+  onClick: () => void;
+  disabled?: boolean;
+};
+
+/** A task's main action as a column tile. Ready: gold with the forest border,
+ *  as everywhere else. Not ready: an outline on the forest column, legible but
+ *  plainly not tappable yet. */
+export function RailActionButton({ label, ariaLabel, onClick, disabled }: RailActionSpec) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      aria-label={ariaLabel && ariaLabel !== label ? ariaLabel : undefined}
+      className="min-h-[56px] w-[84px] rounded-[18px] border-2 px-1.5 text-[15px] font-[700] leading-tight active:scale-95 disabled:active:scale-100"
+      style={disabled
+        ? { background: "transparent", borderColor: "rgba(255,255,255,0.35)", color: "rgba(255,255,255,0.6)" }
+        : { background: "#f2b33d", borderColor: FOREST, color: FOREST }}
+    >
+      {label}
+    </button>
+  );
+}
+
 /** The column itself. `setTop` / `setAction` are callback refs for the slots. */
 export function DuoRail({ task, setTop, setAction }: { task: boolean; setTop: (el: HTMLElement | null) => void; setAction: (el: HTMLElement | null) => void }) {
   const { t } = useTranslation();

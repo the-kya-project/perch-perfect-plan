@@ -192,8 +192,9 @@ function AuthenticatedLayout() {
   const task = useLocation({ select: (l) => isTaskPath(l.pathname, l.search as Record<string, unknown>) });
   const hideNav = ownChrome || task;
 
-  // iPhone Duo (folded cover screen, or unfolded and sideways): the nav moves
-  // into a column on the right edge (DuoRail) on every regular page and task.
+  // Landscape with room for two panes (iPhone Duo unfolded and sideways, see
+  // lib/duo.ts): the nav moves into a column on the right edge (DuoRail) on
+  // every regular page and task.
   // Screens with their own chrome keep it, exactly as today.
   const duoMode = useDuoMode();
   const rail = duoMode && !ownChrome ? duoMode : null;
@@ -202,8 +203,7 @@ function AuthenticatedLayout() {
   useEffect(() => {
     const html = document.documentElement;
     html.classList.toggle("duo", !!rail);
-    html.classList.toggle("duo-sideways", rail === "sideways");
-    return () => html.classList.remove("duo", "duo-sideways");
+    return () => html.classList.remove("duo");
   }, [rail]);
 
   // One tree either way, so turning the phone doesn't remount the page (and

@@ -1,45 +1,44 @@
 import { useSyncExternalStore } from "react";
 
 /**
- * iPhone Duo layouts (web only; no fold or hinge detection — that needs the
- * native app). Apple's guidance for the foldable: on the folded cover screen,
- * and on the unfolded screen held sideways, navigation moves to a column on
- * the edge where the status bar and camera sit. Unfolded and upright keeps the
- * bottom tab bar.
+ * The side-column layout (iPhone Duo unfolded and sideways, and any screen
+ * like it). Following Apple's guidance, this adapts to the space available
+ * rather than detecting a device or its screen size.
  *
- *   "sideways" — unfolded, held sideways (951×669 points). Landscape, at least
- *                700px wide, and tall enough that no current iPhone held
- *                sideways matches (those are at most ~440px tall); capped below
- *                iPad sizes, touch only so a small desktop window never does.
- *   "cover"    — the folded cover screen (382×837 points, portrait). No other
- *                iPhone is 380–384px wide.
+ * The column shows when the screen is:
+ *   - landscape;
+ *   - wide enough for two usable panes split at the center: the right pane
+ *     loses the 104px column, so 50vw − 104px ≥ 320px → at least 848px wide;
+ *   - tall enough for two scrolling panes (500px). Phones held sideways are at
+ *     most ~440px tall, so no regular iPhone ever gets the column;
+ *   - touch first (no hover, coarse pointer), so desktop windows keep today's
+ *     layout however they're sized.
  *
- * Everything else (every current iPhone, the Duo unfolded upright, iPad,
- * desktop) matches neither and keeps today's layout.
+ * The folded cover screen gets the same layout as a regular iPhone for now:
+ * the web app can't tell it apart from an iPhone held upright. It switches to
+ * the side column in version 1.2, once the native app reports which screen
+ * it's on.
  */
 export const DUO_SIDEWAYS_QUERY =
-  "(orientation: landscape) and (min-width: 700px) and (max-width: 1000px) and (min-height: 600px) and (max-height: 720px) and (hover: none) and (pointer: coarse)";
-export const DUO_COVER_QUERY =
-  "(orientation: portrait) and (min-width: 380px) and (max-width: 384px) and (min-aspect-ratio: 2/5) and (max-aspect-ratio: 1/2) and (hover: none) and (pointer: coarse)";
+  "(orientation: landscape) and (min-width: 848px) and (min-height: 500px) and (hover: none) and (pointer: coarse)";
 
-export type DuoMode = "sideways" | "cover" | null;
+export type DuoMode = "sideways" | null;
 
 function read(): DuoMode {
   if (typeof window === "undefined" || !window.matchMedia) return null;
-  if (window.matchMedia(DUO_SIDEWAYS_QUERY).matches) return "sideways";
-  if (window.matchMedia(DUO_COVER_QUERY).matches) return "cover";
-  return null;
+  return window.matchMedia(DUO_SIDEWAYS_QUERY).matches ? "sideways" : null;
 }
 
 function subscribe(onChange: () => void): () => void {
   if (typeof window === "undefined" || !window.matchMedia) return () => {};
-  const lists = [window.matchMedia(DUO_SIDEWAYS_QUERY), window.matchMedia(DUO_COVER_QUERY)];
-  lists.forEach((l) => l.addEventListener("change", onChange));
-  return () => lists.forEach((l) => l.removeEventListener("change", onChange));
+  const list = window.matchMedia(DUO_SIDEWAYS_QUERY);
+  list.addEventListener("change", onChange);
+  return () => list.removeEventListener("change", onChange);
 }
 
-/** The Duo layout this screen is in, or null for today's layout. Null on the
- *  server and during hydration, so the first render always matches. */
+/** "sideways" when the side-column layout applies, else null (today's
+ *  layout). Null on the server and during hydration, so the first render
+ *  always matches. */
 export function useDuoMode(): DuoMode {
   return useSyncExternalStore(subscribe, read, () => null);
 }
