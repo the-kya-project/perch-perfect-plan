@@ -1,6 +1,6 @@
 // The iPhone Duo side column (see lib/duo.ts for when it shows). It replaces
-// the bottom tab bar on the right-hand edge, where the status bar and camera
-// sit: room for those at the top, then Back (or Close on a task), and the tabs
+// the bottom tab bar on the edge where the status bar and camera sit (the
+// right, unless the native app names the left; data-duo-rail on <html>): room for those at the top, then Back (or Close on a task), and the tabs
 // at the bottom. A task screen shows only Close and its main action, no tabs.
 //
 // Headers don't know about the column: PageHeader / TaskHeader / TaskFooter ask
@@ -14,10 +14,10 @@ import { ArrowLeft, Users, X } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useOwnerTabs } from "@/components/OwnerTabBar";
 import { rememberMode } from "@/lib/flock";
-import type { DuoMode } from "@/lib/duo";
 
 export type DuoRailSlots = {
-  mode: Exclude<DuoMode, null>;
+  /** The edge the column sits on. */
+  edge: "left" | "right";
   task: boolean;
   /** Under the status bar: Back, or Close on a task. */
   top: HTMLElement | null;

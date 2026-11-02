@@ -26,7 +26,7 @@ export function TabHeader({ title, line, children }: { title: ReactNode; line?: 
   return (
     <KyaHeader>
       <div className="mt-1.5 flex items-center gap-2">
-        <BrandLockup orientation="horizontal" variant="ink" size={118} />
+        <BrandLockup orientation="horizontal" variant="ink" size={118} className="kya-tab-lockup" />
         <div className="flex-1" />
         <OwnerHeaderIcons />
       </div>

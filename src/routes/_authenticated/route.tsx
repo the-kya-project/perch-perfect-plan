@@ -11,7 +11,7 @@ import { PullToRefresh } from "@/components/PullToRefresh";
 import { OwnerTabBar, isTaskPath } from "@/components/OwnerTabBar";
 import { StartupSplash } from "@/components/StartupSplash";
 import { DuoRail, DuoRailProvider } from "@/components/DuoRail";
-import { useDuoMode } from "@/lib/duo";
+import { useDuoLayout } from "@/lib/duo";
 import { FLOCK_ENABLED_QUERY, rememberMode, rememberedMode } from "@/lib/flock";
 
 /**
@@ -196,20 +196,28 @@ function AuthenticatedLayout() {
   // lib/duo.ts): the nav moves into a column on the right edge (DuoRail) on
   // every regular page and task.
   // Screens with their own chrome keep it, exactly as today.
-  const duoMode = useDuoMode();
-  const rail = duoMode && !ownChrome ? duoMode : null;
+  // From 1.2 the iOS app also puts it on the folded cover screen, on whichever
+  // edge the system names (lib/duo.ts resolveDuoLayout).
+  const duoLayout = useDuoLayout();
+  const rail = duoLayout.rail && !ownChrome ? duoLayout.rail : null;
   const [railTop, setRailTop] = useState<HTMLElement | null>(null);
   const [railAction, setRailAction] = useState<HTMLElement | null>(null);
   useEffect(() => {
     const html = document.documentElement;
     html.classList.toggle("duo", !!rail);
-    return () => html.classList.remove("duo");
-  }, [rail]);
+    html.classList.toggle("duo-two-pane", !!rail && duoLayout.split);
+    if (rail) html.setAttribute("data-duo-rail", rail);
+    else html.removeAttribute("data-duo-rail");
+    return () => {
+      html.classList.remove("duo", "duo-two-pane");
+      html.removeAttribute("data-duo-rail");
+    };
+  }, [rail, duoLayout.split]);
 
   // One tree either way, so turning the phone doesn't remount the page (and
   // lose what's half-typed in it).
   return (
-    <DuoRailProvider value={rail ? { mode: rail, task, top: railTop, action: task ? railAction : null } : null}>
+    <DuoRailProvider value={rail ? { edge: rail, task, top: railTop, action: task ? railAction : null } : null}>
       <div className={rail ? "duo-content" : undefined}>
         <PullToRefresh>
           <Outlet />

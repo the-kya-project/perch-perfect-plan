@@ -2,8 +2,9 @@ import UIKit
 import UserNotifications
 import Capacitor
 
-// Capacitor 8.5's scene delegate (its template), plus one addition: handing the
-// Capacitor bridge to LaunchNotificationRelay once it exists.
+// Capacitor 8.5's scene delegate (its template), plus two additions: handing the
+// Capacitor bridge to LaunchNotificationRelay once it exists, and our own bridge
+// view controller (AppBridgeViewController) for the DuoBridge plugin.
 class SceneDelegate: UIResponder, UIWindowSceneDelegate {
     var window: UIWindow?
 
@@ -12,7 +13,8 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
 
         // Built in code. Info.plist names no storyboard for the scene, so UIKit
         // doesn't build a second window (and a second web view) from Main.
-        let bridgeViewController = CAPBridgeViewController()
+        // AppBridgeViewController adds the local DuoBridge plugin (1.2).
+        let bridgeViewController = AppBridgeViewController()
         window = UIWindow(windowScene: windowScene)
         window?.rootViewController = bridgeViewController
         window?.makeKeyAndVisible()

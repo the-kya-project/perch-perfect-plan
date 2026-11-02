@@ -18,7 +18,7 @@ import { useLoggedBy } from "@/lib/useLoggedBy";
 import { weightThen } from "@/lib/weightThen";
 import { K, SERIF, KyaPage, KyaBody, KyaCard, KyaField, KyaHeading, KyaLabel, KyaLink, KyaPrimaryButton } from "@/components/kya";
 import { PageHeader } from "@/components/headers";
-import { RailBack } from "@/components/DuoRail";
+import { RailBack, useDuoRail } from "@/components/DuoRail";
 import { useDuoMode } from "@/lib/duo";
 import { useBirdPhotos } from "@/lib/useBirdPhotos";
 import { useBirdRecord } from "@/routes/_authenticated/birds/$birdId.index";
@@ -117,9 +117,12 @@ function WeightFacet() {
   // iPhone Duo unfolded and sideways ("Weight option A"): log a weight on the
   // left, the chart and history on the right, the entry always open.
   const wide = useDuoMode() === "sideways";
+  // The side column without two panes (the folded cover screen, iOS app 1.2):
+  // today's single column, under the same Option A header (no large number).
+  const coverRail = !!useDuoRail() && !wide;
   const [savedCount, setSavedCount] = useState(0);
   const birdRecord = useBirdRecord(birdId).data as { photo_url?: string | null } | null | undefined;
-  const photoOf = useBirdPhotos([wide ? birdRecord?.photo_url : null], 160);
+  const photoOf = useBirdPhotos([wide || coverRail ? birdRecord?.photo_url : null], 160);
   const goBird = () => navigate({ to: "/birds/$birdId", params: { birdId } });
 
   // ?log=1 deep-link → open the entry once we know the caller may log.
@@ -239,7 +242,7 @@ function WeightFacet() {
                   {[`${dayText(t, openEntry.measured_at, lang)}, ${timeText(openEntry.measured_at, lang)}`, mealText(t, openEntry.meal_relation)].filter(Boolean).join(" · ")}
                 </p>
                 {/* Side-column layout: no large weight number anywhere on this page. */}
-                <p className={`m-0 mt-1 font-[700] leading-none ${wide ? "text-[20px]" : "text-[34px]"}`} style={{ fontFamily: SERIF }}>{grams(t, openEntry.grams)}</p>
+                <p className={`m-0 mt-1 font-[700] leading-none ${wide || coverRail ? "text-[20px]" : "text-[34px]"}`} style={{ fontFamily: SERIF }}>{grams(t, openEntry.grams)}</p>
                 <p className="m-0 mt-2 text-[14px]" style={{ color: K.quiet }}>{t("birdWeight.loggedBy", "Logged by {{who}}", { who: loggedBy(t, { by: openEntry.logged_by, source: openEntry.source, sitId: openEntry.sit_id }) })}</p>
               </div>
               <button type="button" onClick={() => setOpenEntry(null)} aria-label={t("birdWeight.close", "Close")} className="grid size-11 shrink-0 place-items-center rounded-full" style={{ background: K.mist }}>
@@ -261,41 +264,26 @@ function WeightFacet() {
     </>
   );
 
+  const photo = photoOf(birdRecord?.photo_url)?.url;
   if (wide) {
-    const photo = photoOf(birdRecord?.photo_url)?.url;
     return (
       <KyaPage>
         <RailBack onBack={goBird} />
-        <header className="flex items-center gap-4 px-8 pb-[62px] pt-[calc(env(safe-area-inset-top)+28px)] text-white" style={{ background: K.forest }}>
-          {photo ? (
-            <img src={photo} alt="" className="size-14 shrink-0 rounded-full border-[3px] object-cover" style={{ borderColor: "#8fc4a8" }} />
-          ) : (
-            <span aria-hidden="true" className="grid size-14 shrink-0 place-items-center rounded-full border-[3px] text-[22px] font-[700]" style={{ borderColor: "#8fc4a8", background: K.forestDeep }}>{name.charAt(0)}</span>
-          )}
-          <div className="flex min-w-0 flex-1 flex-col gap-[3px]">
-            <h1 className="m-0 text-[32px] font-[700] leading-[1.1]" style={{ fontFamily: SERIF }}>{t("birdWeight.title", "{{name}}'s weight", { name })}</h1>
-            {latest ? (
-              <span className="text-[15px]" style={{ color: "#c9dacb" }}>
-                {t("birdWeight.latest", "Latest")} <b className="font-[700] text-white">{grams(t, latest.grams)}</b> · {latestWhen(t, latest, lang)}
-              </span>
-            ) : entries !== undefined ? (
-              <span className="text-[15px]" style={{ color: "#c9dacb" }}>{t("birdWeight.bodyEmpty", "No weights yet. Pop {{name}} on a scale and log the first one.", { name })}</span>
-            ) : null}
-          </div>
-          {all.length > 0 && (
-            <span className="shrink-0 rounded-full px-4 py-2 text-[14px] font-[700]" style={{ background: "#10291e", color: "#cfe9b7" }}>
-              {t("birdWeight.entriesPill", "{{count}} entries", { count: all.length, defaultValue_one: "{{count}} entry" })}
-            </span>
-          )}
-        </header>
+        <WeightHeaderA
+          name={name}
+          photo={photo}
+          latest={latest}
+          loaded={entries !== undefined}
+          count={all.length}
+        />
 
         <main
           className="relative -mt-9 grid gap-5 rounded-t-[36px] px-[26px] pb-6 pt-[22px]"
           // The log card fills the left half: its column ends half the 20px
           // gap before the middle of the screen (the fold), whatever the width.
-          // 26px = this sheet's left padding; the content starts after the
-          // left safe-area inset.
-          style={{ background: "#f0f4f0", gridTemplateColumns: canLogCare ? "calc(50vw - env(safe-area-inset-left) - 26px - 10px) minmax(0, 1fr)" : "minmax(0, 1fr)" }}
+          // 26px = this sheet's left padding; the content starts after
+          // --duo-left (the left safe area, plus the column when it's there).
+          style={{ background: "#f0f4f0", gridTemplateColumns: canLogCare ? "calc(50vw - var(--duo-left) - 26px - 10px) minmax(0, 1fr)" : "minmax(0, 1fr)" }}
         >
           {canLogCare && (
             <section className="self-start" data-duo-pane="left">
@@ -349,18 +337,25 @@ function WeightFacet() {
   return (
     <KyaPage>
       <div className="mx-auto max-w-md">
-        <PageHeader onBack={goBird} title={t("birdWeight.title", "{{name}}'s weight", { name })}>
-          {latest ? (
-            <div className="mt-2 flex flex-wrap items-baseline gap-x-3 gap-y-1">
-              <span className="text-[48px] font-[700] leading-none" style={{ fontFamily: SERIF }}>{grams(t, latest.grams)}</span>
-              {latestMeta && <span className="text-[14px]" style={{ color: K.paleGreen }}>{latestMeta}</span>}
-            </div>
-          ) : entries === undefined ? (
-            !load.failed && <div className="mt-3 h-[44px] w-32 animate-pulse rounded-[10px] bg-white/15" aria-hidden="true" />
-          ) : (
-            <p className="m-0 mt-2 text-[15px]" style={{ color: K.paleGreen }}>{t("birdWeight.bodyEmpty", "No weights yet. Pop {{name}} on a scale and log the first one.", { name })}</p>
-          )}
-        </PageHeader>
+        {coverRail ? (
+          <>
+            <RailBack onBack={goBird} />
+            <WeightHeaderA compact name={name} photo={photo} latest={latest} loaded={entries !== undefined} count={all.length} />
+          </>
+        ) : (
+          <PageHeader onBack={goBird} title={t("birdWeight.title", "{{name}}'s weight", { name })}>
+            {latest ? (
+              <div className="mt-2 flex flex-wrap items-baseline gap-x-3 gap-y-1">
+                <span className="text-[48px] font-[700] leading-none" style={{ fontFamily: SERIF }}>{grams(t, latest.grams)}</span>
+                {latestMeta && <span className="text-[14px]" style={{ color: K.paleGreen }}>{latestMeta}</span>}
+              </div>
+            ) : entries === undefined ? (
+              !load.failed && <div className="mt-3 h-[44px] w-32 animate-pulse rounded-[10px] bg-white/15" aria-hidden="true" />
+            ) : (
+              <p className="m-0 mt-2 text-[15px]" style={{ color: K.paleGreen }}>{t("birdWeight.bodyEmpty", "No weights yet. Pop {{name}} on a scale and log the first one.", { name })}</p>
+            )}
+          </PageHeader>
+        )}
 
         <KyaBody>
           <MemberContextBanner birdId={birdId} />
@@ -446,8 +441,56 @@ function WeightFacet() {
   );
 }
 
-/** The chart card: range control, the chart, then lowest / highest / then. */
-/** `wide`: iPhone Duo sideways ("Weight option A") — a white card, a filled
+/**
+ * "Weight option A" header (side-column layouts only): the bird's photo in a
+ * mint ring, "[Name]'s weight", a small Latest line and the entries pill; no
+ * large number. `compact`: the folded cover screen, where the pill wraps under
+ * the title and the forest band tucks under today's 26px body.
+ */
+function WeightHeaderA({ name, photo, latest, loaded, count, compact = false }: {
+  name: string;
+  photo: string | undefined;
+  latest: Entry | undefined;
+  loaded: boolean;
+  count: number;
+  compact?: boolean;
+}) {
+  const { t, i18n } = useTranslation();
+  const lang = i18n.language;
+  const pill = (
+    <span className="w-fit shrink-0 rounded-full px-4 py-2 text-[14px] font-[700]" style={{ background: "#10291e", color: "#cfe9b7" }}>
+      {t("birdWeight.entriesPill", "{{count}} entries", { count, defaultValue_one: "{{count}} entry" })}
+    </span>
+  );
+  return (
+    <header
+      className={`flex items-center gap-4 text-white ${compact ? "px-5 pb-[46px] pt-[calc(env(safe-area-inset-top)+20px)]" : "px-8 pb-[62px] pt-[calc(env(safe-area-inset-top)+28px)]"}`}
+      style={{ background: K.forest }}
+    >
+      {photo ? (
+        <img src={photo} alt="" className="size-14 shrink-0 rounded-full border-[3px] object-cover" style={{ borderColor: "#8fc4a8" }} />
+      ) : (
+        <span aria-hidden="true" className="grid size-14 shrink-0 place-items-center rounded-full border-[3px] text-[22px] font-[700]" style={{ borderColor: "#8fc4a8", background: K.forestDeep }}>{name.charAt(0)}</span>
+      )}
+      <div className="flex min-w-0 flex-1 flex-col gap-[3px]">
+        <h1 className={`m-0 font-[700] leading-[1.1] ${compact ? "text-[26px]" : "text-[32px]"}`} style={{ fontFamily: SERIF }}>{t("birdWeight.title", "{{name}}'s weight", { name })}</h1>
+        {latest ? (
+          <span className="text-[15px]" style={{ color: "#c9dacb" }}>
+            {t("birdWeight.latest", "Latest")} <b className="font-[700] text-white">{grams(t, latest.grams)}</b> · {latestWhen(t, latest, lang)}
+          </span>
+        ) : loaded ? (
+          <span className="text-[15px]" style={{ color: "#c9dacb" }}>{t("birdWeight.bodyEmpty", "No weights yet. Pop {{name}} on a scale and log the first one.", { name })}</span>
+        ) : null}
+        {/* Narrow: the pill sits under the title instead of beside it. */}
+        {count > 0 && compact && <div className="mt-1.5">{pill}</div>}
+      </div>
+      {count > 0 && !compact && pill}
+    </header>
+  );
+}
+
+/** The chart card: range control, the chart, then lowest / highest / then.
+ *  `wide`: iPhone Duo sideways ("Weight option A") — a white card, a filled
  *  line with a gold dot on the latest entry, tiled lowest / highest / then. */
 function ChartCard({ entries, win, setWin, isMine, wide = false }: { entries: Entry[]; win: WindowDays; setWin: (w: WindowDays) => void; isMine: (e: Entry) => boolean; wide?: boolean }) {
   const { t, i18n } = useTranslation();

@@ -312,23 +312,30 @@ input[type="date"]::-webkit-date-and-time-value {
 
 /* ---- iPhone Duo (lib/duo.ts, components/DuoRail.tsx) --------------------
    html.duo is set by the authenticated layout only while the side column is
-   on screen (landscape with room for two panes, see lib/duo.ts). Nothing here
-   applies anywhere else, so every other screen keeps today's layout. */
+   on screen, with data-duo-rail="left|right" for its edge and .duo-two-pane
+   when the two-pane layouts apply (see lib/duo.ts). Nothing here applies
+   anywhere else, so every other screen keeps today's layout. */
 html.duo {
   /* No bottom bar: the reserved nav space shrinks to the safe area. */
   --nav-h: 0px;
-  --duo-rail: calc(104px + env(safe-area-inset-right));
+  /* Room taken on each side: the column on its edge, the safe area on both. */
+  --duo-left: env(safe-area-inset-left);
+  --duo-right: calc(104px + env(safe-area-inset-right));
   /* Full-bleed headers (KyaHeader) span the content area, not the column. */
-  --bleed: calc(100vw - var(--duo-rail) - env(safe-area-inset-left));
+  --bleed: calc(100vw - var(--duo-left) - var(--duo-right));
+}
+html.duo[data-duo-rail="left"] {
+  --duo-left: calc(104px + env(safe-area-inset-left));
+  --duo-right: env(safe-area-inset-right);
 }
 .duo-content {
-  padding-right: var(--duo-rail);
-  padding-left: env(safe-area-inset-left);
+  padding-left: var(--duo-left);
+  padding-right: var(--duo-right);
 }
 /* Bars pinned to the bottom (Hand off, Export…) stop at the column. */
 html.duo .duo-content .fixed.inset-x-0 {
-  left: env(safe-area-inset-left);
-  right: var(--duo-rail);
+  left: var(--duo-left);
+  right: var(--duo-right);
 }
 .duo-rail {
   position: fixed;
@@ -336,7 +343,7 @@ html.duo .duo-content .fixed.inset-x-0 {
   right: 0;
   bottom: 0;
   z-index: 45;
-  width: var(--duo-rail);
+  width: var(--duo-right);
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
@@ -348,9 +355,21 @@ html.duo .duo-content .fixed.inset-x-0 {
   font-family: "DM Sans", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
   overflow-y: auto;
 }
+html.duo[data-duo-rail="left"] .duo-rail {
+  right: auto;
+  left: 0;
+  width: var(--duo-left);
+  padding-left: env(safe-area-inset-left);
+  padding-right: 0;
+  border-left: 0;
+  border-right: 1px solid #dfe7df;
+}
 .duo-rail-task {
   background: #1a3d2e;
-  border-left-color: #1a3d2e;
+  border-color: #1a3d2e;
+}
+html.duo[data-duo-rail="left"] .duo-rail-task {
+  border-right-color: #1a3d2e;
 }
 /* A task's main action (TaskFooter's `rail`, see RailActionButton). */
 .duo-rail-action {
@@ -372,12 +391,13 @@ html.duo .duo-content .fixed.inset-x-0 {
   text-align: center;
   white-space: normal;
 }
-/* Side-by-side panes, each scrolling on its own. The content starts after the
-   left safe-area inset, so a first column of 50vw minus that inset ends exactly
-   on the middle of the screen (the fold), at any width. */
+/* Side-by-side panes, each scrolling on its own. The content starts after
+   --duo-left (the left safe area, plus the column when it's on the left), so a
+   first column of 50vw minus that ends exactly on the middle of the screen
+   (the fold), at any width. */
 .duo-split {
   display: grid;
-  grid-template-columns: calc(50vw - env(safe-area-inset-left)) minmax(0, 1fr);
+  grid-template-columns: calc(50vw - var(--duo-left)) minmax(0, 1fr);
   height: 100dvh;
 }
 .duo-pane {
@@ -387,13 +407,30 @@ html.duo .duo-content .fixed.inset-x-0 {
 }
 /* Headers inside a pane bleed to the pane's edges, not the screen's. */
 .duo-split > .duo-pane:first-child {
-  --bleed: calc(50vw - env(safe-area-inset-left));
+  --bleed: calc(50vw - var(--duo-left));
 }
 .duo-split > .duo-pane:last-child {
-  --bleed: calc(50vw - var(--duo-rail));
+  --bleed: calc(50vw - var(--duo-right));
 }
-/* The bird summary's tiles in a narrow pane (the record beside Home's list):
-   as many as fit whole, so "Yesterday" never breaks mid-word. */
+/* The bird summary's tiles in a narrow pane (the record beside Home's list,
+   the cover screen): as many as fit whole, so "Yesterday" never breaks
+   mid-word. */
 html.duo .kya-summary-tiles {
   grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+}
+/* The column without two panes (the folded cover screen, iOS app 1.2): about
+   278px is left beside it. The tab header's logo gives way so the help,
+   updates and account buttons still fit, and the full check's Normal / Not
+   sure / Concerning go two on a row with Concerning on its own. */
+html.duo:not(.duo-two-pane) .kya-tab-lockup {
+  flex-shrink: 1;
+  min-width: 0;
+  width: auto !important;
+  max-width: 118px;
+}
+html.duo:not(.duo-two-pane) .kya-answer-pills {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+html.duo:not(.duo-two-pane) .kya-answer-pills > :nth-child(3) {
+  grid-column: 1 / -1;
 }
