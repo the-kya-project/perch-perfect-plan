@@ -285,6 +285,24 @@ export function buildDailyEmail(groups: SaveErrorGroup[], opts: { urgentToday: S
   return opts.test || groups.some((g) => g.sample) ? markTest(built) : built;
 }
 
+/**
+ * The push that goes to the alert inbox's own account when an alert email
+ * couldn't be sent: email is the thing that failed, so it can't be the
+ * channel. `reason` is "blocked:<Brevo's code>" when the address is on
+ * Brevo's blocklist (an Unsubscribe tap, a bounce), else why the send failed.
+ */
+export function buildDeliveryProblemPush(reason: string, opts: { to: string; test?: boolean }): { title: string; body: string; tag: string } {
+  const blocked = reason.startsWith("blocked:");
+  const body = blocked
+    ? `Brevo has ${opts.to} on its blocklist (${reason.slice("blocked:".length)}), so save-error alerts aren't being emailed. Remove the address from Brevo's blocked contacts to get them back.`
+    : `A save-error alert email to ${opts.to} failed to send (${reason}). Check Brevo and the Vercel logs for /api/public/hooks/save-error-alerts.`;
+  return {
+    title: `${opts.test ? "TEST: " : ""}Kya & Co. alerts can't reach your inbox`,
+    body: opts.test ? `This is a test of the alert push; nothing is wrong. Real version: ${body}` : body,
+    tag: "save-error-alert-delivery",
+  };
+}
+
 // Sample data for the QA sender and the tests: the Oct 26 sits failure.
 // Marked `sample`, so every email built from it says TEST.
 export function sampleSaveErrorGroups(now = new Date("2026-10-27T15:00:00Z")): SaveErrorGroup[] {

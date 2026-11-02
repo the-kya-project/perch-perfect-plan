@@ -4,7 +4,7 @@ import assert from "node:assert/strict";
 import { classifySaveError, noteSaveError, saveErrorSignature, setSaveErrorRecorder, type SaveErrorShape } from "@/lib/saveErrors";
 import { friendlyError } from "@/lib/errorMessage";
 import {
-  ALERT_SENDER_NAME, alertSettings, buildDailyEmail, buildUrgentEmail, describeGroup, groupSaveErrors, planUrgent, sampleSaveErrorGroups,
+  ALERT_SENDER_NAME, alertSettings, buildDailyEmail, buildDeliveryProblemPush, buildUrgentEmail, describeGroup, groupSaveErrors, planUrgent, sampleSaveErrorGroups,
   type SaveErrorRow,
 } from "@/lib/saveErrorAlerts";
 
@@ -232,6 +232,23 @@ check("a real alert is never marked TEST", () => {
 });
 check("alerts come from Kya & Co. Alerts", () => {
   assert.equal(ALERT_SENDER_NAME, "Kya & Co. Alerts");
+});
+
+// ---- When the alert email itself can't go: a push ----------------------------
+
+check("delivery push: a blocklisted address says so and how to fix it", () => {
+  const p = buildDeliveryProblemPush("blocked:unsubscribedViaEmail", { to: "brittany@thekyaproject.com" });
+  assert.equal(p.title, "Kya & Co. alerts can't reach your inbox");
+  assert.match(p.body, /Brevo has brittany@thekyaproject\.com on its blocklist \(unsubscribedViaEmail\)/);
+  assert.match(p.body, /Remove the address from Brevo's blocked contacts/);
+});
+check("delivery push: any other send failure", () => {
+  assert.match(buildDeliveryProblemPush("brevo-api-key-not-configured", { to: "a@b.co" }).body, /failed to send \(brevo-api-key-not-configured\)/);
+});
+check("delivery push: the test version says TEST and that nothing is wrong", () => {
+  const p = buildDeliveryProblemPush("blocked:unsubscribed", { to: "a@b.co", test: true });
+  assert.match(p.title, /^TEST: /);
+  assert.match(p.body, /^This is a test of the alert push; nothing is wrong\./);
 });
 
 if (failed) process.exit(1);
