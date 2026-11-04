@@ -34,7 +34,8 @@ declare
   grieving uuid := gen_random_uuid();
   -- No profile row at all (the auth row alone must be enough).
   no_profile uuid := gen_random_uuid();
-  -- A time zone Postgres doesn't know → treated as none.
+  -- A blank time zone (the profiles trigger stores it as none; unknown
+  -- names are refused there, so they can't reach the report).
   bad_tz uuid := gen_random_uuid();
   -- Confirmed 3 days ago and never sent → 'missed'.
   missed uuid := gen_random_uuid();
@@ -70,7 +71,7 @@ begin
     from auth.users u where u.id = p.id and p.id in (jana, austen, plain, edge, welcomed, opted_out, pre_series, grieving, no_profile, bad_tz, missed);
   update public.profiles set time_zone = 'America/Chicago' where id in (jana, edge);
   update public.profiles set time_zone = 'America/New_York' where id = austen;
-  update public.profiles set time_zone = 'Mars/Olympus_Mons' where id = bad_tz;
+  update public.profiles set time_zone = '   ' where id = bad_tz;
   update public.profiles set notify_onboarding = false where id = opted_out;
   delete from public.profiles where id = no_profile;
   insert into public.onboarding_email_log (user_id, stage, status, sent_at) values (welcomed, 'welcome', 'sent', '2026-11-04T11:07:00Z');
@@ -120,9 +121,9 @@ begin
   -- 8) An Apple account with no profile row is still checked (from auth.users alone).
   if exists (select 1 from overdue_now where user_id = no_profile and at = '2026-11-04T12:01:00Z')
     then passed := passed + 1; else failed := array_append(failed, 'no profile row still counted'); end if;
-  -- 9) An unknown time zone counts as none (the hook does the same).
+  -- 9) A blank time zone counts as none: no hold, even at 3 AM UTC.
   if exists (select 1 from overdue_now where user_id = bad_tz and at = '2026-11-04T11:59:00Z' and scheduled_send_at = '2026-11-04T03:00:00Z')
-    then passed := passed + 1; else failed := array_append(failed, 'unknown time zone → no hold'); end if;
+    then passed := passed + 1; else failed := array_append(failed, 'blank time zone → no hold'); end if;
   -- 10) Past the 48-hour window → 'missed'.
   if exists (select 1 from overdue_now where user_id = missed and at = '2026-11-04T11:59:00Z' and status = 'missed')
     then passed := passed + 1; else failed := array_append(failed, 'past 48 hours → missed'); end if;
