@@ -88,6 +88,35 @@ export type WelcomeCandidate = {
   welcomeSettled: boolean;
 };
 
+/** One row of public.onboarding_confirmations: the auth.users side. */
+export type WelcomeConfirmation = { user_id: string; email: string | null; created_at: string; email_confirmed_at: string | null };
+/** The profile columns the welcome reads. Undefined when there is no row. */
+export type WelcomeProfileFields = { created_at: string; email: string | null; notify_onboarding: boolean | null; time_zone: string | null };
+
+/**
+ * The candidate for `welcomeDecision`, from what the hook loads. Everything
+ * that decides who is picked comes from auth.users, so an account counts
+ * however it signed up: Apple and Google sign-ins are confirmed the moment
+ * they're created, and a missing or half-filled profile never drops anyone
+ * (no profile → signed up at the auth time, notifications on, no time zone).
+ */
+export function welcomeCandidateFor(c: WelcomeConfirmation, profile: WelcomeProfileFields | undefined, welcomeSettled: boolean): WelcomeCandidate {
+  return {
+    userId: c.user_id,
+    createdAt: profile?.created_at ?? c.created_at,
+    confirmedAt: c.email_confirmed_at,
+    notifyOnboarding: profile?.notify_onboarding !== false,
+    timeZone: profile?.time_zone ?? null,
+    welcomeSettled,
+  };
+}
+
+/** Where the welcome goes: profiles.email, else the auth address (for Apple,
+ *  the private relay address). Empty when neither has one. */
+export function welcomeAddress(profileEmail: string | null | undefined, authEmail: string | null | undefined): string {
+  return (profileEmail ?? "").trim() || (authEmail ?? "").trim();
+}
+
 export type WelcomeHold = "already_welcomed" | "opted_out" | "pre_series" | "unconfirmed" | "too_soon" | "quiet_hours" | "outside_window";
 
 export type WelcomeDecision =
