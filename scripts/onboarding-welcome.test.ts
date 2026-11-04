@@ -9,9 +9,15 @@
  * six simulated welcome emails there as HTML.
  */
 import assert from "node:assert/strict";
-import { mkdirSync, writeFileSync } from "node:fs";
+import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { welcomeDecision, welcomeSendAt, type WelcomeCandidate } from "@/lib/welcomeTiming";
+import {
+  welcomeAddress, welcomeCandidateFor, welcomeDecision, welcomeSendAt,
+  QUIET_END_HOUR, QUIET_RELEASE_HOUR, QUIET_START_HOUR, WELCOME_DELAY_MINUTES, WELCOME_WINDOW_HOURS,
+  type WelcomeCandidate, type WelcomeConfirmation, type WelcomeProfileFields,
+} from "@/lib/welcomeTiming";
+import { SERIES_LAUNCH } from "@/lib/onboardingPlan";
+import { isUndeliverableAddress } from "@/lib/brevoEmail.server";
 import { buildAccounts, decide, simulate, SLOTS, type LogEntry, type OnboardingAccount, type RawRows } from "@/lib/onboardingPlan";
 import { buildWelcomeEmail } from "@/lib/flockEmails";
 
@@ -224,5 +230,110 @@ check("the first email after the welcome is 3 days after sign-up, for all three"
   }
 });
 check("all nine slots are still in the series", () => assert.equal(SLOTS.length, 9));
+
+console.log("\nApple sign-in (private relay address, confirmed at sign-up)");
+// Shaped like Jana's account (Nov 4, 2026): Apple confirms the address the
+// moment the account is made, the address is an Apple relay one, and the app
+// saves her time zone. Built through welcomeCandidateFor, as the hook does.
+const appleConfirmation = (over: Partial<WelcomeConfirmation> = {}): WelcomeConfirmation => ({
+  user_id: "apple-1",
+  email: "sbd8244zk4@privaterelay.appleid.com",
+  created_at: "2026-11-04T05:58:12.061Z",
+  email_confirmed_at: "2026-11-04T05:58:12.157Z",
+  ...over,
+});
+const appleProfile = (over: Partial<WelcomeProfileFields> = {}): WelcomeProfileFields => ({
+  created_at: "2026-11-04T05:58:11.993Z",
+  email: "sbd8244zk4@privaterelay.appleid.com",
+  notify_onboarding: true,
+  time_zone: "America/Chicago",
+  ...over,
+});
+const appleRuns = (c: WelcomeCandidate, fromIso: string, hours: number) => {
+  const out: string[] = [];
+  const start = Date.parse(fromIso);
+  for (let t = start; t < start + hours * 3_600_000; t += 60_000) {
+    const d = new Date(t);
+    if ([7, 22, 37, 52].includes(d.getUTCMinutes()) && welcomeDecision(c, d).kind === "send") out.push(d.toISOString());
+  }
+  return out;
+};
+check("confirmed at sign-up counts as confirmed: picked up like any other account", () => {
+  const c = welcomeCandidateFor(appleConfirmation(), appleProfile({ time_zone: null }), false);
+  assert.equal(c.confirmedAt, "2026-11-04T05:58:12.157Z");
+  assert.equal(appleRuns(c, "2026-11-04T05:58:00Z", 3)[0], "2026-11-04T07:07:00.000Z");
+});
+check("Jana's case: 11:58 PM Chicago → held to 8 AM, first sent on the 14:07 UTC run", () => {
+  const c = welcomeCandidateFor(appleConfirmation(), appleProfile(), false);
+  assert.deepEqual(welcomeDecision(c, at("2026-11-04T13:07:00Z")), { kind: "hold", reason: "quiet_hours", sendAt: "2026-11-04T14:00:00.000Z" });
+  assert.equal(appleRuns(c, "2026-11-04T05:58:00Z", 12)[0], "2026-11-04T14:07:00.000Z");
+});
+check("Austen's case: 10:14 PM New York → first sent on the 13:07 UTC run", () => {
+  const c = welcomeCandidateFor(
+    appleConfirmation({ created_at: "2026-11-03T02:14:29.266Z", email_confirmed_at: "2026-11-03T02:14:29.361Z" }),
+    appleProfile({ created_at: "2026-11-03T02:14:29.194Z", time_zone: "America/New_York" }),
+    false,
+  );
+  assert.equal(appleRuns(c, "2026-11-03T02:14:00Z", 12)[0], "2026-11-03T13:07:00.000Z");
+});
+check("Apple sign-in in the daytime → the 60–75 minute welcome, no hold", () => {
+  const c = welcomeCandidateFor(
+    appleConfirmation({ created_at: "2026-11-04T15:00:00Z", email_confirmed_at: "2026-11-04T15:00:00.1Z" }),
+    appleProfile({ created_at: "2026-11-04T15:00:00Z" }),
+    false,
+  );
+  assert.equal(appleRuns(c, "2026-11-04T15:00:00Z", 3)[0], "2026-11-04T16:07:00.000Z");
+});
+check("no profile row yet → still picked up, from the auth row alone", () => {
+  const c = welcomeCandidateFor(appleConfirmation({ created_at: "2026-11-04T15:00:00Z", email_confirmed_at: "2026-11-04T15:00:00.1Z" }), undefined, false);
+  assert.deepEqual(
+    { createdAt: c.createdAt, notifyOnboarding: c.notifyOnboarding, timeZone: c.timeZone },
+    { createdAt: "2026-11-04T15:00:00Z", notifyOnboarding: true, timeZone: null },
+  );
+  assert.equal(welcomeDecision(c, at("2026-11-04T16:07:00Z")).kind, "send");
+});
+check("profile without a name or with notify_onboarding unset (null) → still picked up", () => {
+  const c = welcomeCandidateFor(appleConfirmation(), appleProfile({ notify_onboarding: null, time_zone: null }), false);
+  assert.equal(welcomeDecision(c, at("2026-11-04T07:07:00Z")).kind, "send");
+});
+check("the address: the relay address from the profile, else from auth.users", () => {
+  const relay = "sbd8244zk4@privaterelay.appleid.com";
+  assert.equal(welcomeAddress(relay, relay), relay);
+  assert.equal(welcomeAddress(null, relay), relay);
+  assert.equal(welcomeAddress("  ", relay), relay);
+  assert.equal(welcomeAddress(undefined, ` ${relay} `), relay);
+  assert.equal(welcomeAddress(null, null), "");
+});
+check("a relay address is never treated as undeliverable", () =>
+  assert.equal(isUndeliverableAddress("sbd8244zk4@privaterelay.appleid.com"), false));
+check("the first run after the hour lands at night → goes on the first run after 7 AM (the audit query models this too)", () => {
+  // Hour mark 21:59 Chicago; the 22:07 run is in quiet hours. The late-send
+  // check releases it when quiet hours end (7 AM), so 7:07 AM = 13:07 UTC.
+  const c = welcomeCandidateFor(
+    appleConfirmation({ created_at: "2026-11-05T02:59:00Z", email_confirmed_at: "2026-11-05T02:59:00Z" }),
+    appleProfile({ created_at: "2026-11-05T02:59:00Z" }),
+    false,
+  );
+  const runs = appleRuns(c, "2026-11-05T02:59:00Z", 14);
+  assert.equal(runs[0], "2026-11-05T13:07:00.000Z", runs.join(","));
+});
+
+console.log("\nthe daily audit's welcome query matches this rule");
+// docs/reports/welcome-overdue.sql restates the rule in SQL for the health
+// audit, and supabase/checks/welcome_overdue_checks.sql runs it. This keeps
+// its numbers in step with welcomeTiming.ts: change one, this fails.
+const auditSql = readFileSync(new URL("../docs/reports/welcome-overdue.sql", import.meta.url), "utf8")
+  .split("\n").filter((l) => !l.trimStart().startsWith("--")).join("\n");
+check("delay, quiet hours, release hour, window, launch and run minutes", () => {
+  assert.ok(auditSql.includes(`interval '${WELCOME_DELAY_MINUTES} minutes'`), "delay");
+  assert.equal(auditSql.match(new RegExp(`>= ${QUIET_START_HOUR}\\b`, "g"))?.length, 2, "quiet start");
+  assert.equal(auditSql.match(new RegExp(`< ${QUIET_END_HOUR}\\b`, "g"))?.length, 2, "quiet end");
+  const hh = (h: number) => `time '${String(h).padStart(2, "0")}:00'`;
+  assert.equal(auditSql.split(hh(QUIET_RELEASE_HOUR)).length - 1, 2, "8 AM hold");
+  assert.equal(auditSql.split(hh(QUIET_END_HOUR)).length - 1, 2, "late send released at 7 AM");
+  assert.ok(auditSql.includes(`interval '${WELCOME_WINDOW_HOURS} hours'`), "window");
+  assert.ok(auditSql.includes(`timestamptz '${SERIES_LAUNCH.slice(0, 10)} 00:00:00+00'`), "series launch");
+  assert.ok(auditSql.includes("array[7, 22, 37, 52]"), "run minutes");
+});
 
 console.log(`\n${passed} passed${process.exitCode ? ", with failures" : ""}`);
