@@ -1,7 +1,7 @@
 // Shared pieces for the sitter tab screens (Home, Today, Around the house):
 // the one-bird rule, the greeting and sit line, the walkthrough pill, the
 // "Around the house" card and the vet-care note.
-import { createContext, useContext } from "react";
+import { createContext, useContext, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
 import type { TFunction } from "i18next";
@@ -177,13 +177,15 @@ export function VetNote() {
   );
 }
 
-/** Round (or rounded) bird photo, falling back to the initial. */
-export function BirdAvatar({ bird, size, radius }: { bird: any; size: number; radius?: number }) {
+/** Round (or rounded) bird photo, falling back to the initial. `initialOnFail`
+ *  (the Duo layout): a photo that fails to load shows the initial too. */
+export function BirdAvatar({ bird, size, radius, initialOnFail = false }: { bird: any; size: number; radius?: number; initialOnFail?: boolean }) {
   const initial = (bird?.name?.slice(0, 1) ?? "?").toUpperCase();
   const r = radius ?? size / 2;
-  return bird?.photo_url ? (
+  const [failed, setFailed] = useState(false);
+  return bird?.photo_url && !(initialOnFail && failed) ? (
     <span className="relative block shrink-0 overflow-hidden" style={{ width: size, height: size, borderRadius: r }}>
-      <BirdPhotoCrop url={bird.photo_url} original={bird.photo_url} position={bird.photo_position ?? BIRD_PHOTO_FOCUS} alt="" eager />
+      <BirdPhotoCrop url={bird.photo_url} original={bird.photo_url} position={bird.photo_position ?? BIRD_PHOTO_FOCUS} alt="" eager onFail={initialOnFail ? () => setFailed(true) : undefined} />
     </span>
   ) : (
     <span className="grid shrink-0 place-items-center font-[700] text-white" style={{ width: size, height: size, borderRadius: r, background: K.moss, fontSize: Math.round(size * 0.4) }} aria-hidden="true">

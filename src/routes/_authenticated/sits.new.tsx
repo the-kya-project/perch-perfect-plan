@@ -9,6 +9,8 @@ import { LoadError } from "@/components/LoadError";
 import { useTooLong } from "@/lib/useTooLong";
 import { SitForm } from "@/components/SitForm";
 import { useOwnedBirds, useRefreshSits } from "@/lib/useOwnedBirds";
+import { useDuoMode } from "@/lib/duo";
+import { SitFormDuo } from "@/components/duo/sits/SitFormDuo";
 
 // "Set up a sit" — its own full screen. ?bird= preselects a bird (from a bird's
 // setup or care plan).
@@ -62,6 +64,9 @@ function NewSit() {
   // Never "Loading…" forever: after 10 s, offer a retry (emergency.tsx pattern).
   const { tooLong, restart } = useTooLong(loading && !failed);
   const retry = () => { restart(); void qc.refetchQueries({ type: "active" }); };
+  // iPhone Duo: the two-pane form (same state and submit as the phone form).
+  const duo = useDuoMode() === "sideways";
   if (loading || failed) return <SitFormLoading onClose={close} failed={failed || tooLong} onRetry={retry} />;
+  if (duo) return <SitFormDuo birds={owned} preselectBirdId={bird} onSaved={refresh} onClose={close} />;
   return <SitForm birds={owned} preselectBirdId={bird} onSaved={refresh} onClose={close} />;
 }

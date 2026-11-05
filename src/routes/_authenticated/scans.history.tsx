@@ -14,6 +14,8 @@ import { PageHeader } from "@/components/headers";
 import { EntryDays, sitCaregiverName, type EntryContext } from "@/components/HealthEntries";
 import { LoadError } from "@/components/LoadError";
 import { useLoadState } from "@/lib/useTooLong";
+import { useDuoMode } from "@/lib/duo";
+import { FlockHealthDuo } from "@/components/duo/records/FlockHealthDuo";
 
 // Every daily check and weight for the owner's birds, newest first, with
 // filters for who logged it, the bird, the type, and (from a sit card) one sit.
@@ -27,8 +29,28 @@ const historySearch = z.object({
 export const Route = createFileRoute("/_authenticated/scans/history")({
   head: () => ({ meta: [{ title: i18next.t("healthHistory.metaTitle", "Health history — Kya & Co.") }] }),
   validateSearch: historySearch,
-  component: HealthHistoryPage,
+  component: HealthHistoryRoute,
 });
+
+/** iPhone Duo sideways: the history in Flock health's right pane, the flock
+ *  tiles on the left filtering it by bird. Everywhere else, unchanged. */
+function HealthHistoryRoute() {
+  const { t } = useTranslation();
+  const navigate = useNavigate({ from: "/scans/history" });
+  const router = useRouter();
+  const canGoBack = useCanGoBack();
+  const search = Route.useSearch();
+  if (useDuoMode() !== "sideways") return <HealthHistoryPage />;
+  return (
+    <FlockHealthDuo
+      selectedBirdId={search.bird}
+      onBack={() => (canGoBack ? router.history.back() : navigate({ to: "/scans" }))}
+      // Tapping the picked bird again clears the filter.
+      onPick={(id) => void navigate({ search: (prev) => ({ ...prev, bird: prev.bird === id ? undefined : id }), replace: true })}
+      page={{ title: t("healthHistory.title", "Health history"), node: <HealthHistoryPage /> }}
+    />
+  );
+}
 
 const PAGE = 30;
 

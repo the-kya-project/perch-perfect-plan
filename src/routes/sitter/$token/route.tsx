@@ -19,6 +19,9 @@ import { sitterI18n, ensureSitterI18n, resolveSitterLocale } from "@/lib/i18n";
 import { localDateISO } from "@/lib/localDay";
 import { isOwnerPreview } from "@/lib/sitterPreviewMode";
 import { removeSitDrafts } from "@/lib/draftStore";
+import { useDuoLayout } from "@/lib/duo";
+import { DuoRailProvider } from "@/components/DuoRail";
+import { SitterDuoRail } from "@/components/duo/sitter/SitterDuoRail";
 
 // `saved`: set by the daily health check after a save (Today shows the
 // "Saved. Next: …" confirmation once, then clears it). Never retained.
@@ -213,20 +216,34 @@ function SitterLayout() {
   // room for the bar, so the shell adds neither there.
   const ownsBackground = /\/emergency\/?$/.test(pathname);
 
+  // iPhone Duo, two panes (lib/duo.ts; this is a browser page, so the space
+  // rule decides): the bottom bar becomes a side column (SitterDuoRail), and
+  // PageHeader / TaskHeader send Back / Close into its top slot. Each screen
+  // picks its own two-pane layout. One tree either way, so turning the phone
+  // doesn't remount the page (a half-done check keeps its answers).
+  const duoLayout = useDuoLayout();
+  const duoEdge = duoLayout.split ? duoLayout.rail : null;
+  const [railTop, setRailTop] = useState<HTMLElement | null>(null);
+  const framePad = duoEdge ? "duo-content" : onTask || ownsBackground ? "" : "pb-[calc(env(safe-area-inset-bottom)+96px)]";
+
   return (
     <SitterShellContext.Provider value={shell}>
-      <PullToRefresh>
-        <div
-          className={`setup-frame min-h-screen ${onTask || ownsBackground ? "" : "pb-[calc(env(safe-area-inset-bottom)+96px)]"}`}
-          style={ownsBackground ? undefined : { background: K.mist, color: K.forest }}
-        >
-          <Suspense fallback={<TabSkeleton />}>
-            <Outlet />
-          </Suspense>
-          {!onTask && <EmergencyBar token={token} activeBirdId={ctx.activeBirdId} />}
-          <SitterOnboarding birds={ctx.birds} bird={ctx.bird} careSections={presentCareSections(ctx)} hasClips={(ctx.watchClips?.length ?? 0) > 0} token={token} />
-        </div>
-      </PullToRefresh>
+      <DuoRailProvider value={duoEdge ? { edge: duoEdge, top: railTop } : null}>
+        <PullToRefresh>
+          <div
+            className={`setup-frame min-h-screen ${framePad}`}
+            style={ownsBackground && !duoEdge ? undefined : { background: K.mist, color: K.forest }}
+          >
+            <Suspense fallback={<TabSkeleton />}>
+              <Outlet />
+            </Suspense>
+            {duoEdge
+              ? <SitterDuoRail token={token} activeBirdId={ctx.activeBirdId} edge={duoEdge} setTop={setRailTop} />
+              : !onTask && <EmergencyBar token={token} activeBirdId={ctx.activeBirdId} />}
+            <SitterOnboarding birds={ctx.birds} bird={ctx.bird} careSections={presentCareSections(ctx)} hasClips={(ctx.watchClips?.length ?? 0) > 0} token={token} />
+          </div>
+        </PullToRefresh>
+      </DuoRailProvider>
     </SitterShellContext.Provider>
   );
 }
@@ -269,12 +286,12 @@ function withSettleGuard<T>(work: Promise<T>): Promise<T> {
   });
 }
 
-export function useSitterContext(token: string) {
-  const search = useSearch({ from: "/sitter/$token" });
-  const birdId = search.birdId;
-  const fn = useServerFn(getSitterContext);
-  return useSuspenseQuery({
-    queryKey: ["sitter-ctx", token, birdId ?? null],
+/** The sitter context query for one bird (or the default bird). Shared by
+ *  useSitterContext and the Duo's whole-sit checklist, which loads every
+ *  bird's context under the same keys. */
+export function sitterContextQuery(fn: ReturnType<typeof useServerFn<typeof getSitterContext>>, token: string, birdId: string | undefined) {
+  return {
+    queryKey: ["sitter-ctx", token, birdId ?? null] as const,
     queryFn: () => withSettleGuard(fn({ data: { token, birdId, today: localDateISO() } })).then((ctx) => {
       // A sit with no birds comes back as a code (with the owner's first name)
       // instead of a context: raise it as a link state for the error boundary.
@@ -285,8 +302,15 @@ export function useSitterContext(token: string) {
     // revoked, expired, or whose sit is paused will not become valid on a
     // second attempt — retrying it only doubles how long the sitter waits for
     // a message that was already decided.
-    retry: (failureCount, error) => failureCount < 1 && !isTerminalSitterError(error),
-  });
+    retry: (failureCount: number, error: unknown) => failureCount < 1 && !isTerminalSitterError(error),
+  };
+}
+
+export function useSitterContext(token: string) {
+  const search = useSearch({ from: "/sitter/$token" });
+  const birdId = search.birdId;
+  const fn = useServerFn(getSitterContext);
+  return useSuspenseQuery(sitterContextQuery(fn, token, birdId));
 }
 
 

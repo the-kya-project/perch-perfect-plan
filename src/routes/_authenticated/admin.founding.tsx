@@ -2,6 +2,8 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { Download, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { useDuoMode } from "@/lib/duo";
+import { AdminListDuo, AdminTotals } from "@/components/duo/flows/AdminListDuo";
 import { K, KyaBackRow, KyaBody, KyaCard, KyaHeader, KyaHeading, KyaPage, KyaPrimaryButton, KyaSecondaryButton, KyaTitle } from "@/components/kya";
 
 // Admin-only list of Founding 50 claims. The database is the gate:
@@ -30,6 +32,7 @@ const DIRECT = "(none)";
 
 function AdminFounding() {
   const navigate = useNavigate();
+  const duo = useDuoMode() === "sideways";
   const { data: isAdmin, isLoading: adminLoading } = useQuery({
     queryKey: ["is-admin"],
     queryFn: async () => {
@@ -78,6 +81,39 @@ function AdminFounding() {
   const bySource = new Map<string, number>();
   for (const c of rows) bySource.set(c.source ?? DIRECT, (bySource.get(c.source ?? DIRECT) ?? 0) + 1);
   const sources = [...bySource.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
+
+  // iPhone Duo, sideways: claims as tiles on the left, the selected claim on
+  // the right.
+  if (duo) {
+    return (
+      <AdminListDuo
+        title="Founding 50 claims"
+        line={isLoading ? "Loading…" : `${rows.length} of 50 spots claimed`}
+        loading={isLoading}
+        error={error ? `Couldn't load claims: ${(error as Error).message}` : null}
+        emptyText="No claims yet."
+        summary={<AdminTotals title="By source" rows={sources.map(([s, n]) => [s, String(n)])} emptyText="No claims yet." />}
+        items={rows.map((c) => ({
+          key: String(c.spot_number),
+          badge: `#${c.spot_number}`,
+          title: c.name ?? c.email ?? "—",
+          preview: c.region_name ?? c.region_slug,
+          status: c.source ?? DIRECT,
+          eyebrow: `Spot #${c.spot_number}`,
+          detailTitle: c.name ?? c.email ?? "—",
+          rows: [
+            ["Name", c.name ?? "—"],
+            ["Email", c.email ?? "—"],
+            ["Region", c.region_name ?? c.region_slug],
+            ["Source", c.source ?? "—"],
+            ["Claimed", formatDate(c.claimed_at)],
+          ],
+        }))}
+        onCsv={() => downloadCsv(rows)}
+        onBack={back}
+      />
+    );
+  }
 
   return (
     <KyaPage>

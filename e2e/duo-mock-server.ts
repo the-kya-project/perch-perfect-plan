@@ -22,7 +22,7 @@ const port = Number(process.env.MOCK_SUPABASE_PORT || 54399);
 const APP = `http://127.0.0.1:${Number(process.env.E2E_APP_PORT || 4173)}`;
 const sitter = sitterFixture(`http://127.0.0.1:${port}`) as { tables: Record<string, Record<string, unknown>[]>; users: Record<string, unknown> };
 
-const VARIANTS: DuoVariant[] = ["base", "filled", "empty", "nobirds", "new"];
+const VARIANTS: DuoVariant[] = ["base", "filled", "empty", "nobirds", "new", "readiness"];
 function data(variant: string | null) {
   const v = (VARIANTS as string[]).includes(variant ?? "") ? (variant as DuoVariant) : "filled";
   const fx = duoFixture(APP, Date.now(), v);

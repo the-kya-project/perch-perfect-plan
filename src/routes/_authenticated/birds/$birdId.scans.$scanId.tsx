@@ -1,10 +1,12 @@
-import { useState } from "react";
+import { useContext, useState } from "react";
 import { createFileRoute, useNavigate, useRouter, useCanGoBack, Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { ArrowLeft, Loader2, Phone } from "lucide-react";
-import { K, KyaPage, KyaBody, KyaCard, KyaHeading, KyaLink, KyaSecondaryButton } from "@/components/kya";
+import { K, KyaPage, KyaBody, KyaCard, KyaHeading, KyaInCard, KyaLink, KyaSecondaryButton } from "@/components/kya";
+import { useDuoMode } from "@/lib/duo";
+import { FlockHealthDuo } from "@/components/duo/records/FlockHealthDuo";
 import { PageHeader } from "@/components/headers";
 import { useConfirm } from "@/components/ConfirmSheet";
 import { useCapability, useMyPermissions } from "@/lib/useCapability";
@@ -28,8 +30,26 @@ import type { TFunction } from "i18next";
 // Health tab and Health history. Owner/household read via RLS on daily_logs.
 export const Route = createFileRoute("/_authenticated/birds/$birdId/scans/$scanId")({
   head: () => ({ meta: [{ title: i18next.t("scanDetail.metaTitle", "Health check — Kya & Co.") }] }),
-  component: ScanDetail,
+  component: ScanDetailRoute,
 });
+
+/** iPhone Duo sideways: the check in Flock health's right pane, beside the
+ *  flock. Everywhere else, unchanged. */
+function ScanDetailRoute() {
+  const { t } = useTranslation();
+  const { birdId } = Route.useParams();
+  const navigate = useNavigate();
+  const router = useRouter();
+  const canGoBack = useCanGoBack();
+  if (useDuoMode() !== "sideways") return <ScanDetail />;
+  return (
+    <FlockHealthDuo
+      selectedBirdId={birdId}
+      onBack={() => (canGoBack ? router.history.back() : navigate({ to: "/scans" }))}
+      page={{ title: t("healthDuo.oneCheck", "Health check"), node: <ScanDetail /> }}
+    />
+  );
+}
 
 // `fkey` = the scan FIELD key that item_notes is keyed by (the status column and
 // the field key differ for noise→behavior and fluffed→energy).
@@ -397,7 +417,20 @@ function ScanDetail() {
 }
 
 function Shell({ headline, body, onBack, children }: { headline: string; body?: string; onBack: () => void; children: React.ReactNode }) {
-  const { t } = useTranslation();
+  // Inside the iPhone Duo's pop-out card the page header is dropped, so the
+  // headline and when / by line lead the card's content instead.
+  const inCard = useContext(KyaInCard);
+  if (inCard) {
+    return (
+      <div className="flex flex-col gap-4">
+        <div className="px-1">
+          <KyaHeading size={22}>{headline}</KyaHeading>
+          {body && <p className="m-0 mt-1 text-[15px]" style={{ color: K.quiet }}>{body}</p>}
+        </div>
+        {children}
+      </div>
+    );
+  }
   return (
     <KyaPage>
       <div className="mx-auto max-w-md">

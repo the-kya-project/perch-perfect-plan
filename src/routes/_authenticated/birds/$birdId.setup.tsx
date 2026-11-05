@@ -16,6 +16,7 @@ import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { SetupShell, SETUP_STEPS, TOTAL_STEPS, setupStepTitle, setupStepNumber } from "@/components/SetupShell";
+import { SetupStepsPane } from "@/components/duo/plan/SetupStepsPane";
 import { encodeSetupStep, basicsDone } from "@/lib/setupProgress";
 import { getLocalUser } from "@/integrations/supabase/currentUser";
 import { mergeHome, homeDifferences, seedShared, sameGroup, followSharedPatch, clearOwnPatch, birdHasOwn, HOME_GROUPS, HOME_GROUP_COLUMNS, parseCleaning, formatCleaning, CLEANING_NEVER_DEFAULTS, type HomeRow } from "@/lib/homeDefaults";
@@ -505,6 +506,9 @@ function BirdSetup() {
   const meta = SETUP_STEPS[step - 1];
   const isLast = step === TOTAL_STEPS;
   const onFoodPage2 = meta.key === "food" && foodPage === 2;
+  // iPhone Duo (two panes): the ring and the steps in the left half; tapping
+  // a step is the same jump as the "All steps" list. Ignored elsewhere.
+  const duoLeft = <SetupStepsPane birdId={birdId} birdName={bird.name} current={atStopPoint ? "health" : meta.key} onJumpToStep={jumpToStep} />;
 
   if (atStopPoint) {
     return (
@@ -516,6 +520,7 @@ function BirdSetup() {
         birdSpecies={bird.species}
         onExit={exitToProfile}
         onBack={onBack}
+        duoLeft={duoLeft}
         footer={
           <div className="flex items-center gap-3">
             {/* Not a dead end: Back returns to the Health step (onBack's
@@ -584,6 +589,7 @@ function BirdSetup() {
       homeSubline={homeSubline ?? undefined}
       onSkip={meta.key === "environment" || meta.key === "emergency" ? onNext : undefined}
       footerNoteWarn={meta.key === "emergency"}
+      duoLeft={duoLeft}
       footer={meta.key === "review" ? (
         <div className="flex flex-col gap-2.5">
           <SetupPrimaryButton onClick={() => finishAndGo({ to: "home" })} disabled={saving} arrow={false}>{t("birdSetup.looksGoodSave", "Looks good — save")}</SetupPrimaryButton>

@@ -1,4 +1,4 @@
-import { useContext, useEffect, useRef, useState, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import type { TFunction } from "i18next";
 import { ClipPlayer } from "@/components/ClipPlayer";
@@ -78,7 +78,8 @@ const CONTACT_ROWS: { key: string; label: string }[] = [
 
 // The six cards, in the overview's order. "home" is the Your home card, which
 // also holds the emergency details.
-type CardKey = "food" | "health" | "behavior" | "tips" | "routine" | "home";
+export type CarePlanCard = "food" | "health" | "behavior" | "tips" | "routine" | "home";
+type CardKey = CarePlanCard;
 const NAV: { id: CardKey; label: string }[] = [
   { id: "food", label: "Food" },
   { id: "health", label: "Health" },
@@ -128,6 +129,10 @@ function displayLabel(t: TFunction, en: string): string {
 
 // ---- Kya-look primitives ----------------------------------------------------
 
+/** CarePlanView's `bare` mode: cards render their rows only (no white card,
+ *  icon or title), for one section inside a Duo pop-out card. */
+const BareCards = createContext(false);
+
 const LABEL = "m-0 text-[13.5px] font-[700]";
 
 /** One section card: forest icon tile + Newsreader title (+ a quiet line),
@@ -141,6 +146,16 @@ function Card({ id, coach, setRef, icon, title, line, children }: {
   line?: string;
   children: ReactNode;
 }) {
+  // Inside an iPhone Duo pop-out card the card carries the icon and title, so
+  // only the rows render here.
+  if (useContext(BareCards)) {
+    return (
+      <section id={id} data-coach={coach} ref={setRef} className="flex flex-col [&>.cp-row+.cp-row]:border-t [&>.cp-row+.cp-row]:border-[#e3ebe2] [&>.cp-row:first-child]:pt-0" style={{ color: K.forest }}>
+        {line && <p className="m-0 mb-1 text-[15px] leading-[1.4]" style={{ color: K.quiet }}>{line}</p>}
+        {children}
+      </section>
+    );
+  }
   return (
     <section id={id} data-coach={coach} ref={setRef} className="scroll-mt-2 rounded-[20px] bg-white px-4 pb-2 pt-4" style={{ color: K.forest }}>
       <div className="flex items-center gap-3">
@@ -276,6 +291,60 @@ function ClipTile({ src, label, audience, ownerName, refreshSrc }: { src: string
   );
 }
 
+/** Which sections and cards a CarePlanView shows for this data and surface
+ *  (has content AND the surface allows it). Shared with the iPhone Duo
+ *  readers (components/duo/plan), which open one card at a time. */
+export function carePlanPresence(data: CarePlanData, {
+  visibleSections = CARE_PLAN_SECTIONS,
+  showEmergencyContacts = true,
+  separateNeverFeed = false,
+}: { visibleSections?: readonly CareSection[]; showEmergencyContacts?: boolean; separateNeverFeed?: boolean } = {}) {
+  const bird = (data.bird ?? {}) as any;
+  const plan = (data.plan ?? {}) as any;
+  const tasks = (data.tasks ?? []) as any[];
+  const contacts = (data.contacts ?? {}) as Record<string, string | null>;
+  const watchClips = (data.watchClips ?? []) as { key: string; label: string; url: string }[];
+  const baselineClipUrl = data.baselineClipUrl ?? null;
+  const canShow = (id: CareSection) => visibleSections.includes(id);
+  const neverFeed = (plan.never_feed ?? []) as string[];
+  const hazards = (plan.hazards ?? []) as string[];
+  const feedingTimes = (plan.feeding_times ?? []) as string[];
+  const diet = (plan.diet_types ?? []) as string[];
+  const freshFoods = (plan.fresh_foods ?? []) as string[];
+
+  const showFeeding = !!(diet.length || plan.food_brand || plan.amount_value || feedingTimes.length || freshFoods.length || plan.fresh_foods_other || plan.treats_notes || plan.treats_frequency || plan.water_frequency || plan.water_notes || plan.food_storage || plan.food_hygiene_notes || plan.food_instructions || plan.water_instructions || plan.fresh_food_removal_minutes);
+  const showHandling = has(plan.step_up) || has(plan.step_up_notes) || has(plan.handlers) || has(plan.likes) || has(plan.fears_triggers) || has(plan.bite_risk) || has(plan.handling_rules) || has(plan.known_triggers);
+  const showHome = has(plan.cage_location) || has(plan.out_of_cage_mode) || has(plan.out_of_cage_notes) || has(plan.out_of_cage_rules) || hazards.length > 0 || has(plan.hazards_other) || has(plan.off_limits) || has(plan.off_limits_rooms) || has(plan.safety_rules) || has(plan.other_pets) || has(plan.cleaning_instructions);
+  const showHealth = has(bird.normal_weight) || has(bird.normal_weight_min) || has(bird.normal_weight_max) || has(plan.whats_normal) || has(plan.normal_appetite) || has(plan.normal_droppings) || has(plan.normal_noise) || has(plan.normal_activity) || has(plan.normal_sleep) || has(plan.normal_behavior_with_strangers) || has(bird.medical_conditions) || has(bird.medications) || has(plan.medication_schedule) || !!baselineClipUrl;
+
+  const groups = TIME_ORDER
+    .map((time) => ({ time, items: tasks.filter((x) => (x.time_of_day || "anytime") === time) }))
+    .filter((g) => g.items.length > 0);
+  const ungrouped = tasks.filter((x) => !TIME_ORDER.includes(x.time_of_day || "anytime"));
+  if (ungrouped.length) groups.push({ time: "anytime", items: ungrouped });
+
+  // Contacts only when the surface includes them (the Review step omits them).
+  const contactRows = showEmergencyContacts ? CONTACT_ROWS.filter((r) => (contacts[r.key] ?? "").toString().trim()) : [];
+  const hasWhenToCall = has(plan.when_to_call_owner) || has(plan.when_to_call_vet);
+
+  // present = has content AND the surface allows the section.
+  const present: Record<CareSection, boolean> = {
+    food: canShow("food") && (showFeeding || (!separateNeverFeed && neverFeed.length > 0)),
+    behavior: canShow("behavior") && showHandling,
+    home: canShow("home") && showHome,
+    health: canShow("health") && showHealth,
+    routine: canShow("routine") && groups.length > 0,
+    emergency: canShow("emergency") && (contactRows.length > 0 || hasWhenToCall),
+    tips: canShow("tips") && watchClips.length > 0,
+  };
+  // The Your home card shows for either of its parts.
+  const cardPresent: Record<CarePlanCard, boolean> = {
+    food: present.food, health: present.health, behavior: present.behavior, tips: present.tips, routine: present.routine,
+    home: present.home || present.emergency,
+  };
+  return { showFeeding, showHandling, showHome, showHealth, groups, contactRows, hasWhenToCall, present, cardPresent };
+}
+
 export function CarePlanView({
   data,
   visibleSections = CARE_PLAN_SECTIONS,
@@ -295,6 +364,7 @@ export function CarePlanView({
   tipsTitle,
   tipsLine,
   refreshClipUrl,
+  bare = false,
 }: {
   data: CarePlanData;
   /** Which sections this surface may show (in addition to data-presence gating). */
@@ -337,6 +407,10 @@ export function CarePlanView({
   /** Re-mint one clip's signed URL after it expires (key = slot key, or
    *  "baseline" for the normal-behavior clip). Resolve the fresh URL or null. */
   refreshClipUrl?: (key: string) => Promise<string | null | undefined>;
+  /** iPhone Duo: one section inside a pop-out card (components/duo/plan).
+   *  Cards drop their white card, icon and title, and there's no chip row.
+   *  Pass a single card's sections in `visibleSections`. */
+  bare?: boolean;
 }) {
   const { t } = useTranslation();
   // Inside the walkthrough the view sits on SetupFrame's white body, so the
@@ -345,7 +419,6 @@ export function CarePlanView({
   const bird = (data.bird ?? {}) as any;
   const plan = (data.plan ?? {}) as any;
   const name = (bird.name ?? "this bird") as string;
-  const tasks = (data.tasks ?? []) as any[];
   const contacts = (data.contacts ?? {}) as Record<string, string | null>;
   const watchClips = (data.watchClips ?? []) as { key: string; label: string; url: string }[];
   const baselineClipUrl = data.baselineClipUrl ?? null;
@@ -377,10 +450,8 @@ export function CarePlanView({
     has(plan.fresh_foods_other) || has(plan.treats_notes) || has(plan.water_frequency) ||
     has(plan.water_notes) || has(plan.food_storage);
 
-  const showFeeding = !!(diet.length || plan.food_brand || plan.amount_value || feedingTimes.length || freshFoods.length || plan.fresh_foods_other || plan.treats_notes || plan.treats_frequency || plan.water_frequency || plan.water_notes || plan.food_storage || plan.food_hygiene_notes || plan.food_instructions || plan.water_instructions || plan.fresh_food_removal_minutes);
-  const showHandling = has(plan.step_up) || has(plan.step_up_notes) || has(plan.handlers) || has(plan.likes) || has(plan.fears_triggers) || has(plan.bite_risk) || has(plan.handling_rules) || has(plan.known_triggers);
-  const showHome = has(plan.cage_location) || has(plan.out_of_cage_mode) || has(plan.out_of_cage_notes) || has(plan.out_of_cage_rules) || hazards.length > 0 || has(plan.hazards_other) || has(plan.off_limits) || has(plan.off_limits_rooms) || has(plan.safety_rules) || has(plan.other_pets) || has(plan.cleaning_instructions);
-  const showHealth = has(bird.normal_weight) || has(bird.normal_weight_min) || has(bird.normal_weight_max) || has(plan.whats_normal) || has(plan.normal_appetite) || has(plan.normal_droppings) || has(plan.normal_noise) || has(plan.normal_activity) || has(plan.normal_sleep) || has(plan.normal_behavior_with_strangers) || has(bird.medical_conditions) || has(bird.medications) || has(plan.medication_schedule) || !!baselineClipUrl;
+  const { showFeeding, groups, contactRows, hasWhenToCall, present, cardPresent } =
+    carePlanPresence(data, { visibleSections, showEmergencyContacts, separateNeverFeed });
 
   const handlingDangerous = /\b(no|do not|don'?t|never|owner.?only)\b/i.test(`${plan.step_up ?? ""} ${plan.step_up_notes ?? ""} ${plan.handlers ?? ""}`);
 
@@ -390,31 +461,6 @@ export function CarePlanView({
     return null;
   })();
 
-  const groups = TIME_ORDER
-    .map((time) => ({ time, items: tasks.filter((x) => (x.time_of_day || "anytime") === time) }))
-    .filter((g) => g.items.length > 0);
-  const ungrouped = tasks.filter((x) => !TIME_ORDER.includes(x.time_of_day || "anytime"));
-  if (ungrouped.length) groups.push({ time: "anytime", items: ungrouped });
-
-  // Contacts only when the surface includes them (the Review step omits them).
-  const contactRows = showEmergencyContacts ? CONTACT_ROWS.filter((r) => (contacts[r.key] ?? "").toString().trim()) : [];
-  const hasWhenToCall = has(plan.when_to_call_owner) || has(plan.when_to_call_vet);
-
-  // present = has content AND the surface allows the section.
-  const present: Record<CareSection, boolean> = {
-    food: canShow("food") && (showFeeding || (!separateNeverFeed && neverFeed.length > 0)),
-    behavior: canShow("behavior") && showHandling,
-    home: canShow("home") && showHome,
-    health: canShow("health") && showHealth,
-    routine: canShow("routine") && groups.length > 0,
-    emergency: canShow("emergency") && (contactRows.length > 0 || hasWhenToCall),
-    tips: canShow("tips") && watchClips.length > 0,
-  };
-  // The Your home card shows for either of its parts.
-  const cardPresent: Record<CardKey, boolean> = {
-    food: present.food, health: present.health, behavior: present.behavior, tips: present.tips, routine: present.routine,
-    home: present.home || present.emergency,
-  };
   const presentNav = NAV.filter((n) => cardPresent[n.id]);
   const presentKey = presentNav.map((n) => n.id).join(",");
 
@@ -466,7 +512,7 @@ export function CarePlanView({
   }, []);
 
   const setRef = (id: string) => (el: HTMLElement | null) => { sectionRefs.current[id] = el; };
-  const stickyHasContent = !!header || presentNav.length > 1 || chipsOnForest;
+  const stickyHasContent = !bare && (!!header || presentNav.length > 1 || chipsOnForest);
   const neverFeedCard = separateNeverFeed && canShow("food") && neverFeed.length > 0;
   const tileIcon = "size-5";
   const sitter = audience === "sitter";
@@ -478,8 +524,10 @@ export function CarePlanView({
     : t("carePlan.theOwnersHome", "The owner's home");
   const navLabel = (n: { id: CardKey; label: string }) => (n.id === "home" ? homeTitle : displayLabel(t, n.label));
 
+  const mist = inFrame && !bare;
   return (
-    <div className={`flex flex-col gap-4 ${inFrame ? "rounded-[20px] p-2.5" : ""} ${chipsOnForest ? "-mt-[46px]" : ""}`} style={inFrame ? { background: K.mist } : undefined}>
+    <BareCards.Provider value={bare}>
+    <div className={`flex flex-col gap-4 ${mist ? "rounded-[20px] p-2.5" : ""} ${chipsOnForest && !bare ? "-mt-[46px]" : ""}`} style={mist ? { background: K.mist } : undefined}>
       {stickyHasContent && chipsOnForest ? (
         // Forest band continuing the page header: chips, then the mist body's
         // rounded top. Full-bleed like KyaHeader.
@@ -804,5 +852,6 @@ export function CarePlanView({
 
       {footer}
     </div>
+    </BareCards.Provider>
   );
 }

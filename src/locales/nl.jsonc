@@ -2983,6 +2983,10 @@
   "draft.yesterdayAt": "gisteren om {{time}}",
   // Calm, clear care for your bird.
   "duoFrontDoor.tagline": "Rustige, duidelijke zorg voor je vogel.",
+  // Next section
+  "duoReader.next": "Volgende onderdeel",
+  // Previous section
+  "duoReader.previous": "Vorige onderdeel",
   // Emergency
   "emergencyBar.emergency": "Noodgeval",
   // Parrots 101
@@ -3151,6 +3155,16 @@
   "explore.storiesOnTheWay": "Er komen verhalen aan",
   // View all
   "explore.viewAll": "Alles bekijken",
+  // Preview
+  "exportDuo.previewEyebrow": "Voorbeeld",
+  // What the adopter gets
+  "exportDuo.previewTitle": "Wat de nieuwe eigenaar krijgt",
+  // Confirm the handoff. {{name}} moves to your Past birds.
+  "exportDuo.stepConfirm": "Bevestig de overdracht. {{name}} gaat naar je vorige vogels.",
+  // Save the record as a PDF and give it to the adopter.
+  "exportDuo.stepSave": "Sla het dossier op als pdf en geef het aan de nieuwe eigenaar.",
+  // Share the record with the adopter.
+  "exportDuo.stepShare": "Deel het dossier met de nieuwe eigenaar.",
   // Add
   "exportRecord.add": "Toevoegen",
   // Age
@@ -3957,6 +3971,10 @@
   "handoff.wrongAccount": "Deze overdracht is gestuurd naar <b>{{email}}</b>, maar je bent ingelogd met een ander account.",
   // Your bird
   "handoff.yourBird": "Je vogel",
+  // Handoff preview
+  "handoffDuo.eyebrow": "Voorbeeld van de overdracht",
+  // {{name}} goes to {{to}}
+  "handoffDuo.goingTo": "{{name}} gaat naar {{to}}",
   // Back
   "headers.back": "Terug",
   // Close
@@ -3969,6 +3987,30 @@
   "headers.leaveBody": "Wat je tot nu toe hebt ingevuld, wordt niet bewaard.",
   // Leave without saving?
   "headers.leaveTitle": "Verlaten zonder opslaan?",
+  // Checked · all normal
+  "healthDuo.checkedAllNormal": "Gecheckt · alles normaal",
+  // Checked · resolved
+  "healthDuo.checkedResolved": "Gecheckt · opgelost",
+  // No birds yet
+  "healthDuo.emptyTitle": "Nog geen vogels",
+  // Full health check
+  "healthDuo.fullCheck": "Volledige gezondheidscheck",
+  // All of {{name}}'s history
+  "healthDuo.historyFor": "Alle geschiedenis van {{name}}",
+  // Last 30 days
+  "healthDuo.last30": "Afgelopen 30 dagen",
+  // Latest weight {{grams}}
+  "healthDuo.latestWeight": "Laatste gewicht {{grams}}",
+  // No checks yet.
+  "healthDuo.noChecks": "Nog geen checks.",
+  // No weight yet
+  "healthDuo.noWeight": "Nog geen gewicht",
+  // Health check
+  "healthDuo.oneCheck": "Gezondheidscheck",
+  // Recent checks
+  "healthDuo.recentChecks": "Recente checks",
+  // Something's off
+  "healthDuo.somethingOff": "Er klopt iets niet",
   // All birds
   "healthHistory.allBirds": "Alle vogels",
   // Bird
@@ -4547,6 +4589,12 @@
   "journalAttachment.tooLarge": "Dat bestand is te groot — bijlagen mogen maximaal {{mb}} MB zijn.",
   // That file type isn't supported yet — attach a PDF.
   "journalAttachment.unsupportedType": "Dat bestandstype wordt nog niet ondersteund — voeg een pdf toe.",
+  // Add
+  "journalDuo.add": "Toevoegen",
+  // Tap Add to note a molt, a vet visit or an off day. It'll open here.
+  "journalDuo.emptyBody": "Tik op Toevoegen om een rui, een bezoek aan de dierenarts of een mindere dag te noteren. Het opent hier.",
+  // Entries will show here once they're added.
+  "journalDuo.emptyBodyViewer": "Notities verschijnen hier zodra ze zijn toegevoegd.",
   // Close
   "journalEntryView.close": "Sluiten",
   // Edit
@@ -4703,6 +4751,18 @@
   "memberOnboarding.yourHouseholdsOwnerLower": "de eigenaar van je huishouden",
   // Couldn't render the card.
   "momentCardImage.renderFailed": "De kaart kon niet worden gemaakt.",
+  // Tap Add to save a first: a first flight, a new word, a favorite day. It'll open here.
+  "momentsDuo.emptyBody": "Tik op Toevoegen om een eerste keer te bewaren: een eerste vlucht, een nieuw woord, een favoriete dag. Het opent hier.",
+  // Moments will show here once they're added.
+  "momentsDuo.emptyBodyMember": "Momenten verschijnen hier zodra ze zijn toegevoegd.",
+  // No moments yet
+  "momentsDuo.emptyTitle": "Nog geen momenten",
+  // Show moments
+  "momentsDuo.filterLabel": "Momenten tonen",
+  // Your own
+  "momentsDuo.filterOwn": "Je eigen",
+  // Every year
+  "momentsDuo.filterYearly": "Elk jaar",
   // {{head}}, and {{last}}
   "nameList.many": "{{head}} en {{last}}",
   // {{a}} and {{b}}
@@ -4765,6 +4825,18 @@
   "newBird.pleaseTryAgain": "probeer het opnieuw.",
   // Remove
   "newBird.remove": "Verwijderen",
+  // Age
+  "newBirdDuo.age": "Leeftijd",
+  // Choose a species
+  "newBirdDuo.chooseSpecies": "Kies een soort",
+  // Foster
+  "newBirdDuo.foster": "Opvang",
+  // Next: the care plan.
+  "newBirdDuo.next": "Hierna: het verzorgingsplan.",
+  // Preview
+  "newBirdDuo.previewEyebrow": "Voorbeeld",
+  // Your bird
+  "newBirdDuo.previewNoName": "Je vogel",
   // Android
   "notificationsBlocked.android": "Android",
   // Press and hold the app icon, then tap App info (ⓘ).
@@ -5121,6 +5193,8 @@
   "pastBirds.withYouFromTo": "Bij jou van {{from}} tot {{to}}",
   // With you until {{date}}
   "pastBirds.withYouUntil": "Bij jou tot {{date}}",
+  // No past birds yet
+  "pastBirdsDuo.emptyTitle": "Nog geen vorige vogels",
   // That doesn't look like a valid phone number.
   "phoneCheck.invalid": "Dat lijkt geen geldig telefoonnummer.",
   // That looks too long for a phone number.
@@ -5133,6 +5207,40 @@
   "photoCropper.hint": "Sleep binnen het kader om aan te passen wat er te zien is.",
   // We couldn't upload that photo. Check your connection and try again.
   "photoUpload.failed": "We konden die foto niet uploaden. Controleer je verbinding en probeer het opnieuw.",
+  // Everything's in. Anyone caring for {{name}} has what they need.
+  "planDuo.allDone": "Alles staat erin. Iedereen die voor {{name}} zorgt, heeft wat nodig is.",
+  // {{count}} clip
+  "planDuo.clipCount_one": "{{count}} clip",
+  // {{count}} clips
+  "planDuo.clipCount_other": "{{count}} clips",
+  // Age
+  "planDuo.detailsAge": "Leeftijd",
+  // Name
+  "planDuo.detailsName": "Naam",
+  // Species
+  "planDuo.detailsSpecies": "Soort",
+  // Edit details
+  "planDuo.editDetails": "Gegevens bewerken",
+  // Edit this section
+  "planDuo.editSection": "Dit onderdeel bewerken",
+  // Finish this section
+  "planDuo.finishSection": "Dit onderdeel afmaken",
+  // {{words}} more and anyone caring for {{name}} has everything.
+  "planDuo.moreLeft": "Nog {{words}} en iedereen die voor {{name}} zorgt, heeft alles.",
+  // Next: {{section}}
+  "planDuo.nextSection": "Volgende: {{section}}",
+  // Nothing added here yet.
+  "planDuo.nothingYet": "Hier is nog niets toegevoegd.",
+  // 1 clip
+  "planDuo.oneClip": "1 clip",
+  // One more and anyone caring for {{name}} has everything.
+  "planDuo.oneMore": "Nog één en iedereen die voor {{name}} zorgt, heeft alles.",
+  // {{page}} of {{total}}
+  "planDuo.pageOf": "{{page}} van {{total}}",
+  // Normal weight {{weight}}
+  "planDuo.previewWeight": "Normaal gewicht {{weight}}",
+  // {{done}} of {{total}} sections done
+  "planDuo.ringLabel": "{{done}} van {{total}} onderdelen klaar",
   // Concerning
   "planEditor.answerConcerning": "Zorgelijk",
   // Normal
@@ -5783,6 +5891,12 @@
   "shareNewBird.shareFailed": "Kon {{bird}} niet delen met {{names}}. Je kunt ze toevoegen via Huishouden.",
   // Who else helps with {{bird}}?
   "shareNewBird.titleNamed": "Wie helpt er nog met {{bird}}?",
+  // Only you for now.
+  "shareNewBirdDuo.justYou": "Voorlopig alleen jij.",
+  // Who will see {{bird}}
+  "shareNewBirdDuo.whoSees": "Wie {{bird}} kan zien",
+  // You
+  "shareNewBirdDuo.you": "Jij",
   // That file couldn't be opened.
   "signedFile.openFailed": "Dat bestand kon niet worden geopend.",
   // Active
@@ -6239,6 +6353,96 @@
   "sits.sitCount_other": "{{count}} oppasperiodes",
   // Your sitter
   "sits.yourSitter": "Je oppas",
+  // {{name}} already has {{range}}
+  "sitsDuo.alreadyHas": "{{name}} heeft al {{range}}",
+  // {{name}}'s care plan
+  "sitsDuo.birdCarePlan": "Verzorgingsplan van {{name}}",
+  // Tap the first day, then the last.
+  "sitsDuo.calendarLine": "Tik op de eerste dag, daarna op de laatste.",
+  // Checking…
+  "sitsDuo.checking": "Controleren…",
+  // Daily health check
+  "sitsDuo.dailyCheck": "Dagelijkse gezondheidscheck",
+  // A quick check each day. You see the result, and anything that looks off is flagged.
+  "sitsDuo.dailyCheckLine": "Elke dag een korte check. Jij ziet het resultaat en alles wat niet lijkt te kloppen wordt gemarkeerd.",
+  // Day {{day}} of {{total}}
+  "sitsDuo.dayOf": "Dag {{day}} van {{total}}",
+  // Done
+  "sitsDuo.done": "Klaar",
+  // Fix
+  "sitsDuo.fix": "Aanvullen",
+  // During this sit
+  "sitsDuo.inNumbers": "Tijdens deze oppasperiode",
+  // Last update {{when}}
+  "sitsDuo.lastUpdate": "Laatste update {{when}}",
+  // Live · day {{day}} of {{total}}
+  "sitsDuo.liveDayOf": "Nu bezig · dag {{day}} van {{total}}",
+  // Missing: {{list}}
+  "sitsDuo.missing": "Ontbreekt: {{list}}",
+  // Missing for {{names}}
+  "sitsDuo.missingFor": "Ontbreekt voor {{names}}",
+  // New sit
+  "sitsDuo.newSit": "Nieuwe oppasperiode",
+  // Next month
+  "sitsDuo.nextMonth": "Volgende maand",
+  // No photos yet today.
+  "sitsDuo.noPhotosToday": "Vandaag nog geen foto's.",
+  // No daily tasks yet. Add them in the care plan.
+  "sitsDuo.noRoutineYet": "Nog geen dagelijkse taken. Voeg ze toe in het verzorgingsplan.",
+  // Not added yet
+  "sitsDuo.notAddedYet": "Nog niet toegevoegd",
+  // Not done yet
+  "sitsDuo.notYet": "Nog niet gedaan",
+  // Now
+  "sitsDuo.now": "Nu",
+  // Open {{name}}'s care plan
+  "sitsDuo.openCarePlan": "Verzorgingsplan van {{name}} openen",
+  // optional
+  "sitsDuo.optional": "optioneel",
+  // Past
+  "sitsDuo.past": "Afgelopen",
+  // Past sit
+  "sitsDuo.pastSit": "Afgelopen oppasperiode",
+  // Pick a bird on the left first.
+  "sitsDuo.pickBirdFirst": "Kies eerst links een vogel.",
+  // Pick your dates
+  "sitsDuo.pickDates": "Kies je data",
+  // Now pick the last day
+  "sitsDuo.pickLastDay": "Kies nu de laatste dag",
+  // A sitter sees this on their phone, from a private link. No account needed.
+  "sitsDuo.previewLine": "Een oppas ziet dit op de eigen telefoon, via een privélink. Geen account nodig.",
+  // {{name}}'s day, for a sitter
+  "sitsDuo.previewTitle": "De dag van {{name}}, voor een oppas",
+  // Previous month
+  "sitsDuo.prevMonth": "Vorige maand",
+  // Ready
+  "sitsDuo.ready": "Klaar",
+  // Ready for {{name}}?
+  "sitsDuo.readyFor": "Klaar voor {{name}}?",
+  // Ready for your sitter?
+  "sitsDuo.readyForSitter": "Klaar voor je oppas?",
+  // Sat {{range}}
+  "sitsDuo.satBefore": "Paste op van {{range}}",
+  // What a sitter gets
+  "sitsDuo.sitterGets": "Wat een oppas krijgt",
+  // Someone new
+  "sitsDuo.someoneNew": "Iemand nieuw",
+  // Coming up · starts in {{count}} day
+  "sitsDuo.startsInDays_one": "Binnenkort · begint over {{count}} dag",
+  // Coming up · starts in {{count}} days
+  "sitsDuo.startsInDays_other": "Binnenkort · begint over {{count}} dagen",
+  // Coming up · starts tomorrow
+  "sitsDuo.startsTomorrow": "Binnenkort · begint morgen",
+  // Sits
+  "sitsDuo.title": "Oppasperiodes",
+  // Today's checklist
+  "sitsDuo.todaysChecklist": "Checklist van vandaag",
+  // Today's photos
+  "sitsDuo.todaysPhotos": "Foto's van vandaag",
+  // Today's routine
+  "sitsDuo.todaysRoutine": "Routine van vandaag",
+  // View {{name}}'s care plan
+  "sitsDuo.viewNamedCarePlan": "Verzorgingsplan van {{name}} bekijken",
   // Carrier, first-aid kit, and house notes
   "sitter.around.cardLine": "Reismand, EHBO-doos en huisnotities",
   // Carrier
@@ -6295,6 +6499,62 @@
   "sitter.concern.pauseError": "Kon de herinneringen niet pauzeren. Probeer het opnieuw.",
   // Something's wrong with {{name}}
   "sitter.concern.title": "Er is iets mis met {{name}}",
+  // Take a breath. If it's urgent, call the vet first.
+  "sitter.duo.concern.line": "Haal even adem. Is het dringend, bel dan eerst de dierenarts.",
+  // Who to call
+  "sitter.duo.emergency.calls": "Wie je belt",
+  // Where things are
+  "sitter.duo.emergency.where": "Waar alles ligt",
+  // Results for “{{q}}”
+  "sitter.duo.guide.results": "Resultaten voor “{{q}}”",
+  // Sitter menu
+  "sitter.duo.rail.aria": "Oppasmenu",
+  // Look at {{name}} as you answer. If anything worries you, call the vet: you'll never be in trouble for calling too soon.
+  "sitter.duo.scan.line": "Kijk naar {{name}} terwijl je antwoordt. Maak je je ergens zorgen over, bel dan de dierenarts: je komt nooit in de problemen omdat je te vroeg belt.",
+  // Done
+  "sitter.duo.today.checkDoneShort": "Klaar",
+  // A few minutes: look at {{name}} and answer a short list of questions. {{owner}} sees it right away.
+  "sitter.duo.today.checkLine": "Een paar minuten: kijk naar {{name}} en beantwoord een korte lijst vragen. {{owner}} ziet het meteen.",
+  // {{n}} clips
+  "sitter.duo.today.clipCount": "{{n}} clips",
+  // Daily health check
+  "sitter.duo.today.dailyCheck": "Dagelijkse gezondheidscheck",
+  // What to do
+  "sitter.duo.today.detailAria": "Wat je doet",
+  // Done
+  "sitter.duo.today.doneTag": "Klaar",
+  // How {{owner}} does it
+  "sitter.duo.today.howOwnerDoesIt": "Zo doet {{owner}} het",
+  // Today's checklist
+  "sitter.duo.today.listAria": "Checklist van vandaag",
+  // {{name}}'s tasks didn't load. Tap to try again.
+  "sitter.duo.today.loadFailed": "De taken van {{name}} zijn niet geladen. Tik om het opnieuw te proberen.",
+  // Mark done
+  "sitter.duo.today.markDone": "Markeer als klaar",
+  // Mark as not done
+  "sitter.duo.today.markNotDone": "Markeer als niet klaar",
+  // Never feed: {{list}}
+  "sitter.duo.today.neverFeed": "Nooit geven: {{list}}",
+  // Next: {{title}}
+  "sitter.duo.today.nextTask": "Volgende: {{title}}",
+  // {{owner}} didn't add any steps for this one.
+  "sitter.duo.today.noSteps": "{{owner}} heeft hier geen stappen voor toegevoegd.",
+  // Now
+  "sitter.duo.today.now": "Nu",
+  // {{done}} of {{total}} done
+  "sitter.duo.today.progress": "{{done}} van {{total}} klaar",
+  // See {{name}}'s check
+  "sitter.duo.today.seeCheck": "Bekijk de check van {{name}}",
+  // Start {{name}}'s check
+  "sitter.duo.today.startCheck": "Start de check van {{name}}",
+  // Mark {{title}} done
+  "sitter.duo.today.tick": "Markeer {{title}} als klaar",
+  // Tip from the care plan
+  "sitter.duo.today.tip": "Tip uit het verzorgingsplan",
+  // Today with {{names}}
+  "sitter.duo.today.title": "Vandaag met {{names}}",
+  // Mark {{title}} as not done
+  "sitter.duo.today.untick": "Markeer {{title}} als niet klaar",
   // You'll never be in trouble for calling too soon.
   "sitter.emergency.callSoonNever": "Je krijgt nooit problemen omdat je te vroeg belt.",
   // Carrier
@@ -6729,6 +6989,8 @@
   "sitterDashboard.checkToDo": "Dagelijkse check te doen",
   // {{done}} of {{total}} tasks
   "sitterDashboard.tasksDone": "{{done}} van {{total}} taken",
+  // Nothing added here yet.
+  "sitterDuo.nothingYet": "Hier is nog niets toegevoegd.",
   // Close
   "sitterOnboarding.close": "Sluiten",
   // You're all set to care for {{names}}. Want to see this again? Tap the question mark in the upper right anytime.
@@ -7009,6 +7271,28 @@
   "updates.yourBird": "je vogel",
   // Your sitter
   "updates.yourSitter": "Je oppas",
+  // Flagged checks, finished sits and weigh-ins due will show up here.
+  "updatesDuo.emptyBody": "Gemarkeerde checks, afgeronde oppasperiodes en weegmomenten verschijnen hier.",
+  // Review the care plan
+  "updatesDuo.openCareplan": "Verzorgingsplan bekijken",
+  // See the day's checks
+  "updatesDuo.openFinished": "Bekijk de checks van die dag",
+  // See the check
+  "updatesDuo.openFlag": "Bekijk de check",
+  // See your household
+  "updatesDuo.openJoined": "Bekijk je huishouden",
+  // Weigh now
+  "updatesDuo.openWeigh": "Nu wegen",
+  // Care plan
+  "updatesDuo.tagCareplan": "Verzorgingsplan",
+  // Checks done
+  "updatesDuo.tagFinished": "Checks klaar",
+  // Flagged
+  "updatesDuo.tagFlag": "Gemarkeerd",
+  // Household
+  "updatesDuo.tagJoined": "Huishouden",
+  // Weigh-in due
+  "updatesDuo.tagWeigh": "Wegen nodig",
   // Checking your link…
   "verifyLink.checking": "Je link wordt gecontroleerd…",
   // It may have expired or already been used. Sign in, or ask for a new email.
@@ -7021,6 +7305,10 @@
   "verifyLink.title": "Een momentje",
   // Go to sign in
   "verifyLink.toSignIn": "Naar inloggen",
+  // None
+  "vetDuo.noneFlagged": "Geen",
+  // Send to vet
+  "vetDuo.sendToVet": "Naar de dierenarts sturen",
   // Add them
   "vetSummary.addThem": "Toevoegen",
   // after meal
@@ -7312,5 +7600,7 @@
   // Steady
   "weightPill.steady": "Stabiel",
   // Up {{delta}} g
-  "weightPill.up": "{{delta}} g erbij"
+  "weightPill.up": "{{delta}} g erbij",
+  // Not enough weights for a trend yet
+  "weightTrend.notEnough": "Nog niet genoeg gewichten voor een trend"
 }

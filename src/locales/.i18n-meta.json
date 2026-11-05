@@ -4398,6 +4398,12 @@
     "duoFrontDoor.tagline": {
       "stamp": "89db7adbd8d72f7c"
     },
+    "duoReader.next": {
+      "stamp": "37b4894f92ac0a3e"
+    },
+    "duoReader.previous": {
+      "stamp": "beffa317f08468f8"
+    },
     "emergencyBar.emergency": {
       "stamp": "16fdfafb12402299"
     },
@@ -4649,6 +4655,21 @@
     },
     "explore.viewAll": {
       "stamp": "5fc8577d53e07b6e"
+    },
+    "exportDuo.previewEyebrow": {
+      "stamp": "5b4680732706d9f7"
+    },
+    "exportDuo.previewTitle": {
+      "stamp": "d5783255b1cc3244"
+    },
+    "exportDuo.stepConfirm": {
+      "stamp": "a75ca4dc67ac1dc0"
+    },
+    "exportDuo.stepSave": {
+      "stamp": "27408f34f48de03a"
+    },
+    "exportDuo.stepShare": {
+      "stamp": "e3ff245add2cb3c7"
     },
     "exportRecord.add": {
       "stamp": "7243fcbe9aec5d44"
@@ -5859,6 +5880,12 @@
     "handoff.yourBird": {
       "stamp": "19f01978083a5dce"
     },
+    "handoffDuo.eyebrow": {
+      "stamp": "5ec9c4cfde0c44bc"
+    },
+    "handoffDuo.goingTo": {
+      "stamp": "ae3549b2a08d3707"
+    },
     "headers.back": {
       "stamp": "5001815e48b3af8b"
     },
@@ -5876,6 +5903,42 @@
     },
     "headers.leaveTitle": {
       "stamp": "a1c6a5ee0bb8bd66"
+    },
+    "healthDuo.checkedAllNormal": {
+      "stamp": "e8d3ae46e045151c"
+    },
+    "healthDuo.checkedResolved": {
+      "stamp": "bcb125fea3fe99df"
+    },
+    "healthDuo.emptyTitle": {
+      "stamp": "df496490083bba9f"
+    },
+    "healthDuo.fullCheck": {
+      "stamp": "6849412e9ebe15d2"
+    },
+    "healthDuo.historyFor": {
+      "stamp": "a7bee13d150d0108"
+    },
+    "healthDuo.last30": {
+      "stamp": "94fb06af6043ac74"
+    },
+    "healthDuo.latestWeight": {
+      "stamp": "f77a1220075e7253"
+    },
+    "healthDuo.noChecks": {
+      "stamp": "b09b0956240351dd"
+    },
+    "healthDuo.noWeight": {
+      "stamp": "28d9f882abd3f013"
+    },
+    "healthDuo.oneCheck": {
+      "stamp": "8e03faf2e5f1ee54"
+    },
+    "healthDuo.recentChecks": {
+      "stamp": "e127830b96ceaf20"
+    },
+    "healthDuo.somethingOff": {
+      "stamp": "3f15a55649d26b80"
     },
     "healthHistory.allBirds": {
       "stamp": "bc61e5c90fd1b088"
@@ -6744,6 +6807,15 @@
     "journalAttachment.unsupportedType": {
       "stamp": "fb77006eaa48052c"
     },
+    "journalDuo.add": {
+      "stamp": "7243fcbe9aec5d44"
+    },
+    "journalDuo.emptyBody": {
+      "stamp": "6b44566a5b05e87c"
+    },
+    "journalDuo.emptyBodyViewer": {
+      "stamp": "06a28a8450dfbca5"
+    },
     "journalEntryView.close": {
       "stamp": "d981ee660d866d8c"
     },
@@ -6978,6 +7050,24 @@
     "momentCardImage.renderFailed": {
       "stamp": "093ec25ba271ba72"
     },
+    "momentsDuo.emptyBody": {
+      "stamp": "0dff4bf3f37efdd2"
+    },
+    "momentsDuo.emptyBodyMember": {
+      "stamp": "365a762a78607383"
+    },
+    "momentsDuo.emptyTitle": {
+      "stamp": "ed99bb0a29479f15"
+    },
+    "momentsDuo.filterLabel": {
+      "stamp": "535437cefea538ae"
+    },
+    "momentsDuo.filterOwn": {
+      "stamp": "511a7eb06dd6830a"
+    },
+    "momentsDuo.filterYearly": {
+      "stamp": "df872ce356a82f8e"
+    },
     "nameList.many": {
       "stamp": "7fd25b43e95a52e7"
     },
@@ -7070,6 +7160,24 @@
     },
     "newBird.remove": {
       "stamp": "7a3c74b21c1d6ef1"
+    },
+    "newBirdDuo.age": {
+      "stamp": "0d774c505c12bcc1"
+    },
+    "newBirdDuo.chooseSpecies": {
+      "stamp": "4581bb41d7e25962"
+    },
+    "newBirdDuo.foster": {
+      "stamp": "883bc5824866f631"
+    },
+    "newBirdDuo.next": {
+      "stamp": "4a26b528fd724cef"
+    },
+    "newBirdDuo.previewEyebrow": {
+      "stamp": "5b4680732706d9f7"
+    },
+    "newBirdDuo.previewNoName": {
+      "stamp": "19f01978083a5dce"
     },
     "notificationsBlocked.android": {
       "stamp": "ce92e63da92ab83a"
@@ -7605,6 +7713,9 @@
     "pastBirds.withYouUntil": {
       "stamp": "24458481229efa21"
     },
+    "pastBirdsDuo.emptyTitle": {
+      "stamp": "ad6dba2d8aa3b504"
+    },
     "phoneCheck.invalid": {
       "stamp": "073a43393488468b"
     },
@@ -7622,6 +7733,57 @@
     },
     "photoUpload.failed": {
       "stamp": "b34f5523e8157a16"
+    },
+    "planDuo.allDone": {
+      "stamp": "151661ae73c31757"
+    },
+    "planDuo.clipCount_one": {
+      "stamp": "05ea7be68489c63d"
+    },
+    "planDuo.clipCount_other": {
+      "stamp": "a8082f7149b013d6"
+    },
+    "planDuo.detailsAge": {
+      "stamp": "0d774c505c12bcc1"
+    },
+    "planDuo.detailsName": {
+      "stamp": "007f731cba24111c"
+    },
+    "planDuo.detailsSpecies": {
+      "stamp": "558943ff684792a6"
+    },
+    "planDuo.editDetails": {
+      "stamp": "019658a9eabedfcf"
+    },
+    "planDuo.editSection": {
+      "stamp": "3a1938384e253656"
+    },
+    "planDuo.finishSection": {
+      "stamp": "b2d322eccdab59f2"
+    },
+    "planDuo.moreLeft": {
+      "stamp": "a7f3088aba5b9bd0"
+    },
+    "planDuo.nextSection": {
+      "stamp": "8c40efda90ac3757"
+    },
+    "planDuo.nothingYet": {
+      "stamp": "8a5578e5730cff60"
+    },
+    "planDuo.oneClip": {
+      "stamp": "ee4ecab0fb0703bf"
+    },
+    "planDuo.oneMore": {
+      "stamp": "41b637325acd2bbe"
+    },
+    "planDuo.pageOf": {
+      "stamp": "1078a092d4bafb50"
+    },
+    "planDuo.previewWeight": {
+      "stamp": "cb6166b404fd41a9"
+    },
+    "planDuo.ringLabel": {
+      "stamp": "fdf1682807745a68"
     },
     "planEditor.answerConcerning": {
       "stamp": "8676a7a66f6b1267"
@@ -8598,6 +8760,15 @@
     "shareNewBird.titleNamed": {
       "stamp": "b44954fa1c169128"
     },
+    "shareNewBirdDuo.justYou": {
+      "stamp": "dc2a6e63708ae273"
+    },
+    "shareNewBirdDuo.whoSees": {
+      "stamp": "2c95b30e1aca4f30"
+    },
+    "shareNewBirdDuo.you": {
+      "stamp": "082a30d4026bdff4"
+    },
     "signedFile.openFailed": {
       "stamp": "a667e55c910dceb5"
     },
@@ -9270,6 +9441,141 @@
     "sits.yourSitter": {
       "stamp": "1f87da8fe21f5a1a"
     },
+    "sitsDuo.alreadyHas": {
+      "stamp": "4e1279c615db6f59"
+    },
+    "sitsDuo.birdCarePlan": {
+      "stamp": "43afd22261e8c11c"
+    },
+    "sitsDuo.calendarLine": {
+      "stamp": "553bfd8271fc4ecd"
+    },
+    "sitsDuo.checking": {
+      "stamp": "e9721fdda7f70658"
+    },
+    "sitsDuo.dailyCheck": {
+      "stamp": "01e38b3413c0e455"
+    },
+    "sitsDuo.dailyCheckLine": {
+      "stamp": "41d452577f0d7e51"
+    },
+    "sitsDuo.dayOf": {
+      "stamp": "6a17c537b18eec8b"
+    },
+    "sitsDuo.done": {
+      "stamp": "3e00dbef8dddb12e"
+    },
+    "sitsDuo.fix": {
+      "stamp": "be9c9548d327b354"
+    },
+    "sitsDuo.inNumbers": {
+      "stamp": "a30a4a5fd3d4dd52"
+    },
+    "sitsDuo.lastUpdate": {
+      "stamp": "c8e37044cef408bf"
+    },
+    "sitsDuo.liveDayOf": {
+      "stamp": "acd530b5b9130bf0"
+    },
+    "sitsDuo.missing": {
+      "stamp": "ed0e8a1f12d6741e"
+    },
+    "sitsDuo.missingFor": {
+      "stamp": "d5923629f794baec"
+    },
+    "sitsDuo.newSit": {
+      "stamp": "7ab97a9d8ca43537"
+    },
+    "sitsDuo.nextMonth": {
+      "stamp": "4f58eca72267de98"
+    },
+    "sitsDuo.noPhotosToday": {
+      "stamp": "58969acaf65f2177"
+    },
+    "sitsDuo.noRoutineYet": {
+      "stamp": "d0c0366b13bdfdbf"
+    },
+    "sitsDuo.notAddedYet": {
+      "stamp": "3aec63a6c1bee5a6"
+    },
+    "sitsDuo.notYet": {
+      "stamp": "70f6ad313fd10308"
+    },
+    "sitsDuo.now": {
+      "stamp": "f8a421599f9a75fa"
+    },
+    "sitsDuo.openCarePlan": {
+      "stamp": "e6932939ec4d55d3"
+    },
+    "sitsDuo.optional": {
+      "stamp": "5de5ced83f1bc009"
+    },
+    "sitsDuo.past": {
+      "stamp": "6c641189f8d16e32"
+    },
+    "sitsDuo.pastSit": {
+      "stamp": "eec114f925ec1c23"
+    },
+    "sitsDuo.pickBirdFirst": {
+      "stamp": "1bed5076e96de72f"
+    },
+    "sitsDuo.pickDates": {
+      "stamp": "a06121589f1bf6c7"
+    },
+    "sitsDuo.pickLastDay": {
+      "stamp": "629b3aac9b03580d"
+    },
+    "sitsDuo.previewLine": {
+      "stamp": "fed0876e87c04d29"
+    },
+    "sitsDuo.previewTitle": {
+      "stamp": "50f5e5d70e0989a0"
+    },
+    "sitsDuo.prevMonth": {
+      "stamp": "2af4eca0d093698d"
+    },
+    "sitsDuo.ready": {
+      "stamp": "febf31ddd8bcb7b1"
+    },
+    "sitsDuo.readyFor": {
+      "stamp": "cf06dfbd42e92ebe"
+    },
+    "sitsDuo.readyForSitter": {
+      "stamp": "a5797ad9715f34af"
+    },
+    "sitsDuo.satBefore": {
+      "stamp": "65a74e6319fdc625"
+    },
+    "sitsDuo.sitterGets": {
+      "stamp": "200d74dd3d7dd421"
+    },
+    "sitsDuo.someoneNew": {
+      "stamp": "11732e2ff954d57d"
+    },
+    "sitsDuo.startsInDays_one": {
+      "stamp": "711cc5ad53fdaeb5"
+    },
+    "sitsDuo.startsInDays_other": {
+      "stamp": "915121b86d1dc010"
+    },
+    "sitsDuo.startsTomorrow": {
+      "stamp": "0c692ccf08733401"
+    },
+    "sitsDuo.title": {
+      "stamp": "26a4b593fb834d48"
+    },
+    "sitsDuo.todaysChecklist": {
+      "stamp": "c6724be4fa53448e"
+    },
+    "sitsDuo.todaysPhotos": {
+      "stamp": "ab409e80c031baff"
+    },
+    "sitsDuo.todaysRoutine": {
+      "stamp": "daff4329f02e1019"
+    },
+    "sitsDuo.viewNamedCarePlan": {
+      "stamp": "ea0968fcc009c1b6"
+    },
     "sitter.around.cardLine": {
       "stamp": "11a285eec60a1270"
     },
@@ -9353,6 +9659,90 @@
     },
     "sitter.concern.title": {
       "stamp": "7b79ab629f6e00af"
+    },
+    "sitter.duo.concern.line": {
+      "stamp": "0259f05951a67360"
+    },
+    "sitter.duo.emergency.calls": {
+      "stamp": "6c57ba514dfa348f"
+    },
+    "sitter.duo.emergency.where": {
+      "stamp": "99af1f8837c674da"
+    },
+    "sitter.duo.guide.results": {
+      "stamp": "98bf17c9aabf30b7"
+    },
+    "sitter.duo.rail.aria": {
+      "stamp": "f114de55731f6a19"
+    },
+    "sitter.duo.scan.line": {
+      "stamp": "ca15a8508005890e"
+    },
+    "sitter.duo.today.checkDoneShort": {
+      "stamp": "3e00dbef8dddb12e"
+    },
+    "sitter.duo.today.checkLine": {
+      "stamp": "a570914f10250c8d"
+    },
+    "sitter.duo.today.clipCount": {
+      "stamp": "79901f5f77814ac4"
+    },
+    "sitter.duo.today.dailyCheck": {
+      "stamp": "01e38b3413c0e455"
+    },
+    "sitter.duo.today.detailAria": {
+      "stamp": "6abd38c990f23230"
+    },
+    "sitter.duo.today.doneTag": {
+      "stamp": "3e00dbef8dddb12e"
+    },
+    "sitter.duo.today.howOwnerDoesIt": {
+      "stamp": "29da26c724c22c7a"
+    },
+    "sitter.duo.today.listAria": {
+      "stamp": "c6724be4fa53448e"
+    },
+    "sitter.duo.today.loadFailed": {
+      "stamp": "c523480c38d6f958"
+    },
+    "sitter.duo.today.markDone": {
+      "stamp": "6a59c46e584be39c"
+    },
+    "sitter.duo.today.markNotDone": {
+      "stamp": "bde060c4455428d0"
+    },
+    "sitter.duo.today.neverFeed": {
+      "stamp": "29901da3fea3bc18"
+    },
+    "sitter.duo.today.nextTask": {
+      "stamp": "ef66e20d40b44ab8"
+    },
+    "sitter.duo.today.noSteps": {
+      "stamp": "0e0fc9703060a546"
+    },
+    "sitter.duo.today.now": {
+      "stamp": "f8a421599f9a75fa"
+    },
+    "sitter.duo.today.progress": {
+      "stamp": "59efbd7d6145d298"
+    },
+    "sitter.duo.today.seeCheck": {
+      "stamp": "788641ccf5a59531"
+    },
+    "sitter.duo.today.startCheck": {
+      "stamp": "f011fd08a3895de0"
+    },
+    "sitter.duo.today.tick": {
+      "stamp": "e708ccacdf514862"
+    },
+    "sitter.duo.today.tip": {
+      "stamp": "8f8aaaa5c916317d"
+    },
+    "sitter.duo.today.title": {
+      "stamp": "b72ae252214f19e6"
+    },
+    "sitter.duo.today.untick": {
+      "stamp": "5ddaa1ab080ef181"
     },
     "sitter.emergency.callSoonNever": {
       "stamp": "d13e036b2edfe79b"
@@ -10005,6 +10395,9 @@
     "sitterDashboard.tasksDone": {
       "stamp": "ffd78e5cb2acc1f4"
     },
+    "sitterDuo.nothingYet": {
+      "stamp": "8a5578e5730cff60"
+    },
     "sitterOnboarding.close": {
       "stamp": "d981ee660d866d8c"
     },
@@ -10425,6 +10818,39 @@
     "updates.yourSitter": {
       "stamp": "1f87da8fe21f5a1a"
     },
+    "updatesDuo.emptyBody": {
+      "stamp": "99a5005f8f257a18"
+    },
+    "updatesDuo.openCareplan": {
+      "stamp": "9b8ec9a310b507e1"
+    },
+    "updatesDuo.openFinished": {
+      "stamp": "cc684406d3de3adb"
+    },
+    "updatesDuo.openFlag": {
+      "stamp": "1be56857839e3cec"
+    },
+    "updatesDuo.openJoined": {
+      "stamp": "4f4331411ab2e469"
+    },
+    "updatesDuo.openWeigh": {
+      "stamp": "1351e87109536f42"
+    },
+    "updatesDuo.tagCareplan": {
+      "stamp": "024068f55f21e2cd"
+    },
+    "updatesDuo.tagFinished": {
+      "stamp": "0e36354609b6f01c"
+    },
+    "updatesDuo.tagFlag": {
+      "stamp": "0bc4dd09a90f224e"
+    },
+    "updatesDuo.tagJoined": {
+      "stamp": "da35ceae68b17eed"
+    },
+    "updatesDuo.tagWeigh": {
+      "stamp": "45e5c4d54486c9e7"
+    },
     "verifyLink.checking": {
       "stamp": "c015955d0df27063"
     },
@@ -10442,6 +10868,12 @@
     },
     "verifyLink.toSignIn": {
       "stamp": "080fc6c138699cbd"
+    },
+    "vetDuo.noneFlagged": {
+      "stamp": "8a487ee35f7324bd"
+    },
+    "vetDuo.sendToVet": {
+      "stamp": "0ff6c1efd60112ce"
     },
     "vetSummary.addThem": {
       "stamp": "e9113bf03821bc94"
@@ -10880,6 +11312,9 @@
     },
     "weightPill.up": {
       "stamp": "e25b3a5351a00936"
+    },
+    "weightTrend.notEnough": {
+      "stamp": "90f20266b85001ee"
     }
   }
 }

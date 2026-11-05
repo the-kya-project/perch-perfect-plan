@@ -19,6 +19,7 @@ import { friendlyError } from "@/lib/errorMessage";
 import { pickVet } from "@/lib/emergency";
 import { isBirdPreview, ownerFirstName } from "@/components/sitter/sitterShared";
 import { localDateISO } from "@/lib/localDay";
+import { SitterAsideDuo } from "@/components/duo/sitter/SitterAsideDuo";
 
 /** When the sit ends: the link's expiry, the end of its last day in the
  *  owner's time zone (enforce_sit_token_rules). Null if unknown. */
@@ -127,8 +128,14 @@ function ScanPage() {
   const vet = pickVet(ctx.contacts as any);
   const preview = isOwnerPreview() || isBirdPreview(ctx);
 
+  // iPhone Duo: the check in the right half, which bird beside it (no-op
+  // wrappers on every other screen).
   return (
-    <>
+    <SitterAsideDuo
+      bird={ctx.bird}
+      title={t("sitter.today.birdsCheck", "{{name}}'s daily check", { name: ctx.bird.name })}
+      line={t("sitter.duo.scan.line", "Look at {{name}} as you answer. If anything worries you, call the vet: you'll never be in trouble for calling too soon.", { name: ctx.bird.name })}
+    >
       {/* The form stays mounted while past checks are open, so answers survive a peek. */}
       <div style={showHistory ? { display: "none" } : undefined}>
         <FullHealthCheck
@@ -159,7 +166,7 @@ function ScanPage() {
         />
       </div>
       {showHistory && <ScanHistory token={token} birdId={birdId} birdName={ctx.bird.name} onBack={() => setShowHistory(false)} />}
-    </>
+    </SitterAsideDuo>
   );
 }
 
