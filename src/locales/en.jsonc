@@ -3909,5 +3909,6 @@
   "weightPill.down": "Down {{delta}} g",
   "weightPill.first": "First weight",
   "weightPill.steady": "Steady",
-  "weightPill.up": "Up {{delta}} g"
+  "weightPill.up": "Up {{delta}} g",
+  "weightTrend.notEnough": "Not enough weights for a trend yet"
 }

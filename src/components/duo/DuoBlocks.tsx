@@ -114,7 +114,7 @@ export function Tile({ icon, title, status, tone = "neutral", selected = false, 
           </span>
         )}
         <span className="block w-full text-[17px] font-[700] leading-tight">{title}</span>
-        {preview && <span className="line-clamp-2 block w-full text-[14px] leading-snug" style={{ color: selected ? "rgba(255,255,255,0.78)" : DUO.quiet }}>{preview}</span>}
+        {preview && <span data-tile-preview="" className="line-clamp-2 w-full break-words text-[14px] leading-snug" style={{ color: selected ? "rgba(255,255,255,0.78)" : DUO.quiet }}>{preview}</span>}
         {status && <StatusPill tone={tone} inverted={selected}>{status}</StatusPill>}
       </button>
     </div>

@@ -21,8 +21,11 @@ const DAY = 86_400_000;
  *              journal, moments, household or past birds.
  *   nobirds  — an account with no birds yet (Home's empty state).
  *   new      — nobirds, and the one-time welcome not seen yet.
+ *   readiness — filled, plus Buzz with a care plan missing its food, and an
+ *              avian vet with no phone number: Set up a sit's "Ready for …?"
+ *              check then shows Fix rows.
  */
-export type DuoVariant = "base" | "filled" | "empty" | "nobirds" | "new";
+export type DuoVariant = "base" | "filled" | "empty" | "nobirds" | "new" | "readiness";
 export const MEMBER_ID = "00000000-0000-4000-8000-0000000000a2";
 export const SIT_ACTIVE_ID = "00000000-0000-4000-8000-0000000000f1";
 export const SIT_UPCOMING_ID = "00000000-0000-4000-8000-0000000000f2";
@@ -89,7 +92,8 @@ export function duoFixture(appOrigin: string, now = Date.now(), variant: DuoVari
     triage_status: "green", source: "owner", run_by: OWNER_ID, sit_id: null, kind: i === 1 ? "full" : "daily", item_notes: null,
   }));
 
-  const filled = variant === "filled";
+  const readiness = variant === "readiness";
+  const filled = variant === "filled" || readiness;
   const sit = (id: string, title: string, startDays: number, endDays: number, sitter: string, birdIds: string[]) => ({
     row: {
       id, owner_id: OWNER_ID, title, sitter_name: sitter, sitter_email: `${sitter.toLowerCase()}@example.com`,
@@ -116,10 +120,16 @@ export function duoFixture(appOrigin: string, now = Date.now(), variant: DuoVari
   // Echo's care plan: a copy of the sitter fixture's complete one (filled only).
   const sitterTables = (sitterFixture(appOrigin) as { tables: Record<string, Record<string, any>[]> }).tables;
   const ECHO_PLAN = "00000000-0000-4000-8000-0000000000c9";
-  const carePlans = filled ? [{ ...sitterTables.care_plans[0], id: ECHO_PLAN, bird_id: birds[0].id }] : [];
+  const carePlans: Record<string, any>[] = filled ? [{ ...sitterTables.care_plans[0], id: ECHO_PLAN, bird_id: birds[0].id }] : [];
   const routineTasks = filled
     ? sitterTables.routine_tasks.filter((t) => t.care_plan_id === sitterTables.care_plans[0].id).map((t, i) => ({ ...t, id: `00000000-0000-4000-8000-0000000c90${String(i).padStart(2, "0")}`, care_plan_id: ECHO_PLAN }))
     : [];
+  // readiness: Buzz has the same plan with the food section left empty.
+  const BUZZ_PLAN = "00000000-0000-4000-8000-0000000000ca";
+  if (readiness) {
+    carePlans.push({ ...sitterTables.care_plans[0], id: BUZZ_PLAN, bird_id: birds[1].id, diet_types: [], food_instructions: null, diet_details: null });
+    routineTasks.push(...routineTasks.map((t, i) => ({ ...t, id: `00000000-0000-4000-8000-0000000ca0${String(i).padStart(2, "0")}`, care_plan_id: BUZZ_PLAN })));
+  }
   const withLogs = variant === "base" || filled;
   const members = [
     ...keep.map((b) => ({ bird_id: b.id, user_id: OWNER_ID, role: "owner" })),
@@ -148,7 +158,10 @@ export function duoFixture(appOrigin: string, now = Date.now(), variant: DuoVari
       care_plans: carePlans,
       routine_tasks: routineTasks,
       emergency_contacts: [],
-      owner_emergency_defaults: [{ owner_id: OWNER_ID, vet_name: "Bird & Exotic Clinic", vet_phone: "+31 20 555 0101", emergency_vet_name: "Night Vet", emergency_vet_phone: "+31 20 555 0199" }],
+      owner_emergency_defaults: [readiness
+        // An avian vet with no phone number yet: the emergency row needs fixing.
+        ? { owner_id: OWNER_ID, owner_phone: "+31 6 5550 0123", avian_vet_name: "Bird & Exotic Clinic", avian_vet_phone: null, emergency_vet_name: "Night Vet", emergency_vet_phone: "+31 20 555 0199" }
+        : { owner_id: OWNER_ID, vet_name: "Bird & Exotic Clinic", vet_phone: "+31 20 555 0101", emergency_vet_name: "Night Vet", emergency_vet_phone: "+31 20 555 0199" }],
       gift_purchases: [],
       profiles: [{
         id: OWNER_ID, first_name: "Brittany", display_name: "Brittany", locale: "en",

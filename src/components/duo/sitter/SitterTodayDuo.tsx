@@ -29,9 +29,8 @@ import { taskDaypart, hourToDaypart, parseTaskMinutes, DAYPARTS, DAYPART_LABEL, 
 import { renderDerivedTask } from "@/lib/routineTaskRender";
 import type { DerivedTask } from "@/lib/derivedTasks";
 import { clipSlotLabel } from "@/lib/clipSlotLabels";
-import { BIRD_PHOTO_FOCUS } from "@/lib/birdPhotoFocus";
+import { SitterPhotoBox } from "./SitterPhotoBox";
 import { ClipPlayer } from "@/components/ClipPlayer";
-import { BirdPhotoCrop } from "@/components/BirdPhotoCrop";
 import { K, SERIF } from "@/components/kya";
 import { VetCallRow } from "@/components/sitter/CallRows";
 import {
@@ -206,7 +205,7 @@ export function SitterTodayDuo({ token }: { token: string }) {
     const va = parseTaskMinutes(a.time) ?? 1e9, vb = parseTaskMinutes(b.time) ?? 1e9;
     return va !== vb ? va - vb : (a.refs[0].task.sort_order ?? 0) - (b.refs[0].task.sort_order ?? 0);
   });
-  const clips = loadedBirds.flatMap((b) => ((ctxByBird.get(b.id).watchClips ?? []) as any[]).map((clip) => ({ clip, ctx: ctxByBird.get(b.id) })));
+  const clips = loadedBirds.flatMap((b) => ((ctxByBird.get(b.id).watchClips ?? []) as any[]).filter((c) => !!c?.url).map((clip) => ({ clip, ctx: ctxByBird.get(b.id) })));
   const tipsRow: Row | null = clips.length > 0 ? { kind: "tips", key: "tips", clips } : null;
   const rows: Row[] = [...checkRows, ...taskRows, ...(tipsRow ? [tipsRow] : [])];
 
@@ -325,7 +324,7 @@ export function SitterTodayDuo({ token }: { token: string }) {
             style={{ borderColor: "rgba(255,255,255,0.55)", color: "#fff" }}
           >
             <span className="flex min-w-0 items-center gap-3">
-              <BirdAvatar bird={b} size={32} />
+              <BirdAvatar bird={b} size={32} initialOnFail />
               <span className="truncate">{t("sitter.today.birdCarePlan", "{{name}}'s care plan", { name: b.name })}</span>
             </span>
             <ChevronRight className="size-5 shrink-0" aria-hidden="true" />
@@ -396,7 +395,7 @@ export function SitterTodayDuo({ token }: { token: string }) {
           </span>
           {open.birds.map((b) => (
             <span key={b.id} className="inline-flex items-center gap-1.5 rounded-full py-0.5 pl-0.5 pr-3 text-[14px] font-[700]" style={{ background: DUO.bg, color: DUO.forest }}>
-              <BirdAvatar bird={b} size={26} /> {b.name}
+              <BirdAvatar bird={b} size={26} initialOnFail /> {b.name}
             </span>
           ))}
           {open.done && <span className="rounded-full px-3 py-1 text-[14px] font-[700]" style={{ background: DUO.fineBg, color: DUO.forest }}>{t("sitter.duo.today.doneTag", "Done")}</span>}
@@ -406,7 +405,7 @@ export function SitterTodayDuo({ token }: { token: string }) {
         ) : (
           <p className="m-0 mt-5 text-[16px] leading-[1.5]" style={{ color: DUO.quiet }}>{t("sitter.duo.today.noSteps", "{{owner}} didn't add any steps for this one.", { owner })}</p>
         )}
-        {clip && (
+        {clip?.url && (
           <div className="mt-5 overflow-hidden rounded-[20px]" style={{ background: "#12291f" }}>
             <ClipPlayer
               src={clip.url}
@@ -442,14 +441,8 @@ export function SitterTodayDuo({ token }: { token: string }) {
         title={t("sitter.today.birdsCheck", "{{name}}'s daily check", { name: b.name })}
         action={<DuoMainButton onClick={go}>{open.done ? t("sitter.duo.today.seeCheck", "See {{name}}'s check", { name: b.name }) : t("sitter.duo.today.startCheck", "Start {{name}}'s check", { name: b.name })}</DuoMainButton>}
       >
-        <div className="relative aspect-[4/3] w-full overflow-hidden rounded-[22px]" style={{ background: K.forest }}>
-          {b.photo_url ? (
-            <BirdPhotoCrop url={b.photo_url} original={b.photo_url} position={b.photo_position || BIRD_PHOTO_FOCUS} alt="" eager />
-          ) : (
-            <span className="absolute inset-0 grid place-items-center text-[64px] font-[700] text-white/85" style={{ fontFamily: SERIF }} aria-hidden="true">{(b.name?.slice(0, 1) ?? "?").toUpperCase()}</span>
-          )}
-        </div>
-        <p className="m-0 mt-5 text-[18px] font-[700] leading-[1.4]" style={{ color: st.red ? K.red : st.watch > 0 ? K.amberText : DUO.forest }}>{st.line}</p>
+        <SitterPhotoBox bird={b} className="mb-5 aspect-[4/3] w-full rounded-[22px]" style={{ background: K.forest }} />
+        <p className="m-0 text-[18px] font-[700] leading-[1.4]" style={{ color: st.red ? K.red : st.watch > 0 ? K.amberText : DUO.forest }}>{st.line}</p>
         {!open.done && (
           <p className="m-0 mt-2 text-[16px] leading-[1.5]" style={{ color: K.ink }}>
             {t("sitter.duo.today.checkLine", "A few minutes: look at {{name}} and answer a short list of questions. {{owner}} sees it right away.", { name: b.name, owner })}

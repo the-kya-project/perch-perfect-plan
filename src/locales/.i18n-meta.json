@@ -11312,6 +11312,9 @@
     },
     "weightPill.up": {
       "stamp": "e25b3a5351a00936"
+    },
+    "weightTrend.notEnough": {
+      "stamp": "90f20266b85001ee"
     }
   }
 }

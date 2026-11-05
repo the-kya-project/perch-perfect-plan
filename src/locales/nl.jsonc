@@ -7600,5 +7600,7 @@
   // Steady
   "weightPill.steady": "Stabiel",
   // Up {{delta}} g
-  "weightPill.up": "{{delta}} g erbij"
+  "weightPill.up": "{{delta}} g erbij",
+  // Not enough weights for a trend yet
+  "weightTrend.notEnough": "Nog niet genoeg gewichten voor een trend"
 }

@@ -300,7 +300,8 @@ function NewBird() {
               <input type="file" accept="image/*,.heic,.heif" disabled={photoBusy} className="hidden" onChange={onPhoto} />
             </label>
           )}
-          <div className="flex flex-1 flex-wrap items-center gap-x-3 gap-y-1">
+          {/* On the Duo the empty tile is the only way in; the button shows once there's a photo to change. */}
+          {(!duo || photo) && <div className="flex flex-1 flex-wrap items-center gap-x-3 gap-y-1">
             <label className={`inline-flex min-h-[44px] items-center rounded-full border-2 border-[#1a3d2e] bg-white px-4 text-[15px] font-[700] text-[#1a3d2e] ${photoBusy ? "cursor-default opacity-60" : "cursor-pointer"}`}>
               {photoBusy ? t("birdSetup.processing", "Processing…") : photo ? t("birdSetup.changePhoto", "Change photo") : t("birdSetup.addPhoto", "Add photo")}
               <input type="file" accept="image/*,.heic,.heif" disabled={photoBusy} className="hidden" onChange={onPhoto} />
@@ -308,7 +309,7 @@ function NewBird() {
             {photo && (
               <button type="button" onClick={() => { setPhoto(null); setPhotoPos(BIRD_PHOTO_FOCUS); }} className="min-h-[44px] text-[15px] font-[700] text-[#a32d2d]">{t("newBird.remove", "Remove")}</button>
             )}
-          </div>
+          </div>}
         </div>
         <BirdField label={t("birdSetup.name", "Name")} required><input className="kya-input" value={name} onChange={(e) => setName(e.target.value)} /></BirdField>
         <SpeciesPicker required value={species} onChange={setSpecies} />

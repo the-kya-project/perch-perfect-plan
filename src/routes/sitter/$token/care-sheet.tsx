@@ -1,4 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { SitterPhotoBox } from "@/components/duo/sitter/SitterPhotoBox";
 import { useCallback, useEffect, useState } from "react";
 import { useTranslation, Trans } from "react-i18next";
 import { useSitterContext } from "./route";
@@ -11,7 +12,6 @@ import { firstName } from "@/lib/memberDisplay";
 import { track } from "@/lib/analytics";
 import { BIRD_PHOTO_FOCUS } from "@/lib/birdPhotoFocus";
 import { useDuoMode } from "@/lib/duo";
-import { BirdPhotoCrop } from "@/components/BirdPhotoCrop";
 import { DuoSectionReader, type ReaderSection } from "@/components/duo/DuoSectionReader";
 import { CARD_ORDER, CARD_SECTIONS, cardIcon, cardTitle, sectionPreview } from "@/components/duo/plan/CarePlanDuo";
 import { PaneBack } from "@/components/duo/plan/PaneBack";
@@ -116,11 +116,7 @@ function CareSheet() {
         top={
           <>
             <PaneBack onBack={goBack} />
-            {bird?.photo_url && (
-              <span className="relative mb-4 block size-20 shrink-0 overflow-hidden rounded-[22px]">
-                <BirdPhotoCrop url={bird.photo_url} position={bird.photo_position || BIRD_PHOTO_FOCUS} alt="" eager />
-              </span>
-            )}
+            <SitterPhotoBox bird={bird} className="mb-4 block size-20 shrink-0 rounded-[22px]" />
           </>
         }
         title={<span data-coach="cp-header">{t("sitter.caresheet.titlePlan", "{{name}}'s care plan", { name })}</span>}

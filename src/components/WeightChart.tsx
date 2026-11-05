@@ -22,6 +22,12 @@ function niceScale(min: number, max: number): { lo: number; hi: number; ticks: n
   return { lo, hi, ticks };
 }
 
+/** The Duo's line when a range has fewer than two weights: one dot is not a trend. */
+export function NotEnoughWeights() {
+  const { t } = useTranslation();
+  return <p className="m-0 py-10 text-center text-[15px]" style={{ color: K.quiet }} data-weight-trend-empty="">{t("weightTrend.notEnough", "Not enough weights for a trend yet")}</p>;
+}
+
 export function WeightChart<E extends ChartPoint>({ points, start, end, isMine, lang, wide = false }: { points: E[]; start: number; end: number; isMine: (e: E) => boolean; lang: string; wide?: boolean }) {
   const { t } = useTranslation();
   const W = wide ? 420 : 320, H = wide ? 210 : 170, L = 34, R = 10, T = 10, B = 26;

@@ -22,12 +22,15 @@ export function BirdPhotoCrop({
   position,
   alt = "",
   eager = false,
+  onFail,
 }: {
   url: string;
   original?: string | null;
   position?: string | null;
   alt?: string;
   eager?: boolean;
+  /** Called when the photo can't load at all (after the fallback to `original`). */
+  onFail?: () => void;
 }) {
   return (
     <img
@@ -37,6 +40,7 @@ export function BirdPhotoCrop({
       decoding="async"
       onError={(e) => {
         if (original && e.currentTarget.src !== original) e.currentTarget.src = original;
+        else onFail?.();
       }}
       style={{ objectPosition: position || BIRD_PHOTO_FOCUS }}
       className="absolute inset-0 block size-full object-cover"

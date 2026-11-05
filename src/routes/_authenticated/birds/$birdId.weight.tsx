@@ -30,7 +30,7 @@ import i18next from "i18next";
 import type { TFunction } from "i18next";
 import { useTranslation } from "react-i18next";
 import { BIRD_PHOTO_FOCUS } from "@/lib/birdPhotoFocus";
-import { WeightChart } from "@/components/WeightChart";
+import { NotEnoughWeights, WeightChart } from "@/components/WeightChart";
 
 export const Route = createFileRoute("/_authenticated/birds/$birdId/weight")({
   head: () => ({ meta: [{ title: i18next.t("birdWeight.metaTitle", "Weight — Kya & Co.") }] }),
@@ -520,8 +520,8 @@ function ChartCard({ entries, win, setWin, isMine, wide = false }: { entries: En
     return (
       <div className="flex flex-col gap-2.5 rounded-[26px] bg-white p-[18px]">
         <RangeSwitch win={win} setWin={setWin} />
-        {inRange.length === 0 ? (
-          <p className="m-0 py-10 text-center text-[14px]" style={{ color: K.quiet }}>{t("birdWeight.noneInRange", "No weights in the last {{range}}.", { range: windowLabel(t, win) })}</p>
+        {inRange.length < 2 ? (
+          <NotEnoughWeights />
         ) : (
           <WeightChart wide points={inRange} start={start} end={now} isMine={isMine} lang={lang} />
         )}
