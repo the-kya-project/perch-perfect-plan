@@ -4,7 +4,12 @@ import { useServerFn } from "@tanstack/react-start";
 import { addExistingHouseholdMember } from "@/lib/household.functions";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
-import { SetupFrame } from "@/components/setup/SetupFrame";
+import { InSetupFrame, SetupFrame, SETUP_PILLS } from "@/components/setup/SetupFrame";
+import { useDuoMode } from "@/lib/duo";
+import { RailClose } from "@/components/DuoRail";
+import { KyaLink } from "@/components/kya";
+import { DUO, DuoMainButton, DuoTwoPane, PopOutCard } from "@/components/duo/DuoBlocks";
+import { FlowHeading } from "@/components/duo/flows/FlowParts";
 import { CheckRow, S, SetupPrimaryButton, SetupTextButton } from "@/components/setup/controls";
 import { useTranslation } from "react-i18next";
 import i18next from "i18next";
@@ -53,6 +58,7 @@ export function ShareNewBirdStep({
   const { t } = useTranslation();
   const [sharing, setSharing] = useState(false);
   const addExisting = useServerFn(addExistingHouseholdMember);
+  const duo = useDuoMode() === "sideways";
 
   const toggle = (id: string) =>
     setSelected((p) => {
@@ -88,26 +94,11 @@ export function ShareNewBirdStep({
     onContinue();
   }
 
-  return (
-    <SetupFrame
-      birdName={birdName}
-      current="details"
-      page={[2, 2]}
-      title={t("shareNewBird.titleNamed", "Who else helps with {{bird}}?", { bird: birdName })}
-      intro={t("shareNewBird.intro", "{{bird}} is saved. These people help with your other birds — pick anyone who should see {{bird}} too.", { bird: birdName })}
-      onBack={onBack}
-      footer={
-        <div className="flex items-center gap-3">
-          <SetupTextButton disabled={sharing} onClick={onContinue}>{t("shareNewBird.notNow", "Not now")}</SetupTextButton>
-          <div className="min-w-0 flex-1">
-            <SetupPrimaryButton disabled={sharing} onClick={onShare}>
-              {sharing && <Loader2 className="size-4 animate-spin" aria-hidden="true" />}
-              {selected.size ? t("shareNewBird.shareAndContinue", "Share and continue") : t("shareNewBird.continue", "Continue")}
-            </SetupPrimaryButton>
-          </div>
-        </div>
-      }
-    >
+  const title = t("shareNewBird.titleNamed", "Who else helps with {{bird}}?", { bird: birdName });
+  const intro = t("shareNewBird.intro", "{{bird}} is saved. These people help with your other birds — pick anyone who should see {{bird}} too.", { bird: birdName });
+  const mainLabel = selected.size ? t("shareNewBird.shareAndContinue", "Share and continue") : t("shareNewBird.continue", "Continue");
+  const list = (
+    <>
       <div className="flex flex-col gap-2.5">
         {members.map((m) => {
           const label = memberLabel(m);
@@ -131,6 +122,85 @@ export function ShareNewBirdStep({
       <p className="m-0 px-1 text-[14.5px] leading-[1.5]" style={{ color: S.quiet }}>
         {t("shareNewBird.changeAnytime", "You can change who sees {{bird}} anytime from Household.", { bird: birdName })}
       </p>
+    </>
+  );
+
+  // iPhone Duo, sideways: the people on the left, who will see the bird on the
+  // right with the one main button.
+  if (duo) {
+    const picked = members.filter((m) => selected.has(m.userId));
+    return (
+      <DuoTwoPane
+        leftLabel={title}
+        rightLabel={t("shareNewBirdDuo.whoSees", "Who will see {{bird}}", { bird: birdName })}
+        left={
+          <>
+            <RailClose onClose={onBack} />
+            <FlowHeading eyebrow={t("setupShell.stepOf", "Step {{step}} of {{total}}", { step: 1, total: SETUP_PILLS.length })} title={title} line={intro} />
+            <InSetupFrame.Provider value={true}><div className="mt-6 flex flex-col gap-[14px]">{list}</div></InSetupFrame.Provider>
+          </>
+        }
+        right={
+          <PopOutCard
+            eyebrow={birdName}
+            title={t("shareNewBirdDuo.whoSees", "Who will see {{bird}}", { bird: birdName })}
+            action={
+              <DuoMainButton disabled={sharing} onClick={onShare}>
+                {sharing && <Loader2 className="size-4 animate-spin" aria-hidden="true" />}
+                {mainLabel}<span aria-hidden="true">→</span>
+              </DuoMainButton>
+            }
+            footer={<KyaLink onClick={sharing ? undefined : onContinue}>{t("shareNewBird.notNow", "Not now")}</KyaLink>}
+          >
+            <ul className="m-0 flex list-none flex-col gap-2.5 p-0">
+              <li className="flex min-h-[56px] items-center gap-3 rounded-[18px] px-3" style={{ background: DUO.bg }}>
+                <span aria-hidden="true" className="grid size-11 shrink-0 place-items-center rounded-full text-[17px] font-[700]" style={{ background: S.forest, color: S.lime }}>
+                  {(t("shareNewBirdDuo.you", "You").slice(0, 1)).toUpperCase()}
+                </span>
+                <span className="text-[16px] font-[700]">{t("shareNewBirdDuo.you", "You")}</span>
+              </li>
+              {picked.map((m) => {
+                const label = memberLabel(m);
+                return (
+                  <li key={m.userId} className="flex min-h-[56px] items-center gap-3 rounded-[18px] px-3" style={{ background: DUO.bg }}>
+                    <span aria-hidden="true" className="grid size-11 shrink-0 place-items-center rounded-full text-[17px] font-[700]" style={{ background: S.forest, color: S.lime }}>
+                      {(label.slice(0, 1) || "?").toUpperCase()}
+                    </span>
+                    <span className="min-w-0 truncate text-[16px] font-[700]">{label}</span>
+                  </li>
+                );
+              })}
+            </ul>
+            {!picked.length && (
+              <p className="m-0 mt-3 text-[15px] leading-[1.5]" style={{ color: DUO.quiet }}>{t("shareNewBirdDuo.justYou", "Only you for now.")}</p>
+            )}
+          </PopOutCard>
+        }
+      />
+    );
+  }
+
+  return (
+    <SetupFrame
+      birdName={birdName}
+      current="details"
+      page={[2, 2]}
+      title={title}
+      intro={intro}
+      onBack={onBack}
+      footer={
+        <div className="flex items-center gap-3">
+          <SetupTextButton disabled={sharing} onClick={onContinue}>{t("shareNewBird.notNow", "Not now")}</SetupTextButton>
+          <div className="min-w-0 flex-1">
+            <SetupPrimaryButton disabled={sharing} onClick={onShare}>
+              {sharing && <Loader2 className="size-4 animate-spin" aria-hidden="true" />}
+              {mainLabel}
+            </SetupPrimaryButton>
+          </div>
+        </div>
+      }
+    >
+      {list}
     </SetupFrame>
   );
 }

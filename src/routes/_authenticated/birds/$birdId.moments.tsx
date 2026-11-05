@@ -10,7 +10,11 @@ import { useBirdPhotos } from "@/lib/useBirdPhotos";
 import { useBirdRole } from "@/lib/useBirdRole";
 import { shareMomentCard } from "@/lib/momentCard";
 import { togetherSince, occurredYears } from "@/lib/togetherSince";
-import { K, KyaPage, KyaBody, KyaCard, KyaHeading, KyaIconTile, KyaPrimaryButton, KyaSecondaryButton, KyaSheet, KyaField, KyaRequiredTag } from "@/components/kya";
+import { K, KyaPage, KyaBody, KyaCard, KyaHeading, KyaIconTile, KyaLink, KyaPrimaryButton, KyaSecondaryButton, KyaSheet, KyaField, KyaRequiredTag } from "@/components/kya";
+import { useDuoMode } from "@/lib/duo";
+import { RailBack } from "@/components/DuoRail";
+import { DuoTwoPane, PopOutCard } from "@/components/duo/DuoBlocks";
+import { EmptyRecordCard, FilterChips, PhotoGrid, RecordCard, RecordCards, RecordListHeader } from "@/components/duo/records/RecordList";
 import { useConfirm } from "@/components/ConfirmSheet";
 import { PageHeader, useGoBack } from "@/components/headers";
 import { friendlyError } from "@/lib/errorMessage";
@@ -82,6 +86,10 @@ function MomentsFacet() {
   // One sheet at a time: adding/editing a milestone, or one anchor's year photos.
   const [sheet, setSheet] = useState<{ kind: "add" } | { kind: "edit"; custom: Custom } | { kind: "anchor"; key: AnchorKey } | null>(null);
   const [busy, setBusy] = useState(false);
+  // iPhone Duo sideways: the milestone shown in the right pane (MilestoneItem key).
+  const duo = useDuoMode() === "sideways";
+  const [pickKey, setPickKey] = useState<string | null>(null);
+  const [duoFilter, setDuoFilter] = useState<"all" | "yearly" | "own">("all");
   // Moments/anchor photos are owner-curated (RLS: owner-write, member-read).
   // Household members view them but can't add — gate every write affordance so
   // they're never shown a form/upload that RLS will reject on save.
@@ -240,6 +248,181 @@ function MomentsFacet() {
 
   const sheetAnchor = sheet?.kind === "anchor" ? anchors.find((a) => a.key === sheet.key) ?? null : null;
   const refreshCustoms = () => qc.invalidateQueries({ queryKey: ["moments", birdId] });
+
+  // iPhone Duo sideways: milestones on the left, the picked one (or the add /
+  // edit form) on the right. Everywhere else, the page below, unchanged.
+  if (duo) {
+    const title = bird?.name
+      ? t("birdMoments.titleNamed", "{{name}}'s moments", { name: bird.name })
+      : t("birdMoments.titlePlain", "Moments");
+    const formOpen = sheet?.kind === "add" || sheet?.kind === "edit";
+    const both = anchors.length > 0 && customs.length > 0;
+    const listed = items.filter((it) => !both || duoFilter === "all" || (duoFilter === "yearly" ? it.type === "anchor" : it.type === "custom"));
+    const current = listed.find((it) => it.key === pickKey) ?? listed[0] ?? null;
+    const left = (
+      <>
+        <RailBack onBack={goBack} />
+        <RecordListHeader
+          title={title}
+          line={t("birdMoments.line", "The days worth remembering.")}
+          addLabel={t("journalDuo.add", "Add")}
+          onAdd={isOwner ? () => setSheet({ kind: "add" }) : undefined}
+          addActive={formOpen}
+        />
+        <div className="mt-4 flex flex-col gap-3">
+          {busy && (
+            <p className="m-0 inline-flex items-center gap-2 px-1 text-[15px] font-[700]" style={{ color: K.moss }}>
+              <Loader2 className="size-4 animate-spin" aria-hidden="true" /> {t("birdMoments.savingPhoto", "Saving photo…")}
+            </p>
+          )}
+          {both && (
+            <FilterChips
+              label={t("momentsDuo.filterLabel", "Show moments")}
+              options={[
+                { value: "all", label: t("birdJournal.filterAll", "All") },
+                { value: "yearly", label: t("momentsDuo.filterYearly", "Every year") },
+                { value: "own", label: t("momentsDuo.filterOwn", "Your own") },
+              ]}
+              value={duoFilter}
+              onChange={(v) => { setDuoFilter(v); setSheet(null); }}
+            />
+          )}
+          {bird !== undefined && items.length === 0 && (
+            <p className="m-0 text-[16px] leading-[1.5]" style={{ color: K.quiet }}>
+              {anchors.length === 0
+                ? (isOwner
+                  ? t("birdMoments.emptyOwner", "Add {{name}}'s hatch date and the day they came home in Identity, and their yearly moments will appear here.", { name })
+                  : t("birdMoments.emptyMember", "Once {{name}}'s owner adds a hatch date or homecoming day, the yearly moments will appear here.", { name }))
+                : null}
+            </p>
+          )}
+          {listed.length > 0 && (
+            <RecordCards label={t("birdMoments.milestones", "Milestones")}>
+              {listed.map((it) => {
+                const on = !formOpen && current?.key === it.key;
+                const select = () => { setPickKey(it.key); setSheet(null); };
+                if (it.type === "anchor") {
+                  const a = it.anchor;
+                  const years = occurredYears(a.baseISO, todayMid());
+                  return (
+                    <RecordCard
+                      key={it.key}
+                      media={<KyaIconTile size={48}>{a.key === "gotcha_day" ? <House className="size-5" /> : <Egg className="size-5" />}</KyaIconTile>}
+                      title={anchorLabel(a)}
+                      date={monthDay(a.baseISO)}
+                      tag={t("momentsDuo.filterYearly", "Every year")}
+                      tagTone="fine"
+                      preview={years.length ? yearsText(years) : undefined}
+                      selected={on}
+                      onSelect={select}
+                    />
+                  );
+                }
+                const c = it.custom;
+                const url = urlFor(c.photo_path);
+                return (
+                  <RecordCard
+                    key={it.key}
+                    media={url
+                      ? <img src={url} alt="" className="size-12 shrink-0 rounded-[14px] object-cover" />
+                      : <KyaIconTile size={48}><Sparkles className="size-5" /></KyaIconTile>}
+                    title={c.title || t("birdMoments.milestone", "Milestone")}
+                    date={c.on_date ? fmtDate(c.on_date) : undefined}
+                    tag={t("momentsDuo.filterOwn", "Your own")}
+                    selected={on}
+                    onSelect={select}
+                  />
+                );
+              })}
+            </RecordCards>
+          )}
+        </div>
+      </>
+    );
+
+    let right: ReactNode;
+    if (formOpen) {
+      right = (
+        <MilestoneSheet
+          key={sheet.kind === "edit" ? sheet.custom.id : "new"}
+          inline
+          birdId={birdId}
+          custom={sheet.kind === "edit" ? sheet.custom : null}
+          photoUrl={sheet.kind === "edit" ? urlFor(sheet.custom.photo_path) : null}
+          onClose={() => setSheet(null)}
+          onSaved={() => { setSheet(null); refreshCustoms(); }}
+        />
+      );
+    } else if (current?.type === "anchor") {
+      const a = current.anchor;
+      const occ = nextOccurrence(a.baseISO);
+      const latest = [...anchorPhotos].filter((p) => p.anchor === a.key).sort((m, n) => n.year - m.year)[0];
+      const latestUrl = urlFor(latest?.photo_path);
+      right = (
+        <PopOutCard
+          eyebrow={t("birdMoments.yearly", "{{date}} · yearly", { date: monthDay(a.baseISO) })}
+          title={anchorLabel(a)}
+          action={
+            <KyaSecondaryButton
+              className="w-full"
+              icon={<Share2 className="size-4" />}
+              onClick={() => share({
+                photoUrl: latestUrl ?? birdPhoto?.url ?? null,
+                title: a.key === "gotcha_day" ? togetherNow(a.baseISO) : anchorTitle(a, occ.years),
+                context: a.key === "hatch_day" ? t("birdMoments.hatchedOn", "Hatched {{date}}", { date: fmtDate(a.baseISO) }) : `${name} · ${monthDay(a.baseISO)}`,
+              })}
+            >
+              {t("birdMoments.share", "Share")}
+            </KyaSecondaryButton>
+          }
+        >
+          <p className="m-0 mb-4 text-[16px] leading-[1.45]" style={{ color: K.quiet }}>
+            {a.key === "gotcha_day" ? togetherNow(a.baseISO) : anchorTitle(a, occ.years)} · {relDay(occ.date)}
+          </p>
+          <AnchorYears
+            anchor={a}
+            isOwner={isOwner}
+            busy={busy}
+            urlForYear={(y) => urlFor(photoByYear.get(`${a.key}:${y}`))}
+            onAdd={(y, f) => addAnchorPhoto(a.key, y, f)}
+            onShare={(y, url) => share({ photoUrl: url, title: anchorTitle(a, y - Number(a.baseISO.slice(0, 4))), context: `${name} · ${y}` })}
+          />
+        </PopOutCard>
+      );
+    } else if (current?.type === "custom") {
+      const c = current.custom;
+      const url = urlFor(c.photo_path);
+      right = (
+        <PopOutCard
+          eyebrow={c.on_date ? t("birdMoments.ownLine", "{{date}} · your own", { date: fmtDate(c.on_date) }) : t("birdMoments.ownShort", "Your own")}
+          title={c.title || t("birdMoments.milestone", "Milestone")}
+          action={
+            <KyaSecondaryButton className="w-full" icon={<Share2 className="size-4" />} onClick={() => shareCustom(c)}>
+              {t("birdMoments.share", "Share")}
+            </KyaSecondaryButton>
+          }
+          footer={isOwner ? <KyaLink onClick={() => setSheet({ kind: "edit", custom: c })}>{t("journalEntryView.edit", "Edit")}</KyaLink> : undefined}
+        >
+          {url ? (
+            <PhotoGrid photos={[{ key: c.id, node: <img src={url} alt="" className="block h-[260px] w-full rounded-[18px] object-cover" /> }]} />
+          ) : (
+            <p className="m-0 text-[16px]" style={{ color: K.quiet }}>{name}</p>
+          )}
+        </PopOutCard>
+      );
+    } else {
+      right = (
+        <EmptyRecordCard
+          icon={<CalendarHeart />}
+          title={t("momentsDuo.emptyTitle", "No moments yet")}
+          body={isOwner
+            ? t("momentsDuo.emptyBody", "Tap Add to save a first: a first flight, a new word, a favorite day. It'll open here.")
+            : t("momentsDuo.emptyBodyMember", "Moments will show here once they're added.")}
+        />
+      );
+    }
+    return <DuoTwoPane left={left} right={right} leftLabel={title} />;
+  }
 
   return (
     <KyaPage>
@@ -473,7 +656,7 @@ function AnchorYears({ anchor, isOwner, busy, urlForYear, onAdd, onShare }: {
 }
 
 /** Add or edit one of the owner's own milestones. */
-function MilestoneSheet({ birdId, custom, photoUrl, onClose, onSaved }: { birdId: string; custom: Custom | null; photoUrl: string | null; onClose: () => void; onSaved: () => void }) {
+function MilestoneSheet({ birdId, custom, photoUrl, onClose, onSaved, inline = false }: { birdId: string; custom: Custom | null; photoUrl: string | null; onClose: () => void; onSaved: () => void; /** iPhone Duo: the form as the right pane's card. */ inline?: boolean }) {
   const { t } = useTranslation();
   const [title, setTitle] = useState(custom?.title ?? "");
   const [date, setDate] = useState(custom?.on_date ?? localDateISO());
@@ -552,6 +735,7 @@ function MilestoneSheet({ birdId, custom, photoUrl, onClose, onSaved }: { birdId
   return (
     <>
     <KyaSheet
+      inline={inline}
       onClose={busy ? () => {} : onClose}
       closeLabel={t("birdMoments.close", "Close")}
       title={<KyaHeading size={24}>{custom ? t("birdMoments.editMilestone", "Edit milestone") : t("birdMoments.addMilestone", "Add a milestone")}</KyaHeading>}

@@ -104,7 +104,9 @@ function BirdRecordHome() {
             <BirdRecordHero birdId={birdId} />
             <main className="flex flex-col gap-4 px-4 pb-6 pt-4">
               <MemberContextBanner birdId={birdId} />
-              <BirdRecordBody birdId={birdId} part="summary" />
+              {/* At most one gold button on the Duo: the checks are outline
+                  here, so "Create care plan" (fresh birds) is the only one. */}
+              <BirdRecordBody birdId={birdId} part="summary" quietChecks />
             </main>
           </div>
           <main className="duo-pane flex flex-col gap-4 px-4 pb-nav pt-[calc(env(safe-area-inset-top)+14px)]">
@@ -638,7 +640,8 @@ function SummaryCard({ birdId, weights, today, canCheck, planExists, passed = fa
               className={checkBtn}
               // Fresh bird: "Create care plan" above is the one sunflower
               // button, so Daily check stays white until the plan exists.
-              // Inside Home (quietChecks), the flock card's button is the one.
+              // Inside Home and on the Duo bird page (quietChecks) both are
+              // outline: Home's flock card or the care-plan invite is the one.
               style={{ background: planExists && !quietChecks ? K.sunflower : "#fff", borderColor: K.forest, color: K.forest }}
             >
               {t("birdRecord.dailyCheckButton", "Daily check")}

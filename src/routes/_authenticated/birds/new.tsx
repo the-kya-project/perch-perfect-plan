@@ -7,7 +7,7 @@ import { Camera } from "lucide-react";
 import i18next from "i18next";
 import { getHouseholdAccount } from "@/lib/household.functions";
 import { ShareNewBirdStep, type ShareCandidate } from "@/components/ShareNewBirdStep";
-import { SetupFrame } from "@/components/setup/SetupFrame";
+import { SetupFrame, SETUP_PILLS } from "@/components/setup/SetupFrame";
 import { SetupPrimaryButton, Switch } from "@/components/setup/controls";
 import { supabase } from "@/integrations/supabase/client";
 import { getLocalUser } from "@/integrations/supabase/currentUser";
@@ -26,6 +26,8 @@ import { useConfirm } from "@/components/ConfirmSheet";
 import { isMissingColumn } from "@/lib/missingColumn";
 import { useFormDraft } from "@/lib/drafts";
 import { BIRD_PHOTO_FOCUS } from "@/lib/birdPhotoFocus";
+import { useDuoMode } from "@/lib/duo";
+import { NewBirdDuo } from "@/components/duo/flows/NewBirdDuo";
 
 export const Route = createFileRoute("/_authenticated/birds/new")({
   head: () => ({ meta: [{ title: i18next.t("newBird.metaTitle", "Add a bird — Kya & Co.") }] }),
@@ -47,6 +49,9 @@ function NewBird() {
   const qc = useQueryClient();
   const { foster: fosterParam, next } = Route.useSearch();
   const { confirm, sheet: confirmSheet } = useConfirm();
+  // iPhone Duo, sideways: form left, live preview right (NewBirdDuo). Same
+  // state, draft and save; only the layout changes.
+  const duo = useDuoMode() === "sideways";
   const [name, setName] = useState("");
   const [species, setSpecies] = useState("");
   const [age, setAge] = useState("");
@@ -278,28 +283,18 @@ function NewBird() {
     );
   }
 
-  return (
-    <SetupFrame
-      birdName={name}
-      current="details"
-      // "Who else helps?" follows when there's a household to share with.
-      page={shareCandidates.length ? [1, 2] : undefined}
-      title={fosterParam ? t("newBird.headlineFosterNoPeriod", "Take in a bird") : t("newBird.headlineNoPeriod", "Add a bird")}
-      intro={t("newBird.body", "Start with the basics. The full care plan comes next.")}
-      onBack={() => void onCancel()}
-      footer={
-        <SetupPrimaryButton disabled={saving || !canAdd} onClick={onAddBird}>
-          {saving ? t("newBird.adding", "Adding…") : t("newBird.continue", "Continue")}
-        </SetupPrimaryButton>
-      }
-    >
-      <section className="rounded-[18px] bg-[#f1f5f0] p-4 space-y-3">
+  const title = fosterParam ? t("newBird.headlineFosterNoPeriod", "Take in a bird") : t("newBird.headlineNoPeriod", "Add a bird");
+  const intro = t("newBird.body", "Start with the basics. The full care plan comes next.");
+  const continueLabel = saving ? t("newBird.adding", "Adding…") : t("newBird.continue", "Continue");
+  const form = (
+    <>
+      <section className={`rounded-[18px] ${duo ? "bg-white" : "bg-[#f1f5f0]"} p-4 space-y-3`}>
         <div className="flex items-start gap-3">
           {photo ? (
-            <PhotoCropper src={photo} position={photoPos} onChange={setPhotoPos} size={120} />
+            <PhotoCropper src={photo} position={photoPos} onChange={setPhotoPos} size={duo ? 128 : 120} />
           ) : (
             // Empty photo tile: tapping it opens the picker, same as the button.
-            <label className={`flex size-[120px] shrink-0 flex-col items-center justify-center gap-1.5 rounded-xl border-[1.5px] border-[#d5dfd5] bg-[#f1f5f0] text-center text-[13.5px] font-[700] text-[#1a3d2e] ${photoBusy ? "cursor-default opacity-60" : "cursor-pointer"}`}>
+            <label className={`flex ${duo ? "size-32" : "size-[120px]"} shrink-0 flex-col items-center justify-center gap-1.5 rounded-xl border-[1.5px] border-[#d5dfd5] bg-[#f1f5f0] text-center text-[13.5px] font-[700] text-[#1a3d2e] ${photoBusy ? "cursor-default opacity-60" : "cursor-pointer"}`}>
               <Camera className="size-6" aria-hidden="true" />
               {t("newBird.addAPhoto", "Add a photo")}
               <input type="file" accept="image/*,.heic,.heif" disabled={photoBusy} className="hidden" onChange={onPhoto} />
@@ -342,7 +337,7 @@ function NewBird() {
 
       {/* Foster status — a meta-question about your relationship with the bird,
           not basic info, so it sits last after all the actual bird details. */}
-      <section className="rounded-[18px] bg-[#f1f5f0] p-4">
+      <section className={`rounded-[18px] ${duo ? "bg-white" : "bg-[#f1f5f0]"} p-4`}>
         <Switch checked={isFoster} onChange={setIsFoster}>
           <span className="block">{t("newBird.isFoster", "This is a foster")}</span>
           <span className="mt-0.5 block text-[13.5px] font-[400] leading-[1.45] text-[#5f5e5a]">
@@ -362,6 +357,44 @@ function NewBird() {
           </div>
         )}
       </section>
+    </>
+  );
+
+  if (duo) {
+    return (
+      <>
+        <NewBirdDuo
+          stepLabel={t("setupShell.stepOf", "Step {{step}} of {{total}}", { step: 1, total: SETUP_PILLS.length })}
+          title={title}
+          intro={intro}
+          form={form}
+          preview={{ name, species, age, birthDate, sex, flight, photo, photoPos, isFoster, intakeDate }}
+          continueLabel={continueLabel}
+          canContinue={!saving && canAdd}
+          onContinue={onAddBird}
+          onClose={() => void onCancel()}
+        />
+        {confirmSheet}
+      </>
+    );
+  }
+
+  return (
+    <SetupFrame
+      birdName={name}
+      current="details"
+      // "Who else helps?" follows when there's a household to share with.
+      page={shareCandidates.length ? [1, 2] : undefined}
+      title={title}
+      intro={intro}
+      onBack={() => void onCancel()}
+      footer={
+        <SetupPrimaryButton disabled={saving || !canAdd} onClick={onAddBird}>
+          {continueLabel}
+        </SetupPrimaryButton>
+      }
+    >
+      {form}
       {confirmSheet}
     </SetupFrame>
   );

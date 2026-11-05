@@ -77,9 +77,11 @@ export function TileGrid({ children, label }: { children: ReactNode; label?: str
 }
 
 /** A large tile: icon square, bold title, one status pill. Selected = forest. */
-export function Tile({ icon, title, status, tone = "neutral", selected = false, onSelect, dashed = false, media }: {
+export function Tile({ icon, title, status, tone = "neutral", selected = false, onSelect, dashed = false, media, preview }: {
   icon?: ReactNode;
   title: ReactNode;
+  /** Up to two lines under the title (a section's first lines, an entry's start). */
+  preview?: ReactNode;
   status?: ReactNode;
   tone?: TileTone;
   selected?: boolean;
@@ -112,6 +114,7 @@ export function Tile({ icon, title, status, tone = "neutral", selected = false, 
           </span>
         )}
         <span className="block w-full text-[17px] font-[700] leading-tight">{title}</span>
+        {preview && <span className="line-clamp-2 block w-full text-[14px] leading-snug" style={{ color: selected ? "rgba(255,255,255,0.78)" : DUO.quiet }}>{preview}</span>}
         {status && <StatusPill tone={tone} inverted={selected}>{status}</StatusPill>}
       </button>
     </div>
@@ -120,18 +123,25 @@ export function Tile({ icon, title, status, tone = "neutral", selected = false, 
 
 /** The right pane's content as one large card. `action` is the screen's one
  *  main button (gold); it sits at the bottom of the card. */
-export function PopOutCard({ eyebrow, title, children, action, footer }: {
+export function PopOutCard({ eyebrow, title, children, action, footer, corner }: {
   eyebrow?: ReactNode;
   title: ReactNode;
   children: ReactNode;
   action?: ReactNode;
   /** Under the main button: a text link (e.g. "Remove Sam from household"). */
   footer?: ReactNode;
+  /** Top right, beside the eyebrow and title (e.g. previous / next buttons). */
+  corner?: ReactNode;
 }) {
   return (
     <article className="duo-popout flex min-h-full flex-col rounded-[28px] bg-white p-6" style={{ boxShadow: "0 18px 40px rgba(26,61,46,0.12), 0 2px 6px rgba(26,61,46,0.06)" }}>
-      {eyebrow && <p className="m-0 text-[13px] font-[700] uppercase tracking-[0.08em]" style={{ color: DUO.quiet }}>{eyebrow}</p>}
-      <h2 className="m-0 mt-1.5 text-[28px] font-[600] leading-[1.15] [text-wrap:balance]" style={{ fontFamily: SERIF, color: DUO.forest }}>{title}</h2>
+      <div className="flex items-start gap-3">
+        <div className="min-w-0 flex-1">
+          {eyebrow && <p className="m-0 text-[13px] font-[700] uppercase tracking-[0.08em]" style={{ color: DUO.quiet }}>{eyebrow}</p>}
+          <h2 className="m-0 mt-1.5 text-[28px] font-[600] leading-[1.15] [text-wrap:balance]" style={{ fontFamily: SERIF, color: DUO.forest }}>{title}</h2>
+        </div>
+        {corner && <div className="flex shrink-0 gap-2">{corner}</div>}
+      </div>
       <div className="mt-5 flex-1">{children}</div>
       {(action || footer) && (
         <div className="mt-6 flex flex-col items-stretch gap-3">

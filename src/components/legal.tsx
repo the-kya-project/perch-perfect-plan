@@ -3,10 +3,14 @@
 // page header with back top left and a Newsreader 30px title, a mist body with
 // rounded top corners, and the text in one white card. No tab bar here, so the
 // body runs to the bottom of the screen and clears the home indicator.
-import type { ReactNode } from "react";
+import { Children, isValidElement, useState, type ReactElement, type ReactNode } from "react";
 import { Link, useCanGoBack, useNavigate, useRouter } from "@tanstack/react-router";
 import { K, KyaCard, SERIF } from "@/components/kya";
 import { PageHeader } from "@/components/headers";
+import { useDuoMode } from "@/lib/duo";
+import { SignedOutDuoChrome } from "@/components/duo/SignedOutDuo";
+import { DuoSectionReader, type ReaderSection } from "@/components/duo/DuoSectionReader";
+import { PaneBack } from "@/components/duo/plan/PaneBack";
 
 /**
  * Back to the actual previous screen (signup, settings) when there is one,
@@ -28,8 +32,68 @@ function useLegalBack() {
   };
 }
 
+/** The plain text inside a node (for a section's title and preview). */
+function textOf(node: ReactNode): string {
+  if (node == null || typeof node === "boolean") return "";
+  if (typeof node === "string" || typeof node === "number") return String(node);
+  if (Array.isArray(node)) return node.map(textOf).join("");
+  if (isValidElement(node)) return textOf((node.props as { children?: ReactNode }).children);
+  return "";
+}
+
+/** The page's text split at each LegalHeading: what comes before the first
+ *  heading (the "Last updated" line), then one section per heading. */
+function splitSections(children: ReactNode): { intro: ReactNode[]; sections: { title: string; body: ReactNode[] }[] } {
+  const intro: ReactNode[] = [];
+  const sections: { title: string; body: ReactNode[] }[] = [];
+  for (const child of Children.toArray(children)) {
+    if (isValidElement(child) && child.type === LegalHeading) {
+      sections.push({ title: textOf((child as ReactElement<{ children?: ReactNode }>).props.children), body: [] });
+    } else if (sections.length) {
+      sections[sections.length - 1].body.push(child);
+    } else {
+      intro.push(child);
+    }
+  }
+  return { intro, sections };
+}
+
+/** iPhone Duo (two panes): the headings as cards on the left, the open one's
+ *  text on the right, with previous / next. No main button. These pages
+ *  work signed out, so the column is the signed-out strip. */
+function LegalDuo({ title, children, onBack }: { title: ReactNode; children: ReactNode; onBack: () => void }) {
+  const { intro, sections } = splitSections(children);
+  const [open, setOpen] = useState("0");
+  const text = "space-y-4 text-[16px] leading-[1.6]";
+  const reader: ReaderSection[] = sections.length
+    ? sections.map((sec, i) => ({
+        key: String(i),
+        title: sec.title,
+        preview: textOf(sec.body).replace(/\s+/g, " ").trim() || undefined,
+        body: <div className={text} style={{ color: K.ink }}>{sec.body}</div>,
+      }))
+    : [{ key: "0", title: textOf(title), body: <div className={text} style={{ color: K.ink }}>{intro}</div> }];
+  return (
+    <>
+      <div className="duo-content">
+        <DuoSectionReader
+          top={<PaneBack onBack={onBack} />}
+          title={title}
+          sections={reader}
+          selected={open}
+          onSelect={setOpen}
+          leftExtra={sections.length && intro.length ? <div className="[&_p]:m-0">{intro}</div> : undefined}
+        />
+      </div>
+      <SignedOutDuoChrome />
+    </>
+  );
+}
+
 export function LegalPage({ title, children }: { title: ReactNode; children: ReactNode }) {
   const goBack = useLegalBack();
+  const duo = useDuoMode() === "sideways";
+  if (duo) return <LegalDuo title={title} onBack={goBack}>{children}</LegalDuo>;
   return (
     <div className="setup-frame min-h-screen" style={{ background: K.mist, color: K.forest }}>
       <PageHeader title={title} onBack={goBack} />

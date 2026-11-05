@@ -7,6 +7,9 @@ import { useSitterContext } from "./route";
 import { SitterTabHeader } from "@/components/sitter/SitterChrome";
 import { K, KyaBody, KyaCard, KyaHeading, KyaIconTile } from "@/components/kya";
 import { getGuideCards } from "@/lib/sitter.functions";
+import { useDuoMode } from "@/lib/duo";
+import { DuoSectionReader, type ReaderSection } from "@/components/duo/DuoSectionReader";
+import { SitterDuoTopBar } from "@/components/duo/sitter/SitterDuoRail";
 import {
   Search, ChevronDown, Info,
   Star, Utensils, Smile, Heart, AlertTriangle, Home,
@@ -181,6 +184,85 @@ function Guide() {
     setChipAtEnd(el.scrollLeft + el.clientWidth >= el.scrollWidth - 1);
   }
   useEffect(() => { updateChipFades(); }, [searching]);
+  const duo = useDuoMode() === "sideways";
+
+  // iPhone Duo: the topics as big cards on the left (search above them), the
+  // open topic's entries in full on the right. Typing a search opens a
+  // "Results" section that spans every topic, as on the phone.
+  if (duo) {
+    const entry = (c: any) => {
+      const Icon = iconForEntry(c);
+      return (
+        <article key={c.id} className="border-t pt-5 first:border-t-0 first:pt-0" style={{ borderColor: K.line }}>
+          <h3 className="m-0 flex items-center gap-3 text-[19px] font-[700] leading-[1.3]" style={{ color: K.forest }}>
+            <KyaIconTile size={40}><Icon className="size-5" /></KyaIconTile>
+            <span className="min-w-0 flex-1">{c.title}</span>
+          </h3>
+          <div className="mt-3 flex flex-col gap-2.5 text-[17px] leading-[1.5]" style={{ color: K.ink }}>
+            {c.quick_answer && <p className="m-0">{c.quick_answer}</p>}
+            {c.what_to_check && <p className="m-0"><span className="font-[700]" style={{ color: K.forest }}>{t("sitter.guide.whatToCheck", "What to check:")}</span> {c.what_to_check}</p>}
+            {c.what_to_do && <p className="m-0"><span className="font-[700]" style={{ color: K.forest }}>{t("sitter.guide.whatToDo", "What to do:")}</span> {c.what_to_do}</p>}
+            {c.when_to_call_vet && <p className="m-0"><span className="font-[700]" style={{ color: K.forest }}>{t("sitter.guide.whenToCallVet", "When to call the vet:")}</span> {c.when_to_call_vet}</p>}
+            {isDroppings(c) && (
+              <p className="m-0 text-[15px]" style={{ color: K.quiet }}>
+                {t("sitter.guide.droppingsHint.before", "If unsure, snap a photo for the owner in the")}{" "}
+                <Link to="/sitter/$token/scan" params={{ token }} className="font-[700] underline" style={{ color: K.moss }}>{t("sitter.guide.droppingsHint.linkCheck", "daily health check")}</Link>{t("sitter.guide.droppingsHint.after", ".")}
+              </p>
+            )}
+          </div>
+        </article>
+      );
+    };
+    const entries = (cs: any[]) => cs.length > 0
+      ? <div className="flex flex-col gap-5">{cs.map(entry)}</div>
+      : <p className="m-0 text-[17px]" style={{ color: K.quiet }}>{t("sitter.guide.noMatches", "No entries match “{{q}}”.", { q })}</p>;
+    const topicSections: ReaderSection[] = TOPICS.map((tp) => {
+      const Icon = tp.icon;
+      const cs = localizedCards.filter((c) => topicForCard(c) === tp.key);
+      return {
+        key: tp.key,
+        title: topicLabel(tp.key, tp.label),
+        icon: <Icon />,
+        preview: TOPIC_SUBHEAD[tp.key] ? subheadLabel(tp.key, TOPIC_SUBHEAD[tp.key]) : cs.slice(0, 2).map((c) => c.title).join(", "),
+        body: entries(cs),
+      };
+    });
+    const sections: ReaderSection[] = searching
+      ? [{ key: "search", title: t("sitter.duo.guide.results", "Results for “{{q}}”", { q: q.trim() }), icon: <Search />, body: entries(list) }, ...topicSections]
+      : topicSections;
+    return (
+      <DuoSectionReader
+        top={
+          <div data-coach="guide-header" className="mb-6">
+            <SitterDuoTopBar token={token} light />
+            <div data-coach="guide-search" className="relative mt-5">
+              <Search className="pointer-events-none absolute left-4 top-1/2 size-5 -translate-y-1/2" style={{ color: K.quiet }} aria-hidden="true" />
+              <input
+                type="search"
+                value={q}
+                onChange={(e) => setQ(e.target.value)}
+                placeholder={t("sitter.guide.searchPlaceholder", "What do you need to know?")}
+                aria-label={t("sitter.guide.searchPlaceholder", "What do you need to know?")}
+                className="h-14 w-full rounded-full border bg-white pl-12 pr-4 text-[17px] outline-none placeholder:text-[#8a958d] focus:ring-2 focus:ring-[#cdeab0]"
+                style={{ color: K.forest, borderColor: "#d5dfd5" }}
+              />
+            </div>
+          </div>
+        }
+        title={t("sitter.guide.title", "Parrots 101")}
+        line={line}
+        sections={sections}
+        selected={searching ? "search" : topic}
+        onSelect={(key) => { if (key !== "search") { setQ(""); setTopic(key); } }}
+        leftExtra={
+          <p className="m-0 flex items-start gap-1.5 text-[13px] leading-[1.45]" style={{ color: K.quiet }}>
+            <Info className="mt-px size-3.5 shrink-0" aria-hidden="true" />
+            <span>{t("sitter.guide.disclaimer", "General guidance, not vet-reviewed. For anything urgent, use {{name}}'s emergency info.", { name: bird.name })}</span>
+          </p>
+        }
+      />
+    );
+  }
 
   // No KyaPage: its bottom padding is for the owner's tab bar, and the sitter
   // layout already leaves room for the sitter's bar and the safe area.

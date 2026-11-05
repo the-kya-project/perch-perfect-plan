@@ -23,18 +23,31 @@ import { LoadError, ListSkeleton } from "@/components/LoadError";
 import { useLoadState } from "@/lib/useTooLong";
 import { useDailyCheckBirds } from "@/lib/checkBirds";
 import { BIRD_PHOTO_FOCUS } from "@/lib/birdPhotoFocus";
+import { useDuoMode } from "@/lib/duo";
+import { FlockHealthDuo } from "@/components/duo/records/FlockHealthDuo";
 
 // The Health tab: a flock summary. Each bird's latest daily check and weight,
 // the current (or last) sit, and the five latest entries, with the full list
 // one tap away on Health history. Old ?sitId links forward to that page.
 export const Route = createFileRoute("/_authenticated/scans/")({
   head: () => ({ meta: [{ title: i18next.t("healthTab.metaTitle", "Flock health — Kya & Co.") }] }),
-  validateSearch: (s: Record<string, unknown>) => z.object({ sitId: z.string().uuid().optional() }).parse(s),
+  // ?bird= picks the bird shown in the iPhone Duo's right pane (ignored elsewhere).
+  validateSearch: (s: Record<string, unknown>) => z.object({ sitId: z.string().uuid().optional(), bird: z.string().uuid().optional() }).parse(s),
   beforeLoad: ({ search }) => {
     if (search.sitId) throw redirect({ to: "/scans/history", search: { sitId: search.sitId } });
   },
-  component: HealthTab,
+  component: HealthTabRoute,
 });
+
+/** iPhone Duo sideways: the two-pane Flock health; everywhere else, unchanged. */
+function HealthTabRoute() {
+  const { bird } = Route.useSearch();
+  const duo = useDuoMode() === "sideways";
+  // The header bell opens this tab: clear its badge (HealthTab does the same).
+  useEffect(() => { if (duo) markNotifsSeen(); }, [duo]);
+  if (duo) return <FlockHealthDuo selectedBirdId={bird} />;
+  return <HealthTab />;
+}
 
 const OVERDUE_DAYS = 7;
 
