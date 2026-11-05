@@ -348,6 +348,24 @@
     "addressInput.zip": {
       "stamp": "3cc2fbb686d0c392"
     },
+    "appSignInReturn.backToSignIn": {
+      "stamp": "9c8f60e559c93e73"
+    },
+    "appSignInReturn.didNotFinish": {
+      "stamp": "b77c9dfddde69a3d"
+    },
+    "appSignInReturn.errorTitle": {
+      "stamp": "b6c1476dcf1c6d8e"
+    },
+    "appSignInReturn.pageTitle": {
+      "stamp": "dc14de777c443899"
+    },
+    "appSignInReturn.returnToApp": {
+      "stamp": "327b49582b683964"
+    },
+    "appSignInReturn.title": {
+      "stamp": "193ac269dc481815"
+    },
     "auth.agreeToTermsOfService": {
       "stamp": "e6d5bbd4ee8a7cac"
     },
@@ -362,6 +380,9 @@
     },
     "auth.appleSignInFailed": {
       "stamp": "5b5b6aad1137423b"
+    },
+    "auth.appleUnavailableInApp": {
+      "stamp": "107f2e29cb5d6b5b"
     },
     "auth.backToSignIn": {
       "stamp": "9c8f60e559c93e73"
@@ -398,6 +419,9 @@
     },
     "auth.googleSignInFailed": {
       "stamp": "916d62629302d809"
+    },
+    "auth.googleUnavailableInApp": {
+      "stamp": "8eb212ec6bc7ddfd"
     },
     "auth.haveAccountSignIn": {
       "stamp": "c12daaa530fa3577"
