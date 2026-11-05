@@ -159,6 +159,8 @@ function IdentityFacet() {
   const goBack = useGoBack(useCallback(() => navigate({ to: "/birds/$birdId", params: { birdId } }), [navigate, birdId]));
   const canEdit = !!bird && canEditIdentity;
   const openEdit = canEdit ? startEditing : undefined;
+  // iPhone Duo pop-out card: the hatch date in its short form, on one line.
+  const inCard = useContext(KyaInCard);
   // Editing is a task: Close top left, and "Leave without saving?" when
   // something has changed. The form reports whether it has.
   const [formDirty, setFormDirty] = useState(false);
@@ -234,7 +236,7 @@ function IdentityFacet() {
             <KyaCard>
               <Row label={t("birdSetup.sex", "Sex")} value={sexValue(t, bird)} onAdd={openEdit} />
               <Row label={t("birdSetup.flight", "Flight")} value={flightLabel(t, bird.flight_status)} onAdd={openEdit} />
-              <Row label={t("birdPickers.hatchDate", "Hatch date")} value={bird.birth_date ? `${fmtDate(bird.birth_date)} (≈ ${approxAge(t, bird.birth_date)})` : null} onAdd={openEdit} />
+              <Row label={t("birdPickers.hatchDate", "Hatch date")} value={bird.birth_date ? (inCard ? hatchShort(t, bird.birth_date) : `${fmtDate(bird.birth_date)} (≈ ${approxAge(t, bird.birth_date)})`) : null} onAdd={openEdit} />
               <Row label={t("birdIdentity.microchip", "Microchip")} value={bird.microchip} onAdd={openEdit} />
               <Row label={t("birdIdentity.legBand", "Leg band")} value={bird.band_number} onAdd={openEdit} />
               <Row label={t("birdIdentity.origin", "Origin")} value={bird.origin} onAdd={openEdit} />
@@ -489,6 +491,23 @@ function FormField({ id, label, children }: { id?: string; label: string; childr
 
 function fmtDate(iso: string): string {
   return formatLocalDate(new Date(`${iso}T12:00:00`), { year: "numeric", month: "short", day: "numeric" });
+}
+
+/** "Sep 26, 2024 · 2 yrs": the hatch date and age for the narrow Duo card. */
+function hatchShort(t: TFunction, iso: string): string {
+  const born = new Date(`${iso}T12:00:00`);
+  const now = new Date();
+  let months = (now.getFullYear() - born.getFullYear()) * 12 + now.getMonth() - born.getMonth();
+  if (now.getDate() < born.getDate()) months -= 1;
+  const days = Math.floor((now.getTime() - born.getTime()) / 86_400_000);
+  const age = days < 0
+    ? null
+    : months >= 12
+      ? t("birdIdentity.yrsShort", "{{count}} yrs", { count: Math.floor(months / 12) })
+      : months >= 1
+        ? t("birdIdentity.moShort", "{{count}} mo", { count: months })
+        : t("birdIdentity.daysShort", "{{count}} days", { count: days });
+  return age ? `${fmtDate(iso)} · ${age}` : fmtDate(iso);
 }
 
 function approxAge(t: TFunction, iso: string): string {

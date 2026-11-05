@@ -819,6 +819,12 @@
     "birdIdentity.daysOther": {
       "stamp": "e4eb664b0d3db46d"
     },
+    "birdIdentity.daysShort_one": {
+      "stamp": "4fd978633030957c"
+    },
+    "birdIdentity.daysShort_other": {
+      "stamp": "61aff90b101588bf"
+    },
     "birdIdentity.edit": {
       "stamp": "dc46962c1249053f"
     },
@@ -876,6 +882,12 @@
     "birdIdentity.monthsOther": {
       "stamp": "0ec1c5e4985f2924"
     },
+    "birdIdentity.moShort_one": {
+      "stamp": "31d8e90efde96c67"
+    },
+    "birdIdentity.moShort_other": {
+      "stamp": "31d8e90efde96c67"
+    },
     "birdIdentity.notAdded": {
       "stamp": "369938ad2bbc6c71"
     },
@@ -908,6 +920,12 @@
     },
     "birdIdentity.titleFallback": {
       "stamp": "34ae6a197bc7891c"
+    },
+    "birdIdentity.yrsShort_one": {
+      "stamp": "0c6be711dea001f2"
+    },
+    "birdIdentity.yrsShort_other": {
+      "stamp": "aed03f1553d1d0c8"
     },
     "birdJournal.addAnEntry": {
       "stamp": "846b3fe5c8a1c4df"

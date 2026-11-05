@@ -549,6 +549,10 @@
   "birdIdentity.daysOne": "{{n}} dag",
   // {{n}} days
   "birdIdentity.daysOther": "{{n}} dagen",
+  // {{count}} day
+  "birdIdentity.daysShort_one": "{{count}} dag",
+  // {{count}} days
+  "birdIdentity.daysShort_other": "{{count}} dagen",
   // Edit
   "birdIdentity.edit": "Bewerken",
   // Edit identity
@@ -587,6 +591,10 @@
   "birdIdentity.monthsOne": "{{n}} maand",
   // {{n}} months
   "birdIdentity.monthsOther": "{{n}} maanden",
+  // {{count}} mo
+  "birdIdentity.moShort_one": "{{count}} mnd",
+  // {{count}} mo
+  "birdIdentity.moShort_other": "{{count}} mnd",
   // Not added
   "birdIdentity.notAdded": "Niet toegevoegd",
   // Not set
@@ -609,6 +617,10 @@
   "birdIdentity.title": "Identiteit van {{name}}",
   // Identity
   "birdIdentity.titleFallback": "Identiteit",
+  // {{count}} yr
+  "birdIdentity.yrsShort_one": "{{count}} jr",
+  // {{count}} yrs
+  "birdIdentity.yrsShort_other": "{{count}} jr",
   // Add an entry
   "birdJournal.addAnEntry": "Voeg een notitie toe",
   // Entry added.

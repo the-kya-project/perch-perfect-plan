@@ -109,6 +109,15 @@ for (const [size, { column, ...viewport }] of Object.entries(SIZES)) {
         const heights = await page.getByText("Not added", { exact: true }).evaluateAll((els) => els.map((el) => el.getBoundingClientRect().height));
         expect(heights.length).toBeGreaterThan(0);
         for (const h of heights) expect(h, "a Not added value wraps").toBeLessThan(30);
+        // The hatch date in its short form ("Sep 26, 2024 · 2 yrs"), on one line.
+        const hatch = page.getByText(/^[A-Z][a-z]{2} \d{1,2}, \d{4} · \d+ (yrs?|mo|days?)$/);
+        await expect(hatch).toHaveCount(1);
+        const lines = await hatch.evaluate((el) => {
+          const cs = getComputedStyle(el);
+          const h = el.getBoundingClientRect().height - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom);
+          return Math.round(h / parseFloat(cs.lineHeight));
+        });
+        expect(lines, "the hatch date wraps").toBe(1);
       }
       // The account's Emergency info card: an empty phone says what goes there.
       if (column && name === "account") {
