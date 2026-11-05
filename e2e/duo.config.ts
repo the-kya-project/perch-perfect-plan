@@ -27,6 +27,8 @@ export default defineConfig({
       timeout: 120_000,
       cwd: "..",
     },
-    ...servers.slice(1),
+    // The app server reads the made-up blog feed (e2e/duo-feed.ts) from the
+    // stand-in instead of thekyaproject.com.
+    ...servers.slice(1).map((srv) => ({ ...srv, env: { ...(srv.env ?? {}), BLOG_FEED_URL: `http://127.0.0.1:${MOCK_PORT}/__feed.json` } })),
   ],
 });

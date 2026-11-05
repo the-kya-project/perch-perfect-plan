@@ -16,6 +16,7 @@ import { appendFileSync, mkdirSync } from "node:fs";
 import { test, expect, type Page as PwPage } from "@playwright/test";
 import { duoFixture, ECHO_ID, SIT_ACTIVE_ID, SIT_PAST_ID, SIT_UPCOMING_ID, type DuoVariant } from "./duo-fixture";
 import { mockDuo } from "./duo-mock";
+import { READER_POST_ID, WEB_POST_ID } from "./duo-feed";
 
 const SIZES = {
   // iPhone Duo folded (cover screen): a regular iPhone layout until 1.2.
@@ -57,6 +58,14 @@ type Page = {
   /** Steps to take on the page before the checks and the screenshot. */
   act?: (page: PwPage) => Promise<void>;
 };
+
+const DUO_ONLY = ["sideways", "sideways-1100"];
+const READER = `/explore?read=${encodeURIComponent(READER_POST_ID)}`;
+
+/** The reader's page label once it has counted its pages. */
+async function readerReady(page: PwPage) {
+  await expect(page.locator("[data-reader-page]")).toHaveText(/Page 1 of [2-9]/, { timeout: 10_000 });
+}
 
 /** Set up a sit, filled in: Echo and Buzz, three days starting three days out, Sam covering. */
 async function fillSitForm(page: PwPage) {
@@ -138,6 +147,28 @@ const PAGES: Record<string, Page> = {
   farewell: p2(`/birds/${E}/farewell`),
   "admin-founding": p2("/admin/founding"),
   "admin-gifts": p2("/admin/gifts"),
+
+  // ── Part 3: Explore (made-up feed, e2e/duo-feed.ts) ──────────────────────
+  explore: p2("/explore", { noBack: true, ready: /Reading your parrot's body language/ }),
+  "explore-all": p2("/explore?all=1", { sizes: DUO_ONLY, ready: /Choosing a vet who knows birds/ }),
+  "reader-p1": p2(READER, { sizes: DUO_ONLY, ready: /Reading your parrot's body language/, act: readerReady }),
+  "reader-p2": p2(READER, {
+    sizes: DUO_ONLY, ready: /Reading your parrot's body language/,
+    act: async (page) => {
+      await readerReady(page);
+      await page.getByRole("button", { name: "Next page" }).click();
+      await expect(page.locator("[data-reader-page]")).toHaveText(/Page 2 of/);
+      await page.waitForTimeout(500); // the page slide
+    },
+  }),
+  // A post without content_html never opens an empty reader: back to Explore.
+  "reader-no-body": p2(`/explore?read=${encodeURIComponent(WEB_POST_ID)}`, {
+    sizes: DUO_ONLY, noBack: true,
+    act: async (page) => {
+      await expect(page).toHaveURL(/\/explore$/, { timeout: 10_000 });
+      await expect(page.getByText("Reading your parrot's body language").first()).toBeVisible();
+    },
+  }),
 };
 
 const PART2_SIZES = new Set(["sideways", "sideways-1100", "iphone17pro", "folded", "upright", "iphone17promax-sideways", "ipad-air-upright"]);
@@ -245,7 +276,8 @@ for (const [size, { column, ...viewport }] of Object.entries(SIZES)) {
         .filter((img) => getComputedStyle(img).objectFit === "cover" && /juno|weighing|journal-foraging|health-check/.test(img.currentSrc))
         .map((img) => ({ src: img.currentSrc.split("/").pop(), position: getComputedStyle(img).objectPosition, h: Math.round(img.getBoundingClientRect().height) })));
       appendFileSync("test-results/duo/crops.json", JSON.stringify({ size, name, crops }) + "\n");
-      for (const c of crops) expect(c.position, `${c.src} is cropped from the middle`).not.toBe("50% 50%");
+      // Phone Explore keeps today's centered article photos (phones unchanged in part 3).
+      if (column || name !== "explore") for (const c of crops) expect(c.position, `${c.src} is cropped from the middle`).not.toBe("50% 50%");
 
       if (column) {
         // A section card's preview is at most two lines; the full text is in the open card.
@@ -254,6 +286,47 @@ for (const [size, { column, ...viewport }] of Object.entries(SIZES)) {
           return { lines: Math.round(el.getBoundingClientRect().height / lh), text: (el.textContent ?? "").slice(0, 40) };
         }));
         for (const p of previews) expect(p.lines, `preview "${p.text}…" runs past 2 lines`).toBeLessThanOrEqual(2);
+      }
+      if (column && name === "explore") {
+        // Articles with a body open the reader; the rest open the website.
+        await expect(page.locator(`[data-explore-post="${READER_POST_ID}"]`).first()).toHaveAttribute("data-opens", "reader");
+        const web = page.locator(`[data-explore-post="${WEB_POST_ID}"]`).first();
+        await expect(web).toHaveAttribute("data-opens", "website");
+        await expect(web).toHaveAttribute("target", "_blank");
+      }
+      if (column && name.startsWith("reader-p")) {
+        // The body was cleaned: nothing it carried ran or survived.
+        const leaks = await page.evaluate(() => {
+          const flow = document.querySelector(".duo-reader-flow");
+          const body = flow?.querySelector(".duo-reader-body");
+          return {
+            ran: (window as unknown as { __readerPwned?: string }).__readerPwned ?? null,
+            tags: flow ? [...flow.querySelectorAll("script, style, iframe, object, embed")].length : -1,
+            styled: body ? [...body.querySelectorAll("[style], [class], [id]")].length : -1,
+            handlers: body ? [...body.querySelectorAll("*")].filter((el) => [...el.attributes].some((a) => a.name.startsWith("on"))).length : -1,
+            badLinks: body ? [...body.querySelectorAll("a")].filter((a) => !/^(https?:|mailto:)/.test(a.getAttribute("href") ?? "") || a.getAttribute("target") !== "_blank").length : -1,
+            bodyShown: getComputedStyle(document.body).display !== "none",
+          };
+        });
+        expect(leaks).toEqual({ ran: null, tags: 0, styled: 0, handlers: 0, badLinks: 0, bodyShown: true });
+        // No line of text crosses the center of the screen (the fold).
+        const crossing = await page.evaluate(() => {
+          const cx = innerWidth / 2;
+          const out: string[] = [];
+          const walker = document.createTreeWalker(document.querySelector("[data-duo-reader]")!, NodeFilter.SHOW_TEXT);
+          for (let n = walker.nextNode(); n; n = walker.nextNode()) {
+            if (!n.textContent?.trim()) continue;
+            const range = document.createRange();
+            range.selectNodeContents(n);
+            for (const r of range.getClientRects()) {
+              if (r.width < 1 || r.right < 0 || r.left > innerWidth || r.bottom < 0 || r.top > innerHeight) continue;
+              if (r.left < cx - 0.5 && r.right > cx + 0.5) out.push((n.textContent ?? "").trim().slice(0, 40));
+            }
+          }
+          return out;
+        });
+        appendFileSync("test-results/duo/reader-center.json", JSON.stringify({ size, name, crossing }) + "\n");
+        expect(crossing, "text lines across the fold").toEqual([]);
       }
       if (column && pg.sitter) {
         // No photo box that failed to load (an empty dark box with a broken image).

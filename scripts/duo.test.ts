@@ -13,6 +13,7 @@
  */
 import assert from "node:assert/strict";
 import { resolveDuoLayout } from "@/lib/duo";
+import { mapFeedToExplore, type BlogFeedItem } from "@/lib/blogFeed.server";
 import { applyToHtml, barGeometry, normalizeNativeDuoState, type NativeDuoState } from "@/lib/duoNative";
 
 let passed = 0;
@@ -172,6 +173,27 @@ check("an inactive crease sets no fold variables", () => {
   const r = fakeRoot();
   applyToHtml(state({ hingeStatus: "closed", fold: { ...crease, active: false } }), r);
   assert.equal(r.props.size, 0);
+});
+
+console.log("\nExplore on the Duo (lib/blogFeed.server.ts)");
+const feedItems: BlogFeedItem[] = [
+  { id: "a", url: "https://x.test/a", title: "With body", summary: "S", image: "https://x.test/a.jpg", _kya: { read_minutes: 7, category: "Behavior", image_alt: "Alt" }, content_html: "<p>Hi</p>" },
+  { id: "b", url: "https://x.test/b", title: "No body", tags: ["Health"] },
+  { id: "c", url: "https://x.test/c", title: "Blank body", content_html: "   " },
+  { id: "d", url: "https://x.test/d", content_html: "<p>No title</p>" },
+];
+check("posts carry summary, read time, alt, and whether they have a body", () => {
+  const posts = mapFeedToExplore(feedItems);
+  assert.deepEqual(posts.map((p) => [p.id, p.hasBody]), [["a", true], ["b", false], ["c", false]]);
+  assert.equal(posts[0].readMinutes, 7);
+  assert.equal(posts[0].imageAlt, "Alt");
+  assert.equal(posts[0].summary, "S");
+  assert.equal(posts[1].category, "Health");
+});
+check("a blank or missing content_html is not a body (the post opens on the website)", () => {
+  const posts = mapFeedToExplore(feedItems);
+  assert.equal(posts.find((p) => p.id === "c")!.hasBody, false);
+  assert.equal(posts.find((p) => p.id === "b")!.hasBody, false);
 });
 
 console.log(`\n${passed} passed${process.exitCode ? ", some FAILED" : ""}`);

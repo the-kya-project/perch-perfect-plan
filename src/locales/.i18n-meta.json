@@ -4656,6 +4656,45 @@
     "explore.viewAll": {
       "stamp": "5fc8577d53e07b6e"
     },
+    "exploreDuo.allArticles": {
+      "stamp": "fa9c38d27bacdca9"
+    },
+    "exploreDuo.featured": {
+      "stamp": "625d9bbf5cabaa72"
+    },
+    "exploreDuo.featuredMeta": {
+      "stamp": "b7945d3f21becc39"
+    },
+    "exploreDuo.min": {
+      "stamp": "d83bc9639cd36657"
+    },
+    "exploreDuo.minRead": {
+      "stamp": "1b2e2df0076adcec"
+    },
+    "exploreDuo.moreArticles": {
+      "stamp": "e04cc78d811d7368"
+    },
+    "exploreDuo.nextPage": {
+      "stamp": "30774cab2ac86795"
+    },
+    "exploreDuo.onTheWebsite": {
+      "stamp": "12af156c01e47e54"
+    },
+    "exploreDuo.pageOf": {
+      "stamp": "b01b34b644105820"
+    },
+    "exploreDuo.previousPage": {
+      "stamp": "efa08c144fa2107e"
+    },
+    "exploreDuo.readOnSite": {
+      "stamp": "0686e5800f171b2d"
+    },
+    "exploreDuo.seeAll": {
+      "stamp": "633093736fdd4e48"
+    },
+    "exploreDuo.title": {
+      "stamp": "7dd0d5e0d790ffdf"
+    },
     "exportDuo.previewEyebrow": {
       "stamp": "5b4680732706d9f7"
     },

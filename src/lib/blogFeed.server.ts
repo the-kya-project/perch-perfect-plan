@@ -56,6 +56,8 @@ export type BlogFeedItem = {
     category?: unknown;
     image_alt?: unknown;
   };
+  /** The full article body, when the feed carries it (not yet, Nov 2026). */
+  content_html?: unknown;
 };
 
 type CacheEntry = { at: number; items: BlogFeedItem[] | null };
@@ -193,4 +195,75 @@ export async function getBlogResult(): Promise<BlogResult> {
   // Could not read the feed → an empty section, never a broken one.
   if (!items) return { connected: true, posts: [] };
   return { connected: true, posts: mapFeedToPosts(items) };
+}
+
+// ── The iPhone Duo's Explore (components/duo/explore) ──────────────────────
+// A wider view of the same feed: every post, with its summary, and whether it
+// has a body the in-app reader can show. The body itself is only sent when a
+// post is opened (getArticleBody), so the list stays small.
+
+export type ExplorePost = {
+  id: string;
+  title: string;
+  url: string | null;
+  image: string | null;
+  imageAlt: string | null;
+  category: string | null;
+  readMinutes: number | null;
+  summary: string | null;
+  published: string | null;
+  /** The feed carries content_html for this post: open it in the reader. */
+  hasBody: boolean;
+};
+
+/** How many posts "See all" lists. */
+export const MAX_EXPLORE_POSTS = 30;
+
+function bodyOf(item: BlogFeedItem): string | undefined {
+  return str(item.content_html);
+}
+
+/** Feed items → the Duo's Explore list, newest first. Pure. */
+export function mapFeedToExplore(items: BlogFeedItem[], limit = MAX_EXPLORE_POSTS): ExplorePost[] {
+  const posts: ExplorePost[] = [];
+  for (const item of items) {
+    const title = str(item.title);
+    if (!title) continue;
+    const url = str(item.url);
+    posts.push({
+      id: str(item.id) ?? url ?? title,
+      title,
+      url: url ?? null,
+      image: str(item.image) ?? null,
+      imageAlt: str(item._kya?.image_alt) ?? null,
+      category: categoryOf(item) ?? null,
+      readMinutes: num(item._kya?.read_minutes) ?? null,
+      summary: str(item.summary) ?? null,
+      published: str(item.date_published) ?? null,
+      hasBody: !!bodyOf(item)?.trim(),
+    });
+    if (posts.length === limit) break;
+  }
+  return posts;
+}
+
+export async function getExploreResult(): Promise<{ posts: ExplorePost[] }> {
+  const items = await fetchBlogFeed();
+  return { posts: items ? mapFeedToExplore(items) : [] };
+}
+
+/**
+ * One post's body, as the feed publishes it (unsanitized: the reader cleans it
+ * in the browser before showing it, lib/articleHtml.ts), or null when the post
+ * is gone or has no body.
+ */
+export async function getArticleBody(id: string): Promise<{ post: ExplorePost; html: string } | null> {
+  const items = await fetchBlogFeed();
+  if (!items) return null;
+  const all = mapFeedToExplore(items, items.length);
+  const i = all.findIndex((p) => p.id === id);
+  if (i < 0) return null;
+  const item = items.filter((it) => str(it.title))[i];
+  const html = item ? bodyOf(item) : undefined;
+  return html?.trim() ? { post: all[i], html } : null;
 }

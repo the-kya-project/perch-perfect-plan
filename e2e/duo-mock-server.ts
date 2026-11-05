@@ -15,6 +15,7 @@
 import http from "node:http";
 import { duoFixture, type DuoVariant } from "./duo-fixture";
 import { embed, filterRows, variantOf } from "./duo-rows";
+import { duoFeed } from "./duo-feed";
 // @ts-expect-error plain JS fixture
 import { sitterFixture } from "./sitter-fixture.mjs";
 
@@ -45,6 +46,8 @@ http.createServer((req, res) => {
   };
   if (req.method === "OPTIONS") return send(204, undefined);
   if (p === "/__health") return send(200, { ok: true });
+  // The blog's JSON Feed (the app server reads it via BLOG_FEED_URL).
+  if (p === "/__feed.json") return send(200, duoFeed(APP));
 
   // Service-role calls carry no token of the person: they get the variant of
   // the last signed-in request (the inventory runs one screen at a time).
