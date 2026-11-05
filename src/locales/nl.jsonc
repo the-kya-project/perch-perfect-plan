@@ -153,6 +153,8 @@
   "account.yourAccountAndAllData": "Je account en alle gegevens zijn verwijderd.",
   // Your name
   "account.yourName": "Je naam",
+  // Add a phone number
+  "accountDuo.addPhone": "Telefoonnummer toevoegen",
   // Backup contact, first-aid kit and more
   "accountDuo.allEmergency": "Back-upcontact, EHBO-doos en meer",
   // Complete

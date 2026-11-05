@@ -12,7 +12,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useTranslation } from "react-i18next";
 import type { TFunction } from "i18next";
-import { Bell, Lock, ShieldAlert, Users } from "lucide-react";
+import { Bell, Lock, Phone, ShieldAlert, Users } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { getLocalUser } from "@/integrations/supabase/currentUser";
@@ -249,16 +249,22 @@ function EmergencyQuickForm({ values, loaded, eyebrow, title }: { values: Emerge
               return (
                 <label key={f} className="flex flex-col gap-1.5">
                   <span className="text-[14px] font-[700]">{fieldLabel(t, f)}</span>
-                  <input
-                    value={form[f] ?? ""}
-                    inputMode={phone ? "tel" : undefined}
-                    type={phone ? "tel" : "text"}
-                    data-empty-phone={phone && empty ? "" : undefined}
-                    onChange={(e) => setForm((p) => ({ ...p, [f]: e.target.value }))}
-                    onBlur={phone ? () => setForm((p) => ({ ...p, [f]: formatPhoneOnBlur(p[f]) })) : undefined}
-                    className="min-h-[52px] w-full rounded-[16px] border-2 bg-white px-4 text-[16px] outline-none focus:border-[#2d6a4f]"
-                    style={{ borderColor: phone && empty ? "#e0b860" : DUO.line, color: DUO.forest, background: phone && empty ? DUO.attentionBg : "#fff" }}
-                  />
+                  {/* A missing number: amber border and "Add a phone number" in
+                      amber, with the phone icon on the right. */}
+                  <span className="relative block">
+                    <input
+                      value={form[f] ?? ""}
+                      inputMode={phone ? "tel" : undefined}
+                      type={phone ? "tel" : "text"}
+                      placeholder={phone ? t("accountDuo.addPhone", "Add a phone number") : undefined}
+                      data-empty-phone={phone && empty ? "" : undefined}
+                      onChange={(e) => setForm((p) => ({ ...p, [f]: e.target.value }))}
+                      onBlur={phone ? () => setForm((p) => ({ ...p, [f]: formatPhoneOnBlur(p[f]) })) : undefined}
+                      className={`min-h-[52px] w-full rounded-[16px] border-2 bg-white px-4 text-[16px] outline-none placeholder:font-[600] placeholder:text-[#8a6a1f] focus:border-[#2d6a4f]${phone && empty ? " pr-12" : ""}`}
+                      style={{ borderColor: phone && empty ? "#e0b860" : DUO.line, color: DUO.forest, background: phone && empty ? DUO.attentionBg : "#fff" }}
+                    />
+                    {phone && empty && <Phone aria-hidden="true" className="pointer-events-none absolute right-4 top-1/2 size-5 -translate-y-1/2" style={{ color: DUO.attentionText }} />}
+                  </span>
                   {warn && <span className="text-[13px]" style={{ color: DUO.attentionText }}>{warn}</span>}
                 </label>
               );

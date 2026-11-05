@@ -104,6 +104,17 @@ for (const [size, { column, ...viewport }] of Object.entries(SIZES)) {
         await expect(rail.getByRole("link")).toHaveCount(0);
       }
 
+      // Identity in the Duo card: every "Not added" row on one line.
+      if (column && name === "identity") {
+        const heights = await page.getByText("Not added", { exact: true }).evaluateAll((els) => els.map((el) => el.getBoundingClientRect().height));
+        expect(heights.length).toBeGreaterThan(0);
+        for (const h of heights) expect(h, "a Not added value wraps").toBeLessThan(30);
+      }
+      // The account's Emergency info card: an empty phone says what goes there.
+      if (column && name === "account") {
+        await expect(page.getByPlaceholder("Add a phone number").first()).toBeVisible();
+      }
+
       // One main button per screen: at most one gold (sunflower) button showing.
       const gold = await page.evaluate(() => [...document.querySelectorAll("button, a")].filter((el) => {
         const r = el.getBoundingClientRect();

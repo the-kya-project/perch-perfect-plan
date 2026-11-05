@@ -1,7 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { speciesLabel } from "@/lib/speciesLabel";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
+import { useCallback, useContext, useEffect, useRef, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import i18next, { type TFunction } from "i18next";
 import { supabase } from "@/integrations/supabase/client";
@@ -16,7 +16,7 @@ import { useCapability } from "@/lib/useCapability";
 import { signBirdPhoto, persistBirdPhoto } from "@/lib/birdPhoto";
 import { BirdPhotoCrop } from "@/components/BirdPhotoCrop";
 import { compressImageToDataUrl, dataUrlBytes, MAX_UPLOAD_BYTES } from "@/lib/imageUpload";
-import { K, KyaPage, KyaBody, KyaCard, KyaField, KyaHeading, KyaLink, KyaPrimaryButton } from "@/components/kya";
+import { K, KyaPage, KyaBody, KyaCard, KyaField, KyaHeading, KyaInCard, KyaLink, KyaPrimaryButton } from "@/components/kya";
 import { PageHeader, TaskFooter, TASK_FOOTER_SPACE, TaskHeader, useGoBack, useLeaveGuard } from "@/components/headers";
 import { friendlyError } from "@/lib/errorMessage";
 import { LoadError } from "@/components/LoadError";
@@ -262,14 +262,17 @@ function sexValue(t: TFunction, b: Identity): string | null {
 function Row({ label, value, onAdd, last }: { label: string; value: string | null | undefined; onAdd?: () => void; last?: boolean }) {
   const { t } = useTranslation();
   const filled = !blank(value);
+  // iPhone Duo pop-out card (narrower than a phone): a tighter label column so
+  // "Not added" and Add stay on one line.
+  const inCard = useContext(KyaInCard);
   return (
-    <div className="flex min-h-[52px] items-center gap-3 px-4 py-2" style={{ borderBottom: last ? undefined : `1px solid ${K.line}` }}>
-      <span className="w-[108px] shrink-0 text-[14px]" style={{ color: K.quiet }}>{label}</span>
+    <div className={`flex min-h-[52px] items-center py-2 ${inCard ? "gap-2 px-3" : "gap-3 px-4"}`} style={{ borderBottom: last ? undefined : `1px solid ${K.line}` }}>
+      <span className={`${inCard ? "w-[92px]" : "w-[108px]"} shrink-0 text-[14px]`} style={{ color: K.quiet }}>{label}</span>
       {filled ? (
         <span className="min-w-0 flex-1 break-words py-1.5 text-[15px] font-[600]" style={{ color: K.forest }}>{value}</span>
       ) : (
         <span className="flex min-w-0 flex-1 items-center justify-between gap-2">
-          <span className="text-[15px]" style={{ color: K.quiet }}>{t("birdIdentity.notAdded", "Not added")}</span>
+          <span className={`text-[15px]${inCard ? " whitespace-nowrap" : ""}`} style={{ color: K.quiet }}>{t("birdIdentity.notAdded", "Not added")}</span>
           {onAdd && <KyaLink onClick={onAdd} className="px-1">{t("birdIdentity.add", "Add")}</KyaLink>}
         </span>
       )}
