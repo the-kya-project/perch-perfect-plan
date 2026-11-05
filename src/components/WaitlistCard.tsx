@@ -42,11 +42,12 @@ const inputStyle = { borderColor: "#d5dfd5", color: "#1a3d2e" };
 
 // Lime community-waitlist card on Explore — the single accent moment. The button
 // opens a popup form whose fields map 1:1 to the Brevo waitlist form.
-export function WaitlistCard() {
+export function WaitlistCard({ duo = false }: { duo?: boolean } = {}) {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   return (
-    <section className="rounded-[20px] p-5" style={{ background: K.lime, color: K.forest }}>
+    // The iPhone Duo's Explore uses the Duo blocks' green (#cfe9b7) and a larger radius.
+    <section className={duo ? "rounded-[24px] p-6" : "rounded-[20px] p-5"} style={{ background: duo ? "#cfe9b7" : K.lime, color: K.forest }}>
       <span className="inline-flex rounded-full px-2.5 py-1 text-[12px] font-[700] text-white" style={{ background: K.forest }}>{t("waitlist.comingSoonTag", "Coming soon")}</span>
       <KyaHeading size={21} className="mt-2.5">{t("waitlist.joinTheCommunity", "Join the community")}</KyaHeading>
       <p className="m-0 mt-2 text-[15px] leading-[1.5]">

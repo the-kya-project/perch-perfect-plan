@@ -26,3 +26,22 @@ export const getBlogPosts = createServerFn({ method: "GET" }).handler(async (): 
   const { getBlogResult } = await import("./blogFeed.server");
   return getBlogResult();
 });
+
+export type { ExplorePost } from "./blogFeed.server";
+
+/** The iPhone Duo's Explore: every post, with summaries and has-body flags. */
+export const getExploreFeed = createServerFn({ method: "GET" }).handler(async () => {
+  const { getExploreResult } = await import("./blogFeed.server");
+  return getExploreResult();
+});
+
+/** One post's body for the Duo's reader, or null (then the post opens on the website). */
+export const getBlogArticle = createServerFn({ method: "GET" })
+  .inputValidator((d: { id: string }) => {
+    if (!d || typeof d.id !== "string" || !d.id || d.id.length > 2000) throw new Error("Bad article id.");
+    return { id: d.id };
+  })
+  .handler(async ({ data }) => {
+    const { getArticleBody } = await import("./blogFeed.server");
+    return getArticleBody(data.id);
+  });

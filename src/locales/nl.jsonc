@@ -3155,6 +3155,32 @@
   "explore.storiesOnTheWay": "Er komen verhalen aan",
   // View all
   "explore.viewAll": "Alles bekijken",
+  // All articles
+  "exploreDuo.allArticles": "Alle artikelen",
+  // Featured
+  "exploreDuo.featured": "Uitgelicht",
+  // Featured · {{meta}}
+  "exploreDuo.featuredMeta": "Uitgelicht · {{meta}}",
+  // {{n}} min
+  "exploreDuo.min": "{{n}} min",
+  // {{n}} min read
+  "exploreDuo.minRead": "{{n}} min lezen",
+  // More articles
+  "exploreDuo.moreArticles": "Meer artikelen",
+  // Next page
+  "exploreDuo.nextPage": "Volgende pagina",
+  // On thekyaproject.com
+  "exploreDuo.onTheWebsite": "Op thekyaproject.com",
+  // Page {{page}} of {{total}}
+  "exploreDuo.pageOf": "Pagina {{page}} van {{total}}",
+  // Previous page
+  "exploreDuo.previousPage": "Vorige pagina",
+  // Read on thekyaproject.com
+  "exploreDuo.readOnSite": "Lees verder op thekyaproject.com",
+  // See all
+  "exploreDuo.seeAll": "Alles bekijken",
+  // Explore
+  "exploreDuo.title": "Ontdekken",
   // Preview
   "exportDuo.previewEyebrow": "Voorbeeld",
   // What the adopter gets
