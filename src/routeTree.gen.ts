@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
+import { Route as AppSigninReturnRouteImport } from './routes/app-signin-return'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as ConfirmEmailRouteImport } from './routes/confirm-email'
 import { Route as DeleteAccountRouteImport } from './routes/delete-account'
@@ -117,6 +118,11 @@ const IndexRoute = IndexRouteImport.update({
 } as any)
 const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
   id: '/_authenticated',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AppSigninReturnRoute = AppSigninReturnRouteImport.update({
+  id: '/app-signin-return',
+  path: '/app-signin-return',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthRoute = AuthRouteImport.update({
@@ -661,6 +667,7 @@ const ApiPublicUnsubscribeCategoryUserIdSigRoute =
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/app-signin-return': typeof AppSigninReturnRoute
   '/auth': typeof AuthRoute
   '/confirm-email': typeof ConfirmEmailRoute
   '/delete-account': typeof DeleteAccountRoute
@@ -762,6 +769,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/app-signin-return': typeof AppSigninReturnRoute
   '/auth': typeof AuthRoute
   '/confirm-email': typeof ConfirmEmailRoute
   '/delete-account': typeof DeleteAccountRoute
@@ -858,6 +866,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
+  '/app-signin-return': typeof AppSigninReturnRoute
   '/auth': typeof AuthRoute
   '/confirm-email': typeof ConfirmEmailRoute
   '/delete-account': typeof DeleteAccountRoute
@@ -961,6 +970,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/app-signin-return'
     | '/auth'
     | '/confirm-email'
     | '/delete-account'
@@ -1062,6 +1072,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/app-signin-return'
     | '/auth'
     | '/confirm-email'
     | '/delete-account'
@@ -1157,6 +1168,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/_authenticated'
+    | '/app-signin-return'
     | '/auth'
     | '/confirm-email'
     | '/delete-account'
@@ -1260,6 +1272,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
+  AppSigninReturnRoute: typeof AppSigninReturnRoute
   AuthRoute: typeof AuthRoute
   ConfirmEmailRoute: typeof ConfirmEmailRoute
   DeleteAccountRoute: typeof DeleteAccountRoute
@@ -1311,6 +1324,13 @@ declare module '@tanstack/react-router' {
       path: ''
       fullPath: '/'
       preLoaderRoute: typeof AuthenticatedRouteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/app-signin-return': {
+      id: '/app-signin-return'
+      path: '/app-signin-return'
+      fullPath: '/app-signin-return'
+      preLoaderRoute: typeof AppSigninReturnRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/auth': {
@@ -2224,6 +2244,7 @@ const SitterTokenRouteRouteWithChildren =
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
+  AppSigninReturnRoute: AppSigninReturnRoute,
   AuthRoute: AuthRoute,
   ConfirmEmailRoute: ConfirmEmailRoute,
   DeleteAccountRoute: DeleteAccountRoute,

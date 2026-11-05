@@ -51,6 +51,8 @@
  * same link works in the browser exactly as before.
  */
 
+import { appCallbackRoute } from "./oauthAppReturn";
+
 export const APP_LINK_HOST = "app.thekyaproject.com";
 /** The app's own URL scheme (Info.plist). Defined here, not in openInApp.ts,
  *  which imports this file. */
@@ -119,6 +121,12 @@ export function incomingLink(url: string): IncomingLink | null {
   } catch {
     return null;
   }
+  // The web sign-in fallback handing its code back from the browser sheet
+  // (oauthAppReturn.ts): kyaco://auth-callback?code=… The exchange has to
+  // happen in the app, which holds the PKCE verifier, so this is the one
+  // ?code= link the app takes.
+  const callback = appCallbackRoute(u);
+  if (callback) return { kind: "route", href: callback };
   // "Open in the Kya & Co. app" from an iPhone browser (openInApp.ts):
   // kyaco://open/<path>. Only app screens; anything else opens the dashboard.
   if (u.protocol === `${APP_URL_SCHEME}:`) {

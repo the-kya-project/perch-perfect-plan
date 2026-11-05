@@ -39,9 +39,9 @@ import { withErrorTelemetry } from "@/lib/errorTelemetry";
 import { withCronTelemetry } from "@/lib/cronTelemetry";
 import { cronAuthFailure } from "@/lib/cronAuth";
 import { buildAccounts, WELCOME_WINDOW_HOURS, type CtaVariant, type RawRows } from "@/lib/onboardingPlan";
-import { welcomeDecision, type WelcomeHold } from "@/lib/welcomeTiming";
+import { welcomeAddress, welcomeCandidateFor, welcomeDecision, type WelcomeConfirmation, type WelcomeHold } from "@/lib/welcomeTiming";
 
-type Confirmation = { user_id: string; email: string | null; created_at: string; email_confirmed_at: string | null };
+type Confirmation = WelcomeConfirmation;
 type Profile = {
   id: string;
   email: string | null;
@@ -124,17 +124,7 @@ export const Route = createFileRoute("/api/public/hooks/onboarding-welcome")({
         const waiting: Array<{ userId: string; reason: WelcomeHold; sendAt?: string }> = [];
         for (const c of confirmations) {
           const profile = profileById.get(c.user_id);
-          const decision = welcomeDecision(
-            {
-              userId: c.user_id,
-              createdAt: profile?.created_at ?? c.created_at,
-              confirmedAt: c.email_confirmed_at,
-              notifyOnboarding: profile?.notify_onboarding !== false,
-              timeZone: profile?.time_zone ?? null,
-              welcomeSettled: welcomed.has(c.user_id),
-            },
-            now,
-          );
+          const decision = welcomeDecision(welcomeCandidateFor(c, profile, welcomed.has(c.user_id)), now);
           if (decision.kind === "hold") {
             hold(decision.reason);
             if (decision.reason === "too_soon" || decision.reason === "quiet_hours") waiting.push({ userId: c.user_id, reason: decision.reason, sendAt: decision.sendAt });
@@ -144,7 +134,7 @@ export const Route = createFileRoute("/api/public/hooks/onboarding-welcome")({
           // A grieving owner with no other bird gets nothing (as in the daily
           // batch); nothing is logged, so it would go if a bird were added.
           if (account?.onlyPassedBirds) { hold("bird_passed"); continue; }
-          const to = ((profile?.email ?? "").trim() || (c.email ?? "").trim());
+          const to = welcomeAddress(profile?.email, c.email);
           due.push({ c, profile, to, ctaVariant: account?.hasBird ? "standard" : "no_bird", sendAt: decision.sendAt, quietHold: decision.quietHold });
         }
 

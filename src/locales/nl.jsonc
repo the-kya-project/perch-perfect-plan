@@ -261,6 +261,18 @@
   "addressInput.streetLabel": "Straat",
   // ZIP
   "addressInput.zip": "Postcode",
+  // Back to sign in
+  "appSignInReturn.backToSignIn": "Terug naar inloggen",
+  // Sign-in didn't finish. Please try again.
+  "appSignInReturn.didNotFinish": "Inloggen is niet afgerond. Probeer het opnieuw.",
+  // Sign-in didn't finish
+  "appSignInReturn.errorTitle": "Inloggen is niet afgerond",
+  // Signing in — Kya & Co.
+  "appSignInReturn.pageTitle": "Inloggen — Kya & Co.",
+  // Return to Kya & Co.
+  "appSignInReturn.returnToApp": "Terug naar Kya & Co.",
+  // Finishing sign-in
+  "appSignInReturn.title": "Inloggen afronden",
   // By creating an account you agree to our <terms>Terms of service</terms> and <privacy>Privacy policy</privacy>.
   "auth.agreeToTermsOfService": "Door een account aan te maken ga je akkoord met onze <terms>servicevoorwaarden</terms> en ons <privacy>privacybeleid</privacy>.",
   // Your email is already confirmed. Sign in to continue.
@@ -271,6 +283,8 @@
   "auth.alreadyHaveAccountCheckInbox": "Je hebt al een account — kijk in je inbox of stuur de bevestiging opnieuw.",
   // Apple sign-in failed.
   "auth.appleSignInFailed": "Inloggen met Apple mislukt.",
+  // Apple sign-in isn't working in this version of the app. Please sign in with email for now, or update the app.
+  "auth.appleUnavailableInApp": "Inloggen met Apple werkt niet in deze versie van de app. Log voorlopig in met je e-mailadres, of werk de app bij.",
   // Back to sign in
   "auth.backToSignIn": "Terug naar inloggen",
   // Continue with Apple
@@ -295,6 +309,8 @@
   "auth.forgotPassword": "Wachtwoord vergeten?",
   // Google sign-in failed.
   "auth.googleSignInFailed": "Inloggen met Google mislukt.",
+  // Google sign-in isn't working in this version of the app. Please sign in with email for now, or update the app.
+  "auth.googleUnavailableInApp": "Inloggen met Google werkt niet in deze versie van de app. Log voorlopig in met je e-mailadres, of werk de app bij.",
   // Already have an account? <go>Sign in</go>
   "auth.haveAccountSignIn": "Heb je al een account? <go>Inloggen</go>",
   // Last name
@@ -3859,6 +3875,8 @@
   "fullCheck.save": "Check van {{name}} opslaan",
   // {{name}}'s check is saved to the health log.
   "fullCheck.savedLine": "De check van {{name}} staat in het gezondheidslogboek.",
+  // Save
+  "fullCheck.saveShort": "Opslaan",
   // Saving…
   "fullCheck.saving": "Opslaan…",
   // {{name}}'s daily check
