@@ -41,7 +41,9 @@ export function duoFixture(appOrigin: string, now = Date.now(), variant: DuoVari
     birth_date: date(2 * 365 * DAY + n * 40 * DAY),
     flight_status: "flighted",
     photo_url: `${appOrigin}${photo}`,
-    photo_position: "50% 30%",
+    // No saved crop, as for most birds: the app's default framing applies
+    // (lib/birdPhotoFocus.ts).
+    photo_position: null,
     setup_complete: true,
     setup_step: null,
     is_foster: false,
@@ -121,7 +123,7 @@ export function duoFixture(appOrigin: string, now = Date.now(), variant: DuoVari
   const withLogs = variant === "base" || filled;
   const members = [
     ...keep.map((b) => ({ bird_id: b.id, user_id: OWNER_ID, role: "owner" })),
-    ...(filled ? [{ bird_id: birds[0].id, user_id: MEMBER_ID, role: "household" }, { bird_id: birds[1].id, user_id: MEMBER_ID, role: "household" }] : []),
+    ...(filled ? [{ bird_id: birds[0].id, user_id: MEMBER_ID, role: "household", created_at: iso(60 * DAY) }, { bird_id: birds[1].id, user_id: MEMBER_ID, role: "household", created_at: iso(60 * DAY) }] : []),
   ];
 
   return {

@@ -28,6 +28,7 @@ import { friendlyError } from "@/lib/errorMessage";
 import { localDateISO } from "@/lib/localDay";
 import { birdNames } from "@/lib/birdNames";
 import { mergeEmergency } from "@/lib/emergency";
+import { useFormDraft } from "@/lib/drafts";
 
 // Create OR edit a sit. In edit mode (`editSit` set) it preserves the existing
 // invite_token — the same sitter link keeps working; editing changes what it
@@ -76,7 +77,6 @@ export function SitForm({
   // Close asks before throwing away anything entered.
   const snapshot = JSON.stringify([Array.from(selected).sort(), title, sitterName, sitterEmail, start, end, notes]);
   const initialSnapshot = useRef(snapshot);
-  const { requestClose, guard } = useLeaveGuard(snapshot !== initialSnapshot.current && !saving, onClose);
 
   // Delete a sit — owner always; a household member only with manage_sits (RLS
   // "sits delete" mirrors this). FK cascade cleans children: sit_birds,
@@ -198,6 +198,29 @@ export function SitForm({
     : null;
   const [caregiverKind, setCaregiverKind] = useState<CaregiverKind | null>(initialKind);
   const [householdUserId, setHouseholdUserId] = useState<string | null>(editing ? (editSit.caregiver_user_id ?? null) : null);
+
+  // Setting up a sit keeps a local draft: with the iPhone Duo's side column the
+  // tabs are always a tap away, so leaving mid-way and coming back puts every
+  // choice back. Cleared once the sit is created, and on Close.
+  type SitDraft = {
+    selected: string[]; title: string; sitterName: string; sitterEmail: string;
+    start: string; end: string; notes: string;
+    caregiverKind: CaregiverKind | null; householdUserId: string | null;
+  };
+  const draft = useFormDraft<SitDraft>({
+    kind: "sit-new",
+    birdId: "new",
+    enabled: !editing,
+    data: { selected: Array.from(selected).sort(), title, sitterName, sitterEmail, start, end, notes, caregiverKind, householdUserId },
+    empty: snapshot === initialSnapshot.current && !caregiverKind,
+    onRestore: ({ data: d }) => {
+      setSelected(new Set(d.selected.filter((id) => birds.some((b: any) => b.id === id))));
+      setTitle(d.title); setSitterName(d.sitterName); setSitterEmail(d.sitterEmail);
+      setStart(d.start); setEnd(d.end); setNotes(d.notes);
+      setCaregiverKind(d.caregiverKind); setHouseholdUserId(d.householdUserId);
+    },
+  });
+  const { requestClose, guard } = useLeaveGuard(snapshot !== initialSnapshot.current && !saving, () => { draft.clear(); onClose(); });
 
   // The lead ("in charge") is DERIVED from who's covering at save time — no
   // separate picker: a household cover IS the lead; an external sitter leaves
@@ -574,6 +597,7 @@ export function SitForm({
             kind === "household" ? t("sitForm.createdHousehold", "Sit created — your household member is set.") : t("sitForm.createdInviteSent", "Sit created — invite sent to {{name}}.", { name: sitterLabel }),
           );
         }
+        draft.clear();
         onSaved();
         // Back to the Sits tab with the new sit's card at the top.
         navigate({ to: "/sits", search: { created: sit.id } });

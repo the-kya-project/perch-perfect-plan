@@ -22,6 +22,7 @@ import { ChevronRight } from "lucide-react";
 import { LoadError, ListSkeleton } from "@/components/LoadError";
 import { useLoadState } from "@/lib/useTooLong";
 import { useDailyCheckBirds } from "@/lib/checkBirds";
+import { BIRD_PHOTO_FOCUS } from "@/lib/birdPhotoFocus";
 
 // The Health tab: a flock summary. Each bird's latest daily check and weight,
 // the current (or last) sit, and the five latest entries, with the full list
@@ -129,7 +130,7 @@ function HealthTab() {
                       style={{ borderBottom: i === birds.length - 1 ? undefined : `1px solid ${K.line}`, color: K.forest }}
                     >
                       <span className="relative grid size-12 shrink-0 place-items-center overflow-hidden rounded-[14px] text-[18px] font-[700] text-white" style={{ background: K.moss }} aria-hidden="true">
-                        {photo ? <BirdPhotoCrop url={photo.url} original={photo.original} position={b.photo_position ?? "50% 20%"} alt="" /> : String(b.name).slice(0, 1).toUpperCase()}
+                        {photo ? <BirdPhotoCrop url={photo.url} original={photo.original} position={b.photo_position ?? BIRD_PHOTO_FOCUS} alt="" /> : String(b.name).slice(0, 1).toUpperCase()}
                       </span>
                       <span className="min-w-0 flex-1">
                         <span className="block truncate text-[15px] font-[700]">{b.name}</span>

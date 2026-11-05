@@ -17,10 +17,12 @@ import { formatLocalDate } from "@/lib/dates";
 import { capabilitySummary } from "@/components/HouseholdMemberSheet";
 import i18next from "i18next";
 import { useTranslation } from "react-i18next";
+import { useDuoMode } from "@/lib/duo";
+import { BirdSettingsDuo } from "@/components/duo/BirdSettingsDuo";
 
 export const Route = createFileRoute("/_authenticated/birds/$birdId/access")({
   head: () => ({ meta: [{ title: i18next.t("birdAccess.metaTitle", "Who can see this record — Kya & Co.") }] }),
-  component: AccessHub,
+  component: AccessHubRoute,
 });
 
 function fmtDate(iso: string): string {
@@ -32,6 +34,17 @@ function sentenceStart(s: string): string {
 }
 function initialOf(s: string | null | undefined, fallback = "?") {
   return (s?.trim()?.slice(0, 1) || fallback).toUpperCase();
+}
+
+
+// iPhone Duo, two panes: this page in the card beside the bird's settings
+// tiles (BirdSettingsDuo).
+function AccessHubRoute() {
+  const { birdId } = Route.useParams();
+  const navigate = useNavigate();
+  const goBack = useGoBack(useCallback(() => navigate({ to: "/birds/$birdId", params: { birdId } }), [navigate, birdId]));
+  if (useDuoMode() === "sideways") return <BirdSettingsDuo birdId={birdId} selected="access" onBack={goBack}><AccessHub /></BirdSettingsDuo>;
+  return <AccessHub />;
 }
 
 function AccessHub() {

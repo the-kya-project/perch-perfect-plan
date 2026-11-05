@@ -115,7 +115,7 @@ function GiftPage() {
   };
 
   return (
-    <FrontDoorPage>
+    <FrontDoorPage duoForm>
       <FrontDoorHeader
         title={t("gift.title", "Give a gift membership")}
         line={t("gift.line", "A year with The Kya Project for the parrot person in your life. Pick a gift, add a note, and choose when it arrives.")}

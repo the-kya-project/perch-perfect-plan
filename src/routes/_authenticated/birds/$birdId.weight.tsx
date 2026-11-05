@@ -29,6 +29,7 @@ import { DraftRestoredNote } from "@/components/DraftRestoredNote";
 import i18next from "i18next";
 import type { TFunction } from "i18next";
 import { useTranslation } from "react-i18next";
+import { BIRD_PHOTO_FOCUS } from "@/lib/birdPhotoFocus";
 
 export const Route = createFileRoute("/_authenticated/birds/$birdId/weight")({
   head: () => ({ meta: [{ title: i18next.t("birdWeight.metaTitle", "Weight — Kya & Co.") }] }),
@@ -121,7 +122,7 @@ function WeightFacet() {
   // today's single column, under the same Option A header (no large number).
   const coverRail = !!useDuoRail() && !wide;
   const [savedCount, setSavedCount] = useState(0);
-  const birdRecord = useBirdRecord(birdId).data as { photo_url?: string | null } | null | undefined;
+  const birdRecord = useBirdRecord(birdId).data as { photo_url?: string | null; photo_position?: string | null } | null | undefined;
   const photoOf = useBirdPhotos([wide || coverRail ? birdRecord?.photo_url : null], 160);
   const goBird = () => navigate({ to: "/birds/$birdId", params: { birdId } });
 
@@ -272,6 +273,7 @@ function WeightFacet() {
         <WeightHeaderA
           name={name}
           photo={photo}
+          position={birdRecord?.photo_position}
           latest={latest}
           loaded={entries !== undefined}
           count={all.length}
@@ -340,7 +342,7 @@ function WeightFacet() {
         {coverRail ? (
           <>
             <RailBack onBack={goBird} />
-            <WeightHeaderA compact name={name} photo={photo} latest={latest} loaded={entries !== undefined} count={all.length} />
+            <WeightHeaderA compact name={name} photo={photo} position={birdRecord?.photo_position} latest={latest} loaded={entries !== undefined} count={all.length} />
           </>
         ) : (
           <PageHeader onBack={goBird} title={t("birdWeight.title", "{{name}}'s weight", { name })}>
@@ -447,9 +449,10 @@ function WeightFacet() {
  * large number. `compact`: the folded cover screen, where the pill wraps under
  * the title and the forest band tucks under today's 26px body.
  */
-function WeightHeaderA({ name, photo, latest, loaded, count, compact = false }: {
+function WeightHeaderA({ name, photo, position, latest, loaded, count, compact = false }: {
   name: string;
   photo: string | undefined;
+  position?: string | null;
   latest: Entry | undefined;
   loaded: boolean;
   count: number;
@@ -468,7 +471,7 @@ function WeightHeaderA({ name, photo, latest, loaded, count, compact = false }: 
       style={{ background: K.forest }}
     >
       {photo ? (
-        <img src={photo} alt="" className="size-14 shrink-0 rounded-full border-[3px] object-cover" style={{ borderColor: "#8fc4a8" }} />
+        <img src={photo} alt="" className="size-14 shrink-0 rounded-full border-[3px] object-cover" style={{ borderColor: "#8fc4a8", objectPosition: position || BIRD_PHOTO_FOCUS }} />
       ) : (
         <span aria-hidden="true" className="grid size-14 shrink-0 place-items-center rounded-full border-[3px] text-[22px] font-[700]" style={{ borderColor: "#8fc4a8", background: K.forestDeep }}>{name.charAt(0)}</span>
       )}

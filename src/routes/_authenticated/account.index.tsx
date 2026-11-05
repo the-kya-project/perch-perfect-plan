@@ -30,6 +30,9 @@ import { saveOwnerLocale } from "@/lib/i18n/ownerLocale";
 import { TimeZoneSheet, ACCOUNT_TIME_ZONE_KEY } from "@/components/TimeZoneSheet";
 import { fetchAccountTimeZone } from "@/lib/sitTimeZoneBackfill";
 import { timeZoneRowLabel } from "@/lib/sitTimeZoneNames";
+import { z } from "zod";
+import { useDuoMode } from "@/lib/duo";
+import { AccountDuo } from "@/components/duo/AccountDuo";
 
 // Each language is named in itself, never translated: someone looking for
 // Nederlands has to recognise it whatever language the app is showing.
@@ -38,10 +41,28 @@ const LANGUAGE_NAMES: Record<Locale, string> = { en: "English", nl: "Nederlands"
 
 export const Route = createFileRoute("/_authenticated/account/")({
   head: () => ({ meta: [{ title: i18next.t("account.pageTitle", "Account — Kya & Co.") }] }),
-  component: AccountPage,
+  // iPhone Duo only (AccountDuo): which tile's settings the right half shows,
+  // and whether to open Delete account. Ignored on every other screen.
+  validateSearch: z.object({
+    tile: z.enum(["household", "more"]).optional().catch(undefined),
+    delete: z.coerce.boolean().optional().catch(undefined),
+  }),
+  component: AccountRoute,
 });
 
-function AccountPage() {
+function AccountRoute() {
+  const { tile, delete: askDelete } = Route.useSearch();
+  // iPhone Duo, two panes: the tiles and a pop-out card (AccountDuo). The card
+  // shows Emergency info unless a tile was picked; "more" puts this whole page
+  // in it.
+  if (useDuoMode() === "sideways") {
+    if (tile === "more") return <AccountDuo selected="more"><AccountPage openDelete={!!askDelete} /></AccountDuo>;
+    return <AccountDuo selected={tile === "household" ? "household" : "emergency"} />;
+  }
+  return <AccountPage />;
+}
+
+function AccountPage({ openDelete = false }: { openDelete?: boolean }) {
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const router = useRouter();
@@ -97,7 +118,7 @@ function AccountPage() {
   const [timeZoneOpen, setTimeZoneOpen] = useState(false);
 
   const [editOpen, setEditOpen] = useState(false);
-  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(openDelete);
   // Same per-surface rule as Settings and the checklists: inside the app there
   // is nothing to install, on a phone browser we point at the store, and on a
   // desktop we do not push an install at all.

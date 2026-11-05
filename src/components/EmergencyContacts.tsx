@@ -52,7 +52,7 @@ export function rowLabel(t: TFunction, k: RowKey, viewerIsOwner = true): string 
   }
 }
 
-function fieldLabel(t: TFunction, f: EmergencyField, viewerIsOwner = true): string {
+export function fieldLabel(t: TFunction, f: EmergencyField, viewerIsOwner = true): string {
   switch (f) {
     case "owner_phone": return viewerIsOwner ? t("emergencyList.field.yourPhone", "Your phone") : t("emergencyList.field.ownerPhone", "Owner's phone");
     case "backup_name": return t("emergencyList.field.name", "Name");

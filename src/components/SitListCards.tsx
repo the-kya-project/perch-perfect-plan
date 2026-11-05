@@ -14,6 +14,7 @@ import { BirdPhotoCrop } from "@/components/BirdPhotoCrop";
 import { K, KyaCard, KyaLink, KyaRow, KyaSheet, KyaHeading } from "@/components/kya";
 import { birdNames } from "@/lib/birdNames";
 import { useTranslation } from "react-i18next";
+import { BIRD_PHOTO_FOCUS } from "@/lib/birdPhotoFocus";
 
 export type SitBird = { id: string; name: string; photo_url?: string | null; photo_original?: string | null; photo_position?: string | null };
 export type ListSit = {
@@ -80,7 +81,7 @@ function BirdStack({ birds, onDark }: { birds: SitBird[]; onDark?: boolean }) {
       <span className="flex pl-1.5" aria-hidden="true">
         {birds.slice(0, 4).map((b) => (
           <span key={b.id} className="relative -ml-1.5 grid size-7 place-items-center overflow-hidden rounded-full text-[11px] font-[700] text-white" style={{ background: K.moss, boxShadow: `0 0 0 2px ${onDark ? K.forest : "#fff"}` }}>
-            {b.photo_url ? <BirdPhotoCrop url={b.photo_url} original={b.photo_original} position={b.photo_position ?? "50% 20%"} alt="" /> : b.name.slice(0, 1).toUpperCase()}
+            {b.photo_url ? <BirdPhotoCrop url={b.photo_url} original={b.photo_original} position={b.photo_position ?? BIRD_PHOTO_FOCUS} alt="" /> : b.name.slice(0, 1).toUpperCase()}
           </span>
         ))}
       </span>
@@ -115,7 +116,7 @@ function CarePlanButton({ birds, className, style, children }: { birds: SitBird[
               last={i === birds.length - 1}
               leading={
                 <span className="relative grid size-10 place-items-center overflow-hidden rounded-full text-[15px] font-[700] text-white" style={{ background: K.moss }} aria-hidden="true">
-                  {b.photo_url ? <BirdPhotoCrop url={b.photo_url} original={b.photo_original} position={b.photo_position ?? "50% 20%"} alt="" /> : b.name.slice(0, 1).toUpperCase()}
+                  {b.photo_url ? <BirdPhotoCrop url={b.photo_url} original={b.photo_original} position={b.photo_position ?? BIRD_PHOTO_FOCUS} alt="" /> : b.name.slice(0, 1).toUpperCase()}
                 </span>
               }
               title={b.name}

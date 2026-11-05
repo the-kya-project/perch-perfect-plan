@@ -364,32 +364,26 @@ html.duo[data-duo-rail="left"] .duo-rail {
   border-left: 0;
   border-right: 1px solid #dfe7df;
 }
-.duo-rail-task {
-  background: #1a3d2e;
-  border-color: #1a3d2e;
+/* A task's one main button (TaskFooter, SetupFrame's footer): pinned to the
+   bottom of the right half, gold with the forest border as everywhere else.
+   With no second pane (the folded cover screen) it spans the content area. */
+.duo-task-footer {
+  position: fixed;
+  z-index: 40;
+  bottom: 0;
+  left: var(--duo-left);
+  right: var(--duo-right);
+  padding: 14px 24px calc(env(safe-area-inset-bottom) + 18px);
+  background: linear-gradient(to bottom, rgba(240, 244, 240, 0), #f0f4f0 22px);
 }
-html.duo[data-duo-rail="left"] .duo-rail-task {
-  border-right-color: #1a3d2e;
+html.duo.duo-two-pane .duo-task-footer {
+  left: 50vw;
 }
-/* A task's main action (TaskFooter's `rail`, see RailActionButton). */
-.duo-rail-action {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 8px;
-}
-/* A TaskFooter without a `rail` label: its own button, shrunk to a tile. */
-.duo-rail-fallback button {
-  width: 84px;
-  min-height: 64px;
-  padding: 10px 6px;
-  border-radius: 18px;
-  flex-direction: column;
-  gap: 4px;
-  font-size: 13px;
-  line-height: 1.2;
-  text-align: center;
-  white-space: normal;
+/* The signed-out screens' column (landing, sign in…): the status bar's strip
+   only, on forest. */
+.duo-rail-signed-out {
+  background: #10291e;
+  border-color: #10291e;
 }
 /* Side-by-side panes, each scrolling on its own. The content starts after
    --duo-left (the left safe area, plus the column when it's on the left), so a
@@ -411,6 +405,34 @@ html.duo[data-duo-rail="left"] .duo-rail-task {
 }
 .duo-split > .duo-pane:last-child {
   --bleed: calc(50vw - var(--duo-right));
+}
+/* Shared two-pane blocks (components/duo/DuoBlocks.tsx). Light #f0f4f0 panes,
+   each with its own padding on both sides of the fold, so nothing sits on it. */
+.duo-blocks {
+  background: #f0f4f0;
+  color: #1a3d2e;
+}
+.duo-block-pane {
+  display: flex;
+  flex-direction: column;
+  padding: max(calc(env(safe-area-inset-top) + 16px), 28px) 28px calc(env(safe-area-inset-bottom) + 28px);
+  background: #f0f4f0;
+}
+.duo-block-pane-dark {
+  background: #1a3d2e;
+  color: #fff;
+}
+/* StepList's current row reaches the fold: it runs through the pane's
+   right padding and loses its right-hand corners. */
+.duo-block-pane-dark .duo-step-current {
+  margin-right: -28px;
+}
+.duo-block-pane-dark .duo-step-current > button {
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+}
+.duo-block-pane-right > .duo-popout {
+  flex: 1 0 auto;
 }
 /* The bird summary's tiles in a narrow pane (the record beside Home's list,
    the cover screen): as many as fit whole, so "Yesterday" never breaks

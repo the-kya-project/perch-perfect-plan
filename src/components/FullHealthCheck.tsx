@@ -411,7 +411,7 @@ export function FullHealthCheck({ birdId, name, sex, vet, submitting, onSubmit, 
       )}
       </div>
 
-      <TaskFooter rail={{ label: submitting ? t("fullCheck.savingShort", "Saving…") : t("fullCheck.saveShort", "Save"), ariaLabel: saveLabel, onClick: submit, disabled: !allAnswered || submitting || photoBusy || weightInvalid }}>
+      <TaskFooter>
         <KyaPrimaryButton onClick={submit} disabled={!allAnswered || submitting || photoBusy || weightInvalid}>{saveLabel}</KyaPrimaryButton>
       </TaskFooter>
       {guard}

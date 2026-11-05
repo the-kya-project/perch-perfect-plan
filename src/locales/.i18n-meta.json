@@ -225,6 +225,45 @@
     "account.yourName": {
       "stamp": "62cd2c541af427c6"
     },
+    "accountDuo.addPhone": {
+      "stamp": "b0e2ba12328257dc"
+    },
+    "accountDuo.allEmergency": {
+      "stamp": "10087cf78fbc3760"
+    },
+    "accountDuo.complete": {
+      "stamp": "1ed21b835954919d"
+    },
+    "accountDuo.emergencyLine": {
+      "stamp": "257a90a948368fc8"
+    },
+    "accountDuo.householdLine": {
+      "stamp": "be467d20538fd0ab"
+    },
+    "accountDuo.manageHousehold": {
+      "stamp": "ca8a03d83071faca"
+    },
+    "accountDuo.moreSettings": {
+      "stamp": "8f02a302ca8387dd"
+    },
+    "accountDuo.moreTitle": {
+      "stamp": "03685708bf40974b"
+    },
+    "accountDuo.notSaved": {
+      "stamp": "7f0dc9b174d432a4"
+    },
+    "accountDuo.password": {
+      "stamp": "03ba02a186c36edb"
+    },
+    "accountDuo.passwordNotSet": {
+      "stamp": "bada2594e7fbfd74"
+    },
+    "accountDuo.passwordSet": {
+      "stamp": "034140a97c8c6f61"
+    },
+    "accountDuo.regularVet": {
+      "stamp": "78cd549c62a3363f"
+    },
     "accountEmergency.line": {
       "stamp": "000bdb6099dcc3ce"
     },
@@ -780,6 +819,12 @@
     "birdIdentity.daysOther": {
       "stamp": "e4eb664b0d3db46d"
     },
+    "birdIdentity.daysShort_one": {
+      "stamp": "4fd978633030957c"
+    },
+    "birdIdentity.daysShort_other": {
+      "stamp": "61aff90b101588bf"
+    },
     "birdIdentity.edit": {
       "stamp": "dc46962c1249053f"
     },
@@ -837,6 +882,12 @@
     "birdIdentity.monthsOther": {
       "stamp": "0ec1c5e4985f2924"
     },
+    "birdIdentity.moShort_one": {
+      "stamp": "31d8e90efde96c67"
+    },
+    "birdIdentity.moShort_other": {
+      "stamp": "31d8e90efde96c67"
+    },
     "birdIdentity.notAdded": {
       "stamp": "369938ad2bbc6c71"
     },
@@ -869,6 +920,12 @@
     },
     "birdIdentity.titleFallback": {
       "stamp": "34ae6a197bc7891c"
+    },
+    "birdIdentity.yrsShort_one": {
+      "stamp": "0c6be711dea001f2"
+    },
+    "birdIdentity.yrsShort_other": {
+      "stamp": "aed03f1553d1d0c8"
     },
     "birdJournal.addAnEntry": {
       "stamp": "846b3fe5c8a1c4df"
@@ -1796,6 +1853,27 @@
     },
     "birdRecord.youReOffline": {
       "stamp": "1f2a9a048924ed2e"
+    },
+    "birdSettingsDuo.access": {
+      "stamp": "5fda40fc9a78dab1"
+    },
+    "birdSettingsDuo.eyebrow": {
+      "stamp": "a509674d797f9f07"
+    },
+    "birdSettingsDuo.identity": {
+      "stamp": "34ae6a197bc7891c"
+    },
+    "birdSettingsDuo.listLabel": {
+      "stamp": "dd2d25726978f5cd"
+    },
+    "birdSettingsDuo.noSpecies": {
+      "stamp": "2400c219ce14fe65"
+    },
+    "birdSettingsDuo.youAndCount_one": {
+      "stamp": "1e09b8d63828172b"
+    },
+    "birdSettingsDuo.youAndCount_other": {
+      "stamp": "1e09b8d63828172b"
     },
     "birdSetup.addANameAndSpecies": {
       "stamp": "a95ea46711841362"
@@ -4317,6 +4395,9 @@
     "draft.yesterdayAt": {
       "stamp": "95c74c256d25dc39"
     },
+    "duoFrontDoor.tagline": {
+      "stamp": "89db7adbd8d72f7c"
+    },
     "emergencyBar.emergency": {
       "stamp": "16fdfafb12402299"
     },
@@ -6377,6 +6458,24 @@
     },
     "household.you": {
       "stamp": "082a30d4026bdff4"
+    },
+    "householdDuo.invited": {
+      "stamp": "fa6ea579ca40438b"
+    },
+    "householdDuo.invitedLine": {
+      "stamp": "b9648d47f63faa89"
+    },
+    "householdDuo.line": {
+      "stamp": "be467d20538fd0ab"
+    },
+    "householdDuo.owner": {
+      "stamp": "1bdb0dd4efcd0156"
+    },
+    "householdDuo.people": {
+      "stamp": "9618ec2ba33d12c3"
+    },
+    "householdDuo.title": {
+      "stamp": "da35ceae68b17eed"
     },
     "householdInvite.add": {
       "stamp": "7243fcbe9aec5d44"
