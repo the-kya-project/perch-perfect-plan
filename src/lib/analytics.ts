@@ -83,6 +83,11 @@ export type AnalyticsEventName =
   // exchange throw when native sign-in fails a few ms after it starts.
   | "native_oauth_init"
   | "native_oauth_token"
+  // The build has no SocialLogin plugin, so sign-in used the web flow in an
+  // in-app browser sheet instead (nativeOAuth webFallback). Its outcome comes
+  // back as native_oauth_exchanged / native_oauth_failed with via/stage
+  // "web_fallback".
+  | "native_oauth_fallback_web"
   // "Open in the Kya & Co. app" tapped in an iPhone browser (OpenInAppBar).
   | "open_in_app_tapped"
   // Clip-upload diagnostics: compare picked file size app vs PWA

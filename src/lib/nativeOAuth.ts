@@ -14,10 +14,17 @@
  * the token. Also delivers Sign in with Apple (App Store requirement).
  *
  * The plugin is imported dynamically so none of it ships in the web bundle.
+ *
+ * FALLBACK: a build without the SocialLogin plugin (Nov 2026: an iOS install
+ * reported `"SocialLogin" plugin is not implemented on ios` on every Apple
+ * attempt) uses the web flow in an in-app browser sheet instead of failing.
+ * See webFallback() below and oauthAppReturn.ts for the round trip.
  */
+import i18next from "i18next";
 import { supabase } from "@/integrations/supabase/client";
-import { isNativeApp, nativePlatform } from "./nativeApp";
+import { isNativeApp, nativePlatform, nativePluginAvailable } from "./nativeApp";
 import { track, type AnalyticsEventName } from "./analytics";
+import { appReturnRedirect } from "./oauthAppReturn";
 
 type OAuthProvider = "google" | "apple";
 
@@ -289,10 +296,91 @@ function reportAbandonedLogin(): void {
   } catch { /* never let diagnostics break sign-in */ }
 }
 
+// --- Web fallback for builds without the native plugin --------------------
+
+const PLUGIN = "SocialLogin";
+
+/** Capacitor's rejection for a plugin missing from the native build. */
+function isUnimplemented(e: unknown): boolean {
+  return errCode(e) === "UNIMPLEMENTED" || /plugin is not implemented/i.test(errText(e));
+}
+
+/** The installed build's version, for telling builds apart in the audit. */
+async function nativeAppInfo(): Promise<{ app_version?: string; app_build?: string }> {
+  if (!nativePluginAvailable("App")) return {};
+  try {
+    const { App } = await import("@capacitor/app");
+    const info = await App.getInfo();
+    return { app_version: String(info.version).slice(0, 20), app_build: String(info.build).slice(0, 20) };
+  } catch {
+    return {};
+  }
+}
+
+/** Thrown when neither the native picker nor the in-app web flow can run. */
+class SignInUnavailable extends Error {
+  constructor(provider: OAuthProvider) {
+    super(provider === "apple"
+      ? i18next.t("auth.appleUnavailableInApp", "Apple sign-in isn't working in this version of the app. Please sign in with email for now, or update the app.")
+      : i18next.t("auth.googleUnavailableInApp", "Google sign-in isn't working in this version of the app. Please sign in with email for now, or update the app."));
+    this.name = "SignInUnavailable";
+  }
+}
+
+/** How long to keep the button busy while the browser sheet is open. */
+const SHEET_TIMEOUT_MS = 10 * 60_000;
+
+/**
+ * The provider's web sign-in in an in-app browser sheet, used when this build
+ * has no SocialLogin plugin. Supabase's PKCE verifier is created here, in the
+ * app's storage; the sheet hands the resulting code back on kyaco:// and
+ * /app-signin-return (in the app) exchanges it and moves on, signed in.
+ *
+ * iOS only: the round trip needs the kyaco:// scheme (in the iOS app since
+ * 1.0.x, #411) plus the Browser and App plugins. The Android app registers no
+ * custom scheme, so there it says sign-in is unavailable instead.
+ *
+ * Resolves when the sheet closes (the return page closes it on success).
+ */
+async function webFallback(provider: OAuthProvider, redirectTo: string, reason: "plugin_missing" | "unimplemented"): Promise<void> {
+  const platform = nativePlatform();
+  const canReturn = platform === "ios" && nativePluginAvailable("Browser") && nativePluginAvailable("App");
+  safeTrack("native_oauth_fallback_web", {
+    provider,
+    platform,
+    reason,
+    can_return: canReturn,
+    ms_since_boot: msSinceBoot(),
+    ...(await nativeAppInfo()),
+  });
+  if (!canReturn) throw new SignInUnavailable(provider);
+
+  const { data, error } = await supabase.auth.signInWithOAuth({
+    provider,
+    options: { redirectTo: appReturnRedirect(redirectTo, provider), skipBrowserRedirect: true },
+  });
+  if (error) throw new Error(error.message);
+  if (!data?.url) throw new SignInUnavailable(provider);
+
+  const { Browser } = await import("@capacitor/browser");
+  let release: (() => void) | undefined;
+  const closed = new Promise<void>((resolve) => { release = resolve; });
+  const timer = setTimeout(() => release?.(), SHEET_TIMEOUT_MS);
+  const listener = await Browser.addListener("browserFinished", () => release?.());
+  try {
+    await Browser.open({ url: data.url });
+    await closed;
+  } finally {
+    clearTimeout(timer);
+    void listener.remove();
+  }
+}
+
 /**
  * Sign in with a provider. On the web, redirects (call navigates away). In the
  * native shell, uses the OS-native picker and returns once signed in — call
- * sites should navigate to their destination on success.
+ * sites should navigate to their destination on success. A native build
+ * without the picker plugin uses webFallback() instead.
  */
 export async function signInWithProvider(provider: OAuthProvider, redirectTo: string): Promise<void> {
   if (!isNativeApp()) {
@@ -309,6 +397,13 @@ export async function signInWithProvider(provider: OAuthProvider, redirectTo: st
     build: "idtoken-b6",
     web: typeof __WEB_BUILD__ === "string" ? __WEB_BUILD__ : "unknown",
   });
+  // Guard before touching the plugin: a build without it rejects every call
+  // within a few ms ("… is not implemented on ios"), so go straight to the web
+  // flow instead of failing.
+  if (!nativePluginAvailable(PLUGIN)) {
+    await webFallback(provider, redirectTo, "plugin_missing");
+    return;
+  }
   markPending(provider);
   try {
     await ensureInitialized();
@@ -339,6 +434,11 @@ export async function signInWithProvider(provider: OAuthProvider, redirectTo: st
     };
     // The plugin throws on user cancel too — don't treat that as an error toast.
     if (/cancel/i.test(msg)) { safeTrack("native_oauth_failed", { ...diag, stage: "cancelled" }); return; }
+    // Reported as available but not actually there: same fallback as above.
+    if (isUnimplemented(e)) {
+      await webFallback(provider, redirectTo, "unimplemented");
+      return;
+    }
     const stage = e instanceof NativeLoginTimeout ? "timeout" : "idtoken";
     safeTrack("native_oauth_failed", { ...diag, stage });
     throw new Error(msg);

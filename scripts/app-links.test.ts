@@ -243,4 +243,50 @@ await check("Info.plist registers the scheme", () => {
   assert.ok(plist.includes(`<string>${O.APP_URL_SCHEME}</string>`));
 });
 
+console.log("web sign-in fallback (kyaco://auth-callback)");
+const R = await import("@/lib/oauthAppReturn");
+await check("Supabase returns to the fallback page, keeping where to go next", () => {
+  assert.equal(
+    R.appReturnRedirect(`${APP}/welcome`, "apple"),
+    `${APP}/app-signin-return?next=%2Fwelcome&p=apple`,
+  );
+  assert.equal(
+    R.appReturnRedirect(`${APP}/invite/abc`, "google"),
+    `${APP}/app-signin-return?next=%2Finvite%2Fabc&p=google`,
+  );
+});
+await check("next is always one of our own paths", () => {
+  assert.equal(R.safeNext("//evil.example"), "/welcome");
+  assert.equal(R.safeNext("https://evil.example"), "/welcome");
+  assert.equal(R.safeNext("/\\evil.example"), "/welcome");
+  assert.equal(R.safeNext(null), "/welcome");
+  assert.equal(R.safeNext("/handoff/tok?x=1"), "/handoff/tok?x=1");
+  assert.equal(R.readAppReturnParams("?code=c&next=%2F%2Fevil.example").next, "/welcome");
+});
+await check("the sheet hands code, next and provider to the app", () => {
+  const p = R.readAppReturnParams("?next=%2Fwelcome&p=apple&code=abc-123");
+  assert.deepEqual(p, { code: "abc-123", error: undefined, next: "/welcome", provider: "apple" });
+  assert.equal(R.appCallbackUrl(p), "kyaco://auth-callback?code=abc-123&next=%2Fwelcome&p=apple");
+});
+await check("a provider error is passed back too", () => {
+  const p = R.readAppReturnParams("?error=access_denied&error_description=User+cancelled&next=%2Fwelcome&p=google");
+  assert.equal(p.error, "User cancelled");
+  assert.equal(R.appCallbackUrl(p), "kyaco://auth-callback?error=User+cancelled&next=%2Fwelcome&p=google");
+});
+await check("the app routes the callback to the exchange page, code kept", () => {
+  assert.deepEqual(
+    L.incomingLink("kyaco://auth-callback?code=abc&next=%2Finvite%2Ftok&p=apple"),
+    { kind: "route", href: "/app-signin-return?code=abc&next=%2Finvite%2Ftok&p=apple" },
+  );
+  assert.deepEqual(
+    L.incomingLink("kyaco://auth-callback?next=%2F%2Fevil&code=abc"),
+    { kind: "route", href: "/app-signin-return?code=abc&next=%2Fwelcome" },
+  );
+  assert.deepEqual(L.incomingLink("kyaco://auth-callback"), { kind: "route", href: "/" }, "nothing to exchange: same as any other kyaco link");
+});
+await check("the exchange page isn't a Universal Link (its ?code= stays in the sheet)", () => {
+  assert.equal(L.isUniversalLinkPath(R.APP_RETURN_PATH), false);
+  assert.equal(L.incomingLink(`${APP}${R.APP_RETURN_PATH}?code=abc`), null);
+});
+
 console.log(`\n${passed} passed${process.exitCode ? ", some FAILED" : ""}`);
