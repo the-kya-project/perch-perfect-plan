@@ -25,6 +25,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { isNativeApp, nativePlatform, nativePluginAvailable } from "./nativeApp";
 import { track, type AnalyticsEventName } from "./analytics";
 import { appReturnRedirect } from "./oauthAppReturn";
+import { isOAuthCancel, isPluginUnimplemented } from "./oauthErrors";
 
 type OAuthProvider = "google" | "apple";
 
@@ -300,10 +301,6 @@ function reportAbandonedLogin(): void {
 
 const PLUGIN = "SocialLogin";
 
-/** Capacitor's rejection for a plugin missing from the native build. */
-function isUnimplemented(e: unknown): boolean {
-  return errCode(e) === "UNIMPLEMENTED" || /plugin is not implemented/i.test(errText(e));
-}
 
 /** The installed build's version, for telling builds apart in the audit. */
 async function nativeAppInfo(): Promise<{ app_version?: string; app_build?: string }> {
@@ -317,8 +314,28 @@ async function nativeAppInfo(): Promise<{ app_version?: string; app_build?: stri
   }
 }
 
+/**
+ * A sign-in failure whose message is already written for people, in the app's
+ * language. The buttons show it as is, never the provider's raw text (Apple's
+ * "The operation couldn't be completed. (com.apple…)" and the like).
+ */
+export class SignInError extends Error {
+  readonly friendly = true;
+  constructor(message: string) {
+    super(message);
+    this.name = "SignInError";
+  }
+}
+
+/** The plain-language message for a real (not cancelled) failure. */
+function didNotWork(provider: OAuthProvider): SignInError {
+  return new SignInError(provider === "apple"
+    ? i18next.t("auth.appleSignInDidNotWork", "Apple sign-in didn't work. Please try again, or sign in with email.")
+    : i18next.t("auth.googleSignInDidNotWork", "Google sign-in didn't work. Please try again, or sign in with email."));
+}
+
 /** Thrown when neither the native picker nor the in-app web flow can run. */
-class SignInUnavailable extends Error {
+class SignInUnavailable extends SignInError {
   constructor(provider: OAuthProvider) {
     super(provider === "apple"
       ? i18next.t("auth.appleUnavailableInApp", "Apple sign-in isn't working in this version of the app. Please sign in with email for now, or update the app.")
@@ -359,8 +376,10 @@ async function webFallback(provider: OAuthProvider, redirectTo: string, reason: 
     provider,
     options: { redirectTo: appReturnRedirect(redirectTo, provider), skipBrowserRedirect: true },
   });
-  if (error) throw new Error(error.message);
-  if (!data?.url) throw new SignInUnavailable(provider);
+  if (error || !data?.url) {
+    safeTrack("native_oauth_failed", { provider, platform, stage: "web_fallback", err: errText(error ?? "no url"), code: errCode(error) });
+    throw didNotWork(provider);
+  }
 
   const { Browser } = await import("@capacitor/browser");
   let release: (() => void) | undefined;
@@ -377,15 +396,38 @@ async function webFallback(provider: OAuthProvider, redirectTo: string, reason: 
 }
 
 /**
+ * One sign-in at a time. A second native login() while one is open is what
+ * cuts the first one off: the plugin's Apple provider keeps a single
+ * completion handler, so starting a second request hands the second caller the
+ * first request's cancel (ASAuthorizationError 1001) while the new sheet is
+ * still on screen, and the sheet's real answer then goes nowhere. A repeat tap
+ * waits on the attempt already running instead of starting another.
+ */
+let inFlight: Promise<void> | null = null;
+
+/**
  * Sign in with a provider. On the web, redirects (call navigates away). In the
  * native shell, uses the OS-native picker and returns once signed in — call
  * sites should navigate to their destination on success. A native build
  * without the picker plugin uses webFallback() instead.
+ *
+ * Resolves (without signing in) when the person cancels. Rejects only for a
+ * real failure, with a SignInError whose message is ready to show.
  */
-export async function signInWithProvider(provider: OAuthProvider, redirectTo: string): Promise<void> {
+export function signInWithProvider(provider: OAuthProvider, redirectTo: string): Promise<void> {
+  if (inFlight) return inFlight.then(() => undefined, () => undefined);
+  const run = runSignIn(provider, redirectTo).finally(() => { inFlight = null; });
+  inFlight = run;
+  return run;
+}
+
+async function runSignIn(provider: OAuthProvider, redirectTo: string): Promise<void> {
   if (!isNativeApp()) {
     const { error } = await supabase.auth.signInWithOAuth({ provider, options: { redirectTo } });
-    if (error) throw new Error(error.message);
+    if (error) {
+      console.error(`[oauth] ${provider} sign-in could not start`, error);
+      throw didNotWork(provider);
+    }
     return; // browser is navigating away
   }
 
@@ -421,7 +463,6 @@ export async function signInWithProvider(provider: OAuthProvider, redirectTo: st
     } catch { /* keep current location; the auth listener will navigate */ }
   } catch (e) {
     clearPending();
-    const msg = e instanceof Error ? e.message : "Sign-in failed.";
     // `initialized` here tells us WHERE it broke: false → SocialLogin.initialize
     // threw (the lead hypothesis); true → login/exchange threw after a good init.
     const diag = {
@@ -432,16 +473,19 @@ export async function signInWithProvider(provider: OAuthProvider, redirectTo: st
       err: errText(e),   // scrub-safe key + ≤80 chars (unlike the old `message`)
       code: errCode(e),
     };
-    // The plugin throws on user cancel too — don't treat that as an error toast.
-    if (/cancel/i.test(msg)) { safeTrack("native_oauth_failed", { ...diag, stage: "cancelled" }); return; }
+    // The person closed or declined the sheet (Apple 1001, Google -5, the
+    // plugin's USER_CANCELLED…): no error, the buttons simply reset. Checked
+    // first, so a cancel can never start the web fallback.
+    if (isOAuthCancel(e)) { safeTrack("native_oauth_cancelled", diag); return; }
     // Reported as available but not actually there: same fallback as above.
-    if (isUnimplemented(e)) {
+    // The only error that leads to it.
+    if (isPluginUnimplemented(e)) {
       await webFallback(provider, redirectTo, "unimplemented");
       return;
     }
     const stage = e instanceof NativeLoginTimeout ? "timeout" : "idtoken";
     safeTrack("native_oauth_failed", { ...diag, stage });
-    throw new Error(msg);
+    throw didNotWork(provider);
   }
 }
 
