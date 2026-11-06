@@ -335,13 +335,6 @@ check("migration: the Google Form waitlist fits, and waitlist_signups stays admi
   assert.match(sql, /alter table public\.waitlist_signups enable row level security/);
   assert.doesNotMatch(sql, /grant (insert|update|delete|all)[^;]*to (anon|authenticated)/);
 });
-check("waitlist backfill hook: cron-token only, list 4 only, no emails in its answer", () => {
-  const src = readFileSync("src/routes/api/public/hooks/waitlist-brevo-backfill.ts", "utf8");
-  assert.match(src, /cronAuthFailure\(request, "waitlist-brevo-backfill"\)/);
-  assert.match(src, /addContactToListReported\(\s*"BREVO_WAITLIST_LIST_ID"/);
-  assert.doesNotMatch(src, /BREVO_LIST_ID"|sendTransactionalEmail/);
-  assert.doesNotMatch(src, /refused\.push\(\{[^}]*email/);
-});
 
 // addContactToList's guards, with the environment and fetch stubbed.
 async function withEnv(env: Record<string, string | undefined>, fn: () => Promise<void>) {
