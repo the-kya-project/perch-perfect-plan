@@ -346,14 +346,57 @@ await acheck("addContactToList: a missing list id in production is reported", ()
   const r = await addContactToList("BREVO_WAITLIST_LIST_ID", { email: "a@b.co" });
   assert.equal(listAddFailureShape(r, "BREVO_WAITLIST_LIST_ID")?.category, "config");
 }));
-await acheck("addContactToList: sends list 4 with the attributes, and a Brevo 400 is reported", () => withEnv({ VERCEL_ENV: "production", BREVO_API_KEY: "k", BREVO_WAITLIST_LIST_ID: "4" }, async () => {
-  let body: any = null;
-  globalThis.fetch = (async (_u: unknown, init?: { body?: string }) => { body = JSON.parse(init?.body ?? "{}"); return new Response("{\"code\":\"invalid_parameter\"}", { status: 400 }); }) as typeof fetch;
-  const r = await addContactToList("BREVO_WAITLIST_LIST_ID", { email: "ana@gmail.com", firstName: "Ana", source: "waitlist-app", primaryChapter: 3 });
-  assert.deepEqual(body.listIds, [4]);
-  assert.deepEqual(body.attributes, { FIRSTNAME: "Ana", SOURCE: "waitlist-app", PRIMARY_CHAPTER: 3 });
-  assert.equal(body.updateEnabled, true);
+// Stub Brevo: each call gets the next response; every request body is kept.
+function stubBrevo(responses: Array<[number, string]>) {
+  const bodies: any[] = [];
+  globalThis.fetch = (async (_u: unknown, init?: { body?: string }) => {
+    bodies.push(JSON.parse(init?.body ?? "{}"));
+    const [status, text] = responses[Math.min(bodies.length - 1, responses.length - 1)];
+    return new Response(status === 204 ? null : text, { status });
+  }) as typeof fetch;
+  return bodies;
+}
+const CONTACT = { email: "ana@gmail.com", firstName: "Ana", source: "waitlist-app", primaryChapter: 3 };
+
+await acheck("addContactToList: a new contact is created on list 4 with SOURCE, in one call", () => withEnv({ VERCEL_ENV: "production", BREVO_API_KEY: "k", BREVO_WAITLIST_LIST_ID: "4" }, async () => {
+  const bodies = stubBrevo([[201, "{\"id\":7}"]]);
+  const r = await addContactToList("BREVO_WAITLIST_LIST_ID", CONTACT);
+  assert.equal(r.ok, true);
+  assert.equal(bodies.length, 1);
+  assert.deepEqual(bodies[0].listIds, [4]);
+  assert.deepEqual(bodies[0].attributes, { FIRSTNAME: "Ana", SOURCE: "waitlist-app", PRIMARY_CHAPTER: 3 });
+  assert.equal(bodies[0].updateEnabled, undefined);
+}));
+await acheck("addContactToList: an existing contact joins list 4 but keeps its first-touch SOURCE", () => withEnv({ VERCEL_ENV: "production", BREVO_API_KEY: "k", BREVO_WAITLIST_LIST_ID: "4" }, async () => {
+  const bodies = stubBrevo([[400, "{\"code\":\"duplicate_parameter\",\"message\":\"Contact already exist\"}"], [204, ""]]);
+  const r = await addContactToList("BREVO_WAITLIST_LIST_ID", CONTACT);
+  assert.equal(r.ok, true);
+  assert.equal(bodies.length, 2);
+  assert.deepEqual(bodies[1].listIds, [4]);
+  assert.equal(bodies[1].updateEnabled, true);
+  assert.deepEqual(bodies[1].attributes, { FIRSTNAME: "Ana", PRIMARY_CHAPTER: 3 });
+  assert.equal("SOURCE" in bodies[1].attributes, false);
+  assert.equal(listAddFailureShape(r, "BREVO_WAITLIST_LIST_ID"), null);
+}));
+await acheck("addContactToList: any other Brevo 400 is reported, with no second call", () => withEnv({ VERCEL_ENV: "production", BREVO_API_KEY: "k", BREVO_WAITLIST_LIST_ID: "4" }, async () => {
+  const bodies = stubBrevo([[400, "{\"code\":\"invalid_parameter\"}"]]);
+  const r = await addContactToList("BREVO_WAITLIST_LIST_ID", CONTACT);
+  assert.equal(bodies.length, 1);
   assert.equal(listAddFailureShape(r, "BREVO_WAITLIST_LIST_ID")?.category, "server");
 }));
+await acheck("addContactToList: a failed update after the duplicate answer is reported", () => withEnv({ VERCEL_ENV: "production", BREVO_API_KEY: "k", BREVO_WAITLIST_LIST_ID: "4" }, async () => {
+  stubBrevo([[400, "{\"code\":\"duplicate_parameter\"}"], [500, "oops"]]);
+  const r = await addContactToList("BREVO_WAITLIST_LIST_ID", CONTACT);
+  assert.equal(listAddFailureShape(r, "BREVO_WAITLIST_LIST_ID")?.category, "server");
+}));
+check("capture-lead keeps first-touch SOURCE too (create first, update without SOURCE)", () => {
+  const fn = readFileSync("supabase/functions/capture-lead/index.ts", "utf8");
+  assert.match(fn, /code !== "duplicate_parameter"/);
+  assert.match(fn, /const \{ SOURCE: _keep, \.\.\.rest \} = attributes;/);
+  assert.doesNotMatch(fn.split("const post =")[0], /updateEnabled: true/);
+});
+check("migration: safe_uuid gets the search_path production already has", () => {
+  assert.match(readFileSync("supabase/migrations/20261106180000_brevo_list_signups.sql", "utf8"), /alter function public\.safe_uuid\(text\) set search_path = '';/);
+});
 
 if (failed) process.exit(1);

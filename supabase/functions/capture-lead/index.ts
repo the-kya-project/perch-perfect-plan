@@ -179,9 +179,11 @@ Deno.serve(async (req) => {
     if (signupDate) attributes.SIGNUP_DATE = signupDate; // omit if unparseable so the date attr isn't rejected
   }
 
+  // Created first, with SOURCE. If the contact already exists (Brevo answers
+  // duplicate_parameter), it's updated without SOURCE, so an existing contact
+  // keeps its first-touch SOURCE (Nov 2026).
   const contact: Record<string, unknown> = {
     email,
-    updateEnabled: true, // re-submits update the contact instead of erroring
     attributes,
   };
 
@@ -200,16 +202,31 @@ Deno.serve(async (req) => {
     await recordEdgeSaveError("capture-lead", { category: "config", target: "brevo_list_id" });
   }
 
-  try {
-    const res = await fetch(BREVO_URL, {
+  const post = (body: Record<string, unknown>) =>
+    fetch(BREVO_URL, {
       method: "POST",
       headers: {
         "api-key": apiKey,
         "Content-Type": "application/json",
         accept: "application/json",
       },
-      body: JSON.stringify(contact),
+      body: JSON.stringify(body),
     });
+
+  try {
+    let res = await post(contact);
+    if (res.status === 400) {
+      const text = await res.text();
+      let code = "";
+      try { code = JSON.parse(text)?.code ?? ""; } catch { /* not JSON */ }
+      if (code !== "duplicate_parameter") {
+        console.error("capture-lead: Brevo error", res.status, text);
+        await recordEdgeSaveError("capture-lead", { category: "server", target: "brevo_list_id" });
+        return json(502, { error: "Brevo rejected the request" });
+      }
+      const { SOURCE: _keep, ...rest } = attributes;
+      res = await post({ ...contact, attributes: rest, updateEnabled: true });
+    }
     // 201 = created, 204 = updated; both are success.
     if (!res.ok) {
       const text = await res.text();

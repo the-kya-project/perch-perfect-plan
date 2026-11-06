@@ -32,7 +32,8 @@ export type ListContact = {
   email: string;
   firstName?: string | null;
   lastName?: string | null;
-  /** Where they came from, e.g. "waitlist-app". Overwrites an existing contact's SOURCE. */
+  /** Where they came from, e.g. "waitlist-app". Set only when Brevo creates the
+   *  contact: an existing contact keeps its first-touch SOURCE. */
   source?: string | null;
   chapterLeadInterest?: 1 | 2 | null;
   primaryChapter?: number | null;
@@ -48,6 +49,15 @@ export function listContactAttributes(c: ListContact): Record<string, string | n
   return a;
 }
 
+/** Brevo's answer when creating a contact that already exists. */
+export function isDuplicateContact(body: string): boolean {
+  try {
+    return (JSON.parse(body) as { code?: string }).code === "duplicate_parameter";
+  } catch {
+    return false;
+  }
+}
+
 export async function addContactToList(listEnvVar: string, contact: ListContact): Promise<ListAddResult> {
   const apiKey = process.env.BREVO_API_KEY;
   const listId = Number(process.env[listEnvVar]);
@@ -57,18 +67,28 @@ export async function addContactToList(listEnvVar: string, contact: ListContact)
   if (!contact.email) return { ok: false, skipped: "no-email" };
   if (isUndeliverableAddress(contact.email)) return { ok: false, skipped: "undeliverable-test-domain" };
 
-  try {
-    const res = await fetch(BREVO_CONTACTS_URL, {
+  const post = (body: object) =>
+    fetch(BREVO_CONTACTS_URL, {
       method: "POST",
       headers: { "api-key": apiKey, "Content-Type": "application/json", accept: "application/json" },
-      body: JSON.stringify({
-        email: contact.email,
-        attributes: listContactAttributes(contact),
-        listIds: [listId],
-        // An existing contact is added to the list instead of erroring.
-        updateEnabled: true,
-      }),
+      body: JSON.stringify(body),
     });
+
+  try {
+    // 1. Create the contact, with SOURCE (first touch).
+    const attributes = listContactAttributes(contact);
+    let res = await post({ email: contact.email, attributes, listIds: [listId] });
+    // 2. Already in Brevo: add them to the list and update the other details,
+    //    but leave SOURCE as it was (the list and our own tables record this join).
+    if (res.status === 400) {
+      const text = await res.text().catch(() => "");
+      if (!isDuplicateContact(text)) {
+        console.error("[brevoContacts] list add failed", listEnvVar, res.status, text);
+        return { ok: false, status: res.status };
+      }
+      const { SOURCE: _keep, ...rest } = attributes;
+      res = await post({ email: contact.email, attributes: rest, listIds: [listId], updateEnabled: true });
+    }
     if (!res.ok) {
       console.error("[brevoContacts] list add failed", listEnvVar, res.status, await res.text().catch(() => ""));
       return { ok: false, status: res.status };

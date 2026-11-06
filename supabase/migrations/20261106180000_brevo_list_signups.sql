@@ -131,3 +131,9 @@ alter table public.save_errors add constraint save_errors_platform_check
 alter table public.save_errors drop constraint if exists save_errors_operation_check;
 alter table public.save_errors add constraint save_errors_operation_check
   check (operation in ('write', 'delete', 'rpc', 'storage', 'server_fn', 'brevo_list'));
+
+-- 4. public.safe_uuid: production already has search_path = '' (set outside
+--    the migrations); 20260621120000 never said so, so every branch built from
+--    the files got a "mutable search_path" advisor warning. Bring the files in
+--    step. A no-op on production.
+alter function public.safe_uuid(text) set search_path = '';
