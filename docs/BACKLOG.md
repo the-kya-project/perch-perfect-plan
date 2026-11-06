@@ -151,6 +151,28 @@ in `SocialSignInButtons`) and treats 1001 as a quiet cancel (`src/lib/oauthError
 
 ---
 
+## iPhone Duo: half-folded ideas (later, not now)
+
+**Status:** ideas only, nothing built. Revisit both after 1.2 is approved and the Duo
+layouts have been tried on a real iPhone Duo.
+
+### Weigh station (suggested first)
+With the Duo half-folded like a laptop, the top half shows the current bird's photo and
+last weight, and the bottom half shows a large number pad to log today's weight. Saving
+moves on to the next bird, so the whole flock can be weighed hands-free.
+
+- Uses the hinge status and fold position the native bridge already sends
+  (`data-hinge`, `--fold-x`).
+- Mostly a web change once 1.2 is installed.
+
+### Tripod mode
+The Duo stood up half-folded to film a bird hands-free.
+
+- Needs camera access, choosing the right Duo camera, and recording and saving clips.
+- **Needs native work and a new App Store build.**
+
+---
+
 ## Security / infrastructure
 
 ### CSP is still report-only
