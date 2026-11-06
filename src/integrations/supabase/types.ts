@@ -1921,6 +1921,15 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      admin_set_flock_ui: {
+        Args: { p_enabled: boolean }
+        Returns: {
+          id: boolean
+          ui_enabled: boolean
+          updated_at: string
+          updated_by: string | null
+        }
+      }
       admin_revoke_entitlement: {
         Args: { p_email: string }
         Returns: {
