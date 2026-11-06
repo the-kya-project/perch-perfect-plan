@@ -1,8 +1,9 @@
 // Explore on the iPhone Duo (side column, two panes).
 //
 //   Left   the newest article as a cover story filling the pane.
-//   Right  "Explore", the next three articles, then the community card, whose
-//          button is the screen's one gold button. "See all" lists every
+//   Right  "Explore", the next three articles, then the phone page's mission,
+//          podcast and membership cards (compact), then the community card,
+//          whose button is the screen's one gold button. The pane scrolls. "See all" lists every
 //          article in the right pane instead (?all=1).
 //
 // An article with a body in the feed (content_html) opens in the in-app reader
@@ -18,6 +19,7 @@ import { SERIF } from "@/components/kya";
 import { DUO, DuoTwoPane } from "@/components/duo/DuoBlocks";
 import { RailBack } from "@/components/DuoRail";
 import { WaitlistCard } from "@/components/WaitlistCard";
+import { MembershipCard, MissionCard, PodcastCard } from "@/components/explore/ExploreCards";
 import { getExploreFeed, type ExplorePost } from "@/lib/blogFeed.functions";
 import { sentenceCase, sizedPublicImage } from "@/lib/blogImage";
 import { BIRD_PHOTO_FOCUS } from "@/lib/birdPhotoFocus";
@@ -152,7 +154,14 @@ export function ExploreDuo({ all = false }: { all?: boolean }) {
           {list.map((p) => <PostRow key={p.id} post={p} />)}
         </ul>
       ) : null}
-      {!all && <div className="mt-auto pt-6"><WaitlistCard duo /></div>}
+      {!all && (
+        <div className="mt-auto flex flex-col gap-2.5 pt-6" data-explore-cards="">
+          <MissionCard />
+          <PodcastCard compact />
+          <MembershipCard compact />
+          <div className="pt-3.5"><WaitlistCard duo /></div>
+        </div>
+      )}
     </>
   );
 
