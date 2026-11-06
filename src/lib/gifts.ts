@@ -53,3 +53,56 @@ export function formatCents(cents: number, currency = "usd"): string {
 /** The gift code alphabet: 2-9 and A-Z without I and O, so nothing can be read
  *  as 0/O or 1/I. Must match private.new_gift_code() and the table's check. */
 export const GIFT_CODE_PATTERN = /^KYA-[2-9A-HJ-NP-Z]{4}-[2-9A-HJ-NP-Z]{4}$/;
+
+// ── Status, refunds and money kept ─────────────────────────────────────────
+
+export type GiftStatus = "paid" | "redeemed" | "refunded";
+
+/**
+ * LAUNCH RULE: only a gift whose status is 'redeemed' may ever grant
+ * membership. A refunded gift keeps redeemed_by and redeemed_at, so "has a
+ * redeemer" is not the test. Whatever turns redeemed gifts into entitlements at
+ * launch must go through this (or private.gift_grants_membership(status) in
+ * SQL, which says the same thing).
+ */
+export function giftGrantsMembership(gift: { status: string | null | undefined }): boolean {
+  return gift.status === "redeemed";
+}
+
+export type GiftRefundState = { status: string; amountPaidCents: number; amountRefundedCents: number };
+
+/**
+ * What a Stripe charge.refunded event does to a gift. Stripe's
+ * charge.amount_refunded is cumulative, so each event says how much has been
+ * refunded in total. The amount only ever goes up (a late, older event can't
+ * lower it) and never past what was paid. The gift becomes 'refunded' once the
+ * refunds reach the amount paid: one full refund, or several partial ones that
+ * add up. Until then it keeps its status and stays valid.
+ */
+export function applyGiftRefund(
+  gift: GiftRefundState,
+  charge: { amountRefundedCents: number; fullyRefunded: boolean },
+): { status: string; amountRefundedCents: number; becameRefunded: boolean; changed: boolean } {
+  const refunded = Math.min(Math.max(gift.amountRefundedCents, charge.amountRefundedCents, 0), gift.amountPaidCents);
+  const full = gift.status === "refunded" || charge.fullyRefunded || (gift.amountPaidCents > 0 && refunded >= gift.amountPaidCents);
+  const status = full ? "refunded" : gift.status;
+  // A full refund refunds everything, whatever the amount said.
+  const amountRefundedCents = full ? gift.amountPaidCents : refunded;
+  return {
+    status,
+    amountRefundedCents,
+    becameRefunded: full && gift.status !== "refunded",
+    changed: status !== gift.status || amountRefundedCents !== gift.amountRefundedCents,
+  };
+}
+
+/** What we kept from a gift: nothing once refunded, else paid minus partial refunds. */
+export function giftKeptCents(gift: { status: string; amount_paid_cents: number; amount_refunded_cents?: number | null }): number {
+  if (gift.status === "refunded") return 0;
+  return Math.max(0, gift.amount_paid_cents - (gift.amount_refunded_cents ?? 0));
+}
+
+/** The rescue and conservation share of what we kept (20%, or 40% on double-giving days). */
+export function giftGivingCents(gift: { status: string; amount_paid_cents: number; amount_refunded_cents?: number | null; giving_rate: number }): number {
+  return Math.round(giftKeptCents(gift) * gift.giving_rate);
+}
