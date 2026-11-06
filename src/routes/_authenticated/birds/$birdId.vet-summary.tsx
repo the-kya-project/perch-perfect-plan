@@ -2,10 +2,10 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { speciesLabel } from "@/lib/speciesLabel";
 import { birdAgeLabel } from "@/lib/birdAge";
 import { useQuery } from "@tanstack/react-query";
-import { useCallback, useState, type ReactNode } from "react";
+import { createContext, useCallback, useContext, useState, type ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { FileText, Share2, Printer, ArrowRight } from "lucide-react";
+import { FileText, Share2, Printer, ArrowRight, IdCard, Scale, Soup, Pill, AlertTriangle, Hand, ListOrdered } from "lucide-react";
 import { computeWeightTrend } from "@/lib/weightTrend";
 import { formatAmountUnitDisplay } from "@/lib/labels";
 import { normalizeFeedTimes, feedTimeLabel } from "@/lib/feedTimes";
@@ -22,6 +22,10 @@ import { formatLocalDate, formatLocalDateTime } from "@/lib/dates";
 import i18next from "i18next";
 import { useTranslation } from "react-i18next";
 import type { TFunction } from "i18next";
+import { useDuoMode } from "@/lib/duo";
+import { DuoMainButton } from "@/components/duo/DuoBlocks";
+import { DuoSectionReader, type ReaderSection } from "@/components/duo/DuoSectionReader";
+import { PaneBack } from "@/components/duo/plan/PaneBack";
 
 type WeightRow = { id: string; grams: number; measured_at: string; source: string | null; meal_relation: string | null; note: string | null };
 
@@ -63,6 +67,8 @@ function VetSummary() {
   const { birdId } = Route.useParams();
   const navigate = useNavigate();
   const [generated, setGenerated] = useState(false);
+  const duo = useDuoMode() === "sideways";
+  const [duoSection, setDuoSection] = useState("identity");
   const goBack = useGoBack(useCallback(() => navigate({ to: "/birds/$birdId", params: { birdId } }), [navigate, birdId]));
   // The "Add them" link opens the identity editor, which needs manage_flock.
   const canEditIdentity = useCapability("manage_flock", { birdId });
@@ -258,6 +264,111 @@ function VetSummary() {
   ].filter((x): x is string => !!x) : [];
   const missingText = missing.length ? t("vetSummary.missingList", "{{items}}.", { items: cap(joinList(missing, i18n.language)) }) : null;
 
+  const identityBody = (
+    <dl className="m-0 grid grid-cols-2 gap-x-4 gap-y-3">
+      {identity.map(([l, v, empty]) => (
+        <div key={l}>
+          <dt className="text-[13px]" style={{ color: K.quiet }}>{l}</dt>
+          <dd className={`m-0 mt-0.5 text-[15px] ${v ? "font-[600]" : "italic"}`} style={{ color: v ? K.forest : K.quiet }}>{v ?? empty ?? cap(none())}</dd>
+        </div>
+      ))}
+    </dl>
+  );
+  const weightBody = current ? (
+    <div>
+      <p className="m-0 text-[26px] font-[700] leading-tight" style={{ color: K.moss, fontFamily: SERIF }}>{current.grams} g</p>
+      <p className="m-0 mt-0.5 text-[13px]" style={{ color: K.quiet }}>{trendLabel(trend, delta, baseline)} · {t("vetSummary.lastWeighed", "last weighed {{date}}", { date: fmtDate(current.measured_at) })}</p>
+    </div>
+  ) : (
+    <Value text={null} />
+  );
+
+  // iPhone Duo (two panes): the summary's parts as cards on the left, the open
+  // one on the right. No "Make the summary" step (it only reveals the sheet).
+  // The one main button is Send to vet: the same share as the header's Share
+  // (the share sheet, else a copy). Save as PDF (print, web only) beside it.
+  if (duo) {
+    const firstLine = (text: string | null | undefined) => (text ?? "").split("\n").filter(Boolean).slice(0, 2).join(" · ") || undefined;
+    const flagged = flaggedScans ?? [];
+    const sections: ReaderSection[] = load.failed ? [{
+      key: "error", title: t("vetSummary.titleFallback", "Vet summary"), body: <LoadError onRetry={load.retry} onBack={goBack} />,
+    }] : [
+      { key: "identity", title: t("vetSummary.identity", "Identity"), icon: <IdCard />, preview: identity.filter(([, v]) => v).map(([, v]) => v).slice(0, 3).join(" · ") || undefined, body: identityBody },
+      { key: "weight", title: t("vetSummary.weight", "Weight"), icon: <Scale />, preview: current ? `${current.grams} g · ${trendLabel(trend, delta, baseline)}` : undefined, body: weightBody },
+      { key: "diet", title: t("vetSummary.diet", "Diet"), icon: <Soup />, preview: firstLine(dietText), body: <Value text={dietText} multiline /> },
+      { key: "meds", title: t("vetSummary.medsHealthFlags", "Meds & health flags"), icon: <Pill />, preview: firstLine(meds), body: <Value text={meds} multiline /> },
+      {
+        key: "flagged",
+        title: t("vetSummary.flaggedTitle", "Flagged for review (last 6 months)"),
+        icon: <AlertTriangle />,
+        status: flaggedScans ? (flagged.length ? { text: String(flagged.length), tone: "attention" as const } : { text: t("vetDuo.noneFlagged", "None"), tone: "fine" as const }) : undefined,
+        preview: flagged.length ? fmtDate(flagged[0].created_at) : undefined,
+        body: <BareSection.Provider value={true}><FlaggedForReview scans={flagged} birdName={bird?.name} /></BareSection.Provider>,
+      },
+      { key: "handling", title: t("vetSummary.handling", "Handling"), icon: <Hand />, preview: firstLine(handling), body: <Value text={handling} multiline /> },
+      ...((weights ?? []).length ? [{
+        key: "appendix",
+        title: t("vetSummary.appendixHeading", "Appendix: weight history"),
+        icon: <ListOrdered />,
+        preview: (weights ?? []).length === 1 ? t("vetSummary.entriesOne", "{{n}} entry, newest first", { n: 1 }) : t("vetSummary.entriesOther", "{{n}} entries, newest first", { n: (weights ?? []).length }),
+        body: <BareSection.Provider value={true}><WeightAppendix entries={weights ?? []} /></BareSection.Provider>,
+      }] : []),
+    ];
+    return (
+      <>
+        <DuoSectionReader
+          top={<PaneBack onBack={goBack} />}
+          title={bird ? t("vetSummary.title", "{{name}}'s vet summary", { name: bird.name }) : t("vetSummary.titleFallback", "Vet summary")}
+          line={t("vetSummary.line", "One clean sheet to bring to the vet or send ahead.")}
+          sections={sections}
+          selected={load.failed ? "error" : duoSection}
+          onSelect={setDuoSection}
+          action={load.failed ? undefined : <DuoMainButton onClick={share}><Share2 className="size-5" aria-hidden="true" />{t("vetDuo.sendToVet", "Send to vet")}</DuoMainButton>}
+          secondary={!load.failed && !isNativeApp() ? <KyaSecondaryButton className="w-full" icon={<Printer className="size-4" />} onClick={() => window.print()}>{t("vetSummary.saveAsPdf", "Save as PDF")}</KyaSecondaryButton> : undefined}
+          leftExtra={missingText ? (
+            <div className="rounded-[20px] bg-white p-4">
+              <p className="m-0 text-[15px] font-[700]" style={{ color: K.forest }}>{t("vetSummary.missingTitle", "Missing from {{name}}'s record", { name })}</p>
+              <p className="m-0 mt-0.5 text-[14px] leading-[1.45]" style={{ color: K.quiet }}>{missingText}</p>
+              {canEditIdentity && (
+                <KyaLink onClick={() => navigate({ to: "/birds/$birdId/identity", params: { birdId }, search: { edit: 1 } })}>
+                  {t("vetSummary.addThem", "Add them")} <ArrowRight className="size-4" aria-hidden="true" />
+                </KyaLink>
+              )}
+            </div>
+          ) : undefined}
+        />
+        {/* Save as PDF prints the whole sheet, not the open card: the phone's
+            sheet, shown only when printing. */}
+        {!load.failed && (
+          <div className="hidden print:block">
+            <article id="vet-sheet" className="flex flex-col gap-3">
+              <KyaCard className="p-5">
+                <KyaHeading as="h2" size={26}>{name}</KyaHeading>
+                {bird?.species && <p className="m-0 mt-1 text-[15px]" style={{ color: K.ink }}>{speciesLabel(t, bird.species)}</p>}
+                <p className="m-0 mt-1 text-[13px]" style={{ color: K.quiet }}>{t("vetSummary.generated", "Generated {{date}}", { date: fmtDate(new Date().toISOString()) })}</p>
+              </KyaCard>
+              <Section label={t("vetSummary.identity", "Identity")}>{identityBody}</Section>
+              <Section label={t("vetSummary.weight", "Weight")}>{weightBody}</Section>
+              <Section label={t("vetSummary.diet", "Diet")}><Value text={dietText} multiline /></Section>
+              <Section label={t("vetSummary.medsHealthFlags", "Meds & health flags")}><Value text={meds} multiline /></Section>
+              <FlaggedForReview scans={flagged} birdName={bird?.name} />
+              <Section label={t("vetSummary.handling", "Handling")}><Value text={handling} multiline /></Section>
+              <WeightAppendix entries={weights ?? []} />
+            </article>
+          </div>
+        )}
+        <style>{`@media print {
+          [data-duo-two-pane] { display: none !important; }
+          body * { visibility: hidden !important; }
+          #vet-sheet, #vet-sheet * { visibility: visible !important; }
+          #vet-sheet { position: absolute; left: 0; top: 0; width: 100%; border: none !important; }
+          #vet-sheet > section { box-shadow: none !important; border: 1px solid ${K.line}; }
+          #vet-sheet .avoid-break { break-inside: avoid; page-break-inside: avoid; }
+        }`}</style>
+      </>
+    );
+  }
+
   return (
     <KyaPage>
       <div data-noprint>
@@ -333,27 +444,9 @@ function VetSummary() {
                 <p className="m-0 mt-1 text-[13px]" style={{ color: K.quiet }}>{t("vetSummary.generated", "Generated {{date}}", { date: fmtDate(new Date().toISOString()) })}</p>
               </KyaCard>
 
-              <Section label={t("vetSummary.identity", "Identity")}>
-                <dl className="m-0 grid grid-cols-2 gap-x-4 gap-y-3">
-                  {identity.map(([l, v, empty]) => (
-                    <div key={l}>
-                      <dt className="text-[13px]" style={{ color: K.quiet }}>{l}</dt>
-                      <dd className={`m-0 mt-0.5 text-[15px] ${v ? "font-[600]" : "italic"}`} style={{ color: v ? K.forest : K.quiet }}>{v ?? empty ?? cap(none())}</dd>
-                    </div>
-                  ))}
-                </dl>
-              </Section>
+              <Section label={t("vetSummary.identity", "Identity")}>{identityBody}</Section>
 
-              <Section label={t("vetSummary.weight", "Weight")}>
-                {current ? (
-                  <div>
-                    <p className="m-0 text-[26px] font-[700] leading-tight" style={{ color: K.moss, fontFamily: SERIF }}>{current.grams} g</p>
-                    <p className="m-0 mt-0.5 text-[13px]" style={{ color: K.quiet }}>{trendLabel(trend, delta, baseline)} · {t("vetSummary.lastWeighed", "last weighed {{date}}", { date: fmtDate(current.measured_at) })}</p>
-                  </div>
-                ) : (
-                  <Value text={null} />
-                )}
-              </Section>
+              <Section label={t("vetSummary.weight", "Weight")}>{weightBody}</Section>
               <Section label={t("vetSummary.diet", "Diet")}><Value text={dietText} multiline /></Section>
               <Section label={t("vetSummary.medsHealthFlags", "Meds & health flags")}><Value text={meds} multiline /></Section>
               <FlaggedForReview scans={flaggedScans ?? []} birdName={bird?.name} />
@@ -530,13 +623,19 @@ function fmtDateTime(iso: string): string {
   return formatLocalDateTime(new Date(iso), { year: "numeric", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
 }
 
+/** True inside the Duo's pop-out card, which carries the section's title:
+ *  Section and the weight appendix drop their own card and heading. */
+const BareSection = createContext(false);
+
 export function WeightAppendix({ entries }: { entries: WeightRow[] }) {
   const { t } = useTranslation();
+  const bare = useContext(BareSection);
   if (entries.length === 0) return null;
+  const Wrap = bare ? "div" : KyaCard;
   return (
-    <KyaCard className="p-5">
-      <KyaHeading as="h3" size={19}>{t("vetSummary.appendixHeading", "Appendix: weight history")}</KyaHeading>
-      <p className="m-0 mt-1 text-[13px]" style={{ color: K.quiet }}>{entries.length === 1 ? t("vetSummary.entriesOne", "{{n}} entry, newest first", { n: entries.length }) : t("vetSummary.entriesOther", "{{n}} entries, newest first", { n: entries.length })}</p>
+    <Wrap className={bare ? "" : "p-5"}>
+      {!bare && <KyaHeading as="h3" size={19}>{t("vetSummary.appendixHeading", "Appendix: weight history")}</KyaHeading>}
+      <p className={`m-0 text-[13px] ${bare ? "" : "mt-1"}`} style={{ color: K.quiet }}>{entries.length === 1 ? t("vetSummary.entriesOne", "{{n}} entry, newest first", { n: entries.length }) : t("vetSummary.entriesOther", "{{n}} entries, newest first", { n: entries.length })}</p>
       {/* Column headers so the series reads as a table at a glance. Two
           columns that fit 375px: date with its context underneath, weight on
           the right (no fixed widths squeezing the context). */}
@@ -563,11 +662,12 @@ export function WeightAppendix({ entries }: { entries: WeightRow[] }) {
           );
         })}
       </div>
-    </KyaCard>
+    </Wrap>
   );
 }
 
 function Section({ label, children }: { label: string; children: React.ReactNode }) {
+  if (useContext(BareSection)) return <div>{children}</div>;
   return (
     <KyaCard className="p-5">
       <KyaHeading as="h3" size={19}>{label}</KyaHeading>

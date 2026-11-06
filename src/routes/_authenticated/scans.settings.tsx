@@ -39,11 +39,19 @@ import { friendlyError } from "@/lib/errorMessage";
 import i18next from "i18next";
 import type { TFunction } from "i18next";
 import { useTranslation } from "react-i18next";
+import { useDuoMode } from "@/lib/duo";
+import { AccountDuo } from "@/components/duo/AccountDuo";
 
 export const Route = createFileRoute("/_authenticated/scans/settings")({
   head: () => ({ meta: [{ title: i18next.t("notifSettings.metaTitle", "Notification settings — Kya & Co.") }] }),
-  component: NotificationsSettingsPage,
+  component: NotificationsSettingsPageRoute,
 });
+
+// iPhone Duo, two panes: this page in the account's pop-out card (AccountDuo).
+function NotificationsSettingsPageRoute() {
+  if (useDuoMode() === "sideways") return <AccountDuo selected="notifications"><NotificationsSettingsPage /></AccountDuo>;
+  return <NotificationsSettingsPage />;
+}
 
 type Prefs = {
   notify_sitter_opened: boolean;

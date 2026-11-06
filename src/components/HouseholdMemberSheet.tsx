@@ -15,6 +15,8 @@ import { formatLocalDate } from "@/lib/dates";
 import { memberDisplayName, memberInitials } from "@/lib/memberDisplay";
 import { K, KyaSheet, KyaHeading, KyaSwitch, KyaLink } from "@/components/kya";
 import { useConfirm } from "@/components/ConfirmSheet";
+import { BirdPhotoCrop } from "@/components/BirdPhotoCrop";
+import { PopOutCard } from "@/components/duo/DuoBlocks";
 
 export type HouseholdAccountMember = {
   userId: string; name: string | null; email: string | null;
@@ -84,9 +86,13 @@ export function MemberAvatar({ name, size = 40 }: { name: string; size?: number 
 // addExistingHouseholdMember, revoke via removeHouseholdMember — unchecking the
 // LAST bird confirms and removes them from the household), what they can do
 // (household_member_permissions, saved per switch), or remove them entirely.
-export function HouseholdMemberSheet({ member, allBirds, ownerId, storedCaps, onClose, onChanged, onCapsSaved }: {
+export function HouseholdMemberSheet({ member, allBirds, ownerId, storedCaps, onClose, onChanged, onCapsSaved, inline = false, birdPhotos }: {
   member: HouseholdAccountMember;
   allBirds: { id: string; name: string }[];
+  /** iPhone Duo: the right pane's card instead of a sheet over the screen, with
+   *  the birds as chips that carry their photos (green when on). */
+  inline?: boolean;
+  birdPhotos?: Record<string, { url: string; original?: string | null; position?: string | null }>;
   ownerId: string | null;
   /** Their stored capabilities, or null while still loading. No row = none. */
   storedCaps: string[] | null;
@@ -177,17 +183,47 @@ export function HouseholdMemberSheet({ member, allBirds, ownerId, storedCaps, on
   const capsDisabled = savingCaps || storedCaps === null || !ownerId || removeEverywhere.isPending;
   const closeLabel = t("household.close", "Close");
 
-  return (
-    <KyaSheet
-      onClose={onClose}
-      closeLabel={closeLabel}
-      title={<MemberAvatar name={display} size={52} />}
-    >
-      <KyaHeading size={24}>{display}</KyaHeading>
-      <p className="m-0 mt-1 text-[14px]" style={{ color: K.quiet }}>
-        {t("household.householdSince", "Household since {{month}}", { month: since })}
-      </p>
+  const sinceLine = (
+    <p className="m-0 mt-1 text-[14px]" style={{ color: K.quiet }}>
+      {t("household.householdSince", "Household since {{month}}", { month: since })}
+    </p>
+  );
+  const birdsSection = inline ? (
+    <>
+      <KyaHeading as="h3" size={18} className="mt-6">{t("household.whichBirds", "Which birds?")}</KyaHeading>
+      <div className="mt-3 flex flex-wrap gap-2">
+        {allBirds.map((b) => {
+          const on = hasAccess(b.id);
+          return (
+            <button
+              key={b.id}
+              data-on={on ? "" : undefined}
+              type="button"
+              aria-pressed={on}
+              disabled={busy}
+              onClick={() => toggleBird(b)}
+              className="inline-flex min-h-[52px] items-center gap-2 rounded-full border-2 py-1 pl-1 pr-4 text-[16px] font-[700] active:scale-[0.98] disabled:opacity-60"
+              style={on
+                ? { background: "#cfe9b7", borderColor: K.forest, color: K.forest }
+                : { background: "#fff", borderColor: "#d5dfd5", color: K.forest }}
+            >
+              <span className="relative grid size-10 shrink-0 place-items-center overflow-hidden rounded-full text-[15px]" style={{ background: K.mist }} aria-hidden="true">
+                {birdPhotos?.[b.id]
+                  ? <BirdPhotoCrop url={birdPhotos[b.id].url} original={birdPhotos[b.id].original} position={birdPhotos[b.id].position} />
+                  : b.name.slice(0, 1).toUpperCase()}
+              </span>
+              {pendingBird === b.id
+                ? <Loader2 className="size-4 animate-spin" aria-hidden="true" />
+                : on ? <Check className="size-4" aria-hidden="true" /> : null}
+              {b.name}
+            </button>
+          );
+        })}
+      </div>
 
+    </>
+  ) : (
+    <>
       <KyaHeading as="h3" size={18} className="mt-6">{t("household.whichBirds", "Which birds?")}</KyaHeading>
       <div className="mt-3 flex flex-wrap gap-2">
         {allBirds.map((b) => {
@@ -213,6 +249,10 @@ export function HouseholdMemberSheet({ member, allBirds, ownerId, storedCaps, on
         })}
       </div>
 
+    </>
+  );
+  const capsSection = (
+    <>
       <KyaHeading as="h3" size={18} className="mt-6">{t("household.whatCanTheyDo", "What can they do?")}</KyaHeading>
       <div className="mt-3 rounded-[16px] px-4" style={{ background: K.mist }}>
         <div className="flex min-h-[52px] items-center gap-3 py-2" style={{ borderBottom: `1px solid ${K.line}` }}>
@@ -239,6 +279,9 @@ export function HouseholdMemberSheet({ member, allBirds, ownerId, storedCaps, on
         {t("household.savesAsYouGo", "Changes save as you go.")}
       </p>
 
+    </>
+  );
+  const removeLink = (
       <div className="mt-4">
         <KyaLink
           color={K.red}
@@ -257,6 +300,36 @@ export function HouseholdMemberSheet({ member, allBirds, ownerId, storedCaps, on
             : t("household.removeNameFromHousehold", "Remove {{name}} from your household", { name: display })}
         </KyaLink>
       </div>
+  );
+
+  if (inline) {
+    return (
+      <>
+        <PopOutCard
+          eyebrow={t("household.headline", "Your household")}
+          title={display}
+          footer={removeLink}
+        >
+          <div className="-mt-4">{sinceLine}</div>
+          {birdsSection}
+          {capsSection}
+        </PopOutCard>
+        {confirmSheet}
+      </>
+    );
+  }
+
+  return (
+    <KyaSheet
+      onClose={onClose}
+      closeLabel={closeLabel}
+      title={<MemberAvatar name={display} size={52} />}
+    >
+      <KyaHeading size={24}>{display}</KyaHeading>
+      {sinceLine}
+      {birdsSection}
+      {capsSection}
+      {removeLink}
       {confirmSheet}
     </KyaSheet>
   );

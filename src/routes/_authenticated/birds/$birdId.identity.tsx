@@ -1,7 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { speciesLabel } from "@/lib/speciesLabel";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
+import { useCallback, useContext, useEffect, useRef, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import i18next, { type TFunction } from "i18next";
 import { supabase } from "@/integrations/supabase/client";
@@ -16,7 +16,7 @@ import { useCapability } from "@/lib/useCapability";
 import { signBirdPhoto, persistBirdPhoto } from "@/lib/birdPhoto";
 import { BirdPhotoCrop } from "@/components/BirdPhotoCrop";
 import { compressImageToDataUrl, dataUrlBytes, MAX_UPLOAD_BYTES } from "@/lib/imageUpload";
-import { K, KyaPage, KyaBody, KyaCard, KyaField, KyaHeading, KyaLink, KyaPrimaryButton } from "@/components/kya";
+import { K, KyaPage, KyaBody, KyaCard, KyaField, KyaHeading, KyaInCard, KyaLink, KyaPrimaryButton } from "@/components/kya";
 import { PageHeader, TaskFooter, TASK_FOOTER_SPACE, TaskHeader, useGoBack, useLeaveGuard } from "@/components/headers";
 import { friendlyError } from "@/lib/errorMessage";
 import { LoadError } from "@/components/LoadError";
@@ -25,6 +25,9 @@ import { formatLocalDate } from "@/lib/dates";
 import { localDateISO } from "@/lib/localDay";
 import { ownerIntakeDate } from "@/lib/intakeDate";
 import { isMissingColumn } from "@/lib/missingColumn";
+import { BIRD_PHOTO_FOCUS } from "@/lib/birdPhotoFocus";
+import { useDuoMode } from "@/lib/duo";
+import { BirdSettingsDuo } from "@/components/duo/BirdSettingsDuo";
 
 type IdentitySearch = { edit?: 1 };
 
@@ -37,7 +40,7 @@ export const Route = createFileRoute("/_authenticated/birds/$birdId/identity")({
     const e = search.edit;
     return e === 1 || e === "1" || e === true ? { edit: 1 } : {};
   },
-  component: IdentityFacet,
+  component: IdentityFacetRoute,
 });
 
 type Identity = {
@@ -92,6 +95,18 @@ function flightLabel(t: TFunction, v: string | null | undefined): string | null 
 }
 const blank = (v: string | null | undefined) => !((v ?? "").trim());
 
+
+// iPhone Duo, two panes: this page in the card beside the bird's settings
+// tiles (BirdSettingsDuo). Editing stays a full task.
+function IdentityFacetRoute() {
+  const { birdId } = Route.useParams();
+  const search = Route.useSearch();
+  const navigate = useNavigate();
+  const goBack = useGoBack(useCallback(() => navigate({ to: "/birds/$birdId", params: { birdId } }), [navigate, birdId]));
+  if (useDuoMode() === "sideways" && !search.edit) return <BirdSettingsDuo birdId={birdId} selected="identity" onBack={goBack}><IdentityFacet /></BirdSettingsDuo>;
+  return <IdentityFacet />;
+}
+
 function IdentityFacet() {
   const { t } = useTranslation();
   const { birdId } = Route.useParams();
@@ -144,6 +159,8 @@ function IdentityFacet() {
   const goBack = useGoBack(useCallback(() => navigate({ to: "/birds/$birdId", params: { birdId } }), [navigate, birdId]));
   const canEdit = !!bird && canEditIdentity;
   const openEdit = canEdit ? startEditing : undefined;
+  // iPhone Duo pop-out card: the hatch date in its short form, on one line.
+  const inCard = useContext(KyaInCard);
   // Editing is a task: Close top left, and "Leave without saving?" when
   // something has changed. The form reports whether it has.
   const [formDirty, setFormDirty] = useState(false);
@@ -202,7 +219,7 @@ function IdentityFacet() {
                   birds never repositioned) instead of centering on feet. */}
               <div className="relative grid size-14 shrink-0 place-items-center overflow-hidden rounded-[16px]" style={{ background: K.forest }}>
                 {photo ? (
-                  <BirdPhotoCrop url={photo.url} original={photo.original} position={bird.photo_position ?? "50% 20%"} alt={name} />
+                  <BirdPhotoCrop url={photo.url} original={photo.original} position={bird.photo_position ?? BIRD_PHOTO_FOCUS} alt={name} />
                 ) : (
                   <span className="text-[22px] font-[700]" style={{ color: K.lime, fontFamily: "'Newsreader', Georgia, serif" }}>{initial}</span>
                 )}
@@ -219,7 +236,7 @@ function IdentityFacet() {
             <KyaCard>
               <Row label={t("birdSetup.sex", "Sex")} value={sexValue(t, bird)} onAdd={openEdit} />
               <Row label={t("birdSetup.flight", "Flight")} value={flightLabel(t, bird.flight_status)} onAdd={openEdit} />
-              <Row label={t("birdPickers.hatchDate", "Hatch date")} value={bird.birth_date ? `${fmtDate(bird.birth_date)} (≈ ${approxAge(t, bird.birth_date)})` : null} onAdd={openEdit} />
+              <Row label={t("birdPickers.hatchDate", "Hatch date")} value={bird.birth_date ? (inCard ? hatchShort(t, bird.birth_date) : `${fmtDate(bird.birth_date)} (≈ ${approxAge(t, bird.birth_date)})`) : null} onAdd={openEdit} />
               <Row label={t("birdIdentity.microchip", "Microchip")} value={bird.microchip} onAdd={openEdit} />
               <Row label={t("birdIdentity.legBand", "Leg band")} value={bird.band_number} onAdd={openEdit} />
               <Row label={t("birdIdentity.origin", "Origin")} value={bird.origin} onAdd={openEdit} />
@@ -247,14 +264,17 @@ function sexValue(t: TFunction, b: Identity): string | null {
 function Row({ label, value, onAdd, last }: { label: string; value: string | null | undefined; onAdd?: () => void; last?: boolean }) {
   const { t } = useTranslation();
   const filled = !blank(value);
+  // iPhone Duo pop-out card (narrower than a phone): a tighter label column so
+  // "Not added" and Add stay on one line.
+  const inCard = useContext(KyaInCard);
   return (
-    <div className="flex min-h-[52px] items-center gap-3 px-4 py-2" style={{ borderBottom: last ? undefined : `1px solid ${K.line}` }}>
-      <span className="w-[108px] shrink-0 text-[14px]" style={{ color: K.quiet }}>{label}</span>
+    <div className={`flex min-h-[52px] items-center py-2 ${inCard ? "gap-2 px-3" : "gap-3 px-4"}`} style={{ borderBottom: last ? undefined : `1px solid ${K.line}` }}>
+      <span className={`${inCard ? "w-[92px]" : "w-[108px]"} shrink-0 text-[14px]`} style={{ color: K.quiet }}>{label}</span>
       {filled ? (
         <span className="min-w-0 flex-1 break-words py-1.5 text-[15px] font-[600]" style={{ color: K.forest }}>{value}</span>
       ) : (
         <span className="flex min-w-0 flex-1 items-center justify-between gap-2">
-          <span className="text-[15px]" style={{ color: K.quiet }}>{t("birdIdentity.notAdded", "Not added")}</span>
+          <span className={`text-[15px]${inCard ? " whitespace-nowrap" : ""}`} style={{ color: K.quiet }}>{t("birdIdentity.notAdded", "Not added")}</span>
           {onAdd && <KyaLink onClick={onAdd} className="px-1">{t("birdIdentity.add", "Add")}</KyaLink>}
         </span>
       )}
@@ -445,7 +465,7 @@ function IdentityForm({ birdId, bird, onSaved, onDirtyChange }: { birdId: string
 
       {/* Pinned Save, the one task button (Close top left leaves, with the
           leave-without-saving guard when something changed). */}
-      <TaskFooter rail={{ label: saving ? t("birdIdentity.saving", "Saving…") : t("birdIdentity.save", "Save"), onClick: save, disabled: saving }}>
+      <TaskFooter>
         <KyaPrimaryButton onClick={save} disabled={saving}>
           {saving ? t("birdIdentity.saving", "Saving…") : t("birdIdentity.save", "Save")}
         </KyaPrimaryButton>
@@ -471,6 +491,23 @@ function FormField({ id, label, children }: { id?: string; label: string; childr
 
 function fmtDate(iso: string): string {
   return formatLocalDate(new Date(`${iso}T12:00:00`), { year: "numeric", month: "short", day: "numeric" });
+}
+
+/** "Sep 26, 2024 · 2 yrs": the hatch date and age for the narrow Duo card. */
+function hatchShort(t: TFunction, iso: string): string {
+  const born = new Date(`${iso}T12:00:00`);
+  const now = new Date();
+  let months = (now.getFullYear() - born.getFullYear()) * 12 + now.getMonth() - born.getMonth();
+  if (now.getDate() < born.getDate()) months -= 1;
+  const days = Math.floor((now.getTime() - born.getTime()) / 86_400_000);
+  const age = days < 0
+    ? null
+    : months >= 12
+      ? t("birdIdentity.yrsShort", "{{count}} yrs", { count: Math.floor(months / 12) })
+      : months >= 1
+        ? t("birdIdentity.moShort", "{{count}} mo", { count: months })
+        : t("birdIdentity.daysShort", "{{count}} days", { count: days });
+  return age ? `${fmtDate(iso)} · ${age}` : fmtDate(iso);
 }
 
 function approxAge(t: TFunction, iso: string): string {

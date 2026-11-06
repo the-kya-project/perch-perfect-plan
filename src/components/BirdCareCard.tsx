@@ -3,6 +3,7 @@ import { speciesLabel } from "@/lib/speciesLabel";
 import { Stethoscope, ChevronRight, ChevronDown } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { K } from "@/components/kya";
+import { BIRD_PHOTO_FOCUS } from "@/lib/birdPhotoFocus";
 
 // One "bird in your care" card: photo + name + today's task progress (+ optional
 // health-scan status), in the Kya & Co. white-card look.
@@ -53,7 +54,7 @@ export function BirdCareCard({
     >
       {photoUrl ? (
         <div className="relative size-14 shrink-0 overflow-hidden rounded-full">
-          <BirdPhotoCrop url={photoUrl} original={photoUrl} position={photoPosition ?? "50% 20%"} alt={name} />
+          <BirdPhotoCrop url={photoUrl} original={photoUrl} position={photoPosition ?? BIRD_PHOTO_FOCUS} alt={name} />
         </div>
       ) : (
         <div className="grid size-14 shrink-0 place-items-center rounded-full text-[20px] font-[700] text-white" style={{ background: K.forest }}>{initial}</div>

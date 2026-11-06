@@ -11,7 +11,7 @@ import { PullToRefresh } from "@/components/PullToRefresh";
 import { OwnerTabBar, isTaskPath } from "@/components/OwnerTabBar";
 import { StartupSplash } from "@/components/StartupSplash";
 import { DuoRail, DuoRailProvider } from "@/components/DuoRail";
-import { useDuoMode } from "@/lib/duo";
+import { useDuoLayout } from "@/lib/duo";
 import { FLOCK_ENABLED_QUERY, rememberMode, rememberedMode } from "@/lib/flock";
 
 /**
@@ -194,28 +194,39 @@ function AuthenticatedLayout() {
 
   // Landscape with room for two panes (iPhone Duo unfolded and sideways, see
   // lib/duo.ts): the nav moves into a column on the right edge (DuoRail) on
-  // every regular page and task.
-  // Screens with their own chrome keep it, exactly as today.
-  const duoMode = useDuoMode();
-  const rail = duoMode && !ownChrome ? duoMode : null;
+  // every signed-in screen, tasks included, with all its tabs: the tabs are
+  // always one tap away, so add a bird and set up a sit keep a draft. Add a
+  // bird and the care plan walkthrough give their own bottom nav up for it.
+  // The welcome splash, the sitter previews and the Flock keep their own
+  // chrome, exactly as today.
+  // From 1.2 the iOS app also puts it on the folded cover screen, on whichever
+  // edge the system names (lib/duo.ts resolveDuoLayout).
+  const duoLayout = useDuoLayout();
+  const railChrome = useLocation({ select: (l) => l.pathname === "/birds/new" || l.pathname.endsWith("/setup") });
+  const rail = duoLayout.rail && (!ownChrome || railChrome) ? duoLayout.rail : null;
   const [railTop, setRailTop] = useState<HTMLElement | null>(null);
-  const [railAction, setRailAction] = useState<HTMLElement | null>(null);
   useEffect(() => {
     const html = document.documentElement;
     html.classList.toggle("duo", !!rail);
-    return () => html.classList.remove("duo");
-  }, [rail]);
+    html.classList.toggle("duo-two-pane", !!rail && duoLayout.split);
+    if (rail) html.setAttribute("data-duo-rail", rail);
+    else html.removeAttribute("data-duo-rail");
+    return () => {
+      html.classList.remove("duo", "duo-two-pane");
+      html.removeAttribute("data-duo-rail");
+    };
+  }, [rail, duoLayout.split]);
 
   // One tree either way, so turning the phone doesn't remount the page (and
   // lose what's half-typed in it).
   return (
-    <DuoRailProvider value={rail ? { mode: rail, task, top: railTop, action: task ? railAction : null } : null}>
+    <DuoRailProvider value={rail ? { edge: rail, top: railTop } : null}>
       <div className={rail ? "duo-content" : undefined}>
         <PullToRefresh>
           <Outlet />
         </PullToRefresh>
       </div>
-      {rail ? <DuoRail task={task} setTop={setRailTop} setAction={setRailAction} /> : !hideNav && <OwnerTabBar />}
+      {rail ? <DuoRail setTop={setRailTop} /> : !hideNav && <OwnerTabBar />}
     </DuoRailProvider>
   );
 }

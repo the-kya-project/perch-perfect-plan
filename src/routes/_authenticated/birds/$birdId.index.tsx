@@ -104,7 +104,9 @@ function BirdRecordHome() {
             <BirdRecordHero birdId={birdId} />
             <main className="flex flex-col gap-4 px-4 pb-6 pt-4">
               <MemberContextBanner birdId={birdId} />
-              <BirdRecordBody birdId={birdId} part="summary" />
+              {/* At most one gold button on the Duo: the checks are outline
+                  here, so "Create care plan" (fresh birds) is the only one. */}
+              <BirdRecordBody birdId={birdId} part="summary" quietChecks />
             </main>
           </div>
           <main className="duo-pane flex flex-col gap-4 px-4 pb-nav pt-[calc(env(safe-area-inset-top)+14px)]">
@@ -140,7 +142,9 @@ export function BirdRecordPane({ birdId }: { birdId: string }) {
       <BirdRecordHero birdId={birdId} pane />
       <div className="flex flex-col gap-4 px-4 pb-6 pt-4">
         <MemberContextBanner birdId={birdId} />
-        <BirdRecordBody birdId={birdId} />
+        {/* Home's flock card holds the screen's one main button, so the checks
+            here are both outline buttons. */}
+        <BirdRecordBody birdId={birdId} quietChecks />
       </div>
     </>
   );
@@ -298,7 +302,7 @@ function whenLabel(t: TFunction, iso: string): string {
 /** `part` splits the body for the two-column bird page on iPhone Duo:
  *  "summary" (summary, setup, the record's pages, about) and "records"
  *  (recent, who can see, changes). Omitted = all of it, in today's order. */
-export function BirdRecordBody({ birdId, part }: { birdId: string; part?: "summary" | "records" }) {
+export function BirdRecordBody({ birdId, part, quietChecks = false }: { birdId: string; part?: "summary" | "records"; quietChecks?: boolean }) {
   const summary = part !== "records";
   const records = part !== "summary";
   const { t } = useTranslation();
@@ -396,7 +400,7 @@ export function BirdRecordBody({ birdId, part }: { birdId: string; part?: "summa
   return (
     <>
       {summary && (<>
-      <SummaryCard birdId={birdId} weights={weights} today={dailyToday?.[birdId]} canCheck={canHealth && !passed} planExists={bird ? !!bird.setup_complete : true} passed={passed} />
+      <SummaryCard birdId={birdId} weights={weights} today={dailyToday?.[birdId]} canCheck={canHealth && !passed} planExists={bird ? !!bird.setup_complete : true} passed={passed} quietChecks={quietChecks} />
 
       {/* Fresh bird → guide straight into the care plan. Prominent but skippable. */}
       {bird && !bird.setup_complete && canEditPlan && !passed && (
@@ -592,7 +596,7 @@ export function BirdRecordBody({ birdId, part }: { birdId: string; part?: "summa
 /** Weight, last weighed and today's check, then the two ways into a check:
  *  the daily check (sunflower) and the full health check (white). Today's
  *  status lives in the third tile, which opens the check once it's done. */
-function SummaryCard({ birdId, weights, today, canCheck, planExists, passed = false }: { birdId: string; weights?: WeightRow[]; today?: BirdToday; canCheck: boolean; planExists: boolean; passed?: boolean }) {
+function SummaryCard({ birdId, weights, today, canCheck, planExists, passed = false, quietChecks = false }: { birdId: string; weights?: WeightRow[]; today?: BirdToday; canCheck: boolean; planExists: boolean; passed?: boolean; quietChecks?: boolean }) {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const latest = weights?.[0];
@@ -636,7 +640,9 @@ function SummaryCard({ birdId, weights, today, canCheck, planExists, passed = fa
               className={checkBtn}
               // Fresh bird: "Create care plan" above is the one sunflower
               // button, so Daily check stays white until the plan exists.
-              style={{ background: planExists ? K.sunflower : "#fff", borderColor: K.forest, color: K.forest }}
+              // Inside Home and on the Duo bird page (quietChecks) both are
+              // outline: Home's flock card or the care-plan invite is the one.
+              style={{ background: planExists && !quietChecks ? K.sunflower : "#fff", borderColor: K.forest, color: K.forest }}
             >
               {t("birdRecord.dailyCheckButton", "Daily check")}
             </button>

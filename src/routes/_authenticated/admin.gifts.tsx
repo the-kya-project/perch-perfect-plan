@@ -3,6 +3,8 @@ import { useQuery } from "@tanstack/react-query";
 import { Download, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { formatCents } from "@/lib/gifts";
+import { useDuoMode } from "@/lib/duo";
+import { AdminListDuo, AdminTotals } from "@/components/duo/flows/AdminListDuo";
 import { K, KyaBackRow, KyaBody, KyaCard, KyaHeader, KyaHeading, KyaPage, KyaPrimaryButton, KyaSecondaryButton, KyaTitle } from "@/components/kya";
 
 // Admin-only list of gift memberships. RLS on gift_purchases is the gate: a
@@ -37,6 +39,7 @@ const NO_PROMO = "(none)";
 
 function AdminGifts() {
   const navigate = useNavigate();
+  const duo = useDuoMode() === "sideways";
   const { data: isAdmin, isLoading: adminLoading } = useQuery({
     queryKey: ["is-admin"],
     queryFn: async () => {
@@ -91,6 +94,48 @@ function AdminGifts() {
   const giving = counted.reduce((n, g) => n + Math.round(g.amount_paid_cents * g.giving_rate), 0);
   const byPlan = group(counted, (g) => PLAN_LABEL[g.plan] ?? g.plan);
   const byPromo = group(counted, (g) => g.promo_code ?? NO_PROMO);
+  const line = isLoading ? "Loading…" : `${counted.length} paid ${counted.length === 1 ? "gift" : "gifts"} · ${formatCents(total)} · ${formatCents(giving)} to rescue and conservation`;
+
+  // iPhone Duo, sideways: totals and gifts as tiles on the left, the selected
+  // gift on the right.
+  if (duo) {
+    const totals = (g: Group[]) => g.map((x) => [x.key, `${x.count} · ${formatCents(x.cents)}`] as [string, string]);
+    return (
+      <AdminListDuo
+        title="Gift memberships"
+        line={line}
+        loading={isLoading}
+        error={error ? `Couldn't load gifts: ${(error as Error).message}` : null}
+        emptyText="No gifts yet."
+        summary={<>
+          <AdminTotals title="By plan" rows={totals(byPlan)} emptyText="No paid gifts yet." />
+          <AdminTotals title="By promo code" rows={totals(byPromo)} emptyText="No paid gifts yet." />
+        </>}
+        items={rows.map((g) => ({
+          key: g.gift_code,
+          badge: formatCents(g.amount_paid_cents),
+          title: g.recipient_name,
+          preview: PLAN_LABEL[g.plan] ?? g.plan,
+          status: g.status,
+          tone: g.status === "refunded" ? "attention" : "fine",
+          eyebrow: formatDate(g.purchased_at),
+          detailTitle: `Gift for ${g.recipient_name}`,
+          rows: [
+            ["Plan", PLAN_LABEL[g.plan] ?? g.plan],
+            ["Status", <span key="s" style={{ color: g.status === "refunded" ? K.red : K.forest }}>{g.status}</span>],
+            ["Buyer", g.buyer_name ? `${g.buyer_name} · ${g.buyer_email}` : g.buyer_email],
+            ["Recipient", `${g.recipient_name}${g.recipient_email ? ` · ${g.recipient_email}` : " · (to buyer)"}`],
+            ["Send on", g.send_on],
+            ["Amount", formatCents(g.amount_paid_cents)],
+            ["Promo code", g.promo_code ?? "—"],
+            ["Giving", `${Math.round(g.giving_rate * 100)}%`],
+          ],
+        }))}
+        onCsv={() => downloadCsv(rows)}
+        onBack={back}
+      />
+    );
+  }
 
   return (
     <KyaPage>
@@ -98,7 +143,7 @@ function AdminGifts() {
         <KyaBackRow label="Back" onBack={back} />
         <KyaTitle
           title="Gift memberships"
-          line={isLoading ? "Loading…" : `${counted.length} paid ${counted.length === 1 ? "gift" : "gifts"} · ${formatCents(total)} · ${formatCents(giving)} to rescue and conservation`}
+          line={line}
         />
       </KyaHeader>
       <KyaBody>

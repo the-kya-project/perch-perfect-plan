@@ -1,14 +1,19 @@
-import { useCallback } from "react";
+import { useCallback, useState, type ReactNode } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
 import type { TFunction } from "i18next";
-import { ChevronRight } from "lucide-react";
+import { AlertTriangle, ChevronRight, HeartPulse, MapPin, Phone } from "lucide-react";
 import { useSitterContext } from "./route";
 import { K, KyaHeading } from "@/components/kya";
 import { PageHeader, useGoBack } from "@/components/headers";
 import { VetCallRow, PersonCallRow } from "@/components/sitter/CallRows";
 import { BirdAvatar } from "@/components/sitter/sitterShared";
 import { defaultPoisonLines, warmRange } from "@/lib/poisonControl";
+import { useDuoMode } from "@/lib/duo";
+import { RailBack } from "@/components/DuoRail";
+import { DuoSectionReader, type ReaderSection } from "@/components/duo/DuoSectionReader";
+import { DUO } from "@/components/duo/DuoBlocks";
+import { SitterDuoTopBar } from "@/components/duo/sitter/SitterDuoRail";
 
 export const Route = createFileRoute("/sitter/$token/emergency")({
   component: Emergency,
@@ -55,6 +60,8 @@ function Emergency() {
   const poisonDefaults = c.poison_control ? [] : defaultPoisonLines(homeTimeZone);
   const poisonPhone = c.poison_control || poisonDefaults[0]?.display || "";
   const goBack = useGoBack(useCallback(() => navigate({ to: "/sitter/$token", params: { token } }), [navigate, token]));
+  const duo = useDuoMode() === "sideways";
+  const [duoOpen, setDuoOpen] = useState("calls");
   const playbooks = [
     {
       title: t("sitter.emergency.pb_breathing_title", "Trouble breathing / open-mouth"),
@@ -188,41 +195,154 @@ function Emergency() {
     { label: t("sitter.emergency.spendingLimit", "Spending limit"), value: c.spending_limit },
   ].filter((x) => !!x.value?.trim());
 
+  const pageTitle = ruleName ? t("sitter.emergency.pageTitleFor", "Emergency for {{name}}", { name: ruleName }) : t("sitter.emergency.pageTitle", "Emergency");
+  const switcher = showSwitcher && (
+    <div className="mt-5 flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" role="group" aria-label={t("sitter.emergency.whichBird", "Which bird")}>
+      {birds.map((b) => {
+        const active = b.id === ctx.activeBirdId;
+        return (
+          <button
+            key={b.id}
+            type="button"
+            aria-pressed={active}
+            onClick={() => navigate({ to: "/sitter/$token/emergency", params: { token }, search: { birdId: b.id }, replace: true })}
+            className="inline-flex h-12 shrink-0 items-center gap-2 rounded-full pl-[5px] pr-4 text-[15px] font-[700] active:scale-95"
+            style={active ? { background: K.lime, color: K.forest } : { background: K.forestDeep, color: "#fff" }}
+          >
+            {/* Shared avatar treatment (photo, or the initial on moss) — same as Today's bird switcher. */}
+            <BirdAvatar bird={b} size={38} />
+            {b.name}
+          </button>
+        );
+      })}
+    </div>
+  );
+  const differentNote = showSwitcher && birds.find((b) => b.id === ctx.activeBirdId)?.emergencyDifferent;
+
+  // iPhone Duo: the calls, "while you wait" and each emergency as big cards on
+  // the left; the open one on the right. Calls open first.
+  if (duo) {
+    const callRows: ReactNode = (
+      <div className="flex flex-col gap-2.5">
+        <VetCallRow surface="mist" label={t("sitter.calls.avianVet", "Avian vet")} name={c.avian_vet_name} phone={c.avian_vet_phone} />
+        <VetCallRow surface="mist" label={t("sitter.calls.emergencyVet", "After-hours emergency vet")} name={c.emergency_vet_name} phone={c.emergency_vet_phone} />
+        <PersonCallRow surface="mist" label={t("sitter.calls.owner", "Owner")} name={ownerName && ownerName !== "the owner" ? ownerName : null} phone={c.owner_phone} />
+        {c.backup_phone && <PersonCallRow surface="mist" label={t("sitter.calls.backup", "Backup contact")} name={c.backup_name} phone={c.backup_phone} />}
+        {c.poison_control || poisonDefaults.length === 0 ? (
+          <PersonCallRow
+            surface="mist"
+            label={t("sitter.emergency.poisonControl", "Poison control")}
+            phone={c.poison_control}
+            missingText={t("sitter.emergency.noPoisonLineAnyVet", "no public line here. Call the owner's vet or an emergency vet right away.")}
+          />
+        ) : (
+          <>
+            {poisonDefaults.map((line) => (
+              <PersonCallRow key={line.dial} surface="mist" label={t("sitter.emergency.poisonControl", "Poison control")} name={line.name} phone={line.dial} displayPhone={line.display} />
+            ))}
+            <p className="m-0 px-1 text-[14px] leading-[1.4]" style={{ color: K.quiet }}>
+              {poisonDefaults.length > 1
+                ? t("sitter.emergency.poisonFeeBoth", "Both poison lines charge a consultation fee.")
+                : t("sitter.emergency.poisonFeeOne", "This poison line charges a consultation fee.")}
+            </p>
+          </>
+        )}
+      </div>
+    );
+    const sections: ReaderSection[] = [
+      { key: "calls", title: t("sitter.duo.emergency.calls", "Who to call"), icon: <Phone />, preview: t("sitter.calls.avianVet", "Avian vet"), body: callRows },
+      {
+        key: "wait",
+        title: t("sitter.emergency.whileYouWait", "While you wait for the vet"),
+        icon: <HeartPulse />,
+        body: (
+          <>
+            <ol className="m-0 flex list-none flex-col gap-3 p-0">
+              {rules(t, ruleName, pronFor((ctx.bird as any).sex), temp).map((r, i) => (
+                <li key={i} className="flex gap-3 text-[18px] leading-[1.45]" style={{ color: K.ink }}>
+                  <span className="w-5 shrink-0 font-[700]" style={{ color: K.amberText }}>{i + 1}.</span>
+                  <span className="min-w-0 flex-1">{r}</span>
+                </li>
+              ))}
+            </ol>
+            <p className="m-0 mt-4 text-[17px] font-[700] leading-[1.45]" style={{ color: K.moss }}>
+              {t("sitter.emergency.callSoonNever", "You'll never be in trouble for calling too soon.")}
+            </p>
+          </>
+        ),
+      },
+      ...playbooks.map((p, i) => ({
+        key: `pb${i}`,
+        title: p.title,
+        icon: <AlertTriangle />,
+        preview: p.signs,
+        body: (
+          <div className="text-[17px] leading-[1.5]" style={{ color: K.ink }}>
+            {p.signs && (
+              <p className="m-0 rounded-[16px] p-4" style={{ background: DUO.bg, color: K.forest }}>
+                <span className="font-[700]">{t("sitter.emergency.signsLabel", "Signs")}:</span> {p.signs}
+              </p>
+            )}
+            <ol className="m-0 mt-4 flex list-decimal flex-col gap-2 pl-6">
+              {p.steps.map((step, j) => <li key={j}>{step}</li>)}
+            </ol>
+          </div>
+        ),
+      })),
+      ...(tiles.length > 0 ? [{
+        key: "where",
+        title: t("sitter.duo.emergency.where", "Where things are"),
+        icon: <MapPin />,
+        preview: tiles.map((x) => x.label).join(", "),
+        body: (
+          <div className="flex flex-col gap-3">
+            {tiles.map((x) => (
+              <div key={x.label} className="rounded-[16px] p-4" style={{ background: DUO.bg }}>
+                <p className="m-0 text-[14px]" style={{ color: K.quiet }}>{x.label}</p>
+                <p className="m-0 mt-1 break-words text-[18px] font-[700] leading-[1.35]" style={{ color: K.forest }}>{x.value}</p>
+              </div>
+            ))}
+          </div>
+        ),
+      }] : []),
+    ];
+    return (
+      <>
+        <RailBack onBack={goBack} />
+        <DuoSectionReader
+          top={<div className="mb-6"><SitterDuoTopBar token={token} light />{switcher && <div className="-mt-1">{switcher}</div>}</div>}
+          title={pageTitle}
+          line={differentNote
+            ? t("sitter.emergency.differentFor", "Different for {{name}}", { name: ctx.bird.name })
+            : t("sitter.emergency.subtitle", "Take a breath. Here's exactly what to do.")}
+          sections={sections}
+          selected={duoOpen}
+          onSelect={setDuoOpen}
+          leftExtra={
+            <p className="m-0 text-[13px]" style={{ color: K.quiet }}>
+              {t("sitter.emergency.footer", "Care guidance from The Kya Project · Parrot Care Bible for Pet Sitters.")}
+            </p>
+          }
+        />
+      </>
+    );
+  }
+
   return (
     <div className="setup-frame min-h-screen" style={{ background: K.forest, color: "#fff" }}>
       <PageHeader
         // Named for the bird when the screen is about one bird (a one-bird
         // sit, or a bird picked in the switcher); plain "Emergency" when
         // several birds share it.
-        title={ruleName ? t("sitter.emergency.pageTitleFor", "Emergency for {{name}}", { name: ruleName }) : t("sitter.emergency.pageTitle", "Emergency")}
+        title={pageTitle}
         line={t("sitter.emergency.subtitle", "Take a breath. Here's exactly what to do.")}
         onBack={goBack}
       >
-        {showSwitcher && (
-          <div className="mt-5 flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" role="group" aria-label={t("sitter.emergency.whichBird", "Which bird")}>
-            {birds.map((b) => {
-              const active = b.id === ctx.activeBirdId;
-              return (
-                <button
-                  key={b.id}
-                  type="button"
-                  aria-pressed={active}
-                  onClick={() => navigate({ to: "/sitter/$token/emergency", params: { token }, search: { birdId: b.id }, replace: true })}
-                  className="inline-flex h-12 shrink-0 items-center gap-2 rounded-full pl-[5px] pr-4 text-[15px] font-[700] active:scale-95"
-                  style={active ? { background: K.lime, color: K.forest } : { background: K.forestDeep, color: "#fff" }}
-                >
-                  {/* Shared avatar treatment (photo, or the initial on moss) — same as Today's bird switcher. */}
-                  <BirdAvatar bird={b} size={38} />
-                  {b.name}
-                </button>
-              );
-            })}
-          </div>
-        )}
+        {switcher}
       </PageHeader>
 
       <main className="mx-auto -mt-[30px] flex max-w-md flex-col gap-3 px-4 pb-32">
-        {showSwitcher && birds.find((b) => b.id === ctx.activeBirdId)?.emergencyDifferent && (
+        {differentNote && (
           <p className="m-0 px-1 text-[13.5px] font-[700]" style={{ color: K.lime }}>
             {t("sitter.emergency.differentFor", "Different for {{name}}", { name: ctx.bird.name })}
           </p>

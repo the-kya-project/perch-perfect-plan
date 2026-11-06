@@ -22,18 +22,32 @@ import { ChevronRight } from "lucide-react";
 import { LoadError, ListSkeleton } from "@/components/LoadError";
 import { useLoadState } from "@/lib/useTooLong";
 import { useDailyCheckBirds } from "@/lib/checkBirds";
+import { BIRD_PHOTO_FOCUS } from "@/lib/birdPhotoFocus";
+import { useDuoMode } from "@/lib/duo";
+import { FlockHealthDuo } from "@/components/duo/records/FlockHealthDuo";
 
 // The Health tab: a flock summary. Each bird's latest daily check and weight,
 // the current (or last) sit, and the five latest entries, with the full list
 // one tap away on Health history. Old ?sitId links forward to that page.
 export const Route = createFileRoute("/_authenticated/scans/")({
   head: () => ({ meta: [{ title: i18next.t("healthTab.metaTitle", "Flock health — Kya & Co.") }] }),
-  validateSearch: (s: Record<string, unknown>) => z.object({ sitId: z.string().uuid().optional() }).parse(s),
+  // ?bird= picks the bird shown in the iPhone Duo's right pane (ignored elsewhere).
+  validateSearch: (s: Record<string, unknown>) => z.object({ sitId: z.string().uuid().optional(), bird: z.string().uuid().optional() }).parse(s),
   beforeLoad: ({ search }) => {
     if (search.sitId) throw redirect({ to: "/scans/history", search: { sitId: search.sitId } });
   },
-  component: HealthTab,
+  component: HealthTabRoute,
 });
+
+/** iPhone Duo sideways: the two-pane Flock health; everywhere else, unchanged. */
+function HealthTabRoute() {
+  const { bird } = Route.useSearch();
+  const duo = useDuoMode() === "sideways";
+  // The header bell opens this tab: clear its badge (HealthTab does the same).
+  useEffect(() => { if (duo) markNotifsSeen(); }, [duo]);
+  if (duo) return <FlockHealthDuo selectedBirdId={bird} />;
+  return <HealthTab />;
+}
 
 const OVERDUE_DAYS = 7;
 
@@ -129,7 +143,7 @@ function HealthTab() {
                       style={{ borderBottom: i === birds.length - 1 ? undefined : `1px solid ${K.line}`, color: K.forest }}
                     >
                       <span className="relative grid size-12 shrink-0 place-items-center overflow-hidden rounded-[14px] text-[18px] font-[700] text-white" style={{ background: K.moss }} aria-hidden="true">
-                        {photo ? <BirdPhotoCrop url={photo.url} original={photo.original} position={b.photo_position ?? "50% 20%"} alt="" /> : String(b.name).slice(0, 1).toUpperCase()}
+                        {photo ? <BirdPhotoCrop url={photo.url} original={photo.original} position={b.photo_position ?? BIRD_PHOTO_FOCUS} alt="" /> : String(b.name).slice(0, 1).toUpperCase()}
                       </span>
                       <span className="min-w-0 flex-1">
                         <span className="block truncate text-[15px] font-[700]">{b.name}</span>

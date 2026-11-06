@@ -81,7 +81,7 @@ function RedeemPage() {
   }
 
   return (
-    <FrontDoorPage>
+    <FrontDoorPage duoForm>
       <FrontDoorHeader
         title={redeemed ? t("redeem.doneTitle", "Your gift is saved.") : t("redeem.title", "Redeem a gift")}
         line={redeemed ? undefined : t("redeem.line", "Someone gave you a year with The Kya Project. Enter your code to save it to your account.")}

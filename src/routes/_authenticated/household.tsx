@@ -21,6 +21,11 @@ import { memberDisplayName } from "@/lib/memberDisplay";
 import type { Capability } from "@/lib/capabilities";
 import { useTranslation } from "react-i18next";
 import i18next from "i18next";
+import { useDuoMode } from "@/lib/duo";
+import { useBirdPhotos } from "@/lib/useBirdPhotos";
+import { RailBack } from "@/components/DuoRail";
+import { SERIF } from "@/components/kya";
+import { DUO, DuoTwoPane, PopOutCard, Tile, TileGrid } from "@/components/duo/DuoBlocks";
 
 // Account-level household management — every person who can help with the
 // owner's birds, each shown ONCE (memberships grouped by user, invites by
@@ -49,6 +54,7 @@ function HouseholdScreen() {
 
   const [inviting, setInviting] = useState(false);
   const [manageUserId, setManageUserId] = useState<string | null>(null);
+  const duo = useDuoMode() === "sideways";
 
   const getAccount = useServerFn(getHouseholdAccount);
   const accountQ = useQuery({ queryKey: ["household-account"], queryFn: () => getAccount() });
@@ -106,6 +112,26 @@ function HouseholdScreen() {
         : [...list, row];
     });
     qc.invalidateQueries({ queryKey: permKey });
+  }
+
+  // iPhone Duo, two panes: people as tiles on the left, the chosen person (or
+  // the invite form) in the right half.
+  if (duo) {
+    return (
+      <HouseholdDuo
+        members={members}
+        pending={pending}
+        allBirds={allBirds}
+        myId={myId}
+        loading={isLoading}
+        failed={load.failed}
+        onRetry={load.retry}
+        capsFor={(id) => (permsLoading || !permRows ? null : (capsByMember.get(id) ?? []))}
+        onBack={goBack}
+        onChanged={refresh}
+        onCapsSaved={onCapsSaved}
+      />
+    );
   }
 
   return (
@@ -219,4 +245,107 @@ function PendingRow({ invite, last, onChanged }: { invite: AccountPending; last?
       }
     />
   );
+}
+
+type DuoPick = { kind: "you" } | { kind: "member"; id: string } | { kind: "pending"; email: string } | { kind: "invite" };
+
+/** The household on the iPhone Duo: people as tiles (avatar initial, name,
+ *  what they can do) plus a dashed "Invite someone" tile; the right half shows
+ *  the chosen person's birds and switches (HouseholdMemberSheet, inline), or
+ *  the invite form (HouseholdInviteSheet, inline). */
+function HouseholdDuo({ members, pending, allBirds, myId, loading, failed, onRetry, capsFor, onBack, onChanged, onCapsSaved }: {
+  members: HouseholdAccountMember[];
+  pending: AccountPending[];
+  allBirds: { id: string; name: string }[];
+  myId: string | null;
+  loading: boolean;
+  failed: boolean;
+  onRetry: () => void;
+  capsFor: (userId: string) => string[] | null;
+  onBack: () => void;
+  onChanged: () => void;
+  onCapsSaved: (userId: string, caps: Capability[], preset: string) => void;
+}) {
+  const { t } = useTranslation();
+  const [pick, setPick] = useState<DuoPick | null>(null);
+  // Bird photos for the chips (same 800px width as Home, so the crop matches).
+  const { data: photoRows = [] } = useQuery({
+    queryKey: ["household-duo-bird-photos", allBirds.map((b) => b.id).join(",")],
+    enabled: allBirds.length > 0,
+    queryFn: async () => {
+      const { data } = await supabase.from("birds").select("id, photo_url, photo_position").in("id", allBirds.map((b) => b.id));
+      return (data ?? []) as { id: string; photo_url: string | null; photo_position: string | null }[];
+    },
+  });
+  const photoOf = useBirdPhotos(photoRows.map((r) => r.photo_url), 800);
+  const birdPhotos = Object.fromEntries(photoRows.flatMap((r) => {
+    const ph = photoOf(r.photo_url);
+    return ph ? [[r.id, { url: ph.url, original: ph.original, position: r.photo_position }]] : [];
+  }));
+
+  // Default: the first person who helps, else the invite form.
+  const current: DuoPick = pick
+    ?? (members[0] ? { kind: "member", id: members[0].userId } : loading ? { kind: "you" } : { kind: "invite" });
+  const member = current.kind === "member" ? members.find((m) => m.userId === current.id) ?? null : null;
+  const invite = current.kind === "pending" ? pending.find((p) => p.email === current.email) ?? null : null;
+  const roleOf = (m: HouseholdAccountMember) => {
+    const caps = capsFor(m.userId);
+    if (!caps) return undefined;
+    const text = capabilitySummary(caps);
+    return text.charAt(0).toUpperCase() + text.slice(1);
+  };
+  const initial = (name: string) => <span aria-hidden="true" className="grid size-11 place-items-center rounded-full text-[18px] font-[700]" style={{ background: K.paleGreen, color: K.forest }}>{(name.trim()[0] ?? "?").toUpperCase()}</span>;
+
+  const left = (
+    <>
+      <RailBack onBack={onBack} />
+      <h1 className="m-0 text-[30px] font-[600] leading-tight" style={{ fontFamily: SERIF }}>{t("householdDuo.title", "Household")}</h1>
+      <p className="m-0 mt-1.5 text-[16px] leading-[1.45]" style={{ color: DUO.quiet }}>{t("householdDuo.line", "People who help care for your birds all the time.")}</p>
+      <div className="mt-6">
+        {failed ? <LoadError onRetry={onRetry} /> : (
+          <TileGrid label={t("householdDuo.people", "People")}>
+            <Tile media={initial(t("household.you", "You"))} title={t("household.you", "You")} status={t("householdDuo.owner", "Owner")} tone="fine" selected={current.kind === "you"} onSelect={() => setPick({ kind: "you" })} />
+            {members.map((m) => {
+              const name = memberDisplayName(m);
+              return <Tile key={m.userId} media={initial(name)} title={name} status={roleOf(m)} tone="fine" selected={current.kind === "member" && current.id === m.userId} onSelect={() => setPick({ kind: "member", id: m.userId })} />;
+            })}
+            {pending.map((p) => {
+              const name = p.name?.trim() || p.email;
+              return <Tile key={p.email} media={initial(name)} title={name} status={t("householdDuo.invited", "Invited")} tone="attention" selected={current.kind === "pending" && current.email === p.email} onSelect={() => setPick({ kind: "pending", email: p.email })} />;
+            })}
+            <Tile dashed icon={<Plus />} title={t("household.inviteSomeone", "Invite someone")} selected={current.kind === "invite"} onSelect={() => setPick({ kind: "invite" })} />
+          </TileGrid>
+        )}
+      </div>
+    </>
+  );
+
+  const right = current.kind === "invite" ? (
+    <HouseholdInviteSheet inline onClose={() => setPick({ kind: "you" })} onSent={() => { setPick(null); onChanged(); }} />
+  ) : member ? (
+    <HouseholdMemberSheet
+      key={member.userId}
+      inline
+      birdPhotos={birdPhotos}
+      member={member}
+      allBirds={allBirds}
+      ownerId={myId}
+      storedCaps={capsFor(member.userId)}
+      onClose={() => setPick({ kind: "you" })}
+      onChanged={onChanged}
+      onCapsSaved={(caps, preset) => onCapsSaved(member.userId, caps, preset)}
+    />
+  ) : invite ? (
+    <PopOutCard eyebrow={t("household.headline", "Your household")} title={invite.name?.trim() || invite.email}>
+      <p className="m-0 text-[15px] leading-[1.5]" style={{ color: DUO.quiet }}>{t("householdDuo.invitedLine", "Invited to help with {{birds}}. They join once they accept the email.", { birds: birdNames(t, invite.birdNames) })}</p>
+      <div className="mt-2"><PendingRow invite={invite} last onChanged={() => { setPick(null); onChanged(); }} /></div>
+    </PopOutCard>
+  ) : (
+    <PopOutCard eyebrow={t("household.headline", "Your household")} title={t("household.you", "You")}>
+      <p className="m-0 text-[16px] leading-[1.5]" style={{ color: K.ink }}>{t("household.ownerAllBirds", "Owner · all birds")}</p>
+      <p className="m-0 mt-3 text-[15px] leading-[1.5]" style={{ color: DUO.quiet }}>{t("household.orSitterBody", "Household members help every day and keep access until you remove them. Sitters cover a trip and only have access during that sit.")}</p>
+    </PopOutCard>
+  );
+
+  return <DuoTwoPane left={left} right={right} leftLabel={t("householdDuo.title", "Household")} />;
 }

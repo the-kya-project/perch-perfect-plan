@@ -25,6 +25,9 @@ import {
 } from "@/components/sitter/sitterShared";
 import { useSitterDashboard } from "@/components/SitterDashboard";
 import { VetCallRow } from "@/components/sitter/CallRows";
+import { BIRD_PHOTO_FOCUS } from "@/lib/birdPhotoFocus";
+import { useDuoMode } from "@/lib/duo";
+import { SitterTodayDuo } from "@/components/duo/sitter/SitterTodayDuo";
 
 export const Route = createFileRoute("/sitter/$token/")({
   component: SitterHome,
@@ -59,6 +62,7 @@ function SitterHome() {
   const { data: ctx } = useSitterContext(token);
   const { birdId } = useSearch({ from: "/sitter/$token" });
   const { multi, pinnedBirdId } = useSitterShell();
+  const duo = useDuoMode() === "sideways";
   // Multi-bird sits open on Home until a bird is picked; the Today nav item
   // always carries a birdId, so this only fires on the initial open. One-bird
   // sits go straight to that bird's Today (the one-bird rule, decided once per
@@ -68,6 +72,8 @@ function SitterHome() {
   if (!multi && !birdId && pinnedBirdId && ctx.activeBirdId !== pinnedBirdId) {
     return <Navigate to="/sitter/$token" params={{ token }} search={{ birdId: pinnedBirdId }} replace />;
   }
+  // iPhone Duo, two panes: the whole sit's checklist beside the picked task.
+  if (duo) return <SitterTodayDuo token={token} />;
   return <SitterToday />;
 }
 
@@ -644,7 +650,7 @@ function SinglePhotoCard({ bird, species, token }: { bird: any; species: string;
           // Not lazy: first thing on the page, and inside the owner's preview
           // frame on iPhone a lazy image may never load.
           loading="eager"
-          style={{ objectPosition: bird.photo_position ?? "50% 20%" }}
+          style={{ objectPosition: bird.photo_position ?? BIRD_PHOTO_FOCUS }}
           className="absolute inset-0 size-full object-cover"
         />
       ) : (

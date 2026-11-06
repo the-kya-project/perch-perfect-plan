@@ -3,7 +3,7 @@
 Things we know about and chose not to do yet. Each entry is written to be picked up
 cold: what the problem is, where the code lives, and what "done" looks like.
 
-Nothing here is blocking a release. Last updated 2026-11-02.
+Nothing here is blocking a release. Last updated 2026-11-06.
 
 ---
 
@@ -129,6 +129,25 @@ qualify.
 - Approved design: the "Proposed: Home folded (cover screen)" artboard in the Duo mockups
   (https://claude.ai/artifact/Xhu4izWBxtHMNbpkfYt2df).
 - **Needs a new native build**, so it rides along with other 1.2 native work.
+
+### Sign in with Apple: make the native plugin handle overlapping requests
+**Status:** web side guarded in #439 (Nov 2026); the native cause is still there.
+
+In `@capgo/capacitor-social-login`, the Apple provider keeps a single `completion`
+handler, and its delegate doesn't check which request is answering. A second `login()`
+while one is open replaces the handler; iOS then cancels the first request, and that
+cancel (`ASAuthorizationError` 1001) reaches the second caller while its sheet is still
+on screen, so the sheet's real answer goes nowhere. #439 stops the web app from ever
+starting a second request (one sign-in at a time in `src/lib/nativeOAuth.ts`, a tap ref
+in `SocialSignInButtons`) and treats 1001 as a quiet cancel (`src/lib/oauthErrors.ts`).
+
+- Fix: extend `patches/@capgo+capacitor-social-login+<version>.patch` so the Apple
+  provider keeps a handler per `ASAuthorizationController` (or ignores callbacks from a
+  controller that isn't the current one), and only the current request completes.
+- Regenerate the patch with the command in CLAUDE.md (iOS native shell section).
+- Done when: two rapid `login()` calls from the native side produce one sheet and one
+  result, and a cancel only ever reaches the request it belongs to. Test on a real iPhone.
+- **Needs a new native build**, so it rides along with other native work.
 
 ---
 

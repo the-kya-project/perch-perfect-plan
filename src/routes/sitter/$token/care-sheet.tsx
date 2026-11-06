@@ -1,14 +1,20 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useCallback, useEffect } from "react";
+import { SitterPhotoBox } from "@/components/duo/sitter/SitterPhotoBox";
+import { useCallback, useEffect, useState } from "react";
 import { useTranslation, Trans } from "react-i18next";
 import { useSitterContext } from "./route";
-import { CarePlanView, type CareSection } from "@/components/CarePlanView";
+import { CarePlanView, carePlanPresence, type CarePlanCard, type CareSection } from "@/components/CarePlanView";
 import { K, KyaCard } from "@/components/kya";
 import { PageHeader, useGoBack } from "@/components/headers";
 import { speciesLabel } from "@/lib/speciesLabel";
 import { birdAgeLabel } from "@/lib/birdAge";
 import { firstName } from "@/lib/memberDisplay";
 import { track } from "@/lib/analytics";
+import { BIRD_PHOTO_FOCUS } from "@/lib/birdPhotoFocus";
+import { useDuoMode } from "@/lib/duo";
+import { DuoSectionReader, type ReaderSection } from "@/components/duo/DuoSectionReader";
+import { CARD_ORDER, CARD_SECTIONS, cardIcon, cardTitle, sectionPreview } from "@/components/duo/plan/CarePlanDuo";
+import { PaneBack } from "@/components/duo/plan/PaneBack";
 
 export const Route = createFileRoute("/sitter/$token/care-sheet")({
   component: CareSheet,
@@ -46,6 +52,86 @@ function CareSheet() {
   const species = bird?.species ? speciesLabel(t, bird.species) : "";
   const age = birdAgeLabel(t, bird);
   const showIdentity = !!(name || species || age || bird?.photo_url);
+  const duo = useDuoMode() === "sideways";
+  const [duoCard, setDuoCard] = useState<CarePlanCard | null>(null);
+
+  const data = { bird: ctx.bird, plan: ctx.plan, watchClips: ctx.watchClips ?? [], baselineClipUrl: ctx.baselineClipUrl };
+  // An expired signed clip link: refetch the sitter context (the same
+  // path that minted it) and hand back that clip's fresh URL.
+  const refreshClipUrl = async (key: string) => {
+    const r = await ctxQ.refetch();
+    if (key === "baseline") return r.data?.baselineClipUrl ?? null;
+    return ((r.data?.watchClips ?? []) as { key: string; url: string }[]).find((x) => x.key === key)?.url ?? null;
+  };
+  const tipsTitle = owner ? t("sitter.caresheet.tipsTitleNamed", "Tips from {{owner}}", { owner }) : t("sitter.caresheet.tipsTitle", "Tips from the owner");
+  const tipsLine = owner ? t("sitter.caresheet.tipsLineNamed", "Short clips from {{owner}}, just for you.", { owner }) : t("sitter.caresheet.tipsLine", "Short clips from the owner, just for you.");
+  const guideNote = (
+    <p className="m-0 px-1 text-center text-[13px]" style={{ color: K.quiet }}>
+      <Trans
+        i18nKey="sitter.caresheet.referenceParrots101"
+        defaults="Owner-provided reference. For general care guidance, see <guide>Parrots 101</guide>."
+        components={{ guide: <Link to="/sitter/$token/guide" params={{ token }} className="font-[700] underline" style={{ color: K.moss }} /> }}
+      />
+    </p>
+  );
+
+  // iPhone Duo (two panes): the care sheet's cards on the left, the open one
+  // on the right, each the same CarePlanView card the phone shows (`bare`),
+  // with the sitter's wording. Nothing to send or edit here, so no main button.
+  if (duo) {
+    const sitterSections = SITTER_SECTIONS as CareSection[];
+    const presence = carePlanPresence(data, { visibleSections: sitterSections, showEmergencyContacts: false, separateNeverFeed: true });
+    const neverFeed = ((ctx.plan as any)?.never_feed ?? []) as string[];
+    const cards = CARD_ORDER.filter((c) => (c === "food" ? presence.cardPresent.food || neverFeed.length > 0 : presence.cardPresent[c]));
+    const homeTitle = owner ? t("carePlan.ownerHome", "{{owner}}'s home", { owner }) : t("carePlan.theOwnersHome", "The owner's home");
+    const sections: ReaderSection[] = cards.map((c) => {
+      const visible = CARD_SECTIONS[c].filter((x) => sitterSections.includes(x));
+      return {
+        key: c,
+        title: c === "home" ? homeTitle : c === "tips" ? tipsTitle : cardTitle(t, c),
+        icon: cardIcon(c),
+        preview: visible.map((x) => sectionPreview(t, x, data)).filter(Boolean).join(" · ") || undefined,
+        body: (
+          <CarePlanView
+            data={data}
+            refreshClipUrl={refreshClipUrl}
+            visibleSections={visible}
+            showEmergencyContacts={false}
+            separateNeverFeed
+            ownerName={owner || undefined}
+            audience="sitter"
+            tipsTitle={tipsTitle}
+            tipsLine={tipsLine}
+            bare
+          />
+        ),
+      };
+    });
+    if (!sections.length) {
+      sections.push({ key: "empty", title: t("sitter.caresheet.titlePlan", "{{name}}'s care plan", { name }), body: <p className="m-0 text-[16px]" style={{ color: K.quiet }}>{t("sitterDuo.nothingYet", "Nothing added here yet.")}</p> });
+    }
+    const open = duoCard && cards.includes(duoCard) ? duoCard : (cards[0] ?? "empty");
+    return (
+      <DuoSectionReader
+        top={
+          <>
+            <PaneBack onBack={goBack} />
+            <SitterPhotoBox bird={bird} className="mb-4 block size-20 shrink-0 rounded-[22px]" />
+          </>
+        }
+        title={<span data-coach="cp-header">{t("sitter.caresheet.titlePlan", "{{name}}'s care plan", { name })}</span>}
+        line={[
+          owner ? t("sitter.caresheet.lineNamed", "Everything {{owner}} wants you to know.", { owner }) : t("sitter.caresheet.subtitle", "Everything the owner wants you to know."),
+          [species, age].filter(Boolean).join(" · "),
+        ].filter(Boolean).join(" ")}
+        eyebrowRight={t("sitter.caresheet.titlePlan", "{{name}}'s care plan", { name })}
+        sections={sections}
+        selected={open}
+        onSelect={(k) => setDuoCard(k as CarePlanCard)}
+        leftExtra={guideNote}
+      />
+    );
+  }
 
   // No KyaPage: its bottom padding is for the owner's tab bar, and the sitter
   // layout already leaves room for the sitter's bar and the safe area.
@@ -82,7 +168,7 @@ function CareSheet() {
             contextBanner={showIdentity ? (
               <KyaCard className="flex items-center gap-4 p-4">
                 {bird?.photo_url ? (
-                  <img src={bird.photo_url} alt={name} className="block size-16 shrink-0 rounded-[16px] object-cover" style={{ objectPosition: bird.photo_position ?? "50% 20%" }} />
+                  <img src={bird.photo_url} alt={name} className="block size-16 shrink-0 rounded-[16px] object-cover" style={{ objectPosition: bird.photo_position ?? BIRD_PHOTO_FOCUS }} />
                 ) : (
                   <div className="grid size-16 shrink-0 place-items-center rounded-[16px] text-[22px] font-[700]" style={{ background: K.lime, color: K.forest }}>{(name || "?").slice(0, 1).toUpperCase()}</div>
                 )}

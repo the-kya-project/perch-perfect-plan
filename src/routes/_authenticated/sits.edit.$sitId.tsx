@@ -7,6 +7,8 @@ import { SitForm } from "@/components/SitForm";
 import { SitFormLoading } from "./sits.new";
 import { useTooLong } from "@/lib/useTooLong";
 import { useOwnedBirds, useRefreshSits } from "@/lib/useOwnedBirds";
+import { useDuoMode } from "@/lib/duo";
+import { SitFormDuo } from "@/components/duo/sits/SitFormDuo";
 
 // "Edit sit" — the same screen as "Set up a sit", with the sit's values filled in.
 export const Route = createFileRoute("/_authenticated/sits/edit/$sitId")({
@@ -40,8 +42,11 @@ function EditSit() {
   const failed = sitQ.isError || birdsFailed;
   const { tooLong, restart } = useTooLong(waiting && !missing && !failed);
   const retry = () => { restart(); void qc.refetchQueries({ type: "active" }); };
+  // iPhone Duo: the two-pane form (same state and submit as the phone form).
+  const duo = useDuoMode() === "sideways";
   if (missing || waiting || failed || !sit) {
     return <SitFormLoading editing onClose={close} failed={failed || tooLong} onRetry={retry} />;
   }
+  if (duo) return <SitFormDuo key={sit.id} birds={owned} editSit={sit} onSaved={refresh} onClose={close} />;
   return <SitForm key={sit.id} birds={owned} editSit={sit} onSaved={refresh} onClose={close} />;
 }

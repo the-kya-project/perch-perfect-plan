@@ -8,6 +8,8 @@ import { K, KyaHeading, KyaPrimaryButton } from "@/components/kya";
 import { FrontDoorPage, OnForestOutlineButton } from "@/components/frontDoor";
 import { useTranslation } from "react-i18next";
 import i18next from "i18next";
+import { useDuoMode } from "@/lib/duo";
+import { HERO_SRC, SignedOutDuoChrome } from "@/components/duo/SignedOutDuo";
 
 export const Route = createFileRoute("/")({
   // Returning owners shouldn't land on the marketing page — send them home.
@@ -53,6 +55,10 @@ function Welcome() {
     return () => { cancelled = true; };
   }, [navigate]);
 
+  const signUp = () => navigate({ to: "/auth", search: { mode: "signup" as const } });
+  const signIn = () => navigate({ to: "/auth", search: { mode: "signin" as const } });
+  if (useDuoMode() === "sideways") return <DuoLanding onSignUp={signUp} onSignIn={signIn} />;
+
   return (
     <FrontDoorPage>
       {/* The photo fills the top of the screen and fades into forest; the
@@ -93,10 +99,10 @@ function Welcome() {
         </p>
 
         <div className="mt-6 flex flex-col gap-3">
-          <KyaPrimaryButton onClick={() => navigate({ to: "/auth", search: { mode: "signup" as const } })}>
+          <KyaPrimaryButton onClick={signUp}>
             {t("landing.addYourFirstBird", "Add your first bird")}
           </KyaPrimaryButton>
-          <OnForestOutlineButton onClick={() => navigate({ to: "/auth", search: { mode: "signin" as const } })}>
+          <OnForestOutlineButton onClick={signIn}>
             {t("landing.alreadyHaveAccountButton", "I already have an account")}
           </OnForestOutlineButton>
         </div>
@@ -109,5 +115,62 @@ function Welcome() {
         </p>
       </main>
     </FrontDoorPage>
+  );
+}
+
+/** The landing on the iPhone Duo's two panes: one big screen, the photo edge to
+ *  edge across both halves. The left half carries the lockup and the words,
+ *  the right half the two buttons, and nothing important sits on the fold. */
+function DuoLanding({ onSignUp, onSignIn }: { onSignUp: () => void; onSignIn: () => void }) {
+  const { t } = useTranslation();
+  return (
+    <div className="duo-content">
+      <div className="duo-split setup-frame relative" style={{ background: K.forestDeep }}>
+        <img src={HERO_SRC} alt="" aria-hidden="true" className="pointer-events-none absolute inset-0 size-full object-cover" style={{ objectPosition: "50% 30%" }} />
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-0"
+          style={{ background: "linear-gradient(to right, rgba(18,41,31,0.94) 0%, rgba(18,41,31,0.82) 32%, rgba(18,41,31,0.25) 50%, rgba(18,41,31,0) 62%), linear-gradient(to top, rgba(18,41,31,0.7) 0%, rgba(18,41,31,0) 30%)" }}
+        />
+        <section className="duo-pane relative flex flex-col px-9 pb-[calc(env(safe-area-inset-bottom)+32px)] pt-[max(calc(env(safe-area-inset-top)+20px),32px)] text-white" data-duo-pane="left">
+          <BrandLockup orientation="horizontal" variant="white" size={140} />
+          <div className="mt-auto">
+            <KyaHeading as="h1" size={36} className="text-balance text-white">
+              {t("landing.headlineV2", "Everything it takes to care for your parrots, in one place you can share")}
+            </KyaHeading>
+            <p className="m-0 mt-3 text-pretty text-[16px] leading-[1.5]" style={{ color: K.paleGreen }}>
+              {t("landing.subheadV2", "A care plan and health record for each bird: routine, diet, weight, and the little things only you know. Share it with family, sitters, and anyone who helps.")}
+            </p>
+            <p className="m-0 mt-4 text-[14px] leading-[1.45]" style={{ color: K.paleGreen }}>
+              {t("landing.invitedHintV2", "Invited by someone? Open the link they sent you.")}
+            </p>
+            <p className="m-0 mt-3 text-[12.5px] leading-[1.45]" style={{ color: K.teal }}>
+              {t("disclaimer.compactBody", "Not a substitute for veterinary care. Call a vet for any medical concern.")}
+            </p>
+          </div>
+        </section>
+        <section className="duo-pane relative flex flex-col justify-end px-9 pb-[calc(env(safe-area-inset-bottom)+32px)]" data-duo-pane="right">
+          <div className="flex flex-col gap-3">
+            <KyaPrimaryButton onClick={onSignUp}>{t("landing.addYourFirstBird", "Add your first bird")}</KyaPrimaryButton>
+            <WhiteOutlineButton onClick={onSignIn}>{t("landing.alreadyHaveAccountButton", "I already have an account")}</WhiteOutlineButton>
+          </div>
+        </section>
+      </div>
+      <SignedOutDuoChrome />
+    </div>
+  );
+}
+
+/** On the photo: transparent, 2px white border, white text. */
+function WhiteOutlineButton({ children, onClick }: { children: React.ReactNode; onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="inline-flex min-h-[52px] w-full items-center justify-center rounded-full border-2 border-white px-6 text-[16px] font-[700] text-white active:scale-[0.99]"
+      style={{ background: "rgba(18,41,31,0.35)" }}
+    >
+      {children}
+    </button>
   );
 }

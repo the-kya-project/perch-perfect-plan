@@ -21,6 +21,7 @@ import { useTranslation, Trans } from "react-i18next";
 import type { TFunction } from "i18next";
 import i18next from "i18next";
 import { currentLocale } from "@/lib/i18n/ownerLocale";
+import { BIRD_PHOTO_FOCUS } from "@/lib/birdPhotoFocus";
 
 // Public handoff-accept screen. Renders for logged-out visitors; the token is
 // the access check. Invalid/expired → clean message, no data exposed (an
@@ -130,7 +131,7 @@ function HandoffAccept() {
       <header className="text-white">
         <div className="relative mx-auto h-[45dvh] max-h-[460px] min-h-[260px] max-w-md overflow-hidden">
           {handoff.birdPhotoUrl ? (
-            <img src={handoff.birdPhotoUrl} alt="" className="absolute inset-0 size-full object-cover" style={{ objectPosition: handoff.birdPhotoPosition ?? "50% 20%" }} />
+            <img src={handoff.birdPhotoUrl} alt="" className="absolute inset-0 size-full object-cover" style={{ objectPosition: handoff.birdPhotoPosition ?? BIRD_PHOTO_FOCUS }} />
           ) : (
             <div className="absolute inset-0 grid place-items-center" style={{ background: K.teal, color: K.forest }} aria-hidden="true">
               <span className="-mt-6 text-[96px] font-[700] leading-none" style={{ fontFamily: SERIF }}>{(birdName.trim()[0] ?? "?").toUpperCase()}</span>

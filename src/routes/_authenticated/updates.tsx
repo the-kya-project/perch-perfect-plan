@@ -11,13 +11,149 @@ import { formatLocalDate, formatLocalTime, monthDay } from "@/lib/dates";
 import { localDateISO } from "@/lib/localDay";
 import { sitTitle } from "@/lib/sitText";
 import { birdNames } from "@/lib/birdNames";
+import { useState } from "react";
+import { useDuoMode } from "@/lib/duo";
+import { RailBack } from "@/components/DuoRail";
+import { DuoMainButton, DuoTwoPane, PopOutCard, type TileTone } from "@/components/duo/DuoBlocks";
+import { EmptyRecordCard, RecordCard, RecordCards, RecordGroupLabel, RecordListHeader } from "@/components/duo/records/RecordList";
 
 // The bell: what's happened with your birds (see src/lib/updates.ts for where
 // each update comes from).
 export const Route = createFileRoute("/_authenticated/updates")({
   head: () => ({ meta: [{ title: i18next.t("updates.metaTitle", "Updates — Kya & Co.") }] }),
-  component: UpdatesPage,
+  component: UpdatesRoute,
 });
+
+/** iPhone Duo sideways: updates on the left, the picked one on the right.
+ *  Everywhere else, unchanged. */
+function UpdatesRoute() {
+  if (useDuoMode() === "sideways") return <UpdatesDuo />;
+  return <UpdatesPage />;
+}
+
+function kindTag(t: TFunction, kind: Update["kind"]): { text: string; tone: TileTone } {
+  switch (kind) {
+    case "flag": return { text: t("updatesDuo.tagFlag", "Flagged"), tone: "attention" };
+    case "finished": return { text: t("updatesDuo.tagFinished", "Checks done"), tone: "fine" };
+    case "weigh": return { text: t("updatesDuo.tagWeigh", "Weigh-in due"), tone: "attention" };
+    case "careplan": return { text: t("updatesDuo.tagCareplan", "Care plan"), tone: "neutral" };
+    case "joined": return { text: t("updatesDuo.tagJoined", "Household"), tone: "fine" };
+  }
+}
+
+/** The right pane's one main button: where the update leads. */
+function openLabel(t: TFunction, kind: Update["kind"]): string {
+  switch (kind) {
+    case "flag": return t("updatesDuo.openFlag", "See the check");
+    case "finished": return t("updatesDuo.openFinished", "See the day's checks");
+    case "weigh": return t("updatesDuo.openWeigh", "Weigh now");
+    case "careplan": return t("updatesDuo.openCareplan", "Review the care plan");
+    case "joined": return t("updatesDuo.openJoined", "See your household");
+  }
+}
+
+function useOpenUpdate() {
+  const navigate = useNavigate();
+  return (u: Update) => {
+    switch (u.kind) {
+      case "flag": return navigate({ to: "/birds/$birdId/scans/$scanId", params: { birdId: u.birdId!, scanId: u.scanId! } });
+      case "finished": return navigate({ to: "/scans/history", search: { sitId: u.sitId } });
+      case "weigh": return navigate({ to: "/check", search: u.birdId ? { bird: u.birdId } : {} });
+      case "careplan": return u.birdId ? navigate({ to: "/birds/$birdId/plan", params: { birdId: u.birdId } }) : navigate({ to: "/sits" });
+      case "joined": return navigate({ to: "/household" });
+    }
+  };
+}
+
+function UpdatesDuo() {
+  const { t } = useTranslation();
+  const router = useRouter();
+  const navigate = useNavigate();
+  const canGoBack = useCanGoBack();
+  const { items, loading, isRead, markRead, markAllRead, unread } = useUpdates();
+  const goBack = () => (canGoBack ? router.history.back() : navigate({ to: "/dashboard" }));
+  const openUpdate = useOpenUpdate();
+  const [pickId, setPickId] = useState<string | null>(null);
+  const current = items.find((u) => u.id === pickId) ?? items[0] ?? null;
+  const fresh = items.filter((u) => !isRead(u));
+  const earlier = items.filter((u) => isRead(u));
+
+  const group = (label: string, list: Update[]) => list.length > 0 && (
+    <section className="flex flex-col gap-2">
+      <RecordGroupLabel>{label}</RecordGroupLabel>
+      <RecordCards label={label}>
+        {list.map((u) => {
+          const c = copy(t, u);
+          const tag = kindTag(t, u.kind);
+          return (
+            <RecordCard
+              key={u.id}
+              media={<Tile kind={u.kind} />}
+              title={c.title}
+              preview={c.detail}
+              tag={tag.text}
+              tagTone={tag.tone}
+              unread={!isRead(u)}
+              selected={current?.id === u.id}
+              onSelect={() => { setPickId(u.id); markRead(u.id); }}
+            />
+          );
+        })}
+      </RecordCards>
+    </section>
+  );
+
+  const left = (
+    <>
+      <RailBack onBack={goBack} />
+      <RecordListHeader
+        title={t("updates.title", "Updates")}
+        line={t("updates.line", "What's happened with your birds while you weren't looking.")}
+        aside={unread > 0 ? <KyaLink className="shrink-0" onClick={markAllRead}>{t("updates.markAllRead", "Mark all read")}</KyaLink> : undefined}
+      />
+      <div className="mt-4 flex flex-col gap-4">
+        {loading ? (
+          <p className="m-0 text-[16px]" style={{ color: K.quiet }}>{t("updates.loading", "Loading…")}</p>
+        ) : items.length === 0 ? (
+          <p className="m-0 text-[16px]" style={{ color: K.quiet }}>{t("updates.caughtUp", "You're all caught up.")}</p>
+        ) : (
+          <>
+            {group(t("updates.new", "New"), fresh)}
+            {group(t("updates.earlier", "Earlier"), earlier)}
+          </>
+        )}
+      </div>
+      <div className="mt-auto flex justify-center pt-6">
+        <KyaLink onClick={() => navigate({ to: "/scans/settings" })}>{t("updates.notificationSettings", "Notification settings")}</KyaLink>
+      </div>
+    </>
+  );
+
+  const right = current ? (() => {
+    const c = copy(t, current);
+    const tag = kindTag(t, current.kind);
+    return (
+      <PopOutCard
+        eyebrow={tag.text}
+        title={c.title}
+        action={<DuoMainButton onClick={() => { markRead(current.id); void openUpdate(current); }}>{openLabel(t, current.kind)}</DuoMainButton>}
+      >
+        <div className="flex items-start gap-3">
+          <Tile kind={current.kind} />
+          <p className="m-0 min-w-0 flex-1 text-[16px] leading-[1.5]" style={{ color: K.ink }}>{c.detail}</p>
+        </div>
+      </PopOutCard>
+    );
+  })() : (
+    <EmptyRecordCard
+      icon={<CheckCheck />}
+      title={loading ? t("updates.loading", "Loading…") : t("updates.caughtUp", "You're all caught up.")}
+      body={loading ? undefined : t("updatesDuo.emptyBody", "Flagged checks, finished sits and weigh-ins due will show up here.")}
+    />
+  );
+
+  return <DuoTwoPane left={left} right={right} leftLabel={t("updates.title", "Updates")} rightLabel={current ? copy(t, current).title : undefined} />;
+}
 
 function when(t: TFunction, iso: string): string {
   const d = new Date(iso);

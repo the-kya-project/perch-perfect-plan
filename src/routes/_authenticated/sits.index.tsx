@@ -3,7 +3,9 @@ import { birdNames } from "@/lib/birdNames";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect } from "react";
 import { z } from "zod";
-import { supabase } from "@/integrations/supabase/client";
+import { fetchSitsFull } from "@/components/duo/sits/sitsData";
+import { SitsDuo } from "@/components/duo/sits/SitsDuo";
+import { useDuoMode } from "@/lib/duo";
 import { getLocalUser } from "@/integrations/supabase/currentUser";
 import { Plus, Calendar, CalendarPlus } from "lucide-react";
 import { ActiveSitCard, UpcomingSitCard, PastSitsList, type SitBird, type ListSit } from "@/components/SitListCards";
@@ -39,8 +41,20 @@ const sitsSearch = z.object({
 export const Route = createFileRoute("/_authenticated/sits/")({
   head: () => ({ meta: [{ title: i18next.t("sits.pageTitle", "Sits — Kya & Co.") }] }),
   validateSearch: sitsSearch,
-  component: SitsPage,
+  component: SitsRoute,
 });
+
+// iPhone Duo: the two-pane Sits screen; every other screen keeps the page below.
+function SitsRoute() {
+  const navigate = useNavigate();
+  const { newSit, preselectBirdId, created } = Route.useSearch();
+  // Setting up a sit is its own screen now; forward old ?newSit links there.
+  useEffect(() => {
+    if (newSit) navigate({ to: "/sits/new", search: preselectBirdId ? { bird: preselectBirdId } : {}, replace: true });
+  }, [newSit, preselectBirdId, navigate]);
+  if (useDuoMode() === "sideways") return <SitsDuo selectedId={created} />;
+  return <SitsPage />;
+}
 
 function joinNames(names: string[]): string {
   if (names.length === 0) return "";
@@ -50,11 +64,7 @@ function joinNames(names: string[]): string {
 function SitsPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { newSit, preselectBirdId, created } = Route.useSearch();
-  // Setting up a sit is its own screen now; forward old ?newSit links there.
-  useEffect(() => {
-    if (newSit) navigate({ to: "/sits/new", search: preselectBirdId ? { bird: preselectBirdId } : {}, replace: true });
-  }, [newSit, preselectBirdId, navigate]);
+  const { created } = Route.useSearch();
 
   const birdsQ = useQuery({
     queryKey: ["birds"],
@@ -75,15 +85,7 @@ function SitsPage() {
     // collision. No per-mount refetch: 60s staleTime paints from cache; sit
     // create/edit/delete calls refreshSits() to update immediately.
     queryKey: ["sits-full"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("sits")
-        .select("*, sit_birds(bird_id)")
-        .or("sitter_name.is.null,sitter_name.neq.__preview__")
-        .order("start_date", { ascending: false });
-      if (error) throw error;
-      return data ?? [];
-    },
+    queryFn: fetchSitsFull,
   });
 
   const sits = sitsQ.data ?? [];

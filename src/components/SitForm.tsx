@@ -28,26 +28,27 @@ import { friendlyError } from "@/lib/errorMessage";
 import { localDateISO } from "@/lib/localDay";
 import { birdNames } from "@/lib/birdNames";
 import { mergeEmergency } from "@/lib/emergency";
+import { useFormDraft } from "@/lib/drafts";
 
-// Create OR edit a sit. In edit mode (`editSit` set) it preserves the existing
-// invite_token — the same sitter link keeps working; editing changes what it
-// grants (dates → access window, and which birds are included), not the link.
-// The full "Set up a sit" / "Edit sit" screen (routes /sits/new and
-// /sits/edit/$sitId). `onClose` leaves without saving; `onSaved` refreshes the
-// lists that show sits.
-export function SitForm({
-  birds,
-  onSaved,
-  preselectBirdId,
-  editSit,
-  onClose,
-}: {
+type CaregiverKind = "household" | "external";
+type SitDraft = {
+  selected: string[]; title: string; sitterName: string; sitterEmail: string;
+  start: string; end: string; notes: string;
+  caregiverKind: CaregiverKind | null; householdUserId: string | null;
+};
+
+export type SitFormProps = {
   birds: any[];
   onSaved: () => void;
   preselectBirdId?: string;
   editSit?: any;
   onClose: () => void;
-}) {
+};
+
+/** Everything the sit form knows and does — state, validation, submit, the
+ *  leave guard and the local draft — shared by the phone layout (SitForm) and
+ *  the iPhone Duo's two-pane layout (SitFormDuo), so both behave the same. */
+export function useSitForm({ birds, onSaved, preselectBirdId, editSit, onClose }: SitFormProps) {
   const { t } = useTranslation();
   const theirInfo = t("sitForm.theirInfo", "Their info");
   const editing = !!editSit;
@@ -76,7 +77,6 @@ export function SitForm({
   // Close asks before throwing away anything entered.
   const snapshot = JSON.stringify([Array.from(selected).sort(), title, sitterName, sitterEmail, start, end, notes]);
   const initialSnapshot = useRef(snapshot);
-  const { requestClose, guard } = useLeaveGuard(snapshot !== initialSnapshot.current && !saving, onClose);
 
   // Delete a sit — owner always; a household member only with manage_sits (RLS
   // "sits delete" mirrors this). FK cascade cleans children: sit_birds,
@@ -192,12 +192,29 @@ export function SitForm({
   // Defaults to whichever was set on the row when editing; null on a fresh form
   // (the owner picks during creation). PR 1 doesn't allow swapping the kind in
   // edit mode — surfaced as a small note in the UI; a follow-up will add it.
-  type CaregiverKind = "household" | "external";
   const initialKind: CaregiverKind | null = editing
     ? (editSit.caregiver_user_id ? "household" : "external")
     : null;
   const [caregiverKind, setCaregiverKind] = useState<CaregiverKind | null>(initialKind);
   const [householdUserId, setHouseholdUserId] = useState<string | null>(editing ? (editSit.caregiver_user_id ?? null) : null);
+
+  // Setting up a sit keeps a local draft: with the iPhone Duo's side column the
+  // tabs are always a tap away, so leaving mid-way and coming back puts every
+  // choice back. Cleared once the sit is created, and on Close.
+  const draft = useFormDraft<SitDraft>({
+    kind: "sit-new",
+    birdId: "new",
+    enabled: !editing,
+    data: { selected: Array.from(selected).sort(), title, sitterName, sitterEmail, start, end, notes, caregiverKind, householdUserId },
+    empty: snapshot === initialSnapshot.current && !caregiverKind,
+    onRestore: ({ data: d }) => {
+      setSelected(new Set(d.selected.filter((id) => birds.some((b: any) => b.id === id))));
+      setTitle(d.title); setSitterName(d.sitterName); setSitterEmail(d.sitterEmail);
+      setStart(d.start); setEnd(d.end); setNotes(d.notes);
+      setCaregiverKind(d.caregiverKind); setHouseholdUserId(d.householdUserId);
+    },
+  });
+  const { requestClose, guard } = useLeaveGuard(snapshot !== initialSnapshot.current && !saving, () => { draft.clear(); onClose(); });
 
   // The lead ("in charge") is DERIVED from who's covering at save time — no
   // separate picker: a household cover IS the lead; an external sitter leaves
@@ -574,6 +591,7 @@ export function SitForm({
             kind === "household" ? t("sitForm.createdHousehold", "Sit created — your household member is set.") : t("sitForm.createdInviteSent", "Sit created — invite sent to {{name}}.", { name: sitterLabel }),
           );
         }
+        draft.clear();
         onSaved();
         // Back to the Sits tab with the new sit's card at the top.
         navigate({ to: "/sits", search: { created: sit.id } });
@@ -596,6 +614,112 @@ export function SitForm({
       : caregiverKind === "external"
         ? t("sitForm.createAndEmail", "Create sit and email {{name}}", { name: coverName ?? yourSitter })
         : t("sitForm.createSit", "Create sit");
+
+  return {
+    t,
+    theirInfo,
+    editing,
+    navigate,
+    birds,
+    selected,
+    setSelected,
+    title,
+    setTitle,
+    sitterName,
+    setSitterName,
+    sitterEmail,
+    setSitterEmail,
+    start,
+    setStart,
+    end,
+    setEnd,
+    notes,
+    setNotes,
+    saving,
+    confirmingDelete,
+    setConfirmingDelete,
+    deleting,
+    rootRef,
+    canDelete,
+    isActiveSit,
+    deleteSit,
+    initialKind,
+    caregiverKind,
+    setCaregiverKind,
+    householdUserId,
+    setHouseholdUserId,
+    draft,
+    requestClose,
+    guard,
+    eligibleMembers,
+    gaps,
+    setGaps,
+    requiredMissing,
+    setRequiredMissing,
+    acceptGapsRef,
+    toggle,
+    selectAll,
+    caregiverLabel,
+    openGap,
+    gapBirdCount,
+    gapBirdNames,
+    submit,
+    coverName,
+    submitLabel,
+  };
+}
+
+export type SitFormState = ReturnType<typeof useSitForm>;
+
+// Create OR edit a sit. In edit mode (`editSit` set) it preserves the existing
+// invite_token — the same sitter link keeps working; editing changes what it
+// grants (dates → access window, and which birds are included), not the link.
+// The full "Set up a sit" / "Edit sit" screen (routes /sits/new and
+// /sits/edit/$sitId). `onClose` leaves without saving; `onSaved` refreshes the
+// lists that show sits.
+export function SitForm(props: SitFormProps) {
+  const f = useSitForm(props);
+  const {
+    t,
+    theirInfo,
+    editing,
+    birds,
+    selected,
+    title,
+    setTitle,
+    sitterName,
+    setSitterName,
+    sitterEmail,
+    setSitterEmail,
+    start,
+    setStart,
+    end,
+    setEnd,
+    notes,
+    setNotes,
+    saving,
+    confirmingDelete,
+    setConfirmingDelete,
+    deleting,
+    canDelete,
+    isActiveSit,
+    deleteSit,
+    initialKind,
+    caregiverKind,
+    setCaregiverKind,
+    householdUserId,
+    setHouseholdUserId,
+    requestClose,
+    guard,
+    eligibleMembers,
+    gaps,
+    toggle,
+    selectAll,
+    submit,
+    coverName,
+    submitLabel,
+    rootRef,
+  } = f;
 
   return (
     <form ref={rootRef} onSubmit={submit} noValidate className="setup-frame min-h-screen" style={{ background: K.mist, color: K.forest }}>
@@ -749,94 +873,102 @@ export function SitForm({
         </div>
       )}
 
-      {gaps && (
-        <BottomSheet onClose={() => { setGaps(null); setRequiredMissing(null); }}>
-          <div className="flex flex-col gap-4" style={{ color: S.forest }}>
-            <div>
-              <h2 className="m-0 text-[28px] font-[700] leading-[1.1]" style={{ fontFamily: SERIF }}>
-                {t("sitForm.gaps.title", "{{name}} will need a little more", { name: caregiverLabel() })}
-              </h2>
-              <p className="m-0 mt-2 text-[15.5px] leading-[1.5]" style={{ color: S.helper }}>
-                {gapBirdCount() > 3
-                  ? t("sitForm.gaps.bodyCount", "{{count}} birds' plans are missing a few things a sitter leans on.", { count: gapBirdCount() })
-                  : gapBirdCount() > 1
-                  ? t("sitForm.gaps.bodyMany", "{{names}}'s plans are missing a few things a sitter leans on.", { names: gapBirdNames() })
-                  : t("sitForm.gaps.body", "{{names}}'s plan is missing a few things a sitter leans on.", { names: gapBirdNames() })}
-              </p>
-            </div>
-
-            {requiredMissing && (
-              <div className="flex flex-col gap-2.5 rounded-[18px] p-3.5" style={{ background: S.lime }}>
-                <div className="flex flex-wrap items-center gap-2">
-                  <p className="m-0 text-[15px] font-[700]">{t("sitForm.gaps.neededBefore", "Needed before you can create a sit")}</p>
-                  <Tag kind="required" />
-                </div>
-                <div className="flex items-center gap-3 rounded-[14px] bg-white px-3.5 py-3">
-                  <span className="min-w-0 flex-1">
-                    <span className="block text-[15px] font-[700]">{t("planOverview.rowEmergencyContacts", "Emergency contacts")}</span>
-                    <span className="block text-[14px]" style={{ color: S.helper }}>
-                      {requiredMissing.needs.length === 2
-                        ? t("sitForm.gaps.needBoth", "Your phone number and your avian vet's phone")
-                        : requiredMissing.needs[0] === "owner_phone"
-                          ? t("sitForm.gaps.needOwnerPhone", "Your phone number")
-                          : t("sitForm.gaps.needVetPhone", "Your avian vet's phone")}
-                    </span>
-                  </span>
-                  <SetupTextButton onClick={() => openGap(requiredMissing.birdId, "emergency")}>{t("sitForm.gaps.add", "Add")}</SetupTextButton>
-                </div>
-              </div>
-            )}
-
-            {gaps.length > 0 && (
-              <div className="flex flex-col gap-2">
-                <p className="m-0 text-[13px] font-[700]" style={{ color: S.quiet }}>{t("sitForm.gaps.goodToAdd", "Good to add when you can")}</p>
-                {gaps.flatMap((g) => g.missing.map((m) => (
-                  <div key={`${g.birdId}-${m}`} className="flex items-center gap-3 rounded-[14px] px-3.5 py-3" style={{ background: S.card }}>
-                    <span className="min-w-0 flex-1">
-                      <span className="block text-[15px] font-[700]">
-                        {gaps.length > 1 ? `${g.name} · ${gapLabel(t, m)}` : gapLabel(t, m)}
-                      </span>
-                      <span className="block text-[14px]" style={{ color: S.helper }}>{gapDetail(t, m, g.name)}</span>
-                    </span>
-                    <SetupTextButton onClick={() => openGap(g.birdId, m)}>{t("sitForm.gaps.add", "Add")}</SetupTextButton>
-                  </div>
-                )))}
-              </div>
-            )}
-
-            <div className="flex flex-col gap-2.5">
-              <SetupPrimaryButton
-                arrow={false}
-                onClick={() => {
-                  track("sit_gaps_choice", { choice: "fill_in" });
-                  if (requiredMissing) openGap(requiredMissing.birdId, "emergency");
-                  else if (gaps[0]) openGap(gaps[0].birdId, gaps[0].missing[0]);
-                }}
-              >
-                {t("sitForm.gaps.fillIn", "Fill these in")}
-              </SetupPrimaryButton>
-              <SetupSecondaryButton
-                disabled={saving || !!requiredMissing}
-                onClick={() => {
-                  track("sit_gaps_choice", { choice: "create_anyway" });
-                  acceptGapsRef.current = true;
-                  setGaps(null);
-                  rootRef.current?.requestSubmit();
-                }}
-              >
-                {t("sitForm.gaps.createAnyway", "Create the sit anyway")}
-              </SetupSecondaryButton>
-              {requiredMissing && (
-                <p className="m-0 text-center text-[14px]" style={{ color: S.helper }}>
-                  {t("sitForm.gaps.addContactsFirst", "Add your emergency contacts to create the sit.")}
-                </p>
-              )}
-            </div>
-          </div>
-        </BottomSheet>
-      )}
+      {gaps && <SitGapsSheet f={f} />}
       {guard}
     </form>
+  );
+}
+
+/** "{{name}} will need a little more": what the birds' plans still miss, shown
+ *  when the sit is submitted (both layouts). */
+export function SitGapsSheet({ f }: { f: SitFormState }) {
+  const { t, gaps, setGaps, setRequiredMissing, requiredMissing, caregiverLabel, gapBirdCount, gapBirdNames, openGap, acceptGapsRef, saving, rootRef } = f;
+  if (!gaps) return null;
+  return (
+    <BottomSheet onClose={() => { setGaps(null); setRequiredMissing(null); }}>
+      <div className="flex flex-col gap-4" style={{ color: S.forest }}>
+        <div>
+          <h2 className="m-0 text-[28px] font-[700] leading-[1.1]" style={{ fontFamily: SERIF }}>
+            {t("sitForm.gaps.title", "{{name}} will need a little more", { name: caregiverLabel() })}
+          </h2>
+          <p className="m-0 mt-2 text-[15.5px] leading-[1.5]" style={{ color: S.helper }}>
+            {gapBirdCount() > 3
+              ? t("sitForm.gaps.bodyCount", "{{count}} birds' plans are missing a few things a sitter leans on.", { count: gapBirdCount() })
+              : gapBirdCount() > 1
+              ? t("sitForm.gaps.bodyMany", "{{names}}'s plans are missing a few things a sitter leans on.", { names: gapBirdNames() })
+              : t("sitForm.gaps.body", "{{names}}'s plan is missing a few things a sitter leans on.", { names: gapBirdNames() })}
+          </p>
+        </div>
+
+        {requiredMissing && (
+          <div className="flex flex-col gap-2.5 rounded-[18px] p-3.5" style={{ background: S.lime }}>
+            <div className="flex flex-wrap items-center gap-2">
+              <p className="m-0 text-[15px] font-[700]">{t("sitForm.gaps.neededBefore", "Needed before you can create a sit")}</p>
+              <Tag kind="required" />
+            </div>
+            <div className="flex items-center gap-3 rounded-[14px] bg-white px-3.5 py-3">
+              <span className="min-w-0 flex-1">
+                <span className="block text-[15px] font-[700]">{t("planOverview.rowEmergencyContacts", "Emergency contacts")}</span>
+                <span className="block text-[14px]" style={{ color: S.helper }}>
+                  {requiredMissing.needs.length === 2
+                    ? t("sitForm.gaps.needBoth", "Your phone number and your avian vet's phone")
+                    : requiredMissing.needs[0] === "owner_phone"
+                      ? t("sitForm.gaps.needOwnerPhone", "Your phone number")
+                      : t("sitForm.gaps.needVetPhone", "Your avian vet's phone")}
+                </span>
+              </span>
+              <SetupTextButton onClick={() => openGap(requiredMissing.birdId, "emergency")}>{t("sitForm.gaps.add", "Add")}</SetupTextButton>
+            </div>
+          </div>
+        )}
+
+        {gaps.length > 0 && (
+          <div className="flex flex-col gap-2">
+            <p className="m-0 text-[13px] font-[700]" style={{ color: S.quiet }}>{t("sitForm.gaps.goodToAdd", "Good to add when you can")}</p>
+            {gaps.flatMap((g) => g.missing.map((m) => (
+              <div key={`${g.birdId}-${m}`} className="flex items-center gap-3 rounded-[14px] px-3.5 py-3" style={{ background: S.card }}>
+                <span className="min-w-0 flex-1">
+                  <span className="block text-[15px] font-[700]">
+                    {gaps.length > 1 ? `${g.name} · ${gapLabel(t, m)}` : gapLabel(t, m)}
+                  </span>
+                  <span className="block text-[14px]" style={{ color: S.helper }}>{gapDetail(t, m, g.name)}</span>
+                </span>
+                <SetupTextButton onClick={() => openGap(g.birdId, m)}>{t("sitForm.gaps.add", "Add")}</SetupTextButton>
+              </div>
+            )))}
+          </div>
+        )}
+
+        <div className="flex flex-col gap-2.5">
+          <SetupPrimaryButton
+            arrow={false}
+            onClick={() => {
+              track("sit_gaps_choice", { choice: "fill_in" });
+              if (requiredMissing) openGap(requiredMissing.birdId, "emergency");
+              else if (gaps[0]) openGap(gaps[0].birdId, gaps[0].missing[0]);
+            }}
+          >
+            {t("sitForm.gaps.fillIn", "Fill these in")}
+          </SetupPrimaryButton>
+          <SetupSecondaryButton
+            disabled={saving || !!requiredMissing}
+            onClick={() => {
+              track("sit_gaps_choice", { choice: "create_anyway" });
+              acceptGapsRef.current = true;
+              setGaps(null);
+              rootRef.current?.requestSubmit();
+            }}
+          >
+            {t("sitForm.gaps.createAnyway", "Create the sit anyway")}
+          </SetupSecondaryButton>
+          {requiredMissing && (
+            <p className="m-0 text-center text-[14px]" style={{ color: S.helper }}>
+              {t("sitForm.gaps.addContactsFirst", "Add your emergency contacts to create the sit.")}
+            </p>
+          )}
+        </div>
+      </div>
+    </BottomSheet>
   );
 }
 
@@ -863,7 +995,7 @@ function Hint({ children }: { children: React.ReactNode }) {
   return <p className="m-0 mt-1 text-[14px] leading-[1.45]" style={{ color: K.quiet }}>{children}</p>;
 }
 
-function SitterFields({ name, email, onName, onEmail, emailRequired }: { name: string; email: string; onName: (v: string) => void; onEmail: (v: string) => void; emailRequired?: boolean }) {
+export function SitterFields({ name, email, onName, onEmail, emailRequired }: { name: string; email: string; onName: (v: string) => void; onEmail: (v: string) => void; emailRequired?: boolean }) {
   const { t } = useTranslation();
   return (
     <div className="flex flex-col gap-3">
@@ -883,7 +1015,7 @@ function SitterFields({ name, email, onName, onEmail, emailRequired }: { name: s
 const GAP_TAB: Record<SitGapSection, string> = {
   food: "food", health: "health", personality: "behavior", day: "routine", environment: "home", emergency: "emergency",
 };
-function gapLabel(t: (k: string, d: string) => string, m: SitGapSection): string {
+export function gapLabel(t: (k: string, d: string) => string, m: SitGapSection): string {
   switch (m) {
     case "food": return t("planEditor.tabFood", "Food");
     case "health": return t("planEditor.tabHealth", "Health");

@@ -20,6 +20,10 @@ import { parseCalendarDate } from "@/lib/localDay";
 import { ownerIntakeDate } from "@/lib/intakeDate";
 import i18next from "i18next";
 import { useTranslation } from "react-i18next";
+import { useDuoMode } from "@/lib/duo";
+import { RailBack } from "@/components/DuoRail";
+import { DUO, DuoMainButton, DuoTwoPane, PopOutCard } from "@/components/duo/DuoBlocks";
+import { FlowHeading, FlowPinnedAction } from "@/components/duo/flows/FlowParts";
 
 // PDF / offline handoff. Renders a print-optimized full-record sheet the sender
 // can "Save as PDF" and give to an adopter who isn't on the app. Confirming the
@@ -55,6 +59,8 @@ function ExportRecord() {
   const navigate = useNavigate();
   const [confirming, setConfirming] = useState(false);
   const [recipientName, setRecipientName] = useState("");
+  // iPhone Duo, sideways: the steps left, the record's preview right.
+  const duo = useDuoMode() === "sideways";
   const goBack = useGoBack(useCallback(() => navigate({ to: "/birds/$birdId/handoff", params: { birdId } }), [navigate, birdId]));
 
   // Every query throws on a failed request: a sheet rendered from a failed load
@@ -192,13 +198,188 @@ function ExportRecord() {
     }
   }
 
+  const title = t("exportRecord.title", "Export {{name}}'s record", { name });
+  const intro = native
+    ? t("exportRecord.introNative", "Share {{name}}'s record with the adopter, then confirm the handoff below. Once you confirm, {{name}} moves to your Past birds and leaves your flock.", { name })
+    : t("exportRecord.introWeb", "Save this as a PDF and give it to the adopter, then confirm the handoff below. Once you confirm, {{name}} moves to your Past birds and leaves your flock.", { name });
+  const confirmPrompt = native
+    ? t("exportRecord.confirmPromptNative", "I shared it with them — did you hand off {{name}}?", { name })
+    : t("exportRecord.confirmPromptWeb", "I gave them the PDF — did you hand off {{name}}?", { name });
+
+  const sheet = (
+    <KyaCard id="export-sheet" className="p-5" style={{ color: K.forest }}>
+      <header className="pb-3" style={{ borderBottom: `1px solid ${K.line}` }}>
+        <KyaHeading size={24}>{name}</KyaHeading>
+        {row?.species && <p className="m-0 mt-0.5 text-[14px] italic" style={{ color: K.quiet }}>{speciesLabel(t, row.species)}</p>}
+        <p className="m-0 mt-1 text-[13px]" style={{ color: K.quiet }}>{t("exportRecord.generated", "Full record · generated {{date}}", { date: fmtDate(new Date().toISOString()) })}</p>
+      </header>
+
+      <Section label={t("exportRecord.identity", "Identity")}>
+        <dl className="m-0 grid grid-cols-2 gap-x-4 gap-y-2">
+          {identity.map(([l, v]) => (
+            <div key={l}>
+              <dt className="text-[12.5px] font-[700]" style={{ color: K.quiet }}>{l}</dt>
+              <dd className={`m-0 text-[14px] ${v ? "" : "italic"}`} style={v ? undefined : { color: K.quiet }}>{v ?? none()}</dd>
+            </div>
+          ))}
+          <div>
+            <dt className="text-[12.5px] font-[700]" style={{ color: K.quiet }}>{cameToYouLabel}</dt>
+            {cameToYou ? (
+              <dd className="m-0 text-[14px]">{fmtDate(cameToYou)}</dd>
+            ) : (
+              <dd className="m-0 flex flex-wrap items-center gap-x-2 text-[14px]">
+                <span className="italic" style={{ color: K.quiet }}>{t("exportRecord.notAdded", "Not added")}</span>
+                <span data-noprint>
+                  <KyaLink onClick={() => navigate({ to: "/birds/$birdId/identity", params: { birdId }, search: { edit: 1 } })}>{t("exportRecord.add", "Add")}</KyaLink>
+                </span>
+              </dd>
+            )}
+          </div>
+        </dl>
+      </Section>
+
+      <Section label={t("exportRecord.diet", "Diet")}><Value text={dietText} multiline /></Section>
+      <Section label={t("exportRecord.medsHealth", "Meds & health")}><Value text={meds} multiline /></Section>
+      <Section label={t("exportRecord.routineHandling", "Routine & handling")}><Value text={routine} multiline /></Section>
+
+      <Section label={t("exportRecord.weightHistory", "Weight history")}>
+        {weights && weights.length ? (
+          <ul className="m-0 list-none p-0 text-[14px]">
+            {weights.map((w, i) => <li key={i} className="flex justify-between py-1" style={{ borderBottom: `1px solid ${K.line}` }}><span>{fmtDate(w.measured_at)}</span><span className="tabular-nums">{w.grams} g</span></li>)}
+          </ul>
+        ) : <Value text={null} />}
+      </Section>
+
+      <Section label={t("exportRecord.moments", "Moments")}>
+        {moments && moments.length ? (
+          <ul className="m-0 list-none space-y-1 p-0 text-[14px]">
+            {moments.map((m, i) => <li key={i} className="flex justify-between gap-3"><span>{m.title}</span><span className="shrink-0" style={{ color: K.quiet }}>{m.on_date ? fmtDate(m.on_date) : t("exportRecord.noDate", "No date")}</span></li>)}
+          </ul>
+        ) : <Value text={null} />}
+      </Section>
+
+      <Section label={t("exportRecord.journal", "Journal")}>
+        {journal && journal.length ? (
+          <ul className="m-0 list-none space-y-2 p-0 text-[14px]">
+            {journal.map((j, i) => <li key={i}><span className="text-[12.5px]" style={{ color: K.quiet }}>{fmtDate(j.created_at)}</span><p className="m-0 whitespace-pre-line">{j.body}</p></li>)}
+          </ul>
+        ) : <Value text={null} />}
+      </Section>
+    </KyaCard>
+  );
+
+  const confirmSheet = (
+    <KyaSheet
+      open={confirming}
+      onClose={() => { if (!busy) setConfirming(false); }}
+      closeLabel={t("exportRecord.close", "Close")}
+      title={<KyaHeading size={24}>{t("exportRecord.confirmTitle", "Hand off {{name}}?", { name })}</KyaHeading>}
+      footer={
+        <div className="flex flex-col gap-2.5">
+          <button
+            type="button"
+            disabled={busy}
+            onClick={confirmHandoff}
+            className="inline-flex min-h-[52px] w-full items-center justify-center gap-2 rounded-full px-6 text-[16px] font-[700] text-white disabled:opacity-45"
+            style={{ background: K.red }}
+          >
+            {busy && <Loader2 className="size-4 animate-spin" />} {t("exportRecord.yesHandOff", "Yes, hand off {{name}}", { name })}
+          </button>
+          <KyaSecondaryButton className="w-full" disabled={busy} onClick={() => setConfirming(false)}>{t("exportRecord.notYet", "Not yet")}</KyaSecondaryButton>
+        </div>
+      }
+    >
+      <div className="rounded-[16px] p-3.5" style={{ background: "#fcebeb", border: `1.5px solid ${K.red}` }}>
+        <p className="m-0 flex items-start gap-2 text-[14px] leading-[1.5]" style={{ color: "#791f1f" }}>
+          <AlertTriangle className="mt-0.5 size-4 shrink-0" style={{ color: K.red }} aria-hidden="true" />
+          <span><span className="font-[700]">{t("exportRecord.cantUndo", "This can't be undone.")}</span> {t("exportRecord.willLeave", "{{name}} will leave your flock and move to Past birds.", { name })}</span>
+        </p>
+      </div>
+      <div className="mt-4">
+        <KyaField
+          id="export-recipient"
+          label={t("exportRecord.recipientLabel", "Who did they go to?")}
+          tag={<span className="text-[12.5px] font-[400]" style={{ color: K.quiet }}>{t("exportRecord.optional", "Optional")}</span>}
+          value={recipientName}
+          maxLength={120}
+          onChange={(e) => setRecipientName(e.target.value)}
+          placeholder={t("exportRecord.recipientPlaceholder", "Who did they go to? (optional)")}
+        />
+      </div>
+    </KyaSheet>
+  );
+
+  const printStyle = (
+    <style>{`@media print {
+      body * { visibility: hidden !important; }
+      main:has(#export-sheet) { position: static !important; }
+      .duo-split:has(#export-sheet), .duo-pane:has(#export-sheet), .duo-popout:has(#export-sheet) { display: block !important; height: auto !important; overflow: visible !important; position: static !important; box-shadow: none !important; }
+      #export-sheet, #export-sheet * { visibility: visible !important; }
+      #export-sheet { position: absolute; left: 0; top: 0; width: 100%; border: none !important; }
+      [data-noprint] { display: none !important; }
+    }`}</style>
+  );
+
+  // iPhone Duo, sideways: what to do on the left (share or save, then confirm),
+  // the record exactly as the adopter gets it on the right, and the one main
+  // button (Share record / Save as PDF) pinned under it.
+  if (duo) {
+    const steps = [
+      native ? t("exportDuo.stepShare", "Share the record with the adopter.") : t("exportDuo.stepSave", "Save the record as a PDF and give it to the adopter."),
+      t("exportDuo.stepConfirm", "Confirm the handoff. {{name}} moves to your Past birds.", { name }),
+    ];
+    return (
+      <>
+        <DuoTwoPane
+          leftLabel={title}
+          rightLabel={t("exportDuo.previewTitle", "What the adopter gets")}
+          left={
+            <>
+              <RailBack onBack={goBack} />
+              <FlowHeading title={title} line={intro} />
+              <ol className="m-0 mt-6 flex list-none flex-col gap-2.5 p-0">
+                {steps.map((step, i) => (
+                  <li key={i} className="flex items-start gap-3 rounded-[20px] border bg-white p-4" style={{ borderColor: DUO.line }}>
+                    <span aria-hidden="true" className="grid size-9 shrink-0 place-items-center rounded-full text-[15px] font-[700]" style={{ background: DUO.fineBg, color: DUO.forest }}>{i + 1}</span>
+                    <span className="pt-1 text-[16px] leading-[1.45]" style={{ color: DUO.forest }}>{step}</span>
+                  </li>
+                ))}
+              </ol>
+              {!load.failed && (
+                <div className="mt-5">
+                  <KyaSecondaryButton className="w-full text-center" onClick={() => setConfirming(true)}>{confirmPrompt}</KyaSecondaryButton>
+                </div>
+              )}
+            </>
+          }
+          right={
+            <>
+              <PopOutCard eyebrow={t("exportDuo.previewEyebrow", "Preview")} title={t("exportDuo.previewTitle", "What the adopter gets")}>
+                {load.failed ? <LoadError onRetry={load.retry} onBack={goBack} /> : sheet}
+              </PopOutCard>
+              {!load.failed && (
+                <FlowPinnedAction>
+                  {native ? (
+                    <DuoMainButton onClick={shareRecord}><Share2 className="size-4" aria-hidden="true" />{t("exportRecord.shareRecord", "Share record")}</DuoMainButton>
+                  ) : (
+                    <DuoMainButton onClick={() => window.print()}><Printer className="size-4" aria-hidden="true" />{t("exportRecord.saveAsPdf", "Save as PDF")}</DuoMainButton>
+                  )}
+                </FlowPinnedAction>
+              )}
+            </>
+          }
+        />
+        {confirmSheet}
+        {printStyle}
+      </>
+    );
+  }
+
   return (
     <KyaPage>
       <PageHeader
-        title={t("exportRecord.title", "Export {{name}}'s record", { name })}
-        line={native
-          ? t("exportRecord.introNative", "Share {{name}}'s record with the adopter, then confirm the handoff below. Once you confirm, {{name}} moves to your Past birds and leaves your flock.", { name })
-          : t("exportRecord.introWeb", "Save this as a PDF and give it to the adopter, then confirm the handoff below. Once you confirm, {{name}} moves to your Past birds and leaves your flock.", { name })}
+        title={title}
+        line={intro}
         onBack={goBack}
       />
 
@@ -222,123 +403,20 @@ function ExportRecord() {
           )}
         </div>
 
-        <KyaCard id="export-sheet" className="p-5" style={{ color: K.forest }}>
-          <header className="pb-3" style={{ borderBottom: `1px solid ${K.line}` }}>
-            <KyaHeading size={24}>{name}</KyaHeading>
-            {row?.species && <p className="m-0 mt-0.5 text-[14px] italic" style={{ color: K.quiet }}>{speciesLabel(t, row.species)}</p>}
-            <p className="m-0 mt-1 text-[13px]" style={{ color: K.quiet }}>{t("exportRecord.generated", "Full record · generated {{date}}", { date: fmtDate(new Date().toISOString()) })}</p>
-          </header>
-
-          <Section label={t("exportRecord.identity", "Identity")}>
-            <dl className="m-0 grid grid-cols-2 gap-x-4 gap-y-2">
-              {identity.map(([l, v]) => (
-                <div key={l}>
-                  <dt className="text-[12.5px] font-[700]" style={{ color: K.quiet }}>{l}</dt>
-                  <dd className={`m-0 text-[14px] ${v ? "" : "italic"}`} style={v ? undefined : { color: K.quiet }}>{v ?? none()}</dd>
-                </div>
-              ))}
-              <div>
-                <dt className="text-[12.5px] font-[700]" style={{ color: K.quiet }}>{cameToYouLabel}</dt>
-                {cameToYou ? (
-                  <dd className="m-0 text-[14px]">{fmtDate(cameToYou)}</dd>
-                ) : (
-                  <dd className="m-0 flex flex-wrap items-center gap-x-2 text-[14px]">
-                    <span className="italic" style={{ color: K.quiet }}>{t("exportRecord.notAdded", "Not added")}</span>
-                    <span data-noprint>
-                      <KyaLink onClick={() => navigate({ to: "/birds/$birdId/identity", params: { birdId }, search: { edit: 1 } })}>{t("exportRecord.add", "Add")}</KyaLink>
-                    </span>
-                  </dd>
-                )}
-              </div>
-            </dl>
-          </Section>
-
-          <Section label={t("exportRecord.diet", "Diet")}><Value text={dietText} multiline /></Section>
-          <Section label={t("exportRecord.medsHealth", "Meds & health")}><Value text={meds} multiline /></Section>
-          <Section label={t("exportRecord.routineHandling", "Routine & handling")}><Value text={routine} multiline /></Section>
-
-          <Section label={t("exportRecord.weightHistory", "Weight history")}>
-            {weights && weights.length ? (
-              <ul className="m-0 list-none p-0 text-[14px]">
-                {weights.map((w, i) => <li key={i} className="flex justify-between py-1" style={{ borderBottom: `1px solid ${K.line}` }}><span>{fmtDate(w.measured_at)}</span><span className="tabular-nums">{w.grams} g</span></li>)}
-              </ul>
-            ) : <Value text={null} />}
-          </Section>
-
-          <Section label={t("exportRecord.moments", "Moments")}>
-            {moments && moments.length ? (
-              <ul className="m-0 list-none space-y-1 p-0 text-[14px]">
-                {moments.map((m, i) => <li key={i} className="flex justify-between gap-3"><span>{m.title}</span><span className="shrink-0" style={{ color: K.quiet }}>{m.on_date ? fmtDate(m.on_date) : t("exportRecord.noDate", "No date")}</span></li>)}
-              </ul>
-            ) : <Value text={null} />}
-          </Section>
-
-          <Section label={t("exportRecord.journal", "Journal")}>
-            {journal && journal.length ? (
-              <ul className="m-0 list-none space-y-2 p-0 text-[14px]">
-                {journal.map((j, i) => <li key={i}><span className="text-[12.5px]" style={{ color: K.quiet }}>{fmtDate(j.created_at)}</span><p className="m-0 whitespace-pre-line">{j.body}</p></li>)}
-              </ul>
-            ) : <Value text={null} />}
-          </Section>
-        </KyaCard>
+        {sheet}
 
         <div data-noprint>
           <KyaSecondaryButton className="w-full text-center" onClick={() => setConfirming(true)}>
-            {native
-              ? t("exportRecord.confirmPromptNative", "I shared it with them — did you hand off {{name}}?", { name })
-              : t("exportRecord.confirmPromptWeb", "I gave them the PDF — did you hand off {{name}}?", { name })}
+            {confirmPrompt}
           </KyaSecondaryButton>
         </div>
         </>
         )}
       </KyaBody>
 
-      <KyaSheet
-        open={confirming}
-        onClose={() => { if (!busy) setConfirming(false); }}
-        closeLabel={t("exportRecord.close", "Close")}
-        title={<KyaHeading size={24}>{t("exportRecord.confirmTitle", "Hand off {{name}}?", { name })}</KyaHeading>}
-        footer={
-          <div className="flex flex-col gap-2.5">
-            <button
-              type="button"
-              disabled={busy}
-              onClick={confirmHandoff}
-              className="inline-flex min-h-[52px] w-full items-center justify-center gap-2 rounded-full px-6 text-[16px] font-[700] text-white disabled:opacity-45"
-              style={{ background: K.red }}
-            >
-              {busy && <Loader2 className="size-4 animate-spin" />} {t("exportRecord.yesHandOff", "Yes, hand off {{name}}", { name })}
-            </button>
-            <KyaSecondaryButton className="w-full" disabled={busy} onClick={() => setConfirming(false)}>{t("exportRecord.notYet", "Not yet")}</KyaSecondaryButton>
-          </div>
-        }
-      >
-        <div className="rounded-[16px] p-3.5" style={{ background: "#fcebeb", border: `1.5px solid ${K.red}` }}>
-          <p className="m-0 flex items-start gap-2 text-[14px] leading-[1.5]" style={{ color: "#791f1f" }}>
-            <AlertTriangle className="mt-0.5 size-4 shrink-0" style={{ color: K.red }} aria-hidden="true" />
-            <span><span className="font-[700]">{t("exportRecord.cantUndo", "This can't be undone.")}</span> {t("exportRecord.willLeave", "{{name}} will leave your flock and move to Past birds.", { name })}</span>
-          </p>
-        </div>
-        <div className="mt-4">
-          <KyaField
-            id="export-recipient"
-            label={t("exportRecord.recipientLabel", "Who did they go to?")}
-            tag={<span className="text-[12.5px] font-[400]" style={{ color: K.quiet }}>{t("exportRecord.optional", "Optional")}</span>}
-            value={recipientName}
-            maxLength={120}
-            onChange={(e) => setRecipientName(e.target.value)}
-            placeholder={t("exportRecord.recipientPlaceholder", "Who did they go to? (optional)")}
-          />
-        </div>
-      </KyaSheet>
+      {confirmSheet}
 
-      <style>{`@media print {
-        body * { visibility: hidden !important; }
-        main:has(#export-sheet) { position: static !important; }
-        #export-sheet, #export-sheet * { visibility: visible !important; }
-        #export-sheet { position: absolute; left: 0; top: 0; width: 100%; border: none !important; }
-        [data-noprint] { display: none !important; }
-      }`}</style>
+      {printStyle}
     </KyaPage>
   );
 }
