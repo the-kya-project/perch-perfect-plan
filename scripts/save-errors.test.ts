@@ -326,6 +326,23 @@ check("consent: the waitlist and founding go to their own list only, never the m
   for (const src of [waitlist, founding]) assert.doesNotMatch(src, /BREVO_LIST_ID"|sibforms/);
 });
 
+check("migration: the Google Form waitlist fits, and waitlist_signups stays admin-read only", () => {
+  const sql = readFileSync("supabase/migrations/20261106190000_waitlist_google_form.sql", "utf8");
+  assert.match(sql, /source in \('waitlist-app', 'waitlist-website', 'waitlist-google-form'\)/);
+  assert.match(sql, /chapter_lead_interest in \(1, 2, 3\)/);
+  assert.match(sql, /add column if not exists birds text/);
+  assert.match(sql, /add column if not exists location text/);
+  assert.match(sql, /alter table public\.waitlist_signups enable row level security/);
+  assert.doesNotMatch(sql, /grant (insert|update|delete|all)[^;]*to (anon|authenticated)/);
+});
+check("waitlist backfill hook: cron-token only, list 4 only, no emails in its answer", () => {
+  const src = readFileSync("src/routes/api/public/hooks/waitlist-brevo-backfill.ts", "utf8");
+  assert.match(src, /cronAuthFailure\(request, "waitlist-brevo-backfill"\)/);
+  assert.match(src, /addContactToListReported\(\s*"BREVO_WAITLIST_LIST_ID"/);
+  assert.doesNotMatch(src, /BREVO_LIST_ID"|sendTransactionalEmail/);
+  assert.doesNotMatch(src, /refused\.push\(\{[^}]*email/);
+});
+
 // addContactToList's guards, with the environment and fetch stubbed.
 async function withEnv(env: Record<string, string | undefined>, fn: () => Promise<void>) {
   const saved = { ...process.env };
