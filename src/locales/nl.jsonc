@@ -281,8 +281,8 @@
   "auth.alreadyConfirmedSignInBelow": "Al bevestigd? Log hieronder in.",
   // You already have an account — check your inbox or resend the confirmation.
   "auth.alreadyHaveAccountCheckInbox": "Je hebt al een account — kijk in je inbox of stuur de bevestiging opnieuw.",
-  // Apple sign-in failed.
-  "auth.appleSignInFailed": "Inloggen met Apple mislukt.",
+  // Apple sign-in didn't work. Please try again, or sign in with email.
+  "auth.appleSignInDidNotWork": "Inloggen met Apple is niet gelukt. Probeer het opnieuw, of log in met je e-mailadres.",
   // Apple sign-in isn't working in this version of the app. Please sign in with email for now, or update the app.
   "auth.appleUnavailableInApp": "Inloggen met Apple werkt niet in deze versie van de app. Log voorlopig in met je e-mailadres, of werk de app bij.",
   // Back to sign in
@@ -307,8 +307,8 @@
   "auth.firstNamePlaceholderLabel": "Voornaam",
   // Forgot password?
   "auth.forgotPassword": "Wachtwoord vergeten?",
-  // Google sign-in failed.
-  "auth.googleSignInFailed": "Inloggen met Google mislukt.",
+  // Google sign-in didn't work. Please try again, or sign in with email.
+  "auth.googleSignInDidNotWork": "Inloggen met Google is niet gelukt. Probeer het opnieuw, of log in met je e-mailadres.",
   // Google sign-in isn't working in this version of the app. Please sign in with email for now, or update the app.
   "auth.googleUnavailableInApp": "Inloggen met Google werkt niet in deze versie van de app. Log voorlopig in met je e-mailadres, of werk de app bij.",
   // Already have an account? <go>Sign in</go>

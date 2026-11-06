@@ -3,13 +3,12 @@
 // one set of provider buttons for /auth and the invite and handoff
 // create-account forms, so all three offer the same methods under the same
 // conditions and go through the same sign-in code (lib/nativeOAuth).
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Loader2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { KyaSecondaryButton } from "@/components/kya";
-import { signInWithGoogle, signInWithApple } from "@/lib/nativeOAuth";
+import { signInWithGoogle, signInWithApple, SignInError } from "@/lib/nativeOAuth";
 import { appleSignInAvailable } from "@/lib/nativeApp";
-import { authErrorMessage } from "@/lib/authErrorMessage";
 
 type Provider = "google" | "apple";
 
@@ -34,7 +33,14 @@ export function SocialSignInButtons({ redirectPath, beforeStart, disabled, onBus
   const [showApple, setShowApple] = useState(false);
   useEffect(() => setShowApple(appleSignInAvailable()), []);
 
+  // Set synchronously on the first tap, so a second tap that lands before
+  // React re-renders the disabled buttons is still ignored. Two overlapping
+  // native requests cut each other off (see nativeOAuth's inFlight).
+  const running = useRef(false);
+
   async function start(provider: Provider) {
+    if (running.current) return;
+    running.current = true;
     onError(null);
     setBusy(provider);
     onBusyChange?.(true);
@@ -43,11 +49,16 @@ export function SocialSignInButtons({ redirectPath, beforeStart, disabled, onBus
       const redirectTo = window.location.origin + redirectPath;
       if (provider === "apple") await signInWithApple(redirectTo);
       else await signInWithGoogle(redirectTo);
+      // A cancel resolves too: nothing to show, the buttons just reset.
     } catch (err) {
-      onError(provider === "apple"
-        ? authErrorMessage(err, t("auth.appleSignInFailed", "Apple sign-in failed."))
-        : authErrorMessage(err, t("auth.googleSignInFailed", "Google sign-in failed.")));
+      // Plain language only, never the provider's raw error text.
+      onError(err instanceof SignInError
+        ? err.message
+        : provider === "apple"
+          ? t("auth.appleSignInDidNotWork", "Apple sign-in didn't work. Please try again, or sign in with email.")
+          : t("auth.googleSignInDidNotWork", "Google sign-in didn't work. Please try again, or sign in with email."));
     } finally {
+      running.current = false;
       setBusy(null);
       onBusyChange?.(false);
     }
