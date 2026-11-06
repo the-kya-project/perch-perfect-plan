@@ -5,7 +5,7 @@ import { useTranslation } from "react-i18next";
 import i18next from "i18next";
 import { supabase } from "@/integrations/supabase/client";
 import { track } from "@/lib/analytics";
-import { authErrorMessage } from "@/lib/authErrorMessage";
+import { isOAuthCancel } from "@/lib/oauthErrors";
 import { isNativeApp, nativePlatform, nativePluginAvailable } from "@/lib/nativeApp";
 import { appCallbackUrl, readAppReturnParams, type AppReturnParams } from "@/lib/oauthAppReturn";
 import { K, KyaPrimaryButton } from "@/components/kya";
@@ -68,6 +68,12 @@ function AppSignInReturn() {
     const fail = (err: string) => {
       track("native_oauth_failed", { provider: p.provider, platform: nativePlatform(), stage: "web_fallback", err: err.replace(/\s+/g, " ").slice(0, 80) });
     };
+    // Closed or declined at Apple/Google: back to sign-in, no error.
+    if (p.error && isOAuthCancel(p.error)) {
+      track("native_oauth_cancelled", { provider: p.provider, platform: nativePlatform(), via: "web_fallback" });
+      void router.navigate({ to: "/auth", replace: true });
+      return;
+    }
     if (p.error || !p.code) {
       fail(p.error ?? "no code");
       setError(t("appSignInReturn.didNotFinish", "Sign-in didn't finish. Please try again."));
@@ -84,7 +90,7 @@ function AppSignInReturn() {
       void router.navigate({ href: p.next, replace: true } as never);
     } catch (e) {
       fail(e instanceof Error ? e.message : String(e));
-      setError(authErrorMessage(e, t("appSignInReturn.didNotFinish", "Sign-in didn't finish. Please try again.")));
+      setError(t("appSignInReturn.didNotFinish", "Sign-in didn't finish. Please try again."));
     }
   }
 

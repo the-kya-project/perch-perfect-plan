@@ -378,8 +378,8 @@
     "auth.alreadyHaveAccountCheckInbox": {
       "stamp": "f39e7029313f4ad4"
     },
-    "auth.appleSignInFailed": {
-      "stamp": "5b5b6aad1137423b"
+    "auth.appleSignInDidNotWork": {
+      "stamp": "58c8c67d555f1edf"
     },
     "auth.appleUnavailableInApp": {
       "stamp": "107f2e29cb5d6b5b"
@@ -417,8 +417,8 @@
     "auth.forgotPassword": {
       "stamp": "c6241b1c19f11641"
     },
-    "auth.googleSignInFailed": {
-      "stamp": "916d62629302d809"
+    "auth.googleSignInDidNotWork": {
+      "stamp": "7ed036b3612344c4"
     },
     "auth.googleUnavailableInApp": {
       "stamp": "8eb212ec6bc7ddfd"

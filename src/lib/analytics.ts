@@ -88,6 +88,10 @@ export type AnalyticsEventName =
   // back as native_oauth_exchanged / native_oauth_failed with via/stage
   // "web_fallback".
   | "native_oauth_fallback_web"
+  // The person closed or declined the native sheet (Apple 1001, Google -5,
+  // the plugin's USER_CANCELLED). Not a failure; previously logged as
+  // native_oauth_failed { stage: "cancelled" }.
+  | "native_oauth_cancelled"
   // "Open in the Kya & Co. app" tapped in an iPhone browser (OpenInAppBar).
   | "open_in_app_tapped"
   // Clip-upload diagnostics: compare picked file size app vs PWA
