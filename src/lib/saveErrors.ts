@@ -28,9 +28,10 @@ export type SaveErrorCategory =
   | "rejected" // P0001: one of our own triggers or functions said no
   | "database" // any other SQLSTATE
   | "server" // a 5xx with no database detail
-  | "network"; // the request never got an answer
+  | "network" // the request never got an answer
+  | "config"; // the server is missing a setting (a Brevo key or list id)
 
-export type SaveErrorOperation = "write" | "delete" | "rpc" | "storage" | "server_fn";
+export type SaveErrorOperation = "write" | "delete" | "rpc" | "storage" | "server_fn" | "brevo_list";
 
 export type SaveErrorShape = {
   category: SaveErrorCategory;

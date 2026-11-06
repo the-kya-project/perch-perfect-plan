@@ -141,6 +141,7 @@ const CATEGORY_TEXT: Record<SaveErrorCategory, string> = {
   database: "The database returned an error",
   server: "The server failed while saving",
   network: "The save never reached the server (connection dropped)",
+  config: "The server is missing a setting it needs",
 };
 
 const OPERATION_TEXT: Record<string, string> = {
@@ -149,17 +150,20 @@ const OPERATION_TEXT: Record<string, string> = {
   rpc: "calling",
   storage: "uploading a file",
   server_fn: "saving through the server",
+  brevo_list: "adding someone to a Brevo list",
 };
 
 /** "The database refused the save (a permission rule said no), saving to sits". */
 export function describeGroup(g: Pick<SaveErrorGroup, "category" | "target" | "operation">): string {
   const what = CATEGORY_TEXT[g.category] ?? "A save failed";
+  // Brevo list adds name the setting involved: the list's env var, or the API key.
+  if (g.operation === "brevo_list") return `${what} (${OPERATION_TEXT.brevo_list})${g.target ? `: ${g.target.toUpperCase()}` : ""}`;
   if (g.target) return `${what}, ${OPERATION_TEXT[g.operation ?? ""] ?? "on"} ${g.target}`;
   if (g.operation === "storage") return `${what}, ${OPERATION_TEXT.storage}`;
   return what;
 }
 
-const PLATFORM_NAMES: Record<string, string> = { web: "web", ios: "iOS app", android: "Android app" };
+const PLATFORM_NAMES: Record<string, string> = { web: "web", ios: "iOS app", android: "Android app", server: "server" };
 
 function platformsText(p: Record<string, number>): string {
   return Object.entries(p)
