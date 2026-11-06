@@ -19,7 +19,7 @@ const PRODUCTION_REF = "koyqdyamazuuwvqbttnj";
 
 export async function recordEdgeSaveError(
   fn: string,
-  e: { category: EdgeSaveErrorCategory; target: string; operation?: "brevo_list" | "write" },
+  e: { category: EdgeSaveErrorCategory; target: string; operation?: "brevo_list" | "write" | "server_fn" },
 ): Promise<void> {
   try {
     const url = Deno.env.get("SUPABASE_URL");
