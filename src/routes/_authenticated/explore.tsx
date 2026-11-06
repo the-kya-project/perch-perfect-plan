@@ -1,10 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { ArrowRight, ArrowUpRight, Headphones, Compass } from "lucide-react";
+import { ArrowRight, ArrowUpRight, Compass } from "lucide-react";
 import { K, KyaPage, KyaBody, KyaCard, KyaHeading, KyaIconTile } from "@/components/kya";
 import { TabHeader } from "@/components/headers";
 import { WaitlistCard } from "@/components/WaitlistCard";
+import { MISSION_URL, MembershipCard, PodcastCard } from "@/components/explore/ExploreCards";
 import { getBlogPosts, type BlogPost } from "@/lib/blogFeed.functions";
 import { useTranslation } from "react-i18next";
 import i18next from "i18next";
@@ -15,7 +16,6 @@ import { ExploreDuo } from "@/components/duo/explore/ExploreDuo";
 import { ArticleReaderDuo } from "@/components/duo/explore/ArticleReaderDuo";
 
 // The Kya Project marketing links.
-const MISSION_URL = "https://www.thekyaproject.com/about";
 const BLOG_URL = "https://www.thekyaproject.com/blog";
 
 export const Route = createFileRoute("/_authenticated/explore")({
@@ -75,24 +75,10 @@ function Explore() {
           </section>
 
           {/* Podcast: not live yet. */}
-          <KyaCard className="p-5">
-            <div className="flex items-start gap-3">
-              <KyaIconTile size={44}><Headphones className="size-5" /></KyaIconTile>
-              <div className="min-w-0 flex-1">
-                <span className="inline-flex rounded-full px-2.5 py-1 text-[12px] font-[700]" style={{ background: K.mist, color: K.forest }}>{t("explore.comingSoonTag", "Coming soon")}</span>
-                <KyaHeading size={20} as="h3" className="mt-2">{t("explore.podcastTitle", "The Kya Project Podcast")}</KyaHeading>
-                <p className="m-0 mt-1 text-[15px] leading-[1.45]" style={{ color: K.quiet }}>{t("explore.podcastBody", "Conversations on parrots, rescue, and the wild.")}</p>
-              </div>
-            </div>
-          </KyaCard>
+          <PodcastCard />
 
           {/* Membership preview (no purchase yet). */}
-          <KyaCard className="p-5">
-            <KyaHeading size={21}>{t("explore.membershipHeadline", "Support the mission and get more")}</KyaHeading>
-            <p className="m-0 mt-2 text-[15px] leading-[1.5]" style={{ color: K.quiet }}>
-              {t("explore.membershipBody", "When the community launches, members get AMAs, chapter access, and 20% of every membership funds rescue and conservation.")}
-            </p>
-          </KyaCard>
+          <MembershipCard />
         </KyaBody>
       </div>
     </KyaPage>

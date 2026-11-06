@@ -293,6 +293,36 @@ for (const [size, { column, ...viewport }] of Object.entries(SIZES)) {
         const web = page.locator(`[data-explore-post="${WEB_POST_ID}"]`).first();
         await expect(web).toHaveAttribute("data-opens", "website");
         await expect(web).toHaveAttribute("target", "_blank");
+        // The phone page's mission, podcast and membership cards sit in the
+        // right pane, under the three article rows and above the community card.
+        const order = await page.evaluate(() => {
+          const right = document.querySelector('[data-duo-pane="right"]')!;
+          const top = (el: Element | null) => (el ? el.getBoundingClientRect().top + right.scrollTop : null);
+          const rows = [...right.querySelectorAll("ul li")];
+          const waitlist = [...right.querySelectorAll("section")].find((s) => /Join the community/.test(s.textContent ?? "")) ?? null;
+          return {
+            rows: rows.length,
+            lastRow: top(rows[rows.length - 1] ?? null),
+            mission: top(right.querySelector("#explore-mission")),
+            podcast: top(right.querySelector("#explore-podcast")),
+            membership: top(right.querySelector("#explore-membership")),
+            waitlist: top(waitlist),
+          };
+        });
+        expect(order.rows).toBe(3);
+        const tops = [order.lastRow, order.mission, order.podcast, order.membership, order.waitlist];
+        for (const v of tops) expect(v, JSON.stringify(order)).not.toBeNull();
+        for (let i = 1; i < tops.length; i++) expect(tops[i]!, JSON.stringify(order)).toBeGreaterThan(tops[i - 1]!);
+        // "Join the waitlist" is the page's only gold button, scrolled into view or not.
+        const allGold = await page.evaluate(() => [...document.querySelectorAll("button, a")]
+          .filter((el) => getComputedStyle(el).backgroundColor === "rgb(242, 179, 61)")
+          .map((el) => (el.textContent ?? "").trim()));
+        expect(allGold).toEqual(["Join the waitlist"]);
+        // The lower half of the pane, for the screenshot page.
+        await page.evaluate(() => { const r = document.querySelector('[data-duo-pane="right"]')!; r.scrollTop = r.scrollHeight; });
+        await page.waitForTimeout(300);
+        await page.screenshot({ path: `test-results/duo/${size}-explore-scrolled.png` });
+        await page.evaluate(() => { document.querySelector('[data-duo-pane="right"]')!.scrollTop = 0; });
       }
       if (column && name.startsWith("reader-p")) {
         // The body was cleaned: nothing it carried ran or survived.
