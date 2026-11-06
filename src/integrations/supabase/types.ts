@@ -715,6 +715,7 @@ export type Database = {
       gift_purchases: {
         Row: {
           amount_paid_cents: number
+          amount_refunded_cents: number
           buyer_email: string
           buyer_emailed_at: string | null
           buyer_name: string | null
@@ -739,6 +740,7 @@ export type Database = {
         }
         Insert: {
           amount_paid_cents: number
+          amount_refunded_cents?: number
           buyer_email: string
           buyer_emailed_at?: string | null
           buyer_name?: string | null
@@ -763,6 +765,7 @@ export type Database = {
         }
         Update: {
           amount_paid_cents?: number
+          amount_refunded_cents?: number
           buyer_email?: string
           buyer_emailed_at?: string | null
           buyer_name?: string | null

@@ -2,7 +2,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { Download, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { formatCents } from "@/lib/gifts";
+import { formatCents, giftGivingCents, giftKeptCents } from "@/lib/gifts";
 import { useDuoMode } from "@/lib/duo";
 import { AdminListDuo, AdminTotals } from "@/components/duo/flows/AdminListDuo";
 import { K, KyaBackRow, KyaBody, KyaCard, KyaHeader, KyaHeading, KyaPage, KyaPrimaryButton, KyaSecondaryButton, KyaTitle } from "@/components/kya";
@@ -28,6 +28,7 @@ type Gift = {
   recipient_email: string | null;
   send_on: string | null;
   amount_paid_cents: number;
+  amount_refunded_cents: number;
   promo_code: string | null;
   giving_rate: number;
   status: string;
@@ -54,7 +55,7 @@ function AdminGifts() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("gift_purchases")
-        .select("purchased_at, plan, buyer_email, buyer_name, recipient_name, recipient_email, send_on, amount_paid_cents, promo_code, giving_rate, status, gift_code")
+        .select("purchased_at, plan, buyer_email, buyer_name, recipient_name, recipient_email, send_on, amount_paid_cents, amount_refunded_cents, promo_code, giving_rate, status, gift_code")
         .order("purchased_at", { ascending: false });
       if (error) throw error;
       return (data ?? []).map((g) => ({ ...g, giving_rate: Number(g.giving_rate) })) as Gift[];
@@ -88,10 +89,11 @@ function AdminGifts() {
   }
 
   const rows = gifts ?? [];
-  // Refunded gifts are listed but kept out of the money totals.
+  // Refunded gifts are listed but kept out of the totals. A partly refunded
+  // gift counts at what was kept, and so does its giving (20% or 40%).
   const counted = rows.filter((g) => g.status !== "refunded");
-  const total = counted.reduce((n, g) => n + g.amount_paid_cents, 0);
-  const giving = counted.reduce((n, g) => n + Math.round(g.amount_paid_cents * g.giving_rate), 0);
+  const total = counted.reduce((n, g) => n + giftKeptCents(g), 0);
+  const giving = counted.reduce((n, g) => n + giftGivingCents(g), 0);
   const byPlan = group(counted, (g) => PLAN_LABEL[g.plan] ?? g.plan);
   const byPromo = group(counted, (g) => g.promo_code ?? NO_PROMO);
   const line = isLoading ? "Loading…" : `${counted.length} paid ${counted.length === 1 ? "gift" : "gifts"} · ${formatCents(total)} · ${formatCents(giving)} to rescue and conservation`;
@@ -126,7 +128,7 @@ function AdminGifts() {
             ["Buyer", g.buyer_name ? `${g.buyer_name} · ${g.buyer_email}` : g.buyer_email],
             ["Recipient", `${g.recipient_name}${g.recipient_email ? ` · ${g.recipient_email}` : " · (to buyer)"}`],
             ["Send on", g.send_on],
-            ["Amount", formatCents(g.amount_paid_cents)],
+            ["Amount", amountText(g)],
             ["Promo code", g.promo_code ?? "—"],
             ["Giving", `${Math.round(g.giving_rate * 100)}%`],
           ],
@@ -163,7 +165,7 @@ function AdminGifts() {
             <KyaCard>
               <div className="overflow-x-auto" tabIndex={0} role="region" aria-label="Gifts table">
                 <table className="w-full min-w-[900px] border-collapse text-left text-[14px]" style={{ color: K.ink }}>
-                  <caption className="sr-only">Gift memberships, newest first. Refunded gifts are listed but not counted in totals.</caption>
+                  <caption className="sr-only">Gift memberships, newest first. Refunded gifts are listed but not counted in totals; partly refunded gifts count at what was kept.</caption>
                   <thead>
                     <tr style={{ background: K.mist }}>
                       {["Date", "Plan", "Buyer", "Recipient", "Amount", "Promo code", "Giving", "Status"].map((h) => (
@@ -178,7 +180,7 @@ function AdminGifts() {
                         <td className="px-3 py-2.5">{PLAN_LABEL[g.plan] ?? g.plan}</td>
                         <td className="px-3 py-2.5">{g.buyer_name ? `${g.buyer_name} · ` : ""}{g.buyer_email}</td>
                         <td className="px-3 py-2.5">{g.recipient_name}{g.recipient_email ? ` · ${g.recipient_email}` : " · (to buyer)"}</td>
-                        <td className="whitespace-nowrap px-3 py-2.5">{formatCents(g.amount_paid_cents)}</td>
+                        <td className="whitespace-nowrap px-3 py-2.5">{amountText(g)}</td>
                         <td className="px-3 py-2.5">{g.promo_code ?? "—"}</td>
                         <td className="px-3 py-2.5">{Math.round(g.giving_rate * 100)}%</td>
                         <td className="px-3 py-2.5 font-[700]" style={{ color: g.status === "refunded" ? K.red : K.forest }}>{g.status}</td>
@@ -206,7 +208,7 @@ function group(rows: Gift[], keyOf: (g: Gift) => string): Group[] {
     const k = keyOf(g);
     const cur = m.get(k) ?? { key: k, count: 0, cents: 0 };
     cur.count++;
-    cur.cents += g.amount_paid_cents;
+    cur.cents += giftKeptCents(g);
     m.set(k, cur);
   }
   return [...m.values()].sort((a, b) => b.cents - a.cents || a.key.localeCompare(b.key));
@@ -232,6 +234,12 @@ function Totals({ title, groups }: { title: string; groups: Group[] }) {
   );
 }
 
+/** "$249", or "$249 · $10 refunded" for a partly refunded gift. */
+function amountText(g: Gift): string {
+  const paid = formatCents(g.amount_paid_cents);
+  return g.status !== "refunded" && g.amount_refunded_cents > 0 ? `${paid} · ${formatCents(g.amount_refunded_cents)} refunded` : paid;
+}
+
 function formatDate(iso: string): string {
   return new Date(iso).toLocaleString("en-US", { month: "short", day: "numeric", year: "numeric", hour: "numeric", minute: "2-digit" });
 }
@@ -244,12 +252,12 @@ function csvCell(v: string | number | null): string {
 }
 
 function downloadCsv(rows: Gift[]) {
-  const header = ["purchased_at", "plan", "buyer_name", "buyer_email", "recipient_name", "recipient_email", "send_on", "amount_paid", "promo_code", "giving_rate", "status"];
+  const header = ["purchased_at", "plan", "buyer_name", "buyer_email", "recipient_name", "recipient_email", "send_on", "amount_paid", "amount_refunded", "promo_code", "giving_rate", "status"];
   const lines = [header.map(csvCell).join(",")];
   for (const g of rows) {
     lines.push([
       g.purchased_at, g.plan, g.buyer_name, g.buyer_email, g.recipient_name, g.recipient_email, g.send_on,
-      (g.amount_paid_cents / 100).toFixed(2), g.promo_code, g.giving_rate, g.status,
+      (g.amount_paid_cents / 100).toFixed(2), (g.amount_refunded_cents / 100).toFixed(2), g.promo_code, g.giving_rate, g.status,
     ].map(csvCell).join(","));
   }
   const blob = new Blob([lines.join("\r\n") + "\r\n"], { type: "text/csv;charset=utf-8" });

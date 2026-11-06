@@ -4,11 +4,11 @@
  * the signature check.
  */
 import type Stripe from "stripe";
-import { isGiftPlan } from "./gifts";
+import { applyGiftRefund, isGiftPlan } from "./gifts";
 
 export type GiftWebhookResult =
   | { handled: "recorded"; created: boolean; emails?: unknown }
-  | { handled: "refunded"; updated: number }
+  | { handled: "refunded"; updated: number; status: string; amountRefundedCents: number }
   | { handled: "ignored"; why: string };
 
 function promoCodeOf(session: Stripe.Checkout.Session): string | null {
@@ -86,20 +86,51 @@ async function recordPurchase(event: Stripe.Event, sessionId: string): Promise<G
 }
 
 async function markRefunded(charge: Stripe.Charge): Promise<GiftWebhookResult> {
-  // A partial refund leaves the gift valid; only a full refund cancels it.
-  if (!charge.refunded) return { handled: "ignored", why: "partial refund" };
+  // Every refund is recorded. A partial refund leaves the gift valid and only
+  // raises amount_refunded_cents; once the refunds reach the amount paid (one
+  // full refund, or partial ones adding up) the gift becomes 'refunded'. The
+  // rules are applyGiftRefund() in gifts.ts.
+  //
+  // LAUNCH RULE: a refunded gift keeps redeemed_by. The code that turns gifts
+  // into entitlements at launch must grant only where giftGrantsMembership()
+  // (status = 'redeemed') is true, never on "has a redeemer". When a refund
+  // cancels a gift that was already granted, that code must also end the
+  // entitlement; this handler is where to hook it in (see becameRefunded).
   const paymentIntent = typeof charge.payment_intent === "string" ? charge.payment_intent : charge.payment_intent?.id;
   if (!paymentIntent) return { handled: "ignored", why: "charge has no payment intent" };
 
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { data: gift, error: readError } = await supabaseAdmin
+    .from("gift_purchases")
+    .select("id, status, amount_paid_cents, amount_refunded_cents")
+    .eq("stripe_payment_intent_id", paymentIntent)
+    .maybeSingle();
+  if (readError) throw new Error(`gift refund read failed: ${readError.message}`);
+  if (!gift) return { handled: "ignored", why: "no gift for this payment" };
+
+  const next = applyGiftRefund(
+    { status: gift.status, amountPaidCents: gift.amount_paid_cents, amountRefundedCents: gift.amount_refunded_cents },
+    { amountRefundedCents: charge.amount_refunded ?? 0, fullyRefunded: charge.refunded === true },
+  );
+  if (!next.changed) return { handled: "refunded", updated: 0, status: gift.status, amountRefundedCents: gift.amount_refunded_cents };
+
+  // Guarded on what was read, so two refund events at once can't overwrite
+  // each other. If the guard misses, throwing makes Stripe redeliver, and the
+  // retry reads the newer row.
   const { data, error } = await supabaseAdmin
     .from("gift_purchases")
-    .update({ status: "refunded", refunded_at: new Date().toISOString() })
-    .eq("stripe_payment_intent_id", paymentIntent)
-    .neq("status", "refunded")
+    .update({
+      status: next.status,
+      amount_refunded_cents: next.amountRefundedCents,
+      ...(next.becameRefunded ? { refunded_at: new Date().toISOString() } : {}),
+    })
+    .eq("id", gift.id)
+    .eq("status", gift.status)
+    .eq("amount_refunded_cents", gift.amount_refunded_cents)
     .select("id");
   if (error) throw new Error(`gift refund update failed: ${error.message}`);
-  return { handled: "refunded", updated: (data ?? []).length };
+  if ((data ?? []).length === 0) throw new Error("gift refund update raced another update; Stripe will retry");
+  return { handled: "refunded", updated: 1, status: next.status, amountRefundedCents: next.amountRefundedCents };
 }
 
 export async function handleGiftWebhookEvent(event: Stripe.Event): Promise<GiftWebhookResult> {

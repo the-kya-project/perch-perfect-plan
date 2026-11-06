@@ -1,7 +1,8 @@
 /**
  * Gift memberships — the parts that don't need a live Stripe account: webhook
  * signature verification (with Stripe's own library and a throwaway secret),
- * gift dates, and the two emails (escaping, subject = headline, code present).
+ * gift dates, the two emails (escaping, subject = headline, code present),
+ * refunds (partial, several adding up, full) and the launch rule.
  *
  *   npm run test:gifts
  *
@@ -12,7 +13,7 @@
  */
 import assert from "node:assert/strict";
 import Stripe from "stripe";
-import { giftToday, isAllowedSendDate, formatGiftDate, formatCents, GIFT_CODE_PATTERN } from "@/lib/gifts";
+import { giftToday, isAllowedSendDate, formatGiftDate, formatCents, GIFT_CODE_PATTERN, applyGiftRefund, giftKeptCents, giftGivingCents, giftGrantsMembership } from "@/lib/gifts";
 import { buildGiftReceiptEmail, buildGiftRecipientEmail, type GiftRow } from "@/lib/giftEmails.server";
 
 let passed = 0;
@@ -135,6 +136,73 @@ await check("both emails carry the PO Box and no unsubscribe link", () => {
     assert.ok(e.html.includes("PO Box 58, New Haven, IN 46774"));
     assert.ok(!/unsubscribe/i.test(e.html));
   }
+});
+
+// ── Refunds ─────────────────────────────────────────────────────────────────
+// Stripe's charge.amount_refunded is the running total, so each event carries
+// the sum of every refund so far.
+const paid249 = { status: "paid", amountPaidCents: 24900, amountRefundedCents: 0 };
+
+await check("one partial refund: recorded, gift stays valid", () => {
+  const r = applyGiftRefund(paid249, { amountRefundedCents: 1000, fullyRefunded: false });
+  assert.deepEqual(r, { status: "paid", amountRefundedCents: 1000, becameRefunded: false, changed: true });
+  const g = { status: r.status, amount_paid_cents: 24900, amount_refunded_cents: r.amountRefundedCents, giving_rate: 0.2 };
+  assert.equal(giftKeptCents(g), 23900);
+  assert.equal(giftGivingCents(g), 4780);
+});
+await check("a partial refund on a redeemed gift keeps it redeemed", () => {
+  const r = applyGiftRefund({ ...paid249, status: "redeemed" }, { amountRefundedCents: 1000, fullyRefunded: false });
+  assert.equal(r.status, "redeemed");
+  assert.equal(r.amountRefundedCents, 1000);
+});
+await check("two partials adding up to the full amount: refunded", () => {
+  const first = applyGiftRefund(paid249, { amountRefundedCents: 9900, fullyRefunded: false });
+  assert.equal(first.status, "paid");
+  const after = { status: first.status, amountPaidCents: 24900, amountRefundedCents: first.amountRefundedCents };
+  // Stripe marks the charge refunded once the total reaches the amount...
+  const second = applyGiftRefund(after, { amountRefundedCents: 24900, fullyRefunded: true });
+  assert.deepEqual(second, { status: "refunded", amountRefundedCents: 24900, becameRefunded: true, changed: true });
+  // ...and reaching it counts even without that flag.
+  assert.equal(applyGiftRefund(after, { amountRefundedCents: 24900, fullyRefunded: false }).status, "refunded");
+  assert.equal(giftKeptCents({ status: "refunded", amount_paid_cents: 24900, amount_refunded_cents: 24900 }), 0);
+});
+await check("a full refund: refunded, nothing kept, nothing given", () => {
+  const r = applyGiftRefund({ status: "paid", amountPaidCents: 30000, amountRefundedCents: 0 }, { amountRefundedCents: 30000, fullyRefunded: true });
+  assert.deepEqual(r, { status: "refunded", amountRefundedCents: 30000, becameRefunded: true, changed: true });
+  const g = { status: "refunded", amount_paid_cents: 30000, amount_refunded_cents: 30000, giving_rate: 0.2 };
+  assert.equal(giftKeptCents(g), 0);
+  assert.equal(giftGivingCents(g), 0);
+});
+await check("refunds only go up: a late, older event changes nothing", () => {
+  const r = applyGiftRefund({ status: "paid", amountPaidCents: 24900, amountRefundedCents: 5000 }, { amountRefundedCents: 1000, fullyRefunded: false });
+  assert.equal(r.amountRefundedCents, 5000);
+  assert.equal(r.changed, false);
+  const done = applyGiftRefund({ status: "refunded", amountPaidCents: 24900, amountRefundedCents: 24900 }, { amountRefundedCents: 1000, fullyRefunded: false });
+  assert.deepEqual(done, { status: "refunded", amountRefundedCents: 24900, becameRefunded: false, changed: false });
+});
+await check("a redelivered event changes nothing", () => {
+  const once = { status: "paid", amountPaidCents: 24900, amountRefundedCents: 1000 };
+  assert.equal(applyGiftRefund(once, { amountRefundedCents: 1000, fullyRefunded: false }).changed, false);
+});
+await check("giving is on what was kept, at 40% on Giving Tuesday", () => {
+  assert.equal(giftGivingCents({ status: "paid", amount_paid_cents: 24900, amount_refunded_cents: 1000, giving_rate: 0.4 }), 9560);
+  assert.equal(giftGivingCents({ status: "redeemed", amount_paid_cents: 30000, amount_refunded_cents: 0, giving_rate: 0.4 }), 12000);
+});
+
+// ── Launch rule ─────────────────────────────────────────────────────────────
+await check("launch rule: only status 'redeemed' grants membership", () => {
+  assert.equal(giftGrantsMembership({ status: "redeemed" }), true);
+  assert.equal(giftGrantsMembership({ status: "paid" }), false);
+  assert.equal(giftGrantsMembership({ status: null }), false);
+});
+await check("launch rule: a refunded gift with a redeemer recorded does NOT grant membership", () => {
+  const refundedAfterRedeeming = {
+    status: "refunded",
+    redeemed_by: "00000000-0000-4000-8000-0000000000aa",
+    redeemed_at: "2026-11-06T17:10:00Z",
+    refunded_at: "2026-11-06T17:19:05Z",
+  };
+  assert.equal(giftGrantsMembership(refundedAfterRedeeming), false);
 });
 
 console.log(`\n${passed} passed`);
