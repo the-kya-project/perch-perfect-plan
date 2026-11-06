@@ -17,16 +17,22 @@
 //   Contacts who do not consent are still saved as contacts, but are
 //   not added to the list. Nobody is blacklisted.
 //
+// Failures are loud (Nov 2026): a missing BREVO_API_KEY or BREVO_LIST_ID, or a
+// Brevo error, records a public.save_errors row (_shared/saveErrors.ts), so the
+// app's save-error alerts email about it.
+//
 // Abuse hardening (public, unauthenticated endpoint):
 //   - CORS restricted to the app's own origins (the only legitimate caller is
 //     the signup flow via supabase.functions.invoke). The community waitlist
-//     uses a different path (joinWaitlist -> Brevo form), so it's unaffected.
+//     uses a different path (joinWaitlist, a server function), so it's unaffected.
 //   - Email is format- and length-validated; name/source lengths are capped.
 //   - Per-IP in-memory sliding-window throttle stops trivial scripted spam.
 //     (Edge isolates don't share memory, so it's per-warm-instance — a
 //     distributed/IP-rotating attacker isn't fully stopped; Cloudflare Turnstile
 //     on the form is the stronger post-launch control. CORS is browser-enforced
 //     and does NOT stop curl, which is exactly why the rate limit exists.)
+
+import { recordEdgeSaveError } from "../_shared/saveErrors.ts";
 
 // ---- CORS allowlist ----------------------------------------------------------
 const ALLOWED_EXACT = new Set<string>([
@@ -146,6 +152,7 @@ Deno.serve(async (req) => {
   const apiKey = Deno.env.get("BREVO_API_KEY");
   if (!apiKey) {
     console.error("capture-lead: BREVO_API_KEY is not configured");
+    await recordEdgeSaveError("capture-lead", { category: "config", target: "brevo_api_key" });
     return json(500, { error: "Server is not configured" });
   }
 
@@ -190,6 +197,7 @@ Deno.serve(async (req) => {
     contact.listIds = [listId];
   } else if (marketingConsent) {
     console.error("capture-lead: marketingConsent=true but BREVO_LIST_ID is missing/non-numeric — contact will NOT be added to the marketing list");
+    await recordEdgeSaveError("capture-lead", { category: "config", target: "brevo_list_id" });
   }
 
   try {
@@ -206,6 +214,7 @@ Deno.serve(async (req) => {
     if (!res.ok) {
       const text = await res.text();
       console.error("capture-lead: Brevo error", res.status, text);
+      await recordEdgeSaveError("capture-lead", { category: "server", target: "brevo_list_id" });
       return json(502, { error: "Brevo rejected the request" });
     }
     // Success log so list additions are visible in the function logs. Email is
@@ -215,6 +224,7 @@ Deno.serve(async (req) => {
     return json(200, { ok: true });
   } catch (err) {
     console.error("capture-lead: network error", err);
+    await recordEdgeSaveError("capture-lead", { category: "server", target: "brevo_list_id" });
     return json(502, { error: "Could not reach Brevo" });
   }
 });

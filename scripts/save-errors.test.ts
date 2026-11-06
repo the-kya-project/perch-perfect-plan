@@ -3,6 +3,10 @@
 import assert from "node:assert/strict";
 import { classifySaveError, noteSaveError, saveErrorSignature, setSaveErrorRecorder, type SaveErrorShape } from "@/lib/saveErrors";
 import { friendlyError } from "@/lib/errorMessage";
+import { listAddFailureShape, QUIET_LIST_SKIPS } from "@/lib/brevoListFailures";
+import { addContactToList, listContactAttributes } from "@/lib/brevoContacts.server";
+import { listAddStatus } from "@/lib/serverSaveErrors.server";
+import { readFileSync } from "node:fs";
 import {
   ALERT_SENDER_NAME, alertSettings, buildDailyEmail, buildDeliveryProblemPush, buildUrgentEmail, describeGroup, groupSaveErrors, planUrgent, sampleSaveErrorGroups,
   type SaveErrorRow,
@@ -250,5 +254,106 @@ check("delivery push: the test version says TEST and that nothing is wrong", () 
   assert.match(p.title, /^TEST: /);
   assert.match(p.body, /^This is a test of the alert push; nothing is wrong\./);
 });
+
+// ---- Brevo list adds (server side): loud failures, quiet skips -------------
+
+check("list add: success and normal skips record nothing", () => {
+  assert.equal(listAddFailureShape({ ok: true, status: 201 }, "BREVO_WAITLIST_LIST_ID"), null);
+  for (const skipped of ["preview-deployment", "undeliverable-test-domain", "no-email"]) {
+    assert.equal(listAddFailureShape({ ok: false, skipped }, "BREVO_WAITLIST_LIST_ID"), null, skipped);
+  }
+  assert.equal(QUIET_LIST_SKIPS.size, 3);
+});
+check("list add: a missing list id is a config error naming the setting", () => {
+  assert.deepEqual(listAddFailureShape({ ok: false, skipped: "list-not-configured" }, "BREVO_FOUNDING_LIST_ID"),
+    { category: "config", sqlstate: null, target: "brevo_founding_list_id", operation: "brevo_list" });
+});
+check("list add: a missing API key is a config error on brevo_api_key", () => {
+  assert.deepEqual(listAddFailureShape({ ok: false, skipped: "brevo-api-key-not-configured" }, "BREVO_WAITLIST_LIST_ID"),
+    { category: "config", sqlstate: null, target: "brevo_api_key", operation: "brevo_list" });
+});
+check("list add: Brevo refusing or unreachable is a server error", () => {
+  assert.equal(listAddFailureShape({ ok: false, status: 400 }, "BREVO_WAITLIST_LIST_ID")?.category, "server");
+  assert.equal(listAddFailureShape({ ok: false, skipped: "network-error" }, "BREVO_WAITLIST_LIST_ID")?.category, "server");
+});
+check("list add: the target always fits the save_errors target rule", () => {
+  const shape = listAddFailureShape({ ok: false, status: 500 }, "BREVO_WAITLIST_LIST_ID");
+  assert.match(shape!.target!, /^[a-z_][a-z0-9_]{0,62}$/);
+});
+check("list add: status words for the waitlist_signups row", () => {
+  assert.equal(listAddStatus({ ok: true, status: 201 }), "added");
+  assert.equal(listAddStatus({ ok: false, skipped: "preview-deployment" }), "skipped:preview-deployment");
+  assert.equal(listAddStatus({ ok: false, skipped: "list-not-configured" }), "failed:list-not-configured");
+  assert.equal(listAddStatus({ ok: false, status: 400 }), "failed:brevo-400");
+});
+check("list add: contact attributes are only the ones Brevo has, and nothing empty", () => {
+  assert.deepEqual(listContactAttributes({ email: "a@b.co", firstName: "Ana", lastName: "Ruiz", source: "waitlist-app", chapterLeadInterest: 2, primaryChapter: 3 }),
+    { FIRSTNAME: "Ana", LASTNAME: "Ruiz", SOURCE: "waitlist-app", CHAPTER_LEAD_INTEREST: 2, PRIMARY_CHAPTER: 3 });
+  assert.deepEqual(listContactAttributes({ email: "a@b.co", firstName: null }), {});
+});
+check("alerts: a Brevo list failure reads as the setting, in capitals", () => {
+  assert.equal(describeGroup({ category: "config", target: "brevo_founding_list_id", operation: "brevo_list" }),
+    "The server is missing a setting it needs (adding someone to a Brevo list): BREVO_FOUNDING_LIST_ID");
+  assert.equal(describeGroup({ category: "server", target: "brevo_waitlist_list_id", operation: "brevo_list" }),
+    "The server failed while saving (adding someone to a Brevo list): BREVO_WAITLIST_LIST_ID");
+});
+check("alerts: a config failure on the server is urgent the first time", () => {
+  const now = new Date("2026-11-06T18:00:00Z");
+  const row: SaveErrorRow = { created_at: "2026-11-06T17:50:00Z", category: "config", sqlstate: null, target: "brevo_waitlist_list_id", operation: "brevo_list", route: "/waitlist", platform: "server", app_version: "1.2.0", user_hash: null };
+  const items = planUrgent([row], now, { known: new Set(), alertedToday: new Set(), spikeUsers: 3 });
+  assert.equal(items.length, 1);
+  assert.deepEqual(items[0].reasons, ["new"]);
+  assert.match(buildUrgentEmail(items).text, /BREVO_WAITLIST_LIST_ID/);
+  assert.match(buildUrgentEmail(items).text, /server/);
+});
+check("migration: save_errors takes config, server and brevo_list; both new tables are admin-read only", () => {
+  const sql = readFileSync("supabase/migrations/20261106180000_brevo_list_signups.sql", "utf8");
+  assert.match(sql, /'network', 'config'\)\)/);
+  assert.match(sql, /platform in \('web', 'ios', 'android', 'server'\)/);
+  assert.match(sql, /'server_fn', 'brevo_list'\)/);
+  for (const t of ["waitlist_signups", "site_form_holds"]) {
+    assert.match(sql, new RegExp(`alter table public\\.${t} enable row level security`));
+    assert.match(sql, new RegExp(`revoke all on table public\\.${t} from public, anon, authenticated`));
+    assert.match(sql, new RegExp(`for select to authenticated\\s+using \\(private\\.is_admin`));
+    assert.doesNotMatch(sql, new RegExp(`grant (insert|update|delete|all)[^;]*public\\.${t} to (anon|authenticated)`));
+  }
+});
+check("consent: the waitlist and founding go to their own list only, never the marketing list", () => {
+  const waitlist = readFileSync("src/lib/waitlist.functions.ts", "utf8");
+  const founding = readFileSync("src/lib/founding.functions.ts", "utf8");
+  assert.match(waitlist, /addContactToListReported\(\s*"BREVO_WAITLIST_LIST_ID"/);
+  assert.match(founding, /addContactToListReported\("BREVO_FOUNDING_LIST_ID"/);
+  for (const src of [waitlist, founding]) assert.doesNotMatch(src, /BREVO_LIST_ID"|sibforms/);
+});
+
+// addContactToList's guards, with the environment and fetch stubbed.
+async function withEnv(env: Record<string, string | undefined>, fn: () => Promise<void>) {
+  const saved = { ...process.env };
+  const savedFetch = globalThis.fetch;
+  Object.assign(process.env, env);
+  for (const [k, v] of Object.entries(env)) if (v === undefined) delete process.env[k];
+  try { await fn(); } finally { process.env = saved; globalThis.fetch = savedFetch; }
+}
+async function acheck(name: string, fn: () => Promise<void>) {
+  try { await fn(); console.log(`ok - ${name}`); } catch (e) { failed++; console.error(`not ok - ${name}\n`, e); }
+}
+await acheck("addContactToList: preview skips before anything else, quietly", () => withEnv({ VERCEL_ENV: "preview", BREVO_API_KEY: undefined }, async () => {
+  const r = await addContactToList("BREVO_WAITLIST_LIST_ID", { email: "a@b.co" });
+  assert.deepEqual(r, { ok: false, skipped: "preview-deployment" });
+  assert.equal(listAddFailureShape(r, "BREVO_WAITLIST_LIST_ID"), null);
+}));
+await acheck("addContactToList: a missing list id in production is reported", () => withEnv({ VERCEL_ENV: "production", BREVO_API_KEY: "k", BREVO_WAITLIST_LIST_ID: undefined }, async () => {
+  const r = await addContactToList("BREVO_WAITLIST_LIST_ID", { email: "a@b.co" });
+  assert.equal(listAddFailureShape(r, "BREVO_WAITLIST_LIST_ID")?.category, "config");
+}));
+await acheck("addContactToList: sends list 4 with the attributes, and a Brevo 400 is reported", () => withEnv({ VERCEL_ENV: "production", BREVO_API_KEY: "k", BREVO_WAITLIST_LIST_ID: "4" }, async () => {
+  let body: any = null;
+  globalThis.fetch = (async (_u: unknown, init?: { body?: string }) => { body = JSON.parse(init?.body ?? "{}"); return new Response("{\"code\":\"invalid_parameter\"}", { status: 400 }); }) as typeof fetch;
+  const r = await addContactToList("BREVO_WAITLIST_LIST_ID", { email: "ana@gmail.com", firstName: "Ana", source: "waitlist-app", primaryChapter: 3 });
+  assert.deepEqual(body.listIds, [4]);
+  assert.deepEqual(body.attributes, { FIRSTNAME: "Ana", SOURCE: "waitlist-app", PRIMARY_CHAPTER: 3 });
+  assert.equal(body.updateEnabled, true);
+  assert.equal(listAddFailureShape(r, "BREVO_WAITLIST_LIST_ID")?.category, "server");
+}));
 
 if (failed) process.exit(1);

@@ -4,7 +4,8 @@
 // claim_founding_spot() takes the lock, checks the deadline against the
 // database clock, refuses a second claim and anything past 50, and saves the
 // region to flock_profiles. This file only carries the calls and adds the
-// claimant to the Brevo "Founding 50" list afterwards.
+// claimant to the Brevo "Founding 50" list afterwards (BREVO_FOUNDING_LIST_ID;
+// a missing id or Brevo error raises a save-error alert).
 
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
@@ -68,14 +69,19 @@ export const claimFoundingSpot = createServerFn({ method: "POST" })
       ]);
       const email = user?.user?.email;
       if (email) {
-        const { addContactToList } = await import("./brevoContacts.server");
+        const { addContactToListReported } = await import("./serverSaveErrors.server");
         const { realFirstName } = await import("./personName");
         // Brevo's own campaigns greet with FIRSTNAME: real names only.
         const firstName = profile ? realFirstName(profile, email, profile.email) ?? null : null;
-        await addContactToList("BREVO_FOUNDING_LIST_ID", { email, firstName });
+        // List 9 only (consent: "We'll email you before the Flock opens").
+        // A missing list id or a Brevo error is recorded and alerted on.
+        await addContactToListReported("BREVO_FOUNDING_LIST_ID", { email, firstName }, { route: "/founding" });
       }
     } catch (err) {
+      // Reading the user or profile failed before the list add was tried.
       console.error("[founding] Brevo list add failed", err);
+      const { recordServerSaveError } = await import("./serverSaveErrors.server");
+      await recordServerSaveError({ category: "server", sqlstate: null, target: "brevo_founding_list_id", operation: "brevo_list" }, "/founding");
     }
 
     return { ok: true, spotNumber: row.spot_number, regionSlug: row.region_slug };
