@@ -1,5 +1,5 @@
 // Shared pieces for the free-user regression check (e2e/free-user/).
-import { expect, type BrowserContext, type Page, type Request } from "@playwright/test";
+import { devices, expect, type Browser, type BrowserContext, type BrowserContextOptions, type Page, type Request } from "@playwright/test";
 
 export const BASE_URL = (process.env.FREE_USER_BASE_URL ?? "").replace(/\/$/, "");
 export const EMAIL = process.env.FREE_USER_EMAIL ?? "";
@@ -15,14 +15,35 @@ export function requireEnv(): void {
   if (missing.length) throw new Error(`Missing env: ${missing.join(", ")}`);
 }
 
-/** Vercel previews sit behind Vercel login. Visiting once with the automation
+/** Vercel previews sit behind Vercel login. One visit with the automation
  *  bypass secret sets a cookie for the preview host only, so the secret is
  *  never sent to Supabase or anywhere else. No-op for production. */
 export async function passVercelProtection(context: BrowserContext): Promise<void> {
-  if (!BYPASS || !/\.vercel\.app$/.test(new URL(BASE_URL).hostname)) return;
+  if (!/\.vercel\.app$/.test(new URL(BASE_URL).hostname)) return;
+  if (!BYPASS) throw new Error("VERCEL_AUTOMATION_BYPASS_SECRET is not set; the preview is behind Vercel login.");
   const page = await context.newPage();
   await page.goto(`${BASE_URL}/?x-vercel-protection-bypass=${encodeURIComponent(BYPASS)}&x-vercel-set-bypass-cookie=samesitenone`);
   await page.close();
+}
+
+/** The phone the check runs as (contexts made by hand, not from the config). */
+const { defaultBrowserType: _dbt, ...iPhone13 } = devices["iPhone 13"];
+export const IPHONE: BrowserContextOptions = iPhone13;
+
+// ── The iPhone Duo (wide) layout ───────────────────────────────────────────
+// src/lib/duo.ts turns the side column on from a media query: landscape,
+// ≥848 wide, ≥500 tall, touch only. Same size as e2e/duo.screens.ts.
+export const DUO: BrowserContextOptions = {
+  viewport: { width: 951, height: 669 },
+  screen: { width: 951, height: 669 },
+  isMobile: true,
+  hasTouch: true,
+};
+
+export async function newContext(browser: Browser, opts: BrowserContextOptions = {}): Promise<BrowserContext> {
+  const context = await browser.newContext({ baseURL: BASE_URL, serviceWorkers: "block", locale: "en-US", timezoneId: "America/New_York", ...opts });
+  await passVercelProtection(context);
+  return context;
 }
 
 // ── Flock code must never load for a free account ──────────────────────────
@@ -31,14 +52,14 @@ export async function passVercelProtection(context: BrowserContext): Promise<voi
 const FLOCK_CHUNK = /\/assets\/(FlockShell|flock(\.[\w-]+)?)-[\w-]+\.js(\?|$)/;
 // Flock-only RPCs. flock_enabled is the gate itself and is allowed.
 const FLOCK_RPC = /\/rest\/v1\/rpc\/(founding_status|admin_founding_claims|is_flock_member|admin_grant_entitlement|admin_revoke_entitlement|admin_set_flock_ui)\b/;
-const FLOCK_TABLE = /\/rest\/v1\/(flock_|member_profiles|regions|entitlements|user_roles)/;
+const FLOCK_TABLE = /\/rest\/v1\/(flock_settings|member_profiles|regions|entitlements|user_roles|founding_claims)\b/;
 
 export type FlockLeak = { url: string; why: string };
 
-/** Records any Flock chunk, RPC or table request a page makes. */
-export function watchForFlock(page: Page): FlockLeak[] {
+/** Records any Flock chunk, RPC or table request the context makes. */
+export function watchForFlock(context: BrowserContext): FlockLeak[] {
   const leaks: FlockLeak[] = [];
-  page.on("request", (req: Request) => {
+  context.on("request", (req: Request) => {
     const url = req.url();
     if (FLOCK_CHUNK.test(url)) leaks.push({ url, why: "Flock code chunk downloaded" });
     else if (FLOCK_RPC.test(url)) leaks.push({ url, why: "Flock RPC called" });
@@ -47,75 +68,86 @@ export function watchForFlock(page: Page): FlockLeak[] {
   return leaks;
 }
 
-/** Reads the gate the way the app does, with the signed-in session's token. */
-export async function flockEnabledFor(page: Page): Promise<boolean | string> {
-  const res = page.waitForResponse((r) => /\/rest\/v1\/rpc\/flock_enabled\b/.test(r.url()), { timeout: 30_000 });
-  const r = await res.catch(() => null);
-  if (!r) return "no flock_enabled call seen";
-  try { return (await r.json()) === true; } catch { return `status ${r.status()}`; }
+/** Starts listening for the app's own flock_enabled() call; await the result
+ *  after the navigation that triggers it. */
+export function nextFlockGate(page: Page): Promise<unknown> {
+  return page
+    .waitForResponse((r) => /\/rest\/v1\/rpc\/flock_enabled\b/.test(r.url()) && r.request().method() === "POST", { timeout: 45_000 })
+    .then((r) => r.json());
 }
 
-// ── Sign in ────────────────────────────────────────────────────────────────
+// ── Getting around ─────────────────────────────────────────────────────────
+/** The forest "Open in the Kya & Co. app" strip on iPhone browsers: dismiss
+ *  it (never tap Open, which goes to the App Store). Session-only. */
+export async function dismissOpenInApp(page: Page): Promise<void> {
+  const notNow = page.getByRole("button", { name: "Not now", exact: true });
+  if (await notNow.isVisible().catch(() => false)) await notNow.click();
+}
+
+/** The first-run welcome layer on Home: close it if it's up. */
+export async function closeWelcome(page: Page): Promise<void> {
+  const welcome = page.getByRole("button", { name: "Skip and add my bird" });
+  if (await welcome.isVisible({ timeout: 4_000 }).catch(() => false)) {
+    await page.getByRole("button", { name: "Close", exact: true }).first().click();
+    await expect(welcome).toBeHidden();
+  }
+}
+
 export async function signIn(page: Page): Promise<void> {
   await page.goto("/auth?mode=signin");
-  // Some builds open on sign-up; switch if the sign-in form isn't showing.
-  const password = page.locator('input[type="password"]').first();
-  const email = page.locator('input[type="email"]').first();
-  await expect(email).toBeVisible();
-  const signInTab = page.getByRole("button", { name: /^(log in|sign in)$/i }).or(page.getByRole("tab", { name: /^(log in|sign in)$/i }));
-  if (await page.getByLabel(/first name/i).isVisible().catch(() => false)) {
-    await page.getByRole("button", { name: /already have an account|^log in$|^sign in$/i }).first().click();
-  }
-  await email.fill(EMAIL);
-  await password.fill(PASSWORD);
-  await page.locator('form button[type="submit"]').first().click();
-  await page.waitForURL((u) => !u.pathname.startsWith("/auth"), { timeout: 45_000 });
-  void signInTab;
+  await expect(page.getByRole("heading", { name: "Welcome back" })).toBeVisible();
+  await page.locator("#auth-email").fill(EMAIL);
+  await page.locator("#auth-password").fill(PASSWORD);
+  await page.getByRole("button", { name: "Sign in", exact: true }).click();
+  await page.waitForURL(/\/dashboard(\?|$)/, { timeout: 60_000 });
+}
+
+/** The care tabs, and nothing else, in a nav. */
+export async function expectOnlyCareTabs(nav: ReturnType<Page["locator"]>): Promise<void> {
+  await expect(nav).toBeVisible();
+  const links = nav.getByRole("link");
+  await expect(links.filter({ hasText: /^Home$/ })).toHaveCount(1);
+  await expect(links.filter({ hasText: /^Sits$/ })).toHaveCount(1);
+  await expect(links.filter({ hasText: /^Health$/ })).toHaveCount(1);
+  await expect(links.filter({ hasText: /^Explore$/ })).toHaveCount(1);
+  await expect(links).toHaveCount(4);
+  await expect(nav.locator('[data-coach="owner-tab-flock"]')).toHaveCount(0);
+  await expect(nav.getByText("Community", { exact: true })).toHaveCount(0);
+  await expect(nav.locator('a[href^="/flock"]')).toHaveCount(0);
 }
 
 // ── Production: block every write ──────────────────────────────────────────
-// Read-only RPCs the app calls while just looking around. Anything else is a
-// write until proven otherwise.
-const READ_ONLY_RPCS = new Set([
-  "flock_enabled", "is_admin", "has_app_premium", "my_birds", "get_my_profile",
-]);
-
 export type Blocked = { method: string; url: string };
 
-/** Aborts every request that could change something: any non-GET/HEAD to
- *  Supabase except password sign-in and token refresh, and read-only RPCs on
- *  the allowlist; every non-GET to the app itself (server functions, API
- *  hooks); and analytics. Returns the list of what was blocked. */
+/** Lets only reads through. Allowed: GET/HEAD/OPTIONS anywhere except
+ *  analytics; password sign-in and session refresh (/auth/v1/token); and the
+ *  flock_enabled() RPC (stable, read-only). Everything else that could change
+ *  something is aborted before it leaves the browser: REST inserts, updates
+ *  and deletes, every other RPC, Edge Functions, the app's POST server
+ *  functions and hooks, sign-out, and analytics (PostHog via /ingest). */
 export async function blockAllWrites(context: BrowserContext): Promise<Blocked[]> {
   const blocked: Blocked[] = [];
   await context.route("**/*", async (route) => {
     const req = route.request();
     const method = req.method();
     const url = new URL(req.url());
-    const host = url.hostname;
-    const readMethod = method === "GET" || method === "HEAD" || method === "OPTIONS";
+    const read = method === "GET" || method === "HEAD" || method === "OPTIONS";
+    const note = () => blocked.push({ method, url: `${url.origin}${url.pathname}` });
 
-    if (/posthog|i\.posthog\.com|sentry/.test(host)) {
-      blocked.push({ method, url: `${url.origin}${url.pathname}` });
-      return route.abort();
+    if (url.pathname.startsWith("/ingest") || /posthog/.test(url.hostname)) { note(); return route.abort(); }
+    if (read) return route.continue();
+    if (url.hostname.endsWith(".supabase.co")) {
+      if (url.pathname === "/auth/v1/token") return route.continue();
+      if (url.pathname === "/rest/v1/rpc/flock_enabled") return route.continue();
     }
-    if (host.endsWith(".supabase.co")) {
-      if (readMethod) return route.continue();
-      if (url.pathname === "/auth/v1/token") return route.continue(); // sign in / refresh
-      const rpc = url.pathname.match(/^\/rest\/v1\/rpc\/([\w]+)$/)?.[1];
-      if (rpc && READ_ONLY_RPCS.has(rpc)) return route.continue();
-      blocked.push({ method, url: `${url.origin}${url.pathname}` });
-      return route.abort();
-    }
-    if (`${url.protocol}//${url.host}` === BASE_URL) {
-      if (readMethod) return route.continue();
-      blocked.push({ method, url: `${url.origin}${url.pathname}` });
-      return route.abort();
-    }
-    // Any other host (fonts, images, CDNs): reads only.
-    if (readMethod) return route.continue();
-    blocked.push({ method, url: `${url.origin}${url.pathname}` });
+    note();
     return route.abort();
   });
   return blocked;
+}
+
+/** "YYYY-MM-DD", n days from today in New York (the browser's time zone). */
+export function dayFromToday(n: number): string {
+  const d = new Date(Date.now() + n * 86_400_000);
+  return new Intl.DateTimeFormat("en-CA", { timeZone: "America/New_York", year: "numeric", month: "2-digit", day: "2-digit" }).format(d);
 }
