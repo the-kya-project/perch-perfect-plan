@@ -33,6 +33,9 @@ on conflict (id) do nothing;
 -- changed through admin_set_flock_ui().
 alter table public.flock_settings enable row level security;
 revoke all on public.flock_settings from anon, authenticated;
+-- The server runs as service_role (bypasses RLS, not privileges); a database
+-- built from migrations gives it nothing by default (service_role_grants_checks).
+grant select, insert, update, delete on public.flock_settings to service_role;
 
 create or replace function private.flock_ui_on()
 returns boolean

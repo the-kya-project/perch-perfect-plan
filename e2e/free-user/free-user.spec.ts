@@ -37,6 +37,8 @@ test("1. sign in; Home loads; no Community button; the gate says no", async () =
   expect(await gate, "flock_enabled() for the free account").toBe(false);
   await closeWelcome(page);
   await dismissOpenInApp(page);
+  await expect(page).toHaveTitle(/Home — Kya & Co\./);
+  // The account is rebuilt before every run, so Home is its empty state.
   await expect(page.getByRole("heading", { name: "Welcome to your flock" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Add your first bird" })).toBeVisible();
   await expectOnlyCareTabs(page.locator('nav[aria-label="Primary"]'));
@@ -95,12 +97,12 @@ test("7. emergency contacts, then a pet sit", async () => {
   await page.goto("/account/emergency");
   await expect(page.getByRole("heading", { name: "Emergency info", level: 1 })).toBeVisible();
 
-  await page.locator("[role=button]").filter({ hasText: /^You/ }).first().click();
+  await page.locator("[role=button]").filter({ has: page.getByText(/^You(\s|$)/) }).first().click();
   await page.locator("#em-owner_phone").fill("5555551234");
   await page.getByRole("dialog").getByRole("button", { name: "Save", exact: true }).click();
   await expect(page.getByText("Saved for all your birds.").first()).toBeVisible();
 
-  await page.locator("[role=button]").filter({ hasText: /^Avian vet/ }).first().click();
+  await page.locator("[role=button]").filter({ has: page.getByText(/^Avian vet(\s|$)/) }).first().click();
   await page.locator("#em-avian_vet_name").fill("Regression Bird Clinic");
   await page.locator("#em-avian_vet_phone").fill("5555559876");
   await page.getByRole("dialog").getByRole("button", { name: "Save", exact: true }).click();

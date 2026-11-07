@@ -15,8 +15,9 @@ export default defineConfig({
   fullyParallel: false,
   workers: 1,
   forbidOnly: !!process.env.CI,
-  // Real network, real backend: one retry for a transient blip, never more.
-  retries: process.env.CI ? 1 : 0,
+  // No retries: the steps build on each other (one account, one bird, one
+  // sit), so a retry would start over on an account that already has them.
+  retries: 0,
   timeout: 180_000,
   expect: { timeout: 20_000 },
   reporter: process.env.CI
