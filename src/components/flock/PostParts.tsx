@@ -10,7 +10,7 @@ import { spaceLabel } from "@/components/flock/SpacesSheet";
 import type { FlockPhotoSrc } from "@/lib/flockData";
 import { react, useInvalidatePosts, type Counts, type FlockPost, type ReactSubject } from "@/lib/flockPostData";
 import type { PostPhoto } from "@/lib/flockPostMedia.functions";
-import { AAV_FIND_A_VET_URL, type PostSpace } from "@/lib/flockPosts";
+import { AAV_FIND_A_VET_URL, type PostSpace, type VetTier } from "@/lib/flockPosts";
 import { REACTIONS, type ReactionKind } from "@/lib/journeyData";
 
 /** "5m", "2h", or "Nov 3". */
@@ -227,26 +227,48 @@ export function PhotoGrid({ photos, count, alt }: { photos: PostPhoto[] | undefi
 
 // ---- The vet nudge -------------------------------------------------------------------------
 
-/** The red card (Batch 3, screen 6). Never diagnoses and never blocks: the
- *  member can always post anyway. */
-export function VetNudgeCard({ onPostAnyway, busy }: { onPostAnyway: () => void; busy?: boolean }) {
+/** The red card (Batch 3, screen 6), in two tiers: "today" (call your avian
+ *  vet today) and "urgent" (this could be an emergency; urgent wins when both
+ *  match). Never diagnoses and never blocks: the member can always post anyway.
+ *  Both cards and their phrase lists are drafts until an avian vet reviews them. */
+export function VetNudgeCard({ onPostAnyway, busy, tier = "today" }: { onPostAnyway: () => void; busy?: boolean; tier?: VetTier }) {
   const { t } = useTranslation();
   const ref = useRef<HTMLElement>(null);
   useEffect(() => { ref.current?.scrollIntoView?.({ block: "nearest", behavior: "smooth" }); }, []);
   return (
-    <section ref={ref} role="alert" className="flex flex-col gap-3 rounded-[18px] p-4" style={{ background: "#fbe9e7", border: `2px solid ${K.red}`, color: K.forest }} data-testid="vet-nudge">
-      <KyaHeading size={20} as="h2" className="!text-[#7a1f1f]">{t("flock.posts.vet.title", "This sounds like something for your avian vet")}</KyaHeading>
-      <p className="m-0 text-[15px] leading-[1.5]" style={{ color: K.ink }}>
-        {t("flock.posts.vet.body", "Changes like these can be early signs a bird is unwell. Birds hide illness, so it's worth calling today rather than waiting on replies.")}
-      </p>
-      <a href={AAV_FIND_A_VET_URL} target="_blank" rel="noopener noreferrer" data-testid="find-vet"
-        className="inline-flex min-h-[50px] items-center justify-center rounded-full px-5 text-[16px] font-[700] text-white" style={{ background: K.red }}>
-        {t("flock.posts.vet.find", "Find an avian vet near me")}
-      </a>
-      <button type="button" onClick={onPostAnyway} disabled={busy} data-testid="post-anyway"
-        className="min-h-[48px] rounded-full border-2 px-5 text-[15px] font-[700] disabled:opacity-60" style={{ borderColor: K.red, color: "#7a1f1f", background: "#fff" }}>
-        {t("flock.posts.vet.anyway", "Post anyway, after I've called")}
-      </button>
+    <section ref={ref} role="alert" className="flex flex-col gap-3 rounded-[18px] p-4" style={{ background: "#fbe9e7", border: `2px solid ${K.red}`, color: K.forest }}
+      data-testid="vet-nudge" data-tier={tier}>
+      {tier === "urgent" ? (
+        <>
+          <KyaHeading size={20} as="h2" className="!text-[#7a1f1f]">{t("flock.posts.vet.urgentTitle", "This could be an emergency")}</KyaHeading>
+          <p className="m-0 text-[15px] leading-[1.5]" style={{ color: K.ink }}>
+            {t("flock.posts.vet.urgentBody", "Call your avian vet or an emergency vet now. Please don't wait for replies here.")}
+          </p>
+          <a href={AAV_FIND_A_VET_URL} target="_blank" rel="noopener noreferrer" data-testid="find-vet"
+            className="inline-flex min-h-[50px] items-center justify-center rounded-full px-5 text-[16px] font-[700] text-white" style={{ background: K.red }}>
+            {t("flock.posts.vet.urgentFind", "Find an emergency vet")}
+          </a>
+          <button type="button" onClick={onPostAnyway} disabled={busy} data-testid="post-anyway"
+            className="min-h-[44px] self-center text-[15px] font-[700] underline underline-offset-2 disabled:opacity-60" style={{ color: "#7a1f1f" }}>
+            {t("flock.posts.vet.anyway", "Post anyway, after I've called")}
+          </button>
+        </>
+      ) : (
+        <>
+          <KyaHeading size={20} as="h2" className="!text-[#7a1f1f]">{t("flock.posts.vet.title", "This sounds like something for your avian vet")}</KyaHeading>
+          <p className="m-0 text-[15px] leading-[1.5]" style={{ color: K.ink }}>
+            {t("flock.posts.vet.body", "Changes like these can be early signs a bird is unwell. Birds hide illness, so it's worth calling today rather than waiting on replies.")}
+          </p>
+          <a href={AAV_FIND_A_VET_URL} target="_blank" rel="noopener noreferrer" data-testid="find-vet"
+            className="inline-flex min-h-[50px] items-center justify-center rounded-full px-5 text-[16px] font-[700] text-white" style={{ background: K.red }}>
+            {t("flock.posts.vet.find", "Find an avian vet near me")}
+          </a>
+          <button type="button" onClick={onPostAnyway} disabled={busy} data-testid="post-anyway"
+            className="min-h-[48px] rounded-full border-2 px-5 text-[15px] font-[700] disabled:opacity-60" style={{ borderColor: K.red, color: "#7a1f1f", background: "#fff" }}>
+            {t("flock.posts.vet.anyway", "Post anyway, after I've called")}
+          </button>
+        </>
+      )}
     </section>
   );
 }

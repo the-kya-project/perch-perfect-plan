@@ -10,7 +10,7 @@ import { getLocalUser } from "@/integrations/supabase/currentUser";
 import { AvatarError, reencodeJpeg } from "@/lib/flockAvatar";
 import { deleteFlockComment, deleteFlockPost, getFlockPostPhotos, type PostPhotoMap } from "@/lib/flockPostMedia.functions";
 import type { ReactionKind } from "@/lib/journeyData";
-import type { FeedSpace, PostSpace, PostStatus } from "@/lib/flockPosts";
+import type { FeedSpace, PostSpace, PostStatus, VetSign } from "@/lib/flockPosts";
 
 const sb = supabase as any;
 const STALE = 30_000;
@@ -110,11 +110,12 @@ export function useReactors(type: ReactSubject, id: string) {
   });
 }
 
+/** The vet nudge's phrases, each with its tier (today or urgent). */
 export function useVetSigns() {
   return useQuery({
     queryKey: postKeys.vetSigns,
     staleTime: 30 * 60_000,
-    queryFn: async (): Promise<string[]> => asArray<string>(must(await sb.rpc("flock_vet_signs"))),
+    queryFn: async (): Promise<VetSign[]> => asArray<VetSign>(must(await sb.rpc("flock_vet_sign_tiers"))),
   });
 }
 

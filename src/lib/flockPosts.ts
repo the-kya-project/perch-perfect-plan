@@ -47,6 +47,18 @@ export function findVetSigns(text: string, phrases: readonly string[]): string[]
   return found;
 }
 
+export type VetTier = "today" | "urgent";
+export type VetSign = { phrase: string; tier: VetTier };
+
+/** Which vet card a post or comment brings up: "urgent" ("This could be an
+ *  emergency") when any urgent phrase matches, even alongside today ones;
+ *  "today" (the red card) for today phrases only; null for none. */
+export function vetNudgeTier(text: string, signs: readonly VetSign[]): VetTier | null {
+  if (findVetSigns(text, signs.filter((s) => s.tier === "urgent").map((s) => s.phrase)).length > 0) return "urgent";
+  if (findVetSigns(text, signs.filter((s) => s.tier !== "urgent").map((s) => s.phrase)).length > 0) return "today";
+  return null;
+}
+
 /** Which hourly limit a save ran into, from the database's 'rate_limited'
  *  error (DETAIL names the kind); null for any other error. */
 export type RateKind = "posts" | "comments" | "photos";
