@@ -156,8 +156,8 @@ async function mockFlock(context: BrowserContext, userId: string, opts: { setupD
     if (fn === "flock_post") { const p = state.posts.find((x) => x.post_id === args.p_post_id); return json(route, p ? [postRow(p)] : []); }
     if (fn === "flock_vet_signs") return json(route, ["fluffed up", "sleeping a lot", "isn't eating", "tail bobbing", "bleeding"]);
     if (fn === "flock_vet_sign_tiers") return json(route, [
-      ...["fluffed up", "sleeping a lot", "isn't eating", "tail bobbing", "bleeding"].map((phrase) => ({ phrase, tier: "today" })),
-      ...["won't stop bleeding", "teflon", "chocolate", "keeps vomiting"].map((phrase) => ({ phrase, tier: "urgent" })),
+      ...["fluffed up all day", "sleeping a lot", "isn't eating", "tail bobbing", "bleeding"].map((phrase) => ({ phrase, tier: "today" })),
+      ...["won't stop bleeding", "teflon fumes", "pan fumes", "ate chocolate", "keeps vomiting"].map((phrase) => ({ phrase, tier: "urgent" })),
     ]);
     if (fn === "flock_post_create") {
       if (state.rateLimit === "posts") return json(route, { code: "P0001", message: "rate_limited", details: "posts", hint: null }, 400);
@@ -1298,7 +1298,7 @@ test.describe("posts, comments and reactions (admin, phone)", () => {
   test("the vet nudge: warning signs bring up the red card, and posting is never blocked", async ({ browser, baseURL }) => {
     const { context, page, state } = await open(browser, baseURL!, { admin: true });
     await page.goto("/flock/post/new");
-    await page.getByTestId("post-body-input").fill("Echo has been fluffed up and sleeping a lot since yesterday and isn\u2019t eating much. Should I worry?");
+    await page.getByTestId("post-body-input").fill("Echo has been fluffed up all day, sleeping a lot since yesterday and isn\u2019t eating much. Should I worry?");
     await page.getByTestId("composer-post").click();
     const card = page.getByTestId("vet-nudge");
     await expect(card.getByRole("heading")).toHaveText("This sounds like something for your avian vet");
@@ -1312,11 +1312,21 @@ test.describe("posts, comments and reactions (admin, phone)", () => {
     await context.close();
   });
 
+  test("an everyday post brings up no vet card", async ({ browser, baseURL }) => {
+    const { context, page, state } = await open(browser, baseURL!, { admin: true });
+    await page.goto("/flock/post/new");
+    await page.getByTestId("post-body-input").fill("Is avocado safe for parrots? Smoky loves his bath, all fluffed up. That's a burning question.");
+    await page.getByTestId("composer-post").click();
+    await expect(page).toHaveURL(/\/flock\?space=learn$/);
+    expect(created(state, "flock_post_create")[0].args).toMatchObject({ p_vet_nudged: false });
+    await context.close();
+  });
+
   test("the urgent vet card: an emergency phrase wins over a today one, and posting is still never blocked", async ({ browser, baseURL }) => {
     const { context, page, state } = await open(browser, baseURL!, { admin: true });
     await page.goto("/flock/post/new");
     // Today and urgent both match: urgent wins.
-    await page.getByTestId("post-body-input").fill("Echo is fluffed up and I think he got into the Teflon pan fumes.");
+    await page.getByTestId("post-body-input").fill("Echo has been fluffed up all day and I think he breathed the Teflon fumes.");
     await page.getByTestId("composer-post").click();
     const card = page.getByTestId("vet-nudge");
     await expect(card).toHaveAttribute("data-tier", "urgent");
@@ -1326,7 +1336,7 @@ test.describe("posts, comments and reactions (admin, phone)", () => {
     await expect(card.getByTestId("find-vet")).toHaveAttribute("href", "https://www.aav.org/page/FindAVet2");
     expect(created(state, "flock_post_create")).toHaveLength(0);
     // Editing the text puts the card away; a today phrase alone brings back the today card.
-    await page.getByTestId("post-body-input").fill("Echo is fluffed up today.");
+    await page.getByTestId("post-body-input").fill("Echo has been fluffed up all day.");
     await expect(card).toHaveCount(0);
     await page.getByTestId("composer-post").click();
     await expect(page.getByTestId("vet-nudge")).toHaveAttribute("data-tier", "today");
