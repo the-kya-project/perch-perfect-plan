@@ -52,11 +52,13 @@ import { Route as AuthenticatedAccountEmergencyRouteImport } from './routes/_aut
 import { Route as AuthenticatedAccountSecurityRouteImport } from './routes/_authenticated/account.security'
 import { Route as AuthenticatedAdminFoundingRouteImport } from './routes/_authenticated/admin.founding'
 import { Route as AuthenticatedAdminGiftsRouteImport } from './routes/_authenticated/admin.gifts'
+import { Route as AuthenticatedAdminIdeasRouteImport } from './routes/_authenticated/admin.ideas'
 import { Route as AuthenticatedAdminReviewRouteImport } from './routes/_authenticated/admin.review'
 import { Route as AuthenticatedBirdsBirdIdRouteImport } from './routes/_authenticated/birds/$birdId'
 import { Route as AuthenticatedBirdsNewRouteImport } from './routes/_authenticated/birds/new'
 import { Route as AuthenticatedFlockIndexRouteImport } from './routes/_authenticated/flock.index'
 import { Route as AuthenticatedFlockChapterRouteImport } from './routes/_authenticated/flock.chapter'
+import { Route as AuthenticatedFlockIdeaRouteImport } from './routes/_authenticated/flock.idea'
 import { Route as AuthenticatedFlockLearnRouteImport } from './routes/_authenticated/flock.learn'
 import { Route as AuthenticatedFlockLibraryRouteImport } from './routes/_authenticated/flock.library'
 import { Route as AuthenticatedFlockSetupRouteImport } from './routes/_authenticated/flock.setup'
@@ -362,6 +364,11 @@ const AuthenticatedAdminGiftsRoute = AuthenticatedAdminGiftsRouteImport.update({
   path: '/admin/gifts',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedAdminIdeasRoute = AuthenticatedAdminIdeasRouteImport.update({
+  id: '/admin/ideas',
+  path: '/admin/ideas',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedAdminReviewRoute =
   AuthenticatedAdminReviewRouteImport.update({
     id: '/admin/review',
@@ -390,6 +397,11 @@ const AuthenticatedFlockChapterRoute =
     path: '/chapter',
     getParentRoute: () => AuthenticatedFlockRoute,
   } as any)
+const AuthenticatedFlockIdeaRoute = AuthenticatedFlockIdeaRouteImport.update({
+  id: '/idea',
+  path: '/idea',
+  getParentRoute: () => AuthenticatedFlockRoute,
+} as any)
 const AuthenticatedFlockLearnRoute = AuthenticatedFlockLearnRouteImport.update({
   id: '/learn',
   path: '/learn',
@@ -902,10 +914,12 @@ export interface FileRoutesByFullPath {
   '/account/security': typeof AuthenticatedAccountSecurityRoute
   '/admin/founding': typeof AuthenticatedAdminFoundingRoute
   '/admin/gifts': typeof AuthenticatedAdminGiftsRoute
+  '/admin/ideas': typeof AuthenticatedAdminIdeasRoute
   '/admin/review': typeof AuthenticatedAdminReviewRoute
   '/birds/$birdId': typeof AuthenticatedBirdsBirdIdRouteWithChildren
   '/birds/new': typeof AuthenticatedBirdsNewRoute
   '/flock/chapter': typeof AuthenticatedFlockChapterRoute
+  '/flock/idea': typeof AuthenticatedFlockIdeaRoute
   '/flock/learn': typeof AuthenticatedFlockLearnRoute
   '/flock/library': typeof AuthenticatedFlockLibraryRoute
   '/flock/setup': typeof AuthenticatedFlockSetupRoute
@@ -1027,9 +1041,11 @@ export interface FileRoutesByTo {
   '/account/security': typeof AuthenticatedAccountSecurityRoute
   '/admin/founding': typeof AuthenticatedAdminFoundingRoute
   '/admin/gifts': typeof AuthenticatedAdminGiftsRoute
+  '/admin/ideas': typeof AuthenticatedAdminIdeasRoute
   '/admin/review': typeof AuthenticatedAdminReviewRoute
   '/birds/new': typeof AuthenticatedBirdsNewRoute
   '/flock/chapter': typeof AuthenticatedFlockChapterRoute
+  '/flock/idea': typeof AuthenticatedFlockIdeaRoute
   '/flock/learn': typeof AuthenticatedFlockLearnRoute
   '/flock/library': typeof AuthenticatedFlockLibraryRoute
   '/flock/setup': typeof AuthenticatedFlockSetupRoute
@@ -1157,10 +1173,12 @@ export interface FileRoutesById {
   '/_authenticated/account/security': typeof AuthenticatedAccountSecurityRoute
   '/_authenticated/admin/founding': typeof AuthenticatedAdminFoundingRoute
   '/_authenticated/admin/gifts': typeof AuthenticatedAdminGiftsRoute
+  '/_authenticated/admin/ideas': typeof AuthenticatedAdminIdeasRoute
   '/_authenticated/admin/review': typeof AuthenticatedAdminReviewRoute
   '/_authenticated/birds/$birdId': typeof AuthenticatedBirdsBirdIdRouteWithChildren
   '/_authenticated/birds/new': typeof AuthenticatedBirdsNewRoute
   '/_authenticated/flock/chapter': typeof AuthenticatedFlockChapterRoute
+  '/_authenticated/flock/idea': typeof AuthenticatedFlockIdeaRoute
   '/_authenticated/flock/learn': typeof AuthenticatedFlockLearnRoute
   '/_authenticated/flock/library': typeof AuthenticatedFlockLibraryRoute
   '/_authenticated/flock/setup': typeof AuthenticatedFlockSetupRoute
@@ -1289,10 +1307,12 @@ export interface FileRouteTypes {
     | '/account/security'
     | '/admin/founding'
     | '/admin/gifts'
+    | '/admin/ideas'
     | '/admin/review'
     | '/birds/$birdId'
     | '/birds/new'
     | '/flock/chapter'
+    | '/flock/idea'
     | '/flock/learn'
     | '/flock/library'
     | '/flock/setup'
@@ -1414,9 +1434,11 @@ export interface FileRouteTypes {
     | '/account/security'
     | '/admin/founding'
     | '/admin/gifts'
+    | '/admin/ideas'
     | '/admin/review'
     | '/birds/new'
     | '/flock/chapter'
+    | '/flock/idea'
     | '/flock/learn'
     | '/flock/library'
     | '/flock/setup'
@@ -1543,10 +1565,12 @@ export interface FileRouteTypes {
     | '/_authenticated/account/security'
     | '/_authenticated/admin/founding'
     | '/_authenticated/admin/gifts'
+    | '/_authenticated/admin/ideas'
     | '/_authenticated/admin/review'
     | '/_authenticated/birds/$birdId'
     | '/_authenticated/birds/new'
     | '/_authenticated/flock/chapter'
+    | '/_authenticated/flock/idea'
     | '/_authenticated/flock/learn'
     | '/_authenticated/flock/library'
     | '/_authenticated/flock/setup'
@@ -1976,6 +2000,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminGiftsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/admin/ideas': {
+      id: '/_authenticated/admin/ideas'
+      path: '/admin/ideas'
+      fullPath: '/admin/ideas'
+      preLoaderRoute: typeof AuthenticatedAdminIdeasRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/admin/review': {
       id: '/_authenticated/admin/review'
       path: '/admin/review'
@@ -2009,6 +2040,13 @@ declare module '@tanstack/react-router' {
       path: '/chapter'
       fullPath: '/flock/chapter'
       preLoaderRoute: typeof AuthenticatedFlockChapterRouteImport
+      parentRoute: typeof AuthenticatedFlockRoute
+    }
+    '/_authenticated/flock/idea': {
+      id: '/_authenticated/flock/idea'
+      path: '/idea'
+      fullPath: '/flock/idea'
+      preLoaderRoute: typeof AuthenticatedFlockIdeaRouteImport
       parentRoute: typeof AuthenticatedFlockRoute
     }
     '/_authenticated/flock/learn': {
@@ -2598,6 +2636,7 @@ const AuthenticatedAccountRouteWithChildren =
 
 interface AuthenticatedFlockRouteChildren {
   AuthenticatedFlockChapterRoute: typeof AuthenticatedFlockChapterRoute
+  AuthenticatedFlockIdeaRoute: typeof AuthenticatedFlockIdeaRoute
   AuthenticatedFlockLearnRoute: typeof AuthenticatedFlockLearnRoute
   AuthenticatedFlockLibraryRoute: typeof AuthenticatedFlockLibraryRoute
   AuthenticatedFlockSetupRoute: typeof AuthenticatedFlockSetupRoute
@@ -2631,6 +2670,7 @@ interface AuthenticatedFlockRouteChildren {
 
 const AuthenticatedFlockRouteChildren: AuthenticatedFlockRouteChildren = {
   AuthenticatedFlockChapterRoute: AuthenticatedFlockChapterRoute,
+  AuthenticatedFlockIdeaRoute: AuthenticatedFlockIdeaRoute,
   AuthenticatedFlockLearnRoute: AuthenticatedFlockLearnRoute,
   AuthenticatedFlockLibraryRoute: AuthenticatedFlockLibraryRoute,
   AuthenticatedFlockSetupRoute: AuthenticatedFlockSetupRoute,
@@ -2798,6 +2838,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedWelcomeRoute: typeof AuthenticatedWelcomeRoute
   AuthenticatedAdminFoundingRoute: typeof AuthenticatedAdminFoundingRoute
   AuthenticatedAdminGiftsRoute: typeof AuthenticatedAdminGiftsRoute
+  AuthenticatedAdminIdeasRoute: typeof AuthenticatedAdminIdeasRoute
   AuthenticatedAdminReviewRoute: typeof AuthenticatedAdminReviewRoute
   AuthenticatedBirdsBirdIdRoute: typeof AuthenticatedBirdsBirdIdRouteWithChildren
   AuthenticatedBirdsNewRoute: typeof AuthenticatedBirdsNewRoute
@@ -2827,6 +2868,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedWelcomeRoute: AuthenticatedWelcomeRoute,
   AuthenticatedAdminFoundingRoute: AuthenticatedAdminFoundingRoute,
   AuthenticatedAdminGiftsRoute: AuthenticatedAdminGiftsRoute,
+  AuthenticatedAdminIdeasRoute: AuthenticatedAdminIdeasRoute,
   AuthenticatedAdminReviewRoute: AuthenticatedAdminReviewRoute,
   AuthenticatedBirdsBirdIdRoute: AuthenticatedBirdsBirdIdRouteWithChildren,
   AuthenticatedBirdsNewRoute: AuthenticatedBirdsNewRoute,

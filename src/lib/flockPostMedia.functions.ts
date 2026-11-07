@@ -81,3 +81,31 @@ export const deleteFlockComment = createServerFn({ method: "POST" })
     await removePaths(((rows ?? []) as { path: string }[]).map((r) => r.path), "deleteFlockComment");
     return { deleted: true };
   });
+
+/** Today's idea's photo and everyone's "We tried it" photos, for members, only
+ *  for today's idea (flock_idea_media_refs checks), signed for one hour. */
+export type IdeaPhoto = PostPhoto & { kind: "idea" | "try"; id: string; bird_name: string | null; outcome: string | null };
+export const getFlockIdeaPhotos = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { ideaId: string; width?: number }) =>
+    z.object({ ideaId: z.string().uuid(), width: z.number().int().min(64).max(1600).optional() }).parse(d))
+  .handler(async ({ data, context }): Promise<IdeaPhoto[]> => {
+    const { data: refs, error } = await (context.supabase as any).rpc("flock_idea_media_refs", { p_idea_id: data.ideaId });
+    if (error) throw new Error("Couldn't load these photos.");
+    const rows = ((refs ?? []) as { kind: "idea" | "try"; ref_id: string; path: string; bird_name: string | null; outcome: string | null }[])
+      .filter((r) => PATH.test(r.path));
+    if (rows.length === 0) return [];
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const bucket = (supabaseAdmin as any).storage.from("flock-posts");
+    const out = await Promise.all(rows.map(async (r): Promise<IdeaPhoto | null> => {
+      const { data: full } = await bucket.createSignedUrl(r.path, 3600);
+      if (!full?.signedUrl) return null;
+      let url = full.signedUrl as string;
+      if (data.width) {
+        const { data: sized } = await bucket.createSignedUrl(r.path, 3600, { transform: { width: data.width, quality: 75 } });
+        if (sized?.signedUrl) url = sized.signedUrl;
+      }
+      return { url, original: full.signedUrl, kind: r.kind, id: r.ref_id, bird_name: r.bird_name, outcome: r.outcome };
+    }));
+    return out.filter((x): x is IdeaPhoto => !!x);
+  });

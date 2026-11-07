@@ -3,6 +3,8 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { JourneyMilestoneCard } from "@/components/flock/JourneyToday";
 import { ComposePrompt, LoadMore, PostMenus, usePostMedia } from "@/components/flock/PostFeed";
 import { PostCard } from "@/components/flock/PostParts";
+import { TodaysIdeaCard } from "@/components/flock/IdeaParts";
+import { useIdeaPhotos, useTodaysIdea } from "@/lib/flockIdeas";
 import { useCommentCounts, useFlockFeed, type FlockPost } from "@/lib/flockPostData";
 import { feedSpaceFor, mergeFeed } from "@/lib/flockPosts";
 import { FollowRings, useCardBirdPhotos } from "@/components/flock/JourneyBrowse";
@@ -60,6 +62,8 @@ function FlockToday() {
   const posts = (feed.data?.pages ?? []).flat();
   const media = usePostMedia(posts);
   const [menuFor, setMenuFor] = useState<FlockPost | null>(null);
+  const { data: idea } = useTodaysIdea();
+  const { data: ideaPhotos } = useIdeaPhotos(idea?.idea_id, !!idea?.has_photo);
   // Followed journeys and their milestones belong to Everything.
   const showJourneys = filter === "everything";
   const items = mergeFeed(posts, showJourneys ? cards ?? [] : [], !!feed.hasNextPage);
@@ -75,6 +79,7 @@ function FlockToday() {
           value={filter}
           onChange={(v) => void navigate({ search: { space: !v || v === "everything" ? undefined : v }, replace: true })}
         />
+        {idea && <TodaysIdeaCard idea={idea} photo={ideaPhotos?.find((p) => p.kind === "idea")?.url ?? null} />}
         <ComposePrompt space={space} />
         {showJourneys && following && following.length > 0 && (
           <FollowRings cards={following} photos={photos}
