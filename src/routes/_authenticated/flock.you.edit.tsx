@@ -32,7 +32,7 @@ function FlockEditProfile() {
   const { data: regions } = useRegions();
   const { data: birds } = useOwnBirds();
   const { data: choices } = useShownChoices();
-  const { data: birdPhotos } = useOwnBirdPhotoUrls(birds);
+  const { data: birdPhotos } = useOwnBirdPhotoUrls(birds, 120);
   const { data: avatarUrls } = useAvatarUrls([me?.photo_path]);
 
   const [name, setName] = useState("");

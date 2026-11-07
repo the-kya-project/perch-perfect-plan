@@ -1,25 +1,48 @@
-import type { ReactNode } from "react";
-import { Bird, Check, Star } from "lucide-react";
+import { useState, type ReactNode } from "react";
+import { Check, Star } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { K, KyaHeading, KyaSheet } from "@/components/kya";
-import type { OwnBird, Region } from "@/lib/flockData";
+import type { FlockPhotoSrc, OwnBird, Region } from "@/lib/flockData";
 import { chapterLine } from "@/lib/flockNav";
 
-/** A member's photo, or their initial on forest. */
-export function FlockAvatar({ name, url, size = 44, ring }: { name: string; url?: string | null; size?: number; ring?: string }) {
+/** A round photo over the person's or bird's initial on forest. The initial
+ *  shows until the photo has loaded, and stays if the photo can't load (after
+ *  trying the original), so a slow or failed photo never leaves an empty gap. */
+function RoundPhoto({ name, photo, size, ring, testId }: { name: string; photo: FlockPhotoSrc; size: number; ring?: string; testId?: string }) {
   const initial = (name.trim()[0] ?? "").toUpperCase();
-  const style = { width: size, height: size, boxShadow: ring ? `0 0 0 2px ${ring}` : undefined };
-  return url ? (
-    <img src={url} alt="" className="shrink-0 rounded-full object-cover" style={style} />
-  ) : (
+  const src = typeof photo === "string" ? { url: photo, original: null } : photo ?? null;
+  const [failed, setFailed] = useState<string[]>([]);
+  const [loaded, setLoaded] = useState<string | null>(null);
+  const candidates = src ? [src.url, src.original].filter((u, i, a): u is string => !!u && a.indexOf(u) === i) : [];
+  const current = candidates.find((u) => !failed.includes(u)) ?? null;
+  const showing = !!current && loaded === current;
+  return (
     <span
-      aria-hidden="true"
-      className="grid shrink-0 place-items-center rounded-full font-[700] text-white"
-      style={{ ...style, background: K.forestDeep, fontSize: Math.round(size * 0.4) }}
+      className="relative grid shrink-0 place-items-center overflow-hidden rounded-full font-[700] text-white"
+      data-photo={showing ? "loaded" : current ? "loading" : "initial"}
+      data-testid={testId}
+      style={{ width: size, height: size, background: K.forest, fontSize: Math.round(size * 0.42), boxShadow: ring ? `0 0 0 2px ${ring}` : undefined }}
     >
-      {initial}
+      <span aria-hidden="true">{initial}</span>
+      {current && (
+        <img
+          key={current}
+          src={current}
+          alt=""
+          decoding="async"
+          onLoad={() => setLoaded(current)}
+          onError={() => setFailed((f) => [...f, current])}
+          className="absolute inset-0 size-full object-cover"
+          style={{ opacity: showing ? 1 : 0 }}
+        />
+      )}
     </span>
   );
+}
+
+/** A member's photo, or their initial on forest. */
+export function FlockAvatar({ name, url, size = 44, ring }: { name: string; url?: FlockPhotoSrc; size?: number; ring?: string }) {
+  return <RoundPhoto name={name} photo={url} size={size} ring={ring} />;
 }
 
 /** "Founding member" pill. */
@@ -33,21 +56,18 @@ export function FounderBadge() {
   );
 }
 
-/** A bird's photo, or a bird icon on lime. */
-export function BirdThumb({ url, size = 40 }: { url?: string | null; size?: number }) {
-  return url ? (
-    <img src={url} alt="" className="shrink-0 rounded-full object-cover" style={{ width: size, height: size }} />
-  ) : (
-    <span aria-hidden="true" className="grid shrink-0 place-items-center rounded-full" style={{ width: size, height: size, background: K.lime, color: K.forest }}>
-      <Bird className="size-[55%]" />
-    </span>
-  );
+/** A bird's photo, or the bird's initial on forest. */
+export function BirdThumb({ name, photo, size = 40 }: { name: string; photo?: FlockPhotoSrc; size?: number }) {
+  return <RoundPhoto name={name} photo={photo} size={size} testId="bird-thumb" />;
 }
+
+const CHIP_ON_BG = "#cdeab0";
+const CHIP_OFF_BORDER = "#c9d3c8";
 
 /** Your own birds as chips, all toggleable (aria-pressed). */
 export function BirdChips({ birds, photos, selected, onToggle }: {
   birds: OwnBird[];
-  photos: Record<string, string | null> | undefined;
+  photos: Record<string, FlockPhotoSrc> | undefined;
   selected: Map<string, boolean>;
   onToggle: (id: string) => void;
 }) {
@@ -66,14 +86,17 @@ export function BirdChips({ birds, photos, selected, onToggle }: {
             aria-pressed={on}
             data-bird-chip={b.id}
             onClick={() => onToggle(b.id)}
-            className="inline-flex min-h-[48px] items-center gap-2 rounded-full py-1 pl-1 pr-3.5 text-[15px] font-[700] active:scale-[0.98]"
+            className="inline-flex min-h-[48px] items-center gap-2 rounded-full py-1 pl-1 pr-3.5 text-[15px] active:scale-[0.98]"
+            // Selected: pale lime, 2px forest border, bold, with a check.
+            // Not selected: white, 1px light border, regular. The thinner
+            // border gets 1px more padding so the chip doesn't change size.
             style={on
-              ? { background: K.forest, color: "#fff", border: `1.5px solid ${K.forest}` }
-              : { background: "#fff", color: K.forest, border: `1.5px solid ${K.line}` }}
+              ? { background: CHIP_ON_BG, color: K.forest, border: `2px solid ${K.forest}`, fontWeight: 700 }
+              : { background: "#fff", color: K.forest, border: `1px solid ${CHIP_OFF_BORDER}`, fontWeight: 400, padding: "5px 15px 5px 5px" }}
           >
-            <BirdThumb url={photos?.[b.id]} size={36} />
+            <BirdThumb name={b.name} photo={photos?.[b.id]} size={36} />
             {b.name}
-            {on && <Check className="size-4" aria-hidden="true" />}
+            {on && <Check className="size-4" strokeWidth={2.75} aria-hidden="true" />}
           </button>
         );
       })}
