@@ -134,6 +134,16 @@ jobs:
           FREE_USER_TARGET: staging
         run: npx playwright test -c e2e/free-user/playwright.config.ts --project staging
 
+      # What the page showed when a step failed (Playwright's page snapshot),
+      # readable in the log without downloading the report.
+      - name: Show the failed page
+        if: failure()
+        shell: bash
+        run: |
+          for f in $(find test-results-free-user -name error-context.md 2>/dev/null); do
+            echo "::group::$f"; cat "$f"; echo "::endgroup::"
+          done
+
       - name: Remove what the run made (the account and everything it owns)
         if: always()
         shell: bash
