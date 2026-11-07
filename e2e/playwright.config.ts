@@ -24,6 +24,9 @@ const iPhone = devices["iPhone 13"];
 export default defineConfig({
   testDir: ".",
   testMatch: /.*\.spec\.ts$/,
+  // The free-user regression check (e2e/free-user/) runs against a deployed
+  // app with its own config and workflow, never here.
+  testIgnore: /free-user\//,
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: 0, // a hydration error is never a flake to retry past
