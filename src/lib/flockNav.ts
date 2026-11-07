@@ -21,7 +21,7 @@ export const FLOCK_DESTS: { key: FlockDest; to: string }[] = [
  *  children read as Today. */
 export function destForPath(pathname: string): FlockTab | null {
   if (pathname.startsWith("/flock/journeys")) return "journeys";
-  if (pathname.startsWith("/flock/chapter") || pathname === "/flock/members" || pathname === "/flock/members/") return "chapter";
+  if (pathname.startsWith("/flock/chapter") || pathname.startsWith("/flock/events") || pathname === "/flock/members" || pathname === "/flock/members/") return "chapter";
   if (pathname.startsWith("/flock/library")) return "library";
   if (pathname.startsWith("/flock/you") || pathname.startsWith("/flock/members/") || pathname.startsWith("/flock/birds/")) return null;
   return "today";

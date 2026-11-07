@@ -9,10 +9,11 @@ import { timeAgo } from "@/components/flock/PostParts";
 import { reasonLabel } from "@/components/flock/ReportSheet";
 import { FLOCK_ENABLED_QUERY } from "@/lib/flock";
 import {
-  QUEUE_FILTERS, resolveReport, reviewPost, useCanReview, useInvalidateModeration, useReviewCounts, useReviewQueue,
+  QUEUE_FILTERS, resolveReport, reviewEvent, reviewPost, useCanReview, useInvalidateModeration, useReviewCounts, useReviewQueue,
   type QueueFilter, type QueueItem,
 } from "@/lib/flockModeration";
 import { pickOptional } from "@/lib/flockNav";
+import { longWhen } from "@/lib/flockEvents";
 
 // The review queue (Batch 8, screen 4): Do good posts waiting to go live, and
 // reported content. Behind the Flock gate like every Community screen (anyone
@@ -35,10 +36,12 @@ type Decision =
 
 function subjectLabel(t: TFunction, q: QueueItem): string {
   if (q.item_type === "good") return t("flock.review.doGood", "Do good");
+  if (q.item_type === "event") return q.event_kind === "volunteer" ? t("flock.review.eventVolunteer", "Event · volunteer day") : t("flock.review.event", "Event suggestion");
   switch (q.subject_type) {
     case "post": return t("flock.review.reportPost", "Report · post");
     case "comment": return t("flock.review.reportComment", "Report · comment");
     case "journey_update": return t("flock.review.reportUpdate", "Report · journey update");
+    default: return t("flock.review.event", "Event suggestion");
   }
 }
 
@@ -79,6 +82,8 @@ function ReviewQueue() {
 
   const good = counts?.good ?? 0;
   const reports = counts?.reports ?? 0;
+  const events = counts?.events ?? 0;
+  const total = good + reports + events;
   const act = async (key: string, fn: () => Promise<void>) => {
     setBusy(key); setError(null);
     try { await fn(); await invalidate(); setDecision(null); }
@@ -91,15 +96,16 @@ function ReviewQueue() {
     <KyaPage>
       <KyaHeader>
         <KyaBackRow label={t("headers.back", "Back")} onBack={back} />
-        <KyaTitle title={t("flock.review.title", "Review queue")} line={t("flock.review.line", "Admin · {{count}} waiting", { count: good + reports })} />
+        <KyaTitle title={t("flock.review.title", "Review queue")} line={t("flock.review.line", "Admin · {{count}} waiting", { count: total })} />
       </KyaHeader>
       <KyaBody>
         <div className="flex flex-col gap-4">
           <FlockChips label={t("flock.review.filterAria", "Filter the queue")} testId="queue-chips" value={current}
             onChange={(v) => void navigate({ search: { filter: !v || v === "all" ? undefined : v }, replace: true })}
             options={[
-              { value: "all" as const, label: t("flock.review.all", "All {{count}}", { count: good + reports }) },
+              { value: "all" as const, label: t("flock.review.all", "All {{count}}", { count: total }) },
               { value: "good" as const, label: t("flock.review.good", "Do good {{count}}", { count: good }) },
+              { value: "events" as const, label: t("flock.review.events", "Events {{count}}", { count: events }) },
               { value: "reports" as const, label: t("flock.review.reports", "Reports {{count}}", { count: reports }) },
             ]} />
           {error && <p role="alert" className="m-0 text-[15px]" style={{ color: K.red }}>{error}</p>}
@@ -118,6 +124,11 @@ function ReviewQueue() {
                     : [q.author_name, q.author_region, timeAgo(t, q.created_at, i18n.language)].filter(Boolean).join(" · ")}
                 </span>
                 {q.title && <KyaHeading size={18} as="h2">{q.title}</KyaHeading>}
+                {q.item_type === "event" && q.event_starts_at && (
+                  <span className="text-[14px] font-[700]" style={{ color: K.ink }} data-testid="queue-event-when">
+                    {[longWhen(q.event_starts_at, null, i18n.language), q.event_mode === "online" ? t("flock.events.online", "Online") : q.event_place].filter(Boolean).join(" · ")}
+                  </span>
+                )}
                 <p className="m-0 line-clamp-6 whitespace-pre-wrap text-[15px] leading-[1.45]">
                   {q.item_type === "report" ? `“${q.body ?? t("flock.review.clipOnly", "(a clip with no caption)")}”` : q.body}
                 </p>
@@ -132,15 +143,18 @@ function ReviewQueue() {
                     )}
                   </div>
                 )}
+                {q.item_type === "event" && (
+                  <Link to="/flock/events/$eventId" params={{ eventId: q.subject_id }} className="self-start text-[14px] font-[700] underline underline-offset-4" style={{ color: K.moss }}>{t("flock.review.open", "Open it")}</Link>
+                )}
                 {(q.post_id || q.journey_id) && (
                   q.post_id
                     ? <Link to="/flock/post/$postId" params={{ postId: q.post_id }} className="self-start text-[14px] font-[700] underline underline-offset-4" style={{ color: K.moss }}>{t("flock.review.open", "Open it")}</Link>
                     : <Link to="/flock/journeys/$journeyId" params={{ journeyId: q.journey_id! }} className="self-start text-[14px] font-[700] underline underline-offset-4" style={{ color: K.moss }}>{t("flock.review.open", "Open it")}</Link>
                 )}
-                {q.item_type === "good" ? (
+                {q.item_type !== "report" ? (
                   <div className="flex gap-2">
                     <button type="button" className={btn} style={{ background: K.forest, color: "#fff" }} disabled={!!busy} data-act="approve"
-                      onClick={() => void act(key, () => reviewPost(q.subject_id, "approve", ""))}>{t("flock.review.approve", "Approve")}</button>
+                      onClick={() => void act(key, () => (q.item_type === "event" ? reviewEvent(q.subject_id, "approve", "") : reviewPost(q.subject_id, "approve", "")))}>{t("flock.review.approve", "Approve")}</button>
                     <button type="button" className={btn} style={{ background: K.mist }} disabled={!!busy} data-act="changes"
                       onClick={() => setDecision({ kind: "changes", item: q })}>{t("flock.review.changes", "Ask for changes")}</button>
                     <button type="button" className={btn} style={{ background: K.mist, color: K.red }} disabled={!!busy} data-act="decline"
@@ -153,7 +167,7 @@ function ReviewQueue() {
                     <button type="button" className={btn} style={{ background: K.mist }} disabled={!!busy} data-act="message"
                       onClick={() => setDecision({ kind: "message", item: q })}>{t("flock.review.message", "Message them")}</button>
                     <button type="button" className={btn} style={{ background: K.mist }} disabled={!!busy} data-act="keep"
-                      onClick={() => void act(key, () => resolveReport(q.subject_type, q.subject_id, "keep", ""))}>{t("flock.review.keep", "Keep it")}</button>
+                      onClick={() => void act(key, () => resolveReport(q.subject_type as "post" | "comment" | "journey_update", q.subject_id, "keep", ""))}>{t("flock.review.keep", "Keep it")}</button>
                   </div>
                 )}
               </article>
@@ -166,8 +180,10 @@ function ReviewQueue() {
           onSubmit={(note) => {
             const q = decision.item;
             const key = `${q.subject_type}:${q.subject_id}`;
-            if (decision.kind === "changes" || decision.kind === "decline") void act(key, () => reviewPost(q.subject_id, decision.kind, note));
-            else void act(key, () => resolveReport(q.subject_type, q.subject_id, decision.kind as "message" | "remove", note));
+            if (decision.kind === "changes" || decision.kind === "decline") {
+              const k = decision.kind;
+              void act(key, () => (q.item_type === "event" ? reviewEvent(q.subject_id, k, note) : reviewPost(q.subject_id, k, note)));
+            } else void act(key, () => resolveReport(q.subject_type as "post" | "comment" | "journey_update", q.subject_id, decision.kind as "message" | "remove", note));
           }} />
       )}
     </KyaPage>
@@ -182,7 +198,7 @@ function NoteSheet({ decision, busy, onClose, onSubmit }: { decision: Decision; 
   const required = decision.kind === "changes" || decision.kind === "message";
   const copy = {
     changes: { title: t("flock.review.changesTitle", "Ask for changes"), label: t("flock.review.changesLabel", "What should they change? They'll see this."), go: t("flock.review.changesSend", "Send to the author") },
-    decline: { title: t("flock.review.declineTitle", "Decline this post"), label: t("flock.review.declineLabel", "A note for the author (optional)"), go: t("flock.review.declineSend", "Decline") },
+    decline: { title: decision.item.item_type === "event" ? t("flock.review.declineEventTitle", "Decline this event") : t("flock.review.declineTitle", "Decline this post"), label: t("flock.review.declineLabel", "A note for the author (optional)"), go: t("flock.review.declineSend", "Decline") },
     message: { title: t("flock.review.messageTitle", "Message them"), label: t("flock.review.messageLabel", "Your note appears in their notifications. The post stays as it is."), go: t("flock.review.messageSend", "Send message") },
     remove: { title: t("flock.review.removeTitle", "Remove it"), label: t("flock.review.removeLabel", "A note for the author (optional)"), go: t("flock.review.removeSend", "Remove it") },
   }[decision.kind];

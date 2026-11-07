@@ -6,6 +6,9 @@ import type { TFunction } from "i18next";
 import { FlockBody, FlockHeader } from "@/components/FlockShell";
 import { FlockEmpty, FlockSubTabs } from "@/components/flock/FlockChips";
 import { ComposePrompt, LoadMore, PostList } from "@/components/flock/PostFeed";
+import { EventCard } from "@/components/flock/EventParts";
+import { useChapterEvents, useEventRules } from "@/lib/flockEvents";
+import { CalendarPlus } from "lucide-react";
 import { useFlockFeed } from "@/lib/flockPostData";
 import { RegionSheet } from "@/components/flock/FlockPeople";
 import { K } from "@/components/kya";
@@ -116,6 +119,8 @@ function FlockChapter() {
             <div role="tabpanel" aria-label={tabLabel(t, current)} className="flex flex-col gap-3">
               {current === "posts" ? (
                 <ChapterPosts name={chapter?.name ?? null} empty={<FlockEmpty icon={<MapPin className="size-6" />} title={empty.title}>{empty.line}</FlockEmpty>} />
+              ) : current === "events" ? (
+                <ChapterEvents empty={<FlockEmpty icon={<MapPin className="size-6" />} title={empty.title}>{empty.line}</FlockEmpty>} />
               ) : (
                 <FlockEmpty icon={<MapPin className="size-6" />} title={empty.title}>{empty.line}</FlockEmpty>
               )}
@@ -144,6 +149,42 @@ function ChapterPosts({ name, empty }: { name: string | null; empty: React.React
           <LoadMore hasMore={!!feed.hasNextPage} loading={feed.isFetchingNextPage} onMore={() => void feed.fetchNextPage()} />
         </div>
       ) : !feed.isLoading && empty}
+    </>
+  );
+}
+
+/** Coming up and Past (Batch 5, screen 1), and a way to suggest one (or, for
+ *  the chapter's lead and admins, to add one). */
+function ChapterEvents({ empty }: { empty: React.ReactNode }) {
+  const { t } = useTranslation();
+  const { data: upcoming, isLoading } = useChapterEvents("upcoming");
+  const { data: past } = useChapterEvents("past");
+  const { data: rules } = useEventRules();
+  const none = !isLoading && (upcoming ?? []).length === 0 && (past ?? []).length === 0;
+  return (
+    <>
+      {none ? empty : (
+        <>
+          {(upcoming ?? []).length > 0 && (
+            <section className="flex flex-col gap-2" data-testid="events-upcoming">
+              <h2 className="m-0 text-[15px] font-[700]" style={{ color: K.forest }}>{t("flock.events.comingUp", "Coming up")}</h2>
+              {(upcoming ?? []).map((e) => <EventCard key={e.event_id} e={e} past={false} />)}
+            </section>
+          )}
+          {(past ?? []).length > 0 && (
+            <section className="flex flex-col gap-2" data-testid="events-past">
+              <h2 className="m-0 text-[15px] font-[700]" style={{ color: K.forest }}>{t("flock.events.past", "Past")}</h2>
+              {(past ?? []).map((e) => <EventCard key={e.event_id} e={e} past />)}
+            </section>
+          )}
+        </>
+      )}
+      <Link to="/flock/events/new" data-testid="suggest-event"
+        className="inline-flex min-h-[52px] w-full items-center justify-center gap-2 rounded-full border-2 px-6 text-[16px] font-[700]"
+        style={{ background: K.sunflower, borderColor: K.forest, color: K.forest }}>
+        <CalendarPlus className="size-5" aria-hidden="true" />
+        {rules?.can_manage ? t("flock.events.new", "New event") : t("flock.events.suggest", "Suggest an event")}
+      </Link>
     </>
   );
 }

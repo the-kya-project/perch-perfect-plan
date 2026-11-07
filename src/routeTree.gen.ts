@@ -101,6 +101,8 @@ import { Route as AuthenticatedBirdsBirdIdViewAsSitterRouteImport } from './rout
 import { Route as AuthenticatedBirdsBirdIdWeightRouteImport } from './routes/_authenticated/birds/$birdId.weight'
 import { Route as AuthenticatedCoveringSitIdBirdIdRouteImport } from './routes/_authenticated/covering.$sitId.$birdId'
 import { Route as AuthenticatedFlockBirdsBirdIdRouteImport } from './routes/_authenticated/flock.birds.$birdId'
+import { Route as AuthenticatedFlockEventsEventIdRouteImport } from './routes/_authenticated/flock.events.$eventId'
+import { Route as AuthenticatedFlockEventsNewRouteImport } from './routes/_authenticated/flock.events.new'
 import { Route as AuthenticatedFlockJourneysIndexRouteImport } from './routes/_authenticated/flock.journeys.index'
 import { Route as AuthenticatedFlockJourneysKnownRouteImport } from './routes/_authenticated/flock.journeys.known'
 import { Route as AuthenticatedFlockJourneysSetupRouteImport } from './routes/_authenticated/flock.journeys.setup'
@@ -639,6 +641,18 @@ const AuthenticatedFlockBirdsBirdIdRoute =
     path: '/birds/$birdId',
     getParentRoute: () => AuthenticatedFlockRoute,
   } as any)
+const AuthenticatedFlockEventsEventIdRoute =
+  AuthenticatedFlockEventsEventIdRouteImport.update({
+    id: '/events/$eventId',
+    path: '/events/$eventId',
+    getParentRoute: () => AuthenticatedFlockRoute,
+  } as any)
+const AuthenticatedFlockEventsNewRoute =
+  AuthenticatedFlockEventsNewRouteImport.update({
+    id: '/events/new',
+    path: '/events/new',
+    getParentRoute: () => AuthenticatedFlockRoute,
+  } as any)
 const AuthenticatedFlockJourneysIndexRoute =
   AuthenticatedFlockJourneysIndexRouteImport.update({
     id: '/journeys/',
@@ -963,6 +977,8 @@ export interface FileRoutesByFullPath {
   '/birds/$birdId/weight': typeof AuthenticatedBirdsBirdIdWeightRoute
   '/covering/$sitId/$birdId': typeof AuthenticatedCoveringSitIdBirdIdRoute
   '/flock/birds/$birdId': typeof AuthenticatedFlockBirdsBirdIdRoute
+  '/flock/events/$eventId': typeof AuthenticatedFlockEventsEventIdRoute
+  '/flock/events/new': typeof AuthenticatedFlockEventsNewRoute
   '/flock/journeys/known': typeof AuthenticatedFlockJourneysKnownRoute
   '/flock/journeys/setup': typeof AuthenticatedFlockJourneysSetupRoute
   '/flock/journeys/start': typeof AuthenticatedFlockJourneysStartRoute
@@ -1088,6 +1104,8 @@ export interface FileRoutesByTo {
   '/birds/$birdId/weight': typeof AuthenticatedBirdsBirdIdWeightRoute
   '/covering/$sitId/$birdId': typeof AuthenticatedCoveringSitIdBirdIdRoute
   '/flock/birds/$birdId': typeof AuthenticatedFlockBirdsBirdIdRoute
+  '/flock/events/$eventId': typeof AuthenticatedFlockEventsEventIdRoute
+  '/flock/events/new': typeof AuthenticatedFlockEventsNewRoute
   '/flock/journeys/known': typeof AuthenticatedFlockJourneysKnownRoute
   '/flock/journeys/setup': typeof AuthenticatedFlockJourneysSetupRoute
   '/flock/journeys/start': typeof AuthenticatedFlockJourneysStartRoute
@@ -1222,6 +1240,8 @@ export interface FileRoutesById {
   '/_authenticated/birds/$birdId/weight': typeof AuthenticatedBirdsBirdIdWeightRoute
   '/_authenticated/covering/$sitId/$birdId': typeof AuthenticatedCoveringSitIdBirdIdRoute
   '/_authenticated/flock/birds/$birdId': typeof AuthenticatedFlockBirdsBirdIdRoute
+  '/_authenticated/flock/events/$eventId': typeof AuthenticatedFlockEventsEventIdRoute
+  '/_authenticated/flock/events/new': typeof AuthenticatedFlockEventsNewRoute
   '/_authenticated/flock/journeys/known': typeof AuthenticatedFlockJourneysKnownRoute
   '/_authenticated/flock/journeys/setup': typeof AuthenticatedFlockJourneysSetupRoute
   '/_authenticated/flock/journeys/start': typeof AuthenticatedFlockJourneysStartRoute
@@ -1356,6 +1376,8 @@ export interface FileRouteTypes {
     | '/birds/$birdId/weight'
     | '/covering/$sitId/$birdId'
     | '/flock/birds/$birdId'
+    | '/flock/events/$eventId'
+    | '/flock/events/new'
     | '/flock/journeys/known'
     | '/flock/journeys/setup'
     | '/flock/journeys/start'
@@ -1481,6 +1503,8 @@ export interface FileRouteTypes {
     | '/birds/$birdId/weight'
     | '/covering/$sitId/$birdId'
     | '/flock/birds/$birdId'
+    | '/flock/events/$eventId'
+    | '/flock/events/new'
     | '/flock/journeys/known'
     | '/flock/journeys/setup'
     | '/flock/journeys/start'
@@ -1614,6 +1638,8 @@ export interface FileRouteTypes {
     | '/_authenticated/birds/$birdId/weight'
     | '/_authenticated/covering/$sitId/$birdId'
     | '/_authenticated/flock/birds/$birdId'
+    | '/_authenticated/flock/events/$eventId'
+    | '/_authenticated/flock/events/new'
     | '/_authenticated/flock/journeys/known'
     | '/_authenticated/flock/journeys/setup'
     | '/_authenticated/flock/journeys/start'
@@ -2343,6 +2369,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedFlockBirdsBirdIdRouteImport
       parentRoute: typeof AuthenticatedFlockRoute
     }
+    '/_authenticated/flock/events/$eventId': {
+      id: '/_authenticated/flock/events/$eventId'
+      path: '/events/$eventId'
+      fullPath: '/flock/events/$eventId'
+      preLoaderRoute: typeof AuthenticatedFlockEventsEventIdRouteImport
+      parentRoute: typeof AuthenticatedFlockRoute
+    }
+    '/_authenticated/flock/events/new': {
+      id: '/_authenticated/flock/events/new'
+      path: '/events/new'
+      fullPath: '/flock/events/new'
+      preLoaderRoute: typeof AuthenticatedFlockEventsNewRouteImport
+      parentRoute: typeof AuthenticatedFlockRoute
+    }
     '/_authenticated/flock/journeys/': {
       id: '/_authenticated/flock/journeys/'
       path: '/journeys'
@@ -2644,6 +2684,8 @@ interface AuthenticatedFlockRouteChildren {
   AuthenticatedFlockWelcomeRoute: typeof AuthenticatedFlockWelcomeRoute
   AuthenticatedFlockIndexRoute: typeof AuthenticatedFlockIndexRoute
   AuthenticatedFlockBirdsBirdIdRoute: typeof AuthenticatedFlockBirdsBirdIdRoute
+  AuthenticatedFlockEventsEventIdRoute: typeof AuthenticatedFlockEventsEventIdRoute
+  AuthenticatedFlockEventsNewRoute: typeof AuthenticatedFlockEventsNewRoute
   AuthenticatedFlockJourneysKnownRoute: typeof AuthenticatedFlockJourneysKnownRoute
   AuthenticatedFlockJourneysSetupRoute: typeof AuthenticatedFlockJourneysSetupRoute
   AuthenticatedFlockJourneysStartRoute: typeof AuthenticatedFlockJourneysStartRoute
@@ -2678,6 +2720,8 @@ const AuthenticatedFlockRouteChildren: AuthenticatedFlockRouteChildren = {
   AuthenticatedFlockWelcomeRoute: AuthenticatedFlockWelcomeRoute,
   AuthenticatedFlockIndexRoute: AuthenticatedFlockIndexRoute,
   AuthenticatedFlockBirdsBirdIdRoute: AuthenticatedFlockBirdsBirdIdRoute,
+  AuthenticatedFlockEventsEventIdRoute: AuthenticatedFlockEventsEventIdRoute,
+  AuthenticatedFlockEventsNewRoute: AuthenticatedFlockEventsNewRoute,
   AuthenticatedFlockJourneysKnownRoute: AuthenticatedFlockJourneysKnownRoute,
   AuthenticatedFlockJourneysSetupRoute: AuthenticatedFlockJourneysSetupRoute,
   AuthenticatedFlockJourneysStartRoute: AuthenticatedFlockJourneysStartRoute,
