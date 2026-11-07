@@ -5,6 +5,7 @@ import { K, KyaHeading } from "@/components/kya";
 import { FlockAvatar } from "@/components/flock/FlockPeople";
 import { reactionLabel } from "@/components/flock/JourneyBrowse";
 import { rateMessage } from "@/components/flock/PostCompose";
+import { ReportSheet } from "@/components/flock/ReportSheet";
 import { ActionSheet, ConfirmSheet, ReactionPicker, timeAgo, useLongPress, useReactionState, VetNudgeCard } from "@/components/flock/PostParts";
 import { AvatarError } from "@/lib/flockAvatar";
 import { useAvatarUrls, useMyProfile, type FlockPhotoSrc } from "@/lib/flockData";
@@ -89,6 +90,7 @@ export function CommentThread({ type, id, ownerName, focus, canComment, top }: {
   const [photo, setPhoto] = useState<{ preview: string; path: string | null } | null>(null);
   const [menuFor, setMenuFor] = useState<FlockComment | null>(null);
   const [confirmFor, setConfirmFor] = useState<FlockComment | null>(null);
+  const [reportFor, setReportFor] = useState<FlockComment | null>(null);
   const [nudge, setNudge] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -215,8 +217,12 @@ export function CommentThread({ type, id, ownerName, focus, canComment, top }: {
               { key: "edit", label: t("flock.posts.edit", "Edit"), onClick: () => { const c = menuFor; setMenuFor(null); startEdit(c); } },
               { key: "delete", label: t("flock.posts.delete", "Delete"), danger: true, onClick: () => { const c = menuFor; setMenuFor(null); setConfirmFor(c); } },
             ]
-            : canComment ? [{ key: "reply", label: t("flock.posts.reply", "Reply"), onClick: () => { const c = menuFor; setMenuFor(null); startReply(c); } }] : []} />
+            : [
+              ...(canComment ? [{ key: "reply", label: t("flock.posts.reply", "Reply"), onClick: () => { const c = menuFor; setMenuFor(null); startReply(c); } }] : []),
+              { key: "report", label: t("flock.report.action", "Report"), onClick: () => { const c = menuFor; setMenuFor(null); setReportFor(c); } },
+            ]} />
       )}
+      {reportFor && <ReportSheet type="comment" id={reportFor.comment_id} onClose={() => setReportFor(null)} />}
       {confirmFor && (
         <ConfirmSheet busy={busy} onClose={() => setConfirmFor(null)}
           title={t("flock.posts.deleteCommentTitle", "Delete this comment?")}

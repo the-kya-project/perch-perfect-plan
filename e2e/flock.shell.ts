@@ -41,6 +41,9 @@ type FlockState = {
   calls: { fn: string; args: Record<string, any> }[];
   /** Make the next post or comment hit the hourly limit. */
   rateLimit: "posts" | "comments" | null;
+  /** Step 4B: notifications and the review queue. */
+  notifications: Record<string, any>[];
+  queue: Record<string, any>[];
 };
 
 async function mockFlock(context: BrowserContext, userId: string, opts: { setupDone: boolean; region?: string }): Promise<FlockState> {
@@ -55,6 +58,8 @@ async function mockFlock(context: BrowserContext, userId: string, opts: { setupD
     comments: [],
     calls: [],
     rateLimit: null,
+    notifications: [],
+    queue: [],
   };
   const neighbours: Record<string, { user_id: string; display_name: string }[]> = {
     "great-lakes": [{ user_id: "00000000-0000-4000-8000-00000000c001", display_name: "Ada L." }],
@@ -156,6 +161,19 @@ async function mockFlock(context: BrowserContext, userId: string, opts: { setupD
         { user_id: "00000000-0000-4000-8000-00000000d002", display_name: "Sam T.", region_name: "Great Lakes", photo_path: null, kind: "been_there", created_at: ago(9) },
         { user_id: "00000000-0000-4000-8000-00000000d003", display_name: "Jo K.", region_name: "Texas", photo_path: null, kind: "great_job", created_at: ago(15) },
       ]);
+    }
+    if (fn === "flock_report") return json(route, null);
+    if (fn === "flock_notifications_list") {
+      const f = args.p_filter;
+      return json(route, state.notifications.filter((n) => f === "all" || (f === "replies" && n.kind === "reply") || (f === "cheers" && n.kind === "cheer") || (f === "chapter" && n.kind === "chapter")));
+    }
+    if (fn === "flock_notifications_mark_read") { for (const n of state.notifications) n.unread = false; return json(route, null); }
+    if (fn === "flock_can_review") return json(route, true);
+    if (fn === "flock_review_counts") return json(route, [{ good: state.queue.filter((q) => q.item_type === "good").length, reports: state.queue.filter((q) => q.item_type === "report").length }]);
+    if (fn === "flock_review_queue") return json(route, state.queue.filter((q) => args.p_filter === "all" || (args.p_filter === "good" ? q.item_type === "good" : q.item_type === "report")));
+    if (fn === "flock_review_post" || fn === "flock_resolve_report") {
+      state.queue = state.queue.filter((q) => q.subject_id !== (args.p_post_id ?? args.p_subject_id) || (fn === "flock_resolve_report" && args.p_action === "message"));
+      return json(route, null);
     }
     return json(route, null);
   });
@@ -405,7 +423,7 @@ async function mockJourneys(context: BrowserContext, opts: JourneyMockOpts, bird
 }
 
 // Community code chunks (FlockHealthDuo is the care app's, not Community's).
-const FLOCK_CHUNK = /\/assets\/(?!FlockHealthDuo)(Flock\w+|SpacesSheet|CommentThread|Post(?:Compose|Feed|Parts)|Journey\w+|[jJ]ourney\w*(\.[\w$-]+)*|flock\w*(\.[\w$-]+)*)-[\w-]+\.js/;
+const FLOCK_CHUNK = /\/assets\/(?!FlockHealthDuo)(Flock\w+|SpacesSheet|CommentThread|ReportSheet|admin\.review|Post(?:Compose|Feed|Parts)|Journey\w+|[jJ]ourney\w*(\.[\w$-]+)*|flock\w*(\.[\w$-]+)*)-[\w-]+\.js/;
 
 const tabs = (page: Page) => page.locator("nav[aria-label='Community']:visible [data-flock-tab]");
 
@@ -1016,13 +1034,18 @@ test.describe("journeys: what a free account sees", () => {
 test("everyone else: every /flock URL sends them Home and no Community code loads", async ({ browser, baseURL }) => {
   for (const size of ["phone", "duo"] as const) {
     const { context, page, flockChunks } = await open(browser, baseURL!, { admin: false, size });
-    for (const path of ["/flock", "/flock/journeys", "/flock/journeys/start", "/flock/journeys/setup?bird=x&template=step-up", "/flock/journeys/known?bird=x", "/flock/journeys/00000000-0000-4000-8000-0000000074a1/post", "/flock/journeys/00000000-0000-4000-8000-0000000074a1/milestone/1", "/flock/journeys/00000000-0000-4000-8000-0000000074a1/story", "/flock/journeys/00000000-0000-4000-8000-0000000074a1/compare", "/flock/chapter", "/flock/library", "/flock/spaces", "/flock/learn", "/flock?space=good"]) {
+    // The gate (flock_enabled) is the only Community call a non-admin ever makes.
+    const calls: string[] = [];
+    context.on("request", (r) => { const m = r.url().match(/\/rpc\/((?:flock|journey)_\w+)/); if (m && m[1] !== "flock_enabled") calls.push(m[1]); });
+    for (const path of ["/flock", "/flock/journeys", "/flock/journeys/start", "/flock/journeys/setup?bird=x&template=step-up", "/flock/journeys/known?bird=x", "/flock/journeys/00000000-0000-4000-8000-0000000074a1/post", "/flock/journeys/00000000-0000-4000-8000-0000000074a1/milestone/1", "/flock/journeys/00000000-0000-4000-8000-0000000074a1/story", "/flock/journeys/00000000-0000-4000-8000-0000000074a1/compare", "/flock/chapter", "/flock/library", "/flock/spaces", "/flock/learn", "/flock?space=good",
+      "/flock/post/new", "/flock/post/00000000-0000-4000-8000-0000000079a1", "/flock/you/notifications", "/admin/review"]) {
       await page.goto(path);
       await expect(page, `${size} ${path}`).toHaveURL(/\/dashboard/);
     }
     await expect(page.locator("[data-flock-tab]")).toHaveCount(0);
     await expect(page.locator("[data-coach='owner-tab-flock']")).toHaveCount(0);
     expect(flockChunks, `${size}: Community code downloaded`).toEqual([]);
+    expect(calls, `${size}: Community calls made`).toEqual([]);
     await context.close();
   }
 });
@@ -1126,9 +1149,9 @@ test.describe("posts, comments and reactions (admin, phone)", () => {
     await page.getByTestId("comment-send").click();
     expect(created(state, "flock_comment_edit")[0].args).toMatchObject({ p_body: "@Priya walnut, in very tiny pieces." });
 
-    // Someone else's: Reply / Cancel.
+    // Someone else's: Reply / Report / Cancel.
     await page.locator(`[data-comment='${PRIYA_C}']`).getByTestId("comment-more").click();
-    await expect(page.getByTestId("action-sheet").getByRole("button")).toHaveText(["Reply", "Cancel"]);
+    await expect(page.getByTestId("action-sheet").getByRole("button")).toHaveText(["Reply", "Report", "Cancel"]);
     await page.getByTestId("action-sheet").locator("[data-action='cancel']").click();
     await expect(page.getByTestId("action-sheet")).toHaveCount(0);
     await context.close();
@@ -1175,10 +1198,10 @@ test.describe("posts, comments and reactions (admin, phone)", () => {
     await page.getByTestId("post-body-input").fill("Hello, Flock! Echo says hi.");
     await page.getByTestId("composer-post").click();
     expect(created(state, "flock_post_edit")[0].args).toMatchObject({ p_body: "Hello, Flock! Echo says hi." });
-    // Someone else's post: Reply / Cancel.
+    // Someone else's post: Reply / Report / Cancel.
     await page.goto("/flock");
     await page.locator(`[data-post='${POST}']`).getByTestId("post-more").click();
-    await expect(page.getByTestId("action-sheet").getByRole("button")).toHaveText(["Reply", "Cancel"]);
+    await expect(page.getByTestId("action-sheet").getByRole("button")).toHaveText(["Reply", "Report", "Cancel"]);
     await page.getByTestId("action-sheet").locator("[data-action='cancel']").click();
 
     state.rateLimit = "posts";
@@ -1199,6 +1222,118 @@ test.describe("posts, comments and reactions (admin, phone)", () => {
     await expect(page.getByTestId("compose-prompt")).toContainText("Post to the Great Lakes chapter");
     await page.getByTestId("compose-prompt").click();
     await expect(page.getByTestId("post-to").locator("[data-space='chapter']")).toHaveAttribute("aria-pressed", "true");
+    await context.close();
+  });
+});
+
+test.describe("reporting, the review queue and notifications (admin, phone)", () => {
+  const ALEX = "00000000-0000-4000-8000-00000000e001";
+  const POST = "00000000-0000-4000-8000-0000000079a1";
+  const COMMENT = "00000000-0000-4000-8000-0000000079c1";
+  const hoursAgo = (h: number) => new Date(Date.now() - h * 3_600_000).toISOString();
+  const seedPost = (state: FlockState) => {
+    state.posts.push({ post_id: POST, author_id: ALEX, author_name: "Alex R.", space: "learn", body: "Just clip his wings, problem solved.", status: "live", created_at: hoursAgo(2) });
+    state.comments.push({ comment_id: COMMENT, subject_type: "post", subject_id: POST, author_id: ALEX, author_name: "Alex R.", body: "Works every time.", created_at: hoursAgo(1) });
+  };
+
+  test("report a post or a comment: a reason, an optional note, and a private thank-you", async ({ browser, baseURL }) => {
+    const { context, page, state } = await open(browser, baseURL!, { admin: true });
+    seedPost(state);
+    await page.goto("/flock");
+    await page.locator(`[data-post='${POST}']`).getByTestId("post-more").click();
+    await expect(page.getByTestId("action-sheet").getByRole("button")).toHaveText(["Reply", "Report", "Cancel"]);
+    await page.getByTestId("action-sheet").locator("[data-action='report']").click();
+    const sheet = page.getByTestId("report-sheet");
+    await expect(sheet.getByRole("radio")).toHaveText(["Unkind or harassing", "Unsafe advice for birds", "Spam or selling", "Something else"]);
+    await expect(sheet.getByRole("button", { name: "Send report" })).toBeDisabled();
+    await sheet.locator("[data-reason='unsafe']").click();
+    await page.getByTestId("report-note").fill("Clipping isn't a behavior fix.");
+    await sheet.getByRole("button", { name: "Send report" }).click();
+    await expect(page.getByTestId("report-done")).toContainText("the person who posted it won't know it was you");
+    expect(state.calls.find((c) => c.fn === "flock_report")!.args).toMatchObject({ p_subject_type: "post", p_subject_id: POST, p_reason: "unsafe", p_note: "Clipping isn't a behavior fix." });
+    await page.getByRole("button", { name: "Done" }).click();
+
+    await page.goto(`/flock/post/${POST}`);
+    await page.locator(`[data-comment='${COMMENT}']`).getByTestId("comment-more").click();
+    await expect(page.getByTestId("action-sheet").getByRole("button")).toHaveText(["Reply", "Report", "Cancel"]);
+    await page.getByTestId("action-sheet").locator("[data-action='report']").click();
+    await page.getByTestId("report-sheet").locator("[data-reason='spam']").click();
+    await page.getByTestId("report-sheet").getByRole("button", { name: "Send report" }).click();
+    expect(state.calls.filter((c) => c.fn === "flock_report").at(-1)!.args).toMatchObject({ p_subject_type: "comment", p_subject_id: COMMENT, p_reason: "spam", p_note: null });
+    await context.close();
+  });
+
+  test("notifications: Today and Earlier, grouped cheers, filters, unread dots, push and email coming", async ({ browser, baseURL }) => {
+    const { context, page, state } = await open(browser, baseURL!, { admin: true });
+    const base = { ids: ["n"], others: 0, detail: null, note: null, post_id: null, post_title: null, post_space: null, journey_id: null, bird_name: null, skill: null, milestone_title: null, region_name: null, unread: true };
+    state.notifications.push(
+      { ...base, ids: ["n1"], kind: "reply", actor_name: "Priya S.", subject_type: "comment", subject_id: "c1", detail: "reply", post_id: POST, created_at: new Date(Date.now() - 60_000).toISOString() },
+      { ...base, ids: ["n2"], kind: "cheer", actor_name: "Sam T.", others: 11, subject_type: "journey_milestone", subject_id: "m1", detail: "great_job", journey_id: "00000000-0000-4000-8000-0000000074a1", bird_name: "Echo", skill: "Step up", milestone_title: "Steps up with both feet.", created_at: new Date(Date.now() - 2 * 60_000).toISOString() },
+      { ...base, ids: ["n3"], kind: "review", actor_name: null, subject_type: "post", subject_id: "p9", detail: "approved", post_id: "00000000-0000-4000-8000-0000000079f9", created_at: new Date(Date.now() - 3 * 60_000).toISOString(), unread: false },
+      { ...base, ids: ["n4"], kind: "clip", actor_name: "Alex R.", subject_type: "journey_update", subject_id: "00000000-0000-4000-8000-0000000079e1", journey_id: "00000000-0000-4000-8000-0000000074a3", bird_name: "Kiwi", created_at: hoursAgo(30) },
+      { ...base, ids: ["n5"], kind: "chapter", actor_name: "Dana M.", subject_type: "post", subject_id: "p8", post_id: "00000000-0000-4000-8000-0000000079f8", region_name: "Great Lakes", created_at: hoursAgo(50) },
+    );
+    await page.goto("/flock/you/notifications");
+    const chips = page.getByTestId("notif-chips").getByRole("button");
+    await expect(chips).toHaveText(["All", "Replies", "Cheers", "My chapter"]);
+    const today = page.getByTestId("notif-today");
+    await expect(today.locator("[data-notification]")).toHaveText([
+      /Priya S\. replied to your comment/,
+      /12 people cheered Echo's milestone: steps up with both feet/,
+      /Your Do good post is live\. Thanks for sharing it\./,
+    ]);
+    await expect(page.getByTestId("notif-earlier").locator("[data-notification]")).toHaveText([
+      /Kiwi posted a new clip in a journey you follow/,
+      /Great Lakes: Dana M\. posted in your chapter/,
+    ]);
+    await expect(page.getByTestId("unread-dot")).toHaveCount(4);
+    await expect(page.getByTestId("notif-settings")).toContainText("Push notifications and email for the Community are coming.");
+    await expect.poll(() => state.calls.some((c) => c.fn === "flock_notifications_mark_read")).toBe(true);
+
+    await chips.filter({ hasText: "Cheers" }).click();
+    await expect(page).toHaveURL(/filter=cheers/);
+    await expect(page.locator("[data-notification]")).toHaveCount(1);
+    await chips.filter({ hasText: "All" }).click();
+    await page.locator("[data-notification='reply']").click();
+    await expect(page).toHaveURL(new RegExp(`/flock/post/${POST}$`));
+    await context.close();
+  });
+
+  test("the review queue: Do good approve / ask for changes / decline; reports remove / message / keep", async ({ browser, baseURL }) => {
+    const { context, page, state } = await open(browser, baseURL!, { admin: true });
+    const item = { author_id: ALEX, author_region: "Great Lakes", title: null, photo_count: 0, report_count: 0, reasons: [], notes: [], hidden: false, removed: false, messaged_at: null, journey_id: null };
+    state.queue.push(
+      { ...item, item_type: "good", subject_type: "post", subject_id: "00000000-0000-4000-8000-0000000079d1", post_id: "00000000-0000-4000-8000-0000000079d1", author_name: "Jordan L.", title: "Help Midwest Avian Rescue replace its aviary roof", body: "They need $4,000 by December.", created_at: hoursAgo(3) },
+      { ...item, item_type: "good", subject_type: "post", subject_id: "00000000-0000-4000-8000-0000000079d2", post_id: "00000000-0000-4000-8000-0000000079d2", author_name: "Priya S.", body: "Fosters needed in Ann Arbor.", created_at: hoursAgo(5) },
+      { ...item, item_type: "report", subject_type: "comment", subject_id: "00000000-0000-4000-8000-0000000079d3", post_id: POST, author_name: "Alex R.", body: "Just clip his wings, problem solved", report_count: 2, reasons: ["unsafe"], notes: ["Clipping isn't a fix."], hidden: false, created_at: hoursAgo(1) },
+    );
+    await page.goto("/admin/review");
+    await expect(page.getByRole("heading", { level: 1, name: "Review queue" })).toBeVisible();
+    await expect(page.getByTestId("queue-chips").getByRole("button")).toHaveText(["All 3", "Do good 2", "Reports 1"]);
+    const roof = page.locator("[data-subject='00000000-0000-4000-8000-0000000079d1']");
+    await expect(roof).toContainText("Help Midwest Avian Rescue replace its aviary roof");
+    await roof.locator("[data-act='approve']").click();
+    expect(state.calls.find((c) => c.fn === "flock_review_post")!.args).toMatchObject({ p_post_id: "00000000-0000-4000-8000-0000000079d1", p_decision: "approve" });
+    await expect(page.getByTestId("queue-chips").getByRole("button")).toHaveText(["All 2", "Do good 1", "Reports 1"]);
+
+    await page.locator("[data-subject='00000000-0000-4000-8000-0000000079d2'] [data-act='changes']").click();
+    const send = page.getByRole("button", { name: "Send to the author" });
+    await expect(send).toBeDisabled();
+    await page.getByTestId("review-note-input").fill("Add the rescue's name and a link to its wish list.");
+    await send.click();
+    expect(state.calls.filter((c) => c.fn === "flock_review_post").at(-1)!.args).toMatchObject({ p_decision: "changes", p_note: "Add the rescue's name and a link to its wish list." });
+
+    const rep = page.locator("[data-subject='00000000-0000-4000-8000-0000000079d3']");
+    await expect(rep).toContainText("Reported by 2 members");
+    await expect(rep).toContainText("“Just clip his wings, problem solved”");
+    await expect(rep.getByTestId("report-reasons")).toContainText("Unsafe advice for birds");
+    await rep.locator("[data-act='message']").click();
+    await page.getByTestId("review-note-input").fill("Please explain why, or edit it.");
+    await page.getByRole("button", { name: "Send message" }).click();
+    expect(state.calls.filter((c) => c.fn === "flock_resolve_report").at(-1)!.args).toMatchObject({ p_subject_type: "comment", p_action: "message", p_note: "Please explain why, or edit it." });
+    await rep.locator("[data-act='keep']").click();
+    expect(state.calls.filter((c) => c.fn === "flock_resolve_report").at(-1)!.args).toMatchObject({ p_action: "keep" });
+    await expect(page.getByTestId("queue-empty")).toHaveText("Nothing waiting. Nice.");
     await context.close();
   });
 });

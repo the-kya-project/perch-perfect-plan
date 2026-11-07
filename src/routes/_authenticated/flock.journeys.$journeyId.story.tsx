@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createFileRoute, Link, useNavigate, useRouter } from "@tanstack/react-router";
 import { useCommentCounts } from "@/lib/flockPostData";
-import { X } from "lucide-react";
+import { Flag, X } from "lucide-react";
+import { ReportSheet } from "@/components/flock/ReportSheet";
 import { useTranslation } from "react-i18next";
 import type { TFunction } from "i18next";
 import { K } from "@/components/kya";
@@ -76,6 +77,7 @@ function Story() {
     setI(n);
   };
   const touch = useRef<number | null>(null);
+  const [reporting, setReporting] = useState<string | null>(null);
 
   const cur = reel[i];
   const clip = cur ? clips?.[cur.update_id] : undefined;
@@ -100,6 +102,12 @@ function Story() {
             {[card?.owner_name, cur ? ago(t, cur.created_at, i18n.language) : null, tag || null].filter(Boolean).join(" · ")}
           </span>
         </span>
+        {access?.can_share && card && !card.is_mine && cur && (
+          <button type="button" onClick={() => setReporting(cur.update_id)} aria-label={t("flock.report.titleUpdate", "Report this update")} data-testid="story-report"
+            className="grid size-11 place-items-center rounded-full" style={{ color: K.paleGreen }}>
+            <Flag className="size-4" aria-hidden="true" />
+          </button>
+        )}
         <button type="button" onClick={close} aria-label={t("flock.journeys.post.close", "Close")} className="grid size-11 place-items-center rounded-full">
           <X className="size-5" aria-hidden="true" />
         </button>
@@ -146,6 +154,7 @@ function Story() {
           </button>
         )}
       </div>
+      {reporting && <ReportSheet type="journey_update" id={reporting} onClose={() => setReporting(null)} />}
     </div>
   );
 }

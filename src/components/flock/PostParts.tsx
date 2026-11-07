@@ -56,8 +56,8 @@ export function useLongPress(onLong: () => void, ms = 480) {
   };
 }
 
-/** The press-and-hold menu: Edit / Delete / Cancel on your own; Reply (and,
- *  later, Report) / Cancel on someone else's. */
+/** The press-and-hold menu: Edit / Delete / Cancel on your own; Reply /
+ *  Report / Cancel on someone else's. */
 export function ActionSheet({ title, actions, onClose }: {
   title: string;
   actions: { key: string; label: string; danger?: boolean; onClick: () => void }[];
