@@ -84,20 +84,16 @@ export async function dismissOpenInApp(page: Page): Promise<void> {
   if (await notNow.isVisible().catch(() => false)) await notNow.click();
 }
 
-/** The first-run welcome layer on Home (OwnerOnboarding, a full-screen
- *  .setup-frame): it appears only after it has checked the account's birds and
+/** The first-run welcome layer on Home (OwnerOnboarding: a full-screen,
+ *  fixed .setup-frame; pages use .setup-frame too, so match the fixed overlay
+ *  only). It appears only after it has checked the account's birds and
  *  profile, so wait for it, then close it with its X. An account that has
  *  already seen it never gets it (waits `timeout`, then carries on). */
 export async function closeWelcome(page: Page, timeout = 15_000): Promise<void> {
-  const frame = page.locator(".setup-frame");
+  const frame = page.locator(".setup-frame.fixed.inset-0");
   const shown = await frame.first().waitFor({ state: "visible", timeout }).then(() => true, () => false);
   if (!shown) return;
-  // More than one copy can be up at once (each closes on its own X), so close
-  // whichever is showing until none is.
-  for (let i = 0; i < 3 && (await frame.count()) > 0; i++) {
-    await frame.first().getByRole("button", { name: "Close", exact: true }).first().click();
-    await page.waitForTimeout(500);
-  }
+  await frame.first().getByRole("button", { name: "Close", exact: true }).first().click();
   await expect(frame).toHaveCount(0);
 }
 
