@@ -10,7 +10,7 @@
 //   (focus back on Spaces), picking a space opens Today filtered to it.
 //   Duo / wide: the five Community tabs sit in the side column, no care tabs.
 //   Non-admins: every /flock URL sends them Home, and no Community code loads.
-import { test, expect, type Browser, type BrowserContext, type Page } from "@playwright/test";
+import { test, expect, type Browser, type BrowserContext, type Page, type Route } from "@playwright/test";
 import { devices } from "@playwright/test";
 import { duoFixture } from "./duo-fixture";
 import { mockDuo } from "./duo-mock";
@@ -19,7 +19,83 @@ import { MOCK } from "./helpers";
 const { defaultBrowserType: _d, ...IPHONE } = devices["iPhone 13"];
 const DUO = { viewport: { width: 951, height: 669 }, screen: { width: 951, height: 669 }, isMobile: true, hasTouch: true };
 
-async function open(browser: Browser, baseURL: string, opts: { admin: boolean; size?: "phone" | "duo" }): Promise<{ context: BrowserContext; page: Page; flockChunks: string[] }> {
+const REGIONS = [
+  { slug: "california", name: "California", states: ["CA"], sort_order: 1 },
+  { slug: "great-lakes", name: "Great Lakes", states: ["IL", "IN", "MI", "OH"], sort_order: 3 },
+  { slug: "texas", name: "Texas", states: ["TX"], sort_order: 9 },
+  { slug: "other", name: "Other region", states: [], sort_order: 10 },
+];
+
+/** The Community's own data, stateful so a save changes the next screen:
+ *  the member's Flock profile and bird choices, the regions, chapters
+ *  (counted from a few made-up neighbours), and their membership. */
+type FlockState = {
+  profile: Record<string, any> | null;
+  shown: Map<string, boolean>;
+  saves: Record<string, any>[];
+  shownSaves: Record<string, any>[];
+};
+
+async function mockFlock(context: BrowserContext, userId: string, opts: { setupDone: boolean; region?: string }): Promise<FlockState> {
+  const state: FlockState = {
+    profile: opts.setupDone || opts.region
+      ? { user_id: userId, display_name: "Brittany K.", region_slug: opts.region ?? "great-lakes", bio: null, photo_path: null, setup_completed_at: opts.setupDone ? new Date().toISOString() : null }
+      : null,
+    shown: new Map(),
+    saves: [],
+    shownSaves: [],
+  };
+  const neighbours: Record<string, { user_id: string; display_name: string }[]> = {
+    "great-lakes": [{ user_id: "00000000-0000-4000-8000-00000000c001", display_name: "Ada L." }],
+    texas: [{ user_id: "00000000-0000-4000-8000-00000000c002", display_name: "Cy T." }, { user_id: "00000000-0000-4000-8000-00000000c003", display_name: "Dee R." }],
+  };
+  const json = (route: Route, body: unknown, status = 200) =>
+    route.fulfill({ status, contentType: "application/json", headers: { "access-control-allow-origin": "*" }, body: JSON.stringify(body) });
+  const wantsObject = (route: Route) => (route.request().headers()["accept"] ?? "").includes("vnd.pgrst.object");
+  const membersOf = (slug: string) => [
+    ...(neighbours[slug] ?? []).map((m) => ({ ...m, photo_path: null, is_founder: false, bird_names: ["Pip"] })),
+    ...(state.profile?.region_slug === slug ? [{ user_id: userId, display_name: state.profile.display_name, photo_path: null, is_founder: true, bird_names: [] }] : []),
+  ];
+
+  await context.route(`${MOCK}/rest/v1/flock_profiles**`, async (route) => {
+    const req = route.request();
+    if (req.method() === "GET" || req.method() === "HEAD") return wantsObject(route) ? (state.profile ? json(route, state.profile) : json(route, { code: "PGRST116" }, 406)) : json(route, state.profile ? [state.profile] : []);
+    if (req.method() === "OPTIONS") return route.fulfill({ status: 204, headers: { "access-control-allow-origin": "*", "access-control-allow-headers": "*", "access-control-allow-methods": "*" } });
+    const body = req.postDataJSON();
+    state.saves.push(body);
+    state.profile = { ...(state.profile ?? {}), ...body };
+    return json(route, [], 201);
+  });
+  await context.route(`${MOCK}/rest/v1/flock_shown_birds**`, async (route) => {
+    const req = route.request();
+    if (req.method() === "GET") return json(route, [...state.shown].map(([bird_id, shown]) => ({ bird_id, shown })));
+    if (req.method() === "OPTIONS") return route.fulfill({ status: 204, headers: { "access-control-allow-origin": "*", "access-control-allow-headers": "*", "access-control-allow-methods": "*" } });
+    const rows = req.postDataJSON() as { bird_id: string; shown: boolean }[];
+    state.shownSaves.push(...rows);
+    for (const r of rows) state.shown.set(r.bird_id, r.shown);
+    return json(route, [], 201);
+  });
+  await context.route(`${MOCK}/rest/v1/regions**`, (route) => json(route, REGIONS));
+  await context.route(`${MOCK}/rest/v1/entitlements**`, (route) =>
+    json(route, [{ plan: "founding", status: "trialing", source: "founding", starts_at: null, current_period_end: null, free_until: null }]));
+  await context.route(`${MOCK}/rest/v1/rpc/flock_*`, async (route) => {
+    const fn = new URL(route.request().url()).pathname.split("/").pop();
+    const args = (route.request().postDataJSON() ?? {}) as Record<string, any>;
+    if (fn === "flock_my_setup") return json(route, [{ suggested_region: "great-lakes", founding_spot: 7, setup_completed_at: state.profile?.setup_completed_at ?? null }]);
+    if (fn === "flock_chapter") {
+      const r = REGIONS.find((x) => x.slug === args.p_region_slug);
+      return json(route, r ? [{ region_slug: r.slug, name: r.name, states: r.states, member_count: membersOf(r.slug).length }] : []);
+    }
+    if (fn === "flock_chapter_members") return json(route, membersOf(args.p_region_slug));
+    if (fn === "flock_visible_birds") return json(route, []);
+    if (fn === "flock_member_profile") return json(route, []);
+    if (fn === "flock_enabled") return route.fallback();
+    return json(route, null);
+  });
+  return state;
+}
+
+async function open(browser: Browser, baseURL: string, opts: { admin: boolean; size?: "phone" | "duo"; setupDone?: boolean; region?: string }): Promise<{ context: BrowserContext; page: Page; flockChunks: string[]; state: FlockState }> {
   const context = await browser.newContext({
     ...(opts.size === "duo" ? DUO : IPHONE),
     locale: "en-US", serviceWorkers: "block", baseURL,
@@ -28,21 +104,17 @@ async function open(browser: Browser, baseURL: string, opts: { admin: boolean; s
   fx.rpc.flock_enabled = opts.admin;
   fx.rpc.is_admin = opts.admin;
   await mockDuo(context, fx);
-  // The member's chapter (the fixture's join helper can't express it).
-  await context.route(`${MOCK}/rest/v1/flock_profiles**`, (route) =>
-    route.fulfill({
-      status: 200,
-      contentType: "application/json",
-      headers: { "access-control-allow-origin": "*" },
-      body: JSON.stringify({ region_slug: "great-lakes", regions: { name: "Great Lakes", states: ["IL", "IN", "MI", "OH"] } }),
-    }));
+  const state = await mockFlock(context, fx.user.id, { setupDone: opts.setupDone ?? true, region: opts.region });
   // Hide the open-in-app strip on every page (a session-only choice).
   await context.addInitScript(() => { try { sessionStorage.setItem("kya:openInAppDismissed", "1"); } catch { /* ignore */ } });
   const flockChunks: string[] = [];
-  context.on("request", (r) => { if (/\/assets\/(FlockShell|FlockChips|SpacesSheet|flock(\.[\w-]+)?)-[\w-]+\.js/.test(r.url())) flockChunks.push(r.url()); });
+  context.on("request", (r) => { if (FLOCK_CHUNK.test(r.url())) flockChunks.push(r.url()); });
   const page = await context.newPage();
-  return { context, page, flockChunks };
+  return { context, page, flockChunks, state };
 }
+
+// Community code chunks (FlockHealthDuo is the care app's, not Community's).
+const FLOCK_CHUNK = /\/assets\/(?!FlockHealthDuo)(Flock\w+|SpacesSheet|flock\w*(\.[\w$-]+)*)-[\w-]+\.js/;
 
 const tabs = (page: Page) => page.locator("nav[aria-label='Community']:visible [data-flock-tab]");
 
@@ -52,7 +124,8 @@ test.describe("as an admin, on a phone", () => {
     await page.goto("/flock");
     await expect(page.getByRole("heading", { level: 1, name: "Today" })).toBeVisible();
     await expect(page.getByRole("button", { name: "Spaces" })).toBeVisible();
-    await expect(page.getByRole("link", { name: "Account settings" })).toBeVisible();
+    // The header avatar opens You (the Community profile), not care Account.
+    await expect(page.getByRole("link", { name: "You", exact: true })).toHaveAttribute("href", "/flock/you");
     await expect(tabs(page)).toHaveText(["Today", "Journeys", "Chapter", "Library", "My birds"]);
     await expect(tabs(page).first()).toHaveAttribute("aria-current", "page");
     await expect(tabs(page).last()).toHaveAttribute("href", "/dashboard");
@@ -134,6 +207,7 @@ test.describe("as an admin, on a phone", () => {
     await tabs(page).filter({ hasText: "Chapter" }).click();
     await expect(page).toHaveURL(/\/flock\/chapter$/);
     await expect(page.getByTestId("chapter-line")).toHaveText("Great Lakes · IL · IN · MI · OH");
+    await expect(page.getByTestId("chapter-count")).toContainText("2 members · meetups unlock at 15");
     const sub = page.getByRole("tablist", { name: "Chapter sections" }).getByRole("tab");
     await expect(sub).toHaveText(["Posts", "Events", "Resources"]);
     await expect(sub.first()).toHaveAttribute("aria-selected", "true");
@@ -210,4 +284,110 @@ test("everyone else: every /flock URL sends them Home and no Community code load
     expect(flockChunks, `${size}: Community code downloaded`).toEqual([]);
     await context.close();
   }
+});
+
+test.describe("welcome, setup, profiles and chapters (admin, phone)", () => {
+  test("welcome shows once: first visit goes to welcome, setup saves, then never again", async ({ browser, baseURL }) => {
+    const { context, page, state } = await open(browser, baseURL!, { admin: true, setupDone: false });
+    await page.goto("/flock");
+    await expect(page).toHaveURL(/\/flock\/welcome$/);
+    const welcome = page.getByTestId("flock-welcome");
+    await expect(welcome.getByText("Founding member · 7 of 50")).toBeVisible();
+    await expect(welcome.getByRole("heading", { level: 1 })).toHaveText("Welcome to the Flock, Brittany");
+    await expect(welcome.getByText("This is a place to learn alongside other bird people, share how your birds are doing, and do some good together.")).toBeVisible();
+    await expect(welcome.getByText("Takes about a minute")).toBeVisible();
+    await expect(page.locator("[data-flock-tab]")).toHaveCount(0);
+
+    await welcome.getByRole("button", { name: "Let's get you set up" }).click();
+    await expect(page).toHaveURL(/\/flock\/setup$/);
+    await expect(page.getByRole("progressbar", { name: "Setup progress" })).toBeVisible();
+    await expect(page.getByTestId("setup-region")).toHaveText("Great Lakes · IL · IN · MI · OH");
+    await expect(page.getByText("Members see your region, never your address.")).toBeVisible();
+    await expect(page.getByText("Only their name, species, and photo. Care records stay private.")).toBeVisible();
+    const chips = page.locator("[data-bird-chip]");
+    expect(await chips.count()).toBeGreaterThan(0);
+    for (const c of await chips.all()) await expect(c).toHaveAttribute("aria-pressed", "true");
+    const first = chips.first();
+    const firstId = await first.getAttribute("data-bird-chip");
+    await first.click();
+    await expect(first).toHaveAttribute("aria-pressed", "false");
+
+    await page.getByRole("button", { name: "Go to the community" }).click();
+    await expect(page).toHaveURL(/\/flock$/);
+    await expect(page.getByRole("heading", { level: 1, name: "Today" })).toBeVisible();
+    const saved = state.saves.at(-1)!;
+    expect(saved.region_slug).toBe("great-lakes");
+    expect(saved.display_name).toBe("Brittany");
+    expect(typeof saved.setup_completed_at).toBe("string");
+    expect(state.shownSaves.find((r) => r.bird_id === firstId)?.shown).toBe(false);
+    expect(state.shownSaves.filter((r) => r.bird_id !== firstId).every((r) => r.shown)).toBe(true);
+
+    // Never again.
+    await page.goto("/flock");
+    await expect(page.getByRole("heading", { level: 1, name: "Today" })).toBeVisible();
+    await page.waitForTimeout(500);
+    await expect(page).toHaveURL(/\/flock$/);
+    await page.goto("/flock/library");
+    await expect(page).toHaveURL(/\/flock\/library$/);
+    await context.close();
+  });
+
+  test("changing region moves you to that chapter at once", async ({ browser, baseURL }) => {
+    const { context, page } = await open(browser, baseURL!, { admin: true });
+    await page.goto("/flock/chapter");
+    await expect(page.getByTestId("chapter-line")).toHaveText("Great Lakes · IL · IN · MI · OH");
+    await expect(page.getByTestId("chapter-count")).toContainText("2 members");
+    await page.getByRole("link", { name: "See members" }).click();
+    await expect(page).toHaveURL(/\/flock\/members$/);
+    await expect(page.getByTestId("chapter-members").getByText("Ada L.")).toBeVisible();
+
+    await page.goto("/flock/you");
+    await page.getByRole("link", { name: "Edit profile" }).click();
+    await expect(page).toHaveURL(/\/flock\/you\/edit$/);
+    await page.getByRole("button", { name: "Change" }).click();
+    await page.getByTestId("region-list").locator("[data-region='texas']").click();
+    await expect(page.getByTestId("edit-region")).toHaveText("Texas · TX");
+    await page.getByRole("button", { name: "Save profile" }).click();
+    await expect(page).toHaveURL(/\/flock\/you$/);
+    await expect(page.getByTestId("you-line")).toHaveText("Texas · Founding member");
+
+    await page.goto("/flock/chapter");
+    await expect(page.getByTestId("chapter-line")).toHaveText("Texas · TX");
+    await expect(page.getByTestId("chapter-count")).toContainText("3 members · meetups unlock at 15");
+    await context.close();
+  });
+
+  test("Other region: no chapter yet, and a way to pick one", async ({ browser, baseURL }) => {
+    const { context, page } = await open(browser, baseURL!, { admin: true, region: "other" });
+    await page.goto("/flock/chapter");
+    await expect(page.getByTestId("chapter-line")).toHaveText("No chapter yet");
+    await page.getByRole("button", { name: "Choose your region" }).click();
+    await expect(page.getByTestId("region-list").locator("[data-region='other']")).toHaveCount(0);
+    await page.getByTestId("region-list").locator("[data-region='california']").click();
+    await expect(page.getByTestId("chapter-line")).toHaveText("California · CA");
+    await context.close();
+  });
+
+  test("You and Privacy: what members see, and what they never see", async ({ browser, baseURL }) => {
+    const { context, page } = await open(browser, baseURL!, { admin: true });
+    await page.goto("/flock");
+    await page.getByRole("link", { name: "You" }).click();
+    await expect(page).toHaveURL(/\/flock\/you$/);
+    await expect(page.getByRole("heading", { level: 1 })).toHaveText("Brittany K.");
+    await expect(page.getByText("Community is separate from care reminders")).toBeVisible();
+    await expect(page.getByText("Founding · $15/mo · first 6 months free once the Flock opens")).toBeVisible();
+    await page.getByRole("button", { name: /Privacy/ }).click();
+    await expect(page).toHaveURL(/\/flock\/you\/privacy$/);
+    const see = page.getByTestId("privacy-see");
+    const never = page.getByTestId("privacy-never");
+    for (const x of ["Your display name", "Your region (your chapter)", "Your bio", "Your profile photo", "The birds you choose to show: their name, species, and photo"]) {
+      await expect(see.getByText(x, { exact: true })).toBeVisible();
+    }
+    for (const x of ["Your email", "Your address", "Your birds' care records and care plans", "Your sits and sitters", "Health checks and health notes", "Weights"]) {
+      await expect(never.getByText(x, { exact: true })).toBeVisible();
+    }
+    await page.getByRole("link", { name: "Choose which birds members meet" }).click();
+    await expect(page).toHaveURL(/\/flock\/you\/edit#birds$/);
+    await context.close();
+  });
 });

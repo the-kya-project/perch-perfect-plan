@@ -17,8 +17,9 @@ import { rememberMode, rememberedMode } from "@/lib/flock";
 import { avatarInitial } from "@/lib/accountInitial";
 import {
   CHAPTER_TABS, FLOCK_DESTS, FLOCK_REDIRECTS, FLOCK_SPACES, JOURNEYS_FILTERS, LIBRARY_SUBJECTS, LIBRARY_TYPES, TODAY_FILTERS,
-  chapterLine, destForPath, pick, pickOptional, pickQuery,
+  chapterLine, destForPath, isFlockOnboardingPath, pick, pickOptional, pickQuery,
 } from "@/lib/flockNav";
+import { defaultDisplayName, greetingName, isAutomaticDisplayName, memberCountLine, membershipSummary } from "@/lib/flockProfile";
 import { accessCells, accessDay } from "@/lib/flockAccess";
 
 let passed = 0;
@@ -94,6 +95,17 @@ check("every path lights the right tab", () => {
   assert.equal(destForPath("/flock/chapter"), "chapter");
   assert.equal(destForPath("/flock/library"), "library");
   assert.equal(destForPath("/flock/something-new"), "today");
+  assert.equal(destForPath("/flock/members"), "chapter");
+  assert.equal(destForPath("/flock/members/abc"), null);
+  assert.equal(destForPath("/flock/you"), null);
+  assert.equal(destForPath("/flock/you/edit"), null);
+  assert.equal(destForPath("/flock/birds/abc"), null);
+});
+check("welcome and setup have no tab bar", () => {
+  assert.ok(isFlockOnboardingPath("/flock/welcome"));
+  assert.ok(isFlockOnboardingPath("/flock/setup"));
+  assert.ok(!isFlockOnboardingPath("/flock"));
+  assert.ok(!isFlockOnboardingPath("/flock/you"));
 });
 check("old placeholder URLs redirect to a real tab", () => {
   assert.equal(FLOCK_REDIRECTS["/flock/spaces"], "/flock");
@@ -156,6 +168,50 @@ check("no end date (comp)", () => {
 check("days are UTC, so every admin sees the same date", () => {
   assert.equal(accessDay("2027-01-05T00:00:00Z"), "Jan 5, 2027");
   assert.equal(accessDay("2027-01-04T23:59:00Z"), "Jan 4, 2027");
+});
+
+console.log("profiles");
+check("display name: first name and last initial, never an email", () => {
+  assert.equal(defaultDisplayName("Brittany", "Brittany King"), "Brittany K.");
+  assert.equal(defaultDisplayName(null, "brittany king"), "brittany K.");
+  assert.equal(defaultDisplayName("Kiwi", null), "Kiwi");
+  assert.equal(defaultDisplayName("Ana", "Ana"), "Ana");
+  assert.equal(defaultDisplayName("Mary", "Mary Jo Smith"), "Mary S.");
+  assert.equal(defaultDisplayName(null, null), "Member");
+  assert.equal(defaultDisplayName("", "  "), "Member");
+});
+check("greeting: first name, else the display name's first word", () => {
+  assert.equal(greetingName("Brittany", "Brittany K."), "Brittany");
+  assert.equal(greetingName(null, "Ben M."), "Ben");
+  assert.equal(greetingName(null, null), "");
+});
+check("setup replaces only an automatic display name", () => {
+  assert.ok(isAutomaticDisplayName("Brittany King", "Brittany King"));
+  assert.ok(isAutomaticDisplayName("Founding member", "Brittany King"));
+  assert.ok(isAutomaticDisplayName(null, "x"));
+  assert.ok(!isAutomaticDisplayName("Birdlady B.", "Brittany King"));
+});
+check("member count line", () => {
+  assert.equal(memberCountLine(1), "1 member · meetups unlock at 15");
+  assert.equal(memberCountLine(8), "8 members · meetups unlock at 15");
+  assert.equal(memberCountLine(15), "15 members");
+});
+check("membership: founding before and after opening", () => {
+  const f = { plan: "founding", status: "trialing", source: "founding", starts_at: null, current_period_end: null, free_until: null };
+  assert.equal(membershipSummary([f], false).line, "Founding · $15/mo · first 6 months free once the Flock opens");
+  const open = { ...f, starts_at: "2027-01-05T06:00:00Z", free_until: "2027-07-05T06:00:00Z", current_period_end: "2027-07-05T06:00:00Z" };
+  assert.equal(membershipSummary([open], false, new Date("2027-02-01T00:00:00Z")).line, "Founding · $15/mo · free until Jul 5, 2027");
+});
+check("membership: gifts, comp, admin, none", () => {
+  const g = { plan: "annual", status: "active", source: "gift", starts_at: "2027-01-05T06:00:00Z", current_period_end: "2028-01-05T06:00:00Z", free_until: null };
+  assert.equal(membershipSummary([g], false, new Date("2027-03-01T00:00:00Z")).line, "Gift membership · until Jan 5, 2028");
+  assert.equal(membershipSummary([g], false, new Date("2026-12-01T00:00:00Z")).line, "Gift membership · starts Jan 5, 2027");
+  assert.equal(membershipSummary([{ ...g, starts_at: null, current_period_end: null }], false).line, "Gift membership · starts when the Flock opens");
+  assert.equal(membershipSummary([{ ...g, source: "manual", plan: "comp", starts_at: "2026-10-01T00:00:00Z", current_period_end: null }], false).line, "Complimentary membership");
+  assert.equal(membershipSummary([], true).title, "Admin access");
+  assert.equal(membershipSummary([], false).line, "No membership yet");
+  const refunded = { ...g, status: "canceled", current_period_end: "2027-02-01T00:00:00Z" };
+  assert.equal(membershipSummary([refunded], false, new Date("2027-03-01T00:00:00Z")).line, "No membership yet");
 });
 
 console.log(`\n${passed} passed${process.exitCode ? ", some FAILED" : ""}`);
