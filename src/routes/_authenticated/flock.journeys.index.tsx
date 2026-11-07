@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Link, createFileRoute, useNavigate } from "@tanstack/react-router";
 import { Plus, Route as RouteIcon } from "lucide-react";
 import { useTranslation } from "react-i18next";
@@ -5,6 +6,9 @@ import type { TFunction } from "i18next";
 import { FlockBody, FlockHeader } from "@/components/FlockShell";
 import { FlockChips, FlockEmpty } from "@/components/flock/FlockChips";
 import { K } from "@/components/kya";
+import { WhichJourneySheet } from "@/components/flock/JourneyParts";
+import { useActiveJourneys } from "@/lib/journeyData";
+import { daysSince, progressOf } from "@/lib/journeys";
 import { JOURNEYS_FILTERS, pickOptional, type JourneysFilter } from "@/lib/flockNav";
 
 // Journeys: members' progress stories. Species filters come in a later step.
@@ -49,6 +53,13 @@ function FlockJourneys() {
   const navigate = useNavigate({ from: Route.fullPath });
   const current: JourneysFilter = filter ?? "for-you";
   const empty = emptyCopy(t, current);
+  const { data: active } = useActiveJourneys();
+  const [picking, setPicking] = useState(false);
+  const postUpdate = () => {
+    if (!active?.length) return;
+    if (active.length === 1) void navigate({ to: "/flock/journeys/$journeyId/post", params: { journeyId: active[0].id }, search: {} });
+    else setPicking(true);
+  };
   return (
     <>
       <FlockHeader title={t("flock.journeys.title", "Journeys")} />
@@ -61,6 +72,13 @@ function FlockJourneys() {
           onChange={(v) => void navigate({ search: { filter: !v || v === "for-you" ? undefined : v }, replace: true })}
         />
         {/* The journey cards and real filters come with step 3's third PR. */}
+        {!!active?.length && (
+          <button type="button" onClick={postUpdate} data-testid="post-update-any"
+            className="inline-flex min-h-[48px] items-center justify-center gap-2 rounded-full border-2 bg-white px-5 text-[15px] font-[700] active:scale-[0.99]"
+            style={{ borderColor: K.forest, color: K.forest }}>
+            {t("flock.journeys.page.post", "Post an update")}
+          </button>
+        )}
         <Link
           to="/flock/journeys/start"
           data-testid="start-journey"
@@ -70,6 +88,17 @@ function FlockJourneys() {
           <Plus className="size-4" aria-hidden="true" />{t("flock.journeys.startCta", "Start a journey")}
         </Link>
         <FlockEmpty icon={<RouteIcon className="size-6" />} title={empty.title}>{empty.line}</FlockEmpty>
+        {picking && active && (
+          <WhichJourneySheet
+            journeys={active.map((j) => {
+              const p = progressOf(j.milestones);
+              return { id: j.id, title: `${j.bird?.name ?? ""} · ${j.template?.name ?? j.custom_name ?? ""}`, done: p.done, total: p.total, daysSince: daysSince(j.last_posted) };
+            })}
+            onPick={(id) => void navigate({ to: "/flock/journeys/$journeyId/post", params: { journeyId: id }, search: {} })}
+            onStartNew={() => void navigate({ to: "/flock/journeys/start" })}
+            onClose={() => setPicking(false)}
+          />
+        )}
       </FlockBody>
     </>
   );

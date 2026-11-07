@@ -128,6 +128,27 @@ export async function deleteVideo(uid: string): Promise<void> {
   }
 }
 
+/**
+ * Make a trimmed copy of a video (Cloudflare's clip API): a new uid holding
+ * startTimeSeconds..endTimeSeconds of the original. Used by journey posts'
+ * Trim; the care app never calls it. The original is left alone (the caller
+ * decides whether to delete it).
+ */
+export async function clipVideo(uid: string, startSeconds: number, endSeconds: number, creator?: string): Promise<{ uid: string }> {
+  const r = await cf(`/stream/clip`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      clippedFromVideoUID: uid,
+      startTimeSeconds: Math.max(0, Math.floor(startSeconds)),
+      endTimeSeconds: Math.ceil(endSeconds),
+      requireSignedURLs: true,
+      ...(creator ? { creator } : {}),
+    }),
+  });
+  return { uid: r.uid as string };
+}
+
 export type StreamStatus = {
   uid: string;
   readyToStream: boolean;

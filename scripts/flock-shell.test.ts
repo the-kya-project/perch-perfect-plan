@@ -22,8 +22,9 @@ import {
 import { defaultDisplayName, greetingName, isAutomaticDisplayName, memberCountLine, membershipSummary } from "@/lib/flockProfile";
 import { accessCells, accessDay } from "@/lib/flockAccess";
 import {
-  birdPronoun, canStartCustom, customProblem, defaultVisibility, groupTemplates, isLocked, possessive, startHere,
-  trimTrailingBlanks, vetCheckLine, visibilityChoices, type JourneyTemplate,
+  birdPronoun, canStartCustom, customProblem, daysSince, defaultVisibility, groupTemplates, isLocked, journeyDay, journeyDays,
+  nextMilestone, possessive, progressOf, skillInSentence, startHere, trimTrailingBlanks, vetCheckLine, visibilityChoices, wantsTip,
+  type JourneyTemplate,
 } from "@/lib/journeys";
 
 let passed = 0;
@@ -114,6 +115,10 @@ check("welcome and setup have no tab bar", () => {
   assert.ok(isFlockOnboardingPath("/flock/journeys/known"));
   assert.ok(!isFlockOnboardingPath("/flock/journeys"));
   assert.ok(!isFlockOnboardingPath("/flock/journeys/abc"));
+  assert.ok(isFlockOnboardingPath("/flock/journeys/abc/post"));
+  assert.ok(isFlockOnboardingPath("/flock/journeys/abc/milestone/3"));
+  assert.ok(isFlockOnboardingPath("/flock/journeys/abc/finished"));
+  assert.ok(!isFlockOnboardingPath("/flock/journeys/abc/postscript"));
   assert.ok(!isFlockOnboardingPath("/flock/you"));
 });
 check("old placeholder URLs redirect to a real tab", () => {
@@ -274,6 +279,26 @@ check("journeys: pronouns, possessives and the vet check line", () => {
   assert.equal(possessive("Iris"), "Iris'");
   assert.equal(vetCheckLine({ safeguards: ["Daily weigh-ins.", "The template suggests a vet check before starting."] }), "The template suggests a vet check before starting.");
   assert.equal(vetCheckLine({ safeguards: [] }), null);
+});
+
+check("journeys: after posting, a tip on hard days and the question on good ones", () => {
+  assert.equal(wantsTip("all_in"), false);
+  assert.equal(wantsTip("distracted"), true);
+  assert.equal(wantsTip("not_today"), true);
+});
+check("journeys: next milestone, progress, days", () => {
+  const ms = [{ position: 2, state: "todo" }, { position: 1, state: "already" }, { position: 3, state: "todo" }];
+  assert.equal(nextMilestone(ms)?.position, 2);
+  assert.deepEqual(progressOf(ms), { done: 1, total: 3 });
+  assert.equal(nextMilestone([{ position: 1, state: "reached" }]), null);
+  const now = new Date("2026-11-20T12:00:00Z");
+  assert.equal(journeyDay("2026-11-20T08:00:00Z", now), 1);
+  assert.equal(journeyDay("2026-11-04T12:00:00Z", now), 17);
+  assert.equal(journeyDays("2026-10-04T12:00:00Z", "2026-11-04T12:00:00Z"), 31);
+  assert.equal(daysSince(null, now), null);
+  assert.equal(daysSince("2026-11-18T12:00:00Z", now), 2);
+  assert.equal(skillInSentence("Recall"), "recall");
+  assert.equal(skillInSentence("Step up"), "step up");
 });
 
 console.log(`\n${passed} passed${process.exitCode ? ", some FAILED" : ""}`);
