@@ -1,31 +1,47 @@
 import { useState } from "react";
-import { Link, createFileRoute } from "@tanstack/react-router";
-import { AlertTriangle, Check, Plus } from "lucide-react";
+import { Link, createFileRoute, useNavigate } from "@tanstack/react-router";
+import { AlertTriangle, Check, MoreHorizontal } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import { K, KyaCard, KyaPrimaryButton } from "@/components/kya";
+import { K, KyaPrimaryButton, KyaSecondaryButton } from "@/components/kya";
 import { FlockSubPage } from "@/components/flock/FlockSubPage";
 import { FlockEmpty } from "@/components/flock/FlockChips";
+import { ClipTile, JourneyMenuSheet, shortDay } from "@/components/flock/JourneyBrowse";
+import { deleteJourney } from "@/lib/journeyMedia.functions";
 import {
-  resumeAfterVet, useBirdWeights, useInvalidateJourneys, useJourney, useJourneyBirds, useWeightCheck, type Journey, type WeightCheck,
+  followJourney, resumeAfterVet, setJourneyStatus, setJourneyVisibility, useBirdWeights, useInvalidateJourneys, useJourney,
+  useJourneyAccess, useJourneyClips, useJourneyView, useJourneyViewUpdates, useWeightCheck, type Journey, type WeightCheck,
 } from "@/lib/journeyData";
-import { nextMilestone, progressOf } from "@/lib/journeys";
+import { journeyDay } from "@/lib/journeys";
 
-// A journey: where it stands, Post an update, and its milestones. Diet
-// conversion adds the weight trend and its safeguard. The full page (clips
-// grid, Day one vs. now, the menu) comes with step 3's third PR.
+// A journey (JourneyEverywhere, screen 6): "[Bird] · [skill]", "Day N · X
+// following", the segmented progress bar, "N of M · next: …", Post an update
+// and Day one vs. now, then every clip in a 3-column grid tagged Milestone,
+// Question or Day one. Your own journeys get the menu (pause, happy where we
+// are, who sees it, delete) and, for Diet conversion, the weight safeguard;
+// other members' community journeys get Follow (members only). Everything
+// comes through journey_view*, which never shows a "Just me" journey outside
+// the bird's household.
 export const Route = createFileRoute("/_authenticated/flock/journeys/$journeyId/")({
   component: JourneyPage,
 });
 
 function JourneyPage() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const navigate = useNavigate();
+  const invalidate = useInvalidateJourneys();
   const { journeyId } = Route.useParams();
-  const { data: journey, isLoading } = useJourney(journeyId);
-  const { data: birds } = useJourneyBirds();
-  const bird = birds?.find((b) => b.id === journey?.bird_id);
-  const diet = journey?.template?.slug === "diet-conversion";
-  const { data: weight } = useWeightCheck(journeyId, !!diet && !!journey && journey.status !== "finished");
-  if (!isLoading && !journey) {
+  const { data: card, isLoading } = useJourneyView(journeyId);
+  const { data: updates } = useJourneyViewUpdates(journeyId);
+  const { data: access } = useJourneyAccess();
+  const { data: clips } = useJourneyClips(journeyId, !!card);
+  const mine = !!card?.is_mine;
+  const { data: own } = useJourney(mine ? journeyId : "");
+  const diet = card?.template_slug === "diet-conversion";
+  const { data: weight } = useWeightCheck(journeyId, mine && diet && card?.status !== "finished");
+  const [menu, setMenu] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  if (!isLoading && !card) {
     return (
       <FlockSubPage title={t("flock.journeys.page.missingTitle", "Journey not found")} fallback="/flock/journeys">
         <FlockEmpty icon={<Check className="size-6" />} title={t("flock.journeys.page.missingTitle", "Journey not found")}>
@@ -34,53 +50,100 @@ function JourneyPage() {
       </FlockSubPage>
     );
   }
-  const skill = journey?.template?.name ?? journey?.custom_name ?? "";
-  const ms = journey?.milestones ?? [];
-  const { done, total } = progressOf(ms);
-  const next = nextMilestone(ms);
-  const weightPaused = journey?.status === "paused" && journey.paused_reason === "weight_drop";
-  return (
-    <FlockSubPage title={journey ? `${bird?.name ?? ""} · ${skill}` : " "} fallback="/flock/journeys">
-      <div data-testid="journey-page" className="flex flex-col gap-3">
-        <p className="m-0 text-[15px] font-[700]" style={{ color: K.forest }} data-testid="journey-progress">
-          {next
-            ? t("flock.journeys.page.progress", "{{done}} of {{total}} · next: {{next}}", { done, total, next: next.title })
-            : t("flock.journeys.page.progressDone", "{{done}} of {{total}}", { done, total })}
-        </p>
-        <div className="flex gap-1" aria-hidden="true">
-          {ms.map((m) => <span key={m.id} className="h-2 flex-1 rounded-full" style={{ background: m.state === "todo" ? "#dfe7dd" : K.moss }} />)}
-        </div>
 
-        {journey && bird && diet && weight && (
-          <WeightCard journey={journey} birdName={bird.name} weight={weight} paused={weightPaused} />
+  const withClips = (updates ?? []).filter((u) => u.has_clip);
+  const canCompare = withClips.length >= 2;
+  const weightPaused = own?.status === "paused" && own.paused_reason === "weight_drop";
+  const act = async (fn: () => Promise<unknown>) => {
+    setError(null);
+    try { await fn(); await invalidate(); }
+    catch { setError(t("flock.journeys.page.error", "We couldn't save that. Check your connection and try again.")); }
+  };
+  const right = card && (mine ? (
+    <button type="button" onClick={() => setMenu(true)} aria-label={t("flock.journeys.page.menu", "Journey options")} data-testid="journey-menu-button"
+      className="grid size-11 place-items-center rounded-full" style={{ background: K.forestDeep, color: "#fff" }}>
+      <MoreHorizontal className="size-5" aria-hidden="true" />
+    </button>
+  ) : access?.can_share ? (
+    <button type="button" data-testid="follow" aria-pressed={card.following}
+      onClick={() => void act(() => followJourney(journeyId, !card.following))}
+      className="min-h-[40px] rounded-full px-4 text-[14px] font-[700]"
+      style={card.following ? { background: "transparent", border: "1.5px solid #9bcab8", color: "#fff" } : { background: K.sunflower, color: K.forest }}>
+      {card.following ? t("flock.journeys.page.following", "Following") : t("flock.journeys.page.follow", "Follow")}
+    </button>
+  ) : null);
+
+  return (
+    <FlockSubPage
+      title={card ? `${card.bird_name} · ${card.skill}` : " "}
+      line={card ? t("flock.journeys.page.line", "Day {{day}} · {{count}} following", { day: journeyDay(card.started_at, card.finished_at ? new Date(card.finished_at) : undefined), count: card.followers }) : " "}
+      fallback="/flock/journeys"
+      right={right}
+    >
+      <div data-testid="journey-page" className="flex flex-col gap-3">
+        {card && (
+          <>
+            <div className="flex gap-1" aria-hidden="true" data-testid="progress-bar">
+              {Array.from({ length: card.total }, (_, i) => <span key={i} className="h-2 flex-1 rounded-full" style={{ background: i < card.done ? K.moss : "#dfe7dd" }} />)}
+            </div>
+            <p className="m-0 text-[15px]" style={{ color: K.forest }} data-testid="journey-progress">
+              <b>{t("flock.journeys.page.of", "{{done}} of {{total}}", { done: card.done, total: card.total })}</b>
+              {card.next_title ? t("flock.journeys.page.next", " · next: {{next}}", { next: card.next_title }) : ""}
+            </p>
+          </>
         )}
-        {journey?.status === "paused" && !weightPaused && (
+
+        {mine && own && diet && weight && <WeightCard journey={own} birdName={card!.bird_name} weight={weight} paused={weightPaused} />}
+        {mine && card?.status === "paused" && !weightPaused && (
           <p className="m-0 rounded-[14px] px-3.5 py-2.5 text-[14px]" style={{ background: K.amberBg, color: K.amberText }} data-testid="paused-note">
             {t("flock.journeys.page.paused", "This journey is paused.")}
           </p>
         )}
-        {journey?.status === "active" && (
-          <Link to="/flock/journeys/$journeyId/post" params={{ journeyId }} search={{}} data-testid="post-update"
-            className="inline-flex min-h-[52px] items-center justify-center gap-2 rounded-full border-2 px-6 text-[16px] font-[700]"
-            style={{ background: K.sunflower, borderColor: K.forest, color: K.forest }}>
-            <Plus className="size-4" aria-hidden="true" />{t("flock.journeys.page.post", "Post an update")}
-          </Link>
-        )}
 
-        <KyaCard className="p-0">
-          <ol className="m-0 list-none p-0">
-            {ms.map((m, i) => (
-              <li key={m.id} className="flex min-h-[48px] items-center gap-3 px-4 py-2" style={{ borderBottom: i === ms.length - 1 ? undefined : `1px solid ${K.line}`, color: K.forest }}>
-                <span className="grid size-6 shrink-0 place-items-center rounded-full" style={m.state === "todo" ? { border: "2px solid #c9d3c8" } : { background: K.moss }}>
-                  {m.state !== "todo" && <Check className="size-3.5 text-white" strokeWidth={3} aria-hidden="true" />}
-                </span>
-                <span className={`flex-1 text-[14px] leading-[1.35] ${m === next ? "font-[700]" : ""}`}>{m.title}</span>
-                {m.state === "already" && <span className="text-[12.5px]" style={{ color: K.quiet }}>{t("flock.journeys.setup.already", "Already")}</span>}
-              </li>
+        {(mine && card?.status === "active") || canCompare ? (
+          <div className="flex gap-2.5">
+            {mine && card?.status === "active" && (
+              <Link to="/flock/journeys/$journeyId/post" params={{ journeyId }} search={{}} data-testid="post-update"
+                className="inline-flex min-h-[48px] flex-1 items-center justify-center rounded-full border-2 px-4 text-[15px] font-[700]"
+                style={{ background: K.sunflower, borderColor: K.forest, color: K.forest }}>
+                {t("flock.journeys.page.post", "Post an update")}
+              </Link>
+            )}
+            {canCompare && (
+              <KyaSecondaryButton className="flex-1" onClick={() => void navigate({ to: "/flock/journeys/$journeyId/compare", params: { journeyId }, search: {} })}>
+                {t("flock.journeys.page.compare", "Day one vs. now")}
+              </KyaSecondaryButton>
+            )}
+          </div>
+        ) : null}
+        {error && <p role="alert" className="m-0 text-[15px]" style={{ color: K.red }}>{error}</p>}
+
+        {withClips.length === 0 ? (
+          <p className="m-0 text-[14.5px]" style={{ color: K.quiet }} data-testid="no-clips">{t("flock.journeys.page.noClips", "No clips yet. Each update adds one here.")}</p>
+        ) : (
+          <div className="-mx-4 grid grid-cols-3 gap-[2px]" data-testid="clip-grid">
+            {withClips.map((u) => (
+              <ClipTile key={u.update_id} testId={u.update_id} thumbnail={clips?.[u.update_id]?.thumbnail}
+                date={shortDay(t, u.created_at, i18n.language)}
+                tag={u.is_milestone ? "milestone" : u.is_question ? "question" : u.is_day_one ? "day_one" : null}
+                onOpen={() => void navigate({ to: "/flock/journeys/$journeyId/story", params: { journeyId }, search: { u: u.update_id } })} />
             ))}
-          </ol>
-        </KyaCard>
+          </div>
+        )}
       </div>
+      {menu && card && (
+        <JourneyMenuSheet status={card.status} visibility={card.visibility} canShare={!!access?.can_share} clipCount={withClips.length}
+          onClose={() => setMenu(false)}
+          onPause={() => { setMenu(false); void act(() => setJourneyStatus(journeyId, "paused")); }}
+          onResume={() => { setMenu(false); void act(() => setJourneyStatus(journeyId, "active")); }}
+          onHappy={() => { setMenu(false); void act(() => setJourneyStatus(journeyId, "happy_where_we_are")); }}
+          onVisibility={(v) => { setMenu(false); void act(() => setJourneyVisibility(journeyId, v)); }}
+          onDelete={async () => {
+            setMenu(false);
+            try { await deleteJourney({ data: { journeyId } }); await invalidate(); void navigate({ to: "/flock/journeys", replace: true }); }
+            catch { setError(t("flock.journeys.page.deleteError", "We couldn't delete this journey. Try again in a moment.")); }
+          }} />
+      )}
     </FlockSubPage>
   );
 }

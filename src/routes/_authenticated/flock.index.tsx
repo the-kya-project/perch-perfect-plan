@@ -1,4 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { JourneyMilestoneCard } from "@/components/flock/JourneyToday";
+import { FollowRings, useCardBirdPhotos } from "@/components/flock/JourneyBrowse";
+import { useJourneyFollowing, useMilestoneCards } from "@/lib/journeyData";
 import { Sun } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import type { TFunction } from "i18next";
@@ -45,6 +48,11 @@ function FlockToday() {
   const navigate = useNavigate({ from: Route.fullPath });
   const filter: TodayFilter = space ?? "everything";
   const empty = emptyCopy(t, filter);
+  const { data: following } = useJourneyFollowing();
+  const { data: cards } = useMilestoneCards();
+  const photos = useCardBirdPhotos([...(following ?? []), ...(cards ?? [])]);
+  // Followed journeys and their milestones belong to Everything.
+  const showJourneys = filter === "everything";
   return (
     <>
       <FlockHeader title={t("flock.today.title", "Today")} />
@@ -56,7 +64,17 @@ function FlockToday() {
           value={filter}
           onChange={(v) => void navigate({ search: { space: !v || v === "everything" ? undefined : v }, replace: true })}
         />
-        <FlockEmpty icon={<Sun className="size-6" />} title={empty.title}>{empty.line}</FlockEmpty>
+        {showJourneys && following && following.length > 0 && (
+          <FollowRings cards={following} photos={photos}
+            onOpen={(id) => void navigate({ to: "/flock/journeys/$journeyId/story", params: { journeyId: id }, search: { queue: "following" } })} />
+        )}
+        {showJourneys && cards && cards.length > 0 ? (
+          <div className="flex flex-col gap-3" data-testid="milestone-cards">
+            {cards.map((c) => <JourneyMilestoneCard key={c.milestone_id} card={c} photo={photos[c.bird_id]} />)}
+          </div>
+        ) : (
+          <FlockEmpty icon={<Sun className="size-6" />} title={empty.title}>{empty.line}</FlockEmpty>
+        )}
       </FlockBody>
     </>
   );

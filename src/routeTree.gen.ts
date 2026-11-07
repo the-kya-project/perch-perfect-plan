@@ -124,8 +124,10 @@ import { Route as AuthenticatedBirdsBirdIdPlanIndexRouteImport } from './routes/
 import { Route as AuthenticatedBirdsBirdIdPlanEditorRouteImport } from './routes/_authenticated/birds/$birdId.plan.editor'
 import { Route as AuthenticatedBirdsBirdIdScansScanIdRouteImport } from './routes/_authenticated/birds/$birdId.scans.$scanId'
 import { Route as AuthenticatedFlockJourneysJourneyIdIndexRouteImport } from './routes/_authenticated/flock.journeys.$journeyId.index'
+import { Route as AuthenticatedFlockJourneysJourneyIdCompareRouteImport } from './routes/_authenticated/flock.journeys.$journeyId.compare'
 import { Route as AuthenticatedFlockJourneysJourneyIdFinishedRouteImport } from './routes/_authenticated/flock.journeys.$journeyId.finished'
 import { Route as AuthenticatedFlockJourneysJourneyIdPostRouteImport } from './routes/_authenticated/flock.journeys.$journeyId.post'
+import { Route as AuthenticatedFlockJourneysJourneyIdStoryRouteImport } from './routes/_authenticated/flock.journeys.$journeyId.story'
 import { Route as ApiPublicBereavementReviewReviewIdSigRouteImport } from './routes/api/public/bereavement-review.$reviewId.$sig'
 import { Route as AuthenticatedFlockJourneysJourneyIdMilestonePositionRouteImport } from './routes/_authenticated/flock.journeys.$journeyId.milestone.$position'
 import { Route as ApiPublicChartBirdIdMonthSigRouteImport } from './routes/api/public/chart.$birdId.$month.$sig'
@@ -767,6 +769,12 @@ const AuthenticatedFlockJourneysJourneyIdIndexRoute =
     path: '/journeys/$journeyId/',
     getParentRoute: () => AuthenticatedFlockRoute,
   } as any)
+const AuthenticatedFlockJourneysJourneyIdCompareRoute =
+  AuthenticatedFlockJourneysJourneyIdCompareRouteImport.update({
+    id: '/journeys/$journeyId/compare',
+    path: '/journeys/$journeyId/compare',
+    getParentRoute: () => AuthenticatedFlockRoute,
+  } as any)
 const AuthenticatedFlockJourneysJourneyIdFinishedRoute =
   AuthenticatedFlockJourneysJourneyIdFinishedRouteImport.update({
     id: '/journeys/$journeyId/finished',
@@ -777,6 +785,12 @@ const AuthenticatedFlockJourneysJourneyIdPostRoute =
   AuthenticatedFlockJourneysJourneyIdPostRouteImport.update({
     id: '/journeys/$journeyId/post',
     path: '/journeys/$journeyId/post',
+    getParentRoute: () => AuthenticatedFlockRoute,
+  } as any)
+const AuthenticatedFlockJourneysJourneyIdStoryRoute =
+  AuthenticatedFlockJourneysJourneyIdStoryRouteImport.update({
+    id: '/journeys/$journeyId/story',
+    path: '/journeys/$journeyId/story',
     getParentRoute: () => AuthenticatedFlockRoute,
   } as any)
 const ApiPublicBereavementReviewReviewIdSigRoute =
@@ -917,8 +931,10 @@ export interface FileRoutesByFullPath {
   '/flock/you/': typeof AuthenticatedFlockYouIndexRoute
   '/birds/$birdId/plan/editor': typeof AuthenticatedBirdsBirdIdPlanEditorRoute
   '/birds/$birdId/scans/$scanId': typeof AuthenticatedBirdsBirdIdScansScanIdRoute
+  '/flock/journeys/$journeyId/compare': typeof AuthenticatedFlockJourneysJourneyIdCompareRoute
   '/flock/journeys/$journeyId/finished': typeof AuthenticatedFlockJourneysJourneyIdFinishedRoute
   '/flock/journeys/$journeyId/post': typeof AuthenticatedFlockJourneysJourneyIdPostRoute
+  '/flock/journeys/$journeyId/story': typeof AuthenticatedFlockJourneysJourneyIdStoryRoute
   '/api/public/bereavement-review/$reviewId/$sig': typeof ApiPublicBereavementReviewReviewIdSigRoute
   '/birds/$birdId/plan/': typeof AuthenticatedBirdsBirdIdPlanIndexRoute
   '/flock/journeys/$journeyId/': typeof AuthenticatedFlockJourneysJourneyIdIndexRoute
@@ -1032,8 +1048,10 @@ export interface FileRoutesByTo {
   '/flock/you': typeof AuthenticatedFlockYouIndexRoute
   '/birds/$birdId/plan/editor': typeof AuthenticatedBirdsBirdIdPlanEditorRoute
   '/birds/$birdId/scans/$scanId': typeof AuthenticatedBirdsBirdIdScansScanIdRoute
+  '/flock/journeys/$journeyId/compare': typeof AuthenticatedFlockJourneysJourneyIdCompareRoute
   '/flock/journeys/$journeyId/finished': typeof AuthenticatedFlockJourneysJourneyIdFinishedRoute
   '/flock/journeys/$journeyId/post': typeof AuthenticatedFlockJourneysJourneyIdPostRoute
+  '/flock/journeys/$journeyId/story': typeof AuthenticatedFlockJourneysJourneyIdStoryRoute
   '/api/public/bereavement-review/$reviewId/$sig': typeof ApiPublicBereavementReviewReviewIdSigRoute
   '/birds/$birdId/plan': typeof AuthenticatedBirdsBirdIdPlanIndexRoute
   '/flock/journeys/$journeyId': typeof AuthenticatedFlockJourneysJourneyIdIndexRoute
@@ -1156,8 +1174,10 @@ export interface FileRoutesById {
   '/_authenticated/flock/you/': typeof AuthenticatedFlockYouIndexRoute
   '/_authenticated/birds/$birdId/plan/editor': typeof AuthenticatedBirdsBirdIdPlanEditorRoute
   '/_authenticated/birds/$birdId/scans/$scanId': typeof AuthenticatedBirdsBirdIdScansScanIdRoute
+  '/_authenticated/flock/journeys/$journeyId/compare': typeof AuthenticatedFlockJourneysJourneyIdCompareRoute
   '/_authenticated/flock/journeys/$journeyId/finished': typeof AuthenticatedFlockJourneysJourneyIdFinishedRoute
   '/_authenticated/flock/journeys/$journeyId/post': typeof AuthenticatedFlockJourneysJourneyIdPostRoute
+  '/_authenticated/flock/journeys/$journeyId/story': typeof AuthenticatedFlockJourneysJourneyIdStoryRoute
   '/api/public/bereavement-review/$reviewId/$sig': typeof ApiPublicBereavementReviewReviewIdSigRoute
   '/_authenticated/birds/$birdId/plan/': typeof AuthenticatedBirdsBirdIdPlanIndexRoute
   '/_authenticated/flock/journeys/$journeyId/': typeof AuthenticatedFlockJourneysJourneyIdIndexRoute
@@ -1280,8 +1300,10 @@ export interface FileRouteTypes {
     | '/flock/you/'
     | '/birds/$birdId/plan/editor'
     | '/birds/$birdId/scans/$scanId'
+    | '/flock/journeys/$journeyId/compare'
     | '/flock/journeys/$journeyId/finished'
     | '/flock/journeys/$journeyId/post'
+    | '/flock/journeys/$journeyId/story'
     | '/api/public/bereavement-review/$reviewId/$sig'
     | '/birds/$birdId/plan/'
     | '/flock/journeys/$journeyId/'
@@ -1395,8 +1417,10 @@ export interface FileRouteTypes {
     | '/flock/you'
     | '/birds/$birdId/plan/editor'
     | '/birds/$birdId/scans/$scanId'
+    | '/flock/journeys/$journeyId/compare'
     | '/flock/journeys/$journeyId/finished'
     | '/flock/journeys/$journeyId/post'
+    | '/flock/journeys/$journeyId/story'
     | '/api/public/bereavement-review/$reviewId/$sig'
     | '/birds/$birdId/plan'
     | '/flock/journeys/$journeyId'
@@ -1518,8 +1542,10 @@ export interface FileRouteTypes {
     | '/_authenticated/flock/you/'
     | '/_authenticated/birds/$birdId/plan/editor'
     | '/_authenticated/birds/$birdId/scans/$scanId'
+    | '/_authenticated/flock/journeys/$journeyId/compare'
     | '/_authenticated/flock/journeys/$journeyId/finished'
     | '/_authenticated/flock/journeys/$journeyId/post'
+    | '/_authenticated/flock/journeys/$journeyId/story'
     | '/api/public/bereavement-review/$reviewId/$sig'
     | '/_authenticated/birds/$birdId/plan/'
     | '/_authenticated/flock/journeys/$journeyId/'
@@ -2376,6 +2402,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedFlockJourneysJourneyIdIndexRouteImport
       parentRoute: typeof AuthenticatedFlockRoute
     }
+    '/_authenticated/flock/journeys/$journeyId/compare': {
+      id: '/_authenticated/flock/journeys/$journeyId/compare'
+      path: '/journeys/$journeyId/compare'
+      fullPath: '/flock/journeys/$journeyId/compare'
+      preLoaderRoute: typeof AuthenticatedFlockJourneysJourneyIdCompareRouteImport
+      parentRoute: typeof AuthenticatedFlockRoute
+    }
     '/_authenticated/flock/journeys/$journeyId/finished': {
       id: '/_authenticated/flock/journeys/$journeyId/finished'
       path: '/journeys/$journeyId/finished'
@@ -2388,6 +2421,13 @@ declare module '@tanstack/react-router' {
       path: '/journeys/$journeyId/post'
       fullPath: '/flock/journeys/$journeyId/post'
       preLoaderRoute: typeof AuthenticatedFlockJourneysJourneyIdPostRouteImport
+      parentRoute: typeof AuthenticatedFlockRoute
+    }
+    '/_authenticated/flock/journeys/$journeyId/story': {
+      id: '/_authenticated/flock/journeys/$journeyId/story'
+      path: '/journeys/$journeyId/story'
+      fullPath: '/flock/journeys/$journeyId/story'
+      preLoaderRoute: typeof AuthenticatedFlockJourneysJourneyIdStoryRouteImport
       parentRoute: typeof AuthenticatedFlockRoute
     }
     '/api/public/bereavement-review/$reviewId/$sig': {
@@ -2456,8 +2496,10 @@ interface AuthenticatedFlockRouteChildren {
   AuthenticatedFlockJourneysIndexRoute: typeof AuthenticatedFlockJourneysIndexRoute
   AuthenticatedFlockMembersIndexRoute: typeof AuthenticatedFlockMembersIndexRoute
   AuthenticatedFlockYouIndexRoute: typeof AuthenticatedFlockYouIndexRoute
+  AuthenticatedFlockJourneysJourneyIdCompareRoute: typeof AuthenticatedFlockJourneysJourneyIdCompareRoute
   AuthenticatedFlockJourneysJourneyIdFinishedRoute: typeof AuthenticatedFlockJourneysJourneyIdFinishedRoute
   AuthenticatedFlockJourneysJourneyIdPostRoute: typeof AuthenticatedFlockJourneysJourneyIdPostRoute
+  AuthenticatedFlockJourneysJourneyIdStoryRoute: typeof AuthenticatedFlockJourneysJourneyIdStoryRoute
   AuthenticatedFlockJourneysJourneyIdIndexRoute: typeof AuthenticatedFlockJourneysJourneyIdIndexRoute
   AuthenticatedFlockJourneysJourneyIdMilestonePositionRoute: typeof AuthenticatedFlockJourneysJourneyIdMilestonePositionRoute
 }
@@ -2483,10 +2525,14 @@ const AuthenticatedFlockRouteChildren: AuthenticatedFlockRouteChildren = {
   AuthenticatedFlockJourneysIndexRoute: AuthenticatedFlockJourneysIndexRoute,
   AuthenticatedFlockMembersIndexRoute: AuthenticatedFlockMembersIndexRoute,
   AuthenticatedFlockYouIndexRoute: AuthenticatedFlockYouIndexRoute,
+  AuthenticatedFlockJourneysJourneyIdCompareRoute:
+    AuthenticatedFlockJourneysJourneyIdCompareRoute,
   AuthenticatedFlockJourneysJourneyIdFinishedRoute:
     AuthenticatedFlockJourneysJourneyIdFinishedRoute,
   AuthenticatedFlockJourneysJourneyIdPostRoute:
     AuthenticatedFlockJourneysJourneyIdPostRoute,
+  AuthenticatedFlockJourneysJourneyIdStoryRoute:
+    AuthenticatedFlockJourneysJourneyIdStoryRoute,
   AuthenticatedFlockJourneysJourneyIdIndexRoute:
     AuthenticatedFlockJourneysJourneyIdIndexRoute,
   AuthenticatedFlockJourneysJourneyIdMilestonePositionRoute:

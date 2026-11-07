@@ -77,8 +77,9 @@ const CSP = [
   "object-src 'none'",
   "frame-ancestors 'self'",
   `form-action 'self' ${SUPABASE_ORIGIN}`,
-  `img-src 'self' data: blob: ${SUPABASE_ORIGIN} https://images.weserv.nl`,
-  `media-src 'self' blob: ${SUPABASE_ORIGIN} https://*.videodelivery.net https://*.cloudflarestream.com`,
+  // videodelivery.net: signed Cloudflare Stream thumbnails for Community journey clips.
+  `img-src 'self' data: blob: ${SUPABASE_ORIGIN} https://images.weserv.nl https://videodelivery.net`,
+  `media-src 'self' blob: ${SUPABASE_ORIGIN} https://videodelivery.net https://*.videodelivery.net https://*.cloudflarestream.com`,
   "font-src 'self' data:",
   "style-src 'self' 'unsafe-inline'",
   // us-assets.i.posthog.com serves PostHog's post-init scripts (config.js,

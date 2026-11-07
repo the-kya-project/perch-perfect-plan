@@ -357,5 +357,68 @@
     "done_line": "spun on cue"
    }
   ]
+ },
+ {
+  "id": "00000000-0000-4000-8000-000000007120",
+  "slug": "recall",
+  "name": "Recall",
+  "category": "foundations",
+  "tier": "free",
+  "purpose": "So your bird comes to you when you say their name, which is the most important safety skill if they ever get out.",
+  "done_when": "your bird comes the first time you call, from anywhere in the room. Use the bird's name alone as the cue, and for very clingy birds, reward them back on the perch as well as on your hand.",
+  "suggested_first": "Step up",
+  "typical_length": "4–8 weeks",
+  "safety_notes": [
+   "Keep sessions short.",
+   "Stop at the first sign of stress.",
+   "Never withhold food to make a bird hungrier for training."
+  ],
+  "safeguards": [],
+  "tips": [],
+  "sort_order": 40,
+  "milestones": [
+   {
+    "position": 1,
+    "title": "Walks a few inches across a perch to your hand.",
+    "ask": "walk across the perch to your hand",
+    "done_line": "walked over to your hand"
+   },
+   {
+    "position": 2,
+    "title": "Hops a short gap to your hand.",
+    "ask": "hop the gap to your hand",
+    "done_line": "hopped to your hand"
+   },
+   {
+    "position": 3,
+    "title": "Flies a short distance, about arm's length.",
+    "ask": "fly to you from arm's length",
+    "done_line": "flew to you"
+   },
+   {
+    "position": 4,
+    "title": "Flies across the room.",
+    "ask": "fly to you across the room",
+    "done_line": "flew across the room to you"
+   },
+   {
+    "position": 5,
+    "title": "Comes from another spot in the room, or from a different perch.",
+    "ask": "come to you from a different spot",
+    "done_line": "came from a new spot"
+   },
+   {
+    "position": 6,
+    "title": "Comes the first time you call, most of the time.",
+    "ask": "come the first time you called",
+    "done_line": "came at the first call"
+   },
+   {
+    "position": 7,
+    "title": "Comes with normal household distractions around.",
+    "ask": "come to you with the household busy",
+    "done_line": "came with distractions around"
+   }
+  ]
  }
 ]
