@@ -1,17 +1,8 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { useTranslation } from "react-i18next";
-import { FlockPlaceholder } from "@/components/FlockShell";
+import { createFileRoute, redirect } from "@tanstack/react-router";
+import { FLOCK_REDIRECTS } from "@/lib/flockNav";
 
+// The old Learn placeholder is the Library now. Kept as a redirect so saved
+// links don't 404.
 export const Route = createFileRoute("/_authenticated/flock/learn")({
-  component: FlockLearn,
+  beforeLoad: () => { throw redirect({ to: FLOCK_REDIRECTS["/flock/learn"], replace: true }); },
 });
-
-function FlockLearn() {
-  const { t } = useTranslation();
-  return (
-    <FlockPlaceholder
-      title={t("flock.learn.title", "Learn")}
-      line={t("flock.learn.line", "Guides, recordings, and the podcast will live here.")}
-    />
-  );
-}

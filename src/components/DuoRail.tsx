@@ -22,6 +22,10 @@ export type DuoRailSlots = {
   edge: "left" | "right";
   /** Under the status bar: Back, or Close on a task. */
   top: HTMLElement | null;
+  /** Only in Community mode (/flock, flock_enabled() true): an empty tab group
+   *  the Flock shell fills with its own tabs. Null everywhere else, where the
+   *  column shows the care tabs exactly as before. */
+  tabs?: HTMLElement | null;
 };
 
 const RailContext = createContext<DuoRailSlots | null>(null);
@@ -75,17 +79,24 @@ export function RailClose({ onClose }: { onClose: () => void }) {
   );
 }
 
-/** The column itself. `setTop` is a callback ref for the Back / Close slot. */
-export function DuoRail({ setTop }: { setTop: (el: HTMLElement | null) => void }) {
+/** The column itself. `setTop` is a callback ref for the Back / Close slot.
+ *  `setTabs` (Community mode only) swaps the care tabs for an empty slot that
+ *  the Flock shell fills; without it the column is exactly as before. */
+export function DuoRail({ setTop, setTabs }: { setTop: (el: HTMLElement | null) => void; setTabs?: (el: HTMLElement | null) => void }) {
   const { t } = useTranslation();
   return (
     <nav aria-label={t("ownerTabs.navAria", "Primary")} className="duo-rail">
       <div ref={setTop} className="flex shrink-0 flex-col items-center gap-2" />
       <div className="duo-rail-spacer" />
-      <RailTabs />
+      {setTabs ? <div ref={setTabs} className="duo-rail-tabs flex flex-col items-center gap-2" data-fit="comfortable" /> : <RailTabs />}
     </nav>
   );
 }
+
+/** A column tab's look, shared with the Community tabs so both modes match. */
+export const RAIL_TAB_CLASS = "duo-rail-tab relative flex w-20 flex-col items-center gap-[5px] rounded-[18px] pb-2.5 pt-3 text-[13px] leading-tight";
+export const RAIL_TAB_ON_STYLE = { background: "#d6ebc4", color: FOREST } as const;
+export const RAIL_TAB_OFF_STYLE = { color: "#5f5e5a" } as const;
 
 
 type Fit = "comfortable" | "tight" | "icons" | "scroll";
@@ -103,7 +114,7 @@ const FIT_HEIGHT: Record<Exclude<Fit, "scroll">, (n: number) => number> = {
  * native bridge's geometry (html[data-bar-geometry]); Safari and the PWA keep
  * today's layout.
  */
-function useTabFit(group: React.RefObject<HTMLDivElement | null>, count: number): Fit {
+export function useTabFit(group: React.RefObject<HTMLDivElement | null>, count: number): Fit {
   const [fit, setFit] = useState<Fit>("comfortable");
   useLayoutEffect(() => {
     const el = group.current;
@@ -132,7 +143,7 @@ function RailTabs() {
   const { tabs, current, flock, flockLabel } = useOwnerTabs();
   const group = useRef<HTMLDivElement>(null);
   const fit = useTabFit(group, tabs.length + (flock ? 1 : 0));
-  const tabClass = "duo-rail-tab relative flex w-20 flex-col items-center gap-[5px] rounded-[18px] pb-2.5 pt-3 text-[13px] leading-tight";
+  const tabClass = RAIL_TAB_CLASS;
   return (
     <div ref={group} className="duo-rail-tabs flex flex-col items-center gap-2" data-fit={fit}>
       {tabs.map(({ key, label, to, Icon }) => {
@@ -144,7 +155,7 @@ function RailTabs() {
             data-coach={`owner-tab-${key}`}
             aria-current={on ? "page" : undefined}
             className={`${tabClass} ${on ? "font-bold" : "font-medium"}`}
-            style={on ? { background: "#d6ebc4", color: FOREST } : { color: "#5f5e5a" }}
+            style={on ? RAIL_TAB_ON_STYLE : RAIL_TAB_OFF_STYLE}
           >
             <Icon className="size-[26px] shrink-0" strokeWidth={on ? 2.4 : 1.9} aria-hidden="true" />
             <span className="duo-rail-tab-label">{label}</span>
@@ -152,7 +163,7 @@ function RailTabs() {
         );
       })}
       {flock && (
-        <Link to="/flock" onClick={() => rememberMode("flock")} data-coach="owner-tab-flock" className={`${tabClass} font-medium`} style={{ color: "#5f5e5a" }}>
+        <Link to="/flock" onClick={() => rememberMode("flock")} data-coach="owner-tab-flock" className={`${tabClass} font-medium`} style={RAIL_TAB_OFF_STYLE}>
           <Users className="size-[26px] shrink-0" strokeWidth={1.9} aria-hidden="true" />
           <span className="duo-rail-tab-label">{flockLabel}</span>
         </Link>

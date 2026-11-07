@@ -47,12 +47,13 @@ export async function newContext(browser: Browser, opts: BrowserContextOptions =
 }
 
 // ── Flock code must never load for a free account ──────────────────────────
-// The community's own chunks: FlockShell-*, flock-* and flock.<child>-*.
-// (FlockHealthDuo is the care app's all-birds health view, not the community.)
-const FLOCK_CHUNK = /\/assets\/(FlockShell|flock(\.[\w-]+)?)-[\w-]+\.js(\?|$)/;
+// The community's own chunks: FlockShell-*, FlockChips-*, SpacesSheet-*,
+// flock-* and flock.<child>-*. (FlockHealthDuo is the care app's all-birds
+// health view, not the community.)
+const FLOCK_CHUNK = /\/assets\/(FlockShell|FlockChips|SpacesSheet|flock(\.[\w-]+)?)-[\w-]+\.js(\?|$)/;
 // Flock-only RPCs. flock_enabled is the gate itself and is allowed.
 const FLOCK_RPC = /\/rest\/v1\/rpc\/(founding_status|admin_founding_claims|is_flock_member|admin_grant_entitlement|admin_revoke_entitlement|admin_set_flock_ui)\b/;
-const FLOCK_TABLE = /\/rest\/v1\/(flock_settings|member_profiles|regions|entitlements|user_roles|founding_claims)\b/;
+const FLOCK_TABLE = /\/rest\/v1\/(flock_settings|flock_profiles|member_profiles|regions|entitlements|user_roles|founding_claims)\b/;
 
 export type FlockLeak = { url: string; why: string };
 

@@ -1,7 +1,7 @@
 import { createFileRoute, Outlet, redirect, useLocation, useNavigate } from "@tanstack/react-router";
 import { pickUtms, withUtms } from "@/lib/utmCarry";
 import { useEffect, useState } from "react";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { AuthClientStalled, getReadySession } from "@/lib/authReady";
 import { readAuthLinkError } from "@/lib/authLinkError";
@@ -203,8 +203,16 @@ function AuthenticatedLayout() {
   // edge the system names (lib/duo.ts resolveDuoLayout).
   const duoLayout = useDuoLayout();
   const railChrome = useLocation({ select: (l) => l.pathname === "/birds/new" || l.pathname.endsWith("/setup") });
-  const rail = duoLayout.rail && (!ownChrome || railChrome) ? duoLayout.rail : null;
+  // Community mode (admins only until launch): the column stays, with the
+  // Community tabs in it (FlockShell fills the slot). Only when the gate says
+  // yes, so for everyone else the column and the query are exactly as before:
+  // the gate isn't even asked off /flock.
+  const flockPath = useLocation({ select: (l) => l.pathname === "/flock" || l.pathname.startsWith("/flock/") });
+  const { data: flockOn } = useQuery({ ...FLOCK_ENABLED_QUERY, enabled: flockPath && !!duoLayout.rail });
+  const flockRail = flockPath && flockOn === true;
+  const rail = duoLayout.rail && (!ownChrome || railChrome || flockRail) ? duoLayout.rail : null;
   const [railTop, setRailTop] = useState<HTMLElement | null>(null);
+  const [railTabs, setRailTabs] = useState<HTMLElement | null>(null);
   useEffect(() => {
     const html = document.documentElement;
     html.classList.toggle("duo", !!rail);
@@ -220,13 +228,13 @@ function AuthenticatedLayout() {
   // One tree either way, so turning the phone doesn't remount the page (and
   // lose what's half-typed in it).
   return (
-    <DuoRailProvider value={rail ? { edge: rail, top: railTop } : null}>
+    <DuoRailProvider value={rail ? { edge: rail, top: railTop, tabs: flockRail ? railTabs : null } : null}>
       <div className={rail ? "duo-content" : undefined}>
         <PullToRefresh>
           <Outlet />
         </PullToRefresh>
       </div>
-      {rail ? <DuoRail setTop={setRailTop} /> : !hideNav && <OwnerTabBar />}
+      {rail ? <DuoRail setTop={setRailTop} setTabs={flockRail ? setRailTabs : undefined} /> : !hideNav && <OwnerTabBar />}
     </DuoRailProvider>
   );
 }
