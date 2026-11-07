@@ -52,6 +52,7 @@ import { Route as AuthenticatedAccountEmergencyRouteImport } from './routes/_aut
 import { Route as AuthenticatedAccountSecurityRouteImport } from './routes/_authenticated/account.security'
 import { Route as AuthenticatedAdminFoundingRouteImport } from './routes/_authenticated/admin.founding'
 import { Route as AuthenticatedAdminGiftsRouteImport } from './routes/_authenticated/admin.gifts'
+import { Route as AuthenticatedAdminReviewRouteImport } from './routes/_authenticated/admin.review'
 import { Route as AuthenticatedBirdsBirdIdRouteImport } from './routes/_authenticated/birds/$birdId'
 import { Route as AuthenticatedBirdsNewRouteImport } from './routes/_authenticated/birds/new'
 import { Route as AuthenticatedFlockIndexRouteImport } from './routes/_authenticated/flock.index'
@@ -361,6 +362,12 @@ const AuthenticatedAdminGiftsRoute = AuthenticatedAdminGiftsRouteImport.update({
   path: '/admin/gifts',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedAdminReviewRoute =
+  AuthenticatedAdminReviewRouteImport.update({
+    id: '/admin/review',
+    path: '/admin/review',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedBirdsBirdIdRoute =
   AuthenticatedBirdsBirdIdRouteImport.update({
     id: '/birds/$birdId',
@@ -895,6 +902,7 @@ export interface FileRoutesByFullPath {
   '/account/security': typeof AuthenticatedAccountSecurityRoute
   '/admin/founding': typeof AuthenticatedAdminFoundingRoute
   '/admin/gifts': typeof AuthenticatedAdminGiftsRoute
+  '/admin/review': typeof AuthenticatedAdminReviewRoute
   '/birds/$birdId': typeof AuthenticatedBirdsBirdIdRouteWithChildren
   '/birds/new': typeof AuthenticatedBirdsNewRoute
   '/flock/chapter': typeof AuthenticatedFlockChapterRoute
@@ -1019,6 +1027,7 @@ export interface FileRoutesByTo {
   '/account/security': typeof AuthenticatedAccountSecurityRoute
   '/admin/founding': typeof AuthenticatedAdminFoundingRoute
   '/admin/gifts': typeof AuthenticatedAdminGiftsRoute
+  '/admin/review': typeof AuthenticatedAdminReviewRoute
   '/birds/new': typeof AuthenticatedBirdsNewRoute
   '/flock/chapter': typeof AuthenticatedFlockChapterRoute
   '/flock/learn': typeof AuthenticatedFlockLearnRoute
@@ -1148,6 +1157,7 @@ export interface FileRoutesById {
   '/_authenticated/account/security': typeof AuthenticatedAccountSecurityRoute
   '/_authenticated/admin/founding': typeof AuthenticatedAdminFoundingRoute
   '/_authenticated/admin/gifts': typeof AuthenticatedAdminGiftsRoute
+  '/_authenticated/admin/review': typeof AuthenticatedAdminReviewRoute
   '/_authenticated/birds/$birdId': typeof AuthenticatedBirdsBirdIdRouteWithChildren
   '/_authenticated/birds/new': typeof AuthenticatedBirdsNewRoute
   '/_authenticated/flock/chapter': typeof AuthenticatedFlockChapterRoute
@@ -1279,6 +1289,7 @@ export interface FileRouteTypes {
     | '/account/security'
     | '/admin/founding'
     | '/admin/gifts'
+    | '/admin/review'
     | '/birds/$birdId'
     | '/birds/new'
     | '/flock/chapter'
@@ -1403,6 +1414,7 @@ export interface FileRouteTypes {
     | '/account/security'
     | '/admin/founding'
     | '/admin/gifts'
+    | '/admin/review'
     | '/birds/new'
     | '/flock/chapter'
     | '/flock/learn'
@@ -1531,6 +1543,7 @@ export interface FileRouteTypes {
     | '/_authenticated/account/security'
     | '/_authenticated/admin/founding'
     | '/_authenticated/admin/gifts'
+    | '/_authenticated/admin/review'
     | '/_authenticated/birds/$birdId'
     | '/_authenticated/birds/new'
     | '/_authenticated/flock/chapter'
@@ -1961,6 +1974,13 @@ declare module '@tanstack/react-router' {
       path: '/admin/gifts'
       fullPath: '/admin/gifts'
       preLoaderRoute: typeof AuthenticatedAdminGiftsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/admin/review': {
+      id: '/_authenticated/admin/review'
+      path: '/admin/review'
+      fullPath: '/admin/review'
+      preLoaderRoute: typeof AuthenticatedAdminReviewRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/birds/$birdId': {
@@ -2778,6 +2798,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedWelcomeRoute: typeof AuthenticatedWelcomeRoute
   AuthenticatedAdminFoundingRoute: typeof AuthenticatedAdminFoundingRoute
   AuthenticatedAdminGiftsRoute: typeof AuthenticatedAdminGiftsRoute
+  AuthenticatedAdminReviewRoute: typeof AuthenticatedAdminReviewRoute
   AuthenticatedBirdsBirdIdRoute: typeof AuthenticatedBirdsBirdIdRouteWithChildren
   AuthenticatedBirdsNewRoute: typeof AuthenticatedBirdsNewRoute
   AuthenticatedSitPreviewSitIdRoute: typeof AuthenticatedSitPreviewSitIdRoute
@@ -2806,6 +2827,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedWelcomeRoute: AuthenticatedWelcomeRoute,
   AuthenticatedAdminFoundingRoute: AuthenticatedAdminFoundingRoute,
   AuthenticatedAdminGiftsRoute: AuthenticatedAdminGiftsRoute,
+  AuthenticatedAdminReviewRoute: AuthenticatedAdminReviewRoute,
   AuthenticatedBirdsBirdIdRoute: AuthenticatedBirdsBirdIdRouteWithChildren,
   AuthenticatedBirdsNewRoute: AuthenticatedBirdsNewRoute,
   AuthenticatedSitPreviewSitIdRoute: AuthenticatedSitPreviewSitIdRoute,

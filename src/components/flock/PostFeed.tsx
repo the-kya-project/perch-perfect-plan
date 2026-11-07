@@ -6,6 +6,7 @@ import { K } from "@/components/kya";
 import { FlockAvatar } from "@/components/flock/FlockPeople";
 import { useCardBirdPhotos } from "@/components/flock/JourneyBrowse";
 import { ActionSheet, ConfirmSheet, PostCard } from "@/components/flock/PostParts";
+import { ReportSheet } from "@/components/flock/ReportSheet";
 import { useAvatarUrls, useMyProfile, type FlockPhotoSrc } from "@/lib/flockData";
 import { deletePost, useInvalidatePosts, usePostPhotos, type FlockPost } from "@/lib/flockPostData";
 import type { PostSpace } from "@/lib/flockPosts";
@@ -30,6 +31,7 @@ export function PostMenus({ menuFor, setMenuFor, onDeleted }: {
   const navigate = useNavigate();
   const invalidate = useInvalidatePosts();
   const [confirmFor, setConfirmFor] = useState<FlockPost | null>(null);
+  const [reportFor, setReportFor] = useState<FlockPost | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const p = menuFor;
@@ -43,9 +45,13 @@ export function PostMenus({ menuFor, setMenuFor, onDeleted }: {
               { key: "delete", label: t("flock.posts.delete", "Delete"), danger: true, onClick: () => { setMenuFor(null); setConfirmFor(p); } },
             ]
             : p.status === "live"
-              ? [{ key: "reply", label: t("flock.posts.reply", "Reply"), onClick: () => { setMenuFor(null); void navigate({ to: "/flock/post/$postId", params: { postId: p.post_id }, search: { focus: 1 } }); } }]
+              ? [
+                { key: "reply", label: t("flock.posts.reply", "Reply"), onClick: () => { setMenuFor(null); void navigate({ to: "/flock/post/$postId", params: { postId: p.post_id }, search: { focus: 1 } }); } },
+                { key: "report", label: t("flock.report.action", "Report"), onClick: () => { setMenuFor(null); setReportFor(p); } },
+              ]
               : []} />
       )}
+      {reportFor && <ReportSheet type="post" id={reportFor.post_id} onClose={() => setReportFor(null)} />}
       {confirmFor && (
         <ConfirmSheet busy={busy} onClose={() => { setConfirmFor(null); setError(null); }}
           title={t("flock.posts.deleteTitle", "Delete this post?")}
