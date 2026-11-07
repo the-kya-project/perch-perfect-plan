@@ -19,6 +19,7 @@ import {
   CHAPTER_TABS, FLOCK_DESTS, FLOCK_REDIRECTS, FLOCK_SPACES, JOURNEYS_FILTERS, LIBRARY_SUBJECTS, LIBRARY_TYPES, TODAY_FILTERS,
   chapterLine, destForPath, isFlockFullScreenPath, isFlockOnboardingPath, pick, pickOptional, pickQuery,
 } from "@/lib/flockNav";
+import { dateBlock, eventIcs, goersLine, longWhen, shortWhen } from "@/lib/flockEvents";
 import { AAV_FIND_A_VET_URL, POST_SPACES, findVetSigns, mergeFeed, rateLimitKind, replyPrefix, threadComments } from "@/lib/flockPosts";
 import { defaultDisplayName, greetingName, isAutomaticDisplayName, memberCountLine, membershipSummary } from "@/lib/flockProfile";
 import { accessCells, accessDay } from "@/lib/flockAccess";
@@ -365,6 +366,33 @@ check("Today mixes posts and milestone cards newest first; older cards wait for 
   assert.deepEqual(ids(mergeFeed(posts, cards, true)), ["p1", "m1", "p2"]);
   assert.deepEqual(ids(mergeFeed(posts, cards, false)), ["p1", "m1", "p2", "m2"]);
   assert.deepEqual(ids(mergeFeed([], cards, false)), ["m1", "m2"]);
+});
+
+// ---- Chapter events (step 5) -------------------------------------------------------------
+check("event times read like the mockup, in the viewer's time zone", () => {
+  const tz = "America/Chicago";
+  assert.equal(shortWhen("2026-11-08T19:00:00Z", "2026-11-08T21:00:00Z", "en-US", tz), "Sun 1–3pm");
+  assert.equal(shortWhen("2026-11-20T01:00:00Z", null, "en-US", tz), "Thu 7pm");
+  assert.equal(shortWhen("2026-12-06T16:00:00Z", "2026-12-06T18:30:00Z", "en-US", tz), "Sun 10am–12:30pm");
+  assert.equal(longWhen("2026-11-08T19:00:00Z", "2026-11-08T21:00:00Z", "en-US", tz), "Sunday, Nov 8 · 1–3pm");
+  assert.deepEqual(dateBlock("2026-11-08T19:00:00Z", "en-US", tz), { month: "Nov", day: "8" });
+});
+
+check("who's going: two first names and the rest", () => {
+  assert.deepEqual(goersLine(["Priya S.", "Alex R.", "Sam T."], 14), { first: ["Priya", "Alex"], others: 12 });
+  assert.deepEqual(goersLine(["Priya S."], 1), { first: ["Priya"], others: 0 });
+});
+
+check("the calendar file: one event, UTC times, escaped text, 2-hour default", () => {
+  const ics = eventIcs({ id: "e1", title: "Fall flock meetup; bring toys", starts_at: "2026-11-08T19:00:00Z", ends_at: null,
+    description: "Humans only, this time.", location: "Ann Arbor District Library, Room B", url: null }, new Date("2026-11-01T00:00:00Z"));
+  assert.match(ics, /^BEGIN:VCALENDAR\r\n/);
+  assert.match(ics, /\r\nDTSTART:20261108T190000Z\r\n/);
+  assert.match(ics, /\r\nDTEND:20261108T210000Z\r\n/);
+  assert.match(ics, /\r\nSUMMARY:Fall flock meetup\\; bring toys\r\n/);
+  assert.match(ics, /\r\nLOCATION:Ann Arbor District Library\\, Room B\r\n/);
+  assert.match(ics, /UID:e1@thekyaproject.com/);
+  assert.ok(ics.split("\r\n").every((l) => new TextEncoder().encode(l).length <= 75));
 });
 
 console.log(`\n${passed} passed${process.exitCode ? ", some FAILED" : ""}`);

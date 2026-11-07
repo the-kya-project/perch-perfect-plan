@@ -1,6 +1,6 @@
 import { useEffect, useRef, type ReactNode } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { Bell, BellRing, Megaphone, PlayCircle, Sparkles } from "lucide-react";
+import { Bell, BellRing, CalendarDays, Megaphone, PlayCircle, Sparkles } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import type { TFunction } from "i18next";
 import { K, KyaHeading } from "@/components/kya";
@@ -46,7 +46,7 @@ function aboutWhat(t: TFunction, n: FlockNotification): string {
 
 /** The sentence: who did what, with the name in bold. */
 function NotificationText({ n }: { n: FlockNotification }) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const who = n.actor_name ?? t("flock.posts.member", "A member");
   const b = (s: string) => <b style={{ color: K.forest }}>{s}</b>;
   const parts = (lead: ReactNode, rest: string) => <>{lead} {rest}</>;
@@ -60,13 +60,27 @@ function NotificationText({ n }: { n: FlockNotification }) {
       return n.others > 0
         ? parts(b(t("flock.notif.people", "{{count}} people", { count: n.others + 1 })), t("flock.notif.cheered", "cheered {{what}}", { what: aboutWhat(t, n) }))
         : parts(b(who), t("flock.notif.cheered", "cheered {{what}}", { what: aboutWhat(t, n) }));
+    case "event": {
+      const title = n.event_title ?? "";
+      if (n.detail === "reminder") return <>{b(t("flock.notif.eventTomorrow", "Tomorrow:"))} {t("flock.notif.eventReminder", "{{title}}. You said you're going.", { title })}</>;
+      return <>{b(t("flock.notif.eventCancelled", "{{title}} was cancelled.", { title }))}{n.note ? ` ${n.note}` : ""}</>;
+    }
     case "review":
+      if (n.subject_type === "event") {
+        if (n.detail === "approved") return <>{t("flock.notif.eventApproved", "Your event {{title}} is on the calendar.", { title: n.event_title ?? "" })}</>;
+        if (n.detail === "changes_requested") return <>{t("flock.notif.eventChanges", "Your event needs a few changes:")} {n.note}</>;
+        return <>{t("flock.notif.eventDeclined", "Your event wasn't approved this time.")}{n.note ? ` ${n.note}` : ""}</>;
+      }
       if (n.detail === "approved") return <>{t("flock.notif.reviewLiveLead", "Your Do good post is")} {b(t("flock.notif.reviewLive", "live"))}{t("flock.notif.reviewLiveEnd", ". Thanks for sharing it.")}</>;
       if (n.detail === "changes_requested") return <>{t("flock.notif.reviewChanges", "Your Do good post needs a few changes:")} {n.note}</>;
       return <>{t("flock.notif.reviewDeclined", "Your Do good post wasn't approved this time.")}{n.note ? ` ${n.note}` : ""}</>;
     case "clip":
       return parts(b(n.bird_name ?? who), t("flock.notif.newClip", "posted a new clip in a journey you follow"));
     case "chapter":
+      if (n.subject_type === "event" && n.event_starts_at) {
+        return <>{b(`${n.region_name ?? t("flock.notif.chapter", "My chapter")}:`)} {t("flock.notif.chapterEvent", "{{title}} is on the calendar for {{date}}", {
+          title: n.event_title ?? "", date: new Date(n.event_starts_at).toLocaleDateString(i18n.language, { month: "short", day: "numeric" }) })}</>;
+      }
       return <>{b(`${n.region_name ?? t("flock.notif.chapter", "My chapter")}:`)} {t("flock.notif.chapterPost", "{{name}} posted in your chapter", { name: who })}</>;
     case "notice":
       return <>{b(n.detail === "removed" ? t("flock.notif.removed", "We removed something you posted.") : t("flock.notif.notice", "A note from The Kya Project:"))} {n.note}</>;
@@ -80,6 +94,7 @@ function Leading({ n }: { n: FlockNotification }) {
   if (n.kind === "review") return icon(<Sparkles className="size-5" />, K.lime);
   if (n.kind === "notice") return icon(<Megaphone className="size-5" />, K.amberBg);
   if (n.kind === "clip") return icon(<PlayCircle className="size-5" />, K.teal);
+  if (n.kind === "event" || n.subject_type === "event") return icon(<CalendarDays className="size-5" />, K.lime);
   if (n.kind === "cheer" && n.others > 0) return icon(<BellRing className="size-5" />, K.sunflower);
   return <FlockAvatar name={n.actor_name ?? "?"} size={40} />;
 }

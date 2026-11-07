@@ -25,10 +25,11 @@ export async function report(type: ReportSubject, id: string, reason: ReportReas
 export type NotificationFilter = "all" | "replies" | "cheers" | "chapter";
 export const NOTIFICATION_FILTERS: NotificationFilter[] = ["all", "replies", "cheers", "chapter"];
 export type FlockNotification = {
-  ids: string[]; kind: "reply" | "cheer" | "review" | "clip" | "chapter" | "notice"; actor_name: string | null; others: number;
-  subject_type: "post" | "comment" | "journey_update" | "journey_milestone"; subject_id: string; detail: string | null; note: string | null;
+  ids: string[]; kind: "reply" | "cheer" | "review" | "clip" | "chapter" | "notice" | "event"; actor_name: string | null; others: number;
+  subject_type: "post" | "comment" | "journey_update" | "journey_milestone" | "event"; subject_id: string; detail: string | null; note: string | null;
   post_id: string | null; post_title: string | null; post_space: string | null; journey_id: string | null; bird_name: string | null;
-  skill: string | null; milestone_title: string | null; region_name: string | null; created_at: string; unread: boolean;
+  skill: string | null; milestone_title: string | null; region_name: string | null;
+  event_id: string | null; event_title: string | null; event_starts_at: string | null; created_at: string; unread: boolean;
 };
 
 export const moderationKeys = {
@@ -64,7 +65,9 @@ export function notificationTarget(n: FlockNotification):
   | { to: "/flock/post/$postId"; params: { postId: string } }
   | { to: "/flock/journeys/$journeyId"; params: { journeyId: string } }
   | { to: "/flock/journeys/$journeyId/story"; params: { journeyId: string }; search: { u: string } }
+  | { to: "/flock/events/$eventId"; params: { eventId: string } }
   | null {
+  if (n.subject_type === "event") return { to: "/flock/events/$eventId", params: { eventId: n.subject_id } };
   if (n.subject_type === "journey_update" && n.journey_id) {
     return { to: "/flock/journeys/$journeyId/story", params: { journeyId: n.journey_id }, search: { u: n.subject_id } };
   }
@@ -75,13 +78,14 @@ export function notificationTarget(n: FlockNotification):
 
 // ---- The review queue ---------------------------------------------------------------------
 
-export type QueueFilter = "all" | "good" | "reports";
-export const QUEUE_FILTERS: QueueFilter[] = ["all", "good", "reports"];
+export type QueueFilter = "all" | "good" | "events" | "reports";
+export const QUEUE_FILTERS: QueueFilter[] = ["all", "good", "events", "reports"];
 export type QueueItem = {
-  item_type: "good" | "report"; subject_type: ReportSubject; subject_id: string; author_id: string; author_name: string | null;
+  item_type: "good" | "report" | "event"; subject_type: ReportSubject | "event"; subject_id: string; author_id: string; author_name: string | null;
   author_region: string | null; title: string | null; body: string | null; photo_count: number; created_at: string;
   report_count: number; reasons: ReportReason[]; notes: string[]; hidden: boolean; removed: boolean; messaged_at: string | null;
   post_id: string | null; journey_id: string | null;
+  event_starts_at: string | null; event_mode: "in_person" | "online" | null; event_place: string | null; event_kind: "meetup" | "volunteer" | null;
 };
 
 export function useCanReview(enabled = true) {
@@ -112,13 +116,17 @@ export function useReviewCounts(enabled: boolean) {
     queryKey: moderationKeys.counts,
     enabled,
     staleTime: 10_000,
-    queryFn: async (): Promise<{ good: number; reports: number }> =>
-      asArray<{ good: number; reports: number }>(must(await sb.rpc("flock_review_counts")))[0] ?? { good: 0, reports: 0 },
+    queryFn: async (): Promise<{ good: number; reports: number; events: number }> =>
+      asArray<{ good: number; reports: number; events: number }>(must(await sb.rpc("flock_review_counts")))[0] ?? { good: 0, reports: 0, events: 0 },
   });
 }
 
 export async function reviewPost(id: string, decision: "approve" | "changes" | "decline", note: string): Promise<void> {
   must(await sb.rpc("flock_review_post", { p_post_id: id, p_decision: decision, p_note: note.trim() || null }));
+}
+
+export async function reviewEvent(id: string, decision: "approve" | "changes" | "decline", note: string): Promise<void> {
+  must(await sb.rpc("flock_review_event", { p_event_id: id, p_decision: decision, p_note: note.trim() || null }));
 }
 
 export async function resolveReport(type: ReportSubject, id: string, action: "remove" | "keep" | "message", note: string): Promise<void> {
@@ -132,6 +140,7 @@ export function useInvalidateModeration() {
       qc.invalidateQueries({ queryKey: ["flock", "review"] }),
       qc.invalidateQueries({ queryKey: ["flock", "notifications"] }),
       qc.invalidateQueries({ queryKey: ["flock", "posts"] }),
+      qc.invalidateQueries({ queryKey: ["flock", "events"] }),
     ]);
   };
 }

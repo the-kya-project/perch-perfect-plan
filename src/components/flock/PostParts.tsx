@@ -83,13 +83,14 @@ export function ActionSheet({ title, actions, onClose }: {
   );
 }
 
-export function ConfirmSheet({ title, line, confirm, onConfirm, onClose, busy }: {
-  title: string; line: string; confirm: string; onConfirm: () => void; onClose: () => void; busy?: boolean;
+export function ConfirmSheet({ title, line, confirm, onConfirm, onClose, busy, extra }: {
+  title: string; line: string; confirm: string; onConfirm: () => void; onClose: () => void; busy?: boolean; extra?: ReactNode;
 }) {
   const { t } = useTranslation();
   return (
     <KyaSheet onClose={onClose} closeLabel={t("flock.region.close", "Close")} title={<KyaHeading size={23}>{title}</KyaHeading>}>
       <p className="m-0 text-[15px] leading-[1.5]" style={{ color: K.ink }}>{line}</p>
+      {extra}
       <div className="mt-4 flex flex-col gap-2">
         <button type="button" data-testid="confirm-delete" disabled={busy} onClick={onConfirm}
           className="min-h-[52px] rounded-full text-[16px] font-[700] text-white disabled:opacity-60" style={{ background: K.red }}>{confirm}</button>

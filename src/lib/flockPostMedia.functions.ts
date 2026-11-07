@@ -109,3 +109,17 @@ export const getFlockIdeaPhotos = createServerFn({ method: "POST" })
     }));
     return out.filter((x): x is IdeaPhoto => !!x);
   });
+
+/** An event's photo, for members who may see the event, signed for one hour. */
+export const getFlockEventPhoto = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { eventId: string; width?: number }) =>
+    z.object({ eventId: z.string().uuid(), width: z.number().int().min(64).max(1600).optional() }).parse(d))
+  .handler(async ({ data, context }): Promise<string | null> => {
+    const { data: path, error } = await (context.supabase as any).rpc("flock_event_photo_ref", { p_event_id: data.eventId });
+    if (error || typeof path !== "string" || !PATH.test(path)) return null;
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const bucket = (supabaseAdmin as any).storage.from("flock-posts");
+    const { data: signed } = await bucket.createSignedUrl(path, 3600, data.width ? { transform: { width: data.width, quality: 75 } } : undefined);
+    return (signed?.signedUrl as string | undefined) ?? null;
+  });
