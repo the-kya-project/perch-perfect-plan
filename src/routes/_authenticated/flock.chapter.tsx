@@ -1,36 +1,23 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { useState } from "react";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { MapPin } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import type { TFunction } from "i18next";
-import { supabase } from "@/integrations/supabase/client";
-import { getLocalUser } from "@/integrations/supabase/currentUser";
 import { FlockBody, FlockHeader } from "@/components/FlockShell";
 import { FlockEmpty, FlockSubTabs } from "@/components/flock/FlockChips";
+import { RegionSheet } from "@/components/flock/FlockPeople";
+import { K } from "@/components/kya";
+import { memberCountLine } from "@/lib/flockProfile";
+import { saveFlockProfile, useChapter, useInvalidateFlock, useMyProfile, useRegions } from "@/lib/flockData";
 import { CHAPTER_TABS, chapterLine, pickOptional, type ChapterTab } from "@/lib/flockNav";
 
-// Chapter: the members near you. The chapter is the region on the member's
-// Flock profile (a founding claim sets it); chapters map one-to-one onto
-// regions for now.
+// Chapter: the members near you. Your chapter is your profile's region
+// (chapters map one-to-one onto regions); change the region and you move at
+// once. "Other" means no chapter yet, with a way to pick one.
 export const Route = createFileRoute("/_authenticated/flock/chapter")({
   validateSearch: (s: Record<string, unknown>): { tab?: ChapterTab } => ({ tab: pickOptional(s.tab, CHAPTER_TABS) }),
   component: FlockChapter,
 });
-
-type MyChapter = { name: string; states: string[] } | null;
-
-async function fetchMyChapter(): Promise<MyChapter> {
-  const { data: u } = await getLocalUser();
-  if (!u.user) return null;
-  const { data, error } = await supabase
-    .from("flock_profiles")
-    .select("region_slug, regions(name, states)")
-    .eq("user_id", u.user.id)
-    .maybeSingle();
-  if (error || !data) return null;
-  const r = (data as unknown as { regions: { name: string; states: string[] | null } | null }).regions;
-  return r ? { name: r.name, states: r.states ?? [] } : null;
-}
 
 function tabLabel(t: TFunction, tab: ChapterTab): string {
   switch (tab) {
@@ -61,10 +48,43 @@ function FlockChapter() {
   const { t } = useTranslation();
   const { tab } = Route.useSearch();
   const navigate = useNavigate({ from: Route.fullPath });
+  const invalidate = useInvalidateFlock();
   const current: ChapterTab = tab ?? "posts";
-  const { data: chapter, isLoading } = useQuery({ queryKey: ["flock-my-chapter"], queryFn: fetchMyChapter, staleTime: 5 * 60_000 });
-  const line = isLoading ? " " : chapter ? chapterLine(chapter.name, chapter.states) : t("flock.chapter.noChapterLine", "No chapter yet");
-  const empty = !isLoading && !chapter
+  const { data: me, isLoading: meLoading } = useMyProfile();
+  const { data: regions } = useRegions();
+  const slug = me?.region_slug && me.region_slug !== "other" ? me.region_slug : null;
+  const { data: chapter, isLoading: chapterLoading } = useChapter(slug);
+  const [picking, setPicking] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const loading = meLoading || (!!slug && chapterLoading);
+  const noChapter = !loading && !slug;
+
+  const pickRegion = async (s: string) => {
+    if (!me) return;
+    setSaving(true);
+    try {
+      await saveFlockProfile({ display_name: me.display_name, region_slug: s });
+      await invalidate();
+    } finally {
+      setSaving(false);
+      setPicking(false);
+    }
+  };
+
+  const line = loading
+    ? "\u00a0"
+    : chapter
+      ? (
+        <>
+          <span data-testid="chapter-line">{chapterLine(chapter.name, chapter.states)}</span>
+          <span className="mt-1 block" data-testid="chapter-count">
+            {memberCountLine(chapter.member_count)} ·{" "}
+            <Link to="/flock/members" className="font-[700] text-white underline underline-offset-4">{t("flock.chapter.seeMembers", "See members")}</Link>
+          </span>
+        </>
+      )
+      : <span data-testid="chapter-line">{t("flock.chapter.noChapterLine", "No chapter yet")}</span>;
+  const empty = noChapter
     ? {
       title: t("flock.chapter.empty.noChapterTitle", "No chapter yet"),
       line: t("flock.chapter.empty.noChapter", "Once you choose your region, the members near you will show up here."),
@@ -72,18 +92,34 @@ function FlockChapter() {
     : emptyCopy(t, current);
   return (
     <>
-      <FlockHeader title={t("flock.chapter.title", "Chapter")} line={<span data-testid="chapter-line">{line}</span>} />
+      <FlockHeader title={t("flock.chapter.title", "Chapter")} line={line} />
       <FlockBody>
-        <FlockSubTabs
-          label={t("flock.chapter.tabsAria", "Chapter sections")}
-          options={CHAPTER_TABS.map((c) => ({ value: c, label: tabLabel(t, c) }))}
-          value={current}
-          onChange={(v) => void navigate({ search: { tab: v === "posts" ? undefined : v }, replace: true })}
-        />
-        <div role="tabpanel" aria-label={tabLabel(t, current)}>
-          <FlockEmpty icon={<MapPin className="size-6" />} title={empty.title}>{empty.line}</FlockEmpty>
-        </div>
+        {noChapter ? (
+          <>
+            <FlockEmpty icon={<MapPin className="size-6" />} title={empty.title}>{empty.line}</FlockEmpty>
+            <button type="button" onClick={() => setPicking(true)} disabled={saving}
+              className="inline-flex min-h-[52px] w-full items-center justify-center rounded-full border-2 px-6 text-[16px] font-[700] active:scale-[0.99] disabled:opacity-50"
+              style={{ background: K.sunflower, borderColor: K.forest, color: K.forest }}>
+              {t("flock.chapter.pickRegion", "Choose your region")}
+            </button>
+          </>
+        ) : (
+          <>
+            <FlockSubTabs
+              label={t("flock.chapter.tabsAria", "Chapter sections")}
+              options={CHAPTER_TABS.map((c) => ({ value: c, label: tabLabel(t, c) }))}
+              value={current}
+              onChange={(v) => void navigate({ search: { tab: v === "posts" ? undefined : v }, replace: true })}
+            />
+            <div role="tabpanel" aria-label={tabLabel(t, current)}>
+              <FlockEmpty icon={<MapPin className="size-6" />} title={empty.title}>{empty.line}</FlockEmpty>
+            </div>
+          </>
+        )}
       </FlockBody>
+      {picking && regions && (
+        <RegionSheet regions={regions.filter((r) => r.slug !== "other")} value={null} onClose={() => setPicking(false)} onPick={(s) => void pickRegion(s)} />
+      )}
     </>
   );
 }

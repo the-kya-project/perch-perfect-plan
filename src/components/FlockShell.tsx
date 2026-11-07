@@ -5,11 +5,13 @@ import { Sun, Route as RouteIcon, MapPin, Library, Bird, LayoutGrid } from "luci
 import { useTranslation } from "react-i18next";
 import type { TFunction } from "i18next";
 import { K, KyaHeading } from "@/components/kya";
-import { AccountAvatar } from "@/components/AccountAvatar";
+import { FlockAvatar } from "@/components/flock/FlockPeople";
+import { useAvatarUrls, useCareName, useMyProfile } from "@/lib/flockData";
+import { defaultDisplayName } from "@/lib/flockProfile";
 import { RAIL_TAB_CLASS, RAIL_TAB_OFF_STYLE, RAIL_TAB_ON_STYLE, useDuoRail, useTabFit } from "@/components/DuoRail";
 import { SpacesSheet } from "@/components/flock/SpacesSheet";
 import { rememberMode } from "@/lib/flock";
-import { FLOCK_DESTS, destForPath, type FlockDest } from "@/lib/flockNav";
+import { FLOCK_DESTS, destForPath, isFlockOnboardingPath, type FlockDest } from "@/lib/flockNav";
 
 // The Community's own chrome (the Flock; admins only until launch, the /flock
 // route guard keeps everyone else out). Five destinations in the same order
@@ -41,7 +43,7 @@ export function flockDestLabel(t: TFunction, key: FlockDest): string {
 }
 
 /** Phone: fixed bottom bar. */
-function FlockTabBar({ current }: { current: FlockDest }) {
+function FlockTabBar({ current }: { current: FlockDest | null }) {
   const { t } = useTranslation();
   return (
     <nav
@@ -74,7 +76,7 @@ function FlockTabBar({ current }: { current: FlockDest }) {
 }
 
 /** The column's tabs, in the Duo column's look (shared classes from DuoRail). */
-function ColumnTabs({ current }: { current: FlockDest }) {
+function ColumnTabs({ current }: { current: FlockDest | null }) {
   const { t } = useTranslation();
   return (
     <>
@@ -101,7 +103,7 @@ function ColumnTabs({ current }: { current: FlockDest }) {
 }
 
 /** Into the Duo column's empty tab group, sized the way the care tabs are. */
-function DuoColumnTabs({ slot, current }: { slot: HTMLElement; current: FlockDest }) {
+function DuoColumnTabs({ slot, current }: { slot: HTMLElement; current: FlockDest | null }) {
   const ref = useMemo(() => ({ current: slot as HTMLDivElement | null }), [slot]);
   const fit = useTabFit(ref, FLOCK_DESTS.length);
   useLayoutEffect(() => { slot.dataset.fit = fit; }, [slot, fit]);
@@ -109,7 +111,7 @@ function DuoColumnTabs({ slot, current }: { slot: HTMLElement; current: FlockDes
 }
 
 /** Wide desktop windows: the Duo column's look, drawn by the Flock itself. */
-function DesktopColumn({ current }: { current: FlockDest }) {
+function DesktopColumn({ current }: { current: FlockDest | null }) {
   const { t } = useTranslation();
   return (
     <nav
@@ -132,6 +134,7 @@ const SpacesContext = createContext<SpacesApi | null>(null);
 export function FlockShell({ children }: { children: ReactNode }) {
   const pathname = useLocation({ select: (l) => l.pathname });
   const current = destForPath(pathname);
+  const onboarding = isFlockOnboardingPath(pathname);
   const rail = useDuoRail();
   const [spacesOpen, setSpacesOpen] = useState(false);
   const trigger = useRef<HTMLElement | null>(null);
@@ -141,9 +144,9 @@ export function FlockShell({ children }: { children: ReactNode }) {
 
   return (
     <SpacesContext.Provider value={api}>
-      <div className={`min-h-screen pb-nav ${rail ? "" : "lg:pb-10 lg:pr-[104px]"}`} style={{ background: K.mist, color: K.forest }}>
+      <div className={`min-h-screen ${onboarding ? "" : "pb-nav"} ${rail || onboarding ? "" : "lg:pb-10 lg:pr-[104px]"}`} style={{ background: K.mist, color: K.forest }}>
         {children}
-        {rail
+        {onboarding ? null : rail
           ? rail.tabs && <DuoColumnTabs slot={rail.tabs} current={current} />
           : (
             <>
@@ -185,6 +188,21 @@ function SpacesButton() {
   );
 }
 
+/** Your photo or initial, opening You (your Community profile). The care
+ *  app's AccountAvatar stays as it is; this one is Community's own. */
+function MeAvatarLink() {
+  const { t } = useTranslation();
+  const { data: me } = useMyProfile();
+  const { data: care } = useCareName();
+  const { data: urls } = useAvatarUrls([me?.photo_path]);
+  const name = me?.display_name ?? defaultDisplayName(care?.first_name, care?.full_name);
+  return (
+    <Link to="/flock/you" aria-label={t("flock.you.open", "You")} className="shrink-0 rounded-full active:scale-95">
+      <FlockAvatar name={name} url={me?.photo_path ? urls?.get(me.photo_path) : null} size={44} ring={K.teal} />
+    </Link>
+  );
+}
+
 /** Every Community screen's forest header: the title on the left; Spaces and
  *  the account avatar on the right; an optional line under the title. */
 export function FlockHeader({ title, line }: { title: ReactNode; line?: ReactNode }) {
@@ -194,7 +212,7 @@ export function FlockHeader({ title, line }: { title: ReactNode; line?: ReactNod
         <div className="flex items-center gap-3">
           <KyaHeading as="h1" size={30} className="min-w-0 flex-1 truncate text-white">{title}</KyaHeading>
           <SpacesButton />
-          <AccountAvatar />
+          <MeAvatarLink />
         </div>
         {line && <p className="m-0 mt-2 text-[15px] leading-[1.5]" style={{ color: K.paleGreen }}>{line}</p>}
       </div>

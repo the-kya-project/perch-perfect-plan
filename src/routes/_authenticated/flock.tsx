@@ -1,5 +1,7 @@
-import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
+import { createFileRoute, Outlet, redirect, useLocation, useNavigate } from "@tanstack/react-router";
 import { useEffect } from "react";
+import { useMySetup } from "@/lib/flockData";
+import { isFlockOnboardingPath } from "@/lib/flockNav";
 import { FlockShell } from "@/components/FlockShell";
 import { FLOCK_ENABLED_QUERY, rememberMode } from "@/lib/flock";
 
@@ -25,6 +27,15 @@ function FlockLayout() {
   // Reaching the Flock by any route (the tab, a link, a typed URL) makes it
   // this device's mode, so reopening the app returns here.
   useEffect(() => { rememberMode("flock"); }, []);
+  // First visit: the welcome, then the one-minute setup. Once setup is saved
+  // (flock_profiles.setup_completed_at) it never shows again.
+  const pathname = useLocation({ select: (l) => l.pathname });
+  const navigate = useNavigate();
+  const { data: setup } = useMySetup();
+  const needsSetup = !!setup && !setup.setup_completed_at;
+  useEffect(() => {
+    if (needsSetup && !isFlockOnboardingPath(pathname)) void navigate({ to: "/flock/welcome", replace: true });
+  }, [needsSetup, pathname, navigate]);
   return (
     <FlockShell>
       <Outlet />

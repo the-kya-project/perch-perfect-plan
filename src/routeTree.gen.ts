@@ -59,7 +59,9 @@ import { Route as AuthenticatedFlockChapterRouteImport } from './routes/_authent
 import { Route as AuthenticatedFlockJourneysRouteImport } from './routes/_authenticated/flock.journeys'
 import { Route as AuthenticatedFlockLearnRouteImport } from './routes/_authenticated/flock.learn'
 import { Route as AuthenticatedFlockLibraryRouteImport } from './routes/_authenticated/flock.library'
+import { Route as AuthenticatedFlockSetupRouteImport } from './routes/_authenticated/flock.setup'
 import { Route as AuthenticatedFlockSpacesRouteImport } from './routes/_authenticated/flock.spaces'
+import { Route as AuthenticatedFlockWelcomeRouteImport } from './routes/_authenticated/flock.welcome'
 import { Route as AuthenticatedNotificationsIndexRouteImport } from './routes/_authenticated/notifications.index'
 import { Route as AuthenticatedNotificationsSettingsRouteImport } from './routes/_authenticated/notifications.settings'
 import { Route as AuthenticatedScansIndexRouteImport } from './routes/_authenticated/scans.index'
@@ -96,6 +98,14 @@ import { Route as AuthenticatedBirdsBirdIdVetSummaryRouteImport } from './routes
 import { Route as AuthenticatedBirdsBirdIdViewAsSitterRouteImport } from './routes/_authenticated/birds/$birdId.view-as-sitter'
 import { Route as AuthenticatedBirdsBirdIdWeightRouteImport } from './routes/_authenticated/birds/$birdId.weight'
 import { Route as AuthenticatedCoveringSitIdBirdIdRouteImport } from './routes/_authenticated/covering.$sitId.$birdId'
+import { Route as AuthenticatedFlockBirdsBirdIdRouteImport } from './routes/_authenticated/flock.birds.$birdId'
+import { Route as AuthenticatedFlockMembersIndexRouteImport } from './routes/_authenticated/flock.members.index'
+import { Route as AuthenticatedFlockMembersUserIdRouteImport } from './routes/_authenticated/flock.members.$userId'
+import { Route as AuthenticatedFlockYouIndexRouteImport } from './routes/_authenticated/flock.you.index'
+import { Route as AuthenticatedFlockYouEditRouteImport } from './routes/_authenticated/flock.you.edit'
+import { Route as AuthenticatedFlockYouMembershipRouteImport } from './routes/_authenticated/flock.you.membership'
+import { Route as AuthenticatedFlockYouNotificationsRouteImport } from './routes/_authenticated/flock.you.notifications'
+import { Route as AuthenticatedFlockYouPrivacyRouteImport } from './routes/_authenticated/flock.you.privacy'
 import { Route as AuthenticatedSitsEditSitIdRouteImport } from './routes/_authenticated/sits.edit.$sitId'
 import { Route as ApiPublicHooksBereavementNoteRouteImport } from './routes/api/public/hooks/bereavement-note'
 import { Route as ApiPublicHooksCarePlanRemindersRouteImport } from './routes/api/public/hooks/care-plan-reminders'
@@ -376,10 +386,21 @@ const AuthenticatedFlockLibraryRoute =
     path: '/library',
     getParentRoute: () => AuthenticatedFlockRoute,
   } as any)
+const AuthenticatedFlockSetupRoute = AuthenticatedFlockSetupRouteImport.update({
+  id: '/setup',
+  path: '/setup',
+  getParentRoute: () => AuthenticatedFlockRoute,
+} as any)
 const AuthenticatedFlockSpacesRoute =
   AuthenticatedFlockSpacesRouteImport.update({
     id: '/spaces',
     path: '/spaces',
+    getParentRoute: () => AuthenticatedFlockRoute,
+  } as any)
+const AuthenticatedFlockWelcomeRoute =
+  AuthenticatedFlockWelcomeRouteImport.update({
+    id: '/welcome',
+    path: '/welcome',
     getParentRoute: () => AuthenticatedFlockRoute,
   } as any)
 const AuthenticatedNotificationsIndexRoute =
@@ -585,6 +606,54 @@ const AuthenticatedCoveringSitIdBirdIdRoute =
     path: '/covering/$sitId/$birdId',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedFlockBirdsBirdIdRoute =
+  AuthenticatedFlockBirdsBirdIdRouteImport.update({
+    id: '/birds/$birdId',
+    path: '/birds/$birdId',
+    getParentRoute: () => AuthenticatedFlockRoute,
+  } as any)
+const AuthenticatedFlockMembersIndexRoute =
+  AuthenticatedFlockMembersIndexRouteImport.update({
+    id: '/members/',
+    path: '/members/',
+    getParentRoute: () => AuthenticatedFlockRoute,
+  } as any)
+const AuthenticatedFlockMembersUserIdRoute =
+  AuthenticatedFlockMembersUserIdRouteImport.update({
+    id: '/members/$userId',
+    path: '/members/$userId',
+    getParentRoute: () => AuthenticatedFlockRoute,
+  } as any)
+const AuthenticatedFlockYouIndexRoute =
+  AuthenticatedFlockYouIndexRouteImport.update({
+    id: '/you/',
+    path: '/you/',
+    getParentRoute: () => AuthenticatedFlockRoute,
+  } as any)
+const AuthenticatedFlockYouEditRoute =
+  AuthenticatedFlockYouEditRouteImport.update({
+    id: '/you/edit',
+    path: '/you/edit',
+    getParentRoute: () => AuthenticatedFlockRoute,
+  } as any)
+const AuthenticatedFlockYouMembershipRoute =
+  AuthenticatedFlockYouMembershipRouteImport.update({
+    id: '/you/membership',
+    path: '/you/membership',
+    getParentRoute: () => AuthenticatedFlockRoute,
+  } as any)
+const AuthenticatedFlockYouNotificationsRoute =
+  AuthenticatedFlockYouNotificationsRouteImport.update({
+    id: '/you/notifications',
+    path: '/you/notifications',
+    getParentRoute: () => AuthenticatedFlockRoute,
+  } as any)
+const AuthenticatedFlockYouPrivacyRoute =
+  AuthenticatedFlockYouPrivacyRouteImport.update({
+    id: '/you/privacy',
+    path: '/you/privacy',
+    getParentRoute: () => AuthenticatedFlockRoute,
+  } as any)
 const AuthenticatedSitsEditSitIdRoute =
   AuthenticatedSitsEditSitIdRouteImport.update({
     id: '/sits/edit/$sitId',
@@ -734,7 +803,9 @@ export interface FileRoutesByFullPath {
   '/flock/journeys': typeof AuthenticatedFlockJourneysRoute
   '/flock/learn': typeof AuthenticatedFlockLearnRoute
   '/flock/library': typeof AuthenticatedFlockLibraryRoute
+  '/flock/setup': typeof AuthenticatedFlockSetupRoute
   '/flock/spaces': typeof AuthenticatedFlockSpacesRoute
+  '/flock/welcome': typeof AuthenticatedFlockWelcomeRoute
   '/notifications/settings': typeof AuthenticatedNotificationsSettingsRoute
   '/scans/history': typeof AuthenticatedScansHistoryRoute
   '/scans/settings': typeof AuthenticatedScansSettingsRoute
@@ -772,6 +843,12 @@ export interface FileRoutesByFullPath {
   '/birds/$birdId/view-as-sitter': typeof AuthenticatedBirdsBirdIdViewAsSitterRoute
   '/birds/$birdId/weight': typeof AuthenticatedBirdsBirdIdWeightRoute
   '/covering/$sitId/$birdId': typeof AuthenticatedCoveringSitIdBirdIdRoute
+  '/flock/birds/$birdId': typeof AuthenticatedFlockBirdsBirdIdRoute
+  '/flock/members/$userId': typeof AuthenticatedFlockMembersUserIdRoute
+  '/flock/you/edit': typeof AuthenticatedFlockYouEditRoute
+  '/flock/you/membership': typeof AuthenticatedFlockYouMembershipRoute
+  '/flock/you/notifications': typeof AuthenticatedFlockYouNotificationsRoute
+  '/flock/you/privacy': typeof AuthenticatedFlockYouPrivacyRoute
   '/sits/edit/$sitId': typeof AuthenticatedSitsEditSitIdRoute
   '/api/public/hooks/bereavement-note': typeof ApiPublicHooksBereavementNoteRoute
   '/api/public/hooks/care-plan-reminders': typeof ApiPublicHooksCarePlanRemindersRoute
@@ -784,6 +861,8 @@ export interface FileRoutesByFullPath {
   '/api/public/hooks/send-email': typeof ApiPublicHooksSendEmailRoute
   '/api/public/stripe/webhook': typeof ApiPublicStripeWebhookRoute
   '/birds/$birdId/': typeof AuthenticatedBirdsBirdIdIndexRoute
+  '/flock/members/': typeof AuthenticatedFlockMembersIndexRoute
+  '/flock/you/': typeof AuthenticatedFlockYouIndexRoute
   '/birds/$birdId/plan/editor': typeof AuthenticatedBirdsBirdIdPlanEditorRoute
   '/birds/$birdId/scans/$scanId': typeof AuthenticatedBirdsBirdIdScansScanIdRoute
   '/api/public/bereavement-review/$reviewId/$sig': typeof ApiPublicBereavementReviewReviewIdSigRoute
@@ -833,7 +912,9 @@ export interface FileRoutesByTo {
   '/flock/journeys': typeof AuthenticatedFlockJourneysRoute
   '/flock/learn': typeof AuthenticatedFlockLearnRoute
   '/flock/library': typeof AuthenticatedFlockLibraryRoute
+  '/flock/setup': typeof AuthenticatedFlockSetupRoute
   '/flock/spaces': typeof AuthenticatedFlockSpacesRoute
+  '/flock/welcome': typeof AuthenticatedFlockWelcomeRoute
   '/notifications/settings': typeof AuthenticatedNotificationsSettingsRoute
   '/scans/history': typeof AuthenticatedScansHistoryRoute
   '/scans/settings': typeof AuthenticatedScansSettingsRoute
@@ -870,6 +951,12 @@ export interface FileRoutesByTo {
   '/birds/$birdId/view-as-sitter': typeof AuthenticatedBirdsBirdIdViewAsSitterRoute
   '/birds/$birdId/weight': typeof AuthenticatedBirdsBirdIdWeightRoute
   '/covering/$sitId/$birdId': typeof AuthenticatedCoveringSitIdBirdIdRoute
+  '/flock/birds/$birdId': typeof AuthenticatedFlockBirdsBirdIdRoute
+  '/flock/members/$userId': typeof AuthenticatedFlockMembersUserIdRoute
+  '/flock/you/edit': typeof AuthenticatedFlockYouEditRoute
+  '/flock/you/membership': typeof AuthenticatedFlockYouMembershipRoute
+  '/flock/you/notifications': typeof AuthenticatedFlockYouNotificationsRoute
+  '/flock/you/privacy': typeof AuthenticatedFlockYouPrivacyRoute
   '/sits/edit/$sitId': typeof AuthenticatedSitsEditSitIdRoute
   '/api/public/hooks/bereavement-note': typeof ApiPublicHooksBereavementNoteRoute
   '/api/public/hooks/care-plan-reminders': typeof ApiPublicHooksCarePlanRemindersRoute
@@ -882,6 +969,8 @@ export interface FileRoutesByTo {
   '/api/public/hooks/send-email': typeof ApiPublicHooksSendEmailRoute
   '/api/public/stripe/webhook': typeof ApiPublicStripeWebhookRoute
   '/birds/$birdId': typeof AuthenticatedBirdsBirdIdIndexRoute
+  '/flock/members': typeof AuthenticatedFlockMembersIndexRoute
+  '/flock/you': typeof AuthenticatedFlockYouIndexRoute
   '/birds/$birdId/plan/editor': typeof AuthenticatedBirdsBirdIdPlanEditorRoute
   '/birds/$birdId/scans/$scanId': typeof AuthenticatedBirdsBirdIdScansScanIdRoute
   '/api/public/bereavement-review/$reviewId/$sig': typeof ApiPublicBereavementReviewReviewIdSigRoute
@@ -939,7 +1028,9 @@ export interface FileRoutesById {
   '/_authenticated/flock/journeys': typeof AuthenticatedFlockJourneysRoute
   '/_authenticated/flock/learn': typeof AuthenticatedFlockLearnRoute
   '/_authenticated/flock/library': typeof AuthenticatedFlockLibraryRoute
+  '/_authenticated/flock/setup': typeof AuthenticatedFlockSetupRoute
   '/_authenticated/flock/spaces': typeof AuthenticatedFlockSpacesRoute
+  '/_authenticated/flock/welcome': typeof AuthenticatedFlockWelcomeRoute
   '/_authenticated/notifications/settings': typeof AuthenticatedNotificationsSettingsRoute
   '/_authenticated/scans/history': typeof AuthenticatedScansHistoryRoute
   '/_authenticated/scans/settings': typeof AuthenticatedScansSettingsRoute
@@ -977,6 +1068,12 @@ export interface FileRoutesById {
   '/_authenticated/birds/$birdId/view-as-sitter': typeof AuthenticatedBirdsBirdIdViewAsSitterRoute
   '/_authenticated/birds/$birdId/weight': typeof AuthenticatedBirdsBirdIdWeightRoute
   '/_authenticated/covering/$sitId/$birdId': typeof AuthenticatedCoveringSitIdBirdIdRoute
+  '/_authenticated/flock/birds/$birdId': typeof AuthenticatedFlockBirdsBirdIdRoute
+  '/_authenticated/flock/members/$userId': typeof AuthenticatedFlockMembersUserIdRoute
+  '/_authenticated/flock/you/edit': typeof AuthenticatedFlockYouEditRoute
+  '/_authenticated/flock/you/membership': typeof AuthenticatedFlockYouMembershipRoute
+  '/_authenticated/flock/you/notifications': typeof AuthenticatedFlockYouNotificationsRoute
+  '/_authenticated/flock/you/privacy': typeof AuthenticatedFlockYouPrivacyRoute
   '/_authenticated/sits/edit/$sitId': typeof AuthenticatedSitsEditSitIdRoute
   '/api/public/hooks/bereavement-note': typeof ApiPublicHooksBereavementNoteRoute
   '/api/public/hooks/care-plan-reminders': typeof ApiPublicHooksCarePlanRemindersRoute
@@ -989,6 +1086,8 @@ export interface FileRoutesById {
   '/api/public/hooks/send-email': typeof ApiPublicHooksSendEmailRoute
   '/api/public/stripe/webhook': typeof ApiPublicStripeWebhookRoute
   '/_authenticated/birds/$birdId/': typeof AuthenticatedBirdsBirdIdIndexRoute
+  '/_authenticated/flock/members/': typeof AuthenticatedFlockMembersIndexRoute
+  '/_authenticated/flock/you/': typeof AuthenticatedFlockYouIndexRoute
   '/_authenticated/birds/$birdId/plan/editor': typeof AuthenticatedBirdsBirdIdPlanEditorRoute
   '/_authenticated/birds/$birdId/scans/$scanId': typeof AuthenticatedBirdsBirdIdScansScanIdRoute
   '/api/public/bereavement-review/$reviewId/$sig': typeof ApiPublicBereavementReviewReviewIdSigRoute
@@ -1046,7 +1145,9 @@ export interface FileRouteTypes {
     | '/flock/journeys'
     | '/flock/learn'
     | '/flock/library'
+    | '/flock/setup'
     | '/flock/spaces'
+    | '/flock/welcome'
     | '/notifications/settings'
     | '/scans/history'
     | '/scans/settings'
@@ -1084,6 +1185,12 @@ export interface FileRouteTypes {
     | '/birds/$birdId/view-as-sitter'
     | '/birds/$birdId/weight'
     | '/covering/$sitId/$birdId'
+    | '/flock/birds/$birdId'
+    | '/flock/members/$userId'
+    | '/flock/you/edit'
+    | '/flock/you/membership'
+    | '/flock/you/notifications'
+    | '/flock/you/privacy'
     | '/sits/edit/$sitId'
     | '/api/public/hooks/bereavement-note'
     | '/api/public/hooks/care-plan-reminders'
@@ -1096,6 +1203,8 @@ export interface FileRouteTypes {
     | '/api/public/hooks/send-email'
     | '/api/public/stripe/webhook'
     | '/birds/$birdId/'
+    | '/flock/members/'
+    | '/flock/you/'
     | '/birds/$birdId/plan/editor'
     | '/birds/$birdId/scans/$scanId'
     | '/api/public/bereavement-review/$reviewId/$sig'
@@ -1145,7 +1254,9 @@ export interface FileRouteTypes {
     | '/flock/journeys'
     | '/flock/learn'
     | '/flock/library'
+    | '/flock/setup'
     | '/flock/spaces'
+    | '/flock/welcome'
     | '/notifications/settings'
     | '/scans/history'
     | '/scans/settings'
@@ -1182,6 +1293,12 @@ export interface FileRouteTypes {
     | '/birds/$birdId/view-as-sitter'
     | '/birds/$birdId/weight'
     | '/covering/$sitId/$birdId'
+    | '/flock/birds/$birdId'
+    | '/flock/members/$userId'
+    | '/flock/you/edit'
+    | '/flock/you/membership'
+    | '/flock/you/notifications'
+    | '/flock/you/privacy'
     | '/sits/edit/$sitId'
     | '/api/public/hooks/bereavement-note'
     | '/api/public/hooks/care-plan-reminders'
@@ -1194,6 +1311,8 @@ export interface FileRouteTypes {
     | '/api/public/hooks/send-email'
     | '/api/public/stripe/webhook'
     | '/birds/$birdId'
+    | '/flock/members'
+    | '/flock/you'
     | '/birds/$birdId/plan/editor'
     | '/birds/$birdId/scans/$scanId'
     | '/api/public/bereavement-review/$reviewId/$sig'
@@ -1250,7 +1369,9 @@ export interface FileRouteTypes {
     | '/_authenticated/flock/journeys'
     | '/_authenticated/flock/learn'
     | '/_authenticated/flock/library'
+    | '/_authenticated/flock/setup'
     | '/_authenticated/flock/spaces'
+    | '/_authenticated/flock/welcome'
     | '/_authenticated/notifications/settings'
     | '/_authenticated/scans/history'
     | '/_authenticated/scans/settings'
@@ -1288,6 +1409,12 @@ export interface FileRouteTypes {
     | '/_authenticated/birds/$birdId/view-as-sitter'
     | '/_authenticated/birds/$birdId/weight'
     | '/_authenticated/covering/$sitId/$birdId'
+    | '/_authenticated/flock/birds/$birdId'
+    | '/_authenticated/flock/members/$userId'
+    | '/_authenticated/flock/you/edit'
+    | '/_authenticated/flock/you/membership'
+    | '/_authenticated/flock/you/notifications'
+    | '/_authenticated/flock/you/privacy'
     | '/_authenticated/sits/edit/$sitId'
     | '/api/public/hooks/bereavement-note'
     | '/api/public/hooks/care-plan-reminders'
@@ -1300,6 +1427,8 @@ export interface FileRouteTypes {
     | '/api/public/hooks/send-email'
     | '/api/public/stripe/webhook'
     | '/_authenticated/birds/$birdId/'
+    | '/_authenticated/flock/members/'
+    | '/_authenticated/flock/you/'
     | '/_authenticated/birds/$birdId/plan/editor'
     | '/_authenticated/birds/$birdId/scans/$scanId'
     | '/api/public/bereavement-review/$reviewId/$sig'
@@ -1701,11 +1830,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedFlockLibraryRouteImport
       parentRoute: typeof AuthenticatedFlockRoute
     }
+    '/_authenticated/flock/setup': {
+      id: '/_authenticated/flock/setup'
+      path: '/setup'
+      fullPath: '/flock/setup'
+      preLoaderRoute: typeof AuthenticatedFlockSetupRouteImport
+      parentRoute: typeof AuthenticatedFlockRoute
+    }
     '/_authenticated/flock/spaces': {
       id: '/_authenticated/flock/spaces'
       path: '/spaces'
       fullPath: '/flock/spaces'
       preLoaderRoute: typeof AuthenticatedFlockSpacesRouteImport
+      parentRoute: typeof AuthenticatedFlockRoute
+    }
+    '/_authenticated/flock/welcome': {
+      id: '/_authenticated/flock/welcome'
+      path: '/welcome'
+      fullPath: '/flock/welcome'
+      preLoaderRoute: typeof AuthenticatedFlockWelcomeRouteImport
       parentRoute: typeof AuthenticatedFlockRoute
     }
     '/_authenticated/notifications/': {
@@ -1960,6 +2103,62 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedCoveringSitIdBirdIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/flock/birds/$birdId': {
+      id: '/_authenticated/flock/birds/$birdId'
+      path: '/birds/$birdId'
+      fullPath: '/flock/birds/$birdId'
+      preLoaderRoute: typeof AuthenticatedFlockBirdsBirdIdRouteImport
+      parentRoute: typeof AuthenticatedFlockRoute
+    }
+    '/_authenticated/flock/members/': {
+      id: '/_authenticated/flock/members/'
+      path: '/members'
+      fullPath: '/flock/members/'
+      preLoaderRoute: typeof AuthenticatedFlockMembersIndexRouteImport
+      parentRoute: typeof AuthenticatedFlockRoute
+    }
+    '/_authenticated/flock/members/$userId': {
+      id: '/_authenticated/flock/members/$userId'
+      path: '/members/$userId'
+      fullPath: '/flock/members/$userId'
+      preLoaderRoute: typeof AuthenticatedFlockMembersUserIdRouteImport
+      parentRoute: typeof AuthenticatedFlockRoute
+    }
+    '/_authenticated/flock/you/': {
+      id: '/_authenticated/flock/you/'
+      path: '/you'
+      fullPath: '/flock/you/'
+      preLoaderRoute: typeof AuthenticatedFlockYouIndexRouteImport
+      parentRoute: typeof AuthenticatedFlockRoute
+    }
+    '/_authenticated/flock/you/edit': {
+      id: '/_authenticated/flock/you/edit'
+      path: '/you/edit'
+      fullPath: '/flock/you/edit'
+      preLoaderRoute: typeof AuthenticatedFlockYouEditRouteImport
+      parentRoute: typeof AuthenticatedFlockRoute
+    }
+    '/_authenticated/flock/you/membership': {
+      id: '/_authenticated/flock/you/membership'
+      path: '/you/membership'
+      fullPath: '/flock/you/membership'
+      preLoaderRoute: typeof AuthenticatedFlockYouMembershipRouteImport
+      parentRoute: typeof AuthenticatedFlockRoute
+    }
+    '/_authenticated/flock/you/notifications': {
+      id: '/_authenticated/flock/you/notifications'
+      path: '/you/notifications'
+      fullPath: '/flock/you/notifications'
+      preLoaderRoute: typeof AuthenticatedFlockYouNotificationsRouteImport
+      parentRoute: typeof AuthenticatedFlockRoute
+    }
+    '/_authenticated/flock/you/privacy': {
+      id: '/_authenticated/flock/you/privacy'
+      path: '/you/privacy'
+      fullPath: '/flock/you/privacy'
+      preLoaderRoute: typeof AuthenticatedFlockYouPrivacyRouteImport
+      parentRoute: typeof AuthenticatedFlockRoute
+    }
     '/_authenticated/sits/edit/$sitId': {
       id: '/_authenticated/sits/edit/$sitId'
       path: '/sits/edit/$sitId'
@@ -2102,8 +2301,18 @@ interface AuthenticatedFlockRouteChildren {
   AuthenticatedFlockJourneysRoute: typeof AuthenticatedFlockJourneysRoute
   AuthenticatedFlockLearnRoute: typeof AuthenticatedFlockLearnRoute
   AuthenticatedFlockLibraryRoute: typeof AuthenticatedFlockLibraryRoute
+  AuthenticatedFlockSetupRoute: typeof AuthenticatedFlockSetupRoute
   AuthenticatedFlockSpacesRoute: typeof AuthenticatedFlockSpacesRoute
+  AuthenticatedFlockWelcomeRoute: typeof AuthenticatedFlockWelcomeRoute
   AuthenticatedFlockIndexRoute: typeof AuthenticatedFlockIndexRoute
+  AuthenticatedFlockBirdsBirdIdRoute: typeof AuthenticatedFlockBirdsBirdIdRoute
+  AuthenticatedFlockMembersUserIdRoute: typeof AuthenticatedFlockMembersUserIdRoute
+  AuthenticatedFlockYouEditRoute: typeof AuthenticatedFlockYouEditRoute
+  AuthenticatedFlockYouMembershipRoute: typeof AuthenticatedFlockYouMembershipRoute
+  AuthenticatedFlockYouNotificationsRoute: typeof AuthenticatedFlockYouNotificationsRoute
+  AuthenticatedFlockYouPrivacyRoute: typeof AuthenticatedFlockYouPrivacyRoute
+  AuthenticatedFlockMembersIndexRoute: typeof AuthenticatedFlockMembersIndexRoute
+  AuthenticatedFlockYouIndexRoute: typeof AuthenticatedFlockYouIndexRoute
 }
 
 const AuthenticatedFlockRouteChildren: AuthenticatedFlockRouteChildren = {
@@ -2111,8 +2320,19 @@ const AuthenticatedFlockRouteChildren: AuthenticatedFlockRouteChildren = {
   AuthenticatedFlockJourneysRoute: AuthenticatedFlockJourneysRoute,
   AuthenticatedFlockLearnRoute: AuthenticatedFlockLearnRoute,
   AuthenticatedFlockLibraryRoute: AuthenticatedFlockLibraryRoute,
+  AuthenticatedFlockSetupRoute: AuthenticatedFlockSetupRoute,
   AuthenticatedFlockSpacesRoute: AuthenticatedFlockSpacesRoute,
+  AuthenticatedFlockWelcomeRoute: AuthenticatedFlockWelcomeRoute,
   AuthenticatedFlockIndexRoute: AuthenticatedFlockIndexRoute,
+  AuthenticatedFlockBirdsBirdIdRoute: AuthenticatedFlockBirdsBirdIdRoute,
+  AuthenticatedFlockMembersUserIdRoute: AuthenticatedFlockMembersUserIdRoute,
+  AuthenticatedFlockYouEditRoute: AuthenticatedFlockYouEditRoute,
+  AuthenticatedFlockYouMembershipRoute: AuthenticatedFlockYouMembershipRoute,
+  AuthenticatedFlockYouNotificationsRoute:
+    AuthenticatedFlockYouNotificationsRoute,
+  AuthenticatedFlockYouPrivacyRoute: AuthenticatedFlockYouPrivacyRoute,
+  AuthenticatedFlockMembersIndexRoute: AuthenticatedFlockMembersIndexRoute,
+  AuthenticatedFlockYouIndexRoute: AuthenticatedFlockYouIndexRoute,
 }
 
 const AuthenticatedFlockRouteWithChildren =
