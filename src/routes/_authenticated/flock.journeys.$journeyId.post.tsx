@@ -8,6 +8,7 @@ import { ClipRecorder } from "@/components/ClipRecorder";
 import { ClipPlayer } from "@/components/ClipPlayer";
 import { FlockSubPage } from "@/components/flock/FlockSubPage";
 import { ChoiceChips, FlowFooter } from "@/components/flock/JourneyParts";
+import { DietDisclaimer } from "@/components/flock/JourneyDiet";
 import { getClipStatus } from "@/lib/clips.functions";
 import { createJourneyClipUpload, trimJourneyClip } from "@/lib/journeyClips.functions";
 import {
@@ -68,7 +69,7 @@ function PostUpdate() {
   }
 
   return clip
-    ? <Compose journeyId={journeyId} clip={clip} birdName={bird?.name ?? ""} next={next} visibility={journey?.visibility ?? "private"}
+    ? <Compose journeyId={journeyId} clip={clip} birdName={bird?.name ?? ""} diet={journey?.template?.slug === "diet-conversion"} next={next} visibility={journey?.visibility ?? "private"}
         canShare={!!access?.can_share} onBack={() => void navigate({ to: "/flock/journeys/$journeyId/post", params: { journeyId }, search: {}, replace: true })}
         onClip={(ref) => void navigate({ to: "/flock/journeys/$journeyId/post", params: { journeyId }, search: { clip: ref }, replace: true })} />
     : <Camera journeyId={journeyId} birdId={journey?.bird_id ?? null} birdName={bird?.name ?? ""} skill={skill} next={next}
@@ -134,8 +135,8 @@ function ClipLimitCard({ used, onBack }: { used: number; onBack: () => void }) {
 }
 
 /** Screen 4: the post. Then screen 5 as a sheet. */
-function Compose({ journeyId, clip, birdName, next, visibility, canShare, onBack, onClip }: {
-  journeyId: string; clip: string; birdName: string; next: JourneyMilestone | null; visibility: JourneyVisibility; canShare: boolean;
+function Compose({ journeyId, clip, birdName, diet, next, visibility, canShare, onBack, onClip }: {
+  journeyId: string; clip: string; birdName: string; diet: boolean; next: JourneyMilestone | null; visibility: JourneyVisibility; canShare: boolean;
   onBack: () => void; onClip: (ref: string) => void;
 }) {
   const { t } = useTranslation();
@@ -221,6 +222,7 @@ function Compose({ journeyId, clip, birdName, next, visibility, canShare, onBack
           {canShare && <KyaLink onClick={() => setChanging(true)}>{t("flock.setup.change", "Change")}</KyaLink>}
         </div>
         {error && <p role="alert" className="m-0 text-[15px]" style={{ color: K.red }}>{error}</p>}
+        {diet && birdName && <DietDisclaimer birdName={birdName} />}
       </div>
       <FlowFooter>
         <KyaPrimaryButton onClick={() => void post()} disabled={!engagement || busy}>

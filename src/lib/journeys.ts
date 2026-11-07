@@ -165,3 +165,37 @@ export function daysSince(iso: string | null | undefined, now: Date = new Date()
 
 /** The weight safeguard's level, as the screens use it. */
 export type WeightLevel = "none" | "notice" | "pause";
+
+// ---- Diet conversion: the vet card and guidance --------------------------------
+
+export const DIET_SLUG = "diet-conversion";
+export type VetCheck = "talked" | "will_call";
+
+/** Lories and lorikeets eat a nectar-based diet; Diet conversion isn't for them.
+ *  The database refuses it too (journeys_block_nectar_diet). */
+export function isNectarEater(species: string | null | undefined): boolean {
+  return /(lory|lories|lorikeet)/i.test(species ?? "");
+}
+
+/** Under a year old, or no hatch date: the vet card adds the young-bird line. */
+export function youngOrUnknownAge(birthDate: string | null | undefined, now: Date = new Date()): boolean {
+  if (!birthDate) return true;
+  const d = new Date(`${birthDate.slice(0, 10)}T00:00:00`);
+  if (Number.isNaN(d.getTime())) return true;
+  const yearOn = new Date(d);
+  yearOn.setFullYear(d.getFullYear() + 1);
+  return now < yearOn;
+}
+
+/** "I'll call" journeys get the reminder card from milestone 2 on (milestone 1,
+ *  the starting weight, is done), until they say they've talked; "Remind me
+ *  later" hides it until vet_remind_after. */
+export function showVetReminder(
+  j: { vet_check: VetCheck | null; vet_remind_after: string | null; status: string; milestones: { position: number; state: string }[] },
+  now: Date = new Date(),
+): boolean {
+  if (j.vet_check !== "will_call" || j.status !== "active") return false;
+  if (j.vet_remind_after && new Date(j.vet_remind_after) > now) return false;
+  const next = nextMilestone(j.milestones);
+  return !!next && next.position >= 2;
+}
