@@ -312,7 +312,14 @@ type SeedJourney = {
 type JourneyMockOpts = {
   tier?: "free" | "premium" | "flock"; openCustom?: number; knownSlugs?: string[];
   seed?: SeedJourney[]; canAddClip?: boolean;
-  weight?: { level: "none" | "notice" | "pause"; start: number; now: number };
+  weight?: {
+    level: "none" | "notice" | "pause"; start: number; now: number;
+    /** The smoothed rules (journey_weight_check since 20261108160000). */
+    avg?: number; pauseKind?: "drop" | "slide" | "sudden"; recheck?: boolean; missed?: boolean;
+    excluded?: { grams: number; daysAgo: number; reason: "other_time" | "unconfirmed" }[];
+  };
+  /** Today's "Weigh [Bird] today" list. */
+  weighReminders?: { journey_id: string; bird_id: string; bird_name: string; days_since_weigh: number }[];
   /** Finished members' tips, by template slug (the database gives free accounts none). */
   finisherTips?: Record<string, string[]>;
 };
@@ -381,10 +388,13 @@ async function mockJourneys(context: BrowserContext, opts: JourneyMockOpts, bird
   };
   await context.route(`${MOCK}/rest/v1/journey_templates**`, (route) => json(route, JOURNEY_TEMPLATES));
   await context.route(`${MOCK}/rest/v1/journey_tips**`, (route) => json(route, [{ body: "Keep it to a few minutes, and stop while your bird still wants more." }]));
+  const dayAt = (daysAgo: number) => { const d = new Date(Date.now() - daysAgo * 86_400_000); d.setUTCHours(8, 30, 0, 0); return d.toISOString(); };
   await context.route(`${MOCK}/rest/v1/weight_entries**`, (route) => json(route, opts.weight ? [
-    { grams: opts.weight.start, measured_at: new Date(Date.now() - 14 * 86_400_000).toISOString() },
-    { grams: opts.weight.now, measured_at: new Date(Date.now() - 86_400_000).toISOString() },
-  ] : []));
+    { grams: opts.weight.start, measured_at: dayAt(14) },
+    ...(opts.weight.excluded ?? []).map((x) => ({ grams: x.grams, measured_at: dayAt(x.daysAgo) })),
+    { grams: opts.weight.avg ?? opts.weight.now, measured_at: dayAt(2) },
+    { grams: opts.weight.now, measured_at: dayAt(1) },
+  ].sort((a, b) => a.measured_at.localeCompare(b.measured_at)) : []));
   await context.route(`${MOCK}/rest/v1/journey_updates**`, (route) => {
     const url = new URL(route.request().url());
     if ((url.searchParams.get("select") ?? "").startsWith("journey_id")) return json(route, [...lastPosted].map(([journey_id, created_at]) => ({ journey_id, created_at })));
@@ -409,6 +419,7 @@ async function mockJourneys(context: BrowserContext, opts: JourneyMockOpts, bird
     const args = (route.request().postDataJSON() ?? {}) as Record<string, any>;
     state.calls.push({ fn, args });
     const j = journeys.get(args.p_journey_id);
+    if (fn === "journey_weigh_reminders") return json(route, opts.weighReminders ?? []);
     if (fn === "journey_my_access") return json(route, [{ tier, open_custom: opts.openCustom ?? 0, ...limits }]);
     if (fn === "journey_clip_allowance") {
       const can = opts.canAddClip ?? true;
@@ -475,8 +486,13 @@ async function mockJourneys(context: BrowserContext, opts: JourneyMockOpts, bird
     if (fn === "journey_resume_after_vet" && j) { j.status = "active"; j.paused_reason = null; return json(route, null); }
     if (fn === "journey_weight_check") {
       const w = opts.weight;
-      return json(route, [{ start_grams: w?.start ?? null, current_grams: w?.now ?? null, drop_pct: w ? Math.round((w.start - w.now) / w.start * 1000) / 10 : null,
+      const avg = w ? (w.avg ?? w.now) : null;
+      return json(route, [{ start_grams: w?.start ?? null, current_grams: w?.now ?? null, avg_grams: avg, drop_pct: w && avg != null ? Math.round((w.start - avg) / w.start * 1000) / 10 : null,
         level: j?.paused_reason === "weight_drop" ? "pause" : (w?.level ?? "none"), paused: j?.paused_reason === "weight_drop",
+        pause_kind: j?.paused_reason === "weight_drop" ? (w?.pauseKind ?? "drop") : null, recheck: !!w?.recheck, recheck_grams: null,
+        missed: !!w?.missed, days_since_weigh: w?.missed ? 3 : 1, usual_meal: w?.excluded ? "before_meal" : null,
+        excluded: [...(w?.excluded ?? []).map((x) => ({ grams: x.grams, measured_at: dayAt(x.daysAgo), reason: x.reason })),
+          ...(w?.recheck ? [{ grams: w.now, measured_at: dayAt(1), reason: "pending" }] : [])],
         window_from: new Date(Date.now() - 16 * 86_400_000).toISOString(), window_to: new Date(Date.now() - 9 * 86_400_000).toISOString() }]);
     }
     return json(route, null);
@@ -932,7 +948,7 @@ test.describe("journeys: posting updates and milestones (admin, phone)", () => {
     const diet = { id: "00000000-0000-4000-8000-0000000074a2", birdName: "Willow", slug: "diet-conversion", done: 1 };
     let o = await open(browser, baseURL!, { admin: true, journeys: { seed: [diet], weight: { level: "notice", start: 400, now: 389 } } });
     await o.page.goto(`/flock/journeys/00000000-0000-4000-8000-0000000074a2`);
-    await expect(o.page.getByTestId("weight-line")).toHaveText("Starting weight 400 g · now 389 g");
+    await expect(o.page.getByTestId("weight-line")).toHaveText("Starting weight 400 g · 3-day average 389 g");
     await expect(o.page.getByTestId("weight-notice")).toHaveText("Willow's weight is down a little from the start. Keep weighing every day, and go slower if it keeps dropping.");
     await expect(o.page.getByTestId("post-update")).toBeVisible();
     await o.context.close();
@@ -948,6 +964,43 @@ test.describe("journeys: posting updates and milestones (admin, phone)", () => {
     await resume.click();
     await expect.poll(() => o.journeys.calls.some((c) => c.fn === "journey_resume_after_vet")).toBe(true);
     await expect(o.page.getByTestId("post-update")).toBeVisible();
+    await o.context.close();
+  });
+
+  test("Diet conversion's weight card: the 3-day average line, a reading left out, a re-weigh, missed days, and a quick drop", async ({ browser, baseURL }) => {
+    const id = "00000000-0000-4000-8000-0000000074a2";
+    const diet = { id, birdName: "Willow", slug: "diet-conversion", done: 2, vetCheck: "talked" as const };
+    let o = await open(browser, baseURL!, { admin: true, journeys: { seed: [diet], weight: { level: "none", start: 400, now: 398, avg: 399,
+      excluded: [{ grams: 371, daysAgo: 3, reason: "other_time" }] } } });
+    await o.page.goto(`/flock/journeys/${id}`);
+    const card = o.page.getByTestId("weight-card");
+    await expect(card.getByTestId("weight-line")).toHaveText("Starting weight 400 g · 3-day average 399 g");
+    await expect(card.getByTestId("weight-avg-line")).toBeVisible();
+    await expect(card.locator("[data-counted='false']")).toHaveCount(1);
+    await expect(card.getByTestId("weight-not-counted")).toContainText("371 g · Not counted: weighed at a different time than usual.");
+    await expect(card.getByTestId("weight-recheck")).toHaveCount(0);
+    await expect(card.getByTestId("weigh-today")).toHaveCount(0);
+    await o.context.close();
+
+    // A sudden drop waiting for the re-weigh, and no weigh-in for a few days.
+    o = await open(browser, baseURL!, { admin: true, journeys: { seed: [diet], weight: { level: "none", start: 400, now: 360, avg: 400, recheck: true, missed: true },
+      weighReminders: [{ journey_id: id, bird_id: "00000000-0000-4000-8000-0000000071b9", bird_name: "Willow", days_since_weigh: 3 }] } });
+    await o.page.goto(`/flock/journeys/${id}`);
+    const recheck = o.page.getByTestId("weight-recheck");
+    await expect(recheck).toContainText("That's a big change from last time. Weigh Willow again to double-check?");
+    await expect(o.page.getByTestId("weight-chart").locator("[data-counted='false']")).toHaveCount(1);
+    await expect(recheck.getByRole("link", { name: "Weigh Willow again" })).toHaveAttribute("href", /\/birds\/.+\/weight\?log=true$/);
+    await expect(o.page.getByTestId("weight-card").getByTestId("weigh-today")).toContainText("Weigh Willow today so we can keep an eye on things during the switch.");
+    await o.page.goto("/flock");
+    await expect(o.page.getByTestId("weigh-today")).toContainText("Weigh Willow today so we can keep an eye on things during the switch.");
+    await expect(o.page.getByTestId("weigh-today").getByRole("link", { name: "Log a weight" })).toHaveAttribute("href", "/birds/00000000-0000-4000-8000-0000000071b9/weight?log=true");
+    await o.context.close();
+
+    // The re-weigh confirmed it: paused, with the quick-drop message.
+    o = await open(browser, baseURL!, { admin: true, journeys: { seed: [{ ...diet, status: "paused", pausedReason: "weight_drop" }], weight: { level: "pause", start: 400, now: 362, avg: 374, pauseKind: "sudden" } } });
+    await o.page.goto(`/flock/journeys/${id}`);
+    await expect(o.page.getByTestId("weight-paused")).toContainText("Willow's weight dropped quickly. Put the usual food back and call your avian vet today.");
+    await expect(o.page.getByTestId("weight-recheck")).toHaveCount(0);
     await o.context.close();
   });
 });

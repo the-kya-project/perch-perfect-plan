@@ -8,7 +8,8 @@ import { useIdeaPhotos, useTodaysIdea } from "@/lib/flockIdeas";
 import { useCommentCounts, useFlockFeed, type FlockPost } from "@/lib/flockPostData";
 import { feedSpaceFor, mergeFeed } from "@/lib/flockPosts";
 import { FollowRings, useCardBirdPhotos } from "@/components/flock/JourneyBrowse";
-import { useJourneyFollowing, useMilestoneCards } from "@/lib/journeyData";
+import { useJourneyFollowing, useMilestoneCards, useWeighReminders } from "@/lib/journeyData";
+import { WeighTodayCard } from "@/components/flock/JourneyDiet";
 import { Sun } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import type { TFunction } from "i18next";
@@ -63,6 +64,8 @@ function FlockToday() {
   const media = usePostMedia(posts);
   const [menuFor, setMenuFor] = useState<FlockPost | null>(null);
   const { data: idea } = useTodaysIdea();
+  // Diet conversion: "Weigh [Bird] today" after a couple of days without a weigh-in.
+  const { data: weighReminders } = useWeighReminders();
   const { data: ideaPhotos } = useIdeaPhotos(idea?.idea_id, !!idea?.has_photo);
   // Followed journeys and their milestones belong to Everything.
   const showJourneys = filter === "everything";
@@ -79,6 +82,7 @@ function FlockToday() {
           value={filter}
           onChange={(v) => void navigate({ search: { space: !v || v === "everything" ? undefined : v }, replace: true })}
         />
+        {(weighReminders ?? []).map((w) => <WeighTodayCard key={w.journey_id} birdId={w.bird_id} birdName={w.bird_name} />)}
         {idea && <TodaysIdeaCard idea={idea} photo={ideaPhotos?.find((p) => p.kind === "idea")?.url ?? null} />}
         <ComposePrompt space={space} />
         {showJourneys && following && following.length > 0 && (

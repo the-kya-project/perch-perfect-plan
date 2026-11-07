@@ -199,3 +199,18 @@ export function showVetReminder(
   const next = nextMilestone(j.milestones);
   return !!next && next.position >= 2;
 }
+
+// ---- Diet conversion: smoothed weight rules (the database decides; this draws) ----
+
+/** For the weight card's line: at each counted weigh-in, the average of it and
+ *  the counted ones before it, up to n. Readings left out get null and don't
+ *  count toward later averages. */
+export function rollingAverage(points: { grams: number; counted: boolean }[], n = 3): (number | null)[] {
+  const kept: number[] = [];
+  return points.map((p) => {
+    if (!p.counted) return null;
+    kept.push(p.grams);
+    const last = kept.slice(-n);
+    return Math.round((last.reduce((a, b) => a + b, 0) / last.length) * 10) / 10;
+  });
+}

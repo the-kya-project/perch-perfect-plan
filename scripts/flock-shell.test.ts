@@ -25,7 +25,7 @@ import { AAV_FIND_A_VET_URL, POST_SPACES, findVetSigns, mergeFeed, rateLimitKind
 import { defaultDisplayName, greetingName, isAutomaticDisplayName, memberCountLine, membershipSummary } from "@/lib/flockProfile";
 import { accessCells, accessDay } from "@/lib/flockAccess";
 import {
-  birdPronoun, canStartCustom, customProblem, daysSince, isNectarEater, showVetReminder, youngOrUnknownAge, defaultVisibility, groupTemplates, isLocked, journeyDay, journeyDays,
+  birdPronoun, canStartCustom, customProblem, daysSince, isNectarEater, rollingAverage, showVetReminder, youngOrUnknownAge, defaultVisibility, groupTemplates, isLocked, journeyDay, journeyDays,
   nextMilestone, possessive, progressOf, skillInSentence, startHere, trimTrailingBlanks, vetCheckLine, visibilityChoices, wantsTip,
   type JourneyTemplate,
 } from "@/lib/journeys";
@@ -453,6 +453,13 @@ check("Diet conversion: lories and lorikeets, young birds, the milestone-2 vet r
   assert.ok(!showVetReminder({ ...j, vet_remind_after: "2026-11-10T00:00:00Z" }, now), "remind me later");
   assert.ok(showVetReminder({ ...j, vet_remind_after: "2026-11-01T00:00:00Z" }, now), "back after the snooze");
   assert.ok(!showVetReminder({ ...j, status: "paused" }, now));
+});
+
+check("Diet conversion's weight line: the average of the last 3 counted weigh-ins", () => {
+  const c = (grams: number, counted = true) => ({ grams, counted });
+  assert.deepEqual(rollingAverage([c(400), c(398), c(396), c(390)]), [400, 399, 398, 394.7]);
+  assert.deepEqual(rollingAverage([c(400), c(360, false), c(398), c(399)]), [400, null, 399, 399]);
+  assert.deepEqual(rollingAverage([]), []);
 });
 
 console.log(`\n${passed} passed${process.exitCode ? ", some FAILED" : ""}`);
