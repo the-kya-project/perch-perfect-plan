@@ -205,12 +205,15 @@ export function useJourneyTips() {
   });
 }
 
-export function useFinisherTips(slug: string | null | undefined) {
+/** "From members who've done [Skill]": finished members' tips, newest first,
+ *  text only. App premium and Flock members get them; free accounts get none,
+ *  and nobody gets their own (journey_finisher_tips_for). */
+export function useFinisherTips(slug: string | null | undefined, enabled = true) {
   return useQuery({
     queryKey: journeyKeys.finisherTips(slug ?? ""),
-    enabled: !!slug,
+    enabled: enabled && !!slug,
     staleTime: 10 * 60_000,
-    queryFn: async (): Promise<{ body: string; display_name: string | null; created_at: string }[]> =>
+    queryFn: async (): Promise<{ body: string; created_at: string; total: number }[]> =>
       must(await sb.rpc("journey_finisher_tips_for", { p_template_slug: slug })) as any,
   });
 }

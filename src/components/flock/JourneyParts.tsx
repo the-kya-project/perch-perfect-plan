@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import { Link } from "@tanstack/react-router";
 import { Check, ChevronRight, Lock } from "lucide-react";
 import { useTranslation } from "react-i18next";
@@ -213,5 +213,38 @@ export function WhichJourneySheet({ journeys, onPick, onStartNew, onClose }: {
         </button>
       </div>
     </KyaSheet>
+  );
+}
+
+/** "From members who've done [Skill]" (JourneyEverywhere, screen 8): one tip
+ *  at a time, newest first, with "Next tip" (or a swipe) for more, and how many
+ *  members shared one. Text only, no names, until step 4. Shows nothing when
+ *  there are no tips, or for free accounts (the database returns none). */
+export function FinisherTipsCard({ skill, tips }: { skill: string; tips: { body: string; total: number }[] | undefined }) {
+  const { t } = useTranslation();
+  const [i, setI] = useState(0);
+  const [x0, setX0] = useState<number | null>(null);
+  if (!tips || tips.length === 0) return null;
+  const k = i % tips.length;
+  const next = () => setI((n) => n + 1);
+  return (
+    <section className="flex flex-col gap-1.5 rounded-[18px] px-4 py-3.5" style={{ background: "#fbf3df", color: K.forest }} data-testid="finisher-tips"
+      onTouchStart={(e) => setX0(e.touches[0].clientX)}
+      onTouchEnd={(e) => { if (x0 != null && Math.abs(e.changedTouches[0].clientX - x0) > 50) next(); setX0(null); }}>
+      <h2 className="m-0 text-[11.5px] font-[700] uppercase tracking-[0.06em]" style={{ color: K.amberText }}>
+        {t("flock.journeys.tips.eyebrow", "From members who've done {{skill}}", { skill })}
+      </h2>
+      <p className="m-0 text-[15px] leading-[1.45]" data-testid="finisher-tip-text" aria-live="polite">{`“${tips[k].body}”`}</p>
+      <div className="flex items-center gap-3">
+        <span className="flex-1 text-[12.5px]" style={{ color: K.quiet }}>
+          {t("flock.journeys.tips.shared", "Shared by {{count}} members who finished", { count: tips[0].total })}
+        </span>
+        {tips.length > 1 && (
+          <button type="button" onClick={next} className="min-h-[36px] text-[13px] font-[700]" style={{ color: K.amberText }} data-testid="next-tip">
+            {t("flock.journeys.tips.next", "Next tip")}
+          </button>
+        )}
+      </div>
+    </section>
   );
 }

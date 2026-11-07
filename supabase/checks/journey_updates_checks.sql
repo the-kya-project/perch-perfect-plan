@@ -109,8 +109,11 @@ begin
     passed := passed + 1; else failed := array_append(failed, 'finished: no more posts; tip after finish'); end if;
 
   -- 6) Finisher tips: app premium and members read them; free accounts get none; no direct reads.
+  -- (Tips show only from finished journeys and never to their own author, so
+  --  this one is written by someone else and its journey counts as finished.)
   insert into public.journey_finisher_tips (journey_id, template_id, author_id, body)
-  values (jp, (select id from public.journey_templates where slug = 'wave'), pr, 'Keep the treat hand low.');
+  values (jp, (select id from public.journey_templates where slug = 'wave'), fm, 'Keep the treat hand low.');
+  update public.journeys set status = 'finished' where id = jp;
   perform set_config('request.jwt.claims', json_build_object('sub', pr, 'role', 'authenticated')::text, true);
   set local role authenticated;
   select count(*) into n from public.journey_finisher_tips_for('wave');
@@ -123,6 +126,7 @@ begin
   set local role authenticated;
   select count(*) into n from public.journey_finisher_tips_for('wave');
   reset role;
+  update public.journeys set status = 'active' where id = jp;
   if ok and n = 0 then passed := passed + 1; else failed := array_append(failed, 'finisher tips: premium and members only'); end if;
 
   -- 7) Sharing a milestone and community visibility are for Flock members.

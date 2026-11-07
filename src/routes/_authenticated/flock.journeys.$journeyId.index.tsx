@@ -6,9 +6,10 @@ import { K, KyaPrimaryButton, KyaSecondaryButton } from "@/components/kya";
 import { FlockSubPage } from "@/components/flock/FlockSubPage";
 import { FlockEmpty } from "@/components/flock/FlockChips";
 import { ClipTile, JourneyMenuSheet, shortDay } from "@/components/flock/JourneyBrowse";
+import { FinisherTipsCard } from "@/components/flock/JourneyParts";
 import { deleteJourney } from "@/lib/journeyMedia.functions";
 import {
-  followJourney, resumeAfterVet, setJourneyStatus, setJourneyVisibility, useBirdWeights, useInvalidateJourneys, useJourney,
+  followJourney, resumeAfterVet, useFinisherTips, setJourneyStatus, setJourneyVisibility, useBirdWeights, useInvalidateJourneys, useJourney,
   useJourneyAccess, useJourneyClips, useJourneyView, useJourneyViewUpdates, useWeightCheck, type Journey, type WeightCheck,
 } from "@/lib/journeyData";
 import { journeyDay } from "@/lib/journeys";
@@ -38,6 +39,8 @@ function JourneyPage() {
   const { data: own } = useJourney(mine ? journeyId : "");
   const diet = card?.template_slug === "diet-conversion";
   const { data: weight } = useWeightCheck(journeyId, mine && diet && card?.status !== "finished");
+  // Tips from members who finished this template, on your own active journeys.
+  const { data: finisherTips } = useFinisherTips(card?.template_slug, mine && card?.status === "active");
   const [menu, setMenu] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -99,6 +102,8 @@ function JourneyPage() {
             {t("flock.journeys.page.paused", "This journey is paused.")}
           </p>
         )}
+
+        {mine && card?.status === "active" && <FinisherTipsCard skill={card.skill} tips={finisherTips} />}
 
         {(mine && card?.status === "active") || canCompare ? (
           <div className="flex gap-2.5">

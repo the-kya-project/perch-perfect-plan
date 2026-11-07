@@ -207,6 +207,71 @@ begin
   where s.nspname = 'public' and p.prosecdef and p.proname like 'journey%';
   if n = 3 and r.count = 0 then passed := passed + 1; else failed := array_append(failed, 'no direct access; invoker wrappers only'); end if;
 
+  -- 12) Finisher tips: from finished journeys only, to app premium and members
+  --     only, never your own, no names, newest first with a count; admins hide.
+  declare
+    t1 uuid; t2 uuid; t3 uuid; ja uuid; jb uuid; jx uuid; wave uuid;
+  begin
+    select id into wave from public.journey_templates where slug = 'wave';
+    insert into public.journeys (id, bird_id, created_by, template_id, status, visibility, rhythm, finished_at)
+    values (gen_random_uuid(), b1, m1, wave, 'finished', 'private', 'most_days', now()) returning id into ja;
+    insert into public.journeys (id, bird_id, created_by, template_id, status, visibility, rhythm, finished_at)
+    values (gen_random_uuid(), b2, m1, wave, 'finished', 'private', 'most_days', now()) returning id into jb;
+    insert into public.journeys (id, bird_id, created_by, template_id, status, visibility, rhythm)
+    values (gen_random_uuid(), b1, m2, wave, 'happy_where_we_are', 'private', 'most_days') returning id into jx;
+    insert into public.journey_finisher_tips (journey_id, template_id, author_id, body, created_at) values
+      (ja, wave, m1, 'Older tip.', now() - interval '2 days'),
+      (jb, wave, m1, 'Newer tip.', now() - interval '1 day'),
+      (jx, wave, m2, 'Not finished, never shown.', now());
+    select id into t1 from public.journey_finisher_tips where journey_id = ja;
+    select id into t2 from public.journey_finisher_tips where journey_id = jb;
+
+    -- Another member and app premium see m1's two tips, newest first, with the count; no names.
+    ok := true;
+    for n in 1..2 loop
+      perform set_config('request.jwt.claims', json_build_object('sub', (array[m2, pr])[n], 'role', 'authenticated')::text, true);
+      set local role authenticated;
+      ok := ok and (select array_agg(body order by created_at desc) from public.journey_finisher_tips_for('wave')) = array['Newer tip.', 'Older tip.']
+               and (select min(total) from public.journey_finisher_tips_for('wave')) = 2;
+      reset role;
+    end loop;
+    ok := ok and not exists (select 1 from information_schema.routines rt join information_schema.parameters pa on pa.specific_name = rt.specific_name
+                             where rt.routine_schema = 'public' and rt.routine_name = 'journey_finisher_tips_for' and pa.parameter_name in ('display_name', 'author_id'));
+    -- Free sees nothing; the author never sees their own.
+    perform set_config('request.jwt.claims', json_build_object('sub', fr, 'role', 'authenticated')::text, true);
+    set local role authenticated;
+    ok := ok and not exists (select 1 from public.journey_finisher_tips_for('wave'));
+    reset role;
+    perform set_config('request.jwt.claims', json_build_object('sub', m1, 'role', 'authenticated')::text, true);
+    set local role authenticated;
+    ok := ok and not exists (select 1 from public.journey_finisher_tips_for('wave'));
+    reset role;
+    if ok then passed := passed + 1; else failed := array_append(failed, 'finisher tips: who sees what'); end if;
+
+    -- Only an admin hides a tip; a hidden tip disappears and the count drops.
+    perform set_config('request.jwt.claims', json_build_object('sub', m2, 'role', 'authenticated')::text, true);
+    set local role authenticated;
+    denied := false;
+    begin perform public.admin_hide_finisher_tip(t2); exception when insufficient_privilege then denied := true; end;
+    reset role;
+    insert into public.user_roles (user_id, role) values (hh, 'admin');
+    perform set_config('request.jwt.claims', json_build_object('sub', hh, 'role', 'authenticated')::text, true);
+    set local role authenticated;
+    perform public.admin_hide_finisher_tip(t2);
+    reset role;
+    perform set_config('request.jwt.claims', json_build_object('sub', m2, 'role', 'authenticated')::text, true);
+    set local role authenticated;
+    ok := (select array_agg(body) from public.journey_finisher_tips_for('wave')) = array['Older tip.']
+          and (select min(total) from public.journey_finisher_tips_for('wave')) = 1;
+    reset role;
+    if denied and ok then passed := passed + 1; else failed := array_append(failed, 'admin hides a finisher tip'); end if;
+  end;
+
+  -- 13) Tip 1 has the new wording.
+  if exists (select 1 from public.journey_tips where body = 'Try a short session before breakfast, when treats tend to feel extra special. Breakfast comes right after, as always.')
+     and not exists (select 1 from public.journey_tips where body like '%a little hungry%') then
+    passed := passed + 1; else failed := array_append(failed, 'tip 1 reworded'); end if;
+
   raise exception 'JOURNEYS BROWSE CHECKS: % passed, % failed%', passed, coalesce(array_length(failed, 1), 0),
     case when array_length(failed, 1) > 0 then ': ' || array_to_string(failed, ', ') else '' end;
 end $$;

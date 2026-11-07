@@ -168,6 +168,8 @@ type JourneyMockOpts = {
   tier?: "free" | "premium" | "flock"; openCustom?: number; knownSlugs?: string[];
   seed?: SeedJourney[]; canAddClip?: boolean;
   weight?: { level: "none" | "notice" | "pause"; start: number; now: number };
+  /** Finished members' tips, by template slug (the database gives free accounts none). */
+  finisherTips?: Record<string, string[]>;
 };
 type JourneyState = { starts: Record<string, any>[]; known: Record<string, any>[]; calls: { fn: string; args: Record<string, any> }[] };
 
@@ -279,6 +281,10 @@ async function mockJourneys(context: BrowserContext, opts: JourneyMockOpts, bird
     }
     if (fn === "journey_post_update") return json(route, "00000000-0000-4000-8000-0000000073aa");
     if (fn === "journey_view") return json(route, j ? [card(j)] : []);
+    if (fn === "journey_finisher_tips_for") {
+      const list = tier === "free" ? [] : (opts.finisherTips?.[args.p_template_slug] ?? []);
+      return json(route, list.map((body, k) => ({ body, created_at: new Date(Date.now() - k * 86_400_000).toISOString(), total: list.length })));
+    }
     if (fn === "journey_view_updates") return json(route, updates.get(args.p_journey_id) ?? []);
     if (fn === "journey_view_milestones") return json(route, j ? j.milestones.map((m: any) => ({ milestone_position: m.position, title: m.title, state: m.state, reached_at: m.reached_at })) : []);
     if (fn === "journey_feed") {
@@ -852,6 +858,43 @@ test.describe("journeys: pages, the Journeys tab, following and Today (admin, ph
     await page.getByTestId("pick-sheet").locator("[data-pick$='9001']").click();
     await expect(page.getByTestId("compare-a")).toHaveAttribute("data-update", /9001$/);
     await context.close();
+  });
+});
+
+test.describe("journeys: finisher tips (admin, phone)", () => {
+  const tips = { "step-up": ["Practice right before a meal you were already serving.", "Keep your hand still and let them choose."] };
+
+  test("setup shows one tip at a time, newest first, with Next tip and the count; no names", async ({ browser, baseURL }) => {
+    const { context, page } = await open(browser, baseURL!, { admin: true, journeys: { finisherTips: tips } });
+    await page.goto("/flock/journeys/start");
+    await page.getByTestId("pick-bird").locator("[data-bird]", { hasText: "Echo" }).click();
+    await page.locator("[data-template='step-up']").click();
+    const card = page.getByTestId("finisher-tips");
+    await expect(card.getByRole("heading")).toHaveText("From members who've done Step up");
+    await expect(card.getByTestId("finisher-tip-text")).toHaveText("\u201cPractice right before a meal you were already serving.\u201d");
+    await expect(card).toContainText("Shared by 2 members who finished");
+    await card.getByTestId("next-tip").click();
+    await expect(card.getByTestId("finisher-tip-text")).toHaveText("\u201cKeep your hand still and let them choose.\u201d");
+    await card.getByTestId("next-tip").click();
+    await expect(card.getByTestId("finisher-tip-text")).toHaveText("\u201cPractice right before a meal you were already serving.\u201d");
+    // A template with no tips yet shows nothing.
+    await page.goto(page.url().replace("template=step-up", "template=recall"));
+    await expect(page.getByTestId("journey-setup")).toBeVisible();
+    await expect(page.getByTestId("finisher-tips")).toHaveCount(0);
+    await context.close();
+  });
+
+  test("on your active journey too; free accounts see nothing, not even a lock", async ({ browser, baseURL }) => {
+    const seed = [{ id: "00000000-0000-4000-8000-0000000074a1", birdName: "Echo", slug: "step-up", done: 2 }];
+    let o = await open(browser, baseURL!, { admin: true, journeys: { seed, finisherTips: tips } });
+    await o.page.goto(`/flock/journeys/00000000-0000-4000-8000-0000000074a1`);
+    await expect(o.page.getByTestId("finisher-tips")).toContainText("From members who've done Step up");
+    await o.context.close();
+    o = await open(browser, baseURL!, { admin: true, journeys: { tier: "free", seed, finisherTips: tips } });
+    await o.page.goto(`/flock/journeys/00000000-0000-4000-8000-0000000074a1`);
+    await expect(o.page.getByTestId("journey-page")).toBeVisible();
+    await expect(o.page.getByTestId("finisher-tips")).toHaveCount(0);
+    await o.context.close();
   });
 });
 
