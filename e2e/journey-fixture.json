@@ -51,7 +51,7 @@
    {
     "position": 6,
     "title": "Follows the stick onto a new perch or out the cage door.",
-    "ask": "follow the stick onto a new perch or out the door",
+    "ask": "follow the stick onto a new perch or out the cage door",
     "done_line": "followed the target to a new spot"
    }
   ]
@@ -159,14 +159,14 @@
    {
     "position": 4,
     "title": "Allows a light touch on the side of the wing.",
-    "ask": "allow a light touch on the wing",
-    "done_line": "allowed a light wing touch"
+    "ask": "let you lightly touch a wing",
+    "done_line": "let you touch a wing"
    },
    {
     "position": 5,
     "title": "Allows a touch at the wing tip.",
-    "ask": "allow a touch at the wing tip",
-    "done_line": "allowed a wing-tip touch"
+    "ask": "let you touch a wing tip",
+    "done_line": "let you touch a wing tip"
    },
    {
     "position": 6,
@@ -177,8 +177,8 @@
    {
     "position": 7,
     "title": "Allows a gentle, brief wing extension on both sides.",
-    "ask": "allow a gentle wing extension on both sides",
-    "done_line": "allowed a gentle wing extension"
+    "ask": "let you gently open each wing",
+    "done_line": "let you gently open both wings"
    }
   ]
  },
@@ -215,7 +215,7 @@
    {
     "position": 1,
     "title": "A week of daily weigh-ins to set your bird's starting weight.",
-    "ask": "get a full week of weigh-ins",
+    "ask": "step on the scale every day this week",
     "done_line": "has a starting weight"
    },
    {
@@ -303,7 +303,7 @@
     "position": 5,
     "title": "Waves on cue from a little distance.",
     "ask": "wave on cue from a distance",
-    "done_line": "waved from across the room"
+    "done_line": "waved from a little way off"
    }
   ]
  },
@@ -417,7 +417,7 @@
     "position": 7,
     "title": "Comes with normal household distractions around.",
     "ask": "come to you with the household busy",
-    "done_line": "came with distractions around"
+    "done_line": "came even with the house busy"
    }
   ]
  }
