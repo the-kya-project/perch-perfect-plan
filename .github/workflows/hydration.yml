@@ -65,6 +65,15 @@ jobs:
       - name: Repeat the tap-while-loading test on WebKit
         run: npx playwright test -c e2e navigation.spec.ts --repeat-each 10 --project 'webkit-*'
 
+      # The Community (Flock) shell, same build: the five tabs, redirects,
+      # chips, the Spaces sheet (focus, Escape, swipe), the Duo column, and
+      # that everyone but admins is sent Home with no Community code loaded.
+      # A made-up session against e2e/duo-mock-server.ts; nothing real.
+      - name: Community shell (admin and non-admin)
+        run: |
+          npm run test:flock-shell
+          npx playwright test -c e2e/flock.config.ts
+
       - name: Upload the report (screenshots and traces of failures)
         if: failure()
         uses: actions/upload-artifact@v4

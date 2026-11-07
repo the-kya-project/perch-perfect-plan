@@ -4,8 +4,9 @@
  *   npm run test:flock-shell
  *
  * Pins the pure parts of the hidden Flock mode: the last-mode memory defaults
- * to care and never throws (private browsing, storage blocked), and the avatar
- * initial prefers a name over an email. The gate itself is the server's
+ * to care and never throws (private browsing, storage blocked), the avatar
+ * initial prefers a name over an email, and the Community navigation (tabs,
+ * redirects, chips, filter links) in lib/flockNav.ts. The gate itself is the server's
  * flock_enabled(); the screens are checked in the browser (see the PR).
  *
  * Plain asserts, since the repo carries no test runner. Exits non-zero on
@@ -14,6 +15,10 @@
 import assert from "node:assert/strict";
 import { rememberMode, rememberedMode } from "@/lib/flock";
 import { avatarInitial } from "@/lib/accountInitial";
+import {
+  CHAPTER_TABS, FLOCK_DESTS, FLOCK_REDIRECTS, FLOCK_SPACES, JOURNEYS_FILTERS, LIBRARY_SUBJECTS, LIBRARY_TYPES, TODAY_FILTERS,
+  chapterLine, destForPath, pick, pickOptional, pickQuery,
+} from "@/lib/flockNav";
 
 let passed = 0;
 function check(name: string, fn: () => void) {
@@ -74,6 +79,52 @@ check("falls back to full name, then email", () => {
 });
 check("nothing known: empty, not a crash", () => {
   assert.equal(avatarInitial(undefined, undefined), "");
+});
+
+console.log("community navigation");
+check("five destinations, left to right, My birds last and back to care", () => {
+  assert.deepEqual(FLOCK_DESTS.map((d) => d.key), ["today", "journeys", "chapter", "library", "care"]);
+  assert.deepEqual(FLOCK_DESTS.map((d) => d.to), ["/flock", "/flock/journeys", "/flock/chapter", "/flock/library", "/dashboard"]);
+});
+check("every path lights the right tab", () => {
+  assert.equal(destForPath("/flock"), "today");
+  assert.equal(destForPath("/flock/"), "today");
+  assert.equal(destForPath("/flock/journeys"), "journeys");
+  assert.equal(destForPath("/flock/chapter"), "chapter");
+  assert.equal(destForPath("/flock/library"), "library");
+  assert.equal(destForPath("/flock/something-new"), "today");
+});
+check("old placeholder URLs redirect to a real tab", () => {
+  assert.equal(FLOCK_REDIRECTS["/flock/spaces"], "/flock");
+  assert.equal(FLOCK_REDIRECTS["/flock/learn"], "/flock/library");
+  for (const to of Object.values(FLOCK_REDIRECTS)) assert.ok(FLOCK_DESTS.some((d) => d.to === to), to);
+});
+check("the chips and spaces are the ones in the design", () => {
+  assert.deepEqual(FLOCK_SPACES, ["start", "learn", "good"]);
+  assert.deepEqual(TODAY_FILTERS, ["everything", "learn", "good", "start"]);
+  assert.deepEqual(JOURNEYS_FILTERS, ["for-you", "following", "tricks", "basics"]);
+  assert.deepEqual(CHAPTER_TABS, ["posts", "events", "resources"]);
+  assert.deepEqual(LIBRARY_TYPES, ["all", "guides", "recordings", "podcast"]);
+  assert.deepEqual(LIBRARY_SUBJECTS, ["foraging", "diet", "training", "hormones", "conservation"]);
+});
+check("bad or old filter links fall back instead of breaking", () => {
+  assert.equal(pick("good", TODAY_FILTERS, "everything"), "good");
+  assert.equal(pick("nonsense", TODAY_FILTERS, "everything"), "everything");
+  assert.equal(pick(42, TODAY_FILTERS, "everything"), "everything");
+  assert.equal(pickOptional("learn", FLOCK_SPACES), "learn");
+  assert.equal(pickOptional("everything", FLOCK_SPACES), undefined);
+  assert.equal(pickOptional(undefined, CHAPTER_TABS), undefined);
+});
+check("library search text: trimmed to 100 characters, blank is none", () => {
+  assert.equal(pickQuery("pellets"), "pellets");
+  assert.equal(pickQuery("   "), undefined);
+  assert.equal(pickQuery(["x"]), undefined);
+  assert.equal(pickQuery("a".repeat(150))?.length, 100);
+});
+check("chapter line: name, then states", () => {
+  assert.equal(chapterLine("Great Lakes", ["IL", "IN", "MI", "OH"]), "Great Lakes · IL · IN · MI · OH");
+  assert.equal(chapterLine("Other region", []), "Other region");
+  assert.equal(chapterLine("Texas", null), "Texas");
 });
 
 console.log(`\n${passed} passed${process.exitCode ? ", some FAILED" : ""}`);

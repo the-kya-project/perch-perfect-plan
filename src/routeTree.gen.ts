@@ -55,7 +55,10 @@ import { Route as AuthenticatedAdminGiftsRouteImport } from './routes/_authentic
 import { Route as AuthenticatedBirdsBirdIdRouteImport } from './routes/_authenticated/birds/$birdId'
 import { Route as AuthenticatedBirdsNewRouteImport } from './routes/_authenticated/birds/new'
 import { Route as AuthenticatedFlockIndexRouteImport } from './routes/_authenticated/flock.index'
+import { Route as AuthenticatedFlockChapterRouteImport } from './routes/_authenticated/flock.chapter'
+import { Route as AuthenticatedFlockJourneysRouteImport } from './routes/_authenticated/flock.journeys'
 import { Route as AuthenticatedFlockLearnRouteImport } from './routes/_authenticated/flock.learn'
+import { Route as AuthenticatedFlockLibraryRouteImport } from './routes/_authenticated/flock.library'
 import { Route as AuthenticatedFlockSpacesRouteImport } from './routes/_authenticated/flock.spaces'
 import { Route as AuthenticatedNotificationsIndexRouteImport } from './routes/_authenticated/notifications.index'
 import { Route as AuthenticatedNotificationsSettingsRouteImport } from './routes/_authenticated/notifications.settings'
@@ -350,11 +353,29 @@ const AuthenticatedFlockIndexRoute = AuthenticatedFlockIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AuthenticatedFlockRoute,
 } as any)
+const AuthenticatedFlockChapterRoute =
+  AuthenticatedFlockChapterRouteImport.update({
+    id: '/chapter',
+    path: '/chapter',
+    getParentRoute: () => AuthenticatedFlockRoute,
+  } as any)
+const AuthenticatedFlockJourneysRoute =
+  AuthenticatedFlockJourneysRouteImport.update({
+    id: '/journeys',
+    path: '/journeys',
+    getParentRoute: () => AuthenticatedFlockRoute,
+  } as any)
 const AuthenticatedFlockLearnRoute = AuthenticatedFlockLearnRouteImport.update({
   id: '/learn',
   path: '/learn',
   getParentRoute: () => AuthenticatedFlockRoute,
 } as any)
+const AuthenticatedFlockLibraryRoute =
+  AuthenticatedFlockLibraryRouteImport.update({
+    id: '/library',
+    path: '/library',
+    getParentRoute: () => AuthenticatedFlockRoute,
+  } as any)
 const AuthenticatedFlockSpacesRoute =
   AuthenticatedFlockSpacesRouteImport.update({
     id: '/spaces',
@@ -709,7 +730,10 @@ export interface FileRoutesByFullPath {
   '/admin/gifts': typeof AuthenticatedAdminGiftsRoute
   '/birds/$birdId': typeof AuthenticatedBirdsBirdIdRouteWithChildren
   '/birds/new': typeof AuthenticatedBirdsNewRoute
+  '/flock/chapter': typeof AuthenticatedFlockChapterRoute
+  '/flock/journeys': typeof AuthenticatedFlockJourneysRoute
   '/flock/learn': typeof AuthenticatedFlockLearnRoute
+  '/flock/library': typeof AuthenticatedFlockLibraryRoute
   '/flock/spaces': typeof AuthenticatedFlockSpacesRoute
   '/notifications/settings': typeof AuthenticatedNotificationsSettingsRoute
   '/scans/history': typeof AuthenticatedScansHistoryRoute
@@ -805,7 +829,10 @@ export interface FileRoutesByTo {
   '/admin/founding': typeof AuthenticatedAdminFoundingRoute
   '/admin/gifts': typeof AuthenticatedAdminGiftsRoute
   '/birds/new': typeof AuthenticatedBirdsNewRoute
+  '/flock/chapter': typeof AuthenticatedFlockChapterRoute
+  '/flock/journeys': typeof AuthenticatedFlockJourneysRoute
   '/flock/learn': typeof AuthenticatedFlockLearnRoute
+  '/flock/library': typeof AuthenticatedFlockLibraryRoute
   '/flock/spaces': typeof AuthenticatedFlockSpacesRoute
   '/notifications/settings': typeof AuthenticatedNotificationsSettingsRoute
   '/scans/history': typeof AuthenticatedScansHistoryRoute
@@ -908,7 +935,10 @@ export interface FileRoutesById {
   '/_authenticated/admin/gifts': typeof AuthenticatedAdminGiftsRoute
   '/_authenticated/birds/$birdId': typeof AuthenticatedBirdsBirdIdRouteWithChildren
   '/_authenticated/birds/new': typeof AuthenticatedBirdsNewRoute
+  '/_authenticated/flock/chapter': typeof AuthenticatedFlockChapterRoute
+  '/_authenticated/flock/journeys': typeof AuthenticatedFlockJourneysRoute
   '/_authenticated/flock/learn': typeof AuthenticatedFlockLearnRoute
+  '/_authenticated/flock/library': typeof AuthenticatedFlockLibraryRoute
   '/_authenticated/flock/spaces': typeof AuthenticatedFlockSpacesRoute
   '/_authenticated/notifications/settings': typeof AuthenticatedNotificationsSettingsRoute
   '/_authenticated/scans/history': typeof AuthenticatedScansHistoryRoute
@@ -1012,7 +1042,10 @@ export interface FileRouteTypes {
     | '/admin/gifts'
     | '/birds/$birdId'
     | '/birds/new'
+    | '/flock/chapter'
+    | '/flock/journeys'
     | '/flock/learn'
+    | '/flock/library'
     | '/flock/spaces'
     | '/notifications/settings'
     | '/scans/history'
@@ -1108,7 +1141,10 @@ export interface FileRouteTypes {
     | '/admin/founding'
     | '/admin/gifts'
     | '/birds/new'
+    | '/flock/chapter'
+    | '/flock/journeys'
     | '/flock/learn'
+    | '/flock/library'
     | '/flock/spaces'
     | '/notifications/settings'
     | '/scans/history'
@@ -1210,7 +1246,10 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/gifts'
     | '/_authenticated/birds/$birdId'
     | '/_authenticated/birds/new'
+    | '/_authenticated/flock/chapter'
+    | '/_authenticated/flock/journeys'
     | '/_authenticated/flock/learn'
+    | '/_authenticated/flock/library'
     | '/_authenticated/flock/spaces'
     | '/_authenticated/notifications/settings'
     | '/_authenticated/scans/history'
@@ -1634,11 +1673,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedFlockIndexRouteImport
       parentRoute: typeof AuthenticatedFlockRoute
     }
+    '/_authenticated/flock/chapter': {
+      id: '/_authenticated/flock/chapter'
+      path: '/chapter'
+      fullPath: '/flock/chapter'
+      preLoaderRoute: typeof AuthenticatedFlockChapterRouteImport
+      parentRoute: typeof AuthenticatedFlockRoute
+    }
+    '/_authenticated/flock/journeys': {
+      id: '/_authenticated/flock/journeys'
+      path: '/journeys'
+      fullPath: '/flock/journeys'
+      preLoaderRoute: typeof AuthenticatedFlockJourneysRouteImport
+      parentRoute: typeof AuthenticatedFlockRoute
+    }
     '/_authenticated/flock/learn': {
       id: '/_authenticated/flock/learn'
       path: '/learn'
       fullPath: '/flock/learn'
       preLoaderRoute: typeof AuthenticatedFlockLearnRouteImport
+      parentRoute: typeof AuthenticatedFlockRoute
+    }
+    '/_authenticated/flock/library': {
+      id: '/_authenticated/flock/library'
+      path: '/library'
+      fullPath: '/flock/library'
+      preLoaderRoute: typeof AuthenticatedFlockLibraryRouteImport
       parentRoute: typeof AuthenticatedFlockRoute
     }
     '/_authenticated/flock/spaces': {
@@ -2038,13 +2098,19 @@ const AuthenticatedAccountRouteWithChildren =
   AuthenticatedAccountRoute._addFileChildren(AuthenticatedAccountRouteChildren)
 
 interface AuthenticatedFlockRouteChildren {
+  AuthenticatedFlockChapterRoute: typeof AuthenticatedFlockChapterRoute
+  AuthenticatedFlockJourneysRoute: typeof AuthenticatedFlockJourneysRoute
   AuthenticatedFlockLearnRoute: typeof AuthenticatedFlockLearnRoute
+  AuthenticatedFlockLibraryRoute: typeof AuthenticatedFlockLibraryRoute
   AuthenticatedFlockSpacesRoute: typeof AuthenticatedFlockSpacesRoute
   AuthenticatedFlockIndexRoute: typeof AuthenticatedFlockIndexRoute
 }
 
 const AuthenticatedFlockRouteChildren: AuthenticatedFlockRouteChildren = {
+  AuthenticatedFlockChapterRoute: AuthenticatedFlockChapterRoute,
+  AuthenticatedFlockJourneysRoute: AuthenticatedFlockJourneysRoute,
   AuthenticatedFlockLearnRoute: AuthenticatedFlockLearnRoute,
+  AuthenticatedFlockLibraryRoute: AuthenticatedFlockLibraryRoute,
   AuthenticatedFlockSpacesRoute: AuthenticatedFlockSpacesRoute,
   AuthenticatedFlockIndexRoute: AuthenticatedFlockIndexRoute,
 }
