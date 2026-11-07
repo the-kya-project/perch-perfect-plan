@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { createFileRoute, useNavigate, useRouter } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate, useRouter } from "@tanstack/react-router";
+import { useCommentCounts } from "@/lib/flockPostData";
 import { X } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import type { TFunction } from "i18next";
@@ -46,6 +47,7 @@ function Story() {
   const photos = useCardBirdPhotos(card ? [card] : undefined, 120);
   // Oldest first, clips only.
   const reel = useMemo(() => [...(updates ?? [])].filter((x) => x.has_clip).reverse(), [updates]);
+  const { data: comments } = useCommentCounts("journey_update", reel.map((x) => x.update_id));
   const [i, setI] = useState(0);
   const [cheered, setCheered] = useState<Set<string>>(new Set());
   const started = useRef(false);
@@ -119,8 +121,19 @@ function Story() {
         )}
       </div>
       <div className="flex items-center gap-2.5 px-3 pb-[max(14px,env(safe-area-inset-bottom))] pt-3">
-        {/* Comments come in step 4: "Say something to [owner]" goes here. */}
-        <div className="flex-1" data-testid="comments-slot" />
+        <div className="flex-1" data-testid="comments-slot">
+          {access?.can_share && cur && (
+            <Link to="/flock/comments/$subjectType/$subjectId" params={{ subjectType: "journey_update", subjectId: cur.update_id }}
+              search={{ j: journeyId, ...((comments?.[cur.update_id] ?? 0) > 0 ? {} : { focus: 1 as const }) }} data-testid="story-comment"
+              className="flex min-h-[46px] items-center rounded-full border px-4 text-[14px]" style={{ borderColor: "rgba(255,255,255,0.35)", color: "#fff" }}>
+              <span className="truncate">
+                {(comments?.[cur.update_id] ?? 0) > 0
+                  ? t("flock.posts.commentCount", "{{count}} comments", { count: comments![cur.update_id] })
+                  : card?.is_mine ? t("flock.posts.addComment", "Add a comment") : t("flock.posts.saySomething", "Say something to {{name}}", { name: (card?.owner_name ?? "").split(/\s+/)[0] || name })}
+              </span>
+            </Link>
+          )}
+        </div>
         {access?.can_share && cur && (
           <button type="button" data-testid="go-bird" aria-pressed={isCheered} disabled={isCheered}
             onClick={async () => {

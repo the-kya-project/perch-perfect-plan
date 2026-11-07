@@ -37,6 +37,12 @@ export function isFlockOnboardingPath(pathname: string): boolean {
     || /^\/flock\/journeys\/[^/]+\/(post|milestone|finished|story)(\/|$)/.test(pathname);
 }
 
+/** Full screens with no tab bar that still need a finished setup: writing or
+ *  editing a post, a post with its comments, a comment thread, who reacted. */
+export function isFlockFullScreenPath(pathname: string): boolean {
+  return /^\/flock\/(post|comments|reactions)(\/|$)/.test(pathname);
+}
+
 /** Old placeholder URLs and where they go now, so nothing 404s. */
 export const FLOCK_REDIRECTS = {
   "/flock/spaces": "/flock",

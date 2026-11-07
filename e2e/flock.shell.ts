@@ -35,6 +35,12 @@ type FlockState = {
   shown: Map<string, boolean>;
   saves: Record<string, any>[];
   shownSaves: Record<string, any>[];
+  /** Step 4: posts and comments, answered the way the database would. */
+  posts: Record<string, any>[];
+  comments: Record<string, any>[];
+  calls: { fn: string; args: Record<string, any> }[];
+  /** Make the next post or comment hit the hourly limit. */
+  rateLimit: "posts" | "comments" | null;
 };
 
 async function mockFlock(context: BrowserContext, userId: string, opts: { setupDone: boolean; region?: string }): Promise<FlockState> {
@@ -45,6 +51,10 @@ async function mockFlock(context: BrowserContext, userId: string, opts: { setupD
     shown: new Map(),
     saves: [],
     shownSaves: [],
+    posts: [],
+    comments: [],
+    calls: [],
+    rateLimit: null,
   };
   const neighbours: Record<string, { user_id: string; display_name: string }[]> = {
     "great-lakes": [{ user_id: "00000000-0000-4000-8000-00000000c001", display_name: "Ada L." }],
@@ -91,6 +101,62 @@ async function mockFlock(context: BrowserContext, userId: string, opts: { setupD
     if (fn === "flock_visible_birds") return json(route, []);
     if (fn === "flock_member_profile") return json(route, []);
     if (fn === "flock_enabled") return route.fallback();
+    state.calls.push({ fn: fn!, args });
+    const ago = (mins: number) => new Date(Date.now() - mins * 60_000).toISOString();
+    const counts = (r: any) => ({ great_job: r.great_job ?? 0, been_there: r.been_there ?? 0, rooting_for_you: r.rooting_for_you ?? 0, love_this: r.love_this ?? 0, mine: r.mine ?? [] });
+    const postRow = (p: any) => ({
+      ...counts(p), post_id: p.post_id, author_id: p.author_id, author_name: p.author_name, author_region: p.author_region ?? "Great Lakes", author_photo_path: null,
+      author_is_founder: false, space: p.space, region_slug: p.space === "chapter" ? "great-lakes" : null, region_name: p.space === "chapter" ? "Great Lakes" : null,
+      title: p.title ?? null, body: p.body, photo_count: 0, bird_id: null, bird_name: null, bird_has_photo: false, status: p.status, review_note: null,
+      created_at: p.created_at, edited_at: p.edited_at ?? null, is_mine: p.author_id === userId,
+      comment_count: state.comments.filter((c) => c.subject_id === p.post_id).length,
+    });
+    if (fn === "flock_feed") {
+      const visible = state.posts.filter((p) => p.status === "live" || p.author_id === userId)
+        .filter((p) => args.p_space === "everything" || p.space === args.p_space)
+        .sort((a, b) => b.created_at.localeCompare(a.created_at));
+      return json(route, visible.map(postRow));
+    }
+    if (fn === "flock_post") { const p = state.posts.find((x) => x.post_id === args.p_post_id); return json(route, p ? [postRow(p)] : []); }
+    if (fn === "flock_vet_signs") return json(route, ["fluffed up", "sleeping a lot", "isn't eating", "tail bobbing", "bleeding"]);
+    if (fn === "flock_post_create") {
+      if (state.rateLimit === "posts") return json(route, { code: "P0001", message: "rate_limited", details: "posts", hint: null }, 400);
+      const post_id = `00000000-0000-4000-8000-0000000080${String(state.posts.length + 1).padStart(2, "0")}`;
+      const status = args.p_space === "good" ? "pending" : "live";
+      state.posts.push({ post_id, author_id: userId, author_name: state.profile?.display_name ?? "Brittany K.", space: args.p_space, title: args.p_title, body: args.p_body, status, created_at: ago(0) });
+      return json(route, [{ post_id, status }]);
+    }
+    if (fn === "flock_post_edit") { const p = state.posts.find((x) => x.post_id === args.p_post_id); if (p) { p.title = args.p_title; p.body = args.p_body; p.edited_at = ago(0); } return json(route, p?.space === "good" ? "pending" : "live"); }
+    if (fn === "flock_comments_for") {
+      return json(route, state.comments.filter((c) => c.subject_type === args.p_subject_type && c.subject_id === args.p_subject_id).map((c) => ({
+        ...counts(c), comment_id: c.comment_id, parent_id: c.parent_id ?? null, author_id: c.author_id, author_name: c.author_name, author_region: "Great Lakes",
+        author_photo_path: null, reply_to_name: c.reply_to_name ?? null, body: c.body, has_photo: false, created_at: c.created_at, edited_at: c.edited_at ?? null,
+        is_mine: c.author_id === userId,
+      })));
+    }
+    if (fn === "flock_comment_create") {
+      if (state.rateLimit === "comments") return json(route, { code: "P0001", message: "rate_limited", details: "comments", hint: null }, 400);
+      const to = state.comments.find((c) => c.comment_id === args.p_reply_to);
+      const comment_id = `00000000-0000-4000-8000-0000000081${String(state.comments.length + 1).padStart(2, "0")}`;
+      state.comments.push({ comment_id, subject_type: args.p_subject_type, subject_id: args.p_subject_id, parent_id: to ? (to.parent_id ?? to.comment_id) : null,
+        reply_to_name: to?.author_name ?? null, author_id: userId, author_name: state.profile?.display_name ?? "Brittany K.", body: args.p_body, created_at: ago(0) });
+      return json(route, comment_id);
+    }
+    if (fn === "flock_comment_edit") { const c = state.comments.find((x) => x.comment_id === args.p_comment_id); if (c) { c.body = args.p_body; c.edited_at = ago(0); } return json(route, null); }
+    if (fn === "flock_comment_counts") return json(route, (args.p_ids ?? []).map((id: string) => ({ subject_id: id, comment_count: state.comments.filter((c) => c.subject_id === id).length })).filter((r: any) => r.comment_count > 0));
+    if (fn === "flock_react") {
+      const all = [...state.posts, ...state.comments];
+      const x = all.find((r) => r.post_id === args.p_subject_id || r.comment_id === args.p_subject_id);
+      if (x) { x[args.p_kind] = Math.max(0, (x[args.p_kind] ?? 0) + (args.p_on ? 1 : -1)); x.mine = args.p_on ? [...(x.mine ?? []), args.p_kind] : (x.mine ?? []).filter((k: string) => k !== args.p_kind); }
+      return json(route, null);
+    }
+    if (fn === "flock_reactors") {
+      return json(route, [
+        { user_id: "00000000-0000-4000-8000-00000000d001", display_name: "Priya S.", region_name: "Southeast", photo_path: null, kind: "great_job", created_at: ago(5) },
+        { user_id: "00000000-0000-4000-8000-00000000d002", display_name: "Sam T.", region_name: "Great Lakes", photo_path: null, kind: "been_there", created_at: ago(9) },
+        { user_id: "00000000-0000-4000-8000-00000000d003", display_name: "Jo K.", region_name: "Texas", photo_path: null, kind: "great_job", created_at: ago(15) },
+      ]);
+    }
     return json(route, null);
   });
   return state;
@@ -339,7 +405,7 @@ async function mockJourneys(context: BrowserContext, opts: JourneyMockOpts, bird
 }
 
 // Community code chunks (FlockHealthDuo is the care app's, not Community's).
-const FLOCK_CHUNK = /\/assets\/(?!FlockHealthDuo)(Flock\w+|SpacesSheet|flock\w*(\.[\w$-]+)*)-[\w-]+\.js/;
+const FLOCK_CHUNK = /\/assets\/(?!FlockHealthDuo)(Flock\w+|SpacesSheet|CommentThread|Post(?:Compose|Feed|Parts)|Journey\w+|[jJ]ourney\w*(\.[\w$-]+)*|flock\w*(\.[\w$-]+)*)-[\w-]+\.js/;
 
 const tabs = (page: Page) => page.locator("nav[aria-label='Community']:visible [data-flock-tab]");
 
@@ -828,11 +894,14 @@ test.describe("journeys: pages, the Journeys tab, following and Today (admin, ph
     await expect(card.locator("[data-reaction='been_there']")).toHaveText("Been there · 5");
     expect(journeys.calls.find((c) => c.fn === "journey_react")!.args).toMatchObject({ p_subject_type: "journey_milestone", p_subject_id: "00000000-0000-4000-8000-0000000074a3-m5", p_kind: "been_there", p_on: true });
 
+    await expect(card.getByTestId("card-comments")).toHaveText("Comment");
+    await expect(card.getByTestId("card-who-reacted")).toHaveText("Who reacted");
     await rings.locator("[data-ring='00000000-0000-4000-8000-0000000074a3']").click();
     await expect(page).toHaveURL(/\/flock\/journeys\/00000000-0000-4000-8000-0000000074a3\/story\?queue=following/);
     await expect(page.getByTestId("story-title")).toHaveText("Kiwi · Recall");
     await expect(page.getByTestId("story-line")).toContainText("Alex R.");
     await expect(page.locator("[data-flock-tab]")).toHaveCount(0);
+    await expect(page.getByTestId("story-comment")).toHaveText("Say something to Alex");
     await page.getByTestId("go-bird").click();
     await expect(page.getByTestId("go-bird")).toHaveText("Cheered");
     const cheer = journeys.calls.filter((c) => c.fn === "journey_react").at(-1)!;
@@ -841,6 +910,23 @@ test.describe("journeys: pages, the Journeys tab, following and Today (admin, ph
     for (let k = 0; k < 3; k++) await page.getByTestId("story-next").click();
     await expect(page).toHaveURL(new RegExp(`/flock/journeys/00000000-0000-4000-8000-0000000074a4/story`));
     await expect(page.getByTestId("story-title")).toHaveText("Mango · Spin");
+    await context.close();
+  });
+
+  test("comments on a milestone card: the journey in the header, the comment saved on the milestone", async ({ browser, baseURL }) => {
+    const { context, page, state } = await open(browser, baseURL!, { admin: true, journeys: { seed: [{ ...kiwi, following: true }] } });
+    await page.goto("/flock");
+    const card = page.locator("[data-milestone-card='00000000-0000-4000-8000-0000000074a3-m5']");
+    await card.getByTestId("card-comments").click();
+    await expect(page).toHaveURL(/\/flock\/comments\/journey_milestone\/00000000-0000-4000-8000-0000000074a3-m5\?/);
+    await expect(page.getByTestId("thread-line")).toHaveText("Kiwi · Recall · Milestone 5 of 7 · Alex R.");
+    await expect(page.getByTestId("no-comments")).toBeVisible();
+    await expect(page.getByTestId("comment-box")).toBeFocused();
+    await page.getByTestId("comment-box").fill("Rooting for Kiwi!");
+    await page.getByTestId("comment-send").click();
+    expect(state.calls.find((c) => c.fn === "flock_comment_create")!.args).toMatchObject({
+      p_subject_type: "journey_milestone", p_subject_id: "00000000-0000-4000-8000-0000000074a3-m5", p_reply_to: null, p_body: "Rooting for Kiwi!" });
+    await expect(page.locator("[data-comment]")).toContainText("Rooting for Kiwi!");
     await context.close();
   });
 
@@ -939,6 +1025,182 @@ test("everyone else: every /flock URL sends them Home and no Community code load
     expect(flockChunks, `${size}: Community code downloaded`).toEqual([]);
     await context.close();
   }
+});
+
+test.describe("posts, comments and reactions (admin, phone)", () => {
+  const ALEX = "00000000-0000-4000-8000-00000000e001";
+  const PRIYA = "00000000-0000-4000-8000-00000000e002";
+  const POST = "00000000-0000-4000-8000-0000000079a1";
+  const PRIYA_C = "00000000-0000-4000-8000-0000000079c1";
+  const seed = (state: FlockState) => {
+    state.posts.push({ post_id: POST, author_id: ALEX, author_name: "Alex R.", space: "learn", title: "Recall treats", body: "What treat works best for recall?",
+      status: "live", created_at: new Date(Date.now() - 3 * 3_600_000).toISOString(), great_job: 2, been_there: 1, mine: [] });
+    state.comments.push({ comment_id: PRIYA_C, subject_type: "post", subject_id: POST, author_id: PRIYA, author_name: "Priya S.",
+      body: "Mango ignores almonds.", created_at: new Date(Date.now() - 60 * 60_000).toISOString(), great_job: 3, mine: [] });
+  };
+  const created = (state: FlockState, fn: string) => state.calls.filter((c) => c.fn === fn);
+
+  test("write a post: Post to chips, title, text, the GPS note; Do good waits for review", async ({ browser, baseURL }) => {
+    const { context, page, state } = await open(browser, baseURL!, { admin: true });
+    await page.goto("/flock");
+    await page.getByTestId("compose-prompt").click();
+    await expect(page).toHaveURL(/\/flock\/post\/new$/);
+    await expect(page.locator("[data-flock-tab]")).toHaveCount(0);
+    const chips = page.getByTestId("post-to").getByRole("button");
+    await expect(chips).toHaveText(["Learn together", "Do good", "Great Lakes chapter", "Start here"]);
+    await expect(chips.first()).toHaveAttribute("aria-pressed", "true");
+    await expect(page.getByTestId("gps-note")).toHaveText("Photos lose their location data when you post.");
+    await page.getByTestId("post-title").fill("Pegboard foraging");
+    await page.getByTestId("post-body-input").fill("Thinking of building one for Echo out of a pegboard. Would love to see yours before I start.");
+    await page.getByTestId("composer-post").click();
+    await expect(page).toHaveURL(/\/flock\?space=learn$/);
+    await expect(page.locator("[data-post]").first()).toContainText("Pegboard foraging");
+    expect(created(state, "flock_post_create")[0].args).toMatchObject({ p_space: "learn", p_title: "Pegboard foraging", p_photo_paths: [], p_bird_id: null, p_vet_nudged: false });
+
+    await page.goto("/flock/post/new?space=good");
+    await expect(page.getByTestId("post-to").locator("[data-space='good']")).toHaveAttribute("aria-pressed", "true");
+    await expect(page.getByTestId("review-hint")).toContainText("We review Do good posts before they go live");
+    await expect(page.getByTestId("composer-post")).toHaveText("Send for review");
+    await page.getByTestId("post-body-input").fill("Our local rescue took in 12 birds this month and is low on pellets.");
+    await page.getByTestId("composer-post").click();
+    await expect(page).toHaveURL(/\/flock\?space=good$/);
+    await expect(page.locator("[data-post]").first().getByTestId("post-status")).toHaveText("Waiting for review");
+    // Nothing to react to or comment on until it's live.
+    await expect(page.locator("[data-post]").first().getByTestId("react-button")).toHaveCount(0);
+    await context.close();
+  });
+
+  test("the vet nudge: warning signs bring up the red card, and posting is never blocked", async ({ browser, baseURL }) => {
+    const { context, page, state } = await open(browser, baseURL!, { admin: true });
+    await page.goto("/flock/post/new");
+    await page.getByTestId("post-body-input").fill("Echo has been fluffed up and sleeping a lot since yesterday and isn\u2019t eating much. Should I worry?");
+    await page.getByTestId("composer-post").click();
+    const card = page.getByTestId("vet-nudge");
+    await expect(card.getByRole("heading")).toHaveText("This sounds like something for your avian vet");
+    await expect(card).toContainText("Birds hide illness, so it's worth calling today rather than waiting on replies.");
+    await expect(page.getByTestId("find-vet")).toHaveAttribute("href", "https://www.aav.org/page/FindAVet2");
+    await expect(page.getByTestId("find-vet")).toHaveAttribute("target", "_blank");
+    expect(created(state, "flock_post_create")).toHaveLength(0);
+    await page.getByTestId("post-anyway").click();
+    await expect(page).toHaveURL(/\/flock\?space=learn$/);
+    expect(created(state, "flock_post_create")[0].args).toMatchObject({ p_vet_nudged: true });
+    await context.close();
+  });
+
+  test("comments: the box is focused, replying names the person, press and hold menus", async ({ browser, baseURL }) => {
+    const { context, page, state } = await open(browser, baseURL!, { admin: true });
+    seed(state);
+    await page.goto("/flock");
+    const post = page.locator(`[data-post='${POST}']`);
+    await expect(post.getByTestId("comment-count")).toHaveText("1 comment");
+    await post.getByTestId("comment-button").click();
+    await expect(page).toHaveURL(new RegExp(`/flock/post/${POST}\\?focus=1$`));
+    await expect(page.locator("[data-flock-tab]")).toHaveCount(0);
+    const box = page.getByTestId("comment-box");
+    await expect(box).toBeFocused();
+    await expect(box).toHaveAttribute("placeholder", "Add a comment for Alex");
+
+    // Reply: "Replying to Priya S.", her name added, nested under her comment.
+    await page.locator(`[data-comment='${PRIYA_C}']`).getByTestId("comment-reply").click();
+    await expect(page.getByTestId("replying-to")).toHaveText("Replying to Priya S.");
+    await expect(box).toHaveValue("@Priya ");
+    await box.fill("@Priya walnut, in tiny pieces.");
+    await page.getByTestId("comment-send").click();
+    expect(created(state, "flock_comment_create")[0].args).toMatchObject({ p_subject_type: "post", p_subject_id: POST, p_reply_to: PRIYA_C, p_body: "@Priya walnut, in tiny pieces." });
+    const mine = page.locator("[data-comment][data-reply='true']");
+    await expect(mine).toContainText("Brittany K. (you)");
+    await expect(page.getByTestId("replying-to")).toHaveCount(0);
+
+    // Press and hold your own: Edit / Delete / Cancel.
+    const bubble = mine.getByTestId("comment-bubble");
+    const b = (await bubble.boundingBox())!;
+    await page.mouse.move(b.x + b.width / 2, b.y + b.height / 2);
+    await page.mouse.down();
+    await page.waitForTimeout(700);
+    await page.mouse.up();
+    const sheet = page.getByTestId("action-sheet");
+    await expect(sheet.getByRole("button")).toHaveText(["Edit", "Delete", "Cancel"]);
+    await sheet.locator("[data-action='edit']").click();
+    await expect(page.getByTestId("replying-to")).toHaveText("Editing your comment");
+    await box.fill("@Priya walnut, in very tiny pieces.");
+    await page.getByTestId("comment-send").click();
+    expect(created(state, "flock_comment_edit")[0].args).toMatchObject({ p_body: "@Priya walnut, in very tiny pieces." });
+
+    // Someone else's: Reply / Cancel.
+    await page.locator(`[data-comment='${PRIYA_C}']`).getByTestId("comment-more").click();
+    await expect(page.getByTestId("action-sheet").getByRole("button")).toHaveText(["Reply", "Cancel"]);
+    await page.getByTestId("action-sheet").locator("[data-action='cancel']").click();
+    await expect(page.getByTestId("action-sheet")).toHaveCount(0);
+    await context.close();
+  });
+
+  test("reactions: Great job on a tap, all four on a hold, and who reacted with regions", async ({ browser, baseURL }) => {
+    const { context, page, state } = await open(browser, baseURL!, { admin: true });
+    seed(state);
+    await page.goto("/flock");
+    const post = page.locator(`[data-post='${POST}']`);
+    await post.getByTestId("react-button").click();
+    expect(created(state, "flock_react")[0].args).toMatchObject({ p_subject_type: "post", p_subject_id: POST, p_kind: "great_job", p_on: true });
+    await expect(post.getByTestId("react-button")).toHaveAttribute("aria-pressed", "true");
+    await post.getByTestId("react-button").click({ button: "right" });
+    await expect(page.getByTestId("reaction-picker").getByRole("button")).toHaveText(["Great job", "Been there", "Rooting for you", "Love this"]);
+    await page.getByTestId("reaction-picker").locator("[data-pick='love_this']").click();
+    await expect(post.getByTestId("react-button")).toHaveText("Love this");
+
+    await post.getByTestId("reaction-summary").click();
+    await expect(page).toHaveURL(new RegExp(`/flock/reactions/post/${POST}$`));
+    const chips = page.getByTestId("reaction-chips").getByRole("button");
+    await expect(chips).toHaveText(["All 3", "Great job 2", "Been there 1"]);
+    await expect(page.locator("[data-reactor]")).toHaveCount(3);
+    await chips.filter({ hasText: "Been there 1" }).click();
+    await expect(page.locator("[data-reactor]")).toHaveCount(1);
+    await expect(page.locator("[data-reactor]")).toContainText("Sam T.");
+    await expect(page.locator("[data-reactor]")).toContainText("Been there · Great Lakes");
+    await context.close();
+  });
+
+  test("your own post: press and hold for Edit / Delete; the hourly limit is a kind message", async ({ browser, baseURL }) => {
+    const { context, page, state } = await open(browser, baseURL!, { admin: true });
+    seed(state);
+    await page.goto("/flock/post/new");
+    await page.getByTestId("post-body-input").fill("Hello, Flock!");
+    await page.getByTestId("composer-post").click();
+    await expect(page).toHaveURL(/\/flock\?space=learn$/);
+    const mine = page.locator("[data-post]").filter({ hasText: "Hello, Flock!" });
+    await mine.getByTestId("post-more").click();
+    await expect(page.getByTestId("action-sheet").getByRole("button")).toHaveText(["Edit", "Delete", "Cancel"]);
+    await page.getByTestId("action-sheet").locator("[data-action='edit']").click();
+    await expect(page).toHaveURL(/\/flock\/post\/[0-9a-f-]+\/edit$/);
+    await expect(page.getByTestId("post-body-input")).toHaveValue("Hello, Flock!");
+    await page.getByTestId("post-body-input").fill("Hello, Flock! Echo says hi.");
+    await page.getByTestId("composer-post").click();
+    expect(created(state, "flock_post_edit")[0].args).toMatchObject({ p_body: "Hello, Flock! Echo says hi." });
+    // Someone else's post: Reply / Cancel.
+    await page.goto("/flock");
+    await page.locator(`[data-post='${POST}']`).getByTestId("post-more").click();
+    await expect(page.getByTestId("action-sheet").getByRole("button")).toHaveText(["Reply", "Cancel"]);
+    await page.getByTestId("action-sheet").locator("[data-action='cancel']").click();
+
+    state.rateLimit = "posts";
+    await page.goto("/flock/post/new");
+    await page.getByTestId("post-body-input").fill("One more thing");
+    await page.getByTestId("composer-post").click();
+    await expect(page.getByTestId("composer-error")).toHaveText("You've shared a lot this hour. Take a breather and post again a little later.");
+    await expect(page.getByTestId("post-body-input")).toHaveValue("One more thing");
+    await context.close();
+  });
+
+  test("the chapter's Posts list its posts and post to the chapter", async ({ browser, baseURL }) => {
+    const { context, page, state } = await open(browser, baseURL!, { admin: true });
+    state.posts.push({ post_id: "00000000-0000-4000-8000-0000000079b1", author_id: ALEX, author_name: "Alex R.", space: "chapter", body: "Picnic in Fort Wayne on Saturday?",
+      status: "live", created_at: new Date(Date.now() - 86_400_000).toISOString() });
+    await page.goto("/flock/chapter");
+    await expect(page.getByTestId("chapter-posts")).toContainText("Picnic in Fort Wayne on Saturday?");
+    await expect(page.getByTestId("compose-prompt")).toContainText("Post to the Great Lakes chapter");
+    await page.getByTestId("compose-prompt").click();
+    await expect(page.getByTestId("post-to").locator("[data-space='chapter']")).toHaveAttribute("aria-pressed", "true");
+    await context.close();
+  });
 });
 
 test.describe("welcome, setup, profiles and chapters (admin, phone)", () => {

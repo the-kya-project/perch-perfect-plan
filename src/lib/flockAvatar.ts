@@ -12,15 +12,16 @@ const MAX_BYTES = 2 * 1024 * 1024; // the bucket's limit
 
 export class AvatarError extends Error {}
 
-/** Re-encode to a square-ish JPEG, at most 800px on the long edge. */
-export async function reencodeAvatar(file: File): Promise<Blob> {
+/** Redraw a photo as a new JPEG, at most `maxEdge` px on the long edge and
+ *  `maxBytes` in size. Pixels only: EXIF (GPS included) never survives. */
+export async function reencodeJpeg(file: File, maxEdge: number, maxBytes: number): Promise<Blob> {
   let bitmap: ImageBitmap;
   try {
     bitmap = await createImageBitmap(file, { imageOrientation: "from-image" } as ImageBitmapOptions);
   } catch {
     throw new AvatarError("We couldn't read that photo. Try a JPEG or PNG.");
   }
-  const scale = Math.min(1, MAX_EDGE / Math.max(bitmap.width, bitmap.height));
+  const scale = Math.min(1, maxEdge / Math.max(bitmap.width, bitmap.height));
   const canvas = document.createElement("canvas");
   canvas.width = Math.max(1, Math.round(bitmap.width * scale));
   canvas.height = Math.max(1, Math.round(bitmap.height * scale));
@@ -30,9 +31,14 @@ export async function reencodeAvatar(file: File): Promise<Blob> {
   bitmap.close?.();
   for (const q of [0.85, 0.75, 0.6, 0.45]) {
     const blob = await new Promise<Blob | null>((r) => canvas.toBlob(r, "image/jpeg", q));
-    if (blob && blob.size <= MAX_BYTES) return blob;
+    if (blob && blob.size <= maxBytes) return blob;
   }
   throw new AvatarError("That photo is too large. Try a smaller one.");
+}
+
+/** Re-encode to a square-ish JPEG, at most 800px on the long edge. */
+export function reencodeAvatar(file: File): Promise<Blob> {
+  return reencodeJpeg(file, MAX_EDGE, MAX_BYTES);
 }
 
 /** Upload a re-encoded photo; returns its storage path. */

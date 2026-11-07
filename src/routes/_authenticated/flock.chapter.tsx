@@ -5,6 +5,8 @@ import { useTranslation } from "react-i18next";
 import type { TFunction } from "i18next";
 import { FlockBody, FlockHeader } from "@/components/FlockShell";
 import { FlockEmpty, FlockSubTabs } from "@/components/flock/FlockChips";
+import { ComposePrompt, LoadMore, PostList } from "@/components/flock/PostFeed";
+import { useFlockFeed } from "@/lib/flockPostData";
 import { RegionSheet } from "@/components/flock/FlockPeople";
 import { K } from "@/components/kya";
 import { memberCountLine } from "@/lib/flockProfile";
@@ -111,8 +113,12 @@ function FlockChapter() {
               value={current}
               onChange={(v) => void navigate({ search: { tab: v === "posts" ? undefined : v }, replace: true })}
             />
-            <div role="tabpanel" aria-label={tabLabel(t, current)}>
-              <FlockEmpty icon={<MapPin className="size-6" />} title={empty.title}>{empty.line}</FlockEmpty>
+            <div role="tabpanel" aria-label={tabLabel(t, current)} className="flex flex-col gap-3">
+              {current === "posts" ? (
+                <ChapterPosts name={chapter?.name ?? null} empty={<FlockEmpty icon={<MapPin className="size-6" />} title={empty.title}>{empty.line}</FlockEmpty>} />
+              ) : (
+                <FlockEmpty icon={<MapPin className="size-6" />} title={empty.title}>{empty.line}</FlockEmpty>
+              )}
             </div>
           </>
         )}
@@ -120,6 +126,24 @@ function FlockChapter() {
       {picking && regions && (
         <RegionSheet regions={regions.filter((r) => r.slug !== "other")} value={null} onClose={() => setPicking(false)} onPick={(s) => void pickRegion(s)} />
       )}
+    </>
+  );
+}
+
+/** The chapter's posts, newest first, with a way to post to it. */
+function ChapterPosts({ name, empty }: { name: string | null; empty: React.ReactNode }) {
+  const { t } = useTranslation();
+  const feed = useFlockFeed("chapter");
+  const posts = (feed.data?.pages ?? []).flat();
+  return (
+    <>
+      <ComposePrompt space="chapter" label={name ? t("flock.chapter.postPrompt", "Post to the {{name}} chapter", { name }) : undefined} />
+      {posts.length > 0 ? (
+        <div className="flex flex-col gap-3" data-testid="chapter-posts">
+          <PostList posts={posts} />
+          <LoadMore hasMore={!!feed.hasNextPage} loading={feed.isFetchingNextPage} onMore={() => void feed.fetchNextPage()} />
+        </div>
+      ) : !feed.isLoading && empty}
     </>
   );
 }

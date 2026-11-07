@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { useNavigate } from "@tanstack/react-router";
+import { Link, useNavigate } from "@tanstack/react-router";
+import { MessageCircle } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { K } from "@/components/kya";
 import { BirdThumb } from "@/components/flock/FlockPeople";
@@ -10,8 +11,8 @@ import { possessive, skillInSentence } from "@/lib/journeys";
 
 /** A milestone from a followed journey, in Today (JourneyEverywhere, screen 8):
  *  who and when, "Milestone N of M · [Bird]'s [skill]", what they said, the
- *  clip, and one-tap reactions. Comments come in step 4. */
-export function JourneyMilestoneCard({ card, photo }: { card: MilestoneCard; photo: FlockPhotoSrc }) {
+ *  clip, one-tap reactions, who reacted, and comments. */
+export function JourneyMilestoneCard({ card, photo, comments = 0 }: { card: MilestoneCard; photo: FlockPhotoSrc; comments?: number }) {
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const invalidate = useInvalidateJourneys();
@@ -58,7 +59,22 @@ export function JourneyMilestoneCard({ card, photo }: { card: MilestoneCard; pho
         </button>
       )}
       <ReactionChips testId="card-reactions" counts={counts} mine={mine} canReact={!!access?.can_share} onToggle={(k, on) => void toggle(k, on)} />
-      {/* Comments come in step 4. */}
+      <div className="flex items-center gap-3 border-t pt-2" style={{ borderColor: K.line }}>
+        {counts.great_job + counts.been_there + counts.rooting_for_you + counts.love_this > 0 && (
+          <Link to="/flock/reactions/$subjectType/$subjectId" params={{ subjectType: "journey_milestone", subjectId: card.milestone_id }}
+            className="min-h-[40px] content-center text-[13px] font-[700]" style={{ color: K.moss }} data-testid="card-who-reacted">
+            {t("flock.posts.whoReacted", "Who reacted")}
+          </Link>
+        )}
+        <span className="flex-1" />
+        {access?.can_share && (
+          <Link to="/flock/comments/$subjectType/$subjectId" params={{ subjectType: "journey_milestone", subjectId: card.milestone_id }} search={{ j: card.journey_id, m: card.milestone_position, ...(comments ? {} : { focus: 1 as const }) }}
+            className="inline-flex min-h-[40px] items-center gap-1.5 text-[13px] font-[700]" style={{ color: K.forest }} data-testid="card-comments">
+            <MessageCircle className="size-4" aria-hidden="true" />
+            {comments > 0 ? t("flock.posts.commentCount", "{{count}} comments", { count: comments }) : t("flock.posts.comment", "Comment")}
+          </Link>
+        )}
+      </div>
     </article>
   );
 }
