@@ -8,7 +8,11 @@ import { FlockEmpty, FlockSubTabs } from "@/components/flock/FlockChips";
 import { ComposePrompt, LoadMore, PostList } from "@/components/flock/PostFeed";
 import { EventCard } from "@/components/flock/EventParts";
 import { useChapterEvents, useEventRules } from "@/lib/flockEvents";
-import { CalendarPlus } from "lucide-react";
+import { CalendarPlus, Search } from "lucide-react";
+import { FlockChips } from "@/components/flock/FlockChips";
+import { FlockAvatar, FounderBadge } from "@/components/flock/FlockPeople";
+import { useAvatarUrls } from "@/lib/flockData";
+import { birdsLine, filterRoster, topGroups, useChapterRoster, type SpeciesGroup } from "@/lib/flockMembers";
 import { useFlockFeed } from "@/lib/flockPostData";
 import { RegionSheet } from "@/components/flock/FlockPeople";
 import { K } from "@/components/kya";
@@ -29,6 +33,7 @@ function tabLabel(t: TFunction, tab: ChapterTab): string {
     case "posts": return t("flock.chapter.posts", "Posts");
     case "events": return t("flock.chapter.events", "Events");
     case "resources": return t("flock.chapter.resources", "Resources");
+    case "members": return t("flock.chapter.members", "Members");
   }
 }
 
@@ -45,6 +50,10 @@ function emptyCopy(t: TFunction, tab: ChapterTab): { title: string; line: string
     case "resources": return {
       title: t("flock.chapter.empty.resourcesTitle", "No resources yet"),
       line: t("flock.chapter.empty.resources", "Avian vets, rescues, and shops your chapter recommends will be collected here."),
+    };
+    case "members": return {
+      title: t("flock.members.emptyTitle", "No members here yet"),
+      line: t("flock.members.empty", "When members join your chapter, you'll find them here."),
     };
   }
 }
@@ -84,7 +93,7 @@ function FlockChapter() {
           <span data-testid="chapter-line">{chapterLine(chapter.name, chapter.states)}</span>
           <span className="mt-1 block" data-testid="chapter-count">
             {memberCountLine(chapter.member_count)} ·{" "}
-            <Link to="/flock/members" className="font-[700] text-white underline underline-offset-4">{t("flock.chapter.seeMembers", "See members")}</Link>
+            <Link to="/flock/chapter" search={{ tab: "members" }} className="font-[700] text-white underline underline-offset-4">{t("flock.chapter.seeMembers", "See members")}</Link>
           </span>
         </>
       )
@@ -119,6 +128,8 @@ function FlockChapter() {
             <div role="tabpanel" aria-label={tabLabel(t, current)} className="flex flex-col gap-3">
               {current === "posts" ? (
                 <ChapterPosts name={chapter?.name ?? null} empty={<FlockEmpty icon={<MapPin className="size-6" />} title={empty.title}>{empty.line}</FlockEmpty>} />
+              ) : current === "members" ? (
+                <ChapterMembers slug={slug!} empty={<FlockEmpty icon={<MapPin className="size-6" />} title={empty.title}>{empty.line}</FlockEmpty>} />
               ) : current === "events" ? (
                 <ChapterEvents empty={<FlockEmpty icon={<MapPin className="size-6" />} title={empty.title}>{empty.line}</FlockEmpty>} />
               ) : (
@@ -186,5 +197,78 @@ function ChapterEvents({ empty }: { empty: React.ReactNode }) {
         {rules?.can_manage ? t("flock.events.new", "New event") : t("flock.events.suggest", "Suggest an event")}
       </Link>
     </>
+  );
+}
+
+const GROUP_LABELS: Record<string, [string, string]> = {
+  macaws: ["flock.members.group.macaws", "Macaws"], amazons: ["flock.members.group.amazons", "Amazons"],
+  cockatoos: ["flock.members.group.cockatoos", "Cockatoos"], greys: ["flock.members.group.greys", "Greys"],
+  cockatiels: ["flock.members.group.cockatiels", "Cockatiels"], conures: ["flock.members.group.conures", "Conures"],
+  parakeets: ["flock.members.group.parakeets", "Parakeets"], lovebirds: ["flock.members.group.lovebirds", "Lovebirds"],
+  caiques: ["flock.members.group.caiques", "Caiques"], eclectus: ["flock.members.group.eclectus", "Eclectus"],
+  parrotlets: ["flock.members.group.parrotlets", "Parrotlets"], pionus: ["flock.members.group.pionus", "Pionus"],
+  lories: ["flock.members.group.lories", "Lories"], quakers: ["flock.members.group.quakers", "Quakers"],
+  poicephalus: ["flock.members.group.poicephalus", "Poicephalus"],
+};
+
+/** The chapter's members (Batch 5, screen 7): search by name or species,
+ *  species chips, badges, and only first names and shown birds. */
+function ChapterMembers({ slug, empty }: { slug: string; empty: React.ReactNode }) {
+  const { t } = useTranslation();
+  const navigate = useNavigate();
+  const { data: roster, isLoading } = useChapterRoster(slug);
+  const { data: urls } = useAvatarUrls((roster ?? []).map((m) => m.photo_path));
+  const [query, setQuery] = useState("");
+  const [group, setGroup] = useState<SpeciesGroup | "everyone">("everyone");
+  const list = roster ?? [];
+  const groups = topGroups(list);
+  const shown = filterRoster(list, query, group === "everyone" ? null : group);
+  const groupLabel = (g: string) => (GROUP_LABELS[g] ? t(GROUP_LABELS[g][0], GROUP_LABELS[g][1]) : g.charAt(0).toUpperCase() + g.slice(1));
+  if (!isLoading && list.length === 0) return <>{empty}</>;
+  return (
+    <div className="flex flex-col gap-3" data-testid="chapter-members-tab">
+      <label className="flex min-h-[48px] items-center gap-2 rounded-full bg-white px-4" style={{ color: K.quiet }}>
+        <Search className="size-4 shrink-0" aria-hidden="true" />
+        <span className="sr-only">{t("flock.members.search", "Search by name or species")}</span>
+        <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder={t("flock.members.search", "Search by name or species")}
+          className="min-w-0 flex-1 bg-transparent text-[16px] outline-none" style={{ color: K.forest }} data-testid="members-search" />
+      </label>
+      {groups.length > 0 && (
+        <FlockChips label={t("flock.members.groupsAria", "Filter by species")} testId="members-chips" value={group}
+          onChange={(v) => setGroup(v ?? "everyone")}
+          options={[{ value: "everyone", label: t("flock.members.everyone", "Everyone") }, ...groups.map((g) => ({ value: g, label: groupLabel(g) }))]} />
+      )}
+      {shown.length === 0 ? (
+        <p className="m-0 py-4 text-center text-[14px]" style={{ color: K.quiet }} data-testid="members-none">{t("flock.members.noMatch", "No one matches that yet.")}</p>
+      ) : (
+        <ul className="m-0 flex list-none flex-col overflow-hidden rounded-[18px] bg-white p-0" data-testid="chapter-members">
+          {shown.map((m, i) => (
+            <li key={m.user_id} style={{ borderTop: i ? `1px solid ${K.line}` : undefined }}>
+              <button type="button" onClick={() => void navigate({ to: "/flock/members/$userId", params: { userId: m.user_id } })} data-member={m.user_id}
+                className="flex min-h-[64px] w-full items-center gap-3 px-4 py-2.5 text-left" style={{ color: K.forest }}>
+                <FlockAvatar name={m.display_name} url={m.photo_path ? urls?.get(m.photo_path) : null} size={44} />
+                <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+                  <span className="flex flex-wrap items-center gap-1.5 text-[15.5px] font-[700]">
+                    {m.display_name}
+                    {m.is_lead && (
+                      <span className="rounded-full px-2 py-0.5 text-[11.5px] font-[700]" style={{ background: K.lime, color: K.forest }} data-testid="lead-badge">
+                        {t("flock.members.lead", "Chapter lead")}
+                      </span>
+                    )}
+                    {m.is_founder && <FounderBadge />}
+                  </span>
+                  <span className="truncate text-[13px]" style={{ color: K.quiet }}>
+                    {m.birds.length ? birdsLine(m.birds, t("flock.members.and", "and")) : t("flock.members.noBirds", "No birds shown")}
+                  </span>
+                </span>
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+      <p className="m-0 px-2 text-center text-[13px]" style={{ color: K.quiet }} data-testid="members-footer">
+        {t("flock.members.footer", "Only first names and birds show here. Members choose what else to share.")}
+      </p>
+    </div>
   );
 }

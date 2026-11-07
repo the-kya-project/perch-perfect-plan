@@ -64,8 +64,8 @@ export type JourneysFilter = "for-you" | "following" | "tricks" | "basics";
 export const JOURNEYS_FILTERS: JourneysFilter[] = ["for-you", "following", "tricks", "basics"];
 
 // ---- Chapter -------------------------------------------------------------
-export type ChapterTab = "posts" | "events" | "resources";
-export const CHAPTER_TABS: ChapterTab[] = ["posts", "events", "resources"];
+export type ChapterTab = "posts" | "events" | "resources" | "members";
+export const CHAPTER_TABS: ChapterTab[] = ["posts", "events", "resources", "members"];
 
 // ---- Library -------------------------------------------------------------
 export type LibraryType = "all" | "guides" | "recordings" | "podcast";

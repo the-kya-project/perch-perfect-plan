@@ -50,6 +50,9 @@ type FlockState = {
   /** Step 5: chapter events, the suggest rules, and RSVPs. */
   events: Record<string, any>[];
   eventRules: Record<string, any>;
+  /** Step 5B: the Members tab and who leads. */
+  roster?: Record<string, any>[];
+  leadOf?: Record<string, string>;
 };
 
 async function mockFlock(context: BrowserContext, userId: string, opts: { setupDone: boolean; region?: string }): Promise<FlockState> {
@@ -122,8 +125,17 @@ async function mockFlock(context: BrowserContext, userId: string, opts: { setupD
       return json(route, r ? [{ region_slug: r.slug, name: r.name, states: r.states, member_count: membersOf(r.slug).length }] : []);
     }
     if (fn === "flock_chapter_members") return json(route, membersOf(args.p_region_slug));
+    if (fn === "flock_chapter_roster") {
+      return json(route, state.roster ?? membersOf(args.p_region_slug).map((m: any) => ({ user_id: m.user_id, display_name: m.display_name, photo_path: null,
+        is_founder: m.is_founder, is_lead: false, birds: (m.bird_names ?? []).map((n: string) => ({ name: n, species: null })) })));
+    }
+    if (fn === "flock_chapter_lead_of") return json(route, state.leadOf?.[args.p_user_id] ?? null);
     if (fn === "flock_visible_birds") return json(route, []);
-    if (fn === "flock_member_profile") return json(route, []);
+    if (fn === "flock_member_profile") {
+      const r = (state.roster ?? []).find((m) => m.user_id === args.p_user_id);
+      return json(route, r ? [{ user_id: r.user_id, display_name: r.display_name, region_slug: "great-lakes", region_name: "Great Lakes", region_states: ["IL", "IN", "MI", "OH"],
+        bio: null, photo_path: null, is_founder: r.is_founder }] : []);
+    }
     if (fn === "flock_enabled") return route.fallback();
     state.calls.push({ fn: fn!, args });
     const ago = (mins: number) => new Date(Date.now() - mins * 60_000).toISOString();
@@ -565,7 +577,7 @@ test.describe("as an admin, on a phone", () => {
     await expect(page.getByTestId("chapter-line")).toHaveText("Great Lakes · IL · IN · MI · OH");
     await expect(page.getByTestId("chapter-count")).toContainText("2 members · meetups unlock at 15");
     const sub = page.getByRole("tablist", { name: "Chapter sections" }).getByRole("tab");
-    await expect(sub).toHaveText(["Posts", "Events", "Resources"]);
+    await expect(sub).toHaveText(["Posts", "Events", "Resources", "Members"]);
     await expect(sub.first()).toHaveAttribute("aria-selected", "true");
     await sub.filter({ hasText: "Events" }).click();
     await expect(page).toHaveURL(/\/flock\/chapter\?tab=events$/);
@@ -1588,6 +1600,65 @@ test.describe("chapter events (admin, phone)", () => {
   });
 });
 
+test.describe("chapter members and leads (admin, phone)", () => {
+  const PRIYA = "00000000-0000-4000-8000-00000000f001";
+  const ALEX = "00000000-0000-4000-8000-00000000f002";
+  const roster = [
+    { user_id: PRIYA, display_name: "Priya S.", photo_path: null, is_founder: false, is_lead: true, birds: [{ name: "Mango", species: "Blue and gold macaw" }] },
+    { user_id: ALEX, display_name: "Alex R.", photo_path: null, is_founder: false, is_lead: false, birds: [{ name: "Kiwi", species: "Green-cheeked conure" }] },
+    { user_id: "00000000-0000-4000-8000-00000000f003", display_name: "Brittany K.", photo_path: null, is_founder: true, is_lead: false,
+      birds: [{ name: "Echo", species: "Sun conure" }, { name: "Kya", species: "Hyacinth macaw" }] },
+    { user_id: "00000000-0000-4000-8000-00000000f004", display_name: "Jordan L.", photo_path: null, is_founder: false, is_lead: false, birds: [{ name: "Rio", species: "Congo grey" }] },
+  ];
+
+  test("the Members tab: search by name or species, species chips, badges, the footer", async ({ browser, baseURL }) => {
+    const { context, page, state } = await open(browser, baseURL!, { admin: true });
+    state.roster = roster;
+    await page.goto("/flock/chapter?tab=members");
+    const tabs = page.getByRole("tablist", { name: "Chapter sections" }).getByRole("tab");
+    await expect(tabs).toHaveText(["Posts", "Events", "Resources", "Members"]);
+    const rows = page.getByTestId("chapter-members").locator("[data-member]");
+    await expect(rows).toHaveCount(4);
+    await expect(rows.first()).toContainText("Priya S.");
+    await expect(rows.first()).toContainText("Mango, Blue and gold macaw");
+    await expect(rows.first().getByTestId("lead-badge")).toHaveText("Chapter lead");
+    await expect(page.locator(`[data-member='00000000-0000-4000-8000-00000000f003']`)).toContainText("Echo and Kya");
+    await expect(page.locator(`[data-member='00000000-0000-4000-8000-00000000f003']`)).toContainText("Founding member");
+    await expect(page.getByTestId("members-chips").getByRole("button")).toHaveText(["Everyone", "Conures", "Macaws", "Greys"]);
+    await page.getByTestId("members-chips").locator("[data-chip='greys']").click();
+    await expect(rows).toHaveCount(1);
+    await expect(rows).toContainText("Jordan L.");
+    await page.getByTestId("members-chips").locator("[data-chip='everyone']").click();
+    await page.getByTestId("members-search").fill("kiwi");
+    await expect(rows).toHaveCount(1);
+    await expect(rows).toContainText("Alex R.");
+    await page.getByTestId("members-search").fill("macaw");
+    await expect(rows).toHaveCount(2);
+    await expect(page.getByTestId("members-footer")).toHaveText("Only first names and birds show here. Members choose what else to share.");
+    await context.close();
+  });
+
+  test("admins make or remove a chapter lead from the member's page", async ({ browser, baseURL }) => {
+    const { context, page, state } = await open(browser, baseURL!, { admin: true });
+    state.roster = roster;
+    state.leadOf = { [PRIYA]: "great-lakes" };
+    await page.goto(`/flock/members/${ALEX}`);
+    await expect(page.getByTestId("member-lead-badge")).toHaveCount(0);
+    await expect(page.getByTestId("lead-toggle")).toHaveText("Make chapter lead of Great Lakes");
+    await page.getByTestId("lead-toggle").click();
+    await page.getByTestId("confirm-delete").click();
+    expect(state.calls.find((c) => c.fn === "admin_set_chapter_lead")!.args).toEqual({ p_user_id: ALEX, p_on: true });
+    await page.goto(`/flock/members/${PRIYA}`);
+    await expect(page.getByTestId("member-lead-badge")).toHaveText("Chapter lead");
+    await expect(page.getByTestId("lead-toggle")).toHaveText("Remove as chapter lead");
+    await page.getByTestId("lead-toggle").click();
+    await expect(page.getByRole("dialog")).toContainText("They stop reviewing and editing Great Lakes events right away");
+    await page.getByTestId("confirm-delete").click();
+    expect(state.calls.filter((c) => c.fn === "admin_set_chapter_lead").at(-1)!.args).toEqual({ p_user_id: PRIYA, p_on: false });
+    await context.close();
+  });
+});
+
 test.describe("welcome, setup, profiles and chapters (admin, phone)", () => {
   test("bird chips: signed photos show, a bird without one shows its initial, a failed resize falls back; selected and unselected styles", async ({ browser, baseURL }) => {
     for (const path of ["/flock/setup", "/flock/you/edit"]) {
@@ -1679,8 +1750,11 @@ test.describe("welcome, setup, profiles and chapters (admin, phone)", () => {
     await expect(page.getByTestId("chapter-line")).toHaveText("Great Lakes · IL · IN · MI · OH");
     await expect(page.getByTestId("chapter-count")).toContainText("2 members");
     await page.getByRole("link", { name: "See members" }).click();
-    await expect(page).toHaveURL(/\/flock\/members$/);
+    await expect(page).toHaveURL(/\/flock\/chapter\?tab=members$/);
     await expect(page.getByTestId("chapter-members").getByText("Ada L.")).toBeVisible();
+    // The old members screen's address lands on the tab.
+    await page.goto("/flock/members");
+    await expect(page).toHaveURL(/\/flock\/chapter\?tab=members$/);
 
     await page.goto("/flock/you");
     await page.getByRole("link", { name: "Edit profile" }).click();

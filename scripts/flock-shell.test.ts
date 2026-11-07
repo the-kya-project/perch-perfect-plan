@@ -19,6 +19,7 @@ import {
   CHAPTER_TABS, FLOCK_DESTS, FLOCK_REDIRECTS, FLOCK_SPACES, JOURNEYS_FILTERS, LIBRARY_SUBJECTS, LIBRARY_TYPES, TODAY_FILTERS,
   chapterLine, destForPath, isFlockFullScreenPath, isFlockOnboardingPath, pick, pickOptional, pickQuery,
 } from "@/lib/flockNav";
+import { birdsLine, filterRoster, speciesGroup, topGroups } from "@/lib/flockMembers";
 import { dateBlock, eventIcs, goersLine, longWhen, shortWhen } from "@/lib/flockEvents";
 import { AAV_FIND_A_VET_URL, POST_SPACES, findVetSigns, mergeFeed, rateLimitKind, replyPrefix, threadComments } from "@/lib/flockPosts";
 import { defaultDisplayName, greetingName, isAutomaticDisplayName, memberCountLine, membershipSummary } from "@/lib/flockProfile";
@@ -132,7 +133,7 @@ check("the chips and spaces are the ones in the design", () => {
   assert.deepEqual(FLOCK_SPACES, ["start", "learn", "good"]);
   assert.deepEqual(TODAY_FILTERS, ["everything", "learn", "good", "start"]);
   assert.deepEqual(JOURNEYS_FILTERS, ["for-you", "following", "tricks", "basics"]);
-  assert.deepEqual(CHAPTER_TABS, ["posts", "events", "resources"]);
+  assert.deepEqual(CHAPTER_TABS, ["posts", "events", "resources", "members"]);
   assert.deepEqual(LIBRARY_TYPES, ["all", "guides", "recordings", "podcast"]);
   assert.deepEqual(LIBRARY_SUBJECTS, ["foraging", "diet", "training", "hormones", "conservation"]);
 });
@@ -393,6 +394,46 @@ check("the calendar file: one event, UTC times, escaped text, 2-hour default", (
   assert.match(ics, /\r\nLOCATION:Ann Arbor District Library\\, Room B\r\n/);
   assert.match(ics, /UID:e1@thekyaproject.com/);
   assert.ok(ics.split("\r\n").every((l) => new TextEncoder().encode(l).length <= 75));
+});
+
+// ---- Members and chapter leads (step 5B) ----------------------------------------------------
+check("species group into the chips (Macaws, Amazons, Cockatoos, Greys…)", () => {
+  assert.equal(speciesGroup("Blue and gold macaw"), "macaws");
+  assert.equal(speciesGroup("Yellow-naped Amazon"), "amazons");
+  assert.equal(speciesGroup("Umbrella cockatoo"), "cockatoos");
+  assert.equal(speciesGroup("Congo African grey"), "greys");
+  assert.equal(speciesGroup("Timneh"), "greys");
+  assert.equal(speciesGroup("Green-cheeked conure"), "conures");
+  assert.equal(speciesGroup("Quaker parrot"), "quakers");
+  assert.equal(speciesGroup("Monk parakeet"), "quakers");
+  assert.equal(speciesGroup("Indian ringneck"), "parakeets");
+  assert.equal(speciesGroup("Kakariki"), "kakariki");
+  assert.equal(speciesGroup(""), null);
+});
+
+check("the Members tab: top species, search by name or species, birds line", () => {
+  const m = (id: string, name: string, birds: [string, string | null][]) => ({ user_id: id, display_name: name, photo_path: null, is_founder: false, is_lead: false,
+    birds: birds.map(([n, s]) => ({ name: n, species: s })) });
+  const roster = [
+    m("1", "Priya S.", [["Mango", "Blue and gold macaw"]]),
+    m("2", "Alex R.", [["Kiwi", "Green-cheeked conure"]]),
+    m("3", "Brittany K.", [["Echo", "Sun conure"], ["Kya", "Hyacinth macaw"]]),
+    m("4", "Jordan L.", [["Rio", "Congo grey"]]),
+  ];
+  assert.deepEqual(topGroups(roster), ["conures", "macaws", "greys"]);
+  assert.deepEqual(filterRoster(roster, "", "macaws").map((x) => x.user_id), ["1", "3"]);
+  assert.deepEqual(filterRoster(roster, "kiwi", null).map((x) => x.user_id), ["2"]);
+  assert.deepEqual(filterRoster(roster, "grey", null).map((x) => x.user_id), ["4"]);
+  assert.deepEqual(filterRoster(roster, "jor", null).map((x) => x.user_id), ["4"]);
+  assert.equal(birdsLine(roster[0].birds), "Mango, Blue and gold macaw");
+  assert.equal(birdsLine(roster[2].birds), "Echo and Kya");
+  assert.equal(birdsLine([...roster[2].birds, { name: "Pip", species: null }]), "Echo, Kya, and Pip");
+});
+
+check("Chapter tabs: Posts, Events, Resources, Members; old members links read as Chapter", () => {
+  assert.deepEqual(CHAPTER_TABS, ["posts", "events", "resources", "members"]);
+  assert.equal(destForPath("/flock/members"), "chapter");
+  assert.equal(destForPath("/flock/events/abc"), "chapter");
 });
 
 console.log(`\n${passed} passed${process.exitCode ? ", some FAILED" : ""}`);
