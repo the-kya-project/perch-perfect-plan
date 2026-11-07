@@ -7,16 +7,19 @@ import { K, KyaLink, KyaPrimaryButton } from "@/components/kya";
 import { ClipRecorder } from "@/components/ClipRecorder";
 import { FlockSubPage } from "@/components/flock/FlockSubPage";
 import { ChoiceChips, FinisherTipsCard, FlowFooter } from "@/components/flock/JourneyParts";
+import { DietNotForBird, DietVetCard, HowToMakeItWork } from "@/components/flock/JourneyDiet";
 import { createJourneyClipUpload } from "@/lib/journeyClips.functions";
 import { startJourney, useFinisherTips, useInvalidateJourneys, useJourneyAccess, useJourneyBirds, useJourneyTemplates } from "@/lib/journeyData";
 import {
-  CUSTOM_MAX, CUSTOM_NAME_MAX, MILESTONE_MAX, RHYTHMS, birdPronoun, customProblem, defaultVisibility, possessive, startHere,
-  trimTrailingBlanks, vetCheckLine, visibilityChoices, type BirdPronoun, type JourneyRhythm, type JourneyVisibility,
+  CUSTOM_MAX, CUSTOM_NAME_MAX, DIET_SLUG, MILESTONE_MAX, RHYTHMS, birdPronoun, customProblem, defaultVisibility, isNectarEater, possessive, startHere,
+  trimTrailingBlanks, vetCheckLine, visibilityChoices, youngOrUnknownAge, type BirdPronoun, type JourneyRhythm, type JourneyVisibility, type VetCheck,
 } from "@/lib/journeys";
 
 // Set up a journey (JourneyFlow, screen 2): where the bird is starting, a
 // day-one clip, how often you'll practice, who sees it, and the template's
-// safety notes (Diet conversion adds its safeguards and the vet check). For
+// safety notes (Diet conversion adds its safeguards). Diet conversion first
+// shows the vet card (both answers continue; the answer is saved on the
+// journey), and isn't offered to lories and lorikeets. For
 // "Write your own journey": a name and 3–8 milestones instead.
 export const Route = createFileRoute("/_authenticated/flock/journeys/setup")({
   validateSearch: (s: Record<string, unknown>): { bird: string; template?: string; custom?: boolean } => ({
@@ -66,14 +69,18 @@ function SetupJourney() {
   const [clipBusy, setClipBusy] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [vetChoice, setVetChoice] = useState<VetCheck | null>(null);
 
   useEffect(() => { if (access && visibility === null) setVisibility(defaultVisibility(access)); }, [access, visibility]);
 
   const count = template?.milestones.length ?? 0;
   const first = startHere(count, already);
   const problem = custom ? customProblem(name, rows) : null;
-  const vet = template ? vetCheckLine(template) : null;
-  const safeguards = template?.safeguards.filter((s) => s !== vet) ?? [];
+  const diet = !custom && template?.slug === DIET_SLUG;
+  const vetLine = template ? vetCheckLine(template) : null;
+  // Diet conversion's vet card replaces the one-line vet suggestion.
+  const vet = diet ? null : vetLine;
+  const safeguards = template?.safeguards.filter((s) => s !== vetLine) ?? [];
   const pronoun = birdPronoun(bird?.sex);
   const notes = template?.safety_notes ?? (templates?.[0]?.safety_notes ?? []);
   const limits = useMemo(() => !access || !bird ? undefined : {
@@ -98,6 +105,7 @@ function SetupJourney() {
         rhythm,
         visibility,
         dayOneClip: clip,
+        vetCheck: diet ? vetChoice : null,
       });
       await invalidate();
       void navigate({ to: "/flock/journeys/$journeyId", params: { journeyId: id }, replace: true });
@@ -109,6 +117,16 @@ function SetupJourney() {
 
   const title = custom ? t("flock.journeys.setup.customTitle", "Write your own journey") : (template?.name ?? " ");
   const line = bird ? t("flock.journeys.setup.line", "{{name}} new journey", { name: possessive(bird.name) }) : " ";
+
+  if (diet && bird && (isNectarEater(bird.species) || !vetChoice)) {
+    return (
+      <FlockSubPage title={title} line={line} fallback="/flock/journeys/start">
+        {isNectarEater(bird.species)
+          ? <DietNotForBird birdName={bird.name} />
+          : <DietVetCard birdName={bird.name} young={youngOrUnknownAge(bird.birth_date)} onChoose={(c) => { setVetChoice(c); window.scrollTo(0, 0); }} />}
+      </FlockSubPage>
+    );
+  }
 
   return (
     <FlockSubPage title={title} line={line} fallback="/flock/journeys/start">
@@ -132,6 +150,7 @@ function SetupJourney() {
           </section>
         )}
 
+        {template && <HowToMakeItWork tips={template.tips} />}
         {template && <FinisherTipsCard skill={template.name} tips={finisherTips} />}
 
         {custom ? (
@@ -253,6 +272,7 @@ function SetupJourney() {
 /** The database's refusals, in words a member can act on. */
 function friendlyStartError(t: TFunction, e: unknown): string {
   const msg = (e as { message?: string })?.message ?? "";
+  if (/diet_not_for_nectar_eaters/.test(msg)) return t("flock.journeys.setup.errNectar", "This journey isn't made for lories and lorikeets. Your avian vet is the best guide for any changes.");
   if (/already has this journey going/.test(msg)) return t("flock.journeys.setup.errGoing", "This bird already has this journey going.");
   if (/comes with app premium/.test(msg)) return t("flock.journeys.setup.errPremium", "This journey comes with app premium.");
   if (/comes with Flock membership/.test(msg)) return t("flock.journeys.setup.errShare", "Sharing with the community comes with Flock membership.");

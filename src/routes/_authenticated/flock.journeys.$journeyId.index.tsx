@@ -7,12 +7,13 @@ import { FlockSubPage } from "@/components/flock/FlockSubPage";
 import { FlockEmpty } from "@/components/flock/FlockChips";
 import { ClipTile, JourneyMenuSheet, shortDay } from "@/components/flock/JourneyBrowse";
 import { FinisherTipsCard } from "@/components/flock/JourneyParts";
+import { DietDisclaimer, HowToMakeItWork, VetReminderCard } from "@/components/flock/JourneyDiet";
 import { deleteJourney } from "@/lib/journeyMedia.functions";
 import {
-  followJourney, resumeAfterVet, useFinisherTips, setJourneyStatus, setJourneyVisibility, useBirdWeights, useInvalidateJourneys, useJourney,
-  useJourneyAccess, useJourneyClips, useJourneyView, useJourneyViewUpdates, useWeightCheck, type Journey, type WeightCheck,
+  followJourney, resumeAfterVet, setVetCheck, useFinisherTips, setJourneyStatus, setJourneyVisibility, useBirdWeights, useInvalidateJourneys, useJourney,
+  useJourneyAccess, useJourneyClips, useJourneyTemplates, useJourneyView, useJourneyViewUpdates, useWeightCheck, type Journey, type WeightCheck,
 } from "@/lib/journeyData";
-import { journeyDay } from "@/lib/journeys";
+import { journeyDay, showVetReminder } from "@/lib/journeys";
 
 // A journey (JourneyEverywhere, screen 6): "[Bird] · [skill]", "Day N · X
 // following", the segmented progress bar, "N of M · next: …", Post an update
@@ -41,6 +42,9 @@ function JourneyPage() {
   const { data: weight } = useWeightCheck(journeyId, mine && diet && card?.status !== "finished");
   // Tips from members who finished this template, on your own active journeys.
   const { data: finisherTips } = useFinisherTips(card?.template_slug, mine && card?.status === "active");
+  const { data: templates } = useJourneyTemplates();
+  const dietTips = diet && mine ? (templates?.find((x) => x.slug === "diet-conversion")?.tips ?? []) : [];
+  const [vetBusy, setVetBusy] = useState(false);
   const [menu, setMenu] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -103,6 +107,13 @@ function JourneyPage() {
           </p>
         )}
 
+        {mine && own && diet && showVetReminder(own) && (
+          <VetReminderCard busy={vetBusy}
+            onTalked={() => { setVetBusy(true); void act(() => setVetCheck(journeyId, "talked")).finally(() => setVetBusy(false)); }}
+            onLater={() => { setVetBusy(true); void act(() => setVetCheck(journeyId, "remind_later")).finally(() => setVetBusy(false)); }} />
+        )}
+        {mine && diet && card?.status !== "finished" && <HowToMakeItWork tips={dietTips} />}
+
         {mine && card?.status === "active" && <FinisherTipsCard skill={card.skill} tips={finisherTips} />}
 
         {(mine && card?.status === "active") || canCompare ? (
@@ -135,6 +146,7 @@ function JourneyPage() {
             ))}
           </div>
         )}
+        {diet && card && <DietDisclaimer birdName={card.bird_name} className="pt-2" />}
       </div>
       {menu && card && (
         <JourneyMenuSheet status={card.status} visibility={card.visibility} canShare={!!access?.can_share} clipCount={withClips.length}

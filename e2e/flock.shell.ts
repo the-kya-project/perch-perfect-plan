@@ -301,6 +301,8 @@ const JOURNEY_TEMPLATES = JSON.parse(readFileSync(`${process.cwd()}/e2e/journey-
 /** A journey already under way: which template (or custom milestones), how many milestones are done. */
 type SeedJourney = {
   id: string; birdName: string; slug?: string; custom?: { name: string; milestones: string[] }; done: number; status?: string; pausedReason?: string;
+  /** Diet conversion's vet card answer. */
+  vetCheck?: "talked" | "will_call";
   lastPostedDaysAgo?: number; visibility?: string;
   /** Someone else's journey (a made-up member), not one of the signed-in owner's birds. */
   owner?: string; region?: string;
@@ -334,7 +336,7 @@ async function mockJourneys(context: BrowserContext, opts: JourneyMockOpts, bird
     const ms = tp ? tp.milestones.map((m) => ({ title: m.title, words: { ask: m.ask, done_line: m.done_line } })) : custom!.milestones.map((title) => ({ title, words: null }));
     return {
       id, bird_id: birdId, template_id: tp?.id ?? null, custom_name: custom?.name ?? null, status: "active", visibility: "community", rhythm: "most_days",
-      started_at: new Date(Date.now() - 16 * 86_400_000).toISOString(), finished_at: null, paused_reason: null,
+      started_at: new Date(Date.now() - 16 * 86_400_000).toISOString(), finished_at: null, paused_reason: null, vet_check: null, vet_remind_after: null,
       template: tp ? { name: tp.name, slug: tp.slug } : null, bird: { name: birds.find((b) => b.id === birdId)?.name ?? "" },
       milestones: ms.map((m, i) => ({ id: `${id}-m${i + 1}`, position: i + 1, title: m.title, state: "todo", reached_at: null, shared_at: null, words: m.words })),
       ...extra,
@@ -346,7 +348,7 @@ async function mockJourneys(context: BrowserContext, opts: JourneyMockOpts, bird
   for (const sj of opts.seed ?? []) {
     const bird = birds.find((b) => b.name === sj.birdName) ?? { id: `00000000-0000-4000-8000-0000000075${sj.id.slice(-2)}`, name: sj.birdName };
     const j = make(sj.id, bird.id, JOURNEY_TEMPLATES.find((x) => x.slug === sj.slug), sj.custom ?? null,
-      { status: sj.status ?? "active", paused_reason: sj.pausedReason ?? null, visibility: sj.visibility ?? "community" });
+      { status: sj.status ?? "active", paused_reason: sj.pausedReason ?? null, visibility: sj.visibility ?? "community", vet_check: sj.vetCheck ?? null });
     j.milestones.forEach((m: any, i: number) => { if (i < sj.done) m.state = "reached"; });
     journeys.set(sj.id, j);
     if (sj.lastPostedDaysAgo != null) lastPosted.set(sj.id, new Date(Date.now() - sj.lastPostedDaysAgo * 86_400_000).toISOString());
@@ -465,6 +467,11 @@ async function mockJourneys(context: BrowserContext, opts: JourneyMockOpts, bird
       return json(route, null);
     }
     if (fn === "journey_set_visibility" && j) { j.visibility = args.p_visibility; return json(route, null); }
+    if (fn === "journey_set_vet_check" && j) {
+      if (args.p_choice === "remind_later") j.vet_remind_after = new Date(Date.now() + 3 * 86_400_000).toISOString();
+      else { j.vet_check = args.p_choice; j.vet_remind_after = null; }
+      return json(route, null);
+    }
     if (fn === "journey_resume_after_vet" && j) { j.status = "active"; j.paused_reason = null; return json(route, null); }
     if (fn === "journey_weight_check") {
       const w = opts.weight;
@@ -682,15 +689,93 @@ test.describe("journeys: start a journey (admin, phone)", () => {
     await context.close();
   });
 
-  test("Diet conversion shows its vet check and safeguards before starting", async ({ browser, baseURL }) => {
-    const { context, page } = await open(browser, baseURL!, { admin: true });
+  test("Diet conversion: the vet card comes first, both answers continue, and the answer is saved on the journey", async ({ browser, baseURL }) => {
+    const { context, page, journeys } = await open(browser, baseURL!, { admin: true });
     await page.goto("/flock/journeys/start");
     await page.getByTestId("pick-bird").locator("[data-bird]", { hasText: "Willow" }).click();
     await page.locator("[data-template='diet-conversion']").click();
-    await expect(page.getByTestId("vet-check")).toHaveText("The template suggests a vet check before starting, especially for older birds or birds on an all-seed diet.");
-    await expect(page.getByTestId("safeguards")).toContainText("If weight drops, the journey pauses with a clear message to call your avian vet.");
-    await expect(page.getByText("Tap anything she already does.")).toBeVisible();
+    const card = page.getByTestId("diet-vet-card");
+    await expect(card.getByRole("heading")).toHaveText("Bring your avian vet in on this one");
+    await expect(card).toContainText("Before you start, check in with your avian vet to make sure your bird is healthy enough for a diet change.");
+    await expect(card.getByTestId("diet-young")).toHaveCount(0);
+    await expect(card.getByTestId("diet-disclaimer")).toHaveText("Kya & Co. helps you keep track of Willow's weight and progress during the switch, but it isn't a substitute for your avian vet. The tips and alerts here are general guidance, not medical advice, so please lean on your vet for decisions about Willow's health and diet.");
+    await expect(card.getByTestId("diet-find-vet")).toHaveAttribute("href", "https://www.aav.org/page/FindAVet2");
+    await expect(page.getByTestId("journey-setup")).toHaveCount(0);
+    await card.getByRole("button", { name: "I'll call before we go further" }).click();
+
+    const setup = page.getByTestId("journey-setup");
+    await expect(setup.getByTestId("safeguards")).toContainText("If weight drops, the journey pauses with a clear message to call your avian vet.");
+    await expect(setup.getByTestId("vet-check")).toHaveCount(0);
+    await setup.getByTestId("how-to").locator("summary").click();
+    await expect(setup.getByTestId("how-to").locator("li").first()).toHaveText("Offer the new food first thing in the morning, with the usual food alongside.");
+    await expect(setup.getByTestId("how-to").locator("li")).toHaveCount(11);
+    await expect(setup.getByText("Tap anything she already does.")).toBeVisible();
+    await page.getByRole("button", { name: "Start Willow's journey" }).click();
+    await expect(page).toHaveURL(/\/flock\/journeys\/00000000-0000-4000-8000-000000007201$/);
+    expect(journeys.starts[0]).toMatchObject({ p_template_slug: "diet-conversion" });
+    expect(journeys.calls.find((c) => c.fn === "journey_set_vet_check")?.args).toEqual({ p_journey_id: "00000000-0000-4000-8000-000000007201", p_choice: "will_call" });
+    await expect(page.getByTestId("diet-disclaimer")).toContainText("isn't a substitute for your avian vet");
     await context.close();
+  });
+
+  test("the vet card is Diet conversion's only; a young bird gets the extra line; lories and lorikeets can't start it", async ({ browser, baseURL }) => {
+    const { context, page, journeys } = await open(browser, baseURL!, { admin: true });
+    const row = (id: string, name: string, species: string, birth: string | null) => ({ id, name, species, sex: null, photo_url: null, birth_date: birth, passed_at: null });
+    const young = new Date(Date.now() - 120 * 86_400_000).toISOString().slice(0, 10);
+    await context.route(`${MOCK}/rest/v1/birds**`, (route) => route.fulfill({ status: 200, contentType: "application/json", headers: { "access-control-allow-origin": "*" },
+      body: JSON.stringify([row("00000000-0000-4000-8000-0000000071b1", "Pip", "Cockatiel", young), row("00000000-0000-4000-8000-0000000071b2", "Sunny", "Rainbow Lorikeet", "2020-05-01"), row("00000000-0000-4000-8000-0000000071b3", "Rio", "Congo grey", null)]) }));
+    // Step up: straight to setup, no vet card, no disclaimer.
+    await page.goto("/flock/journeys/setup?bird=00000000-0000-4000-8000-0000000071b3&template=step-up");
+    await expect(page.getByTestId("journey-setup")).toBeVisible();
+    await expect(page.getByTestId("diet-vet-card")).toHaveCount(0);
+    await expect(page.getByTestId("diet-disclaimer")).toHaveCount(0);
+    // A young bird, and one with no hatch date, get the extra line.
+    await page.goto("/flock/journeys/setup?bird=00000000-0000-4000-8000-0000000071b1&template=diet-conversion");
+    await expect(page.getByTestId("diet-young")).toHaveText("Young birds still learning to eat on their own need food available all day, so please talk with your vet before changing anything.");
+    await page.goto("/flock/journeys/setup?bird=00000000-0000-4000-8000-0000000071b3&template=diet-conversion");
+    await expect(page.getByTestId("diet-young")).toBeVisible();
+    // A lorikeet: no card, no setup, no way to start.
+    await page.goto("/flock/journeys/setup?bird=00000000-0000-4000-8000-0000000071b2&template=diet-conversion");
+    await expect(page.getByTestId("diet-not-for-bird")).toContainText("This journey isn't made for Sunny. Lories and lorikeets eat a nectar-based diet, so their food needs are different. Your avian vet is the best guide for any changes.");
+    await expect(page.getByTestId("diet-vet-card")).toHaveCount(0);
+    await expect(page.getByRole("button", { name: /Start .* journey/ })).toHaveCount(0);
+    expect(journeys.starts).toHaveLength(0);
+    await context.close();
+  });
+
+  test("Diet conversion pages: the milestone-2 vet reminder only for \"I'll call\", and the disclaimer at the bottom", async ({ browser, baseURL }) => {
+    const id = "00000000-0000-4000-8000-0000000074a2";
+    const diet = { id, birdName: "Willow", slug: "diet-conversion", done: 1, vetCheck: "will_call" as const };
+    let o = await open(browser, baseURL!, { admin: true, journeys: { seed: [diet], weight: { level: "none", start: 400, now: 401 } } });
+    await o.page.goto(`/flock/journeys/${id}`);
+    const reminder = o.page.getByTestId("vet-reminder");
+    await expect(reminder).toContainText("Have you had a chance to check in with your avian vet? It's worth doing before the new food becomes a bigger share.");
+    await expect(o.page.getByTestId("diet-disclaimer")).toContainText("Kya & Co. helps you keep track of Willow's weight");
+    await reminder.getByRole("button", { name: "Remind me later" }).click();
+    await expect(reminder).toHaveCount(0);
+    expect(o.journeys.calls.find((c) => c.fn === "journey_set_vet_check")?.args).toEqual({ p_journey_id: id, p_choice: "remind_later" });
+    await o.context.close();
+
+    o = await open(browser, baseURL!, { admin: true, journeys: { seed: [diet], weight: { level: "none", start: 400, now: 401 } } });
+    await o.page.goto(`/flock/journeys/${id}`);
+    await o.page.getByTestId("vet-reminder").getByRole("button", { name: "Yes, we've talked" }).click();
+    await expect(o.page.getByTestId("vet-reminder")).toHaveCount(0);
+    expect(o.journeys.calls.find((c) => c.fn === "journey_set_vet_check")?.args).toEqual({ p_journey_id: id, p_choice: "talked" });
+    await o.context.close();
+
+    // Still on milestone 1, or "I've talked": no reminder. Another journey: no disclaimer.
+    o = await open(browser, baseURL!, { admin: true, journeys: { seed: [{ ...diet, done: 0 }, { ...diet, id: "00000000-0000-4000-8000-0000000074b2", birdName: "Echo", vetCheck: "talked" }, { id: "00000000-0000-4000-8000-0000000074b3", birdName: "Max", slug: "step-up", done: 1 }] } });
+    await o.page.goto(`/flock/journeys/${id}`);
+    await expect(o.page.getByTestId("journey-progress")).toBeVisible();
+    await expect(o.page.getByTestId("vet-reminder")).toHaveCount(0);
+    await expect(o.page.getByTestId("diet-disclaimer")).toBeVisible();
+    await o.page.goto("/flock/journeys/00000000-0000-4000-8000-0000000074b2");
+    await expect(o.page.getByTestId("journey-progress")).toBeVisible();
+    await expect(o.page.getByTestId("vet-reminder")).toHaveCount(0);
+    await o.page.goto("/flock/journeys/00000000-0000-4000-8000-0000000074b3");
+    await expect(o.page.getByTestId("journey-progress")).toBeVisible();
+    await expect(o.page.getByTestId("diet-disclaimer")).toHaveCount(0);
+    await o.context.close();
   });
 
   test("write your own: a name and 3 milestones, privately", async ({ browser, baseURL }) => {

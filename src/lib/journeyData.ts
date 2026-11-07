@@ -7,7 +7,7 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { getJourneyClips, type JourneyClip } from "@/lib/journeyMedia.functions";
-import type { Engagement, JourneyAccess, JourneyRhythm, JourneyStatus, JourneyTemplate, JourneyVisibility, WeightLevel } from "@/lib/journeys";
+import type { Engagement, JourneyAccess, JourneyRhythm, JourneyStatus, JourneyTemplate, JourneyVisibility, VetCheck, WeightLevel } from "@/lib/journeys";
 
 const sb = supabase as any;
 const STALE = 60_000;
@@ -40,7 +40,7 @@ export const journeyKeys = {
   clips: (id: string) => ["flock", "journeys", "clips", id] as const,
 };
 
-export type JourneyBird = { id: string; name: string; species: string | null; sex: string | null; photo_url: string | null };
+export type JourneyBird = { id: string; name: string; species: string | null; sex: string | null; photo_url: string | null; birth_date: string | null };
 export type BirdSkill = { id: string; name: string; template_id: string | null; source: "known" | "journey" };
 export type JourneyMilestone = {
   id: string; position: number; title: string; state: "todo" | "already" | "reached"; reached_at: string | null; shared_at: string | null;
@@ -58,6 +58,8 @@ export type Journey = {
   started_at: string;
   finished_at: string | null;
   paused_reason: "member" | "weight_drop" | null;
+  vet_check: VetCheck | null;
+  vet_remind_after: string | null;
   template: { name: string; slug: string } | null;
   milestones: JourneyMilestone[];
 };
@@ -89,7 +91,7 @@ export function useJourneyBirds() {
     queryKey: journeyKeys.birds,
     staleTime: STALE,
     queryFn: async (): Promise<JourneyBird[]> =>
-      must(await sb.from("birds").select("id, name, species, sex, photo_url").is("passed_at", null).order("name")) as JourneyBird[],
+      must(await sb.from("birds").select("id, name, species, sex, photo_url, birth_date").is("passed_at", null).order("name")) as JourneyBird[],
   });
 }
 
@@ -121,7 +123,7 @@ export function useJourney(id: string) {
     staleTime: STALE,
     queryFn: async (): Promise<Journey | null> => {
       const row = must(await sb.from("journeys")
-        .select("id, bird_id, template_id, custom_name, status, visibility, rhythm, started_at, finished_at, paused_reason, template:journey_templates(name, slug), milestones:journey_milestones(id, position, title, state, reached_at, shared_at, words:journey_template_milestones(ask, done_line))")
+        .select("id, bird_id, template_id, custom_name, status, visibility, rhythm, started_at, finished_at, paused_reason, vet_check, vet_remind_after, template:journey_templates(name, slug), milestones:journey_milestones(id, position, title, state, reached_at, shared_at, words:journey_template_milestones(ask, done_line))")
         .eq("id", id).maybeSingle()) as Journey | null;
       if (!row) return null;
       return { ...row, milestones: [...(row.milestones ?? [])].sort((a, b) => a.position - b.position) };
@@ -138,8 +140,10 @@ export async function startJourney(input: {
   rhythm: JourneyRhythm;
   visibility: JourneyVisibility;
   dayOneClip?: string | null;
+  /** Diet conversion's vet card answer, saved on the journey. */
+  vetCheck?: VetCheck | null;
 }): Promise<string> {
-  return must(await sb.rpc("journey_start", {
+  const id = must(await sb.rpc("journey_start", {
     p_bird_id: input.birdId,
     p_template_slug: input.templateSlug ?? null,
     p_custom_name: input.customName ?? null,
@@ -149,6 +153,13 @@ export async function startJourney(input: {
     p_visibility: input.visibility,
     p_day_one_clip: input.dayOneClip ?? null,
   })) as string;
+  if (input.vetCheck) await setVetCheck(id, input.vetCheck);
+  return id;
+}
+
+/** The vet card's answer, or the milestone-2 card's "Remind me later". */
+export async function setVetCheck(journeyId: string, choice: VetCheck | "remind_later"): Promise<void> {
+  must(await sb.rpc("journey_set_vet_check", { p_journey_id: journeyId, p_choice: choice }));
 }
 
 export async function setKnownSkills(birdId: string, templateSlugs: string[]): Promise<number> {
