@@ -155,6 +155,10 @@ async function mockFlock(context: BrowserContext, userId: string, opts: { setupD
     }
     if (fn === "flock_post") { const p = state.posts.find((x) => x.post_id === args.p_post_id); return json(route, p ? [postRow(p)] : []); }
     if (fn === "flock_vet_signs") return json(route, ["fluffed up", "sleeping a lot", "isn't eating", "tail bobbing", "bleeding"]);
+    if (fn === "flock_vet_sign_tiers") return json(route, [
+      ...["fluffed up", "sleeping a lot", "isn't eating", "tail bobbing", "bleeding"].map((phrase) => ({ phrase, tier: "today" })),
+      ...["won't stop bleeding", "teflon", "chocolate", "keeps vomiting"].map((phrase) => ({ phrase, tier: "urgent" })),
+    ]);
     if (fn === "flock_post_create") {
       if (state.rateLimit === "posts") return json(route, { code: "P0001", message: "rate_limited", details: "posts", hint: null }, 400);
       const post_id = `00000000-0000-4000-8000-0000000080${String(state.posts.length + 1).padStart(2, "0")}`;
@@ -1302,6 +1306,35 @@ test.describe("posts, comments and reactions (admin, phone)", () => {
     await expect(page.getByTestId("find-vet")).toHaveAttribute("href", "https://www.aav.org/page/FindAVet2");
     await expect(page.getByTestId("find-vet")).toHaveAttribute("target", "_blank");
     expect(created(state, "flock_post_create")).toHaveLength(0);
+    await page.getByTestId("post-anyway").click();
+    await expect(page).toHaveURL(/\/flock\?space=learn$/);
+    expect(created(state, "flock_post_create")[0].args).toMatchObject({ p_vet_nudged: true });
+    await context.close();
+  });
+
+  test("the urgent vet card: an emergency phrase wins over a today one, and posting is still never blocked", async ({ browser, baseURL }) => {
+    const { context, page, state } = await open(browser, baseURL!, { admin: true });
+    await page.goto("/flock/post/new");
+    // Today and urgent both match: urgent wins.
+    await page.getByTestId("post-body-input").fill("Echo is fluffed up and I think he got into the Teflon pan fumes.");
+    await page.getByTestId("composer-post").click();
+    const card = page.getByTestId("vet-nudge");
+    await expect(card).toHaveAttribute("data-tier", "urgent");
+    await expect(card.getByRole("heading")).toHaveText("This could be an emergency");
+    await expect(card).toContainText("Call your avian vet or an emergency vet now. Please don't wait for replies here.");
+    await expect(card.getByTestId("find-vet")).toHaveText("Find an emergency vet");
+    await expect(card.getByTestId("find-vet")).toHaveAttribute("href", "https://www.aav.org/page/FindAVet2");
+    expect(created(state, "flock_post_create")).toHaveLength(0);
+    // Editing the text puts the card away; a today phrase alone brings back the today card.
+    await page.getByTestId("post-body-input").fill("Echo is fluffed up today.");
+    await expect(card).toHaveCount(0);
+    await page.getByTestId("composer-post").click();
+    await expect(page.getByTestId("vet-nudge")).toHaveAttribute("data-tier", "today");
+    await expect(page.getByTestId("vet-nudge").getByRole("heading")).toHaveText("This sounds like something for your avian vet");
+    // Urgent again, then post anyway.
+    await page.getByTestId("post-body-input").fill("Kiwi ate chocolate and keeps vomiting.");
+    await page.getByTestId("composer-post").click();
+    await expect(page.getByTestId("vet-nudge")).toHaveAttribute("data-tier", "urgent");
     await page.getByTestId("post-anyway").click();
     await expect(page).toHaveURL(/\/flock\?space=learn$/);
     expect(created(state, "flock_post_create")[0].args).toMatchObject({ p_vet_nudged: true });

@@ -9,7 +9,7 @@ import { postSpaceLabel, VetNudgeCard } from "@/components/flock/PostParts";
 import { AvatarError } from "@/lib/flockAvatar";
 import { useMyProfile, useOwnBirdPhotoUrls, useOwnBirds, useRegions, useShownChoices, type OwnBird } from "@/lib/flockData";
 import { createPost, discardPostPhotos, editPost, uploadPostPhoto, useInvalidatePosts, useVetSigns, type FlockPost } from "@/lib/flockPostData";
-import { findVetSigns, MAX_BODY, MAX_PHOTOS, MAX_TITLE, POST_SPACES, rateLimitKind, type PostSpace, type RateKind } from "@/lib/flockPosts";
+import { vetNudgeTier, MAX_BODY, MAX_PHOTOS, MAX_TITLE, POST_SPACES, rateLimitKind, type PostSpace, type RateKind, type VetTier } from "@/lib/flockPosts";
 import { useFormInProgress } from "@/lib/formsInProgress";
 
 export function rateMessage(t: TFunction, kind: RateKind): string {
@@ -47,7 +47,7 @@ export function PostComposer({ initialSpace, editing, onDone }: {
   const [photos, setPhotos] = useState<Photo[]>([]);
   const [bird, setBird] = useState<OwnBird | null>(null);
   const [pickingBird, setPickingBird] = useState(false);
-  const [nudge, setNudge] = useState(false);
+  const [nudge, setNudge] = useState<VetTier | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -83,7 +83,8 @@ export function PostComposer({ initialSpace, editing, onDone }: {
 
   const submit = async (vetNudged: boolean) => {
     setError(null);
-    if (!vetNudged && findVetSigns(`${title}\n${body}`, signs ?? []).length > 0) { setNudge(true); return; }
+    const tier = vetNudged ? null : vetNudgeTier(`${title}\n${body}`, signs ?? []);
+    if (tier) { setNudge(tier); return; }
     setBusy(true);
     try {
       if (editing) {
@@ -126,7 +127,7 @@ export function PostComposer({ initialSpace, editing, onDone }: {
               {spaces.map((s) => {
                 const on = s === space;
                 return (
-                  <button key={s} type="button" aria-pressed={on} data-space={s} onClick={() => { setSpace(s); setNudge(false); }}
+                  <button key={s} type="button" aria-pressed={on} data-space={s} onClick={() => { setSpace(s); setNudge(null); }}
                     className="min-h-[40px] rounded-full px-3.5 text-[14px] font-[700]"
                     style={on ? { background: K.lime, border: `2px solid ${K.forest}` } : { background: "#fff", border: "1px solid #c9d3c8" }}>
                     {postSpaceLabel(t, s, chapterName)}
@@ -149,10 +150,10 @@ export function PostComposer({ initialSpace, editing, onDone }: {
           placeholder={t("flock.posts.titleLabel", "Title (optional)")} data-testid="post-title"
           className="min-h-[48px] border-b text-[18px] font-[700] outline-none" style={{ borderColor: K.line, fontFamily: "'Newsreader', Georgia, serif" }} />
         <label className="sr-only" htmlFor="post-body">{t("flock.posts.bodyLabel", "Your post")}</label>
-        <textarea id="post-body" value={body} maxLength={MAX_BODY} autoFocus onChange={(e) => { setBody(e.target.value); setNudge(false); }} rows={6}
+        <textarea id="post-body" value={body} maxLength={MAX_BODY} autoFocus onChange={(e) => { setBody(e.target.value); setNudge(null); }} rows={6}
           placeholder={t("flock.posts.bodyPlaceholder", "Ask a question, share what worked, or say hello.")} data-testid="post-body-input"
           className="min-h-[140px] resize-none text-[16px] leading-[1.5] outline-none" />
-        {nudge && <VetNudgeCard busy={busy} onPostAnyway={() => void submit(true)} />}
+        {nudge && <VetNudgeCard tier={nudge} busy={busy} onPostAnyway={() => void submit(true)} />}
         {!editing && (
           <>
             {photos.length > 0 && (

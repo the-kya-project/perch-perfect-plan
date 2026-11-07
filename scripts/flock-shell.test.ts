@@ -21,7 +21,7 @@ import {
 } from "@/lib/flockNav";
 import { birdsLine, filterRoster, speciesGroup, topGroups } from "@/lib/flockMembers";
 import { dateBlock, eventIcs, goersLine, longWhen, shortWhen } from "@/lib/flockEvents";
-import { AAV_FIND_A_VET_URL, POST_SPACES, findVetSigns, mergeFeed, rateLimitKind, replyPrefix, threadComments } from "@/lib/flockPosts";
+import { AAV_FIND_A_VET_URL, POST_SPACES, findVetSigns, mergeFeed, vetNudgeTier, rateLimitKind, replyPrefix, threadComments } from "@/lib/flockPosts";
 import { defaultDisplayName, greetingName, isAutomaticDisplayName, memberCountLine, membershipSummary } from "@/lib/flockProfile";
 import { accessCells, accessDay } from "@/lib/flockAccess";
 import {
@@ -460,6 +460,19 @@ check("Diet conversion's weight line: the average of the last 3 counted weigh-in
   assert.deepEqual(rollingAverage([c(400), c(398), c(396), c(390)]), [400, 399, 398, 394.7]);
   assert.deepEqual(rollingAverage([c(400), c(360, false), c(398), c(399)]), [400, null, 399, 399]);
   assert.deepEqual(rollingAverage([]), []);
+});
+
+check("the vet nudge's tiers: urgent wins when both match; none for ordinary posts", () => {
+  const signs = [
+    { phrase: "fluffed up", tier: "today" as const }, { phrase: "bleeding", tier: "today" as const },
+    { phrase: "won't stop bleeding", tier: "urgent" as const }, { phrase: "teflon", tier: "urgent" as const }, { phrase: "chocolate", tier: "urgent" as const },
+  ];
+  assert.equal(vetNudgeTier("Echo is fluffed up this morning.", signs), "today");
+  assert.equal(vetNudgeTier("His nail won\u2019t stop bleeding", signs), "urgent", "urgent, with today's 'bleeding' also matching");
+  assert.equal(vetNudgeTier("Fluffed up after the Teflon pan smoked", signs), "urgent");
+  assert.equal(vetNudgeTier("We tried a new foraging toy!", signs), null);
+  assert.equal(vetNudgeTier("chocolatey brown feathers", signs), null, "whole words only");
+  assert.equal(vetNudgeTier("anything", []), null);
 });
 
 console.log(`\n${passed} passed${process.exitCode ? ", some FAILED" : ""}`);

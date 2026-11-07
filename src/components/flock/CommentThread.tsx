@@ -14,7 +14,7 @@ import {
   type CommentSubject, type FlockComment,
 } from "@/lib/flockPostData";
 import type { PostPhoto } from "@/lib/flockPostMedia.functions";
-import { findVetSigns, MAX_COMMENT, rateLimitKind, replyPrefix, threadComments } from "@/lib/flockPosts";
+import { MAX_COMMENT, rateLimitKind, replyPrefix, threadComments, vetNudgeTier, type VetTier } from "@/lib/flockPosts";
 import { REACTIONS } from "@/lib/journeyData";
 import { useFormInProgress } from "@/lib/formsInProgress";
 
@@ -91,7 +91,7 @@ export function CommentThread({ type, id, ownerName, focus, canComment, top }: {
   const [menuFor, setMenuFor] = useState<FlockComment | null>(null);
   const [confirmFor, setConfirmFor] = useState<FlockComment | null>(null);
   const [reportFor, setReportFor] = useState<FlockComment | null>(null);
-  const [nudge, setNudge] = useState(false);
+  const [nudge, setNudge] = useState<VetTier | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const box = useRef<HTMLTextAreaElement>(null);
@@ -104,17 +104,17 @@ export function CommentThread({ type, id, ownerName, focus, canComment, top }: {
     setEditing(null);
     setReplyTo(c);
     setText((cur) => (cur.trim() ? cur : replyPrefix(c.author_name)));
-    setNudge(false);
+    setNudge(null);
     requestAnimationFrame(() => box.current?.focus());
   };
   const startEdit = (c: FlockComment) => {
     setReplyTo(null);
     setEditing(c);
     setText(c.body);
-    setNudge(false);
+    setNudge(null);
     requestAnimationFrame(() => box.current?.focus());
   };
-  const reset = () => { setText(""); setReplyTo(null); setEditing(null); setPhoto(null); setNudge(false); };
+  const reset = () => { setText(""); setReplyTo(null); setEditing(null); setPhoto(null); setNudge(null); };
 
   const pickPhoto = async (f: File | undefined) => {
     if (!f) return;
@@ -126,7 +126,8 @@ export function CommentThread({ type, id, ownerName, focus, canComment, top }: {
   const send = async (vetNudged: boolean) => {
     if (!text.trim() || busy || (photo && !photo.path)) return;
     setError(null);
-    if (!editing && !vetNudged && findVetSigns(text, signs ?? []).length > 0) { setNudge(true); return; }
+    const tier = editing || vetNudged ? null : vetNudgeTier(text, signs ?? []);
+    if (tier) { setNudge(tier); return; }
     setBusy(true);
     try {
       if (editing) await editComment(editing.comment_id, text);
@@ -168,7 +169,7 @@ export function CommentThread({ type, id, ownerName, focus, canComment, top }: {
       {canComment && (
         <div className="fixed inset-x-0 bottom-0 z-20 border-t bg-white px-3 pb-[max(12px,env(safe-area-inset-bottom))] pt-2" style={{ borderColor: K.line }} data-testid="comment-composer">
           <div className="mx-auto flex max-w-xl flex-col gap-2">
-            {nudge && <VetNudgeCard busy={busy} onPostAnyway={() => void send(true)} />}
+            {nudge && <VetNudgeCard tier={nudge} busy={busy} onPostAnyway={() => void send(true)} />}
             {(replyTo || editing) && (
               <div className="flex items-center gap-2 text-[13px]" style={{ color: K.quiet }} data-testid="replying-to">
                 <span className="flex-1">
@@ -189,7 +190,7 @@ export function CommentThread({ type, id, ownerName, focus, canComment, top }: {
               <FlockAvatar name={me?.display_name ?? "?"} url={me?.photo_path ? avatars?.get(me.photo_path) : null} size={34} />
               <label className="sr-only" htmlFor="comment-box">{placeholder}</label>
               <textarea id="comment-box" ref={box} value={text} rows={1} maxLength={MAX_COMMENT} placeholder={placeholder} data-testid="comment-box"
-                onChange={(e) => { setText(e.target.value); setNudge(false); }}
+                onChange={(e) => { setText(e.target.value); setNudge(null); }}
                 className="max-h-32 min-h-[44px] flex-1 resize-none rounded-[22px] border px-4 py-2.5 text-[15px] outline-none" style={{ borderColor: "#c9d3c8", background: "#f4f7f4" }} />
               {!editing && (
                 <>
