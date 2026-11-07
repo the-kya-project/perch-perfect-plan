@@ -20,27 +20,39 @@
   "milestones": [
    {
     "position": 1,
-    "title": "Calm with the target stick nearby."
+    "title": "Calm with the target stick nearby.",
+    "ask": "stay calm with the target stick nearby",
+    "done_line": "stayed calm with the target stick"
    },
    {
     "position": 2,
-    "title": "Taps the stick tip when it's held close (with the top of the beak or tongue, not a bite)."
+    "title": "Taps the stick tip when it's held close (with the top of the beak or tongue, not a bite).",
+    "ask": "tap the tip of the stick",
+    "done_line": "tapped the target"
    },
    {
     "position": 3,
-    "title": "Takes a step or two to reach the stick."
+    "title": "Takes a step or two to reach the stick.",
+    "ask": "take a step or two to reach the stick",
+    "done_line": "walked over to the target"
    },
    {
     "position": 4,
-    "title": "Follows the stick across the perch, side to side."
+    "title": "Follows the stick across the perch, side to side.",
+    "ask": "follow the stick across the perch",
+    "done_line": "followed the target across the perch"
    },
    {
     "position": 5,
-    "title": "Follows the stick up, down, or around a toy."
+    "title": "Follows the stick up, down, or around a toy.",
+    "ask": "follow the stick up, down, or around a toy",
+    "done_line": "followed the target around a toy"
    },
    {
     "position": 6,
-    "title": "Follows the stick onto a new perch or out the cage door."
+    "title": "Follows the stick onto a new perch or out the cage door.",
+    "ask": "follow the stick onto a new perch or out the door",
+    "done_line": "followed the target to a new spot"
    }
   ]
  },
@@ -65,31 +77,45 @@
   "milestones": [
    {
     "position": 1,
-    "title": "Stays relaxed as your hand comes near and stays still."
+    "title": "Stays relaxed as your hand comes near and stays still.",
+    "ask": "stay relaxed as your hand came near",
+    "done_line": "stayed relaxed as your hand came near"
    },
    {
     "position": 2,
-    "title": "Touches your still, open hand with a foot."
+    "title": "Touches your still, open hand with a foot.",
+    "ask": "touch your open hand with a foot",
+    "done_line": "touched your hand with a foot"
    },
    {
     "position": 3,
-    "title": "Shifts weight and steps on with one foot, then steps back off."
+    "title": "Shifts weight and steps on with one foot, then steps back off.",
+    "ask": "step on with one foot",
+    "done_line": "stepped on with one foot"
    },
    {
     "position": 4,
-    "title": "Steps up with both feet."
+    "title": "Steps up with both feet.",
+    "ask": "step up with both feet",
+    "done_line": "stepped up with both feet"
    },
    {
     "position": 5,
-    "title": "Stays on your hand for a few seconds, then is set back down."
+    "title": "Stays on your hand for a few seconds, then is set back down.",
+    "ask": "stay on your hand for a few seconds",
+    "done_line": "stayed on your hand"
    },
    {
     "position": 6,
-    "title": "Stays calm while your hand moves up, down, and across the room."
+    "title": "Stays calm while your hand moves up, down, and across the room.",
+    "ask": "stay calm while your hand moved around the room",
+    "done_line": "rode calmly across the room"
    },
    {
     "position": 7,
-    "title": "Steps up on cue from inside the cage and from a stand."
+    "title": "Steps up on cue from inside the cage and from a stand.",
+    "ask": "step up on cue from the cage and from a stand",
+    "done_line": "stepped up on cue"
    }
   ]
  },
@@ -114,31 +140,45 @@
   "milestones": [
    {
     "position": 1,
-    "title": "Approaches your closed hand on the perch for a reward."
+    "title": "Approaches your closed hand on the perch for a reward.",
+    "ask": "come to your closed hand for a reward",
+    "done_line": "came to your closed hand"
    },
    {
     "position": 2,
-    "title": "Comes to your hand without the target stick."
+    "title": "Comes to your hand without the target stick.",
+    "ask": "come to your hand without the stick",
+    "done_line": "came to your hand without the stick"
    },
    {
     "position": 3,
-    "title": "Lets the side of a wing brush your palm."
+    "title": "Lets the side of a wing brush your palm.",
+    "ask": "let a wing brush your palm",
+    "done_line": "let a wing brush your palm"
    },
    {
     "position": 4,
-    "title": "Allows a light touch on the side of the wing."
+    "title": "Allows a light touch on the side of the wing.",
+    "ask": "allow a light touch on the wing",
+    "done_line": "allowed a light wing touch"
    },
    {
     "position": 5,
-    "title": "Allows a touch at the wing tip."
+    "title": "Allows a touch at the wing tip.",
+    "ask": "allow a touch at the wing tip",
+    "done_line": "allowed a wing-tip touch"
    },
    {
     "position": 6,
-    "title": "Allows the tip of the wing to be lifted slightly."
+    "title": "Allows the tip of the wing to be lifted slightly.",
+    "ask": "let you lift the wing tip slightly",
+    "done_line": "let you lift a wing tip"
    },
    {
     "position": 7,
-    "title": "Allows a gentle, brief wing extension on both sides."
+    "title": "Allows a gentle, brief wing extension on both sides.",
+    "ask": "allow a gentle wing extension on both sides",
+    "done_line": "allowed a gentle wing extension"
    }
   ]
  },
@@ -174,31 +214,45 @@
   "milestones": [
    {
     "position": 1,
-    "title": "A week of daily weigh-ins to set your bird's starting weight."
+    "title": "A week of daily weigh-ins to set your bird's starting weight.",
+    "ask": "get a full week of weigh-ins",
+    "done_line": "has a starting weight"
    },
    {
     "position": 2,
-    "title": "The new food offered beside the usual food every day."
+    "title": "The new food offered beside the usual food every day.",
+    "ask": "have the new food beside the usual food every day",
+    "done_line": "has the new food on the menu"
    },
    {
     "position": 3,
-    "title": "Tastes the new food, even just a nibble."
+    "title": "Tastes the new food, even just a nibble.",
+    "ask": "taste the new food",
+    "done_line": "tasted the new food"
    },
    {
     "position": 4,
-    "title": "Eats some of the new food most days."
+    "title": "Eats some of the new food most days.",
+    "ask": "eat some of the new food most days",
+    "done_line": "is eating the new food most days"
    },
    {
     "position": 5,
-    "title": "The new food makes up about a quarter of what's offered."
+    "title": "The new food makes up about a quarter of what's offered.",
+    "ask": "get to about a quarter new food",
+    "done_line": "is at a quarter new food"
    },
    {
     "position": 6,
-    "title": "About half."
+    "title": "About half.",
+    "ask": "get to about half new food",
+    "done_line": "is at half new food"
    },
    {
     "position": 7,
-    "title": "Most of the diet, with treats saved for training."
+    "title": "Most of the diet, with treats saved for training.",
+    "ask": "eat mostly the new diet",
+    "done_line": "switched to the new diet"
    }
   ]
  },
@@ -223,23 +277,33 @@
   "milestones": [
    {
     "position": 1,
-    "title": "Lifts the foot it usually steps up with when your hand comes near."
+    "title": "Lifts the foot it usually steps up with when your hand comes near.",
+    "ask": "lift a foot as your hand came near",
+    "done_line": "lifted a foot"
    },
    {
     "position": 2,
-    "title": "Lifts it high, then puts it back down to reach a treat off to the side."
+    "title": "Lifts it high, then puts it back down to reach a treat off to the side.",
+    "ask": "lift the foot high",
+    "done_line": "lifted the foot high"
    },
    {
     "position": 3,
-    "title": "Lifts it to the same height most times."
+    "title": "Lifts it to the same height most times.",
+    "ask": "lift it to the same height most times",
+    "done_line": "lifted it the same way each time"
    },
    {
     "position": 4,
-    "title": "Waves to a small hand signal instead of an offered hand."
+    "title": "Waves to a small hand signal instead of an offered hand.",
+    "ask": "wave to your hand signal",
+    "done_line": "waved to a hand signal"
    },
    {
     "position": 5,
-    "title": "Waves on cue from a little distance."
+    "title": "Waves on cue from a little distance.",
+    "ask": "wave on cue from a distance",
+    "done_line": "waved from across the room"
    }
   ]
  },
@@ -264,23 +328,33 @@
   "milestones": [
    {
     "position": 1,
-    "title": "Follows the target stick a quarter turn."
+    "title": "Follows the target stick a quarter turn.",
+    "ask": "follow the stick a quarter turn",
+    "done_line": "made a quarter turn"
    },
    {
     "position": 2,
-    "title": "Follows it a half turn."
+    "title": "Follows it a half turn.",
+    "ask": "follow the stick a half turn",
+    "done_line": "made a half turn"
    },
    {
     "position": 3,
-    "title": "Follows it all the way around and ends facing forward."
+    "title": "Follows it all the way around and ends facing forward.",
+    "ask": "follow the stick all the way around",
+    "done_line": "spun all the way around"
    },
    {
     "position": 4,
-    "title": "Spins to your finger instead of the stick."
+    "title": "Spins to your finger instead of the stick.",
+    "ask": "spin to your finger",
+    "done_line": "spun to your finger"
    },
    {
     "position": 5,
-    "title": "Spins to a small flick of the finger."
+    "title": "Spins to a small flick of the finger.",
+    "ask": "spin to a flick of your finger",
+    "done_line": "spun on cue"
    }
   ]
  }

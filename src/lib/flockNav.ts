@@ -33,7 +33,8 @@ export function destForPath(pathname: string): FlockTab | null {
 export function isFlockOnboardingPath(pathname: string): boolean {
   return pathname.startsWith("/flock/welcome") || pathname.startsWith("/flock/setup")
     || pathname.startsWith("/flock/journeys/start") || pathname.startsWith("/flock/journeys/setup")
-    || pathname.startsWith("/flock/journeys/known");
+    || pathname.startsWith("/flock/journeys/known")
+    || /^\/flock\/journeys\/[^/]+\/(post|milestone|finished)(\/|$)/.test(pathname);
 }
 
 /** Old placeholder URLs and where they go now, so nothing 404s. */

@@ -48,3 +48,39 @@ export const createJourneyClipUpload = createServerFn({ method: "POST" })
     }
     return upload;
   });
+
+/** A clip the caller may touch: registered to a bird (clip_assets, written only
+ *  by the upload functions) that the caller's own client can read (RLS). */
+async function authorizedClipBird(callerSb: any, uid: string): Promise<string> {
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { data: asset } = await supabaseAdmin.from("clip_assets").select("bird_id").eq("uid", uid).maybeSingle();
+  if (!asset) throw new Error("Not found.");
+  const { data: bird } = await callerSb.from("birds").select("id").eq("id", asset.bird_id).maybeSingle();
+  if (!bird) throw new Error("Not found.");
+  return asset.bird_id as string;
+}
+
+/** Trim a journey clip before posting: a new private copy of start..end,
+ *  registered to the same bird. The member still posts it through
+ *  journey_post_update, which checks the limits. */
+export const trimJourneyClip = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { uid: string; start: number; end: number }) =>
+    z.object({
+      uid: z.string().regex(/^[A-Za-z0-9]{8,64}$/),
+      start: z.number().min(0).max(3600),
+      end: z.number().min(1).max(3600),
+    }).refine((x) => x.end - x.start >= 1, "Keep at least a second.").parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    const birdId = await authorizedClipBird((context as any).supabase, data.uid);
+    const { clipVideo } = await import("@/lib/cloudflareStream.server");
+    const out = await clipVideo(data.uid, data.start, data.end, (context as any).userId);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { error } = await supabaseAdmin.from("clip_assets").insert({ uid: out.uid, bird_id: birdId });
+    if (error) {
+      console.error(`[trimJourneyClip] clip_assets insert failed uid=${out.uid}: ${error.message}`);
+      throw new Error("Couldn't trim the clip. Please try again.");
+    }
+    return { ref: `cfstream:${out.uid}` };
+  });

@@ -108,7 +108,7 @@ async function open(browser: Browser, baseURL: string, opts: { admin: boolean; s
   await mockDuo(context, fx);
   if (opts.storagePhotos) await storagePhotos(context, fx);
   const state = await mockFlock(context, fx.user.id, { setupDone: opts.setupDone ?? true, region: opts.region });
-  const journeys = await mockJourneys(context, opts.journeys ?? {});
+  const journeys = await mockJourneys(context, opts.journeys ?? {}, (fx.tables as any).birds);
   // Hide the open-in-app strip on every page (a session-only choice).
   await context.addInitScript(() => { try { sessionStorage.setItem("kya:openInAppDismissed", "1"); } catch { /* ignore */ } });
   const flockChunks: string[] = [];
@@ -152,14 +152,22 @@ async function storagePhotos(context: BrowserContext, fx: ReturnType<typeof duoF
 
 // ---- Journeys (step 3) --------------------------------------------------------
 // Six of the fourteen templates, in the doc's own words (e2e/journey-fixture.json).
-const JOURNEY_TEMPLATES = JSON.parse(readFileSync(`${process.cwd()}/e2e/journey-fixture.json`, "utf8")) as { id: string; slug: string; name: string; tier: string; milestones: { position: number; title: string }[] }[];
-type JourneyMockOpts = { tier?: "free" | "premium" | "flock"; openCustom?: number; knownSlugs?: string[] };
-type JourneyState = { starts: Record<string, any>[]; known: Record<string, any>[] };
+const JOURNEY_TEMPLATES = JSON.parse(readFileSync(`${process.cwd()}/e2e/journey-fixture.json`, "utf8")) as {
+  id: string; slug: string; name: string; tier: string; milestones: { position: number; title: string; ask: string; done_line: string }[];
+}[];
+/** A journey already under way: which template (or custom milestones), how many milestones are done. */
+type SeedJourney = { id: string; birdName: string; slug?: string; custom?: { name: string; milestones: string[] }; done: number; status?: string; pausedReason?: string; lastPostedDaysAgo?: number; visibility?: string };
+type JourneyMockOpts = {
+  tier?: "free" | "premium" | "flock"; openCustom?: number; knownSlugs?: string[];
+  seed?: SeedJourney[]; canAddClip?: boolean;
+  weight?: { level: "none" | "notice" | "pause"; start: number; now: number };
+};
+type JourneyState = { starts: Record<string, any>[]; known: Record<string, any>[]; calls: { fn: string; args: Record<string, any> }[] };
 
 /** Journey tables and functions, answered the way the database would for a
- *  member of `tier` (admins are "flock"). Records every start and skills save. */
-async function mockJourneys(context: BrowserContext, opts: JourneyMockOpts): Promise<JourneyState> {
-  const state: JourneyState = { starts: [], known: [] };
+ *  member of `tier` (admins are "flock"). Records every call. */
+async function mockJourneys(context: BrowserContext, opts: JourneyMockOpts, birds: { id: string; name: string }[]): Promise<JourneyState> {
+  const state: JourneyState = { starts: [], known: [], calls: [] };
   const tier = opts.tier ?? "flock";
   const limits = {
     free: { max_clip_seconds: 60, max_clips_per_journey: 10, max_open_custom: 1, max_upload_bytes: 262144000, can_use_premium: false, can_share: false, can_view_community: false },
@@ -169,7 +177,36 @@ async function mockJourneys(context: BrowserContext, opts: JourneyMockOpts): Pro
   const json = (route: Route, body: unknown, status = 200) =>
     route.fulfill({ status, contentType: "application/json", headers: { "access-control-allow-origin": "*" }, body: JSON.stringify(body) });
   const journeys = new Map<string, any>();
+  const lastPosted = new Map<string, string>();
+  const make = (id: string, birdId: string, tp: (typeof JOURNEY_TEMPLATES)[number] | undefined, custom: { name: string; milestones: string[] } | null, extra: Record<string, any>) => {
+    const ms = tp ? tp.milestones.map((m) => ({ title: m.title, words: { ask: m.ask, done_line: m.done_line } })) : custom!.milestones.map((title) => ({ title, words: null }));
+    return {
+      id, bird_id: birdId, template_id: tp?.id ?? null, custom_name: custom?.name ?? null, status: "active", visibility: "community", rhythm: "most_days",
+      started_at: new Date(Date.now() - 16 * 86_400_000).toISOString(), finished_at: null, paused_reason: null,
+      template: tp ? { name: tp.name, slug: tp.slug } : null, bird: { name: birds.find((b) => b.id === birdId)?.name ?? "" },
+      milestones: ms.map((m, i) => ({ id: `${id}-m${i + 1}`, position: i + 1, title: m.title, state: "todo", reached_at: null, shared_at: null, words: m.words })),
+      ...extra,
+    };
+  };
+  for (const sj of opts.seed ?? []) {
+    const bird = birds.find((b) => b.name === sj.birdName)!;
+    const j = make(sj.id, bird.id, JOURNEY_TEMPLATES.find((x) => x.slug === sj.slug), sj.custom ?? null,
+      { status: sj.status ?? "active", paused_reason: sj.pausedReason ?? null, visibility: sj.visibility ?? "community" });
+    j.milestones.forEach((m: any, i: number) => { if (i < sj.done) m.state = "reached"; });
+    journeys.set(sj.id, j);
+    if (sj.lastPostedDaysAgo != null) lastPosted.set(sj.id, new Date(Date.now() - sj.lastPostedDaysAgo * 86_400_000).toISOString());
+  }
   await context.route(`${MOCK}/rest/v1/journey_templates**`, (route) => json(route, JOURNEY_TEMPLATES));
+  await context.route(`${MOCK}/rest/v1/journey_tips**`, (route) => json(route, [{ body: "Keep it to a few minutes, and stop while your bird still wants more." }]));
+  await context.route(`${MOCK}/rest/v1/weight_entries**`, (route) => json(route, opts.weight ? [
+    { grams: opts.weight.start, measured_at: new Date(Date.now() - 14 * 86_400_000).toISOString() },
+    { grams: opts.weight.now, measured_at: new Date(Date.now() - 86_400_000).toISOString() },
+  ] : []));
+  await context.route(`${MOCK}/rest/v1/journey_updates**`, (route) => {
+    const url = new URL(route.request().url());
+    if ((url.searchParams.get("select") ?? "").startsWith("journey_id")) return json(route, [...lastPosted].map(([journey_id, created_at]) => ({ journey_id, created_at })));
+    return json(route, []);
+  });
   await context.route(`${MOCK}/rest/v1/bird_skills**`, (route) => {
     const known = JOURNEY_TEMPLATES.filter((x) => (opts.knownSlugs ?? []).includes(x.slug));
     return json(route, known.map((x) => ({ id: `skill-${x.slug}`, name: x.name, template_id: x.id, source: "known" })));
@@ -181,24 +218,50 @@ async function mockJourneys(context: BrowserContext, opts: JourneyMockOpts): Pro
       const j = journeys.get(id);
       return j ? json(route, j) : json(route, { code: "PGRST116" }, 406);
     }
-    return json(route, []);
+    const status = url.searchParams.get("status")?.replace(/^eq\./, "");
+    return json(route, [...journeys.values()].filter((j) => !status || j.status === status));
   });
   await context.route(`${MOCK}/rest/v1/rpc/journey_*`, async (route) => {
-    const fn = new URL(route.request().url()).pathname.split("/").pop();
+    const fn = new URL(route.request().url()).pathname.split("/").pop()!;
     const args = (route.request().postDataJSON() ?? {}) as Record<string, any>;
+    state.calls.push({ fn, args });
+    const j = journeys.get(args.p_journey_id);
     if (fn === "journey_my_access") return json(route, [{ tier, open_custom: opts.openCustom ?? 0, ...limits }]);
+    if (fn === "journey_clip_allowance") {
+      const can = opts.canAddClip ?? true;
+      return json(route, [{ max_seconds: limits.max_clip_seconds, max_upload_bytes: limits.max_upload_bytes, clips_used: can ? 2 : (limits.max_clips_per_journey ?? 0), clips_max: limits.max_clips_per_journey, can_add: can }]);
+    }
     if (fn === "journey_start") {
       state.starts.push(args);
       const id = `00000000-0000-4000-8000-0000000072${String(state.starts.length).padStart(2, "0")}`;
       const tp = JOURNEY_TEMPLATES.find((x) => x.slug === args.p_template_slug);
-      const titles: string[] = tp ? tp.milestones.map((m) => m.title) : args.p_custom_milestones;
-      journeys.set(id, {
-        id, bird_id: args.p_bird_id, template_id: tp?.id ?? null, custom_name: args.p_custom_name, status: "active",
-        visibility: args.p_visibility, rhythm: args.p_rhythm, started_at: new Date().toISOString(),
-        template: tp ? { name: tp.name, slug: tp.slug } : null,
-        milestones: titles.map((title, i) => ({ id: `${id}-m${i + 1}`, position: i + 1, title, state: (args.p_already ?? []).includes(i + 1) ? "already" : "todo", reached_at: null })),
-      });
+      const jn = make(id, args.p_bird_id, tp, tp ? null : { name: args.p_custom_name, milestones: args.p_custom_milestones },
+        { visibility: args.p_visibility, rhythm: args.p_rhythm, started_at: new Date().toISOString() });
+      jn.milestones.forEach((m: any) => { if ((args.p_already ?? []).includes(m.position)) m.state = "already"; });
+      journeys.set(id, jn);
       return json(route, id);
+    }
+    if (fn === "journey_post_update") return json(route, "00000000-0000-4000-8000-0000000073aa");
+    if (fn === "journey_reach_milestone" && j) {
+      const m = j.milestones.find((x: any) => x.position === args.p_position);
+      m.state = "reached"; m.reached_at = new Date().toISOString();
+      const done = j.milestones.filter((x: any) => x.state !== "todo").length;
+      const finished = done === j.milestones.length;
+      if (finished) { j.status = "finished"; j.finished_at = new Date().toISOString(); }
+      return json(route, [{ finished, done, total: j.milestones.length }]);
+    }
+    if (fn === "journey_share_milestone" && j) {
+      const m = j.milestones.find((x: any) => x.position === args.p_position);
+      if (m) m.shared_at = new Date().toISOString();
+      return json(route, null);
+    }
+    if (fn === "journey_set_visibility" && j) { j.visibility = args.p_visibility; return json(route, null); }
+    if (fn === "journey_resume_after_vet" && j) { j.status = "active"; j.paused_reason = null; return json(route, null); }
+    if (fn === "journey_weight_check") {
+      const w = opts.weight;
+      return json(route, [{ start_grams: w?.start ?? null, current_grams: w?.now ?? null, drop_pct: w ? Math.round((w.start - w.now) / w.start * 1000) / 10 : null,
+        level: j?.paused_reason === "weight_drop" ? "pause" : (w?.level ?? "none"), paused: j?.paused_reason === "weight_drop",
+        window_from: new Date(Date.now() - 16 * 86_400_000).toISOString(), window_to: new Date(Date.now() - 9 * 86_400_000).toISOString() }]);
     }
     return json(route, null);
   });
@@ -458,6 +521,143 @@ test.describe("journeys: start a journey (admin, phone)", () => {
   });
 });
 
+test.describe("journeys: posting updates and milestones (admin, phone)", () => {
+  const CLIP = "cfstream:0123456789abcdef0123456789abcdef";
+  const stepUp = { id: "00000000-0000-4000-8000-0000000074a1", birdName: "Echo", slug: "step-up", done: 2, lastPostedDaysAgo: 2 };
+
+  test("a good day: post, answer yes, celebrate the milestone, share it", async ({ browser, baseURL }) => {
+    const { context, page, journeys } = await open(browser, baseURL!, { admin: true, journeys: { seed: [stepUp] } });
+    await page.goto(`/flock/journeys/00000000-0000-4000-8000-0000000074a1`);
+    await page.getByTestId("post-update").click();
+    await expect(page.getByTestId("post-camera")).toBeVisible();
+    await expect(page.getByTestId("working-on")).toHaveText("Working on: Shifts weight and steps on with one foot, then steps back off.");
+    await expect(page.locator("[data-flock-tab]")).toHaveCount(0);
+
+    await page.goto(`/flock/journeys/00000000-0000-4000-8000-0000000074a1/post?clip=${CLIP}`);
+    const compose = page.getByTestId("post-compose");
+    await expect(compose.getByText("How into it was Echo?")).toBeVisible();
+    const post = page.getByRole("button", { name: "Post", exact: true });
+    await expect(post).toBeDisabled();
+    await compose.getByTestId("engagement").getByRole("radio", { name: "All in" }).click();
+    await compose.getByTestId("caption").fill("Three seconds on my hand! Almonds or walnuts?");
+    await expect(compose.getByTestId("posting-to")).toContainText("Posting to your followers and the community");
+    await expect(compose.getByTestId("posting-to").getByRole("button", { name: "Change" })).toBeVisible();
+    await post.click();
+
+    const after = page.getByTestId("after-post");
+    await expect(after).toContainText("Posted to Echo's journey");
+    await expect(after.getByRole("heading")).toHaveText("Did Echo step on with one foot?");
+    await expect(page.getByTestId("tip")).toHaveCount(0);
+    const posted = journeys.calls.find((c) => c.fn === "journey_post_update")!;
+    expect(posted.args).toMatchObject({ p_journey_id: "00000000-0000-4000-8000-0000000074a1", p_clip_ref: CLIP, p_engagement: "all_in", p_caption: "Three seconds on my hand! Almonds or walnuts?" });
+    await after.getByRole("button", { name: "Yes!" }).click();
+
+    await expect(page).toHaveURL(/\/milestone\/3$/);
+    expect(journeys.calls.find((c) => c.fn === "journey_reach_milestone")!.args).toMatchObject({ p_journey_id: "00000000-0000-4000-8000-0000000074a1", p_position: 3 });
+    await expect(page.getByTestId("celebrate-eyebrow")).toHaveText("Milestone 3 of 7 · Step up");
+    await expect(page.getByTestId("celebrate-line")).toHaveText("Echo stepped on with one foot!");
+    await expect(page.getByText("Day 17. 4 to go.")).toBeVisible();
+    await expect(page.getByTestId("progress-ring")).toHaveAttribute("data-done", "3");
+    await page.getByRole("button", { name: "Share with the community" }).click();
+    await expect(page.getByTestId("shared")).toHaveText("Shared with the community");
+    expect(journeys.calls.find((c) => c.fn === "journey_share_milestone")!.args).toMatchObject({ p_position: 3 });
+    await page.getByRole("button", { name: "Done" }).click();
+    await expect(page).toHaveURL(new RegExp(`/flock/journeys/00000000-0000-4000-8000-0000000074a1$`));
+    await context.close();
+  });
+
+  test("a distracted day: a tip instead of the question", async ({ browser, baseURL }) => {
+    const { context, page, journeys } = await open(browser, baseURL!, { admin: true, journeys: { seed: [stepUp] } });
+    await page.goto(`/flock/journeys/00000000-0000-4000-8000-0000000074a1/post?clip=${CLIP}`);
+    await page.getByTestId("engagement").getByRole("radio", { name: "Distracted" }).click();
+    await page.getByRole("button", { name: "Post", exact: true }).click();
+    await expect(page.getByTestId("tip")).toContainText("A tip for next time");
+    await expect(page.getByTestId("tip")).toContainText("Keep it to a few minutes, and stop while your bird still wants more.");
+    await expect(page.getByTestId("after-post").getByRole("button", { name: "Yes!" })).toHaveCount(0);
+    await page.getByRole("button", { name: "Back to the journey" }).click();
+    await expect(page).toHaveURL(new RegExp(`/flock/journeys/00000000-0000-4000-8000-0000000074a1$`));
+    expect(journeys.calls.some((c) => c.fn === "journey_reach_milestone")).toBe(false);
+    await context.close();
+  });
+
+  test("the last milestone finishes the journey: learned, on the skill list, a tip for the next person", async ({ browser, baseURL }) => {
+    const spin = { id: "00000000-0000-4000-8000-0000000074a2", birdName: "Willow", slug: "spin", done: 4 };
+    const { context, page, journeys } = await open(browser, baseURL!, { admin: true, journeys: { seed: [spin] } });
+    await page.goto(`/flock/journeys/00000000-0000-4000-8000-0000000074a2/post?clip=${CLIP}`);
+    await page.getByTestId("engagement").getByRole("radio", { name: "All in" }).click();
+    await page.getByRole("button", { name: "Post", exact: true }).click();
+    await expect(page.getByTestId("after-post").getByRole("heading")).toHaveText("Did Willow spin to a flick of your finger?");
+    await page.getByRole("button", { name: "Yes!" }).click();
+    await expect(page).toHaveURL(/\/finished$/);
+    await expect(page.getByTestId("finished-title")).toHaveText("Willow learned spin");
+    await expect(page.getByText("Spin is now on Willow's skill list.")).toBeVisible();
+    await expect(page.getByText("Shown to members who start Spin later.")).toBeVisible();
+    await page.getByTestId("finisher-tip").fill("Pick one direction and stay with it.");
+    await page.getByRole("button", { name: "Share and finish" }).click();
+    await expect(page).toHaveURL(new RegExp(`/flock/journeys/00000000-0000-4000-8000-0000000074a2$`));
+    expect(journeys.calls.find((c) => c.fn === "journey_save_finisher_tip")!.args).toMatchObject({ p_journey_id: "00000000-0000-4000-8000-0000000074a2", p_body: "Pick one direction and stay with it." });
+    expect(journeys.calls.find((c) => c.fn === "journey_share_milestone")!.args).toMatchObject({ p_position: 5 });
+    await context.close();
+  });
+
+  test("which journey: with two going, Post an update asks which, with when each was last posted", async ({ browser, baseURL }) => {
+    const spin = { id: "00000000-0000-4000-8000-0000000074a2", birdName: "Willow", slug: "spin", done: 1 };
+    const { context, page } = await open(browser, baseURL!, { admin: true, journeys: { seed: [stepUp, spin] } });
+    await page.goto("/flock/journeys");
+    await page.getByTestId("post-update-any").click();
+    const sheet = page.getByTestId("which-journey");
+    await expect(page.getByRole("heading", { name: "Post an update for…" })).toBeVisible();
+    await expect(sheet.locator("[data-journey]")).toHaveCount(2);
+    await expect(sheet.locator("[data-journey='00000000-0000-4000-8000-0000000074a1']")).toContainText("Echo · Step up");
+    await expect(sheet.locator("[data-journey='00000000-0000-4000-8000-0000000074a1']")).toContainText("Last posted 2 days ago");
+    await expect(sheet.locator("[data-journey='00000000-0000-4000-8000-0000000074a2']")).toContainText("Nothing posted yet");
+    await expect(sheet.getByRole("button", { name: "Or start a new journey" })).toBeVisible();
+    await sheet.locator("[data-journey='00000000-0000-4000-8000-0000000074a2']").click();
+    await expect(page).toHaveURL(new RegExp(`/flock/journeys/00000000-0000-4000-8000-0000000074a2/post$`));
+    await context.close();
+  });
+
+  test("at the clip limit the camera offers Flock membership instead", async ({ browser, baseURL }) => {
+    const { context, page } = await open(browser, baseURL!, { admin: true, journeys: { tier: "premium", seed: [stepUp], canAddClip: false } });
+    await page.goto(`/flock/journeys/00000000-0000-4000-8000-0000000074a1/post`);
+    const card = page.getByTestId("clip-limit");
+    await expect(card.getByRole("heading")).toHaveText("This journey has 20 clips");
+    await expect(card.getByRole("link", { name: "Compare with Flock membership" })).toHaveAttribute("href", "/flock/you/membership");
+    await context.close();
+  });
+
+  test("free and premium post privately: Posting to just you, no Change", async ({ browser, baseURL }) => {
+    const { context, page } = await open(browser, baseURL!, { admin: true, journeys: { tier: "premium", seed: [{ ...stepUp, visibility: "private" }] } });
+    await page.goto(`/flock/journeys/00000000-0000-4000-8000-0000000074a1/post?clip=${CLIP}`);
+    await expect(page.getByTestId("posting-to")).toHaveText("Posting to just you");
+    await expect(page.getByTestId("posting-to").getByRole("button", { name: "Change" })).toHaveCount(0);
+    await context.close();
+  });
+
+  test("Diet conversion: a heads-up at the amber trend; a weight pause lifts only after confirming the vet call", async ({ browser, baseURL }) => {
+    const diet = { id: "00000000-0000-4000-8000-0000000074a2", birdName: "Willow", slug: "diet-conversion", done: 1 };
+    let o = await open(browser, baseURL!, { admin: true, journeys: { seed: [diet], weight: { level: "notice", start: 400, now: 389 } } });
+    await o.page.goto(`/flock/journeys/00000000-0000-4000-8000-0000000074a2`);
+    await expect(o.page.getByTestId("weight-line")).toHaveText("Starting weight 400 g · now 389 g");
+    await expect(o.page.getByTestId("weight-notice")).toHaveText("Willow's weight is down a little from the start. Keep weighing every day, and go slower if it keeps dropping.");
+    await expect(o.page.getByTestId("post-update")).toBeVisible();
+    await o.context.close();
+
+    o = await open(browser, baseURL!, { admin: true, journeys: { seed: [{ ...diet, status: "paused", pausedReason: "weight_drop" }], weight: { level: "pause", start: 400, now: 378 } } });
+    await o.page.goto(`/flock/journeys/00000000-0000-4000-8000-0000000074a2`);
+    const paused = o.page.getByTestId("weight-paused");
+    await expect(paused).toContainText("Willow's weight has dropped. Put the usual food back and call your avian vet before going further.");
+    await expect(o.page.getByTestId("post-update")).toHaveCount(0);
+    const resume = paused.getByRole("button", { name: "Resume the journey" });
+    await expect(resume).toBeDisabled();
+    await paused.getByTestId("vet-confirm").check();
+    await resume.click();
+    await expect.poll(() => o.journeys.calls.some((c) => c.fn === "journey_resume_after_vet")).toBe(true);
+    await expect(o.page.getByTestId("post-update")).toBeVisible();
+    await o.context.close();
+  });
+});
+
 test.describe("journeys: what a free account sees", () => {
   test("premium templates are locked and explain app premium; only Just me; one custom journey at a time", async ({ browser, baseURL }) => {
     const { context, page, journeys } = await open(browser, baseURL!, { admin: true, journeys: { tier: "free", openCustom: 1 } });
@@ -474,7 +674,8 @@ test.describe("journeys: what a free account sees", () => {
     await expect(sheet.getByRole("link", { name: "Compare with Flock membership" })).toHaveAttribute("href", "/flock/you/membership");
     await page.keyboard.press("Escape");
     await page.getByTestId("write-own").click();
-    await expect(page.getByTestId("custom-limit-sheet")).toBeVisible();
+    await expect(page.getByTestId("custom-limit-sheet")).toHaveText(
+      "You have a journey you wrote yourself going already. Finish it, or mark it \"We're happy where we are,\" to write another. With app premium, you can write as many as you like.Got it");
     await page.getByRole("button", { name: "Got it" }).click();
     await page.locator("[data-template='step-up']").click();
     await expect(page.getByTestId("visibility").locator("[role='radio']")).toHaveText(["Just me"]);
@@ -489,7 +690,7 @@ test.describe("journeys: what a free account sees", () => {
 test("everyone else: every /flock URL sends them Home and no Community code loads", async ({ browser, baseURL }) => {
   for (const size of ["phone", "duo"] as const) {
     const { context, page, flockChunks } = await open(browser, baseURL!, { admin: false, size });
-    for (const path of ["/flock", "/flock/journeys", "/flock/journeys/start", "/flock/journeys/setup?bird=x&template=step-up", "/flock/journeys/known?bird=x", "/flock/chapter", "/flock/library", "/flock/spaces", "/flock/learn", "/flock?space=good"]) {
+    for (const path of ["/flock", "/flock/journeys", "/flock/journeys/start", "/flock/journeys/setup?bird=x&template=step-up", "/flock/journeys/known?bird=x", "/flock/journeys/00000000-0000-4000-8000-0000000074a1/post", "/flock/journeys/00000000-0000-4000-8000-0000000074a1/milestone/1", "/flock/chapter", "/flock/library", "/flock/spaces", "/flock/learn", "/flock?space=good"]) {
       await page.goto(path);
       await expect(page, `${size} ${path}`).toHaveURL(/\/dashboard/);
     }

@@ -118,3 +118,50 @@ export function vetCheckLine(t: Pick<JourneyTemplate, "safeguards">): string | n
 export function clipLimitParts(seconds: number): { count: number; unit: "seconds" | "minutes" } {
   return seconds % 60 === 0 && seconds >= 120 ? { count: seconds / 60, unit: "minutes" } : { count: seconds, unit: "seconds" };
 }
+
+// ---- Step 3B: posting, milestones, finishing ----------------------------------
+
+export type Engagement = "all_in" | "distracted" | "not_today";
+export const ENGAGEMENTS: Engagement[] = ["all_in", "distracted", "not_today"];
+
+/** A tip instead of the milestone question after a hard day. */
+export function wantsTip(e: Engagement): boolean {
+  return e !== "all_in";
+}
+
+/** Days since the journey started, counting the first day as day 1. */
+export function journeyDay(startedAt: string, now: Date = new Date()): number {
+  const ms = now.getTime() - new Date(startedAt).getTime();
+  return Math.max(1, Math.floor(ms / 86_400_000) + 1);
+}
+
+/** Days from start to finish (at least 1). */
+export function journeyDays(startedAt: string, endedAt: string | null | undefined, now: Date = new Date()): number {
+  const end = endedAt ? new Date(endedAt) : now;
+  return Math.max(1, Math.round((end.getTime() - new Date(startedAt).getTime()) / 86_400_000));
+}
+
+/** "Step up" → "step up", for "Echo learned step up". */
+export function skillInSentence(skill: string): string {
+  const s = skill.trim();
+  return s ? s[0].toLowerCase() + s.slice(1) : s;
+}
+
+/** The milestone a post is about: the first not yet done. */
+export function nextMilestone<T extends { position: number; state: string }>(ms: T[]): T | null {
+  return [...ms].sort((a, b) => a.position - b.position).find((m) => m.state === "todo") ?? null;
+}
+
+/** Done (reached or already) out of all. */
+export function progressOf(ms: { state: string }[]): { done: number; total: number } {
+  return { done: ms.filter((m) => m.state !== "todo").length, total: ms.length };
+}
+
+/** "Last posted 2 days ago" pieces: days since, or null when never posted. */
+export function daysSince(iso: string | null | undefined, now: Date = new Date()): number | null {
+  if (!iso) return null;
+  return Math.max(0, Math.floor((now.getTime() - new Date(iso).getTime()) / 86_400_000));
+}
+
+/** The weight safeguard's level, as the screens use it. */
+export type WeightLevel = "none" | "notice" | "pause";
