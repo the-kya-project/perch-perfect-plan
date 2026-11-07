@@ -34,9 +34,9 @@ import { initAnalytics, identifyUser, resetUser } from "@/lib/analytics";
 import { ensureProfileLocale } from "@/lib/ensureProfileLocale";
 import { applyOwnerLocale } from "@/lib/i18n/ownerLocale";
 import {
-  registerServiceWorker, installChunkErrorRecovery, hardResetAndReload,
+  registerServiceWorker, startReleaseCheck, installChunkErrorRecovery, hardResetAndReload,
   isStaleChunkError, staleChunkRecoveryExhausted, reloadForStaleChunk,
-  markAppHealthySoon, STARTUP_FAILED_EVENT,
+  markAppHealthySoon, STARTUP_FAILED_EVENT, pageCodeMissing,
 } from "@/lib/sw-register";
 import { captureFirstTouch } from "@/lib/attribution";
 import { checkStylesApplied } from "@/lib/stylesCheck";
@@ -84,11 +84,22 @@ function ErrorComponent({ error }: ErrorComponentProps) {
   // automatic attempt (see reloadForStaleChunk); if the page that comes back
   // still can't load, this shows the error screen and never reloads again.
   const recovering = isStaleChunkError(error) && !staleChunkRecoveryExhausted();
+  // Not recognisably a missing file: React can report one as a generic error
+  // (#520). Before showing the error screen, ask the server whether one of
+  // this page's code files is gone; if so it's the same recovery.
+  const [checking, setChecking] = useState(!recovering && !staleChunkRecoveryExhausted());
   useEffect(() => {
-    if (recovering) reloadForStaleChunk();
-    else reportError(error, { mechanism: "react_error_boundary", boundary: "root" });
+    if (recovering) { reloadForStaleChunk(); return; }
+    let live = true;
+    void pageCodeMissing().then((missing) => {
+      if (!live) return;
+      if (missing) { reloadForStaleChunk(); return; }
+      setChecking(false);
+      reportError(error, { mechanism: "react_error_boundary", boundary: "root" });
+    });
+    return () => { live = false; };
   }, [error, recovering]);
-  if (recovering) {
+  if (recovering || checking) {
     return (
       <StartupSplash />
     );
@@ -160,13 +171,29 @@ const COLD_LAUNCH_REDIRECT = `(function(){try{` +
 // code never loads (a page whose scripts 404 can't run anything from the
 // bundle, which is why the bundle-side recovery in sw-register.ts didn't help
 // the 2026-10-21 stuck installs). Two jobs, no dependencies:
-//  1. A code or style file of this page fails to load → ONE automatic hard
-//     reset (unregister the worker, clear caches, reload). The attempt is
-//     shared with sw-register.ts through the same "kya-auto-reload" record,
-//     so the two together still reload at most once; after that, or offline,
-//     it shows the screen below instead.
+//  1. A code or style file of this page is MISSING → ONE automatic hard reset
+//     (unregister the worker, clear caches, reload). The attempt is shared
+//     with sw-register.ts through the same "kya-auto-reload" record, so the
+//     two together still reload at most once; after that, or offline, it
+//     shows the screen below instead.
 //  2. The app hasn't finished starting after 10 seconds → "Something's taking
 //     too long" with a Try again button. Never an automatic reload.
+// "Missing" is checked, not assumed. On Nov 2, 2026 the iOS app's sitter
+// preview frame reset itself about 70 ms after loading, before its own
+// scripts had finished: the reset cancelled them, the next load reported an
+// error at once, and it never started. So a load error now waits until the
+// page's own loading has settled (the load event), then asks the server
+// (HEAD, uncached) whether the file is really gone. A 404/410 resets at once.
+// A file that's still there may only have been a cancelled load, so the page
+// gets 3 more seconds to start; only if it still hasn't does it reset (the
+// 2026-10-21 case: a bad copy on the device, fixed by clearing the caches).
+// One check at a time, and never while the page's own files are loading.
+// A file confirmed gone still resets in the page's first 20 seconds even if
+// the app has marked itself started: the failure can reach React as a
+// generic error (#520) that the root error screen can't recognise as a
+// missing file, which left the page on "Something went wrong" (CI, Nov 2).
+// Inside a frame (the owner's sitter preview) the reset is a plain cache-busted
+// reload: the worker and caches belong to the app around it.
 // Leaving the page doesn't count as a failure: when a navigation starts
 // (a tapped link, a redirect), Safari cancels the page's pending file loads
 // and reports each as an error. Reloading then would replace the page the
@@ -176,13 +203,14 @@ const COLD_LAUNCH_REDIRECT = `(function(){try{` +
 // The app sets window.__kyaReady once the first screen has loaded (see
 // RootComponent), which also removes the screen if it's showing.
 const STARTUP_GUARD = `(function(){try{` +
-  `var K="kya-auto-reload",W=300000,shown=false,leaving=false;` +
+  `var K="kya-auto-reload",W=300000,S=20000,shown=false,leaving=false,checking=false,inFrame=true;` +
+  `try{inFrame=window.self!==window.top}catch(e){}` +
   `addEventListener("beforeunload",function(){leaving=true});addEventListener("pagehide",function(){leaving=true});` +
   `addEventListener("pageshow",function(){leaving=false});window.__kyaLeaving=function(){return leaving};` +
   `function nl(){try{return /^nl/i.test(navigator.language||"")}catch(e){return false}}` +
   `function reset(){var done=function(){try{var u=new URL(location.href);u.searchParams.set("_r",String(Date.now()));location.replace(u.toString())}catch(e){location.reload()}};` +
-  `var p=[];try{if(navigator.serviceWorker)p.push(navigator.serviceWorker.getRegistrations().then(function(rs){return Promise.all(rs.map(function(r){return r.unregister()}))}))}catch(e){}` +
-  `try{if(window.caches)p.push(caches.keys().then(function(ks){return Promise.all(ks.map(function(k){return caches.delete(k)}))}))}catch(e){}` +
+  `var p=[];if(!inFrame){try{if(navigator.serviceWorker)p.push(navigator.serviceWorker.getRegistrations().then(function(rs){return Promise.all(rs.map(function(r){return r.unregister()}))}))}catch(e){}` +
+  `try{if(window.caches)p.push(caches.keys().then(function(ks){return Promise.all(ks.map(function(k){return caches.delete(k)}))}))}catch(e){}}` +
   `Promise.all(p).then(done,done);setTimeout(done,3000)}` +
   `function show(){if(shown||window.__kyaReady||!document.body)return;shown=true;var d=document.createElement("div");d.id="kya-startup-slow";d.setAttribute("role","alert");` +
   `d.style.cssText="position:fixed;inset:0;z-index:2147483647;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;text-align:center;background:#1a3d2e;color:#fff;font-family:'DM Sans',system-ui,-apple-system,sans-serif;padding:calc(env(safe-area-inset-top) + 24px) 28px calc(env(safe-area-inset-bottom) + 24px)";` +
@@ -190,13 +218,22 @@ const STARTUP_GUARD = `(function(){try{` +
   `var t=document.createElement("p");t.textContent=nl()?"Controleer je verbinding en probeer het opnieuw.":"Check your connection, then try again.";t.style.cssText="margin:0;max-width:30ch;font-size:15px;line-height:1.5;color:#d6e8dc";` +
   `var b=document.createElement("button");b.type="button";b.textContent=nl()?"Opnieuw proberen":"Try again";b.style.cssText="margin-top:12px;min-height:52px;padding:0 32px;border-radius:999px;border:2px solid #1a3d2e;background:#f2b33d;color:#1a3d2e;font:700 16px 'DM Sans',system-ui,sans-serif";` +
   `b.onclick=function(){b.disabled=true;reset()};d.appendChild(h);d.appendChild(t);d.appendChild(b);document.body.appendChild(d)}` +
+  `function showSoon(){if(document.body)show();else addEventListener("DOMContentLoaded",show)}` +
   `window.__kyaHideStartupGuard=function(){var d=document.getElementById("kya-startup-slow");if(d)d.remove()};` +
-  `setTimeout(function(){if(!window.__kyaReady){if(document.body)show();else addEventListener("DOMContentLoaded",show)}},10000);` +
+  `setTimeout(function(){if(!window.__kyaReady)showSoon()},10000);` +
+  // After the page's own loading has settled.
+  `function settled(f){if(document.readyState==="complete")setTimeout(f,0);else addEventListener("load",function(){setTimeout(f,0)})}` +
+  // Is the file really gone? 1 = 404/410, 0 = it's there, 2 = couldn't tell.
+  `function gone(u,cb){var x=false;function fin(m){if(!x){x=true;cb(m)}}setTimeout(function(){fin(2)},8000);` +
+  `try{fetch(u,{method:"HEAD",cache:"no-store",credentials:"same-origin"}).then(function(r){fin(r.status===404||r.status===410?1:0)},function(){fin(2)})}catch(e){fin(2)}}` +
   `addEventListener("error",function(e){if(leaving)return;var el=e&&e.target;if(!el||(el.tagName!=="SCRIPT"&&el.tagName!=="LINK"))return;` +
-  `var u=el.src||el.href||"";if(u.indexOf(location.origin+"/assets/")!==0||window.__kyaReady)return;` +
+  `var u=el.src||el.href||"";if(u.indexOf(location.origin+"/assets/")!==0)return;try{(window.__kyaFailedAssets=window.__kyaFailedAssets||[]).push(u)}catch(x){}if(window.__kyaReady&&performance.now()>S)return;if(checking)return;checking=true;` +
+  `settled(function(){if(leaving||(window.__kyaReady&&performance.now()>S)){checking=false;return}gone(u,function(m){` +
+  `function act(){if(leaving||(window.__kyaReady&&!(m===1&&performance.now()<S))){checking=false;return}` +
   `var at=0;try{at=Number(localStorage.getItem(K))||0}catch(x){}` +
   `if(navigator.onLine!==false&&!(Date.now()-at<W)){try{localStorage.setItem(K,String(Date.now()));reset();return}catch(x){}}` +
-  `if(document.body)show();else addEventListener("DOMContentLoaded",show)},true);` +
+  `showSoon()}` +
+  `if(m===1)act();else setTimeout(act,3000)})})},true);` +
   `}catch(e){}})();`;
 
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
@@ -331,6 +368,8 @@ function RootComponent() {
     installChunkErrorRecovery(); // self-heal stale-build chunk 404s (incl. the sitter preview iframe)
     checkStylesApplied(); // report + one reset if the stylesheet never applied
     registerServiceWorker();
+    // The iOS app has no worker to notice a release; ask which build is live.
+    startReleaseCheck();
     // Native shell only: make a tapped push land on the screen it refers to.
     // Attached once at boot because the tap can happen while the app is cold —
     // Capacitor replays the event after launch, so a listener attached later
