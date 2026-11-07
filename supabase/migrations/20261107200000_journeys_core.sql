@@ -328,7 +328,7 @@ grant select, insert, update, delete on public.journeys, public.journey_mileston
 drop policy if exists "journeys bird member read" on public.journeys;
 create policy "journeys bird member read" on public.journeys
   for select to authenticated
-  using (private.can_use_journeys((select auth.uid())) and public.has_bird_access(bird_id, (select auth.uid())) is not null);
+  using (private.can_use_journeys((select auth.uid())) and private.has_bird_access(bird_id, (select auth.uid())) is not null);
 
 drop policy if exists "journey_milestones bird member read" on public.journey_milestones;
 create policy "journey_milestones bird member read" on public.journey_milestones
@@ -337,18 +337,18 @@ create policy "journey_milestones bird member read" on public.journey_milestones
     select 1 from public.journeys j
     where j.id = journey_id
       and private.can_use_journeys((select auth.uid()))
-      and public.has_bird_access(j.bird_id, (select auth.uid())) is not null
+      and private.has_bird_access(j.bird_id, (select auth.uid())) is not null
   ));
 
 drop policy if exists "journey_updates bird member read" on public.journey_updates;
 create policy "journey_updates bird member read" on public.journey_updates
   for select to authenticated
-  using (private.can_use_journeys((select auth.uid())) and public.has_bird_access(bird_id, (select auth.uid())) is not null);
+  using (private.can_use_journeys((select auth.uid())) and private.has_bird_access(bird_id, (select auth.uid())) is not null);
 
 drop policy if exists "bird_skills bird member read" on public.bird_skills;
 create policy "bird_skills bird member read" on public.bird_skills
   for select to authenticated
-  using (private.can_use_journeys((select auth.uid())) and public.has_bird_access(bird_id, (select auth.uid())) is not null);
+  using (private.can_use_journeys((select auth.uid())) and private.has_bird_access(bird_id, (select auth.uid())) is not null);
 
 
 -- 4) What the app asks: my access, and a journey's clip allowance ----------------------
@@ -395,7 +395,7 @@ declare
   v_used integer := 0;
 begin
   perform private.assert_can_use_journeys();
-  if public.has_bird_access(p_bird_id, v_uid) is null then
+  if private.has_bird_access(p_bird_id, v_uid) is null then
     raise exception 'not your bird' using errcode = '42501';
   end if;
   if p_journey_id is not null then
@@ -447,7 +447,7 @@ declare
   v_title text;
 begin
   perform private.assert_can_use_journeys();
-  if public.has_bird_access(p_bird_id, v_uid) is null then
+  if private.has_bird_access(p_bird_id, v_uid) is null then
     raise exception 'not your bird' using errcode = '42501';
   end if;
   if exists (select 1 from public.birds b where b.id = p_bird_id and b.passed_at is not null) then
@@ -564,7 +564,7 @@ declare
   v_slugs text[] := coalesce(p_template_slugs, '{}');
 begin
   perform private.assert_can_use_journeys();
-  if public.has_bird_access(p_bird_id, v_uid) is null then
+  if private.has_bird_access(p_bird_id, v_uid) is null then
     raise exception 'not your bird' using errcode = '42501';
   end if;
   if exists (select 1 from unnest(v_slugs) s where not exists (select 1 from public.journey_templates t where t.slug = s)) then
