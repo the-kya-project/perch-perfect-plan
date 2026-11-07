@@ -303,6 +303,13 @@ begin
     into ok from public.journey_templates;
   if ok then passed := passed + 1; else failed := array_append(failed, 'seed matches the doc'); end if;
 
+  -- 21) The public admin functions are invoker wrappers (privileged bodies live in private).
+  select count(*) into n from pg_proc p join pg_namespace s on s.oid = p.pronamespace
+  where s.nspname = 'public' and p.prosecdef
+    and p.proname in ('admin_set_journeys', 'admin_update_journey_template', 'admin_set_journey_milestone',
+                      'journey_my_access', 'journey_clip_allowance', 'journey_start', 'bird_set_known_skills', 'journeys_enabled');
+  if n = 0 then passed := passed + 1; else failed := array_append(failed, 'no public security definer journey functions'); end if;
+
   raise exception 'JOURNEYS CHECKS: % passed, % failed%', passed, coalesce(array_length(failed, 1), 0),
     case when array_length(failed, 1) > 0 then ': ' || array_to_string(failed, ', ') else '' end;
 end $$;
