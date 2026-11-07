@@ -95,7 +95,7 @@ async function mockFlock(context: BrowserContext, userId: string, opts: { setupD
   return state;
 }
 
-async function open(browser: Browser, baseURL: string, opts: { admin: boolean; size?: "phone" | "duo"; setupDone?: boolean; region?: string }): Promise<{ context: BrowserContext; page: Page; flockChunks: string[]; state: FlockState }> {
+async function open(browser: Browser, baseURL: string, opts: { admin: boolean; size?: "phone" | "duo"; setupDone?: boolean; region?: string; storagePhotos?: boolean }): Promise<{ context: BrowserContext; page: Page; flockChunks: string[]; state: FlockState }> {
   const context = await browser.newContext({
     ...(opts.size === "duo" ? DUO : IPHONE),
     locale: "en-US", serviceWorkers: "block", baseURL,
@@ -103,7 +103,9 @@ async function open(browser: Browser, baseURL: string, opts: { admin: boolean; s
   const fx = duoFixture(baseURL, Date.now());
   fx.rpc.flock_enabled = opts.admin;
   fx.rpc.is_admin = opts.admin;
+  if (opts.storagePhotos) storagePhotoPaths(fx);
   await mockDuo(context, fx);
+  if (opts.storagePhotos) await storagePhotos(context, fx);
   const state = await mockFlock(context, fx.user.id, { setupDone: opts.setupDone ?? true, region: opts.region });
   // Hide the open-in-app strip on every page (a session-only choice).
   await context.addInitScript(() => { try { sessionStorage.setItem("kya:openInAppDismissed", "1"); } catch { /* ignore */ } });
@@ -111,6 +113,39 @@ async function open(browser: Browser, baseURL: string, opts: { admin: boolean; s
   context.on("request", (r) => { if (FLOCK_CHUNK.test(r.url())) flockChunks.push(r.url()); });
   const page = await context.newPage();
   return { context, page, flockChunks, state };
+}
+
+/** Bird photos the way production stores them: a path in the private
+ *  bird-photos bucket, signed by Storage (the fixture's plain web URLs skip
+ *  signing entirely, which is how a missing photo got past this check).
+ *  Echo, Buzz and Willow have photos; Max has none. Willow's resized copy
+ *  fails, so the original must take over. Every image request is counted. */
+function storagePhotoPaths(fx: ReturnType<typeof duoFixture>) {
+  for (const b of (fx.tables as any).birds) b.photo_url = b.name === "Max" ? null : `${fx.user.id}/${b.id}.jpg`;
+}
+async function storagePhotos(context: BrowserContext, fx: ReturnType<typeof duoFixture>) {
+  const birds = (fx.tables as any).birds as { id: string; name: string; photo_url: string | null }[];
+  const jpg = (await import("node:fs")).readFileSync("public/brand/email/juno.jpg");
+  const cors = { "access-control-allow-origin": "*", "access-control-allow-headers": "*", "access-control-allow-methods": "*" };
+  const willow = birds.find((b) => b.name === "Willow")!.id;
+  // Single sign (with or without a resize) and the batch sign.
+  await context.route(`${MOCK}/storage/v1/object/sign/**`, async (route) => {
+    const req = route.request();
+    if (req.method() === "OPTIONS") return route.fulfill({ status: 204, headers: cors });
+    const path = new URL(req.url()).pathname.replace("/storage/v1/object/sign/bird-photos", "").replace(/^\//, "");
+    if (req.method() === "POST") {
+      const body = req.postDataJSON() ?? {};
+      if (!path) {
+        return route.fulfill({ status: 200, contentType: "application/json", headers: cors,
+          body: JSON.stringify((body.paths as string[]).map((p) => ({ path: p, signedURL: `/object/sign/bird-photos/${p}?token=t`, error: null }))) });
+      }
+      const signedURL = body.transform ? `/render/image/sign/bird-photos/${path}?token=t` : `/object/sign/bird-photos/${path}?token=t`;
+      return route.fulfill({ status: 200, contentType: "application/json", headers: cors, body: JSON.stringify({ signedURL }) });
+    }
+    return route.fulfill({ status: 200, contentType: "image/jpeg", body: jpg });
+  });
+  await context.route(`${MOCK}/storage/v1/render/image/sign/**`, (route) =>
+    route.request().url().includes(willow) ? route.fulfill({ status: 404, body: "" }) : route.fulfill({ status: 200, contentType: "image/jpeg", body: jpg }));
 }
 
 // Community code chunks (FlockHealthDuo is the care app's, not Community's).
@@ -287,6 +322,45 @@ test("everyone else: every /flock URL sends them Home and no Community code load
 });
 
 test.describe("welcome, setup, profiles and chapters (admin, phone)", () => {
+  test("bird chips: signed photos show, a bird without one shows its initial, a failed resize falls back; selected and unselected styles", async ({ browser, baseURL }) => {
+    for (const path of ["/flock/setup", "/flock/you/edit"]) {
+      const { context, page } = await open(browser, baseURL!, { admin: true, setupDone: path !== "/flock/setup", storagePhotos: true });
+      await page.goto(path);
+      const chip = (name: string) => page.locator("[data-bird-chip]", { hasText: name });
+      await expect(page.locator("[data-bird-chip]")).toHaveCount(4);
+      // Echo and Buzz: the resized photo, loaded and visible.
+      for (const name of ["Echo", "Buzz"]) {
+        await expect(chip(name).getByTestId("bird-thumb")).toHaveAttribute("data-photo", "loaded");
+        const img = chip(name).locator("img");
+        await expect(img).toHaveAttribute("src", /\/render\/image\/sign\/bird-photos\//);
+        expect(await img.evaluate((e: HTMLImageElement) => e.naturalWidth)).toBeGreaterThan(0);
+      }
+      // Willow: the resized copy fails, so the original shows.
+      await expect(chip("Willow").getByTestId("bird-thumb")).toHaveAttribute("data-photo", "loaded");
+      await expect(chip("Willow").locator("img")).toHaveAttribute("src", /\/object\/sign\/bird-photos\//);
+      // Max: no photo, so his initial on forest, never an empty circle.
+      await expect(chip("Max").getByTestId("bird-thumb")).toHaveAttribute("data-photo", "initial");
+      await expect(chip("Max").getByTestId("bird-thumb")).toHaveText("M");
+      expect(await chip("Max").getByTestId("bird-thumb").evaluate((e) => getComputedStyle(e).backgroundColor)).toBe("rgb(26, 61, 46)");
+
+      // Selected (the default): pale lime, 2px forest border, bold, a check.
+      const style = (name: string) => chip(name).evaluate((e) => {
+        const c = getComputedStyle(e);
+        return { bg: c.backgroundColor, border: `${c.borderTopWidth} ${c.borderTopColor}`, weight: c.fontWeight, color: c.color, check: !!e.querySelector("svg"), h: e.getBoundingClientRect().height };
+      });
+      const on = await style("Echo");
+      expect(on).toMatchObject({ bg: "rgb(205, 234, 176)", border: "2px rgb(26, 61, 46)", weight: "700", color: "rgb(26, 61, 46)", check: true });
+      await chip("Echo").click();
+      await expect(chip("Echo")).toHaveAttribute("aria-pressed", "false");
+      // Not selected: white, 1px light border, regular, no check, same height.
+      const off = await style("Echo");
+      expect(off).toMatchObject({ bg: "rgb(255, 255, 255)", border: "1px rgb(201, 211, 200)", weight: "400", color: "rgb(26, 61, 46)", check: false });
+      expect(off.h).toBe(on.h);
+      await context.close();
+    }
+  });
+
+
   test("welcome shows once: first visit goes to welcome, setup saves, then never again", async ({ browser, baseURL }) => {
     const { context, page, state } = await open(browser, baseURL!, { admin: true, setupDone: false });
     await page.goto("/flock");

@@ -26,7 +26,7 @@ function FlockSetup() {
   const { data: regions } = useRegions();
   const { data: birds } = useOwnBirds();
   const { data: choices } = useShownChoices();
-  const { data: photos } = useOwnBirdPhotoUrls(birds);
+  const { data: photos } = useOwnBirdPhotoUrls(birds, 120);
 
   const [region, setRegion] = useState<string | null>(null);
   const [picking, setPicking] = useState(false);

@@ -8,13 +8,16 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { getLocalUser } from "@/integrations/supabase/currentUser";
-import { signBirdPhoto } from "@/lib/birdPhoto";
+import { useBirdPhotos } from "@/lib/useBirdPhotos";
 import { getFlockBirdPhotos } from "@/lib/flockMedia.functions";
 import type { EntitlementRow } from "@/lib/flockProfile";
 
 const sb = supabase as any;
 const STALE = 60_000;
 
+/** A photo to show: a resized display URL and the full-size original to try
+ *  if it fails, or a plain URL. */
+export type FlockPhotoSrc = { url: string; original?: string | null } | string | null | undefined;
 export type Region = { slug: string; name: string; states: string[]; sort_order: number };
 export type MyProfile = {
   user_id: string;
@@ -212,30 +215,27 @@ export function useAvatarUrls(paths: (string | null | undefined)[]) {
   });
 }
 
-/** Photos of other members' shown birds, signed on the server. */
-export function useBirdPhotoUrls(birdIds: string[]) {
+/** Photos of other members' shown birds, signed on the server, resized to
+ *  `width` (with the full-size original as a fallback). */
+export function useBirdPhotoUrls(birdIds: string[], width: number) {
   const list = [...new Set(birdIds)].sort();
   return useQuery({
-    queryKey: flockKeys.birdPhotos(list.join("|")),
+    queryKey: flockKeys.birdPhotos(`${width}:${list.join("|")}`),
     enabled: list.length > 0,
     staleTime: 30 * 60_000,
-    queryFn: async (): Promise<Record<string, string | null>> => getFlockBirdPhotos({ data: { birdIds: list } }),
+    queryFn: async (): Promise<Record<string, FlockPhotoSrc>> => getFlockBirdPhotos({ data: { birdIds: list, width } }),
   });
 }
 
-/** Your own birds' photos (you can sign your own). */
-export function useOwnBirdPhotoUrls(birds: OwnBird[] | undefined) {
-  const list = (birds ?? []).filter((b) => b.photo_url);
-  return useQuery({
-    queryKey: ["flock", "own-bird-photos", list.map((b) => `${b.id}:${b.photo_url}`).join("|")],
-    enabled: list.length > 0,
-    staleTime: 30 * 60_000,
-    queryFn: async (): Promise<Record<string, string | null>> => {
-      const out: Record<string, string | null> = {};
-      await Promise.all(list.map(async (b) => { out[b.id] = await signBirdPhoto(b.photo_url).catch(() => null); }));
-      return out;
-    },
-  });
+/** Your own birds' photos, through the care app's own resized-photo cache
+ *  (useBirdPhotos: a small transformed image, the original as a fallback).
+ *  Its key sits outside "flock", so a Community save doesn't re-sign them and
+ *  restart every photo. Keyed by bird id. */
+export function useOwnBirdPhotoUrls(birds: OwnBird[] | undefined, width: number): { data: Record<string, FlockPhotoSrc> } {
+  const photoFor = useBirdPhotos((birds ?? []).map((b) => b.photo_url), width);
+  const data: Record<string, FlockPhotoSrc> = {};
+  for (const b of birds ?? []) data[b.id] = photoFor(b.photo_url);
+  return { data };
 }
 
 /** Save your profile (insert or update) and your shown-bird choices. */

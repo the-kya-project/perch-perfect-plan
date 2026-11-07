@@ -20,7 +20,7 @@ function FlockMember() {
   const { data: m, isLoading } = useMemberProfile(userId);
   const { data: birds } = useVisibleBirds({ ownerIds: [userId] });
   const { data: avatar } = useAvatarUrls([m?.photo_path]);
-  const { data: photos } = useBirdPhotoUrls((birds ?? []).filter((b) => b.has_photo).map((b) => b.bird_id));
+  const { data: photos } = useBirdPhotoUrls((birds ?? []).filter((b) => b.has_photo).map((b) => b.bird_id), 120);
   if (!isLoading && !m) {
     return (
       <FlockSubPage title={t("flock.member.missingTitle", "Member not found")} fallback="/flock/members">
@@ -46,7 +46,7 @@ function FlockMember() {
             {(birds ?? []).map((b) => (
               <li key={b.bird_id}>
                 <Link to="/flock/birds/$birdId" params={{ birdId: b.bird_id }} className="flex min-h-[56px] items-center gap-3 rounded-[16px] px-3 py-2 active:scale-[0.99]" style={{ background: K.mist, color: K.forest }}>
-                  <BirdThumb url={photos?.[b.bird_id]} size={44} />
+                  <BirdThumb name={b.name} photo={photos?.[b.bird_id]} size={44} />
                   <span className="min-w-0">
                     <span className="block text-[15px] font-[700]">{b.name}</span>
                     {b.species && <span className="block text-[13px]" style={{ color: K.quiet }}>{b.species}</span>}

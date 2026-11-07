@@ -19,7 +19,7 @@ function FlockBird() {
   const { data: birds, isLoading } = useVisibleBirds({ birdIds: [birdId] });
   const bird = birds?.[0];
   const { data: owner } = useMemberProfile(bird?.owner_id ?? "");
-  const { data: photos } = useBirdPhotoUrls(bird?.has_photo ? [bird.bird_id] : []);
+  const { data: photos } = useBirdPhotoUrls(bird?.has_photo ? [bird.bird_id] : [], 400);
   if (!isLoading && !bird) {
     return (
       <FlockSubPage title={t("flock.bird.missingTitle", "Bird not found")} fallback="/flock">
@@ -32,7 +32,7 @@ function FlockBird() {
   return (
     <FlockSubPage title={bird?.name ?? " "} line={bird?.species ?? undefined} fallback="/flock">
       <KyaCard className="flex flex-col items-center p-6 text-center">
-        <BirdThumb url={photos?.[birdId]} size={160} />
+        <BirdThumb name={bird?.name ?? ""} photo={photos?.[birdId]} size={160} />
         {owner && (
           <p className="m-0 mt-4 text-[15px]" style={{ color: K.ink }} data-testid="bird-owner">
             {t("flock.bird.whose", "{{name}}'s bird", { name: owner.display_name })} ·{" "}
