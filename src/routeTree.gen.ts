@@ -104,6 +104,7 @@ import { Route as AuthenticatedFlockJourneysSetupRouteImport } from './routes/_a
 import { Route as AuthenticatedFlockJourneysStartRouteImport } from './routes/_authenticated/flock.journeys.start'
 import { Route as AuthenticatedFlockMembersIndexRouteImport } from './routes/_authenticated/flock.members.index'
 import { Route as AuthenticatedFlockMembersUserIdRouteImport } from './routes/_authenticated/flock.members.$userId'
+import { Route as AuthenticatedFlockPostNewRouteImport } from './routes/_authenticated/flock.post.new'
 import { Route as AuthenticatedFlockYouIndexRouteImport } from './routes/_authenticated/flock.you.index'
 import { Route as AuthenticatedFlockYouEditRouteImport } from './routes/_authenticated/flock.you.edit'
 import { Route as AuthenticatedFlockYouMembershipRouteImport } from './routes/_authenticated/flock.you.membership'
@@ -123,11 +124,15 @@ import { Route as ApiPublicStripeWebhookRouteImport } from './routes/api/public/
 import { Route as AuthenticatedBirdsBirdIdPlanIndexRouteImport } from './routes/_authenticated/birds/$birdId.plan.index'
 import { Route as AuthenticatedBirdsBirdIdPlanEditorRouteImport } from './routes/_authenticated/birds/$birdId.plan.editor'
 import { Route as AuthenticatedBirdsBirdIdScansScanIdRouteImport } from './routes/_authenticated/birds/$birdId.scans.$scanId'
+import { Route as AuthenticatedFlockCommentsSubjectTypeSubjectIdRouteImport } from './routes/_authenticated/flock.comments.$subjectType.$subjectId'
 import { Route as AuthenticatedFlockJourneysJourneyIdIndexRouteImport } from './routes/_authenticated/flock.journeys.$journeyId.index'
 import { Route as AuthenticatedFlockJourneysJourneyIdCompareRouteImport } from './routes/_authenticated/flock.journeys.$journeyId.compare'
 import { Route as AuthenticatedFlockJourneysJourneyIdFinishedRouteImport } from './routes/_authenticated/flock.journeys.$journeyId.finished'
 import { Route as AuthenticatedFlockJourneysJourneyIdPostRouteImport } from './routes/_authenticated/flock.journeys.$journeyId.post'
 import { Route as AuthenticatedFlockJourneysJourneyIdStoryRouteImport } from './routes/_authenticated/flock.journeys.$journeyId.story'
+import { Route as AuthenticatedFlockPostPostIdIndexRouteImport } from './routes/_authenticated/flock.post.$postId.index'
+import { Route as AuthenticatedFlockPostPostIdEditRouteImport } from './routes/_authenticated/flock.post.$postId.edit'
+import { Route as AuthenticatedFlockReactionsSubjectTypeSubjectIdRouteImport } from './routes/_authenticated/flock.reactions.$subjectType.$subjectId'
 import { Route as ApiPublicBereavementReviewReviewIdSigRouteImport } from './routes/api/public/bereavement-review.$reviewId.$sig'
 import { Route as AuthenticatedFlockJourneysJourneyIdMilestonePositionRouteImport } from './routes/_authenticated/flock.journeys.$journeyId.milestone.$position'
 import { Route as ApiPublicChartBirdIdMonthSigRouteImport } from './routes/api/public/chart.$birdId.$month.$sig'
@@ -651,6 +656,12 @@ const AuthenticatedFlockMembersUserIdRoute =
     path: '/members/$userId',
     getParentRoute: () => AuthenticatedFlockRoute,
   } as any)
+const AuthenticatedFlockPostNewRoute =
+  AuthenticatedFlockPostNewRouteImport.update({
+    id: '/post/new',
+    path: '/post/new',
+    getParentRoute: () => AuthenticatedFlockRoute,
+  } as any)
 const AuthenticatedFlockYouIndexRoute =
   AuthenticatedFlockYouIndexRouteImport.update({
     id: '/you/',
@@ -763,6 +774,12 @@ const AuthenticatedBirdsBirdIdScansScanIdRoute =
     path: '/scans/$scanId',
     getParentRoute: () => AuthenticatedBirdsBirdIdRoute,
   } as any)
+const AuthenticatedFlockCommentsSubjectTypeSubjectIdRoute =
+  AuthenticatedFlockCommentsSubjectTypeSubjectIdRouteImport.update({
+    id: '/comments/$subjectType/$subjectId',
+    path: '/comments/$subjectType/$subjectId',
+    getParentRoute: () => AuthenticatedFlockRoute,
+  } as any)
 const AuthenticatedFlockJourneysJourneyIdIndexRoute =
   AuthenticatedFlockJourneysJourneyIdIndexRouteImport.update({
     id: '/journeys/$journeyId/',
@@ -791,6 +808,24 @@ const AuthenticatedFlockJourneysJourneyIdStoryRoute =
   AuthenticatedFlockJourneysJourneyIdStoryRouteImport.update({
     id: '/journeys/$journeyId/story',
     path: '/journeys/$journeyId/story',
+    getParentRoute: () => AuthenticatedFlockRoute,
+  } as any)
+const AuthenticatedFlockPostPostIdIndexRoute =
+  AuthenticatedFlockPostPostIdIndexRouteImport.update({
+    id: '/post/$postId/',
+    path: '/post/$postId/',
+    getParentRoute: () => AuthenticatedFlockRoute,
+  } as any)
+const AuthenticatedFlockPostPostIdEditRoute =
+  AuthenticatedFlockPostPostIdEditRouteImport.update({
+    id: '/post/$postId/edit',
+    path: '/post/$postId/edit',
+    getParentRoute: () => AuthenticatedFlockRoute,
+  } as any)
+const AuthenticatedFlockReactionsSubjectTypeSubjectIdRoute =
+  AuthenticatedFlockReactionsSubjectTypeSubjectIdRouteImport.update({
+    id: '/reactions/$subjectType/$subjectId',
+    path: '/reactions/$subjectType/$subjectId',
     getParentRoute: () => AuthenticatedFlockRoute,
   } as any)
 const ApiPublicBereavementReviewReviewIdSigRoute =
@@ -910,6 +945,7 @@ export interface FileRoutesByFullPath {
   '/flock/journeys/setup': typeof AuthenticatedFlockJourneysSetupRoute
   '/flock/journeys/start': typeof AuthenticatedFlockJourneysStartRoute
   '/flock/members/$userId': typeof AuthenticatedFlockMembersUserIdRoute
+  '/flock/post/new': typeof AuthenticatedFlockPostNewRoute
   '/flock/you/edit': typeof AuthenticatedFlockYouEditRoute
   '/flock/you/membership': typeof AuthenticatedFlockYouMembershipRoute
   '/flock/you/notifications': typeof AuthenticatedFlockYouNotificationsRoute
@@ -931,13 +967,17 @@ export interface FileRoutesByFullPath {
   '/flock/you/': typeof AuthenticatedFlockYouIndexRoute
   '/birds/$birdId/plan/editor': typeof AuthenticatedBirdsBirdIdPlanEditorRoute
   '/birds/$birdId/scans/$scanId': typeof AuthenticatedBirdsBirdIdScansScanIdRoute
+  '/flock/comments/$subjectType/$subjectId': typeof AuthenticatedFlockCommentsSubjectTypeSubjectIdRoute
   '/flock/journeys/$journeyId/compare': typeof AuthenticatedFlockJourneysJourneyIdCompareRoute
   '/flock/journeys/$journeyId/finished': typeof AuthenticatedFlockJourneysJourneyIdFinishedRoute
   '/flock/journeys/$journeyId/post': typeof AuthenticatedFlockJourneysJourneyIdPostRoute
   '/flock/journeys/$journeyId/story': typeof AuthenticatedFlockJourneysJourneyIdStoryRoute
+  '/flock/post/$postId/edit': typeof AuthenticatedFlockPostPostIdEditRoute
+  '/flock/reactions/$subjectType/$subjectId': typeof AuthenticatedFlockReactionsSubjectTypeSubjectIdRoute
   '/api/public/bereavement-review/$reviewId/$sig': typeof ApiPublicBereavementReviewReviewIdSigRoute
   '/birds/$birdId/plan/': typeof AuthenticatedBirdsBirdIdPlanIndexRoute
   '/flock/journeys/$journeyId/': typeof AuthenticatedFlockJourneysJourneyIdIndexRoute
+  '/flock/post/$postId/': typeof AuthenticatedFlockPostPostIdIndexRoute
   '/flock/journeys/$journeyId/milestone/$position': typeof AuthenticatedFlockJourneysJourneyIdMilestonePositionRoute
   '/api/public/chart/$birdId/$month/$sig': typeof ApiPublicChartBirdIdMonthSigRoute
   '/api/public/unsubscribe/$category/$userId/$sig': typeof ApiPublicUnsubscribeCategoryUserIdSigRoute
@@ -1027,6 +1067,7 @@ export interface FileRoutesByTo {
   '/flock/journeys/setup': typeof AuthenticatedFlockJourneysSetupRoute
   '/flock/journeys/start': typeof AuthenticatedFlockJourneysStartRoute
   '/flock/members/$userId': typeof AuthenticatedFlockMembersUserIdRoute
+  '/flock/post/new': typeof AuthenticatedFlockPostNewRoute
   '/flock/you/edit': typeof AuthenticatedFlockYouEditRoute
   '/flock/you/membership': typeof AuthenticatedFlockYouMembershipRoute
   '/flock/you/notifications': typeof AuthenticatedFlockYouNotificationsRoute
@@ -1048,13 +1089,17 @@ export interface FileRoutesByTo {
   '/flock/you': typeof AuthenticatedFlockYouIndexRoute
   '/birds/$birdId/plan/editor': typeof AuthenticatedBirdsBirdIdPlanEditorRoute
   '/birds/$birdId/scans/$scanId': typeof AuthenticatedBirdsBirdIdScansScanIdRoute
+  '/flock/comments/$subjectType/$subjectId': typeof AuthenticatedFlockCommentsSubjectTypeSubjectIdRoute
   '/flock/journeys/$journeyId/compare': typeof AuthenticatedFlockJourneysJourneyIdCompareRoute
   '/flock/journeys/$journeyId/finished': typeof AuthenticatedFlockJourneysJourneyIdFinishedRoute
   '/flock/journeys/$journeyId/post': typeof AuthenticatedFlockJourneysJourneyIdPostRoute
   '/flock/journeys/$journeyId/story': typeof AuthenticatedFlockJourneysJourneyIdStoryRoute
+  '/flock/post/$postId/edit': typeof AuthenticatedFlockPostPostIdEditRoute
+  '/flock/reactions/$subjectType/$subjectId': typeof AuthenticatedFlockReactionsSubjectTypeSubjectIdRoute
   '/api/public/bereavement-review/$reviewId/$sig': typeof ApiPublicBereavementReviewReviewIdSigRoute
   '/birds/$birdId/plan': typeof AuthenticatedBirdsBirdIdPlanIndexRoute
   '/flock/journeys/$journeyId': typeof AuthenticatedFlockJourneysJourneyIdIndexRoute
+  '/flock/post/$postId': typeof AuthenticatedFlockPostPostIdIndexRoute
   '/flock/journeys/$journeyId/milestone/$position': typeof AuthenticatedFlockJourneysJourneyIdMilestonePositionRoute
   '/api/public/chart/$birdId/$month/$sig': typeof ApiPublicChartBirdIdMonthSigRoute
   '/api/public/unsubscribe/$category/$userId/$sig': typeof ApiPublicUnsubscribeCategoryUserIdSigRoute
@@ -1153,6 +1198,7 @@ export interface FileRoutesById {
   '/_authenticated/flock/journeys/setup': typeof AuthenticatedFlockJourneysSetupRoute
   '/_authenticated/flock/journeys/start': typeof AuthenticatedFlockJourneysStartRoute
   '/_authenticated/flock/members/$userId': typeof AuthenticatedFlockMembersUserIdRoute
+  '/_authenticated/flock/post/new': typeof AuthenticatedFlockPostNewRoute
   '/_authenticated/flock/you/edit': typeof AuthenticatedFlockYouEditRoute
   '/_authenticated/flock/you/membership': typeof AuthenticatedFlockYouMembershipRoute
   '/_authenticated/flock/you/notifications': typeof AuthenticatedFlockYouNotificationsRoute
@@ -1174,13 +1220,17 @@ export interface FileRoutesById {
   '/_authenticated/flock/you/': typeof AuthenticatedFlockYouIndexRoute
   '/_authenticated/birds/$birdId/plan/editor': typeof AuthenticatedBirdsBirdIdPlanEditorRoute
   '/_authenticated/birds/$birdId/scans/$scanId': typeof AuthenticatedBirdsBirdIdScansScanIdRoute
+  '/_authenticated/flock/comments/$subjectType/$subjectId': typeof AuthenticatedFlockCommentsSubjectTypeSubjectIdRoute
   '/_authenticated/flock/journeys/$journeyId/compare': typeof AuthenticatedFlockJourneysJourneyIdCompareRoute
   '/_authenticated/flock/journeys/$journeyId/finished': typeof AuthenticatedFlockJourneysJourneyIdFinishedRoute
   '/_authenticated/flock/journeys/$journeyId/post': typeof AuthenticatedFlockJourneysJourneyIdPostRoute
   '/_authenticated/flock/journeys/$journeyId/story': typeof AuthenticatedFlockJourneysJourneyIdStoryRoute
+  '/_authenticated/flock/post/$postId/edit': typeof AuthenticatedFlockPostPostIdEditRoute
+  '/_authenticated/flock/reactions/$subjectType/$subjectId': typeof AuthenticatedFlockReactionsSubjectTypeSubjectIdRoute
   '/api/public/bereavement-review/$reviewId/$sig': typeof ApiPublicBereavementReviewReviewIdSigRoute
   '/_authenticated/birds/$birdId/plan/': typeof AuthenticatedBirdsBirdIdPlanIndexRoute
   '/_authenticated/flock/journeys/$journeyId/': typeof AuthenticatedFlockJourneysJourneyIdIndexRoute
+  '/_authenticated/flock/post/$postId/': typeof AuthenticatedFlockPostPostIdIndexRoute
   '/_authenticated/flock/journeys/$journeyId/milestone/$position': typeof AuthenticatedFlockJourneysJourneyIdMilestonePositionRoute
   '/api/public/chart/$birdId/$month/$sig': typeof ApiPublicChartBirdIdMonthSigRoute
   '/api/public/unsubscribe/$category/$userId/$sig': typeof ApiPublicUnsubscribeCategoryUserIdSigRoute
@@ -1279,6 +1329,7 @@ export interface FileRouteTypes {
     | '/flock/journeys/setup'
     | '/flock/journeys/start'
     | '/flock/members/$userId'
+    | '/flock/post/new'
     | '/flock/you/edit'
     | '/flock/you/membership'
     | '/flock/you/notifications'
@@ -1300,13 +1351,17 @@ export interface FileRouteTypes {
     | '/flock/you/'
     | '/birds/$birdId/plan/editor'
     | '/birds/$birdId/scans/$scanId'
+    | '/flock/comments/$subjectType/$subjectId'
     | '/flock/journeys/$journeyId/compare'
     | '/flock/journeys/$journeyId/finished'
     | '/flock/journeys/$journeyId/post'
     | '/flock/journeys/$journeyId/story'
+    | '/flock/post/$postId/edit'
+    | '/flock/reactions/$subjectType/$subjectId'
     | '/api/public/bereavement-review/$reviewId/$sig'
     | '/birds/$birdId/plan/'
     | '/flock/journeys/$journeyId/'
+    | '/flock/post/$postId/'
     | '/flock/journeys/$journeyId/milestone/$position'
     | '/api/public/chart/$birdId/$month/$sig'
     | '/api/public/unsubscribe/$category/$userId/$sig'
@@ -1396,6 +1451,7 @@ export interface FileRouteTypes {
     | '/flock/journeys/setup'
     | '/flock/journeys/start'
     | '/flock/members/$userId'
+    | '/flock/post/new'
     | '/flock/you/edit'
     | '/flock/you/membership'
     | '/flock/you/notifications'
@@ -1417,13 +1473,17 @@ export interface FileRouteTypes {
     | '/flock/you'
     | '/birds/$birdId/plan/editor'
     | '/birds/$birdId/scans/$scanId'
+    | '/flock/comments/$subjectType/$subjectId'
     | '/flock/journeys/$journeyId/compare'
     | '/flock/journeys/$journeyId/finished'
     | '/flock/journeys/$journeyId/post'
     | '/flock/journeys/$journeyId/story'
+    | '/flock/post/$postId/edit'
+    | '/flock/reactions/$subjectType/$subjectId'
     | '/api/public/bereavement-review/$reviewId/$sig'
     | '/birds/$birdId/plan'
     | '/flock/journeys/$journeyId'
+    | '/flock/post/$postId'
     | '/flock/journeys/$journeyId/milestone/$position'
     | '/api/public/chart/$birdId/$month/$sig'
     | '/api/public/unsubscribe/$category/$userId/$sig'
@@ -1521,6 +1581,7 @@ export interface FileRouteTypes {
     | '/_authenticated/flock/journeys/setup'
     | '/_authenticated/flock/journeys/start'
     | '/_authenticated/flock/members/$userId'
+    | '/_authenticated/flock/post/new'
     | '/_authenticated/flock/you/edit'
     | '/_authenticated/flock/you/membership'
     | '/_authenticated/flock/you/notifications'
@@ -1542,13 +1603,17 @@ export interface FileRouteTypes {
     | '/_authenticated/flock/you/'
     | '/_authenticated/birds/$birdId/plan/editor'
     | '/_authenticated/birds/$birdId/scans/$scanId'
+    | '/_authenticated/flock/comments/$subjectType/$subjectId'
     | '/_authenticated/flock/journeys/$journeyId/compare'
     | '/_authenticated/flock/journeys/$journeyId/finished'
     | '/_authenticated/flock/journeys/$journeyId/post'
     | '/_authenticated/flock/journeys/$journeyId/story'
+    | '/_authenticated/flock/post/$postId/edit'
+    | '/_authenticated/flock/reactions/$subjectType/$subjectId'
     | '/api/public/bereavement-review/$reviewId/$sig'
     | '/_authenticated/birds/$birdId/plan/'
     | '/_authenticated/flock/journeys/$journeyId/'
+    | '/_authenticated/flock/post/$postId/'
     | '/_authenticated/flock/journeys/$journeyId/milestone/$position'
     | '/api/public/chart/$birdId/$month/$sig'
     | '/api/public/unsubscribe/$category/$userId/$sig'
@@ -2262,6 +2327,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedFlockMembersUserIdRouteImport
       parentRoute: typeof AuthenticatedFlockRoute
     }
+    '/_authenticated/flock/post/new': {
+      id: '/_authenticated/flock/post/new'
+      path: '/post/new'
+      fullPath: '/flock/post/new'
+      preLoaderRoute: typeof AuthenticatedFlockPostNewRouteImport
+      parentRoute: typeof AuthenticatedFlockRoute
+    }
     '/_authenticated/flock/you/': {
       id: '/_authenticated/flock/you/'
       path: '/you'
@@ -2395,6 +2467,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedBirdsBirdIdScansScanIdRouteImport
       parentRoute: typeof AuthenticatedBirdsBirdIdRoute
     }
+    '/_authenticated/flock/comments/$subjectType/$subjectId': {
+      id: '/_authenticated/flock/comments/$subjectType/$subjectId'
+      path: '/comments/$subjectType/$subjectId'
+      fullPath: '/flock/comments/$subjectType/$subjectId'
+      preLoaderRoute: typeof AuthenticatedFlockCommentsSubjectTypeSubjectIdRouteImport
+      parentRoute: typeof AuthenticatedFlockRoute
+    }
     '/_authenticated/flock/journeys/$journeyId/': {
       id: '/_authenticated/flock/journeys/$journeyId/'
       path: '/journeys/$journeyId'
@@ -2428,6 +2507,27 @@ declare module '@tanstack/react-router' {
       path: '/journeys/$journeyId/story'
       fullPath: '/flock/journeys/$journeyId/story'
       preLoaderRoute: typeof AuthenticatedFlockJourneysJourneyIdStoryRouteImport
+      parentRoute: typeof AuthenticatedFlockRoute
+    }
+    '/_authenticated/flock/post/$postId/': {
+      id: '/_authenticated/flock/post/$postId/'
+      path: '/post/$postId'
+      fullPath: '/flock/post/$postId/'
+      preLoaderRoute: typeof AuthenticatedFlockPostPostIdIndexRouteImport
+      parentRoute: typeof AuthenticatedFlockRoute
+    }
+    '/_authenticated/flock/post/$postId/edit': {
+      id: '/_authenticated/flock/post/$postId/edit'
+      path: '/post/$postId/edit'
+      fullPath: '/flock/post/$postId/edit'
+      preLoaderRoute: typeof AuthenticatedFlockPostPostIdEditRouteImport
+      parentRoute: typeof AuthenticatedFlockRoute
+    }
+    '/_authenticated/flock/reactions/$subjectType/$subjectId': {
+      id: '/_authenticated/flock/reactions/$subjectType/$subjectId'
+      path: '/reactions/$subjectType/$subjectId'
+      fullPath: '/flock/reactions/$subjectType/$subjectId'
+      preLoaderRoute: typeof AuthenticatedFlockReactionsSubjectTypeSubjectIdRouteImport
       parentRoute: typeof AuthenticatedFlockRoute
     }
     '/api/public/bereavement-review/$reviewId/$sig': {
@@ -2489,6 +2589,7 @@ interface AuthenticatedFlockRouteChildren {
   AuthenticatedFlockJourneysSetupRoute: typeof AuthenticatedFlockJourneysSetupRoute
   AuthenticatedFlockJourneysStartRoute: typeof AuthenticatedFlockJourneysStartRoute
   AuthenticatedFlockMembersUserIdRoute: typeof AuthenticatedFlockMembersUserIdRoute
+  AuthenticatedFlockPostNewRoute: typeof AuthenticatedFlockPostNewRoute
   AuthenticatedFlockYouEditRoute: typeof AuthenticatedFlockYouEditRoute
   AuthenticatedFlockYouMembershipRoute: typeof AuthenticatedFlockYouMembershipRoute
   AuthenticatedFlockYouNotificationsRoute: typeof AuthenticatedFlockYouNotificationsRoute
@@ -2496,11 +2597,15 @@ interface AuthenticatedFlockRouteChildren {
   AuthenticatedFlockJourneysIndexRoute: typeof AuthenticatedFlockJourneysIndexRoute
   AuthenticatedFlockMembersIndexRoute: typeof AuthenticatedFlockMembersIndexRoute
   AuthenticatedFlockYouIndexRoute: typeof AuthenticatedFlockYouIndexRoute
+  AuthenticatedFlockCommentsSubjectTypeSubjectIdRoute: typeof AuthenticatedFlockCommentsSubjectTypeSubjectIdRoute
   AuthenticatedFlockJourneysJourneyIdCompareRoute: typeof AuthenticatedFlockJourneysJourneyIdCompareRoute
   AuthenticatedFlockJourneysJourneyIdFinishedRoute: typeof AuthenticatedFlockJourneysJourneyIdFinishedRoute
   AuthenticatedFlockJourneysJourneyIdPostRoute: typeof AuthenticatedFlockJourneysJourneyIdPostRoute
   AuthenticatedFlockJourneysJourneyIdStoryRoute: typeof AuthenticatedFlockJourneysJourneyIdStoryRoute
+  AuthenticatedFlockPostPostIdEditRoute: typeof AuthenticatedFlockPostPostIdEditRoute
+  AuthenticatedFlockReactionsSubjectTypeSubjectIdRoute: typeof AuthenticatedFlockReactionsSubjectTypeSubjectIdRoute
   AuthenticatedFlockJourneysJourneyIdIndexRoute: typeof AuthenticatedFlockJourneysJourneyIdIndexRoute
+  AuthenticatedFlockPostPostIdIndexRoute: typeof AuthenticatedFlockPostPostIdIndexRoute
   AuthenticatedFlockJourneysJourneyIdMilestonePositionRoute: typeof AuthenticatedFlockJourneysJourneyIdMilestonePositionRoute
 }
 
@@ -2517,6 +2622,7 @@ const AuthenticatedFlockRouteChildren: AuthenticatedFlockRouteChildren = {
   AuthenticatedFlockJourneysSetupRoute: AuthenticatedFlockJourneysSetupRoute,
   AuthenticatedFlockJourneysStartRoute: AuthenticatedFlockJourneysStartRoute,
   AuthenticatedFlockMembersUserIdRoute: AuthenticatedFlockMembersUserIdRoute,
+  AuthenticatedFlockPostNewRoute: AuthenticatedFlockPostNewRoute,
   AuthenticatedFlockYouEditRoute: AuthenticatedFlockYouEditRoute,
   AuthenticatedFlockYouMembershipRoute: AuthenticatedFlockYouMembershipRoute,
   AuthenticatedFlockYouNotificationsRoute:
@@ -2525,6 +2631,8 @@ const AuthenticatedFlockRouteChildren: AuthenticatedFlockRouteChildren = {
   AuthenticatedFlockJourneysIndexRoute: AuthenticatedFlockJourneysIndexRoute,
   AuthenticatedFlockMembersIndexRoute: AuthenticatedFlockMembersIndexRoute,
   AuthenticatedFlockYouIndexRoute: AuthenticatedFlockYouIndexRoute,
+  AuthenticatedFlockCommentsSubjectTypeSubjectIdRoute:
+    AuthenticatedFlockCommentsSubjectTypeSubjectIdRoute,
   AuthenticatedFlockJourneysJourneyIdCompareRoute:
     AuthenticatedFlockJourneysJourneyIdCompareRoute,
   AuthenticatedFlockJourneysJourneyIdFinishedRoute:
@@ -2533,8 +2641,13 @@ const AuthenticatedFlockRouteChildren: AuthenticatedFlockRouteChildren = {
     AuthenticatedFlockJourneysJourneyIdPostRoute,
   AuthenticatedFlockJourneysJourneyIdStoryRoute:
     AuthenticatedFlockJourneysJourneyIdStoryRoute,
+  AuthenticatedFlockPostPostIdEditRoute: AuthenticatedFlockPostPostIdEditRoute,
+  AuthenticatedFlockReactionsSubjectTypeSubjectIdRoute:
+    AuthenticatedFlockReactionsSubjectTypeSubjectIdRoute,
   AuthenticatedFlockJourneysJourneyIdIndexRoute:
     AuthenticatedFlockJourneysJourneyIdIndexRoute,
+  AuthenticatedFlockPostPostIdIndexRoute:
+    AuthenticatedFlockPostPostIdIndexRoute,
   AuthenticatedFlockJourneysJourneyIdMilestonePositionRoute:
     AuthenticatedFlockJourneysJourneyIdMilestonePositionRoute,
 }

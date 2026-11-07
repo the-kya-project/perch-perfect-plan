@@ -1,5 +1,10 @@
+import { useState } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { JourneyMilestoneCard } from "@/components/flock/JourneyToday";
+import { ComposePrompt, LoadMore, PostMenus, usePostMedia } from "@/components/flock/PostFeed";
+import { PostCard } from "@/components/flock/PostParts";
+import { useCommentCounts, useFlockFeed, type FlockPost } from "@/lib/flockPostData";
+import { feedSpaceFor, mergeFeed } from "@/lib/flockPosts";
 import { FollowRings, useCardBirdPhotos } from "@/components/flock/JourneyBrowse";
 import { useJourneyFollowing, useMilestoneCards } from "@/lib/journeyData";
 import { Sun } from "lucide-react";
@@ -51,8 +56,14 @@ function FlockToday() {
   const { data: following } = useJourneyFollowing();
   const { data: cards } = useMilestoneCards();
   const photos = useCardBirdPhotos([...(following ?? []), ...(cards ?? [])]);
+  const feed = useFlockFeed(feedSpaceFor(space));
+  const posts = (feed.data?.pages ?? []).flat();
+  const media = usePostMedia(posts);
+  const [menuFor, setMenuFor] = useState<FlockPost | null>(null);
   // Followed journeys and their milestones belong to Everything.
   const showJourneys = filter === "everything";
+  const items = mergeFeed(posts, showJourneys ? cards ?? [] : [], !!feed.hasNextPage);
+  const { data: cardComments } = useCommentCounts("journey_milestone", items.flatMap((x) => (x.kind === "milestone" ? [x.item.milestone_id] : [])));
   return (
     <>
       <FlockHeader title={t("flock.today.title", "Today")} />
@@ -64,17 +75,22 @@ function FlockToday() {
           value={filter}
           onChange={(v) => void navigate({ search: { space: !v || v === "everything" ? undefined : v }, replace: true })}
         />
+        <ComposePrompt space={space} />
         {showJourneys && following && following.length > 0 && (
           <FollowRings cards={following} photos={photos}
             onOpen={(id) => void navigate({ to: "/flock/journeys/$journeyId/story", params: { journeyId: id }, search: { queue: "following" } })} />
         )}
-        {showJourneys && cards && cards.length > 0 ? (
-          <div className="flex flex-col gap-3" data-testid="milestone-cards">
-            {cards.map((c) => <JourneyMilestoneCard key={c.milestone_id} card={c} photo={photos[c.bird_id]} />)}
+        {items.length > 0 ? (
+          <div className="flex flex-col gap-3" data-testid="today-feed">
+            {items.map((x) => x.kind === "post"
+              ? <PostCard key={x.item.post_id} post={x.item} avatar={media.avatar(x.item)} photos={media.photos(x.item)} birdPhoto={media.bird(x.item)} onMenu={() => setMenuFor(x.item)} />
+              : <JourneyMilestoneCard key={x.item.milestone_id} card={x.item} photo={photos[x.item.bird_id]} comments={cardComments?.[x.item.milestone_id] ?? 0} />)}
+            <LoadMore hasMore={!!feed.hasNextPage} loading={feed.isFetchingNextPage} onMore={() => void feed.fetchNextPage()} />
           </div>
-        ) : (
+        ) : !feed.isLoading && (
           <FlockEmpty icon={<Sun className="size-6" />} title={empty.title}>{empty.line}</FlockEmpty>
         )}
+        <PostMenus menuFor={menuFor} setMenuFor={setMenuFor} />
       </FlockBody>
     </>
   );

@@ -17,8 +17,9 @@ import { rememberMode, rememberedMode } from "@/lib/flock";
 import { avatarInitial } from "@/lib/accountInitial";
 import {
   CHAPTER_TABS, FLOCK_DESTS, FLOCK_REDIRECTS, FLOCK_SPACES, JOURNEYS_FILTERS, LIBRARY_SUBJECTS, LIBRARY_TYPES, TODAY_FILTERS,
-  chapterLine, destForPath, isFlockOnboardingPath, pick, pickOptional, pickQuery,
+  chapterLine, destForPath, isFlockFullScreenPath, isFlockOnboardingPath, pick, pickOptional, pickQuery,
 } from "@/lib/flockNav";
+import { AAV_FIND_A_VET_URL, POST_SPACES, findVetSigns, mergeFeed, rateLimitKind, replyPrefix, threadComments } from "@/lib/flockPosts";
 import { defaultDisplayName, greetingName, isAutomaticDisplayName, memberCountLine, membershipSummary } from "@/lib/flockProfile";
 import { accessCells, accessDay } from "@/lib/flockAccess";
 import {
@@ -299,6 +300,71 @@ check("journeys: next milestone, progress, days", () => {
   assert.equal(daysSince("2026-11-18T12:00:00Z", now), 2);
   assert.equal(skillInSentence("Recall"), "recall");
   assert.equal(skillInSentence("Step up"), "step up");
+});
+
+// ---- Posts, comments and the vet nudge (step 4) -------------------------------------
+check("post screens are full screen (no tab bar) but still behind setup", () => {
+  for (const p of ["/flock/post/new", "/flock/post/abc", "/flock/post/abc/edit", "/flock/comments/journey_update/abc", "/flock/reactions/post/abc"]) {
+    assert.equal(isFlockFullScreenPath(p), true, p);
+    assert.equal(isFlockOnboardingPath(p), false, p);
+  }
+  assert.equal(isFlockFullScreenPath("/flock"), false);
+  assert.equal(isFlockFullScreenPath("/flock/postcards"), false);
+  assert.equal(destForPath("/flock/post/abc"), "today");
+});
+
+check("Post to chips: Learn together, Do good, my chapter, Start here", () => {
+  assert.deepEqual(POST_SPACES, ["learn", "good", "chapter", "start"]);
+});
+
+check("vet nudge: whole phrases, any case, curly quotes, never a partial word", () => {
+  const signs = ["fluffed up", "sleeping a lot", "isn't eating", "bleeding", "blood", "tail bobbing", "sitting on the cage floor"];
+  assert.deepEqual(findVetSigns("Echo has been Fluffed  up and sleeping a lot since yesterday and isn\u2019t eating much.", signs),
+    ["fluffed up", "sleeping a lot", "isn't eating"]);
+  assert.deepEqual(findVetSigns("Kiwi is sitting on the cage floor, tail bobbing.", signs), ["tail bobbing", "sitting on the cage floor"]);
+  assert.deepEqual(findVetSigns("Our bloodhound loves Kiwi.", signs), []);
+  assert.deepEqual(findVetSigns("A broken feather was bleeding", signs), ["bleeding"]);
+  assert.deepEqual(findVetSigns("", signs), []);
+  assert.deepEqual(findVetSigns("Walnut is Echo's favorite too!", signs), []);
+});
+
+check("the Find a vet link is the AAV's public search", () => {
+  assert.equal(AAV_FIND_A_VET_URL, "https://www.aav.org/page/FindAVet2");
+});
+
+check("rate limit errors name the limit; anything else is not one", () => {
+  assert.equal(rateLimitKind({ message: "rate_limited", details: "comments" }), "comments");
+  assert.equal(rateLimitKind({ message: "rate_limited", details: "photos" }), "photos");
+  assert.equal(rateLimitKind({ message: "rate_limited" }), "posts");
+  assert.equal(rateLimitKind({ message: "not found" }), null);
+  assert.equal(rateLimitKind(null), null);
+});
+
+check("comments thread one level deep, oldest first, orphans dropped", () => {
+  const rows = [
+    { comment_id: "c3", parent_id: "c1", created_at: "2026-11-07T10:03:00Z" },
+    { comment_id: "c1", parent_id: null, created_at: "2026-11-07T10:01:00Z" },
+    { comment_id: "c2", parent_id: "c1", created_at: "2026-11-07T10:02:00Z" },
+    { comment_id: "c4", parent_id: null, created_at: "2026-11-07T10:04:00Z" },
+    { comment_id: "c5", parent_id: "gone", created_at: "2026-11-07T10:05:00Z" },
+  ];
+  const t = threadComments(rows);
+  assert.deepEqual(t.map((x) => [x.comment.comment_id, x.replies.map((r) => r.comment_id)]), [["c1", ["c2", "c3"]], ["c4", []]]);
+});
+
+check("replying adds the first name", () => {
+  assert.equal(replyPrefix("Alex R."), "@Alex ");
+  assert.equal(replyPrefix(""), "");
+  assert.equal(replyPrefix(null), "");
+});
+
+check("Today mixes posts and milestone cards newest first; older cards wait for older posts", () => {
+  const posts = [{ id: "p1", created_at: "2026-11-07T12:00:00Z" }, { id: "p2", created_at: "2026-11-07T09:00:00Z" }];
+  const cards = [{ id: "m1", reached_at: "2026-11-07T10:00:00Z" }, { id: "m2", reached_at: "2026-11-06T10:00:00Z" }];
+  const ids = (xs: ReturnType<typeof mergeFeed<(typeof posts)[number], (typeof cards)[number]>>) => xs.map((x) => x.item.id);
+  assert.deepEqual(ids(mergeFeed(posts, cards, true)), ["p1", "m1", "p2"]);
+  assert.deepEqual(ids(mergeFeed(posts, cards, false)), ["p1", "m1", "p2", "m2"]);
+  assert.deepEqual(ids(mergeFeed([], cards, false)), ["m1", "m2"]);
 });
 
 console.log(`\n${passed} passed${process.exitCode ? ", some FAILED" : ""}`);

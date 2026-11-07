@@ -11,7 +11,7 @@ import { defaultDisplayName } from "@/lib/flockProfile";
 import { RAIL_TAB_CLASS, RAIL_TAB_OFF_STYLE, RAIL_TAB_ON_STYLE, useDuoRail, useTabFit } from "@/components/DuoRail";
 import { SpacesSheet } from "@/components/flock/SpacesSheet";
 import { rememberMode } from "@/lib/flock";
-import { FLOCK_DESTS, destForPath, isFlockOnboardingPath, type FlockDest } from "@/lib/flockNav";
+import { FLOCK_DESTS, destForPath, isFlockFullScreenPath, isFlockOnboardingPath, type FlockDest } from "@/lib/flockNav";
 
 // The Community's own chrome (the Flock; admins only until launch, the /flock
 // route guard keeps everyone else out). Five destinations in the same order
@@ -134,7 +134,7 @@ const SpacesContext = createContext<SpacesApi | null>(null);
 export function FlockShell({ children }: { children: ReactNode }) {
   const pathname = useLocation({ select: (l) => l.pathname });
   const current = destForPath(pathname);
-  const onboarding = isFlockOnboardingPath(pathname);
+  const onboarding = isFlockOnboardingPath(pathname) || isFlockFullScreenPath(pathname);
   const rail = useDuoRail();
   const [spacesOpen, setSpacesOpen] = useState(false);
   const trigger = useRef<HTMLElement | null>(null);
