@@ -92,7 +92,12 @@ export async function closeWelcome(page: Page, timeout = 15_000): Promise<void> 
   const frame = page.locator(".setup-frame");
   const shown = await frame.first().waitFor({ state: "visible", timeout }).then(() => true, () => false);
   if (!shown) return;
-  await frame.getByRole("button", { name: "Close", exact: true }).first().click();
+  // More than one copy can be up at once (each closes on its own X), so close
+  // whichever is showing until none is.
+  for (let i = 0; i < 3 && (await frame.count()) > 0; i++) {
+    await frame.first().getByRole("button", { name: "Close", exact: true }).first().click();
+    await page.waitForTimeout(500);
+  }
   await expect(frame).toHaveCount(0);
 }
 
