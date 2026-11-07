@@ -121,8 +121,15 @@ test("7. emergency contacts, then a pet sit", async () => {
 
   const created = page.waitForResponse((r) => /\/rest\/v1\/sits(\?|$)/.test(r.url()) && r.request().method() === "POST", { timeout: 60_000 });
   await page.getByRole("button", { name: /^Create sit and email/ }).click();
+  // A new bird's plan is mostly empty, so the app asks first ("Sam will need a
+  // little more", gaps listed as "Good to add when you can"). The sheet opens
+  // after an async readiness check: wait for it. (isVisible() never waits.)
   const anyway = page.getByRole("button", { name: "Create the sit anyway" });
-  if (await anyway.isVisible({ timeout: 8_000 }).catch(() => false)) await anyway.click();
+  const asked = await anyway.waitFor({ state: "visible", timeout: 20_000 }).then(() => true, () => false);
+  if (asked) {
+    await expect(page.getByText("Needed before you can create a sit")).toHaveCount(0);
+    await anyway.click();
+  }
   const res = await created;
   expect(res.ok(), `create sit: HTTP ${res.status()}`).toBeTruthy();
   const body = await res.json();
