@@ -1,0 +1,287 @@
+[
+ {
+  "id": "00000000-0000-4000-8000-000000007110",
+  "slug": "target-training",
+  "name": "Target training",
+  "category": "foundations",
+  "tier": "free",
+  "purpose": "So your bird learns to touch the tip of a stick for a reward, a simple tool that can guide them almost anywhere.",
+  "done_when": "your bird will travel to wherever the stick points. If the stick itself is scary, start by rewarding calm with it in view, or change its look with a colorful bead on the end.",
+  "suggested_first": null,
+  "typical_length": "1–3 weeks",
+  "safety_notes": [
+   "Keep sessions short.",
+   "Stop at the first sign of stress.",
+   "Never withhold food to make a bird hungrier for training."
+  ],
+  "safeguards": [],
+  "tips": [],
+  "sort_order": 20,
+  "milestones": [
+   {
+    "position": 1,
+    "title": "Calm with the target stick nearby."
+   },
+   {
+    "position": 2,
+    "title": "Taps the stick tip when it's held close (with the top of the beak or tongue, not a bite)."
+   },
+   {
+    "position": 3,
+    "title": "Takes a step or two to reach the stick."
+   },
+   {
+    "position": 4,
+    "title": "Follows the stick across the perch, side to side."
+   },
+   {
+    "position": 5,
+    "title": "Follows the stick up, down, or around a toy."
+   },
+   {
+    "position": 6,
+    "title": "Follows the stick onto a new perch or out the cage door."
+   }
+  ]
+ },
+ {
+  "id": "00000000-0000-4000-8000-000000007111",
+  "slug": "step-up",
+  "name": "Step up",
+  "category": "foundations",
+  "tier": "free",
+  "purpose": "So your bird steps onto your hand calmly and by choice, foot first, without biting.",
+  "done_when": "your bird steps up on cue from most places. If your bird lowers its head, opens its beak, or leans away, it's saying no, so pause and make the next ask smaller.",
+  "suggested_first": "Target training helps",
+  "typical_length": "2–6 weeks",
+  "safety_notes": [
+   "Keep sessions short.",
+   "Stop at the first sign of stress.",
+   "Never withhold food to make a bird hungrier for training."
+  ],
+  "safeguards": [],
+  "tips": [],
+  "sort_order": 30,
+  "milestones": [
+   {
+    "position": 1,
+    "title": "Stays relaxed as your hand comes near and stays still."
+   },
+   {
+    "position": 2,
+    "title": "Touches your still, open hand with a foot."
+   },
+   {
+    "position": 3,
+    "title": "Shifts weight and steps on with one foot, then steps back off."
+   },
+   {
+    "position": 4,
+    "title": "Steps up with both feet."
+   },
+   {
+    "position": 5,
+    "title": "Stays on your hand for a few seconds, then is set back down."
+   },
+   {
+    "position": 6,
+    "title": "Stays calm while your hand moves up, down, and across the room."
+   },
+   {
+    "position": 7,
+    "title": "Steps up on cue from inside the cage and from a stand."
+   }
+  ]
+ },
+ {
+  "id": "00000000-0000-4000-8000-000000007112",
+  "slug": "wing-touch",
+  "name": "Wing touch",
+  "category": "husbandry",
+  "tier": "free",
+  "purpose": "So your bird is comfortable having wings touched and gently extended, for vet exams and health checks. The bird gives consent at every step.",
+  "done_when": "your bird leans in for wing touches and allows a short, gentle extension. Any resistance means going back a step. This one should never be rushed, and it should stay brief, since prolonged body touch can trigger hormonal behavior.",
+  "suggested_first": "Target training",
+  "typical_length": "4–8 weeks",
+  "safety_notes": [
+   "Keep sessions short.",
+   "Stop at the first sign of stress.",
+   "Never withhold food to make a bird hungrier for training."
+  ],
+  "safeguards": [],
+  "tips": [],
+  "sort_order": 50,
+  "milestones": [
+   {
+    "position": 1,
+    "title": "Approaches your closed hand on the perch for a reward."
+   },
+   {
+    "position": 2,
+    "title": "Comes to your hand without the target stick."
+   },
+   {
+    "position": 3,
+    "title": "Lets the side of a wing brush your palm."
+   },
+   {
+    "position": 4,
+    "title": "Allows a light touch on the side of the wing."
+   },
+   {
+    "position": 5,
+    "title": "Allows a touch at the wing tip."
+   },
+   {
+    "position": 6,
+    "title": "Allows the tip of the wing to be lifted slightly."
+   },
+   {
+    "position": 7,
+    "title": "Allows a gentle, brief wing extension on both sides."
+   }
+  ]
+ },
+ {
+  "id": "00000000-0000-4000-8000-000000007113",
+  "slug": "diet-conversion",
+  "name": "Diet conversion",
+  "category": "food",
+  "tier": "free",
+  "purpose": "So your bird moves gradually from a seed-heavy diet to pellets, chop, and fresh foods without losing weight.",
+  "done_when": "the new diet is most of what your bird eats and their weight has held steady the whole way.",
+  "suggested_first": null,
+  "typical_length": "4–12 weeks",
+  "safety_notes": [
+   "Keep sessions short.",
+   "Stop at the first sign of stress.",
+   "Never withhold food to make a bird hungrier for training."
+  ],
+  "safeguards": [
+   "Daily weigh-ins are part of every step, and the journey shows the weight trend right on its page.",
+   "The old food is never removed until the bird is reliably eating the new one.",
+   "If weight drops, the journey pauses with a clear message to call your avian vet. For app premium members, this uses the bird's own baseline alerts.",
+   "The template suggests a vet check before starting, especially for older birds or birds on an all-seed diet."
+  ],
+  "tips": [
+   "Offer the new food first thing in the morning, when your bird is hungriest, with the usual food alongside.",
+   "Eat it in front of them. Parrots are flock eaters and often try what they see you eat.",
+   "Change one thing at a time, and go slower than feels necessary. Some birds take months, and that's normal.",
+   "Try different forms: chopped, warmed, crumbled over a favorite food, or tucked into a foraging toy.",
+   "Watch droppings and appetite as well as weight. If your bird stops eating, put the usual food back and call your vet."
+  ],
+  "sort_order": 70,
+  "milestones": [
+   {
+    "position": 1,
+    "title": "A week of daily weigh-ins to set your bird's starting weight."
+   },
+   {
+    "position": 2,
+    "title": "The new food offered beside the usual food every day."
+   },
+   {
+    "position": 3,
+    "title": "Tastes the new food, even just a nibble."
+   },
+   {
+    "position": 4,
+    "title": "Eats some of the new food most days."
+   },
+   {
+    "position": 5,
+    "title": "The new food makes up about a quarter of what's offered."
+   },
+   {
+    "position": 6,
+    "title": "About half."
+   },
+   {
+    "position": 7,
+    "title": "Most of the diet, with treats saved for training."
+   }
+  ]
+ },
+ {
+  "id": "00000000-0000-4000-8000-000000007114",
+  "slug": "wave",
+  "name": "Wave",
+  "category": "tricks",
+  "tier": "premium",
+  "purpose": "So your bird lifts a foot and waves on cue. It builds on step up, since the wave starts as the beginning of a step up.",
+  "done_when": "your bird waves to a hand signal. Stick with one foot, and only reward that foot.",
+  "suggested_first": "Step up",
+  "typical_length": "2–4 weeks",
+  "safety_notes": [
+   "Keep sessions short.",
+   "Stop at the first sign of stress.",
+   "Never withhold food to make a bird hungrier for training."
+  ],
+  "safeguards": [],
+  "tips": [],
+  "sort_order": 100,
+  "milestones": [
+   {
+    "position": 1,
+    "title": "Lifts the foot it usually steps up with when your hand comes near."
+   },
+   {
+    "position": 2,
+    "title": "Lifts it high, then puts it back down to reach a treat off to the side."
+   },
+   {
+    "position": 3,
+    "title": "Lifts it to the same height most times."
+   },
+   {
+    "position": 4,
+    "title": "Waves to a small hand signal instead of an offered hand."
+   },
+   {
+    "position": 5,
+    "title": "Waves on cue from a little distance."
+   }
+  ]
+ },
+ {
+  "id": "00000000-0000-4000-8000-000000007115",
+  "slug": "spin",
+  "name": "Spin",
+  "category": "tricks",
+  "tier": "premium",
+  "purpose": "So your bird turns a full circle on the perch. Pick one direction and stay with it until the spin is solid.",
+  "done_when": "a finger flick gets a full spin.",
+  "suggested_first": "Target training",
+  "typical_length": "2–4 weeks",
+  "safety_notes": [
+   "Keep sessions short.",
+   "Stop at the first sign of stress.",
+   "Never withhold food to make a bird hungrier for training."
+  ],
+  "safeguards": [],
+  "tips": [],
+  "sort_order": 120,
+  "milestones": [
+   {
+    "position": 1,
+    "title": "Follows the target stick a quarter turn."
+   },
+   {
+    "position": 2,
+    "title": "Follows it a half turn."
+   },
+   {
+    "position": 3,
+    "title": "Follows it all the way around and ends facing forward."
+   },
+   {
+    "position": 4,
+    "title": "Spins to your finger instead of the stick."
+   },
+   {
+    "position": 5,
+    "title": "Spins to a small flick of the finger."
+   }
+  ]
+ }
+]

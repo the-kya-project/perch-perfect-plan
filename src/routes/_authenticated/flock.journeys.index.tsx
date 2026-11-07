@@ -1,13 +1,14 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { Route as RouteIcon } from "lucide-react";
+import { Link, createFileRoute, useNavigate } from "@tanstack/react-router";
+import { Plus, Route as RouteIcon } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import type { TFunction } from "i18next";
 import { FlockBody, FlockHeader } from "@/components/FlockShell";
 import { FlockChips, FlockEmpty } from "@/components/flock/FlockChips";
+import { K } from "@/components/kya";
 import { JOURNEYS_FILTERS, pickOptional, type JourneysFilter } from "@/lib/flockNav";
 
 // Journeys: members' progress stories. Species filters come in a later step.
-export const Route = createFileRoute("/_authenticated/flock/journeys")({
+export const Route = createFileRoute("/_authenticated/flock/journeys/")({
   validateSearch: (s: Record<string, unknown>): { filter?: JourneysFilter } => ({ filter: pickOptional(s.filter, JOURNEYS_FILTERS) }),
   component: FlockJourneys,
 });
@@ -59,6 +60,15 @@ function FlockJourneys() {
           value={current}
           onChange={(v) => void navigate({ search: { filter: !v || v === "for-you" ? undefined : v }, replace: true })}
         />
+        {/* The journey cards and real filters come with step 3's third PR. */}
+        <Link
+          to="/flock/journeys/start"
+          data-testid="start-journey"
+          className="inline-flex min-h-[48px] items-center justify-center gap-2 rounded-full border-2 px-5 text-[15px] font-[700] active:scale-[0.99]"
+          style={{ background: K.sunflower, borderColor: K.forest, color: K.forest }}
+        >
+          <Plus className="size-4" aria-hidden="true" />{t("flock.journeys.startCta", "Start a journey")}
+        </Link>
         <FlockEmpty icon={<RouteIcon className="size-6" />} title={empty.title}>{empty.line}</FlockEmpty>
       </FlockBody>
     </>

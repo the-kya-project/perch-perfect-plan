@@ -14,6 +14,7 @@ import { test, expect, type Browser, type BrowserContext, type Page, type Route 
 import { devices } from "@playwright/test";
 import { duoFixture } from "./duo-fixture";
 import { mockDuo } from "./duo-mock";
+import { readFileSync } from "node:fs";
 import { MOCK } from "./helpers";
 
 const { defaultBrowserType: _d, ...IPHONE } = devices["iPhone 13"];
@@ -95,7 +96,7 @@ async function mockFlock(context: BrowserContext, userId: string, opts: { setupD
   return state;
 }
 
-async function open(browser: Browser, baseURL: string, opts: { admin: boolean; size?: "phone" | "duo"; setupDone?: boolean; region?: string; storagePhotos?: boolean }): Promise<{ context: BrowserContext; page: Page; flockChunks: string[]; state: FlockState }> {
+async function open(browser: Browser, baseURL: string, opts: { admin: boolean; size?: "phone" | "duo"; setupDone?: boolean; region?: string; storagePhotos?: boolean; journeys?: JourneyMockOpts }): Promise<{ context: BrowserContext; page: Page; flockChunks: string[]; state: FlockState; journeys: JourneyState }> {
   const context = await browser.newContext({
     ...(opts.size === "duo" ? DUO : IPHONE),
     locale: "en-US", serviceWorkers: "block", baseURL,
@@ -107,12 +108,13 @@ async function open(browser: Browser, baseURL: string, opts: { admin: boolean; s
   await mockDuo(context, fx);
   if (opts.storagePhotos) await storagePhotos(context, fx);
   const state = await mockFlock(context, fx.user.id, { setupDone: opts.setupDone ?? true, region: opts.region });
+  const journeys = await mockJourneys(context, opts.journeys ?? {});
   // Hide the open-in-app strip on every page (a session-only choice).
   await context.addInitScript(() => { try { sessionStorage.setItem("kya:openInAppDismissed", "1"); } catch { /* ignore */ } });
   const flockChunks: string[] = [];
   context.on("request", (r) => { if (FLOCK_CHUNK.test(r.url())) flockChunks.push(r.url()); });
   const page = await context.newPage();
-  return { context, page, flockChunks, state };
+  return { context, page, flockChunks, state, journeys };
 }
 
 /** Bird photos the way production stores them: a path in the private
@@ -146,6 +148,65 @@ async function storagePhotos(context: BrowserContext, fx: ReturnType<typeof duoF
   });
   await context.route(`${MOCK}/storage/v1/render/image/sign/**`, (route) =>
     route.request().url().includes(willow) ? route.fulfill({ status: 404, body: "" }) : route.fulfill({ status: 200, contentType: "image/jpeg", body: jpg }));
+}
+
+// ---- Journeys (step 3) --------------------------------------------------------
+// Six of the fourteen templates, in the doc's own words (e2e/journey-fixture.json).
+const JOURNEY_TEMPLATES = JSON.parse(readFileSync(`${process.cwd()}/e2e/journey-fixture.json`, "utf8")) as { id: string; slug: string; name: string; tier: string; milestones: { position: number; title: string }[] }[];
+type JourneyMockOpts = { tier?: "free" | "premium" | "flock"; openCustom?: number; knownSlugs?: string[] };
+type JourneyState = { starts: Record<string, any>[]; known: Record<string, any>[] };
+
+/** Journey tables and functions, answered the way the database would for a
+ *  member of `tier` (admins are "flock"). Records every start and skills save. */
+async function mockJourneys(context: BrowserContext, opts: JourneyMockOpts): Promise<JourneyState> {
+  const state: JourneyState = { starts: [], known: [] };
+  const tier = opts.tier ?? "flock";
+  const limits = {
+    free: { max_clip_seconds: 60, max_clips_per_journey: 10, max_open_custom: 1, max_upload_bytes: 262144000, can_use_premium: false, can_share: false, can_view_community: false },
+    premium: { max_clip_seconds: 300, max_clips_per_journey: 20, max_open_custom: null, max_upload_bytes: 1073741824, can_use_premium: true, can_share: false, can_view_community: true },
+    flock: { max_clip_seconds: 1200, max_clips_per_journey: null, max_open_custom: null, max_upload_bytes: 2000000000, can_use_premium: true, can_share: true, can_view_community: true },
+  }[tier];
+  const json = (route: Route, body: unknown, status = 200) =>
+    route.fulfill({ status, contentType: "application/json", headers: { "access-control-allow-origin": "*" }, body: JSON.stringify(body) });
+  const journeys = new Map<string, any>();
+  await context.route(`${MOCK}/rest/v1/journey_templates**`, (route) => json(route, JOURNEY_TEMPLATES));
+  await context.route(`${MOCK}/rest/v1/bird_skills**`, (route) => {
+    const known = JOURNEY_TEMPLATES.filter((x) => (opts.knownSlugs ?? []).includes(x.slug));
+    return json(route, known.map((x) => ({ id: `skill-${x.slug}`, name: x.name, template_id: x.id, source: "known" })));
+  });
+  await context.route(`${MOCK}/rest/v1/journeys**`, (route) => {
+    const url = new URL(route.request().url());
+    const id = url.searchParams.get("id")?.replace(/^eq\./, "");
+    if (id) {
+      const j = journeys.get(id);
+      return j ? json(route, j) : json(route, { code: "PGRST116" }, 406);
+    }
+    return json(route, []);
+  });
+  await context.route(`${MOCK}/rest/v1/rpc/journey_*`, async (route) => {
+    const fn = new URL(route.request().url()).pathname.split("/").pop();
+    const args = (route.request().postDataJSON() ?? {}) as Record<string, any>;
+    if (fn === "journey_my_access") return json(route, [{ tier, open_custom: opts.openCustom ?? 0, ...limits }]);
+    if (fn === "journey_start") {
+      state.starts.push(args);
+      const id = `00000000-0000-4000-8000-0000000072${String(state.starts.length).padStart(2, "0")}`;
+      const tp = JOURNEY_TEMPLATES.find((x) => x.slug === args.p_template_slug);
+      const titles: string[] = tp ? tp.milestones.map((m) => m.title) : args.p_custom_milestones;
+      journeys.set(id, {
+        id, bird_id: args.p_bird_id, template_id: tp?.id ?? null, custom_name: args.p_custom_name, status: "active",
+        visibility: args.p_visibility, rhythm: args.p_rhythm, started_at: new Date().toISOString(),
+        template: tp ? { name: tp.name, slug: tp.slug } : null,
+        milestones: titles.map((title, i) => ({ id: `${id}-m${i + 1}`, position: i + 1, title, state: (args.p_already ?? []).includes(i + 1) ? "already" : "todo", reached_at: null })),
+      });
+      return json(route, id);
+    }
+    return json(route, null);
+  });
+  await context.route(`${MOCK}/rest/v1/rpc/bird_set_known_skills`, (route) => {
+    state.known.push(route.request().postDataJSON());
+    return json(route, 2);
+  });
+  return state;
 }
 
 // Community code chunks (FlockHealthDuo is the care app's, not Community's).
@@ -307,10 +368,128 @@ test("as an admin, Duo / wide: the five Community tabs sit in the side column", 
   await context.close();
 });
 
+test.describe("journeys: start a journey (admin, phone)", () => {
+  test("pick a bird, pick Step up, mark what he already does, start: the database gets exactly that", async ({ browser, baseURL }) => {
+    const { context, page, journeys } = await open(browser, baseURL!, { admin: true, journeys: { knownSlugs: ["target-training"] } });
+    await page.goto("/flock/journeys");
+    await page.getByTestId("start-journey").click();
+    await expect(page).toHaveURL(/\/flock\/journeys\/start$/);
+    // A full screen: no tab bar.
+    await expect(page.locator("[data-flock-tab]")).toHaveCount(0);
+    await page.getByTestId("pick-bird").locator("[data-bird]", { hasText: "Echo" }).click();
+    const list = page.getByTestId("template-list");
+    await expect(list.getByRole("heading", { name: "The basics · free" })).toBeVisible();
+    await expect(list.getByRole("heading", { name: "Tricks and more · premium" })).toBeVisible();
+    await expect(list.locator("[data-template]")).toHaveCount(6);
+    await expect(list.locator("[data-template='target-training']")).toContainText("Echo knows this");
+    await expect(list.locator("[data-template='step-up']")).toContainText("7 milestones · usually 2–6 weeks");
+    await expect(list.locator("[data-locked]")).toHaveCount(0);
+    await list.locator("[data-template='step-up']").click();
+
+    await expect(page).toHaveURL(/\/flock\/journeys\/setup\?/);
+    const setup = page.getByTestId("journey-setup");
+    await expect(page.getByRole("heading", { level: 1 })).toHaveText("Step up");
+    await expect(setup.getByText("Where is Echo starting?")).toBeVisible();
+    await expect(setup.getByText("Tap anything he already does.")).toBeVisible();
+    await setup.locator("[data-position='1']").click();
+    await setup.locator("[data-position='2']").click();
+    await expect(setup.locator("[data-position='3']")).toContainText("Start here");
+    await expect(setup.locator("[data-position='1']")).toContainText("Already");
+    await expect(setup.getByText("You'll compare it with later clips. It's worth the 30 seconds.")).toBeVisible();
+    await expect(setup.getByTestId("rhythm").locator("[aria-checked='true']")).toHaveText("A few times a week");
+    await expect(setup.getByTestId("visibility").locator("[role='radio']")).toHaveText(["The community", "Just me"]);
+    await expect(setup.getByTestId("visibility").locator("[aria-checked='true']")).toHaveText("The community");
+    await expect(setup.getByTestId("safety-notes")).toContainText("Never withhold food to make a bird hungrier for training.");
+    await setup.getByTestId("rhythm").getByRole("radio", { name: "Most days" }).click();
+    await page.getByRole("button", { name: "Start Echo's journey" }).click();
+
+    await expect(page).toHaveURL(/\/flock\/journeys\/00000000-0000-4000-8000-000000007201$/);
+    expect(journeys.starts).toHaveLength(1);
+    expect(journeys.starts[0]).toMatchObject({ p_template_slug: "step-up", p_custom_name: null, p_already: [1, 2], p_rhythm: "most_days", p_visibility: "community", p_day_one_clip: null });
+    await expect(page.getByTestId("journey-progress")).toHaveText("2 of 7 · next: Shifts weight and steps on with one foot, then steps back off.");
+    await context.close();
+  });
+
+  test("Diet conversion shows its vet check and safeguards before starting", async ({ browser, baseURL }) => {
+    const { context, page } = await open(browser, baseURL!, { admin: true });
+    await page.goto("/flock/journeys/start");
+    await page.getByTestId("pick-bird").locator("[data-bird]", { hasText: "Willow" }).click();
+    await page.locator("[data-template='diet-conversion']").click();
+    await expect(page.getByTestId("vet-check")).toHaveText("The template suggests a vet check before starting, especially for older birds or birds on an all-seed diet.");
+    await expect(page.getByTestId("safeguards")).toContainText("If weight drops, the journey pauses with a clear message to call your avian vet.");
+    await expect(page.getByText("Tap anything she already does.")).toBeVisible();
+    await context.close();
+  });
+
+  test("write your own: a name and 3 milestones, privately", async ({ browser, baseURL }) => {
+    const { context, page, journeys } = await open(browser, baseURL!, { admin: true });
+    await page.goto("/flock/journeys/start");
+    await page.getByTestId("pick-bird").locator("[data-bird]", { hasText: "Max" }).click();
+    await page.getByTestId("write-own").click();
+    await expect(page.getByRole("heading", { level: 1 })).toHaveText("Write your own journey");
+    const start = page.getByRole("button", { name: "Start Max's journey" });
+    await expect(start).toBeDisabled();
+    await page.getByTestId("custom-name").fill("Bath time");
+    const rows = page.getByTestId("custom-milestones").locator("input");
+    await rows.nth(0).fill("Calm near the dish");
+    await rows.nth(1).fill("Toes in the water");
+    await expect(start).toBeDisabled();
+    await rows.nth(2).fill("A full splash");
+    await page.getByTestId("visibility").getByRole("radio", { name: "Just me" }).click();
+    await start.click();
+    await expect(page).toHaveURL(/\/flock\/journeys\/0000/);
+    expect(journeys.starts[0]).toMatchObject({ p_template_slug: null, p_custom_name: "Bath time", p_custom_milestones: ["Calm near the dish", "Toes in the water", "A full splash"], p_visibility: "private" });
+    await context.close();
+  });
+
+  test("mark known skills: tap, save, and the button counts them", async ({ browser, baseURL }) => {
+    const { context, page, journeys } = await open(browser, baseURL!, { admin: true, journeys: { knownSlugs: ["target-training"] } });
+    await page.goto("/flock/journeys/start");
+    await page.getByTestId("pick-bird").locator("[data-bird]", { hasText: "Echo" }).click();
+    await page.getByRole("button", { name: "Mark what Echo already knows" }).click();
+    await expect(page.getByRole("heading", { level: 1 })).toHaveText("What does Echo already know?");
+    await expect(page.getByText("It goes on his skill list, and those journeys start as finished.")).toBeVisible();
+    await expect(page.locator("[data-skill='target-training']")).toHaveAttribute("aria-pressed", "true");
+    await page.locator("[data-skill='wave']").click();
+    await page.getByRole("button", { name: "Save 2 skills" }).click();
+    await expect(page).toHaveURL(/\/flock\/journeys\/start\?bird=/);
+    expect(journeys.known[0]).toMatchObject({ p_template_slugs: ["target-training", "wave"] });
+    await context.close();
+  });
+});
+
+test.describe("journeys: what a free account sees", () => {
+  test("premium templates are locked and explain app premium; only Just me; one custom journey at a time", async ({ browser, baseURL }) => {
+    const { context, page, journeys } = await open(browser, baseURL!, { admin: true, journeys: { tier: "free", openCustom: 1 } });
+    await page.goto("/flock/journeys/start");
+    await page.getByTestId("pick-bird").locator("[data-bird]", { hasText: "Buzz" }).click();
+    await expect(page.locator("[data-locked]")).toHaveCount(2);
+    await page.locator("[data-template='wave']").click();
+    const sheet = page.getByTestId("premium-sheet");
+    await expect(page.getByRole("heading", { name: "Tricks come with app premium" })).toBeVisible();
+    await expect(sheet).toContainText("Unlock every trick and husbandry journey, unlimited custom journeys, and longer clips, plus the premium care features.");
+    await expect(sheet).toContainText("$9.99");
+    await sheet.getByRole("button", { name: "Coming soon" }).click();
+    await expect(sheet).toBeVisible();
+    await expect(sheet.getByRole("link", { name: "Compare with Flock membership" })).toHaveAttribute("href", "/flock/you/membership");
+    await page.keyboard.press("Escape");
+    await page.getByTestId("write-own").click();
+    await expect(page.getByTestId("custom-limit-sheet")).toBeVisible();
+    await page.getByRole("button", { name: "Got it" }).click();
+    await page.locator("[data-template='step-up']").click();
+    await expect(page.getByTestId("visibility").locator("[role='radio']")).toHaveText(["Just me"]);
+    await expect(page.getByText("Sharing journeys with the community comes with Flock membership.")).toBeVisible();
+    await page.getByRole("button", { name: "Start Buzz's journey" }).click();
+    await expect.poll(() => journeys.starts.length).toBe(1);
+    expect(journeys.starts[0]).toMatchObject({ p_visibility: "private" });
+    await context.close();
+  });
+});
+
 test("everyone else: every /flock URL sends them Home and no Community code loads", async ({ browser, baseURL }) => {
   for (const size of ["phone", "duo"] as const) {
     const { context, page, flockChunks } = await open(browser, baseURL!, { admin: false, size });
-    for (const path of ["/flock", "/flock/journeys", "/flock/chapter", "/flock/library", "/flock/spaces", "/flock/learn", "/flock?space=good"]) {
+    for (const path of ["/flock", "/flock/journeys", "/flock/journeys/start", "/flock/journeys/setup?bird=x&template=step-up", "/flock/journeys/known?bird=x", "/flock/chapter", "/flock/library", "/flock/spaces", "/flock/learn", "/flock?space=good"]) {
       await page.goto(path);
       await expect(page, `${size} ${path}`).toHaveURL(/\/dashboard/);
     }
