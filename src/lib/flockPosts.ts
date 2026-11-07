@@ -31,9 +31,11 @@ function escapeRegExp(s: string): string {
   return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
-/** The warning-sign phrases (flock_vet_signs) found in `text`, as whole words:
- *  "bleeding" matches "is bleeding" but "blood" doesn't match "bloodhound".
- *  Never blocks anything: a match only shows the red card. */
+/** The warning-sign phrases (flock_vet_signs) found in `text`, as whole words
+ *  or phrases, ignoring case: "bleeding" matches "Is BLEEDING" but "blood"
+ *  doesn't match "bloodhound", "a burn" doesn't match "a burning question", and
+ *  a hyphenated word is one word ("alcohol" doesn't match "alcohol-free").
+ *  Never blocks anything: a match only shows a card. */
 export function findVetSigns(text: string, phrases: readonly string[]): string[] {
   const hay = normalizeForSigns(text);
   if (!hay) return [];
@@ -41,7 +43,7 @@ export function findVetSigns(text: string, phrases: readonly string[]): string[]
   for (const raw of phrases) {
     const p = normalizeForSigns(raw);
     if (!p) continue;
-    const re = new RegExp(`(^|[^a-z0-9'])${escapeRegExp(p)}(?=$|[^a-z0-9'])`);
+    const re = new RegExp(`(^|[^a-z0-9'-])${escapeRegExp(p)}(?=$|[^a-z0-9'-])`);
     if (re.test(hay)) found.push(raw);
   }
   return found;

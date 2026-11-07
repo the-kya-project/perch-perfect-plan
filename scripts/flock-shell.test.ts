@@ -463,15 +463,31 @@ check("Diet conversion's weight line: the average of the last 3 counted weigh-in
 });
 
 check("the vet nudge's tiers: urgent wins when both match; none for ordinary posts", () => {
-  const signs = [
-    { phrase: "fluffed up", tier: "today" as const }, { phrase: "bleeding", tier: "today" as const },
-    { phrase: "won't stop bleeding", tier: "urgent" as const }, { phrase: "teflon", tier: "urgent" as const }, { phrase: "chocolate", tier: "urgent" as const },
-  ];
-  assert.equal(vetNudgeTier("Echo is fluffed up this morning.", signs), "today");
+  // A slice of the real lists (20261108180000_flock_vet_nudge_tighten.sql),
+  // including the phrases next to each everyday trap.
+  const today = ["fluffed up and sleeping", "fluffed up all day", "sleeping on the bottom", "sleeping a lot", "bleeding", "tail bobbing"];
+  const urgent = ["won't stop bleeding", "ate avocado", "got into avocado", "ate chocolate", "drank alcohol", "had caffeine", "teflon fumes",
+    "ptfe fumes", "pan fumes", "fumes", "smoke inhalation", "breathed smoke", "house fire", "heavy metal poisoning", "zinc poisoning",
+    "chewed zinc", "got burned", "has a burn", "hard fall"];
+  const signs = [...today.map((phrase) => ({ phrase, tier: "today" as const })), ...urgent.map((phrase) => ({ phrase, tier: "urgent" as const }))];
+  assert.equal(vetNudgeTier("Echo has been fluffed up all day.", signs), "today");
   assert.equal(vetNudgeTier("His nail won\u2019t stop bleeding", signs), "urgent", "urgent, with today's 'bleeding' also matching");
-  assert.equal(vetNudgeTier("Fluffed up after the Teflon pan smoked", signs), "urgent");
   assert.equal(vetNudgeTier("We tried a new foraging toy!", signs), null);
-  assert.equal(vetNudgeTier("chocolatey brown feathers", signs), null, "whole words only");
+  // Everyday posts: no card.
+  for (const t of ["We got rid of our nonstick pans", "Is avocado safe for parrots?", "Smoky loves his bath, all fluffed up",
+    "Our smoke detector went off and scared her", "Music time: Kiwi loves heavy metal", "Use alcohol-free wipes", "That's a burning question"]) {
+    assert.equal(vetNudgeTier(t, signs), null, t);
+  }
+  // Emergencies: urgent, whatever the case.
+  for (const t of ["Echo ate avocado off my plate", "the pan overheated and there were teflon fumes", "Kiwi got burned on the stove", "KIWI GOT BURNED"]) {
+    assert.equal(vetNudgeTier(t, signs), "urgent", t);
+  }
+  // Whole words and phrases only; a hyphenated word is one word.
+  assert.deepEqual(findVetSigns("That's a burning question", ["a burn", "burn"]), []);
+  assert.deepEqual(findVetSigns("Kiwi has a burn on her foot", ["a burn"]), ["a burn"]);
+  assert.deepEqual(findVetSigns("Use alcohol-free wipes", ["alcohol"]), []);
+  assert.deepEqual(findVetSigns("He drank alcohol. Help!", ["drank alcohol"]), ["drank alcohol"]);
+  assert.deepEqual(findVetSigns("chocolatey brown feathers", ["chocolate"]), []);
   assert.equal(vetNudgeTier("anything", []), null);
 });
 
