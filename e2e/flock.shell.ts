@@ -44,6 +44,9 @@ type FlockState = {
   /** Step 4B: notifications and the review queue. */
   notifications: Record<string, any>[];
   queue: Record<string, any>[];
+  /** Step 4C: today's idea (null = none) and the admin schedule. */
+  idea: Record<string, any> | null;
+  schedule: Record<string, any>[];
 };
 
 async function mockFlock(context: BrowserContext, userId: string, opts: { setupDone: boolean; region?: string }): Promise<FlockState> {
@@ -60,6 +63,8 @@ async function mockFlock(context: BrowserContext, userId: string, opts: { setupD
     rateLimit: null,
     notifications: [],
     queue: [],
+    idea: null,
+    schedule: [],
   };
   const neighbours: Record<string, { user_id: string; display_name: string }[]> = {
     "great-lakes": [{ user_id: "00000000-0000-4000-8000-00000000c001", display_name: "Ada L." }],
@@ -94,6 +99,15 @@ async function mockFlock(context: BrowserContext, userId: string, opts: { setupD
   await context.route(`${MOCK}/rest/v1/regions**`, (route) => json(route, REGIONS));
   await context.route(`${MOCK}/rest/v1/entitlements**`, (route) =>
     json(route, [{ plan: "founding", status: "trialing", source: "founding", starts_at: null, current_period_end: null, free_until: null }]));
+  await context.route(`${MOCK}/rest/v1/rpc/admin_*`, async (route) => {
+    const fn = new URL(route.request().url()).pathname.split("/").pop()!;
+    const args = (route.request().postDataJSON() ?? {}) as Record<string, any>;
+    state.calls.push({ fn, args });
+    if (fn === "admin_ideas_schedule") return json(route, state.schedule);
+    if (fn === "admin_ideas_unscheduled") return json(route, []);
+    if (fn === "admin_save_idea") return json(route, "00000000-0000-4000-8000-0000000082aa");
+    return json(route, null);
+  });
   await context.route(`${MOCK}/rest/v1/rpc/flock_*`, async (route) => {
     const fn = new URL(route.request().url()).pathname.split("/").pop();
     const args = (route.request().postDataJSON() ?? {}) as Record<string, any>;
@@ -162,6 +176,8 @@ async function mockFlock(context: BrowserContext, userId: string, opts: { setupD
         { user_id: "00000000-0000-4000-8000-00000000d003", display_name: "Jo K.", region_name: "Texas", photo_path: null, kind: "great_job", created_at: ago(15) },
       ]);
     }
+    if (fn === "flock_todays_idea") return json(route, state.idea ? [state.idea] : []);
+    if (fn === "flock_idea_try") { if (state.idea) { state.idea.my_outcome = args.p_outcome; state.idea.my_bird_id = args.p_bird_id; } return json(route, null); }
     if (fn === "flock_report") return json(route, null);
     if (fn === "flock_notifications_list") {
       const f = args.p_filter;
@@ -423,7 +439,7 @@ async function mockJourneys(context: BrowserContext, opts: JourneyMockOpts, bird
 }
 
 // Community code chunks (FlockHealthDuo is the care app's, not Community's).
-const FLOCK_CHUNK = /\/assets\/(?!FlockHealthDuo)(Flock\w+|SpacesSheet|CommentThread|ReportSheet|admin\.review|Post(?:Compose|Feed|Parts)|Journey\w+|[jJ]ourney\w*(\.[\w$-]+)*|flock\w*(\.[\w$-]+)*)-[\w-]+\.js/;
+const FLOCK_CHUNK = /\/assets\/(?!FlockHealthDuo)(Flock\w+|SpacesSheet|CommentThread|ReportSheet|IdeaParts|admin\.(?:review|ideas)|Post(?:Compose|Feed|Parts)|Journey\w+|[jJ]ourney\w*(\.[\w$-]+)*|flock\w*(\.[\w$-]+)*)-[\w-]+\.js/;
 
 const tabs = (page: Page) => page.locator("nav[aria-label='Community']:visible [data-flock-tab]");
 
@@ -1038,7 +1054,7 @@ test("everyone else: every /flock URL sends them Home and no Community code load
     const calls: string[] = [];
     context.on("request", (r) => { const m = r.url().match(/\/rpc\/((?:flock|journey)_\w+)/); if (m && m[1] !== "flock_enabled") calls.push(m[1]); });
     for (const path of ["/flock", "/flock/journeys", "/flock/journeys/start", "/flock/journeys/setup?bird=x&template=step-up", "/flock/journeys/known?bird=x", "/flock/journeys/00000000-0000-4000-8000-0000000074a1/post", "/flock/journeys/00000000-0000-4000-8000-0000000074a1/milestone/1", "/flock/journeys/00000000-0000-4000-8000-0000000074a1/story", "/flock/journeys/00000000-0000-4000-8000-0000000074a1/compare", "/flock/chapter", "/flock/library", "/flock/spaces", "/flock/learn", "/flock?space=good",
-      "/flock/post/new", "/flock/post/00000000-0000-4000-8000-0000000079a1", "/flock/you/notifications", "/admin/review"]) {
+      "/flock/post/new", "/flock/post/00000000-0000-4000-8000-0000000079a1", "/flock/you/notifications", "/admin/review", "/flock/idea", "/admin/ideas"]) {
       await page.goto(path);
       await expect(page, `${size} ${path}`).toHaveURL(/\/dashboard/);
     }
@@ -1334,6 +1350,83 @@ test.describe("reporting, the review queue and notifications (admin, phone)", ()
     await rep.locator("[data-act='keep']").click();
     expect(state.calls.filter((c) => c.fn === "flock_resolve_report").at(-1)!.args).toMatchObject({ p_action: "keep" });
     await expect(page.getByTestId("queue-empty")).toHaveText("Nothing waiting. Nice.");
+    await context.close();
+  });
+});
+
+test.describe("today's idea and We tried it (admin, phone)", () => {
+  const IDEA = { idea_id: "00000000-0000-4000-8000-0000000082a1", shown_on: "2026-11-08", title: "Wrap a treat in a paper cup", category: "enrichment",
+    body: "Fold a plain paper cup around a favorite treat and hand it over.", has_photo: false, is_reused: false,
+    my_outcome: null, my_bird_id: null, my_has_photo: false, tried: null, loved_pct: null, top_species: null, photo_count: 0 };
+
+  test("the card on Today, How did [bird] do?, and the tally only from five answers", async ({ browser, baseURL }) => {
+    const { context, page, state } = await open(browser, baseURL!, { admin: true });
+    state.idea = { ...IDEA };
+    await page.goto("/flock");
+    const card = page.getByTestId("todays-idea");
+    await expect(card).toContainText("Today's idea · Enrichment");
+    await expect(card.getByRole("heading")).toHaveText("Wrap a treat in a paper cup");
+    await card.getByTestId("we-tried-it").click();
+    await expect(page).toHaveURL(/\/flock\/idea$/);
+    const how = page.getByTestId("how-did");
+    await expect(how.getByRole("heading")).toHaveText(/^How did \w+ do\?$/);
+    await expect(how.getByRole("radio")).toHaveText(["Loved it", "Curious", /^Not for (him|her|them)$/]);
+    await expect(page.getByRole("button", { name: "Share how it went" })).toBeDisabled();
+    await how.locator("[data-outcome='loved']").click();
+    await page.getByRole("button", { name: "Share how it went" }).click();
+    expect(state.calls.find((c) => c.fn === "flock_idea_try")!.args).toMatchObject({ p_idea_id: IDEA.idea_id, p_outcome: "loved", p_photo_path: null });
+    await expect(page.getByTestId("my-answer")).toContainText("Loved it");
+    await expect(page.getByTestId("tally-soon")).toHaveText("Once five birds have tried it, you'll see how everyone did.");
+
+    Object.assign(state.idea!, { tried: 38, loved_pct: 71, top_species: ["Sun conure", "Caique"] });
+    await page.reload();
+    const tally = page.getByTestId("idea-tally");
+    await expect(tally.getByRole("heading")).toHaveText("38 birds tried it today");
+    await expect(tally).toContainText("71% loved it.");
+    await expect(tally).toContainText("Most popular with sun conures and caiques.");
+    await page.goto("/flock");
+    await expect(page.getByTestId("we-tried-it")).toHaveText("You tried it · See how everyone did");
+    await context.close();
+  });
+
+  test("no idea today: no card on Today", async ({ browser, baseURL }) => {
+    const { context, page } = await open(browser, baseURL!, { admin: true });
+    await page.goto("/flock");
+    await expect(page.getByRole("heading", { level: 1, name: "Today" })).toBeVisible();
+    await expect(page.getByTestId("compose-prompt")).toBeVisible();
+    await expect(page.getByTestId("todays-idea")).toHaveCount(0);
+    await context.close();
+  });
+
+  test("admin schedule: two weeks, drafts vs ready, empty days flagged, reorder, New idea", async ({ browser, baseURL }) => {
+    const { context, page, state } = await open(browser, baseURL!, { admin: true });
+    const day = (n: number) => new Date(Date.UTC(2026, 10, 22 + n)).toISOString().slice(0, 10);
+    const row = (n: number, x: Record<string, any>) => ({ day: day(n), idea_id: null, title: null, category: null, body: null, status: null, is_favorite: null, has_photo: null, reused_idea_id: null, reused_title: null, ...x });
+    state.schedule = Array.from({ length: 14 }, (_, n) => row(n, n === 6
+      ? { reused_idea_id: "00000000-0000-4000-8000-0000000082b9", reused_title: "Muffin tin foraging" }
+      : { idea_id: `00000000-0000-4000-8000-0000000082${String(10 + n)}`, title: `Idea ${n + 1}`, category: n % 2 ? "training" : "enrichment", body: "A few lines.", status: n < 4 ? "ready" : "draft", is_favorite: n === 0, has_photo: false }));
+    await page.goto("/admin/ideas");
+    await expect(page.getByRole("heading", { level: 1, name: "Today's ideas" })).toBeVisible();
+    const days = page.getByTestId("idea-days").locator("[data-day]");
+    await expect(days).toHaveCount(14);
+    await expect(days.nth(0).getByTestId("idea-status")).toHaveText("Ready");
+    await expect(days.nth(4).getByTestId("idea-status")).toHaveText("Draft");
+    await expect(days.nth(6)).toHaveAttribute("data-state", "empty");
+    await expect(days.nth(6)).toContainText("Empty · needs one");
+    await expect(days.nth(6)).toContainText("Reuses a favorite: Muffin tin foraging");
+    await days.nth(1).getByRole("button", { name: "Move later" }).click();
+    expect(state.calls.find((c) => c.fn === "admin_swap_idea_days")!.args).toEqual({ p_a: day(1), p_b: day(2) });
+
+    await page.getByTestId("new-idea").click();
+    const sheet = page.getByTestId("idea-sheet");
+    await sheet.getByTestId("idea-title").fill("Five-minute target session");
+    await sheet.locator("[data-category='training']").click();
+    await sheet.getByTestId("idea-body").fill("Reward each touch of the stick.");
+    await sheet.getByTestId("idea-day").fill(day(6));
+    await sheet.locator("[data-status='ready']").click();
+    await sheet.getByRole("button", { name: "Save idea" }).click();
+    expect(state.calls.find((c) => c.fn === "admin_save_idea")!.args).toMatchObject({
+      p_id: null, p_title: "Five-minute target session", p_category: "training", p_body: "Reward each touch of the stick.", p_status: "ready", p_is_favorite: false, p_scheduled_on: day(6) });
     await context.close();
   });
 });
