@@ -21,6 +21,10 @@ import {
 } from "@/lib/flockNav";
 import { defaultDisplayName, greetingName, isAutomaticDisplayName, memberCountLine, membershipSummary } from "@/lib/flockProfile";
 import { accessCells, accessDay } from "@/lib/flockAccess";
+import {
+  birdPronoun, canStartCustom, customProblem, defaultVisibility, groupTemplates, isLocked, possessive, startHere,
+  trimTrailingBlanks, vetCheckLine, visibilityChoices, type JourneyTemplate,
+} from "@/lib/journeys";
 
 let passed = 0;
 function check(name: string, fn: () => void) {
@@ -105,6 +109,11 @@ check("welcome and setup have no tab bar", () => {
   assert.ok(isFlockOnboardingPath("/flock/welcome"));
   assert.ok(isFlockOnboardingPath("/flock/setup"));
   assert.ok(!isFlockOnboardingPath("/flock"));
+  assert.ok(isFlockOnboardingPath("/flock/journeys/start"));
+  assert.ok(isFlockOnboardingPath("/flock/journeys/setup"));
+  assert.ok(isFlockOnboardingPath("/flock/journeys/known"));
+  assert.ok(!isFlockOnboardingPath("/flock/journeys"));
+  assert.ok(!isFlockOnboardingPath("/flock/journeys/abc"));
   assert.ok(!isFlockOnboardingPath("/flock/you"));
 });
 check("old placeholder URLs redirect to a real tab", () => {
@@ -212,6 +221,59 @@ check("membership: gifts, comp, admin, none", () => {
   assert.equal(membershipSummary([], false).line, "No membership yet");
   const refunded = { ...g, status: "canceled", current_period_end: "2027-02-01T00:00:00Z" };
   assert.equal(membershipSummary([refunded], false, new Date("2027-03-01T00:00:00Z")).line, "No membership yet");
+});
+
+// ---- Journeys (step 3) -------------------------------------------------------
+const tpl = (slug: string, tier: "free" | "premium", sort: number): JourneyTemplate => ({
+  id: slug, slug, name: slug, category: "tricks", tier, purpose: "", done_when: "", suggested_first: null,
+  typical_length: "", safety_notes: [], safeguards: [], tips: [], sort_order: sort, milestones: [],
+});
+check("journeys: templates group into the basics, then tricks and more, in catalog order", () => {
+  const g = groupTemplates([tpl("wave", "premium", 100), tpl("recall", "free", 40), tpl("scale", "free", 10), tpl("spin", "premium", 120)]);
+  assert.deepEqual(g.basics.map((x) => x.slug), ["scale", "recall"]);
+  assert.deepEqual(g.more.map((x) => x.slug), ["wave", "spin"]);
+});
+check("journeys: premium templates lock without app premium", () => {
+  assert.equal(isLocked({ tier: "premium" }, { can_use_premium: false }), true);
+  assert.equal(isLocked({ tier: "premium" }, undefined), true);
+  assert.equal(isLocked({ tier: "premium" }, { can_use_premium: true }), false);
+  assert.equal(isLocked({ tier: "free" }, { can_use_premium: false }), false);
+});
+check("journeys: one custom journey at a time when there's a limit", () => {
+  assert.equal(canStartCustom({ max_open_custom: 1, open_custom: 0 }), true);
+  assert.equal(canStartCustom({ max_open_custom: 1, open_custom: 1 }), false);
+  assert.equal(canStartCustom({ max_open_custom: null, open_custom: 7 }), true);
+  assert.equal(canStartCustom(undefined), false);
+});
+check("journeys: only Flock members can choose the community", () => {
+  assert.deepEqual(visibilityChoices({ can_share: false }), ["private"]);
+  assert.deepEqual(visibilityChoices({ can_share: true }), ["community", "private"]);
+  assert.equal(defaultVisibility({ can_share: true }), "community");
+  assert.equal(defaultVisibility({ can_share: false }), "private");
+});
+check("journeys: start here is the first milestone not already done", () => {
+  assert.equal(startHere(7, new Set([1, 2])), 3);
+  assert.equal(startHere(7, new Set([2])), 1);
+  assert.equal(startHere(3, new Set([1, 2, 3])), null);
+});
+check("journeys: a custom journey needs a name and 3 to 8 milestones", () => {
+  assert.equal(customProblem("Bath time", ["a", "b", "c"]), null);
+  assert.equal(customProblem("Bath time", ["a", "b", "c", ""]), null);
+  assert.equal(customProblem("  ", ["a", "b", "c"]), "name");
+  assert.equal(customProblem("Bath", ["a", "b"]), "tooFew");
+  assert.equal(customProblem("Bath", ["1", "2", "3", "4", "5", "6", "7", "8", "9"]), "tooMany");
+  assert.equal(customProblem("Bath", ["a", "", "c"]), "blank");
+  assert.deepEqual(trimTrailingBlanks(["a", "", " "]), ["a"]);
+});
+check("journeys: pronouns, possessives and the vet check line", () => {
+  assert.equal(birdPronoun("Female"), "she");
+  assert.equal(birdPronoun("Male"), "he");
+  assert.equal(birdPronoun(null), "they");
+  assert.equal(birdPronoun("Unknown"), "they");
+  assert.equal(possessive("Juno"), "Juno's");
+  assert.equal(possessive("Iris"), "Iris'");
+  assert.equal(vetCheckLine({ safeguards: ["Daily weigh-ins.", "The template suggests a vet check before starting."] }), "The template suggests a vet check before starting.");
+  assert.equal(vetCheckLine({ safeguards: [] }), null);
 });
 
 console.log(`\n${passed} passed${process.exitCode ? ", some FAILED" : ""}`);

@@ -238,6 +238,7 @@ export function ClipRecorder({
   inPage = false,
   draftSlot,
   draftSit,
+  limits,
 }: {
   /** The bird this clip belongs to. Sent to createClipUpload, which registers
    *  the minted uid against it in clip_assets — the server-authored binding
@@ -268,8 +269,23 @@ export function ClipRecorder({
   /** A sitter's recorder: save under the sit link instead of an account, and
    *  drop the saved clip when the sit ends (epoch ms). */
   draftSit?: { token: string; endsAt: number | null };
+  /** Community journeys only: a longer cap and a different upload minter
+   *  (src/lib/journeyClips.functions.ts, which checks the member's tier).
+   *  Omitted everywhere in the care app, which keeps 60 seconds, 250 MB and
+   *  createClipUpload exactly as before. */
+  limits?: {
+    maxSeconds: number;
+    maxBytes: number;
+    createUpload: (args: { uploadLength: number }) => Promise<{ uploadURL: string; uid: string }>;
+  };
 }) {
   const { t, i18n } = useTranslation();
+  const maxSeconds = limits?.maxSeconds ?? MAX_SECONDS;
+  const maxBytes = limits?.maxBytes ?? MAX_BYTES;
+  // "20 minutes", "5 minutes", "90 seconds": only for a journey's longer cap.
+  const limitWords = !limits ? "" : maxSeconds % 60 === 0
+    ? t("clipRecorder.minutes", "{{count}} minutes", { count: maxSeconds / 60 })
+    : t("clipRecorder.seconds", "{{count}} seconds", { count: maxSeconds });
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const frameRef = useRef<HTMLDivElement | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
@@ -631,7 +647,7 @@ export function ClipRecorder({
       lastTickRef.current = now;
       const s = Math.floor((now - startedAt) / 1000);
       setElapsed(s);
-      if (s >= MAX_SECONDS) stop();
+      if (s >= maxSeconds) stop();
     }, 250);
   }
 
@@ -663,7 +679,7 @@ export function ClipRecorder({
       return;
     }
     if (!blob.size) { setPhase("idle"); setError(t("clipRecorder.nothingCaptured", "No video was captured. Please try recording again.")); return; }
-    if (blob.size > MAX_BYTES) { setPhase("idle"); setError(t("clipRecorder.recordingTooLarge", "That recording is too large. Please record a shorter clip.")); return; }
+    if (blob.size > maxBytes) { setPhase("idle"); setError(t("clipRecorder.recordingTooLarge", "That recording is too large. Please record a shorter clip.")); return; }
 
     const file = new File([blob], `${baseName ?? "clip"}.${cand.ext}`, { type: cand.contentType });
     recordedFileRef.current = file;
@@ -698,7 +714,9 @@ export function ClipRecorder({
     const secs = (from: number) => Math.round((performance.now() - from) / 100) / 10;
     try {
       setStage({ kind: "uploading", pct: 0 });
-      const { uploadURL, uid } = await createClipUpload({ data: { uploadLength: file.size, birdId } });
+      const { uploadURL, uid } = limits
+        ? await limits.createUpload({ uploadLength: file.size })
+        : await createClipUpload({ data: { uploadLength: file.size, birdId } });
       sendStarted = performance.now();
       await tusUpload(uploadURL, file, (pct) => { lastPct = pct; setStage({ kind: "uploading", pct }); }, (abort) => { abortRef.current = abort; if (cancelRef) cancelRef.current = abort; });
       const sendS = secs(sendStarted);
@@ -797,12 +815,14 @@ export function ClipRecorder({
       duration_s: duration != null ? Math.round(duration) : null,
       platform: nativePlatform(),
     });
-    if (duration != null && duration > MAX_SECONDS + 1) {
-      setError(t("clipRecorder.clipTooLong", "That clip is {{duration}} long. Please keep clips under 60 seconds.", { duration: fmt(Math.round(duration)) }));
+    if (duration != null && duration > maxSeconds + 1) {
+      setError(limits
+        ? t("clipRecorder.clipTooLongLimit", "That clip is {{duration}} long. Please keep clips under {{limit}}.", { duration: fmt(Math.round(duration)), limit: limitWords })
+        : t("clipRecorder.clipTooLong", "That clip is {{duration}} long. Please keep clips under 60 seconds.", { duration: fmt(Math.round(duration)) }));
       return;
     }
-    if (file.size > MAX_BYTES) {
-      setError(t("clipRecorder.videoTooLarge", "That video is too large (over {{size}}). Please record a shorter clip.", { size: mb(MAX_BYTES) }));
+    if (file.size > maxBytes) {
+      setError(t("clipRecorder.videoTooLarge", "That video is too large (over {{size}}). Please record a shorter clip.", { size: mb(maxBytes) }));
       return;
     }
 
@@ -866,7 +886,9 @@ export function ClipRecorder({
     );
   }
   if (checking) {
-    return <UploadProgress label={t("clipRecorder.checking", "Checking video…")} hint={t("clipRecorder.checkingHint", "Making sure the clip is under 60 seconds.")} />;
+    return <UploadProgress label={t("clipRecorder.checking", "Checking video…")} hint={limits
+      ? t("clipRecorder.checkingHintLimit", "Making sure the clip is under {{limit}}.", { limit: limitWords })
+      : t("clipRecorder.checkingHint", "Making sure the clip is under 60 seconds.")} />;
   }
 
   if (phase === "interrupted") {
@@ -986,7 +1008,7 @@ export function ClipRecorder({
         {phase === "recording" && (
           <div className="absolute left-2 top-2 flex items-center gap-1.5 rounded-full bg-[#a32d2d] px-2.5 py-1 text-[12px] font-[700] text-white">
             <span className="size-1.5 animate-pulse rounded-full bg-white" />
-            {t("clipRecorder.recording", "Recording {{elapsed}} / {{max}}", { elapsed: fmt(elapsed), max: fmt(MAX_SECONDS) })}
+            {t("clipRecorder.recording", "Recording {{elapsed}} / {{max}}", { elapsed: fmt(elapsed), max: fmt(maxSeconds) })}
           </div>
         )}
         {phase === "ready" && (

@@ -27,9 +27,13 @@ export function destForPath(pathname: string): FlockTab | null {
   return "today";
 }
 
-/** Welcome and setup are full screens: no tab bar, no column tabs. */
+/** Full screens with no tab bar and no column tabs: welcome and setup, and the
+ *  start-a-journey flow (pick, set up, known skills), which ends in its own
+ *  footer button. */
 export function isFlockOnboardingPath(pathname: string): boolean {
-  return pathname.startsWith("/flock/welcome") || pathname.startsWith("/flock/setup");
+  return pathname.startsWith("/flock/welcome") || pathname.startsWith("/flock/setup")
+    || pathname.startsWith("/flock/journeys/start") || pathname.startsWith("/flock/journeys/setup")
+    || pathname.startsWith("/flock/journeys/known");
 }
 
 /** Old placeholder URLs and where they go now, so nothing 404s. */
