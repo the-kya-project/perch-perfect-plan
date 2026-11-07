@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Download, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useDuoMode } from "@/lib/duo";
+import { accessCells, accessDay } from "@/lib/flockAccess";
 import { AdminListDuo, AdminTotals } from "@/components/duo/flows/AdminListDuo";
 import { K, KyaBackRow, KyaBody, KyaCard, KyaHeader, KyaHeading, KyaPage, KyaPrimaryButton, KyaSecondaryButton, KyaTitle } from "@/components/kya";
 
@@ -48,6 +49,17 @@ function AdminFounding() {
       const { data, error } = await supabase.rpc("admin_founding_claims");
       if (error) throw error;
       return (data ?? []) as Claim[];
+    },
+  });
+
+  // Each claim's founding entitlement (free months from opening day), by spot.
+  const { data: access } = useQuery({
+    queryKey: ["admin-founding-entitlements"],
+    enabled: isAdmin === true,
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc("admin_founding_entitlements");
+      if (error) throw error;
+      return new Map((data ?? []).map((a) => [a.spot_number, a]));
     },
   });
 
@@ -107,6 +119,9 @@ function AdminFounding() {
             ["Region", c.region_name ?? c.region_slug],
             ["Source", c.source ?? "—"],
             ["Claimed", formatDate(c.claimed_at)],
+            ["Access", accessCells(access?.get(c.spot_number)).state],
+            ["Access starts", accessCells(access?.get(c.spot_number)).starts],
+            ["Free until", freeUntil(access?.get(c.spot_number)?.free_until)],
           ],
         }))}
         onCsv={() => downloadCsv(rows)}
@@ -151,11 +166,11 @@ function AdminFounding() {
               {/* Wide on a phone: scrolls sideways, and is focusable so the
                   keyboard can scroll it too. */}
               <div className="overflow-x-auto" tabIndex={0} role="region" aria-label="Claims table">
-                <table className="w-full min-w-[640px] border-collapse text-left text-[14px]" style={{ color: K.ink }}>
+                <table className="w-full min-w-[1000px] border-collapse text-left text-[14px]" style={{ color: K.ink }}>
                   <caption className="sr-only">Founding 50 claims by spot number</caption>
                   <thead>
                     <tr style={{ background: K.mist }}>
-                      {["Spot", "Name", "Email", "Region", "Source", "Claimed"].map((h) => (
+                      {["Spot", "Name", "Email", "Region", "Source", "Claimed", "Access", "Starts", "Free until"].map((h) => (
                         <th key={h} scope="col" className="px-3 py-2.5 font-[700]" style={{ color: K.forest }}>{h}</th>
                       ))}
                     </tr>
@@ -169,6 +184,9 @@ function AdminFounding() {
                         <td className="px-3 py-2.5">{c.region_name ?? c.region_slug}</td>
                         <td className="px-3 py-2.5">{c.source ?? "—"}</td>
                         <td className="px-3 py-2.5 whitespace-nowrap">{formatDate(c.claimed_at)}</td>
+                        <td className="px-3 py-2.5 whitespace-nowrap">{accessCells(access?.get(c.spot_number)).state}</td>
+                        <td className="px-3 py-2.5 whitespace-nowrap">{accessCells(access?.get(c.spot_number)).starts}</td>
+                        <td className="px-3 py-2.5 whitespace-nowrap">{freeUntil(access?.get(c.spot_number)?.free_until)}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -180,6 +198,11 @@ function AdminFounding() {
       </KyaBody>
     </KyaPage>
   );
+}
+
+/** End of the six free months (billing starts here), or when it will be set. */
+function freeUntil(iso: string | null | undefined): string {
+  return iso ? accessDay(iso) : "Six months after opening";
 }
 
 function formatDate(iso: string): string {

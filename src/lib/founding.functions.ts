@@ -6,6 +6,14 @@
 // region to flock_profiles. This file only carries the calls and adds the
 // claimant to the Brevo "Founding 50" list afterwards (BREVO_FOUNDING_LIST_ID;
 // a missing id or Brevo error raises a save-error alert).
+//
+// A claim also grants a founding entitlement (database trigger, migration
+// 20261107120000_flock_entitlement_grants): six free months from the day the
+// Flock opens (flock_settings.flock_opens_at), stored as free_until; billing
+// at the locked $15 starts from free_until in the payments step.
+// FOUNDING PRICE IS ONE-WAY: if a founding membership is cancelled, the
+// founding price does not come back. A returning member pays the regular
+// price; payments code must never re-apply locked_price_cents after a cancel.
 
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";

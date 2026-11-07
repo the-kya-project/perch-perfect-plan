@@ -19,6 +19,7 @@ import {
   CHAPTER_TABS, FLOCK_DESTS, FLOCK_REDIRECTS, FLOCK_SPACES, JOURNEYS_FILTERS, LIBRARY_SUBJECTS, LIBRARY_TYPES, TODAY_FILTERS,
   chapterLine, destForPath, pick, pickOptional, pickQuery,
 } from "@/lib/flockNav";
+import { accessCells, accessDay } from "@/lib/flockAccess";
 
 let passed = 0;
 function check(name: string, fn: () => void) {
@@ -125,6 +126,36 @@ check("chapter line: name, then states", () => {
   assert.equal(chapterLine("Great Lakes", ["IL", "IN", "MI", "OH"]), "Great Lakes · IL · IN · MI · OH");
   assert.equal(chapterLine("Other region", []), "Other region");
   assert.equal(chapterLine("Texas", null), "Texas");
+});
+
+console.log("admin access cells");
+const NOW = new Date("2027-03-01T12:00:00Z");
+const ent = (o: Partial<{ starts_at: string | null; ends_at: string | null; status: string }>) =>
+  ({ entitlement_id: "e1", status: "active", starts_at: null, ends_at: null, ...o });
+check("no entitlement", () => {
+  assert.deepEqual(accessCells(undefined, NOW), { starts: "—", ends: "—", state: "No entitlement" });
+  assert.equal(accessCells({ entitlement_id: null, status: null, starts_at: null, ends_at: null }, NOW).state, "No entitlement");
+});
+check("before the Flock has an opening day", () => {
+  assert.deepEqual(accessCells(ent({ status: "trialing" }), NOW), { starts: "When the Flock opens", ends: "—", state: "Waiting for opening day" });
+});
+check("founding free months, scheduled then active", () => {
+  const f = ent({ status: "trialing", starts_at: "2027-01-05T00:00:00Z", ends_at: "2027-07-05T00:00:00Z" });
+  assert.equal(accessCells(f, new Date("2026-12-01T00:00:00Z")).state, "Scheduled");
+  assert.deepEqual(accessCells(f, NOW), { starts: "Jan 5, 2027", ends: "Jul 5, 2027", state: "Active (free months)" });
+});
+check("gift year: active, expired, refunded", () => {
+  const g = ent({ starts_at: "2027-01-05T00:00:00Z", ends_at: "2028-01-05T00:00:00Z" });
+  assert.equal(accessCells(g, NOW).state, "Active");
+  assert.equal(accessCells(g, new Date("2028-02-01T00:00:00Z")).state, "Expired");
+  assert.equal(accessCells({ ...g, status: "canceled", ends_at: "2027-02-01T00:00:00Z" }, NOW).state, "Ended");
+});
+check("no end date (comp)", () => {
+  assert.equal(accessCells(ent({ starts_at: "2026-11-01T00:00:00Z" }), NOW).ends, "No end date");
+});
+check("days are UTC, so every admin sees the same date", () => {
+  assert.equal(accessDay("2027-01-05T00:00:00Z"), "Jan 5, 2027");
+  assert.equal(accessDay("2027-01-04T23:59:00Z"), "Jan 4, 2027");
 });
 
 console.log(`\n${passed} passed${process.exitCode ? ", some FAILED" : ""}`);

@@ -602,11 +602,15 @@ export type Database = {
           created_at: string
           current_period_end: string | null
           external_ref: string | null
+          founding_claim_id: string | null
+          free_until: string | null
+          gift_purchase_id: string | null
           granted_by: string | null
           id: string
           note: string | null
           plan: string
           source: string
+          starts_at: string | null
           status: string
           updated_at: string
           user_id: string
@@ -615,11 +619,15 @@ export type Database = {
           created_at?: string
           current_period_end?: string | null
           external_ref?: string | null
+          founding_claim_id?: string | null
+          free_until?: string | null
+          gift_purchase_id?: string | null
           granted_by?: string | null
           id?: string
           note?: string | null
           plan: string
           source: string
+          starts_at?: string | null
           status: string
           updated_at?: string
           user_id: string
@@ -628,11 +636,15 @@ export type Database = {
           created_at?: string
           current_period_end?: string | null
           external_ref?: string | null
+          founding_claim_id?: string | null
+          free_until?: string | null
+          gift_purchase_id?: string | null
           granted_by?: string | null
           id?: string
           note?: string | null
           plan?: string
           source?: string
+          starts_at?: string | null
           status?: string
           updated_at?: string
           user_id?: string
@@ -1921,9 +1933,42 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      admin_founding_entitlements: {
+        Args: never
+        Returns: {
+          ends_at: string | null
+          entitlement_id: string | null
+          free_until: string | null
+          spot_number: number
+          starts_at: string | null
+          status: string | null
+        }[]
+      }
+      admin_gift_entitlements: {
+        Args: never
+        Returns: {
+          ends_at: string | null
+          entitlement_id: string
+          gift_id: string
+          plan: string
+          starts_at: string | null
+          status: string
+        }[]
+      }
+      admin_set_flock_opens_at: {
+        Args: { p_opens_at: string | null }
+        Returns: {
+          flock_opens_at: string | null
+          id: boolean
+          ui_enabled: boolean
+          updated_at: string
+          updated_by: string | null
+        }
+      }
       admin_set_flock_ui: {
         Args: { p_enabled: boolean }
         Returns: {
+          flock_opens_at: string | null
           id: boolean
           ui_enabled: boolean
           updated_at: string

@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Download, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { formatCents, giftGivingCents, giftKeptCents } from "@/lib/gifts";
+import { accessCells } from "@/lib/flockAccess";
 import { useDuoMode } from "@/lib/duo";
 import { AdminListDuo, AdminTotals } from "@/components/duo/flows/AdminListDuo";
 import { K, KyaBackRow, KyaBody, KyaCard, KyaHeader, KyaHeading, KyaPage, KyaPrimaryButton, KyaSecondaryButton, KyaTitle } from "@/components/kya";
@@ -20,6 +21,7 @@ export const Route = createFileRoute("/_authenticated/admin/gifts")({
 });
 
 type Gift = {
+  id: string;
   purchased_at: string;
   plan: string;
   buyer_email: string;
@@ -55,10 +57,21 @@ function AdminGifts() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("gift_purchases")
-        .select("purchased_at, plan, buyer_email, buyer_name, recipient_name, recipient_email, send_on, amount_paid_cents, amount_refunded_cents, promo_code, giving_rate, status, gift_code")
+        .select("id, purchased_at, plan, buyer_email, buyer_name, recipient_name, recipient_email, send_on, amount_paid_cents, amount_refunded_cents, promo_code, giving_rate, status, gift_code")
         .order("purchased_at", { ascending: false });
       if (error) throw error;
       return (data ?? []).map((g) => ({ ...g, giving_rate: Number(g.giving_rate) })) as Gift[];
+    },
+  });
+
+  // Each gift's entitlement (the access it grants once redeemed), by gift id.
+  const { data: access } = useQuery({
+    queryKey: ["admin-gift-entitlements"],
+    enabled: isAdmin === true,
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc("admin_gift_entitlements");
+      if (error) throw error;
+      return new Map((data ?? []).map((a) => [a.gift_id, a]));
     },
   });
 
@@ -131,6 +144,9 @@ function AdminGifts() {
             ["Amount", amountText(g)],
             ["Promo code", g.promo_code ?? "—"],
             ["Giving", `${Math.round(g.giving_rate * 100)}%`],
+            ["Access", accessCells(access?.get(g.id)).state],
+            ["Access starts", accessCells(access?.get(g.id)).starts],
+            ["Access ends", accessCells(access?.get(g.id)).ends],
           ],
         }))}
         onCsv={() => downloadCsv(rows)}
@@ -164,11 +180,11 @@ function AdminGifts() {
 
             <KyaCard>
               <div className="overflow-x-auto" tabIndex={0} role="region" aria-label="Gifts table">
-                <table className="w-full min-w-[900px] border-collapse text-left text-[14px]" style={{ color: K.ink }}>
+                <table className="w-full min-w-[1180px] border-collapse text-left text-[14px]" style={{ color: K.ink }}>
                   <caption className="sr-only">Gift memberships, newest first. Refunded gifts are listed but not counted in totals; partly refunded gifts count at what was kept.</caption>
                   <thead>
                     <tr style={{ background: K.mist }}>
-                      {["Date", "Plan", "Buyer", "Recipient", "Amount", "Promo code", "Giving", "Status"].map((h) => (
+                      {["Date", "Plan", "Buyer", "Recipient", "Amount", "Promo code", "Giving", "Status", "Access", "Starts", "Ends"].map((h) => (
                         <th key={h} scope="col" className="px-3 py-2.5 font-[700]" style={{ color: K.forest }}>{h}</th>
                       ))}
                     </tr>
@@ -184,10 +200,11 @@ function AdminGifts() {
                         <td className="px-3 py-2.5">{g.promo_code ?? "—"}</td>
                         <td className="px-3 py-2.5">{Math.round(g.giving_rate * 100)}%</td>
                         <td className="px-3 py-2.5 font-[700]" style={{ color: g.status === "refunded" ? K.red : K.forest }}>{g.status}</td>
+                        <AccessTds cells={accessCells(access?.get(g.id))} />
                       </tr>
                     ))}
                     {rows.length === 0 && (
-                      <tr><td colSpan={8} className="px-3 py-4" style={{ color: K.quiet }}>No gifts yet.</td></tr>
+                      <tr><td colSpan={11} className="px-3 py-4" style={{ color: K.quiet }}>No gifts yet.</td></tr>
                     )}
                   </tbody>
                 </table>
@@ -197,6 +214,17 @@ function AdminGifts() {
         )}
       </KyaBody>
     </KyaPage>
+  );
+}
+
+/** A gift's linked entitlement: what it grants and when. */
+function AccessTds({ cells }: { cells: { starts: string; ends: string; state: string } }) {
+  return (
+    <>
+      <td className="whitespace-nowrap px-3 py-2.5">{cells.state}</td>
+      <td className="whitespace-nowrap px-3 py-2.5">{cells.starts}</td>
+      <td className="whitespace-nowrap px-3 py-2.5">{cells.ends}</td>
+    </>
   );
 }
 
