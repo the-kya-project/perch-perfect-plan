@@ -6,6 +6,7 @@
 // The tables and functions postdate the generated types, hence `sb`.
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { getJourneyClips, type JourneyClip } from "@/lib/journeyMedia.functions";
 import type { Engagement, JourneyAccess, JourneyRhythm, JourneyStatus, JourneyTemplate, JourneyVisibility, WeightLevel } from "@/lib/journeys";
 
 const sb = supabase as any;
@@ -30,6 +31,13 @@ export const journeyKeys = {
   weight: (id: string) => ["flock", "journeys", "weight", id] as const,
   weights: (birdId: string) => ["flock", "journeys", "weights", birdId] as const,
   allowance: (birdId: string, id: string) => ["flock", "journeys", "allowance", birdId, id] as const,
+  feed: (filter: string) => ["flock", "journeys", "feed", filter] as const,
+  following: ["flock", "journeys", "following"] as const,
+  view: (id: string) => ["flock", "journeys", "view", id] as const,
+  viewMilestones: (id: string) => ["flock", "journeys", "view-milestones", id] as const,
+  viewUpdates: (id: string) => ["flock", "journeys", "view-updates", id] as const,
+  cards: ["flock", "journeys", "milestone-cards"] as const,
+  clips: (id: string) => ["flock", "journeys", "clips", id] as const,
 };
 
 export type JourneyBird = { id: string; name: string; species: string | null; sex: string | null; photo_url: string | null };
@@ -197,12 +205,15 @@ export function useJourneyTips() {
   });
 }
 
-export function useFinisherTips(slug: string | null | undefined) {
+/** "From members who've done [Skill]": finished members' tips, newest first,
+ *  text only. App premium and Flock members get them; free accounts get none,
+ *  and nobody gets their own (journey_finisher_tips_for). */
+export function useFinisherTips(slug: string | null | undefined, enabled = true) {
   return useQuery({
     queryKey: journeyKeys.finisherTips(slug ?? ""),
-    enabled: !!slug,
+    enabled: enabled && !!slug,
     staleTime: 10 * 60_000,
-    queryFn: async (): Promise<{ body: string; display_name: string | null; created_at: string }[]> =>
+    queryFn: async (): Promise<{ body: string; created_at: string; total: number }[]> =>
       must(await sb.rpc("journey_finisher_tips_for", { p_template_slug: slug })) as any,
   });
 }
@@ -264,6 +275,102 @@ export async function setJourneyStatus(journeyId: string, status: "active" | "pa
 }
 export async function resumeAfterVet(journeyId: string): Promise<void> {
   must(await sb.rpc("journey_resume_after_vet", { p_journey_id: journeyId, p_confirmed: true }));
+}
+
+// ---- Step 3C: viewing, following, reacting ---------------------------------------
+
+export type ReactionKind = "great_job" | "been_there" | "rooting_for_you" | "love_this";
+export const REACTIONS: ReactionKind[] = ["great_job", "been_there", "rooting_for_you", "love_this"];
+type ReactionCounts = { great_job: number; been_there: number; rooting_for_you: number; love_this: number; mine: ReactionKind[] };
+
+/** A journey as anyone allowed to see it sees it (journey_view / journey_feed). */
+export type JourneyCard = {
+  journey_id: string; bird_id: string; bird_name: string; bird_has_photo: boolean; skill: string; template_slug: string | null;
+  category: string | null; template_tier: string | null; status: JourneyStatus; visibility: JourneyVisibility;
+  started_at: string; finished_at: string | null; done: number; total: number; next_title: string | null;
+  owner_id: string; owner_name: string | null; followers: number; following: boolean; is_mine: boolean; last_activity: string;
+};
+export type ViewMilestone = { milestone_position: number; title: string; state: "todo" | "already" | "reached"; reached_at: string | null };
+export type ViewUpdate = ReactionCounts & {
+  update_id: string; has_clip: boolean; caption: string | null; is_question: boolean; is_day_one: boolean; is_milestone: boolean;
+  milestone_position: number | null; created_at: string;
+};
+export type MilestoneCard = ReactionCounts & {
+  journey_id: string; milestone_id: string; bird_id: string; bird_name: string; bird_has_photo: boolean; skill: string; owner_name: string | null;
+  owner_region: string | null; milestone_position: number; total: number; title: string; reached_at: string;
+  update_id: string | null; caption: string | null; has_clip: boolean;
+};
+export type JourneysFilterKey = "for_you" | "following" | "tricks" | "basics";
+
+export function useJourneyFeed(filter: JourneysFilterKey) {
+  return useQuery({
+    queryKey: journeyKeys.feed(filter),
+    staleTime: STALE,
+    queryFn: async (): Promise<JourneyCard[]> => must(await sb.rpc("journey_feed", { p_filter: filter, p_limit: 60 })) as JourneyCard[],
+  });
+}
+
+export function useJourneyFollowing() {
+  return useQuery({
+    queryKey: journeyKeys.following,
+    staleTime: STALE,
+    queryFn: async (): Promise<JourneyCard[]> => must(await sb.rpc("journey_following")) as JourneyCard[],
+  });
+}
+
+export function useJourneyView(id: string) {
+  return useQuery({
+    queryKey: journeyKeys.view(id),
+    enabled: !!id,
+    staleTime: STALE,
+    queryFn: async (): Promise<JourneyCard | null> => ((must(await sb.rpc("journey_view", { p_journey_id: id })) as JourneyCard[])[0] ?? null),
+  });
+}
+
+export function useJourneyViewMilestones(id: string) {
+  return useQuery({
+    queryKey: journeyKeys.viewMilestones(id),
+    enabled: !!id,
+    staleTime: STALE,
+    queryFn: async (): Promise<ViewMilestone[]> => must(await sb.rpc("journey_view_milestones", { p_journey_id: id })) as ViewMilestone[],
+  });
+}
+
+export function useJourneyViewUpdates(id: string) {
+  return useQuery({
+    queryKey: journeyKeys.viewUpdates(id),
+    enabled: !!id,
+    staleTime: STALE,
+    queryFn: async (): Promise<ViewUpdate[]> => must(await sb.rpc("journey_view_updates", { p_journey_id: id })) as ViewUpdate[],
+  });
+}
+
+export function useMilestoneCards() {
+  return useQuery({
+    queryKey: journeyKeys.cards,
+    staleTime: STALE,
+    queryFn: async (): Promise<MilestoneCard[]> => must(await sb.rpc("journey_milestone_cards", { p_limit: 20 })) as MilestoneCard[],
+  });
+}
+
+/** Signed playback for a journey's clips (only if you may see the journey). */
+export function useJourneyClips(journeyId: string, enabled = true) {
+  return useQuery({
+    queryKey: journeyKeys.clips(journeyId),
+    enabled: enabled && !!journeyId,
+    staleTime: 30 * 60_000,
+    queryFn: async (): Promise<Record<string, JourneyClip>> => {
+      const rows = await getJourneyClips({ data: { journeyId } });
+      return Object.fromEntries(rows.map((r) => [r.updateId, r]));
+    },
+  });
+}
+
+export async function followJourney(journeyId: string, follow: boolean): Promise<number> {
+  return must(await sb.rpc("journey_follow", { p_journey_id: journeyId, p_follow: follow })) as number;
+}
+export async function reactTo(subject: "journey_update" | "journey_milestone", id: string, kind: ReactionKind, on: boolean): Promise<void> {
+  must(await sb.rpc("journey_react", { p_subject_type: subject, p_subject_id: id, p_kind: kind, p_on: on }));
 }
 
 /** After a change: everything journey-shaped reloads. */

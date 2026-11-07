@@ -6,9 +6,9 @@ import type { TFunction } from "i18next";
 import { K, KyaLink, KyaPrimaryButton } from "@/components/kya";
 import { ClipRecorder } from "@/components/ClipRecorder";
 import { FlockSubPage } from "@/components/flock/FlockSubPage";
-import { ChoiceChips, FlowFooter } from "@/components/flock/JourneyParts";
+import { ChoiceChips, FinisherTipsCard, FlowFooter } from "@/components/flock/JourneyParts";
 import { createJourneyClipUpload } from "@/lib/journeyClips.functions";
-import { startJourney, useInvalidateJourneys, useJourneyAccess, useJourneyBirds, useJourneyTemplates } from "@/lib/journeyData";
+import { startJourney, useFinisherTips, useInvalidateJourneys, useJourneyAccess, useJourneyBirds, useJourneyTemplates } from "@/lib/journeyData";
 import {
   CUSTOM_MAX, CUSTOM_NAME_MAX, MILESTONE_MAX, RHYTHMS, birdPronoun, customProblem, defaultVisibility, possessive, startHere,
   trimTrailingBlanks, vetCheckLine, visibilityChoices, type BirdPronoun, type JourneyRhythm, type JourneyVisibility,
@@ -54,6 +54,7 @@ function SetupJourney() {
   const { data: access } = useJourneyAccess();
   const bird = birds?.find((b) => b.id === birdId);
   const template = templates?.find((x) => x.slug === slug);
+  const { data: finisherTips } = useFinisherTips(custom ? null : slug);
 
   const [already, setAlready] = useState<Set<number>>(new Set());
   const [name, setName] = useState("");
@@ -130,6 +131,8 @@ function SetupJourney() {
             </ul>
           </section>
         )}
+
+        {template && <FinisherTipsCard skill={template.name} tips={finisherTips} />}
 
         {custom ? (
           <>
