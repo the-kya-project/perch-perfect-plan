@@ -1,4 +1,5 @@
-import { Stethoscope } from "lucide-react";
+import { Link } from "@tanstack/react-router";
+import { Scale, Stethoscope } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { K, KyaPrimaryButton, KyaSecondaryButton } from "@/components/kya";
 import { AAV_FIND_A_VET_URL } from "@/lib/flockPosts";
@@ -96,6 +97,24 @@ export function VetReminderCard({ onTalked, onLater, busy }: { onTalked: () => v
         <KyaSecondaryButton className="flex-1" onClick={onTalked} disabled={busy}>{t("flock.journeys.diet.reminderYes", "Yes, we've talked")}</KyaSecondaryButton>
         <KyaSecondaryButton className="flex-1" onClick={onLater} disabled={busy}>{t("flock.journeys.diet.reminderLater", "Remind me later")}</KyaSecondaryButton>
       </div>
+    </section>
+  );
+}
+
+/** No weigh-in for a couple of days: on the journey page and in Today. */
+export function WeighTodayCard({ birdId, birdName }: { birdId: string; birdName: string }) {
+  const { t } = useTranslation();
+  return (
+    <section className="flex flex-col gap-2.5 rounded-[16px] p-3.5" style={{ background: K.amberBg }} data-testid="weigh-today">
+      <p className="m-0 flex gap-2 text-[14.5px] leading-[1.45]" style={{ color: K.amberText }}>
+        <Scale className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
+        {t("flock.journeys.weight.missed", "Weigh {{name}} today so we can keep an eye on things during the switch.", { name: birdName })}
+      </p>
+      <Link to="/birds/$birdId/weight" params={{ birdId }} search={{ log: true }}
+        className="inline-flex min-h-[44px] items-center justify-center self-start rounded-full border-2 bg-white px-4 text-[14.5px] font-[700]"
+        style={{ borderColor: K.forest, color: K.forest }}>
+        {t("flock.journeys.weight.logWeight", "Log a weight")}
+      </Link>
     </section>
   );
 }

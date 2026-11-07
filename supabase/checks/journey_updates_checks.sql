@@ -163,16 +163,18 @@ begin
     passed := passed + 1; else failed := array_append(failed, 'status changes'); end if;
 
   -- 9) Diet conversion: starting weight from milestone 1's week; 2.5% is a heads-up, 5% pauses.
+  --    (Since 20261108160000 these compare the average of the last 3 weigh-ins;
+  --    diet_weight_rules_checks.sql covers the rules in detail.)
   update public.journeys set started_at = now() - interval '20 days' where id = jd;
   insert into public.weight_entries (bird_id, grams, measured_at) values
     (bd, 400, now() - interval '19 days'), (bd, 402, now() - interval '17 days'), (bd, 398, now() - interval '15 days'),
-    (bd, 389, now() - interval '5 days');  -- 400 → 389 = 2.75%
+    (bd, 389, now() - interval '2 days'), (bd, 388, now() - interval '1 day');  -- 400 → 388.5 average = 2.9%
   perform set_config('request.jwt.claims', json_build_object('sub', fm, 'role', 'authenticated')::text, true);
   set local role authenticated;
   select * into r from public.journey_weight_check(jd);
-  ok := r.start_grams = 400 and r.current_grams = 389 and r.level = 'notice' and not r.paused;
+  ok := r.start_grams = 400 and r.current_grams = 388 and r.level = 'notice' and not r.paused;
   reset role;
-  insert into public.weight_entries (bird_id, grams, measured_at) values (bd, 378, now() - interval '1 day');  -- 5.5%
+  insert into public.weight_entries (bird_id, grams, measured_at) values (bd, 378, now() - interval '12 hours'), (bd, 372, now() - interval '6 hours');  -- 379.3 average = 5.2%
   perform set_config('request.jwt.claims', json_build_object('sub', fm, 'role', 'authenticated')::text, true);
   set local role authenticated;
   select * into r from public.journey_weight_check(jd);
@@ -190,7 +192,7 @@ begin
   perform public.journey_resume_after_vet(jd, true);
   select * into r from public.journey_weight_check(jd);
   reset role;
-  if n = 2 and (select status from public.journeys where id = jd) = 'active' and r.level = 'none' and r.start_grams = 378 then
+  if n = 2 and (select status from public.journeys where id = jd) = 'active' and r.level = 'none' and r.start_grams = 372 then
     passed := passed + 1; else failed := array_append(failed, 'diet: resume only after confirming the vet call'); end if;
 
   -- 11) Thresholds are settings an admin changes; nobody else can.

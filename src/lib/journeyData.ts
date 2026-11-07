@@ -229,8 +229,17 @@ export function useFinisherTips(slug: string | null | undefined, enabled = true)
   });
 }
 
+export type WeightExcluded = { grams: number; measured_at: string; reason: "other_time" | "unconfirmed" | "pending" };
 export type WeightCheck = {
-  start_grams: number | null; current_grams: number | null; drop_pct: number | null; level: WeightLevel; paused: boolean;
+  start_grams: number | null; current_grams: number | null; avg_grams: number | null; drop_pct: number | null; level: WeightLevel; paused: boolean;
+  /** Which rule paused it: the average past 5%, a slow slide, or a sudden drop the re-weigh confirmed. */
+  pause_kind: "drop" | "slide" | "sudden" | null;
+  /** A sudden drop waiting for a re-weigh. */
+  recheck: boolean; recheck_grams: number | null;
+  /** No weigh-in for diet_missed_days days. */
+  missed: boolean; days_since_weigh: number | null;
+  usual_meal: "before_meal" | "after_meal" | null;
+  excluded: WeightExcluded[];
   window_from: string | null; window_to: string | null;
 };
 
@@ -241,6 +250,17 @@ export function useWeightCheck(journeyId: string, enabled: boolean) {
     enabled: enabled && !!journeyId,
     staleTime: STALE,
     queryFn: async (): Promise<WeightCheck> => (must(await sb.rpc("journey_weight_check", { p_journey_id: journeyId })) as WeightCheck[])[0],
+  });
+}
+
+/** Today: your active Diet conversion journeys with no weigh-in for a couple of days. */
+export function useWeighReminders(enabled = true) {
+  return useQuery({
+    queryKey: ["flock", "journeys", "weigh-reminders"] as const,
+    enabled,
+    staleTime: STALE,
+    queryFn: async (): Promise<{ journey_id: string; bird_id: string; bird_name: string; days_since_weigh: number }[]> =>
+      must(await sb.rpc("journey_weigh_reminders")) as any,
   });
 }
 

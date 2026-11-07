@@ -7,13 +7,13 @@ import { FlockSubPage } from "@/components/flock/FlockSubPage";
 import { FlockEmpty } from "@/components/flock/FlockChips";
 import { ClipTile, JourneyMenuSheet, shortDay } from "@/components/flock/JourneyBrowse";
 import { FinisherTipsCard } from "@/components/flock/JourneyParts";
-import { DietDisclaimer, HowToMakeItWork, VetReminderCard } from "@/components/flock/JourneyDiet";
+import { DietDisclaimer, HowToMakeItWork, VetReminderCard, WeighTodayCard } from "@/components/flock/JourneyDiet";
 import { deleteJourney } from "@/lib/journeyMedia.functions";
 import {
   followJourney, resumeAfterVet, setVetCheck, useFinisherTips, setJourneyStatus, setJourneyVisibility, useBirdWeights, useInvalidateJourneys, useJourney,
   useJourneyAccess, useJourneyClips, useJourneyTemplates, useJourneyView, useJourneyViewUpdates, useWeightCheck, type Journey, type WeightCheck,
 } from "@/lib/journeyData";
-import { journeyDay, showVetReminder } from "@/lib/journeys";
+import { journeyDay, rollingAverage, showVetReminder } from "@/lib/journeys";
 
 // A journey (JourneyEverywhere, screen 6): "[Bird] · [skill]", "Day N · X
 // following", the segmented progress bar, "N of M · next: …", Post an update
@@ -165,19 +165,28 @@ function JourneyPage() {
   );
 }
 
-/** Diet conversion: the weight trend since the start, a heads-up at the amber
- *  threshold, and the pause (resume only after confirming the vet call). */
+/** Diet conversion: weigh-ins since the start with the 3-weigh-in average as
+ *  a line, readings left out (and why), the heads-up, the re-weigh after a
+ *  sudden drop, a nudge after missed days, and the pause (resume only after
+ *  confirming the vet call). The database decides all of it
+ *  (journey_weight_check); this only draws. */
 function WeightCard({ journey, birdName, weight, paused }: { journey: Journey; birdName: string; weight: WeightCheck; paused: boolean }) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const invalidate = useInvalidateJourneys();
   const { data: entries } = useBirdWeights(journey.bird_id, weight.window_from ?? journey.started_at);
   const [confirmed, setConfirmed] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const pts = (entries ?? []).slice(-14);
-  const max = Math.max(...pts.map((p) => p.grams), weight.start_grams ?? 0, 1);
-  const min = Math.min(...pts.map((p) => p.grams), weight.start_grams ?? Infinity);
+  const excludedAt = new Map((weight.excluded ?? []).map((x) => [new Date(x.measured_at).getTime(), x.reason]));
+  const pts = (entries ?? []).slice(-14).map((p) => ({ ...p, counted: !excludedAt.has(new Date(p.measured_at).getTime()) }));
+  const avg = rollingAverage(pts, 3);
+  const all = [...pts.map((p) => p.grams), ...(weight.start_grams != null ? [weight.start_grams] : [])];
+  const max = Math.max(...all, 1);
+  const min = Math.min(...all);
   const span = Math.max(1, max - min);
+  const y = (g: number) => 100 - (20 + ((g - min) / span) * 80);
+  const line = avg.map((a, i) => (a == null ? null : `${((i + 0.5) / pts.length) * 100},${y(a)}`)).filter(Boolean).join(" ");
+  const day = (iso: string) => new Date(iso).toLocaleDateString(i18n.language, { month: "short", day: "numeric" });
   const resume = async () => {
     setBusy(true);
     setError(null);
@@ -192,16 +201,48 @@ function WeightCard({ journey, birdName, weight, paused }: { journey: Journey; b
         <p className="m-0 text-[14px]" style={{ color: K.quiet }}>{t("flock.journeys.weight.noStart", "Weigh {{name}} every day this first week. The average becomes the starting weight.", { name: birdName })}</p>
       ) : (
         <p className="m-0 text-[14px]" style={{ color: K.ink }} data-testid="weight-line">
-          {weight.current_grams == null
+          {weight.avg_grams == null
             ? t("flock.journeys.weight.startOnly", "Starting weight {{start}} g", { start: weight.start_grams })
-            : t("flock.journeys.weight.line", "Starting weight {{start}} g · now {{now}} g", { start: weight.start_grams, now: weight.current_grams })}
+            : t("flock.journeys.weight.lineAvg", "Starting weight {{start}} g · 3-day average {{avg}} g", { start: weight.start_grams, avg: weight.avg_grams })}
         </p>
       )}
       {pts.length > 1 && (
-        <div className="flex h-14 items-end gap-1" aria-hidden="true">
-          {pts.map((p) => (
-            <span key={p.measured_at} className="flex-1 rounded-t-[4px]" style={{ height: `${20 + ((p.grams - min) / span) * 80}%`, background: K.paleGreen }} />
-          ))}
+        <div className="relative h-14" aria-hidden="true" data-testid="weight-chart">
+          <div className="absolute inset-0 flex items-end gap-1">
+            {pts.map((p) => (
+              <span key={p.measured_at} className="flex-1 rounded-t-[4px]" data-counted={p.counted}
+                style={{ height: `${20 + ((p.grams - min) / span) * 80}%`, background: p.counted ? K.paleGreen : "#eceeea", outline: p.counted ? undefined : "1px dashed #c9d3c8" }} />
+            ))}
+          </div>
+          {line && (
+            <svg className="absolute inset-0 size-full overflow-visible" viewBox="0 0 100 100" preserveAspectRatio="none" data-testid="weight-avg-line">
+              <polyline points={line} fill="none" stroke={K.moss} strokeWidth={2.5} vectorEffect="non-scaling-stroke" strokeLinejoin="round" strokeLinecap="round" />
+            </svg>
+          )}
+        </div>
+      )}
+      {pts.length > 1 && (
+        <p className="m-0 flex items-center gap-1.5 text-[12.5px]" style={{ color: K.quiet }}>
+          <span className="inline-block h-[3px] w-4 rounded-full" style={{ background: K.moss }} aria-hidden="true" />
+          {t("flock.journeys.weight.avgKey", "3-day average")}
+        </p>
+      )}
+      {(weight.excluded ?? []).filter((x) => x.reason === "other_time").slice(-3).map((x) => (
+        <p key={x.measured_at} className="m-0 text-[12.5px]" style={{ color: K.quiet }} data-testid="weight-not-counted">
+          {t("flock.journeys.weight.notCountedAt", "{{day}} · {{grams}} g · Not counted: weighed at a different time than usual.", { day: day(x.measured_at), grams: x.grams })}
+        </p>
+      ))}
+      {weight.missed && !paused && <WeighTodayCard birdId={journey.bird_id} birdName={birdName} />}
+      {weight.recheck && !paused && (
+        <div className="flex flex-col gap-2.5 rounded-[12px] px-3 py-2.5" style={{ background: K.amberBg }} data-testid="weight-recheck">
+          <p className="m-0 text-[14px] leading-[1.45]" style={{ color: K.amberText }}>
+            {t("flock.journeys.weight.recheck", "That's a big change from last time. Weigh {{name}} again to double-check?", { name: birdName })}
+          </p>
+          <Link to="/birds/$birdId/weight" params={{ birdId: journey.bird_id }} search={{ log: true }}
+            className="inline-flex min-h-[44px] items-center justify-center self-start rounded-full border-2 bg-white px-4 text-[14.5px] font-[700]"
+            style={{ borderColor: K.forest, color: K.forest }}>
+            {t("flock.journeys.weight.weighAgain", "Weigh {{name}} again", { name: birdName })}
+          </Link>
         </div>
       )}
       {weight.level === "notice" && !paused && (
@@ -210,10 +251,12 @@ function WeightCard({ journey, birdName, weight, paused }: { journey: Journey; b
         </p>
       )}
       {paused && (
-        <div className="flex flex-col gap-2.5 rounded-[12px] p-3" style={{ background: "#fbe9e7" }} data-testid="weight-paused">
+        <div className="flex flex-col gap-2.5 rounded-[12px] p-3" style={{ background: "#fbe9e7" }} data-testid="weight-paused" data-kind={weight.pause_kind ?? "drop"}>
           <p className="m-0 flex gap-2 text-[14.5px] font-[700] leading-[1.45]" style={{ color: K.red }}>
             <AlertTriangle className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
-            {t("flock.journeys.weight.paused", "{{name}}'s weight has dropped. Put the usual food back and call your avian vet before going further.", { name: birdName })}
+            {weight.pause_kind === "sudden"
+              ? t("flock.journeys.weight.pausedSudden", "{{name}}'s weight dropped quickly. Put the usual food back and call your avian vet today.", { name: birdName })
+              : t("flock.journeys.weight.paused", "{{name}}'s weight has dropped. Put the usual food back and call your avian vet before going further.", { name: birdName })}
           </p>
           <label className="flex items-start gap-2 text-[14px]" style={{ color: K.forest }}>
             <input type="checkbox" checked={confirmed} onChange={(e) => setConfirmed(e.target.checked)} className="mt-1 size-4" data-testid="vet-confirm" />
