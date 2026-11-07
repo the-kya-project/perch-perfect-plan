@@ -84,13 +84,16 @@ export async function dismissOpenInApp(page: Page): Promise<void> {
   if (await notNow.isVisible().catch(() => false)) await notNow.click();
 }
 
-/** The first-run welcome layer on Home: close it if it's up. */
-export async function closeWelcome(page: Page): Promise<void> {
-  const welcome = page.getByRole("button", { name: "Skip and add my bird" });
-  if (await welcome.isVisible({ timeout: 4_000 }).catch(() => false)) {
-    await page.getByRole("button", { name: "Close", exact: true }).first().click();
-    await expect(welcome).toBeHidden();
-  }
+/** The first-run welcome layer on Home (OwnerOnboarding, a full-screen
+ *  .setup-frame): it appears only after it has checked the account's birds and
+ *  profile, so wait for it, then close it with its X. An account that has
+ *  already seen it never gets it (waits `timeout`, then carries on). */
+export async function closeWelcome(page: Page, timeout = 15_000): Promise<void> {
+  const frame = page.locator(".setup-frame");
+  const shown = await frame.first().waitFor({ state: "visible", timeout }).then(() => true, () => false);
+  if (!shown) return;
+  await frame.getByRole("button", { name: "Close", exact: true }).first().click();
+  await expect(frame).toHaveCount(0);
 }
 
 export async function signIn(page: Page): Promise<void> {
