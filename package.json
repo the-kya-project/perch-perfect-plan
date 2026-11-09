@@ -39,6 +39,7 @@
     "test:supabase-env": "npx --yes vite-node scripts/supabase-env.test.ts",
     "test:flock-shell": "npx --yes vite-node scripts/flock-shell.test.ts",
     "test:clip-playback": "npx --yes vite-node scripts/clip-playback-check.ts",
+    "test:clip-playback:full": "npx --yes vite-node scripts/clip-playback-check.ts --full",
     "test:preview-services": "npx --yes vite-node scripts/preview-services.test.ts",
     "test:setup-progress": "npx --yes vite-node scripts/setup-progress.test.ts",
     "test:home-defaults": "npx --yes vite-node scripts/home-defaults.test.ts",
