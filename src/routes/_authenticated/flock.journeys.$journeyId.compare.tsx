@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
+import { ClipState, useClipPhase } from "@/components/flock/JourneyClipView";
+import type { JourneyClip } from "@/lib/journeyMedia.functions";
 import { K, KyaHeading, KyaSheet } from "@/components/kya";
 import { FlockSubPage } from "@/components/flock/FlockSubPage";
 import { useJourneyClips, useJourneyView, useJourneyViewMilestones, useJourneyViewUpdates, type ViewUpdate } from "@/lib/journeyData";
@@ -28,7 +30,7 @@ function Compare() {
   const { data: card } = useJourneyView(journeyId);
   const { data: updates } = useJourneyViewUpdates(journeyId);
   const { data: milestones } = useJourneyViewMilestones(journeyId);
-  const { data: clips } = useJourneyClips(journeyId, !!card);
+  const { data: clips, isLoading: clipsLoading, refetch: refetchClips } = useJourneyClips(journeyId, !!card);
   const withClips = [...(updates ?? [])].filter((u) => u.has_clip).reverse(); // oldest first
   const left = withClips.find((u) => u.update_id === a) ?? withClips.find((u) => u.is_day_one) ?? withClips[0];
   const right = withClips.find((u) => u.update_id === b) ?? withClips[withClips.length - 1];
@@ -53,20 +55,10 @@ function Compare() {
     if (hls) { for (const v of [va.current, vb.current]) if (v) { v.currentTime = 0; v.playbackRate = slow ? 0.5 : 1; void v.play().catch(() => {}); } }
     else setPlayKey((k) => k + 1);
   };
-  const pane = (u: ViewUpdate | undefined, side: "a" | "b") => {
-    const c = u ? clips?.[u.update_id] : undefined;
-    return (
-      <div className="relative aspect-[9/16] flex-1 overflow-hidden rounded-[14px]" style={{ background: "linear-gradient(180deg,#3b5d4c,#1d3328)" }} data-testid={`compare-${side}`} data-update={u?.update_id}>
-        {c && (hls ? (
-          <video ref={side === "a" ? va : vb} src={c.hls} poster={c.thumbnail} muted playsInline preload="metadata" className="absolute inset-0 size-full object-cover" />
-        ) : (
-          <iframe key={`${u!.update_id}-${playKey}`} src={`${c.player}?muted=true&preload=true${playKey ? "&autoplay=true" : ""}`} title={labelOf(u!, side)}
-            className="absolute inset-0 size-full border-0" allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture;" />
-        ))}
-        {u && <span className="absolute bottom-2 left-2 text-[11.5px] font-[700] text-white" style={{ textShadow: "0 1px 2px rgba(0,0,0,.5)" }}>{labelOf(u, side)}</span>}
-      </div>
-    );
-  };
+  const pane = (u: ViewUpdate | undefined, side: "a" | "b") => (
+    <ComparePane key={side} journeyId={journeyId} update={u} side={side} clip={u ? clips?.[u.update_id] : undefined} loading={clipsLoading || !clips}
+      refetch={refetchClips} hls={hls} playKey={playKey} label={u ? labelOf(u, side) : ""} videoRef={side === "a" ? va : vb} />
+  );
   const chip = (label: string, onClick: () => void, on = false, testId?: string) => (
     <button type="button" onClick={onClick} aria-pressed={on} data-testid={testId}
       className="min-h-[40px] rounded-full px-3.5 text-[13.5px] font-[700]"
@@ -98,7 +90,7 @@ function Compare() {
                   setPicking(picking === "a" ? "b" : null);
                 }}
                 className="relative aspect-[3/4] overflow-hidden rounded-[10px]" style={{ background: "linear-gradient(180deg,#3b5d4c,#1d3328)" }}>
-                {clips?.[u.update_id]?.thumbnail && <img src={clips[u.update_id].thumbnail} alt="" className="absolute inset-0 size-full object-cover" />}
+                {(() => { const c = clips?.[u.update_id]; return c?.status === "ready" ? <img src={c.thumbnail} alt="" className="absolute inset-0 size-full object-cover" /> : null; })()}
                 <span className="absolute bottom-1 left-1.5 text-[11px] font-[700] text-white">{day(u)}</span>
               </button>
             ))}
@@ -106,5 +98,25 @@ function Compare() {
         </KyaSheet>
       )}
     </FlockSubPage>
+  );
+}
+
+/** One side of Day one vs. now: the clip once it's ready, otherwise where it stands. */
+function ComparePane({ journeyId, update, side, clip, loading, refetch, hls, playKey, label, videoRef }: {
+  journeyId: string; update: ViewUpdate | undefined; side: "a" | "b"; clip: JourneyClip | undefined; loading: boolean; refetch: () => unknown;
+  hls: boolean; playKey: number; label: string; videoRef: React.RefObject<HTMLVideoElement | null>;
+}) {
+  const { phase, retry, markFailed } = useClipPhase(journeyId, clip, loading, refetch);
+  return (
+    <div className="relative aspect-[9/16] flex-1 overflow-hidden rounded-[14px]" style={{ background: "linear-gradient(180deg,#3b5d4c,#1d3328)" }} data-testid={`compare-${side}`} data-update={update?.update_id}>
+      {update && clip?.status === "ready" && phase === "ready" && (hls ? (
+        <video ref={videoRef} src={clip.hls} poster={clip.thumbnail} muted playsInline preload="metadata" className="absolute inset-0 size-full object-cover" onError={markFailed} />
+      ) : (
+        <iframe key={`${update.update_id}-${playKey}`} src={`${clip.player}?muted=true&preload=true${playKey ? "&autoplay=true" : ""}`} title={label}
+          className="absolute inset-0 size-full border-0" allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture;" onError={markFailed} />
+      ))}
+      {update && <ClipState phase={phase} onRetry={retry} compact />}
+      {update && <span className="absolute bottom-2 left-2 text-[11.5px] font-[700] text-white" style={{ textShadow: "0 1px 2px rgba(0,0,0,.5)" }}>{label}</span>}
+    </div>
   );
 }

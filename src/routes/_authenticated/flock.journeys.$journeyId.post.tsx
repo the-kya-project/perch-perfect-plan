@@ -6,6 +6,8 @@ import type { TFunction } from "i18next";
 import { K, KyaHeading, KyaLink, KyaPrimaryButton, KyaSheet } from "@/components/kya";
 import { ClipRecorder } from "@/components/ClipRecorder";
 import { ClipPlayer } from "@/components/ClipPlayer";
+import { ClipState } from "@/components/flock/JourneyClipView";
+import { useOwnerClipPreview } from "@/lib/useOwnerClipPreview";
 import { FlockSubPage } from "@/components/flock/FlockSubPage";
 import { ChoiceChips, FlowFooter } from "@/components/flock/JourneyParts";
 import { DietDisclaimer } from "@/components/flock/JourneyDiet";
@@ -186,6 +188,10 @@ function Compose({ journeyId, clip, birdName, diet, next, visibility, canShare, 
     }
   };
 
+  // The clip is the "cfstream:<uid>" reference: wait until Cloudflare has it
+  // ready, then show it through a signed link (never the raw reference).
+  const preview = useOwnerClipPreview(clip);
+
   // A steady tip per post: the same day shows the same tip.
   const tip = tips && tips.length ? tips[(clip.length + new Date().getDate()) % tips.length] : null;
 
@@ -193,7 +199,9 @@ function Compose({ journeyId, clip, birdName, diet, next, visibility, canShare, 
     <FlockSubPage title={t("flock.journeys.post.title", "Post an update")} fallback={`/flock/journeys/${journeyId}`}>
       <div className="flex flex-col gap-3.5" data-testid="post-compose">
         <div className="relative overflow-hidden rounded-[16px]" style={{ background: "#1d3328" }}>
-          <ClipPlayer src={clip} label={t("flock.journeys.post.preview", "Your clip")} />
+          {preview.status === "ready" && preview.url
+            ? <ClipPlayer src={preview.url} label={t("flock.journeys.post.preview", "Your clip")} className="aspect-[9/16] max-h-[45vh] w-full" />
+            : <div className="relative aspect-[9/16] max-h-[45vh] w-full"><ClipState phase={preview.status === "none" ? "failed" : "processing"} onRetry={() => window.location.reload()} /></div>}
           <button type="button" onClick={() => setTrimming(true)} data-testid="trim"
             className="absolute bottom-2.5 right-2.5 inline-flex items-center gap-1 rounded-full px-3 py-1.5 text-[12.5px] font-[700] text-white"
             style={{ background: "rgba(0,0,0,.5)" }}>

@@ -13,11 +13,33 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
-export type PostPhoto = { url: string; original: string };
+/** A signed photo, with its width and height when known, so the frame has the
+ *  photo's shape before it loads (src/lib/flockPhotos.ts). */
+export type PostPhoto = { url: string; original: string; width?: number; height?: number };
 /** Keyed "post:<id>" or "comment:<id>"; a post's photos in order. */
 export type PostPhotoMap = Record<string, PostPhoto[]>;
 
 const PATH = /^[0-9a-f-]{36}\/[0-9a-f-]{36}\.jpg$/;
+
+/** A photo's width and height: stored with the file at upload
+ *  (uploadPostPhoto), or, for photos uploaded before that, read from the start
+ *  of the JPEG. Null when neither works; the screen then sizes it on load. */
+async function photoSize(bucket: any, path: string, originalUrl: string): Promise<{ width: number; height: number } | null> {
+  try {
+    const { data } = await bucket.info(path);
+    const m = (data?.metadata ?? data?.userMetadata ?? {}) as Record<string, unknown>;
+    const width = Number(m.width), height = Number(m.height);
+    if (width > 0 && height > 0) return { width, height };
+  } catch { /* fall through */ }
+  try {
+    const res = await fetch(originalUrl, { headers: { Range: "bytes=0-65535" } });
+    if (!res.ok) return null;
+    const { jpegSize } = await import("@/lib/flockPhotos");
+    return jpegSize(new Uint8Array(await res.arrayBuffer()).slice(0, 65536));
+  } catch {
+    return null;
+  }
+}
 
 export const getFlockPostPhotos = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -47,7 +69,8 @@ export const getFlockPostPhotos = createServerFn({ method: "POST" })
         if (sized?.signedUrl) url = sized.signedUrl;
       }
       const key = `${r.subject_type}:${r.subject_id}`;
-      (out[key] ??= [])[r.idx] = { url, original: full.signedUrl };
+      const size = await photoSize(bucket, r.path, full.signedUrl);
+      (out[key] ??= [])[r.idx] = { url, original: full.signedUrl, ...(size ?? {}) };
     }));
     for (const k of Object.keys(out)) out[k] = out[k].filter(Boolean);
     return out;

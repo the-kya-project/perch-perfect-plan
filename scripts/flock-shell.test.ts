@@ -20,12 +20,13 @@ import {
   chapterLine, destForPath, isFlockFullScreenPath, isFlockOnboardingPath, pick, pickOptional, pickQuery,
 } from "@/lib/flockNav";
 import { birdsLine, filterRoster, speciesGroup, topGroups } from "@/lib/flockMembers";
+import { TALLEST, WIDEST, jpegSize, photoFrame } from "@/lib/flockPhotos";
 import { dateBlock, eventIcs, goersLine, longWhen, shortWhen } from "@/lib/flockEvents";
 import { AAV_FIND_A_VET_URL, POST_SPACES, findVetSigns, mergeFeed, vetNudgeTier, rateLimitKind, replyPrefix, threadComments } from "@/lib/flockPosts";
 import { defaultDisplayName, greetingName, isAutomaticDisplayName, memberCountLine, membershipSummary } from "@/lib/flockProfile";
 import { accessCells, accessDay } from "@/lib/flockAccess";
 import {
-  birdPronoun, canStartCustom, customProblem, daysSince, isNectarEater, rollingAverage, showVetReminder, youngOrUnknownAge, defaultVisibility, groupTemplates, isLocked, journeyDay, journeyDays,
+  birdPronoun, canStartCustom, customProblem, daysSince, clipPhase, isNectarEater, rollingAverage, showVetReminder, youngOrUnknownAge, defaultVisibility, groupTemplates, isLocked, journeyDay, journeyDays,
   nextMilestone, possessive, progressOf, skillInSentence, startHere, trimTrailingBlanks, vetCheckLine, visibilityChoices, wantsTip,
   type JourneyTemplate,
 } from "@/lib/journeys";
@@ -489,6 +490,40 @@ check("the vet nudge's tiers: urgent wins when both match; none for ordinary pos
   assert.deepEqual(findVetSigns("He drank alcohol. Help!", ["drank alcohol"]), ["drank alcohol"]);
   assert.deepEqual(findVetSigns("chocolatey brown feathers", ["chocolate"]), []);
   assert.equal(vetNudgeTier("anything", []), null);
+});
+
+check("journey clips: processing, then still processing after two minutes, failed, ready; never the player's own error", () => {
+  const base = { loading: false, playerFailed: false, processingSince: 1_000, now: 1_000, budgetMs: 120_000 };
+  assert.equal(clipPhase({ ...base, status: undefined, loading: true }), "loading");
+  assert.equal(clipPhase({ ...base, status: undefined }), "failed", "a clip the server didn't return can't be played");
+  assert.equal(clipPhase({ ...base, status: "processing" }), "processing");
+  assert.equal(clipPhase({ ...base, status: "processing", now: 1_000 + 119_000 }), "processing");
+  assert.equal(clipPhase({ ...base, status: "processing", now: 1_000 + 120_000 }), "stalled");
+  assert.equal(clipPhase({ ...base, status: "processing", processingSince: undefined, now: 999_999 }), "processing");
+  assert.equal(clipPhase({ ...base, status: "failed" }), "failed");
+  assert.equal(clipPhase({ ...base, status: "ready" }), "ready");
+  assert.equal(clipPhase({ ...base, status: "ready", playerFailed: true }), "failed");
+});
+
+check("photos at their own shape: 4:5 to 1.91:1, never cropped inside, tall ones keep their top", () => {
+  const near = (a: number, b: number) => Math.abs(a - b) < 1e-9;
+  let f = photoFrame({ width: 1200, height: 900 });
+  assert.ok(near(f.ratio, 4 / 3) && !f.cropped);
+  f = photoFrame({ width: 800, height: 1000 });
+  assert.ok(near(f.ratio, 0.8) && !f.cropped, "exactly 4:5 isn't cropped");
+  f = photoFrame({ width: 900, height: 1600 });
+  assert.ok(near(f.ratio, TALLEST) && f.cropped && f.position === "50% 20%", "a tall phone photo: 4:5, top kept");
+  f = photoFrame({ width: 3000, height: 1000 });
+  assert.ok(near(f.ratio, WIDEST) && f.cropped && f.position === "50% 50%", "a panorama: 1.91:1, centred");
+  f = photoFrame({ width: 1910, height: 1000 });
+  assert.ok(near(f.ratio, 1.91) && !f.cropped);
+  f = photoFrame(null);
+  assert.ok(near(f.ratio, 4 / 3) && !f.cropped, "unknown size: 4:3 until it loads");
+  // A JPEG's size from its first bytes (SOF0 after an APP0 segment).
+  const app0 = [0xff, 0xe0, 0x00, 0x10, ...Array(14).fill(0)];
+  const sof0 = [0xff, 0xc0, 0x00, 0x11, 0x08, 0x06, 0x40, 0x03, 0x84, 0x03, 0x01, 0x22, 0x00, 0x02, 0x11, 0x01, 0x03, 0x11, 0x01];
+  assert.deepEqual(jpegSize(new Uint8Array([0xff, 0xd8, ...app0, ...sof0])), { width: 900, height: 1600 });
+  assert.equal(jpegSize(new Uint8Array([0x89, 0x50, 0x4e, 0x47])), null, "not a JPEG");
 });
 
 console.log(`\n${passed} passed${process.exitCode ? ", some FAILED" : ""}`);

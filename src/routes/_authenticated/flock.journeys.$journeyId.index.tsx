@@ -7,6 +7,7 @@ import { FlockSubPage } from "@/components/flock/FlockSubPage";
 import { FlockEmpty } from "@/components/flock/FlockChips";
 import { ClipTile, JourneyMenuSheet, shortDay } from "@/components/flock/JourneyBrowse";
 import { FinisherTipsCard } from "@/components/flock/JourneyParts";
+import { ClipTileState } from "@/components/flock/JourneyClipView";
 import { DietDisclaimer, HowToMakeItWork, VetReminderCard, WeighTodayCard } from "@/components/flock/JourneyDiet";
 import { deleteJourney } from "@/lib/journeyMedia.functions";
 import {
@@ -139,7 +140,8 @@ function JourneyPage() {
         ) : (
           <div className="-mx-4 grid grid-cols-3 gap-[2px]" data-testid="clip-grid">
             {withClips.map((u) => (
-              <ClipTile key={u.update_id} testId={u.update_id} thumbnail={clips?.[u.update_id]?.thumbnail}
+              <ClipTile key={u.update_id} testId={u.update_id} thumbnail={(() => { const c = clips?.[u.update_id]; return c?.status === "ready" ? c.thumbnail : null; })()}
+                status={<ClipTileState clip={clips?.[u.update_id]} />}
                 date={shortDay(t, u.created_at, i18n.language)}
                 tag={u.is_milestone ? "milestone" : u.is_question ? "question" : u.is_day_one ? "day_one" : null}
                 onOpen={() => void navigate({ to: "/flock/journeys/$journeyId/story", params: { journeyId }, search: { u: u.update_id } })} />

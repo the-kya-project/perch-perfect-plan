@@ -6,6 +6,7 @@ import { ReportSheet } from "@/components/flock/ReportSheet";
 import { useTranslation } from "react-i18next";
 import type { TFunction } from "i18next";
 import { K } from "@/components/kya";
+import { ClipState, ReadyClip, useClipPhase } from "@/components/flock/JourneyClipView";
 import { BirdThumb } from "@/components/flock/FlockPeople";
 import { useCardBirdPhotos } from "@/components/flock/JourneyBrowse";
 import {
@@ -42,7 +43,7 @@ function Story() {
   const { u, queue } = Route.useSearch();
   const { data: card } = useJourneyView(journeyId);
   const { data: updates } = useJourneyViewUpdates(journeyId);
-  const { data: clips } = useJourneyClips(journeyId, !!card);
+  const { data: clips, isLoading: clipsLoading, refetch: refetchClips } = useJourneyClips(journeyId, !!card);
   const { data: access } = useJourneyAccess();
   const { data: following } = useJourneyFollowing();
   const photos = useCardBirdPhotos(card ? [card] : undefined, 120);
@@ -81,6 +82,7 @@ function Story() {
 
   const cur = reel[i];
   const clip = cur ? clips?.[cur.update_id] : undefined;
+  const { phase, retry, markFailed } = useClipPhase(journeyId, clip, clipsLoading || !clips, refetchClips);
   const name = card?.bird_name ?? "";
   const tag = !cur ? "" : cur.is_milestone && cur.milestone_position
     ? t("flock.journeys.story.milestone", "Milestone {{n}} of {{total}}", { n: cur.milestone_position, total: card?.total ?? 0 })
@@ -113,14 +115,14 @@ function Story() {
         </button>
       </div>
       <div className="relative flex-1" data-testid="story-clip" data-update={cur?.update_id}>
-        {clip ? (
-          <iframe key={cur!.update_id} src={`${clip.player}?autoplay=true&muted=true&preload=true&controls=false`} title={t("flock.journeys.story.clip", "{{name}}'s clip", { name })}
-            className="absolute inset-0 size-full border-0" allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture;" />
-        ) : (
+        {reel.length === 0 ? (
           <div className="absolute inset-0 grid place-items-center text-[14px]" style={{ color: K.paleGreen, background: "linear-gradient(180deg,#3b5d4c,#1d3328)" }}>
-            {reel.length === 0 ? t("flock.journeys.story.none", "No clips yet.") : t("flock.journeys.story.loading", "Loading the clip…")}
+            {t("flock.journeys.story.none", "No clips yet.")}
           </div>
-        )}
+        ) : clip?.status === "ready" && phase === "ready" ? (
+          <ReadyClip key={cur!.update_id} clip={clip} title={t("flock.journeys.story.clip", "{{name}}'s clip", { name })} autoplay muted controls={false} onFail={markFailed} />
+        ) : null}
+        <ClipState phase={reel.length === 0 ? "ready" : phase} onRetry={retry} />
         <button type="button" aria-label={t("flock.journeys.story.prev", "Previous clip")} onClick={() => go(-1)} className="absolute inset-y-0 left-0 w-1/4" data-testid="story-prev" />
         <button type="button" aria-label={t("flock.journeys.story.next", "Next clip")} onClick={() => go(1)} className="absolute inset-y-0 right-0 w-1/4" data-testid="story-next" />
         {cur?.caption && (
