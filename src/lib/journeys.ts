@@ -214,3 +214,23 @@ export function rollingAverage(points: { grams: number; counted: boolean }[], n 
     return Math.round((last.reduce((a, b) => a + b, 0) / last.length) * 10) / 10;
   });
 }
+
+// ---- Journey clip states (JourneyClipView draws them) ----------------------------
+
+export type ClipPhase = "loading" | "processing" | "stalled" | "failed" | "ready";
+
+/** Where a clip stands: still loading the links, being prepared (for up to
+ *  `budgetMs` since first seen processing), still processing past that
+ *  ("stalled": Try again), failed (the server said so, or the player did), or
+ *  ready to play. A clip the server didn't return at all can't be played. */
+export function clipPhase(o: {
+  status: "ready" | "processing" | "failed" | undefined; loading: boolean; playerFailed: boolean;
+  processingSince: number | undefined; now: number; budgetMs: number;
+}): ClipPhase {
+  if (!o.status) return o.loading ? "loading" : "failed";
+  if (o.status === "failed" || o.playerFailed) return "failed";
+  if (o.status === "processing") {
+    return o.processingSince !== undefined && o.now - o.processingSince >= o.budgetMs ? "stalled" : "processing";
+  }
+  return "ready";
+}

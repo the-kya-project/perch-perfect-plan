@@ -163,3 +163,14 @@ export function noteSaveError(err: unknown): void {
     /* recording must never break the screen that failed */
   }
 }
+
+/** A clip or photo that couldn't be shown (the player failed, signing failed,
+ *  Cloudflare couldn't process it). Recorded like a failed save, so the alerts
+ *  reach Brittany; never content, only "server" and what kind of media. */
+export function noteMediaError(target: "journey_clip"): void {
+  try {
+    recorder?.({ category: "server", sqlstate: null, target, operation: "server_fn" });
+  } catch {
+    /* recording must never break the screen that failed */
+  }
+}

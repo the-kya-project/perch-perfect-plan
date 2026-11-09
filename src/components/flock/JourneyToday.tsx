@@ -5,6 +5,7 @@ import { useTranslation } from "react-i18next";
 import { K } from "@/components/kya";
 import { BirdThumb } from "@/components/flock/FlockPeople";
 import { ReactionChips } from "@/components/flock/JourneyBrowse";
+import { ClipTileState } from "@/components/flock/JourneyClipView";
 import type { FlockPhotoSrc } from "@/lib/flockData";
 import { reactTo, useInvalidateJourneys, useJourneyAccess, useJourneyClips, type MilestoneCard, type ReactionKind } from "@/lib/journeyData";
 import { possessive, skillInSentence } from "@/lib/journeys";
@@ -55,7 +56,8 @@ export function JourneyMilestoneCard({ card, photo, comments = 0 }: { card: Mile
         <button type="button" onClick={() => void navigate({ to: "/flock/journeys/$journeyId/story", params: { journeyId: card.journey_id }, search: { u: card.update_id! } })}
           className="relative aspect-video overflow-hidden rounded-[14px]" style={{ background: "#e7ece6" }} data-testid="card-clip"
           aria-label={t("flock.today.playClip", "Play {{name}}'s clip", { name: card.bird_name })}>
-          {clip?.thumbnail && <img src={clip.thumbnail} alt="" className="absolute inset-0 size-full object-cover" loading="lazy" />}
+          {clip?.status === "ready" && <img src={clip.thumbnail} alt="" className="absolute inset-0 size-full object-cover" loading="lazy" />}
+          <ClipTileState clip={clip} />
         </button>
       )}
       <ReactionChips testId="card-reactions" counts={counts} mine={mine} canReact={!!access?.can_share} onToggle={(k, on) => void toggle(k, on)} />

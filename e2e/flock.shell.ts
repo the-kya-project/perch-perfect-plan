@@ -143,7 +143,7 @@ async function mockFlock(context: BrowserContext, userId: string, opts: { setupD
     const postRow = (p: any) => ({
       ...counts(p), post_id: p.post_id, author_id: p.author_id, author_name: p.author_name, author_region: p.author_region ?? "Great Lakes", author_photo_path: null,
       author_is_founder: false, space: p.space, region_slug: p.space === "chapter" ? "great-lakes" : null, region_name: p.space === "chapter" ? "Great Lakes" : null,
-      title: p.title ?? null, body: p.body, photo_count: 0, bird_id: null, bird_name: null, bird_has_photo: false, status: p.status, review_note: null,
+      title: p.title ?? null, body: p.body, photo_count: p.photo_count ?? 0, bird_id: null, bird_name: null, bird_has_photo: false, status: p.status, review_note: null,
       created_at: p.created_at, edited_at: p.edited_at ?? null, is_mine: p.author_id === userId,
       comment_count: state.comments.filter((c) => c.subject_id === p.post_id).length,
     });
@@ -1984,6 +1984,112 @@ test.describe("welcome, setup, profiles and chapters (admin, phone)", () => {
     }
     await page.getByRole("link", { name: "Choose which birds members meet" }).click();
     await expect(page).toHaveURL(/\/flock\/you\/edit#birds$/);
+    await context.close();
+  });
+});
+
+
+/** Answer the app's own server functions for clips and photos (they run on the
+ *  test server, which can't reach Cloudflare or Storage): plain JSON
+ *  `{ result }`, which the server-function client unwraps as is. */
+async function mockMediaFns(context: BrowserContext, answer: {
+  clips?: () => unknown[]; photos?: () => Record<string, unknown>;
+}) {
+  await context.route("**/_serverFn/**", async (route) => {
+    const body = route.request().postData() ?? "";
+    const reply = (v: unknown) => route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ result: v }) });
+    if (answer.clips && body.includes("journeyId")) return reply(answer.clips());
+    if (answer.photos && body.includes("postIds")) return reply(answer.photos());
+    return route.continue();
+  });
+}
+
+/** A data: URL image of a given size (an SVG), for photo frames. */
+const svgPhoto = (w: number, h: number) => `data:image/svg+xml;utf8,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}"><rect width="100%" height="100%" fill="#5a8c7a"/><circle cx="${w / 2}" cy="${h * 0.15}" r="${w / 6}" fill="#f2c94c"/></svg>`)}`;
+
+test.describe("photos and clips at their own shape, never the player's error (admin, phone)", () => {
+  test("a tall photo: 4:5 with its top kept; a wide one at its own shape; tap opens full screen, swipe between photos", async ({ browser, baseURL }) => {
+    const { context, page, state } = await open(browser, baseURL!, { admin: true });
+    const TALL = "00000000-0000-4000-8000-00000000a0a1";
+    const MANY = "00000000-0000-4000-8000-00000000a0a2";
+    state.posts.push({ post_id: TALL, author_id: "00000000-0000-4000-8000-00000000f002", author_name: "Alex R.", space: "learn", body: "Echo on the perch", photo_count: 1, status: "live", created_at: new Date(Date.now() - 60_000).toISOString() });
+    state.posts.push({ post_id: MANY, author_id: "00000000-0000-4000-8000-00000000f002", author_name: "Alex R.", space: "learn", body: "Two views", photo_count: 2, status: "live", created_at: new Date(Date.now() - 120_000).toISOString() });
+    await mockMediaFns(context, { photos: () => ({
+      [`post:${TALL}`]: [{ url: svgPhoto(900, 1600), original: svgPhoto(900, 1600), width: 900, height: 1600 }],
+      [`post:${MANY}`]: [
+        { url: svgPhoto(1200, 900), original: svgPhoto(1200, 900), width: 1200, height: 900 },
+        { url: svgPhoto(900, 1200), original: svgPhoto(900, 1200), width: 900, height: 1200 },
+      ],
+    }) });
+    await page.goto("/flock?space=learn");
+    const tall = page.locator(`[data-post="${TALL}"]`).getByTestId("post-photo");
+    await expect(tall).toHaveAttribute("data-ratio", "0.800");
+    await expect(tall).toHaveAttribute("data-cropped", "true");
+    await expect(tall.locator("img")).toHaveCSS("object-position", "50% 20%");
+    const box = await tall.boundingBox();
+    expect(box && Math.abs(box.width / box.height - 0.8) < 0.02).toBeTruthy();
+    const many = page.locator(`[data-post="${MANY}"]`);
+    await expect(many.getByTestId("post-photo").first()).toHaveAttribute("data-ratio", "1.333");
+    await expect(many.getByTestId("photo-count")).toHaveText("1 of 2");
+    // Full screen, then swipe to the second.
+    await many.getByTestId("post-photo").first().getByRole("button").click();
+    const viewer = page.getByTestId("photo-viewer");
+    await expect(viewer).toBeVisible();
+    await expect(viewer.getByTestId("photo-viewer-image")).toHaveCount(2);
+    await expect(viewer.getByTestId("photo-viewer-count")).toHaveText("1 of 2");
+    await viewer.locator("div.snap-x").evaluate((el) => el.scrollTo({ left: el.clientWidth }));
+    await expect(viewer.getByTestId("photo-viewer-count")).toHaveText("2 of 2");
+    await page.keyboard.press("Escape");
+    await expect(viewer).toHaveCount(0);
+    await context.close();
+  });
+
+  test("a new clip: Getting the clip ready…, asked again until it's ready; one that can't play says so with Try again and records a save error", async ({ browser, baseURL }) => {
+    const id = "00000000-0000-4000-8000-0000000074a1";
+    let status = "processing";
+    let asks = 0;
+    const { context, page } = await open(browser, baseURL!, { admin: true, journeys: { seed: [{ id, birdName: "Buzz", slug: "step-up", done: 1, clips: 2 }] } });
+    const saveErrors: any[] = [];
+    await context.route(`${MOCK}/rest/v1/save_errors**`, async (route) => { saveErrors.push(route.request().postDataJSON()); await route.fulfill({ status: 201, body: "" }); });
+    await mockMediaFns(context, { clips: () => {
+      asks++;
+      return ["00000000-0000-4000-8000-000000009000", "00000000-0000-4000-8000-000000009001"].map((updateId) => ({ updateId, status }));
+    } });
+    await page.goto(`/flock/journeys/${id}`);
+    await expect(page.getByTestId("clip-grid").getByTestId("clip-tile-state").first()).toHaveAttribute("data-phase", "processing");
+    await page.getByTestId("clip-grid").locator("[data-tile]").first().click();
+    const state = page.getByTestId("clip-state");
+    await expect(state).toHaveAttribute("data-phase", "processing");
+    await expect(state).toHaveText(/Getting the clip ready…/);
+    await expect.poll(() => asks, { timeout: 15_000 }).toBeGreaterThan(2);
+    // Cloudflare says it can't be played: our message, never the player's.
+    status = "failed";
+    await expect(state).toHaveAttribute("data-phase", "failed", { timeout: 15_000 });
+    await expect(state).toContainText("We couldn't play this clip. Try again in a moment.");
+    await expect(page.getByTestId("clip-iframe")).toHaveCount(0);
+    await expect.poll(() => saveErrors.length).toBeGreaterThan(0);
+    expect(saveErrors[0]).toMatchObject({ category: "server", target: "journey_clip" });
+    expect(JSON.stringify(saveErrors[0])).not.toContain("Buzz");
+    const before = asks;
+    await state.getByTestId("clip-retry").click();
+    await expect.poll(() => asks).toBeGreaterThan(before);
+    await context.close();
+  });
+
+  test("a ready clip plays through its signed links on the story viewer and Day one vs. now", async ({ browser, baseURL }) => {
+    const id = "00000000-0000-4000-8000-0000000074a1";
+    const { context, page } = await open(browser, baseURL!, { admin: true, journeys: { seed: [{ id, birdName: "Buzz", slug: "step-up", done: 1, clips: 2 }] } });
+    const signed = (n: number) => ({ player: `https://iframe.videodelivery.net/signed-token-${n}`, thumbnail: svgPhoto(270, 480), hls: `https://videodelivery.net/signed-token-${n}/manifest/video.m3u8` });
+    await mockMediaFns(context, { clips: () => [0, 1].map((n) => ({ updateId: `00000000-0000-4000-8000-00000000900${n}`, status: "ready", ...signed(n) })) });
+    // The player asks for the signed link (HLS in WebKit, the Stream player elsewhere).
+    // These test links can't really play, so afterwards our own message shows, never the player's.
+    const asked = page.waitForRequest(/signed-token-1/);
+    await page.goto(`/flock/journeys/${id}/story?u=00000000-0000-4000-8000-000000009001`);
+    await asked;
+    await expect(page.locator("iframe[src*='videodelivery'], video[src*='videodelivery']").or(page.getByTestId("clip-state"))).toHaveCount(1);
+    const both = Promise.all([page.waitForRequest(/signed-token-0/), page.waitForRequest(/signed-token-1/)]);
+    await page.goto(`/flock/journeys/${id}/compare`);
+    await both;
     await context.close();
   });
 });

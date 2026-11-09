@@ -190,3 +190,14 @@ export async function signedIframeUrl(uid: string, ttlSeconds = 3600): Promise<s
   const token = await signPlaybackToken(uid, ttlSeconds);
   return iframeUrlForToken(token);
 }
+
+/** The links a journey clip plays from, all carrying one signed token: the
+ *  Stream player, a thumbnail and the HLS manifest. Used by getJourneyClips
+ *  and by scripts/clip-playback-check.ts, so the check tests the real links. */
+export function signedClipUrls(token: string): { player: string; thumbnail: string; hls: string } {
+  return {
+    player: `https://iframe.videodelivery.net/${token}`,
+    thumbnail: `https://videodelivery.net/${token}/thumbnails/thumbnail.jpg?time=1s&height=480`,
+    hls: `https://videodelivery.net/${token}/manifest/video.m3u8`,
+  };
+}

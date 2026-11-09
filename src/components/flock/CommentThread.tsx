@@ -6,6 +6,7 @@ import { FlockAvatar } from "@/components/flock/FlockPeople";
 import { reactionLabel } from "@/components/flock/JourneyBrowse";
 import { rateMessage } from "@/components/flock/PostCompose";
 import { ReportSheet } from "@/components/flock/ReportSheet";
+import { FramedPhoto, PhotoViewer } from "@/components/flock/PhotoViewer";
 import { ActionSheet, ConfirmSheet, ReactionPicker, timeAgo, useLongPress, useReactionState, VetNudgeCard } from "@/components/flock/PostParts";
 import { AvatarError } from "@/lib/flockAvatar";
 import { useAvatarUrls, useMyProfile, type FlockPhotoSrc } from "@/lib/flockData";
@@ -27,6 +28,7 @@ function CommentItem({ c, reply, avatar, photo, highlighted, onReply, onMenu, ca
   const { t, i18n } = useTranslation();
   const { counts, toggle } = useReactionState("comment", c.comment_id, c);
   const [picking, setPicking] = useState(false);
+  const [viewing, setViewing] = useState(false);
   const hold = useLongPress(onMenu);
   const reactHold = useLongPress(() => setPicking(true));
   const current = REACTIONS.find((k) => counts.mine.includes(k));
@@ -43,8 +45,9 @@ function CommentItem({ c, reply, avatar, photo, highlighted, onReply, onMenu, ca
           <p className="m-0 whitespace-pre-wrap break-words">{c.body}</p>
         </div>
         {c.has_photo && (
-          <div className="relative aspect-[4/3] w-48 overflow-hidden rounded-[12px]" style={{ background: "#e7ece6" }}>
-            {photo && <img src={photo.url} alt={t("flock.posts.photoAlt", "Photo from {{name}}", { name })} loading="lazy" className="absolute inset-0 size-full object-cover" />}
+          <div className="w-52 overflow-hidden rounded-[12px]">
+            <FramedPhoto photo={photo} alt={t("flock.posts.photoAlt", "Photo from {{name}}", { name })} onOpen={() => setViewing(true)} testId="comment-photo" />
+            {viewing && photo && <PhotoViewer photos={[photo]} start={0} alt={t("flock.posts.photoAlt", "Photo from {{name}}", { name })} onClose={() => setViewing(false)} />}
           </div>
         )}
         <div className="flex items-center gap-3.5 pl-1.5 text-[12.5px]" style={{ color: K.quiet }}>

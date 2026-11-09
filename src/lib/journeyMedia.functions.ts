@@ -14,9 +14,17 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
-export type JourneyClip = { updateId: string; player: string; thumbnail: string; hls: string };
+/** A journey clip for viewers. `ready`: signed player, thumbnail and HLS links.
+ *  `processing`: Cloudflare is still preparing it (no links yet; ask again).
+ *  `failed`: it can't be played (processing error, or signing failed). */
+export type JourneyClip =
+  | { updateId: string; status: "ready"; player: string; thumbnail: string; hls: string }
+  | { updateId: string; status: "processing" | "failed" };
 
 const TTL = 3600;
+// Cloudflare is asked about a clip only while it's new: a clip that was ready
+// once stays ready, and asking for every old clip on every view would be slow.
+const CHECK_NEWER_THAN_MS = 30 * 60_000;
 
 export const getJourneyClips = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -30,21 +38,35 @@ export const getJourneyClips = createServerFn({ method: "POST" })
     const refs = ((rows ?? []) as { update_id: string; clip_ref: string }[])
       .filter((r) => /^cfstream:[A-Za-z0-9]{8,64}$/.test(r.clip_ref));
     if (refs.length === 0) return [];
-    const { signPlaybackToken } = await import("@/lib/cloudflareStream.server");
-    const out = await Promise.all(refs.map(async (r) => {
+    const { signPlaybackToken, getVideoStatus, signedClipUrls } = await import("@/lib/cloudflareStream.server");
+    // When each update was posted (the caller may see them all: journey_clip_refs checked).
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: when } = await (supabaseAdmin as any).from("journey_updates").select("id, created_at").in("id", refs.map((r) => r.update_id));
+    const postedAt = new Map(((when ?? []) as { id: string; created_at: string }[]).map((w) => [w.id, Date.parse(w.created_at)]));
+    return Promise.all(refs.map(async (r): Promise<JourneyClip> => {
+      const uid = r.clip_ref.slice("cfstream:".length);
+      const posted = postedAt.get(r.update_id) ?? 0;
+      if (Date.now() - posted < CHECK_NEWER_THAN_MS) {
+        try {
+          const st = await getVideoStatus(uid);
+          if (st.state === "error") {
+            console.error(`[getJourneyClips] clip ${uid} failed processing: ${st.errorReason ?? "unknown"}`);
+            return { updateId: r.update_id, status: "failed" };
+          }
+          if (!st.readyToStream) return { updateId: r.update_id, status: "processing" };
+        } catch (e: any) {
+          // Status unknown: try to play it rather than trap it in "processing".
+          console.error(`[getJourneyClips] status ${uid}: ${e?.message ?? e}`);
+        }
+      }
       try {
-        const token = await signPlaybackToken(r.clip_ref.slice("cfstream:".length), TTL);
-        return {
-          updateId: r.update_id,
-          player: `https://iframe.videodelivery.net/${token}`,
-          thumbnail: `https://videodelivery.net/${token}/thumbnails/thumbnail.jpg?time=1s&height=480`,
-          hls: `https://videodelivery.net/${token}/manifest/video.m3u8`,
-        };
-      } catch {
-        return null;
+        const token = await signPlaybackToken(uid, TTL);
+        return { updateId: r.update_id, status: "ready", ...signedClipUrls(token) };
+      } catch (e: any) {
+        console.error(`[getJourneyClips] sign ${uid}: ${e?.message ?? e}`);
+        return { updateId: r.update_id, status: "failed" };
       }
     }));
-    return out.filter((x): x is JourneyClip => !!x);
   });
 
 export const deleteJourney = createServerFn({ method: "POST" })

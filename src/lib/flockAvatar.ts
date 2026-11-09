@@ -15,6 +15,11 @@ export class AvatarError extends Error {}
 /** Redraw a photo as a new JPEG, at most `maxEdge` px on the long edge and
  *  `maxBytes` in size. Pixels only: EXIF (GPS included) never survives. */
 export async function reencodeJpeg(file: File, maxEdge: number, maxBytes: number): Promise<Blob> {
+  return (await reencodeJpegSized(file, maxEdge, maxBytes)).blob;
+}
+
+/** reencodeJpeg, also returning the new JPEG's width and height. */
+export async function reencodeJpegSized(file: File, maxEdge: number, maxBytes: number): Promise<{ blob: Blob; width: number; height: number }> {
   let bitmap: ImageBitmap;
   try {
     bitmap = await createImageBitmap(file, { imageOrientation: "from-image" } as ImageBitmapOptions);
@@ -31,7 +36,7 @@ export async function reencodeJpeg(file: File, maxEdge: number, maxBytes: number
   bitmap.close?.();
   for (const q of [0.85, 0.75, 0.6, 0.45]) {
     const blob = await new Promise<Blob | null>((r) => canvas.toBlob(r, "image/jpeg", q));
-    if (blob && blob.size <= maxBytes) return blob;
+    if (blob && blob.size <= maxBytes) return { blob, width: canvas.width, height: canvas.height };
   }
   throw new AvatarError("That photo is too large. Try a smaller one.");
 }

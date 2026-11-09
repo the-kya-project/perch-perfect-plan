@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
+import { PhotoGrid } from "@/components/flock/PhotoViewer";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { Flag, Hand, Heart, MessageCircle, MoreHorizontal, Star } from "lucide-react";
 import { useTranslation } from "react-i18next";
@@ -210,20 +211,8 @@ export function ActionRow({ counts, onToggle, onComment, commentLabel, canReact 
 
 // ---- Photos ------------------------------------------------------------------------------
 
-export function PhotoGrid({ photos, count, alt }: { photos: PostPhoto[] | undefined; count: number; alt: string }) {
-  if (count === 0) return null;
-  const items = Array.from({ length: count }, (_, i) => photos?.[i]);
-  return (
-    <div className={`grid gap-1 overflow-hidden rounded-[14px] ${count === 1 ? "grid-cols-1" : "grid-cols-2"}`} data-testid="post-photos">
-      {items.map((p, i) => (
-        <div key={i} className={`relative overflow-hidden ${count === 1 ? "aspect-[4/3]" : count === 3 && i === 0 ? "col-span-2 aspect-[2/1]" : "aspect-square"}`} style={{ background: "#e7ece6" }}>
-          {p && <img src={p.url} onError={(e) => { if (p.original && e.currentTarget.src !== p.original) e.currentTarget.src = p.original; }}
-            alt={count > 1 ? `${alt} (${i + 1}/${count})` : alt} loading="lazy" decoding="async" className="absolute inset-0 size-full object-cover" />}
-        </div>
-      ))}
-    </div>
-  );
-}
+// Post photos at their own shape, with the full-screen viewer (PhotoViewer.tsx).
+export { PhotoGrid };
 
 // ---- The vet nudge -------------------------------------------------------------------------
 

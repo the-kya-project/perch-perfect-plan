@@ -128,8 +128,10 @@ export function FollowRings({ cards, photos, onOpen }: { cards: JourneyCard[]; p
 }
 
 /** A clip tile in a journey's grid, with its Milestone / Question / Day one tag. */
-export function ClipTile({ thumbnail, date, tag, onOpen, testId }: {
+export function ClipTile({ thumbnail, date, tag, onOpen, testId, status }: {
   thumbnail?: string | null; date: string; tag: "milestone" | "question" | "day_one" | null; onOpen: () => void; testId?: string;
+  /** Still being prepared, or can't be played (JourneyClipView). */
+  status?: ReactNode;
 }) {
   const { t } = useTranslation();
   const tagStyle = tag === "milestone" ? { background: K.lime, color: K.forest }
@@ -138,6 +140,7 @@ export function ClipTile({ thumbnail, date, tag, onOpen, testId }: {
     <button type="button" onClick={onOpen} data-tile={testId} data-tag={tag ?? undefined}
       className="relative aspect-[3/4] overflow-hidden" style={{ background: "linear-gradient(180deg,#3b5d4c,#1d3328)" }}>
       {thumbnail && <img src={thumbnail} alt="" className="absolute inset-0 size-full object-cover" loading="lazy" />}
+      {status}
       {tag && (
         <span className="absolute left-1.5 top-1.5 rounded-full px-2 py-0.5 text-[10.5px] font-[700]" style={tagStyle}>
           {tag === "milestone" ? t("flock.journeys.tag.milestone", "Milestone") : tag === "question" ? t("flock.journeys.tag.question", "Question") : t("flock.journeys.tag.dayOne", "Day one")}

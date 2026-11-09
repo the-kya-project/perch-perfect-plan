@@ -1,0 +1,37 @@
+# Journey clip playback through the app's signed-link path, against a real,
+# processed Cloudflare Stream test clip (scripts/clip-playback-check.ts).
+# Daily and by hand (Actions → Clip playback → Run workflow). It needs the
+# repository secrets CLOUDFLARE_ACCOUNT_ID and CLOUDFLARE_STREAM_TOKEN (a token
+# with Account → Stream → Edit); it fails, never skips, when one is missing.
+name: Clip playback
+
+on:
+  schedule:
+    - cron: "17 14 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  clip-playback:
+    name: Clip playback (signed links)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install
+        run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Browsers and ffmpeg
+        run: |
+          npx playwright install --with-deps webkit chromium
+          sudo apt-get install -y ffmpeg
+      - name: Play the test clip through signed links
+        env:
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_STREAM_TOKEN: ${{ secrets.CLOUDFLARE_STREAM_TOKEN }}
+        run: npm run test:clip-playback

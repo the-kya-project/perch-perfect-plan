@@ -384,14 +384,46 @@ export function useMilestoneCards() {
   });
 }
 
-/** Signed playback for a journey's clips (only if you may see the journey). */
+// A new clip is still being prepared by Cloudflare for a minute or two. While
+// any is, the clips are asked for again every few seconds, for up to two
+// minutes per clip (then the screen says "still processing" with Try again).
+export const CLIP_POLL_MS = 4_000;
+export const CLIP_PROCESSING_BUDGET_MS = 120_000;
+const processingSince = new Map<string, number>();
+const waitKey = (journeyId: string, updateId: string) => `${journeyId}:${updateId}`;
+
+/** When this clip was first seen still processing (for the two-minute budget). */
+export function clipProcessingSince(journeyId: string, updateId: string): number | undefined {
+  return processingSince.get(waitKey(journeyId, updateId));
+}
+/** "Try again": start the two-minute wait over. */
+export function resetClipWait(journeyId: string, updateId: string): void {
+  processingSince.delete(waitKey(journeyId, updateId));
+}
+
+/** Signed playback for a journey's clips (only if you may see the journey),
+ *  each ready, processing or failed (journeyMedia.functions.ts). */
 export function useJourneyClips(journeyId: string, enabled = true) {
   return useQuery({
     queryKey: journeyKeys.clips(journeyId),
     enabled: enabled && !!journeyId,
     staleTime: 30 * 60_000,
+    refetchInterval: (q) => {
+      const data = q.state.data as Record<string, JourneyClip> | undefined;
+      if (!data) return false;
+      const now = Date.now();
+      const waiting = Object.values(data).some((c) =>
+        c.status === "processing" && now - (processingSince.get(waitKey(journeyId, c.updateId)) ?? now) < CLIP_PROCESSING_BUDGET_MS);
+      return waiting ? CLIP_POLL_MS : false;
+    },
     queryFn: async (): Promise<Record<string, JourneyClip>> => {
       const rows = await getJourneyClips({ data: { journeyId } });
+      const now = Date.now();
+      for (const r of rows) {
+        const k = waitKey(journeyId, r.updateId);
+        if (r.status === "processing") { if (!processingSince.has(k)) processingSince.set(k, now); }
+        else processingSince.delete(k);
+      }
       return Object.fromEntries(rows.map((r) => [r.updateId, r]));
     },
   });

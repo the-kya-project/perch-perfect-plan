@@ -7,7 +7,7 @@
 import { useInfiniteQuery, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { getLocalUser } from "@/integrations/supabase/currentUser";
-import { AvatarError, reencodeJpeg } from "@/lib/flockAvatar";
+import { AvatarError, reencodeJpegSized } from "@/lib/flockAvatar";
 import { deleteFlockComment, deleteFlockPost, getFlockPostPhotos, type PostPhotoMap } from "@/lib/flockPostMedia.functions";
 import type { ReactionKind } from "@/lib/journeyData";
 import type { FeedSpace, PostSpace, PostStatus, VetSign } from "@/lib/flockPosts";
@@ -140,9 +140,11 @@ export function usePostPhotos(opts: { postIds?: string[]; commentIds?: string[];
 export async function uploadPostPhoto(file: File): Promise<string> {
   const { data } = await getLocalUser();
   if (!data.user) throw new AvatarError("You're signed out.");
-  const blob = await reencodeJpeg(file, 1600, 3 * 1024 * 1024);
+  const { blob, width, height } = await reencodeJpegSized(file, 1600, 3 * 1024 * 1024);
   const path = `${data.user.id}/${crypto.randomUUID()}.jpg`;
-  const { error } = await supabase.storage.from("flock-posts").upload(path, blob, { contentType: "image/jpeg", upsert: false });
+  // The size goes with the file, so every screen can draw the photo's shape
+  // before it loads (getFlockPostPhotos hands it back with the signed link).
+  const { error } = await supabase.storage.from("flock-posts").upload(path, blob, { contentType: "image/jpeg", upsert: false, metadata: { width, height } });
   if (error) throw new AvatarError("We couldn't save that photo. Try again.");
   return path;
 }
