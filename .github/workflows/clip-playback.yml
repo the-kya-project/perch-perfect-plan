@@ -1,11 +1,13 @@
 # Journey clip playback through the app's signed-link path, against a real,
 # processed Cloudflare Stream test clip (scripts/clip-playback-check.ts).
-# Daily and by hand (Actions → Clip playback → Run workflow). It needs the
+# On every pull request, daily, and by hand (Actions → Clip playback → Run
+# workflow). It needs the
 # repository secrets CLOUDFLARE_ACCOUNT_ID and CLOUDFLARE_STREAM_TOKEN (a token
 # with Account → Stream → Edit); it fails, never skips, when one is missing.
 name: Clip playback
 
 on:
+  pull_request:
   schedule:
     - cron: "17 14 * * *"
   workflow_dispatch:
