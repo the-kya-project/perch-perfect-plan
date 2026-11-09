@@ -10,8 +10,14 @@
  * data on every navigation (denylisted in workbox config). Installation only
  * makes sense for owners using the app repeatedly.
  */
-import { isNativeApp } from "./nativeApp";
+import { isNativeApp, nativePlatform } from "./nativeApp";
 import { flushAllDrafts, formInProgress } from "./formsInProgress";
+import { WEB_BUILD } from "./errorTags";
+import { track } from "./analytics";
+import {
+  CHECK_EVERY_MS, CHECK_TIMEOUT_MS, checkDue, isNewerBuild, mayReloadFor, parseBuildReload,
+  shouldCheckVersion, staleCodeAction, type BuildReload,
+} from "./releaseCheck";
 
 const SW_URL = "/sw.js";
 
@@ -124,11 +130,32 @@ function leavingPage(): boolean {
   }
 }
 
-/** Recover from a code file that failed to load: one hard reset, then the
- *  error screen. */
-export function reloadForStaleChunk() {
+/** Where a failed code file was noticed (for the report). */
+export type StaleCodeSource = "boundary" | "preload" | "import";
+
+/** One report per page: a broken page can raise the same failure many times. */
+let staleCodeReported = false;
+
+/** A code file failed to load. Production serves only the live build's files,
+ *  so this means a new version is out (lib/releaseCheck.ts, staleCodeAction):
+ *  apply it like an update, at once if nothing is in progress, behind the
+ *  banner if a form is, and never more than the one automatic attempt.
+ *  Reported to PostHog (`stale_code_detected`), so a rise is visible. */
+export function reloadForStaleChunk(source: StaleCodeSource = "boundary") {
   if (typeof window === "undefined" || reloadScheduled || leavingPage()) return;
-  if (!claimAutoReload()) {
+  updateReady = true;
+  pageBehind = true;
+  const action = staleCodeAction({
+    formInProgress: formInProgress(),
+    attemptSpent: readAutoReloadAt() > 0,
+    appGone: source === "boundary",
+  });
+  if (!staleCodeReported) {
+    staleCodeReported = true;
+    track("stale_code_detected", { source, action, platform: nativePlatform(), build: WEB_BUILD });
+  }
+  if (action === "banner") { notifyUpdate(); return; }
+  if (action === "error" || !claimAutoReload()) {
     window.dispatchEvent(new Event(STARTUP_FAILED_EVENT));
     return;
   }
@@ -154,11 +181,46 @@ export function isStaleChunkError(error: unknown): boolean {
   return /failed to fetch dynamically imported module|error loading dynamically imported module|importing a module script failed|failed to load module script|unable to preload/i.test(msg);
 }
 
+/** Is one of this page's own code files gone from the server? For the root
+ *  error screen, when the error it caught isn't recognisably a missing file:
+ *  React can report a code file that failed to load during the first render
+ *  as a generic error (#520), and WebKit doesn't always report the failed
+ *  file to the startup guard either (CI, Nov 2, 2026). Asks the server about
+ *  the page's module scripts (HEAD, uncached, at most 25). False on any doubt. */
+export async function pageCodeMissing(timeoutMs = 5000): Promise<boolean> {
+  if (typeof document === "undefined") return false;
+  const urls = new Set<string>();
+  const add = (u: string) => { if (u.startsWith(`${location.origin}/assets/`) && u.endsWith(".js")) urls.add(u); };
+  // Files the startup guard saw fail, then every code file the page asked
+  // for (the error screen can already have removed the failed route's tags),
+  // then the module tags still on the page.
+  try { ((window as unknown as { __kyaFailedAssets?: string[] }).__kyaFailedAssets ?? []).forEach(add); } catch { /* ignore */ }
+  try { performance.getEntriesByType("resource").forEach((e) => add(e.name)); } catch { /* ignore */ }
+  document.querySelectorAll<HTMLScriptElement | HTMLLinkElement>('script[type="module"][src], link[rel="modulepreload"][href]').forEach((el) => {
+    add((el as HTMLScriptElement).src || (el as HTMLLinkElement).href || "");
+  });
+  const ctrl = typeof AbortController !== "undefined" ? new AbortController() : null;
+  const timer = window.setTimeout(() => ctrl?.abort(), timeoutMs);
+  try {
+    const answers = await Promise.all([...urls].slice(0, 25).map((u) =>
+      fetch(u, { method: "HEAD", cache: "no-store", signal: ctrl?.signal })
+        .then((r) => r.status === 404 || r.status === 410, () => false)));
+    return answers.some(Boolean);
+  } finally {
+    window.clearTimeout(timer);
+  }
+}
+
 export function installChunkErrorRecovery() {
   if (typeof window === "undefined") return;
   window.addEventListener("vite:preloadError", (e) => {
     e.preventDefault(); // don't let it surface as an unhandled error; we handle it here
-    reloadForStaleChunk();
+    reloadForStaleChunk("preload");
+  });
+  // A code file imported outside the router (a lazily loaded dialog, a
+  // preload on intent) fails as a promise nobody catches: same handling.
+  window.addEventListener("unhandledrejection", (e) => {
+    if (isStaleChunkError(e.reason)) reloadForStaleChunk("import");
   });
 }
 
@@ -174,13 +236,18 @@ export function installChunkErrorRecovery() {
  * step can fail (private mode, blocked storage) without stopping the reload.
  */
 export async function hardResetAndReload(): Promise<void> {
-  await unregisterAppWorkers();
-  try {
-    if ("caches" in window) {
-      const keys = await caches.keys();
-      await Promise.all(keys.map((k) => caches.delete(k)));
-    }
-  } catch { /* ignore */ }
+  // Inside a frame (the owner's sitter preview) the worker and caches belong
+  // to the app around it: only reload the frame.
+  const inFrame = (() => { try { return window.self !== window.top; } catch { return true; } })();
+  if (!inFrame) {
+    await unregisterAppWorkers();
+    try {
+      if ("caches" in window) {
+        const keys = await caches.keys();
+        await Promise.all(keys.map((k) => caches.delete(k)));
+      }
+    } catch { /* ignore */ }
+  }
   // Cache-bust the document fetch too, in case an intermediary cached the HTML.
   try {
     const u = new URL(window.location.href);
@@ -245,7 +312,7 @@ export function registerServiceWorker() {
         const check = () => { reg.update().catch(() => {}); };
         check();
         setInterval(check, 60 * 60 * 1000);
-        watchForeground(check);
+        onForeground(check);
       })
       .catch(() => { /* swallow */ });
   };
@@ -353,13 +420,36 @@ async function applyUpdate(reload: boolean) {
     activating = false;
   }
   if (reload) {
-    window.location.reload();
+    noteBuildReload();
+    await reloadFresh();
     return;
   }
   updateReady = false;
   pageBehind = false;
   applying = false;
   notifyUpdate();
+}
+
+/** Reload onto the live build. Vercel pins this page to the build it opened
+ *  with (the __vdpl cookie), and on Nov 2, 2026 the iOS web view kept that
+ *  pin through a reload, so the "new" page still got the old build's files.
+ *  So: expire the pin first (/api/public/unpin), then load a cache-busted
+ *  address, which the web view can't answer from its cache and which pins the
+ *  fresh page to the live build. */
+async function reloadFresh() {
+  const ctrl = typeof AbortController !== "undefined" ? new AbortController() : null;
+  const timer = window.setTimeout(() => ctrl?.abort(), 3000);
+  try {
+    await fetch("/api/public/unpin", { method: "POST", cache: "no-store", signal: ctrl?.signal });
+  } catch { /* an old build without it, or offline: reload anyway */ }
+  window.clearTimeout(timer);
+  try {
+    const u = new URL(window.location.href);
+    u.searchParams.set("_r", String(Date.now()));
+    window.location.replace(u.toString());
+  } catch {
+    window.location.reload();
+  }
 }
 
 /** The banner's Update: save every draft, then move onto the new build. */
@@ -377,8 +467,18 @@ export async function updateNow(): Promise<void> {
  * waits more than about timeoutMs, and never moves while a form is in progress.
  */
 export async function catchUpBeforePreview(timeoutMs = 6_000): Promise<boolean> {
+  if (formInProgress()) return false;
   const reg = swReg;
-  if (!reg || formInProgress()) return false;
+  if (!reg) {
+    // No worker (the iOS app): ask which build is live. Behind = a full
+    // reload, which lands back on this preview (it re-reads the sit when the
+    // router state is gone) on the live build.
+    if (!pageBehind && !(await liveBuildIsNewer(timeoutMs))) return false;
+    pageBehind = true;
+    updateReady = true;
+    await updateNow();
+    return true;
+  }
   const deadline = Date.now() + timeoutMs;
   const until = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, Math.max(0, ms)));
   try { await Promise.race([reg.update(), until(timeoutMs)]); } catch { /* offline: go ahead */ }
@@ -397,6 +497,114 @@ export async function catchUpBeforePreview(timeoutMs = 6_000): Promise<boolean> 
   updateReady = true;
   await updateNow();
   return true;
+}
+
+// ── Version check ────────────────────────────────────────────────────────────
+// lib/releaseCheck.ts explains why. A newer live build is treated exactly like
+// a waiting worker (onUpdateReady), with pageBehind set so applying it reloads.
+
+let lastVersionCheckAt = 0;
+let versionCheckInFlight: Promise<boolean> | null = null;
+/** The newer build the last check found, to record a reload against. */
+let liveBuild: string | null = null;
+const BUILD_RELOAD_KEY = "kya-build-reload";
+
+function readBuildReload(): BuildReload | null {
+  try { return parseBuildReload(localStorage.getItem(BUILD_RELOAD_KEY)); } catch { return null; }
+}
+
+/** Remember that this page is reloading onto `liveBuild`. */
+function noteBuildReload() {
+  if (!liveBuild) return;
+  try { localStorage.setItem(BUILD_RELOAD_KEY, JSON.stringify({ build: liveBuild, at: Date.now() })); } catch { /* ignore */ }
+}
+
+/** Ask /api/public/version whether a newer build is live. False on any
+ *  failure (offline, timeout, odd answer): not knowing is not "behind". Also
+ *  false when this page already reloaded for that build a moment ago and
+ *  still isn't on it (mayReloadFor): one try per build, never a loop. */
+function liveBuildIsNewer(timeoutMs = CHECK_TIMEOUT_MS): Promise<boolean> {
+  if (versionCheckInFlight) return versionCheckInFlight;
+  lastVersionCheckAt = Date.now();
+  versionCheckInFlight = (async () => {
+    try {
+      const live = await readLiveBuild(timeoutMs);
+      if (!isNewerBuild(WEB_BUILD, live)) return false;
+      if (!mayReloadFor(readBuildReload(), live as string, Date.now())) return false;
+      liveBuild = live as string;
+      return true;
+    } catch {
+      return false;
+    } finally {
+      versionCheckInFlight = null;
+    }
+  })();
+  return versionCheckInFlight;
+}
+
+/** The live build, read as a hidden same-origin page load, not a fetch.
+ *  Vercel's Skew Protection pins every fetch from this page to the build the
+ *  page opened with (the __vdpl cookie), so a fetch would only ever answer
+ *  with this page's own build. Page loads, frames included, are never pinned
+ *  (checked on Nov 2, 2026), and still carry the page's cookies. Null when it
+ *  can't tell (offline, timeout, an odd answer). */
+function readLiveBuild(timeoutMs: number): Promise<string | null> {
+  return new Promise((resolve) => {
+    const frame = document.createElement("iframe");
+    frame.setAttribute("aria-hidden", "true");
+    frame.tabIndex = -1;
+    frame.style.cssText = "position:absolute;width:0;height:0;border:0;visibility:hidden";
+    let done = false;
+    const finish = (build: string | null) => {
+      if (done) return;
+      done = true;
+      window.clearTimeout(timer);
+      frame.remove();
+      resolve(build);
+    };
+    const timer = window.setTimeout(() => finish(null), timeoutMs);
+    frame.onload = () => {
+      try {
+        const text = frame.contentDocument?.body?.textContent ?? "";
+        finish(text.match(/"build"\s*:\s*"([0-9A-Za-z]{1,40})"/)?.[1] ?? null);
+      } catch {
+        finish(null);
+      }
+    };
+    frame.src = `/api/public/version?t=${Date.now()}`;
+    document.body.appendChild(frame);
+  });
+}
+
+async function checkVersion(force: boolean) {
+  if (pageBehind || !checkDue(lastVersionCheckAt, Date.now(), force)) return;
+  if (await liveBuildIsNewer()) {
+    pageBehind = true;
+    onUpdateReady();
+  }
+}
+
+/** Start the version check (shouldCheckVersion: every open production page):
+ *  now, hourly, and on every return to the foreground. Called once at boot. */
+export function startReleaseCheck() {
+  if (typeof window === "undefined") return;
+  const inFrame = (() => { try { return window.self !== window.top; } catch { return true; } })();
+  if (!shouldCheckVersion({
+    running: WEB_BUILD,
+    prod: import.meta.env.PROD,
+    inFrame,
+  })) return;
+  void checkVersion(false);
+  window.setInterval(() => { void checkVersion(false); }, CHECK_EVERY_MS);
+  onForeground(() => { void checkVersion(true); });
+}
+
+/** Run `check` whenever the app comes back to the foreground. Both update
+ *  paths (worker and version check) share one watcher. */
+const foregroundChecks: Array<() => void> = [];
+function onForeground(check: () => void) {
+  foregroundChecks.push(check);
+  if (foregroundChecks.length === 1) watchForeground(() => foregroundChecks.forEach((fn) => fn()));
 }
 
 /** Track time in the background. visibilitychange is the signal; a heartbeat
@@ -427,4 +635,11 @@ function watchForeground(check: () => void) {
     if (document.visibilityState === "hidden") hiddenAt = Date.now();
     else back();
   });
+  // The native shells: Capacitor fires "pause" and "resume" on the document
+  // when the app goes to the background and comes back. The iOS web view
+  // doesn't reliably report that as a visibility change (Nov 2, 2026: an app
+  // brought back from the background never re-checked for a release).
+  // Running back() twice is harmless: the second finds nothing new.
+  document.addEventListener("pause", () => { hiddenAt ??= Date.now(); });
+  document.addEventListener("resume", () => { back(); });
 }
