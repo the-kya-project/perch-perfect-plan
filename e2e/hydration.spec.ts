@@ -116,13 +116,20 @@ test("confirmation link waits for a tap, then works once", async ({ page, reques
   await page.waitForTimeout(1000);
   expect(await links(), "Opening /verify must not redeem the token").toMatchObject({ confirmed: false, verifyCalls: 0 });
 
-  // The tap redeems it and goes to `next`.
+  // The tap redeems it and goes to `next`. /welcome is a client-side
+  // navigation that may move straight on (to the dashboard), so record every
+  // page visited rather than wait for /welcome to finish loading.
+  const visited: string[] = [];
+  page.on("framenavigated", (f) => { if (f === page.mainFrame()) visited.push(new URL(f.url()).pathname); });
   await button().click();
-  await page.waitForURL((u) => u.pathname === "/welcome");
+  await expect.poll(() => visited, { message: "The tap should go to next (/welcome)" }).toContain("/welcome");
   expect(await links()).toMatchObject({ confirmed: true, verifyCalls: 1 });
 
-  // The same link again: the button still shows (nothing is spent on load),
-  // and the tap lands on the expired page.
+  // The same link again, signed out (another browser or device): the button
+  // still shows (nothing is spent on load), and the tap lands on the expired
+  // page. (Signed in, /link-expired sends a confirmed person on to the app.)
+  await page.evaluate(() => { localStorage.clear(); sessionStorage.clear(); });
+  await page.context().clearCookies();
   await load(page, link);
   await expect(button()).toBeEnabled();
   await button().click();
