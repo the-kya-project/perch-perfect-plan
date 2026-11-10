@@ -47,6 +47,11 @@ export type AnalyticsEventName =
   // landed on /link-expired; and the "Send a new link" tap there.
   | "confirm_link_expired"
   | "confirm_resend_from_expired"
+  // /verify (the landing page for every emailed auth link) was shown, and its
+  // button tapped. The token is redeemed only on the tap, so a link scanner
+  // shows up as a view with no tap. `type` is the link's kind (signup, …).
+  | "confirm_page_viewed"
+  | "confirm_tapped"
   | "guided_editor_opened"
   | "setup_stop_point_viewed"
   | "setup_stop_point_choice"
