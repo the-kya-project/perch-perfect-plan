@@ -2,7 +2,6 @@
  * Journey clip playback, end to end, through the app's own signed-link path.
  *
  *   CLOUDFLARE_ACCOUNT_ID=… CLOUDFLARE_STREAM_TOKEN=… npm run test:clip-playback
- *   … npm run test:clip-playback:full     (adds WebKit playing it; needs macOS)
  *
  * Earlier tests played clips from plain links and so never exercised signing.
  * This one uses a real, processed Cloudflare Stream video kept for the purpose
@@ -16,12 +15,10 @@
  *   4. the signed stream downloads and parses: the manifest, a variant
  *      playlist and its first video segment, which must be MPEG-TS or fMP4
  *      carrying H.264 or HEVC video;
- *   5. Chromium loads the signed player page;
- *   6. with --full only: WebKit (the iPhone app's engine) plays the signed HLS
- *      in a plain <video>, as JourneyClipView does there. Only WebKit on macOS
- *      can: it plays HLS with Apple's media stack, which Linux WebKit doesn't
- *      have. So the default run (Linux, every PR and daily) says iPhone-style
- *      playback isn't covered, and the weekly macOS job runs --full.
+ *   5. Chromium loads the signed player page.
+ * It does not play the stream the way the iPhone app does (a plain <video> in
+ * WebKit): Linux WebKit can't play HLS, and neither, it turned out, can
+ * Playwright's WebKit build on macOS. The output says so.
  * Fails (never skips) when the Cloudflare settings are missing.
  */
 import { execFileSync } from "node:child_process";
@@ -31,9 +28,8 @@ import { join } from "node:path";
 import { getVideoStatus, signPlaybackToken, signedClipUrls } from "@/lib/cloudflareStream.server";
 
 const NAME = "kya-playback-check";
-const FULL = process.argv.includes("--full");
 const NOT_COVERED = "iPhone-style playback (WebKit playing the signed stream in a <video>) is NOT covered in this job. "
-  + "It runs weekly on macOS, or by hand: Actions → Clip playback → Run workflow.";
+  + "Check it on a real iPhone.";
 const API = "https://api.cloudflare.com/client/v4";
 
 function env(name: string): string {
@@ -61,7 +57,7 @@ async function findOrMakeTestClip(): Promise<string> {
   try {
     execFileSync("ffmpeg", ["-loglevel", "error", "-f", "lavfi", "-i", "testsrc=duration=3:size=360x640:rate=24", "-pix_fmt", "yuv420p", "-c:v", "libx264", file]);
   } catch (e: any) {
-    throw new Error(`couldn't make the test clip with ffmpeg (${e?.code ?? e?.message}). Run the Linux job once to make it, or install ffmpeg.`);
+    throw new Error(`couldn't make the test clip with ffmpeg (${e?.code ?? e?.message}). Install ffmpeg.`);
   }
   const form = new FormData();
   form.append("file", new Blob([readFileSync(file)], { type: "video/mp4" }), "test.mp4");
@@ -214,7 +210,7 @@ async function main() {
   await checkStream(urls.hls);
 
   // 5. Chromium loads the signed player page.
-  const { webkit, chromium } = await import("playwright");
+  const { chromium } = await import("playwright");
   const cr = await chromium.launch();
   try {
     const page = await cr.newPage();
@@ -222,31 +218,14 @@ async function main() {
     check("Chromium loads the signed Stream player", !!res?.ok(), `HTTP ${res?.status() ?? "?"}`);
   } finally { await cr.close(); }
 
-  // 6. WebKit plays the signed HLS in a plain <video> (--full, macOS only).
-  if (!FULL) return;
-  const wk = await webkit.launch();
-  try {
-    const page = await wk.newPage();
-    await page.setContent(`<video id="v" src="${urls.hls}" muted playsinline preload="metadata"></video>`);
-    const played = await page.evaluate(() => new Promise<string>((resolve) => {
-      const v = document.getElementById("v") as HTMLVideoElement;
-      const can = v.canPlayType("application/vnd.apple.mpegurl") || "no";
-      v.addEventListener("loadedmetadata", () => resolve(`ok ${v.duration.toFixed(1)}s, ${v.videoWidth}x${v.videoHeight}`));
-      v.addEventListener("error", () => resolve(`error ${v.error?.code ?? "?"} (plays HLS: ${can})`));
-      setTimeout(() => resolve(`timeout after 30s (plays HLS: ${can})`), 30_000);
-    }));
-    check("WebKit (the iPhone app's engine) plays the signed HLS in a <video>", played.startsWith("ok"), played);
-  } finally { await wk.close(); }
 }
 
 main()
   .catch((e) => { console.error(`FAIL: ${e?.message ?? e}`); failed++; })
   .finally(() => {
-    if (!FULL) {
-      console.log(`\nNOTE: ${NOT_COVERED}`);
-      console.log(`::notice title=iPhone-style playback not covered here::${NOT_COVERED}`);
-      if (process.env.GITHUB_STEP_SUMMARY) appendFileSync(process.env.GITHUB_STEP_SUMMARY, `> **Note:** ${NOT_COVERED}\n`);
-    }
-    console.log(failed ? `\n${failed} check(s) FAILED` : `\nall clip playback checks passed${FULL ? " (including WebKit playback)" : " (stream checks; WebKit playback not run)"}`);
+    console.log(`\nNOTE: ${NOT_COVERED}`);
+    console.log(`::notice title=iPhone-style playback not covered here::${NOT_COVERED}`);
+    if (process.env.GITHUB_STEP_SUMMARY) appendFileSync(process.env.GITHUB_STEP_SUMMARY, `> **Note:** ${NOT_COVERED}\n`);
+    console.log(failed ? `\n${failed} check(s) FAILED` : "\nall clip playback checks passed (stream checks; iPhone-style playback not run)");
     process.exit(failed ? 1 : 0);
   });
