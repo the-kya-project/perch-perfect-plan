@@ -17,8 +17,9 @@
  *      carrying H.264 or HEVC video;
  *   5. Chromium loads the signed player page.
  * It does not play the stream the way the iPhone app does (a plain <video> in
- * WebKit): Linux WebKit can't play HLS, and neither, it turned out, can
- * Playwright's WebKit build on macOS. The output says so.
+ * WebKit): Linux WebKit can't play HLS, and neither can Playwright's WebKit
+ * build on macOS. Real Safari does that weekly (scripts/clip-playback-safari.ts).
+ * The output says so.
  * Fails (never skips) when the Cloudflare settings are missing.
  */
 import { execFileSync } from "node:child_process";
@@ -29,7 +30,7 @@ import { getVideoStatus, signPlaybackToken, signedClipUrls } from "@/lib/cloudfl
 
 const NAME = "kya-playback-check";
 const NOT_COVERED = "iPhone-style playback (WebKit playing the signed stream in a <video>) is NOT covered in this job. "
-  + "Check it on a real iPhone.";
+  + "Real Safari covers it weekly on macOS (job \"Clip playback in Safari\", scripts/clip-playback-safari.ts), or run the workflow by hand.";
 const API = "https://api.cloudflare.com/client/v4";
 
 function env(name: string): string {
