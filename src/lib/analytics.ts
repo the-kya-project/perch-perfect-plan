@@ -35,6 +35,7 @@ import { DEPLOY_ENV, POSTHOG_PROJECT_KEY } from "./deployEnv";
 import { sanitizeAnalyticsEvent, sanitizeAnalyticsProperties } from "./urlScrub";
 import { scrubExceptionProperties } from "./errorScrub";
 import { hashUserId } from "./userHash";
+import { loadNativeAppTags, type NativeAppTags } from "./nativeAppInfo";
 
 // ---------------- Event catalogue ----------------
 
@@ -234,9 +235,26 @@ function loadScript(src: string, attrs: Record<string, string> = {}): Promise<vo
 
 // ---------------- PostHog adapter ----------------
 
-/** PostHog `before_send`. Exported only for scripts/url-scrub.test.ts. */
+/** The installed native app's version and build (src/lib/nativeAppInfo.ts),
+ *  read once before PostHog starts. Null in a browser: those events carry no
+ *  native tags. */
+let nativeTags: NativeAppTags | null = null;
+
+/** Set the native tags beforeSend adds. Exported only for scripts/native-app-tags.test.ts. */
+export function setNativeTagsForAnalytics(tags: NativeAppTags | null) {
+  nativeTags = tags;
+}
+
+/** PostHog `before_send`. Exported only for scripts/url-scrub.test.ts and
+ *  scripts/native-app-tags.test.ts. Adds native_app_version / native_build to
+ *  every event from a native app, $pageview and $exception included. Here
+ *  rather than posthog.register() so the first pageview (sent during init)
+ *  has them and reset() on sign-out can't drop them. */
 export function beforeSend<T extends Record<string, any> | null>(event: T): T {
   const out = sanitizeAnalyticsEvent(event);
+  if (out && nativeTags) {
+    (out as Record<string, any>).properties = { ...((out as Record<string, any>).properties ?? {}), ...nativeTags };
+  }
   if (out && (out as Record<string, any>).event === "$exception" && out.properties) {
     scrubExceptionProperties(out.properties);
   }
@@ -249,7 +267,10 @@ async function bootPostHog(key: string, host: string) {
   // array.js only replays init from its special `_i` queue — so the library
   // loaded and silently never initialized (empty token, no events). Verified
   // live on 2026-07-17: direct init on the loaded object beacons correctly.
-  await loadScript(`${host}/static/array.js`);
+  // Read the native app's version alongside the script load (at most 1.5s),
+  // so every event — the init pageview too — goes out tagged.
+  const [, tags] = await Promise.all([loadScript(`${host}/static/array.js`), loadNativeAppTags()]);
+  nativeTags = tags;
   const ph = (window as any).posthog;
   if (!ph || typeof ph.init !== "function" || ph.__loaded) {
     flush();
