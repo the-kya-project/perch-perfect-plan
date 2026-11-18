@@ -1,6 +1,6 @@
 # The Flock: payments plan
 
-Status: **plan only, for Brittany's review.** Nothing in code, settings, App Store Connect, Stripe or the database was changed to write it. Written Nov 17, 2026.
+Status: **plan only, for Brittany's review.** Nothing in code, settings, App Store Connect, Stripe or the database was changed to write it. Written Nov 17, 2026. **Updated Nov 17, 2026: decision 1 made** (see "Decision 1" below; sections a, b, d, e, f, g and h are revised to match).
 
 What was read: the repo (`main` at `6d64a11`), the Flock migrations, the `/founding` and `/gift` code and copy, the Stripe gift code, the production database (read-only counts), the Vercel environment variable *names and comments* (no values), and App Store Connect through its API (read-only).
 
@@ -10,6 +10,28 @@ What was read: the repo (`main` at `6d64a11`), the Flock migrations, the `/found
 - **Stripe:** live in production for gifts only. Two one-time prices: Flock year $300 and app premium year $79. The webhook lives at `/api/public/stripe/webhook`.
 - **Database:** `flock_settings.flock_opens_at` is **not set**, and the kill switch is on. There's **1 founding claim** (Oct 22, locked at 1500 cents), one `founding/trialing` entitlement and one manual comp. No Stripe, Apple or Google entitlement rows exist yet.
 - **Native app:** none of the installed builds contains a purchases plugin. Web code reaches every build at once (remote-URL mode), but **a new App Store build is required before any in-app purchase can happen.**
+
+---
+
+## Decision 1 (made Nov 17, 2026)
+
+**Founders keep the current claim-only flow through Dec 31: no card and no Stripe step before opening day.**
+
+- **On opening day,** every founder gets an email asking them to add a card on the web (Stripe Checkout, **$0 due**, first charge when their 6 free months end, at `free_until` = opening day + 6 months).
+- **14-day card window.** A founder who hasn't added a card **within 14 days of opening day** has their spot **released back to the waitlist**.
+- **During those 14 days** they're members (the existing `founding` grant starts on opening day), so they can look around before deciding.
+
+What this changes:
+
+- **Payments must be live by opening day, not Dec 31.** Nothing is collected before then, so Dec 31 is only the claim deadline, as built today.
+- **The founding page and terms must say so before opening day.** `/founding` and the terms need a line such as "When the Flock opens, you'll have 14 days to add a card ($0 due then; your first charge is when your 6 free months end), or your spot goes to the next person on the waitlist". This is best added **as soon as possible**, so people claiming between now and Dec 31 see it. Existing claimants should get the same notice by email before opening day.
+- **Releasing a spot is new behavior.** When the window closes without a card:
+  - the claim is marked released (`founding_claims.released_at`), which frees its spot number;
+  - the founding entitlement ends at that moment (`current_period_end = now()`);
+  - the founder gets a short email saying so.
+- **Offering a released spot to the waitlist has to work after Dec 31.** `claim_founding_spot()` refuses claims after `private.founding_deadline()`, so released spots need their own path: an **admin-issued invitation** to a waitlist person (`public.waitlist_signups`), with its own 14-day card window and the same founding terms. The deadline for *open* claims stays Dec 31. Who gets offered a released spot, and in what order, is a decision (added as h14).
+- **Billing is simpler.** Every founder sets up billing *after* opening day, so the trial end (`free_until`) is already known at checkout. There is no provisional trial end and no opening-day resync of Stripe subscriptions (old PR 5). If opening day is ever moved *after* founders have added cards, a one-off admin resync can handle it.
+- **Founders who never add a card now lose access at day 14,** not at `free_until`.
 
 ---
 
@@ -34,8 +56,8 @@ What was read: the repo (`main` at `6d64a11`), the Flock migrations, the `/found
 
 ### Questions for you (undefined or contradictory)
 
-1. **"Pay before Dec 31" vs. the promise on the page.** The page says "No card and no payment today", and under the current terms a founder owes nothing until opening day + 6 months (around July 2027 if the Flock opens in early January). What should a founder be able to do before Dec 31: (a) nothing more than claim, as today; (b) optionally add a card now, charged $0 until the free months end; or (c) be *required* to add a card to keep the spot? (b) and (c) contradict "No card needed today" for people who already claimed.
-2. **Opening day.** It isn't set. The copy says "January", and CLAUDE.md's example is `2027-01-05`. Every founder's first charge date depends on it.
+1. ~~"Pay before Dec 31" vs. the promise on the page.~~ **Answered by decision 1:** claim only through Dec 31; add a card ($0 due) within 14 days of opening day or the spot is released.
+2. **Opening day.** It isn't set. The copy says "January", and CLAUDE.md's example is `2027-01-05`. It now also starts each founder's **14-day card window**, and web payments must be live by then.
 3. **Regular price period.** Is "$30" a month?
 4. **Annual Flock plan.** Is there one for regular members, and at what price? Is it $300, the same as the gift (that's less than 12 × $30 = $360)? Is there an annual founding option?
 5. **App premium.** Is it in scope for this build, at $9.99 a month (and $79 a year)? Flock already includes premium.
@@ -70,7 +92,7 @@ Why this split:
 - **5.1.1(v):** account deletion must explain that an Apple subscription has to be cancelled in Apple's settings. Our deletion flow will need that line once in-app purchase exists.
 - **Commission:** 30%, or **15% in the Small Business Program** (under $1M a year; you have to enroll). Subscriptions also drop to 15% after a subscriber's first year.
 
-**Can web sign-ups be offered inside the iOS app?** Outside the US, no: no button, link or price for the web checkout. In the US storefront, currently yes (see above). The safe design is that the iOS app never shows Stripe. `/founding` already loads in the app, so its payment step must be hidden when `isNativeApp()`, and the app should show only "check your email" or the in-app purchase paywall.
+**Can web sign-ups be offered inside the iOS app?** Outside the US, no: no button, link or price for the web checkout. In the US storefront, currently yes (see above). The safe design is that the iOS app never shows Stripe. The founder card step (from opening day) is a web page reached from the opening-day email. If it's opened inside the app, it must hide the Stripe button when `isNativeApp()` and say "open this link in your browser"; the app otherwise shows only the in-app purchase paywall.
 
 ---
 
@@ -119,9 +141,10 @@ Why this split:
 **Web (Stripe), the recommended path for all 50:**
 
 - **Products:** one Stripe product "The Flock", with a **Founding $15/month** price that is never edited (that's the lock) and a **Regular $30/month** price. A later price change means a new price object; founding subscriptions keep theirs.
-- **Founder sign-up:** Checkout `mode=subscription` with the founding price, `subscription_data.trial_end = free_until`, card collected, $0 today. Only for people with a claim that hasn't been forfeited; the server function checks this.
-- **If opening day isn't set yet:** Stripe needs a trial end between 48 hours and 730 days out. Set a provisional `trial_end` (e.g. Jul 5, 2027). When `admin_set_flock_opens_at` runs, a server job updates `trial_end` on every founding subscription still in its trial. Stripe allows that.
-- **Founders who never add a card:** keep access through their free months (the existing `founding` grant), get reminder emails at about month 5 and two weeks before, and lose access at `free_until`, as the grant already does.
+- **Founder sign-up (decision 1):** opens on opening day. Checkout `mode=subscription` with the founding price, `subscription_data.trial_end = free_until` (known by then: opening day + 6 months), card collected, **$0 due**. Only for people with a claim that hasn't been released or forfeited, and only from opening day until the 14-day window closes; the server function checks all of this.
+- **The 14-day window:** `card_due_at = flock_opens_at + 14 days`, stored on the claim when opening day is set. Reminder emails go out on about day 7 and day 12. A daily cron hook (through `call_cron_hook`) releases claims that pass `card_due_at` without a subscription: it sets `released_at`, ends the founding entitlement, and sends the "your spot was released" email.
+- **If opening day moves** after some founders have added cards, a one-off admin action updates `trial_end` on their subscriptions (Stripe allows this while a trial is running). It isn't needed in the normal flow.
+- **Founders with a card who cancel during the free months:** their subscription ends at `free_until` (cancel at period end), and the founding price is forfeited then (see decision 4).
 - **Cancelling:** through the Stripe Customer Portal. Recommendation: **turning off auto-renew is reversible until the period ends; the price is forfeited only when the subscription actually ends** (`customer.subscription.deleted` sets `forfeited_at`). After that, Checkout offers only the regular price.
 
 **iOS (Apple):** what Apple allows:
@@ -131,7 +154,7 @@ Why this split:
 - **Promotional offers / win-back offers:** for current or lapsed subscribers, signed by our server. Not suitable for a first purchase.
 - **Price changes:** when you change a product's price, Apple lets you **keep current subscribers on their old price**. A separate "Founding" product at $15 that never changes is cleaner.
 
-**Recommendation for iOS:** **don't sell founding in the app at all.** Founders set up billing on the web (by email link). In the app they're already members through the entitlement. The iOS subscription group has only the regular products (monthly, plus annual if you want one), with no founding product and no free trial. That avoids the date mismatch, the forfeiture hole, and double free months. If a founder buys the regular plan in the app anyway, that's their choice, but the paywall should say "Founding members: check your email" when the account has a claim.
+**Recommendation for iOS:** **don't sell founding in the app at all.** Founders set up billing on the web (by the opening-day email link). In the app they're already members through the entitlement. The iOS subscription group has only the regular products (monthly, plus annual if you want one), with no founding product and no free trial. That avoids the date mismatch, the forfeiture hole, and double free months. If a founder buys the regular plan in the app anyway, that's their choice, but the paywall should say "Founding members: check your email" when the account has a claim.
 
 ---
 
@@ -148,7 +171,7 @@ Durations are typical, not promised. Apple and Stripe can be slower in December.
 7. **App Store Connect: turn on Billing Grace Period (16 days)** and set the **App Store Server Notifications V2** URL to RevenueCat's. 10 minutes.
 8. **App Store Connect: create an In-App Purchase key** (a separate .p8 from the API key you used today) for RevenueCat. 5 minutes.
 9. **RevenueCat account:** project, iOS app (bundle `com.thekyaproject.app`), upload the in-app purchase key, import products, an entitlement `flock`, an offering, webhook URL plus Authorization secret, transfer behavior "keep with original". 1–2 hours.
-10. **Terms of Use / EULA link** for subscriptions (Apple's standard EULA is fine), plus Privacy Policy updates to mention payment processors. 1 hour, plus legal review if you want it.
+10. **Terms of Use / EULA link** for subscriptions (Apple's standard EULA is fine), plus Privacy Policy updates to mention payment processors. **Add the founding terms, including the 14-day card window and the release to the waitlist (decision 1)**, and approve the matching `/founding` copy. Do this **as early as possible**, ideally before more people claim, and in any case before opening day. 1–2 hours, plus legal review if you want it.
 11. **Apple review account:** a dedicated account that can reach the paywall while the Flock is hidden (decision below), with credentials in the review notes. 15 minutes.
 12. **Submit the iOS build with the in-app purchase products attached.** A first in-app purchase must go in with an app version. Review is **usually 24–48 hours**; first subscriptions are often rejected once on metadata (price wording, missing EULA link), so allow **about a week** including a resubmit. Apple has slowed or paused submissions around **Dec 23–27** in past years; plan around that.
 
@@ -158,14 +181,18 @@ Durations are typical, not promised. Apple and Stripe can be slower in December.
 
 Every PR follows the Flock safety rules: additive database changes only; no Flock UI, route or network call for non-admins; a "Free-user impact" section; and the free-user regression check green. Nothing below opens the Flock.
 
-**Web and founding (needed for Dec 31):**
+**Copy first (before more claims, and in any case before opening day):**
 
-1. **Billing schema.** The migration from section c (`billing_customers`, `billing_events`, the new `entitlements` and `founding_claims` columns, the upsert functions in `private`), plus `supabase/checks/billing_checks.sql`. No callers yet. *Free users: none (new tables and columns only).*
+0. **Founding page and terms: the 14-day card window.** Add the decision 1 line to `/founding` (the offer and the "What happens next" step) and to the terms, and send the same notice to existing claimants. Copy only: no change to the claim flow, which stays card-free. *Free users: none (`/founding` is a public page; the care app isn't touched).*
+
+**Web and founding (needed by opening day):**
+
+1. **Billing schema.** The migration from section c (`billing_customers`, `billing_events`, the new `entitlements` columns, `founding_claims.forfeited_at`, plus **`card_due_at` and `released_at`** for decision 1, and the upsert functions in `private`), with `supabase/checks/billing_checks.sql`. No callers yet. *Free users: none (new tables and columns only).*
 2. **Stripe billing webhook.** New route `/api/public/stripe/billing` with its own secret (the gift route stays untouched). It handles the section c events, writes `source='stripe'` rows, and includes fixture tests (`npm run test:billing`). Without the env var it returns 503. *Free users: none.*
-3. **Founding checkout (web only).** A server function `createFoundingCheckout`: signed in, has a claim, not forfeited, never in the native app. Plus the "Set up your founding membership" step on the `/founding` done state and a `/founding/thanks` page. `/founding` is already public. Behind a server setting `FOUNDING_BILLING_ENABLED` so it can merge dark. *Free users: none; the page change only shows for claim holders.*
-4. **Manage and emails.** A Customer Portal link from the founder's page; Brevo confirmation and "card on file, first charge on {date}" emails; reminders before `free_until` for founders without a card. *Free users: none.*
-5. **Opening-day resync.** When `flock_opens_at` is set or changed, update `trial_end` on founding subscriptions still in their trial (a cron hook through `call_cron_hook`, idempotent). *Free users: none.*
-6. **Admin view.** `/admin/founding` shows each claim's billing state (no card, card on file, first charge date, past due, forfeited). *Admins only.*
+3. **Founding card step (web only, from opening day).** A server function `createFoundingCheckout`: signed in, has a claim that isn't released or forfeited, opening day set and passed, before `card_due_at`, never in the native app. Plus a founder page `/founding/membership` (add card, or "card on file, first charge on {date}", with a Customer Portal link) and a thanks state. Behind a server setting `FOUNDING_BILLING_ENABLED` so it can merge dark. *Free users: none; only claim holders can reach it.*
+4. **Opening-day and window emails.** The opening-day email ("add your card within 14 days, $0 due"), reminders on about day 7 and day 12, a "card on file, first charge on {date}" confirmation, and a "your spot was released" notice. Sent by a cron hook through `call_cron_hook`, idempotent per founder and email. *Free users: none.*
+5. **Card window and release.** When opening day is set, store `card_due_at` on every claim. A daily cron hook releases claims past `card_due_at` with no subscription (sets `released_at`, ends the founding entitlement, frees the spot), plus an admin invitation that offers a released spot to a waitlist person with their own 14-day window. *Free users: none.* (This replaces the old "opening-day resync" PR, which is no longer needed because nobody has a subscription before opening day.)
+6. **Admin view.** `/admin/founding` shows each claim's state: claimed, card on file (first charge date), past due, released, forfeited, invited from the waitlist. Plus the "offer released spot" action. *Admins only.*
 
 **iOS (needed before regular sign-ups open in the app):**
 
@@ -181,28 +208,31 @@ Every PR follows the Flock safety rules: additive database changes only; no Floc
 
 ## g) Timeline
 
-Assuming work starts Nov 18 and you do the manual steps in parallel.
+Revised for decision 1: **the target is payments live by opening day**, not Dec 31. Dec 31 stays the claim deadline only, as built today. Assuming work starts Nov 18 and you do the manual steps in parallel.
 
 | Week | Web / founding | iOS |
 |---|---|---|
-| Nov 18–24 | PR 1, PR 2; you: Stripe products (test), Stripe Tax decision, Paid Apps agreement, Small Business Program | |
-| Nov 25 – Dec 1 (Thanksgiving) | PR 3, PR 4 on preview with test cards | you: subscription group and products, in-app purchase key, RevenueCat set up |
-| Dec 2–8 | PR 5, PR 6; live Stripe prices and webhook; **first founding card on file around Dec 3–8** | PR 7 (plugin build), submit by about Dec 8 |
-| Dec 9–15 | buffer; founder emails | PR 8, PR 9 on TestFlight with sandbox accounts |
-| Dec 16–31 | founding close Dec 31 | holiday slowdown; avoid submitting in-app purchase review Dec 20–28 |
-| Early–mid Jan | opening day; resync founding trial ends | submit build plus in-app purchase products; in-app purchase live about 1–2 weeks after submission |
+| Nov 18–24 | **PR 0 (copy and terms) first**, then PR 1, PR 2; you: approve the 14-day wording and terms, Stripe products (test), Stripe Tax decision, Paid Apps agreement, Small Business Program | |
+| Nov 25 – Dec 1 (Thanksgiving) | PR 3 on preview with test cards; notice to existing claimants | you: subscription group and products, in-app purchase key, RevenueCat set up |
+| Dec 2–8 | PR 4, PR 5 | PR 7 (plugin build), submit by about Dec 8 |
+| Dec 9–15 | PR 6; live Stripe prices and webhook; a full dry run on production with your own claim (open → email → card → first charge date) | PR 8, PR 9 on TestFlight with sandbox accounts |
+| Dec 16–31 | buffer; founding claims close Dec 31 | holiday slowdown; avoid submitting in-app purchase review Dec 20–28 |
+| Opening day (early Jan) | opening-day emails go out; **first founding card on file within the first days**; window closes opening day + 14 | submit build plus in-app purchase products; live about 1–2 weeks after submission |
+| Opening day + 14 | spots without a card released; waitlist invitations | |
+| About opening day + 6 months (July 2027) | **first founding charges** | |
 
-- **Dec 31 is doable for the web founding path:** a founder adding a card and committing at $15/month, $0 today, first charge on `free_until`. **First paying founding member: realistically Dec 3–10.** "Paying" here means subscribed with a card on file. The first *charge* happens in about July 2027 under the current terms, unless you change them.
-- **iOS in-app purchase before Dec 31 is tight and isn't needed for founders.** Moving it to January is the main cut.
+- **Web payments ready by opening day is comfortable** if opening day is early January: the web PRs fit in about 4 weeks, finishing around Dec 15 and leaving the holidays as a buffer.
+- **First paying founding member:** a card on file **in the first days after opening day**. The first *charge* is still about 6 months later, at `free_until`.
+- **iOS in-app purchase** is still needed before regular (non-founding) sign-ups open in the iOS app. If opening day is early January, the app will be about 1–2 weeks behind web for regular sign-ups (see h2 and h7).
 
 **What to cut or move if it gets tight:**
 
-- iOS in-app purchase moves to January, to go live with opening day or just after.
+- Push opening day out by a week or two rather than open without the card step and emails (PRs 3–5). The card window depends on them.
+- iOS in-app purchase can follow opening day; regular sign-ups start on the web.
 - Annual plans, app premium subscriptions and Android billing all move after launch.
-- The founder reminder emails (PR 4) can follow the first sign-ups by a week.
-- The admin billing view (PR 6) can be SQL until January.
+- The admin view (PR 6) can be SQL for the first weeks; the "offer released spot" action is only needed from opening day + 14.
 
-**Not to cut:** the webhook's idempotency and the forfeiture rule, the opening-day resync (without it every founder's first charge date is wrong), and the native-app guard on the Stripe step.
+**Not to cut:** the copy and terms change (PR 0) before opening day, the webhook's idempotency and the forfeiture rule, the release job's checks (never release a founder who has a card on file), and the native-app guard on the Stripe step.
 
 ---
 
@@ -210,10 +240,10 @@ Assuming work starts Nov 18 and you do the manual steps in parallel.
 
 | # | Decision | Recommendation |
 |---|---|---|
-| 1 | What "pay before Dec 31" means for founders | **Optional card now, $0 until `free_until`; claims stay card-free.** Keeps the "No card needed today" promise to people who already claimed, and still lets founders commit before Dec 31. Require a card only at the end of the free months. |
-| 2 | Opening day | Set it once in-app purchase timing is known. If you want **Jan 5, 2027**, open with founders, gifts and comps first, with regular web sign-ups; iOS regular sign-ups follow as soon as in-app purchase is approved. |
+| 1 | ~~What "pay before Dec 31" means for founders~~ | **Decided Nov 17, 2026:** claim only through Dec 31, no card or Stripe before opening day. On opening day founders are emailed to add a card on the web ($0 due, first charge at `free_until`); no card within 14 days means the spot is released to the waitlist. See "Decision 1". |
+| 2 | Opening day | Pick a date **no earlier than about Jan 5, 2027**, since web payments (PRs 0–5) need to be live and dry-run by then. Avoid the first days of January if you want a buffer after the holidays. Founders, gifts and comps open first, with regular web sign-ups; iOS regular sign-ups follow once in-app purchase is approved. |
 | 3 | Where founders are billed | **Web/Stripe only**; no founding product in the App Store. |
-| 4 | When the founding price is lost | **When the subscription ends**, not when auto-renew is turned off; a failed payment that recovers within the grace period doesn't count. |
+| 4 | When the founding price is lost | **When the subscription ends**, not when auto-renew is turned off; a failed payment that recovers within the grace period doesn't count. A founder released at day 14 (decision 1) loses the spot and the price too. |
 | 5 | Regular price and plans | **$30/month confirmed**; annual **$300** (the same as the gift, about 2 months free) if you want one, otherwise monthly only at launch. |
 | 6 | Apple prices | **$14.99 / $29.99** if App Store Connect doesn't offer $15.00 / $30.00 exactly. Same on web for consistency, or $15 / $30 on web if you prefer round numbers (it's allowed to differ). |
 | 7 | iOS in-app purchase timing | **January, with or just after opening.** Ship the plugin build (PR 7) in early December so it's widely installed by then. |
@@ -223,3 +253,5 @@ Assuming work starts Nov 18 and you do the manual steps in parallel.
 | 11 | Giving share on subscriptions | **The same rate as gifts (20%), on what's left after fees,** recorded per payment; design it after launch. |
 | 12 | Android | **No purchase in the Android app at launch.** Android members subscribe on the web; add Play billing through RevenueCat later. Check Google's current user-choice and external-offer rules before linking out from the Android app. |
 | 13 | App premium | **Leave it out of this build.** Flock includes premium; add premium subscriptions once Flock billing is stable. |
+| 14 | Released spots: who gets them and on what terms (new, from decision 1) | **Offer them to the waitlist in sign-up order, one invitation at a time, each with its own 14-day card window and the full founding terms** (6 free months from when they join, then $15). Admin-sent, so you can skip anyone. Keep the 50-spot cap; no new open claims after Dec 31. |
+| 15 | A founder who signs in during the window but misses it (new, from decision 1) | **No automatic extensions;** you can extend one by hand from `/admin/founding` (a support action). The reminders on about day 7 and day 12 make a missed window unlikely. |
