@@ -1,238 +1,339 @@
 # The Flock: payments plan
 
-Status: **plan only, for Brittany's review.** Nothing in code, settings, App Store Connect, Stripe or the database was changed to write it. Written Nov 17, 2026. **Updated Nov 17, 2026: decision 1 made** (see "Decision 1" below; sections a, b, d, e, f, g and h are revised to match).
+Status: **plan only, for Brittany's review.** Nothing in code, settings, App Store Connect, Stripe or the database was changed to write it.
 
-What was read: the repo (`main` at `6d64a11`), the Flock migrations, the `/founding` and `/gift` code and copy, the Stripe gift code, the production database (read-only counts), the Vercel environment variable *names and comments* (no values), and App Store Connect through its API (read-only).
+- **Nov 17, 2026:** first written.
+- **Nov 18, 2026:** rewritten for the **free-season decisions** below. They replace the earlier "Decision 1" (founders add a card within 14 days of opening day), which is withdrawn.
+
+What was read:
+
+- the repo (`main` at `6d64a11`), including the Flock migrations, the `/founding` and `/gift` code and copy, and the Stripe gift code;
+- the production database (read-only counts and function bodies);
+- the Vercel environment variable *names and comments* (no values);
+- App Store Connect, through its API (read-only);
+- PostHog (read-only event counts);
+- the public pages of thekyaproject.com (home and `/community`).
 
 **State today, as observed:**
 
-- **App Store Connect:** app `6795267221` has **no subscription groups, no in-app purchases and no promoted purchases**. The API can't show whether the Paid Apps agreement, banking and tax forms are done, so check those under *Business* in App Store Connect.
-- **Stripe:** live in production for gifts only. Two one-time prices: Flock year $300 and app premium year $79. The webhook lives at `/api/public/stripe/webhook`.
-- **Database:** `flock_settings.flock_opens_at` is **not set**, and the kill switch is on. There's **1 founding claim** (Oct 22, locked at 1500 cents), one `founding/trialing` entitlement and one manual comp. No Stripe, Apple or Google entitlement rows exist yet.
+- **App Store Connect:** app `6795267221` has **no subscription groups, no in-app purchases and no promoted purchases**. The API can't show whether the Paid Apps agreement, banking and tax forms are done, so check those under *Business*.
+- **Stripe:** live in production for gifts only. There are two one-time prices: Flock year $300 and app premium year $79. The webhook is at `/api/public/stripe/webhook`.
+- **Database:**
+  - `flock_settings.flock_opens_at` is **not set**, and `ui_enabled` is on.
+  - `private.founding_deadline()` returns `2027-01-01 05:00 UTC`, which is the end of Dec 31 in Indianapolis.
+  - There's **1 founding claim** (Oct 22, locked at 1500 cents) and **23 waitlist sign-ups**.
+  - The entitlements are one `founding/trialing` and one manual `comp`. No gift has been redeemed, and no Stripe, Apple or Google entitlement rows exist.
 - **Native app:** none of the installed builds contains a purchases plugin. Web code reaches every build at once (remote-URL mode), but **a new App Store build is required before any in-app purchase can happen.**
+- **Legal pages:** `/terms` (last changed Oct 21) covers only the care app (bird profiles, plans, clips, sit links). It says nothing about posts or photos other members see, community conduct, moderation, memberships or billing. `/privacy` mentions "community" twice and isn't written for the Flock.
+- **Member safety:** the Flock has reporting and a review queue (step 4B) but **no way to block another member**. Apple's guideline 1.2 asks apps with user-generated content to have both.
 
 ---
 
-## Decision 1 (made Nov 17, 2026)
+## The decisions (made Nov 18, 2026)
 
-**Founders keep the current claim-only flow through Dec 31: no card and no Stripe step before opening day.**
+1. **Opening day is Friday, January 1, 2027.** Brittany may move it to **Monday, January 4**. Everything that depends on which of the two it is is listed under "Jan 1 or Jan 4" below.
+2. **Free season.** Everyone who joins the Flock during the first 6 months after opening day is free. **Nobody is charged before about July 1, 2027.**
+3. **Prices.** The founding members (the first 50) keep **$15 a month, locked for life once billing starts**, and lose it if they cancel. The **regular price after the free season is $30 a month.**
+4. **Founding claims close Jan 31, 2027, not Dec 31, 2026,** so people can try the Flock before claiming. The cap stays at 50.
+5. **No card before or at opening.**
+   - **About 30 days before the free season ends,** everyone gets an email asking them to add a card on the web ($0 due, first charge when the free season ends).
+   - **Founders who haven't added a card by the end of the free season lose their founding spot.**
 
-- **On opening day,** every founder gets an email asking them to add a card on the web (Stripe Checkout, **$0 due**, first charge when their 6 free months end, at `free_until` = opening day + 6 months).
-- **14-day card window.** A founder who hasn't added a card **within 14 days of opening day** has their spot **released back to the waitlist**.
-- **During those 14 days** they're members (the existing `founding` grant starts on opening day), so they can look around before deciding.
+### How the plan reads them
 
-What this changes:
+These are the working assumptions. The ones marked **(confirm)** are in section h.
 
-- **Payments must be live by opening day, not Dec 31.** Nothing is collected before then, so Dec 31 is only the claim deadline, as built today.
-- **The founding page and terms must say so before opening day.** `/founding` and the terms need a line such as "When the Flock opens, you'll have 14 days to add a card ($0 due then; your first charge is when your 6 free months end), or your spot goes to the next person on the waitlist". This is best added **as soon as possible**, so people claiming between now and Dec 31 see it. Existing claimants should get the same notice by email before opening day.
-- **Releasing a spot is new behavior.** When the window closes without a card:
-  - the claim is marked released (`founding_claims.released_at`), which frees its spot number;
-  - the founding entitlement ends at that moment (`current_period_end = now()`);
-  - the founder gets a short email saying so.
-- **Offering a released spot to the waitlist has to work after Dec 31.** `claim_founding_spot()` refuses claims after `private.founding_deadline()`, so released spots need their own path: an **admin-issued invitation** to a waitlist person (`public.waitlist_signups`), with its own 14-day card window and the same founding terms. The deadline for *open* claims stays Dec 31. Who gets offered a released spot, and in what order, is a decision (added as h14).
-- **Billing is simpler.** Every founder sets up billing *after* opening day, so the trial end (`free_until`) is already known at checkout. There is no provisional trial end and no opening-day resync of Stripe subscriptions (old PR 5). If opening day is ever moved *after* founders have added cards, a one-off admin resync can handle it.
-- **Founders who never add a card now lose access at day 14,** not at `free_until`.
+- **The free season ends on one date for everyone (confirm).** Store it as its own setting, `flock_settings.free_season_ends_at`, set together with opening day rather than worked out from it. Someone who joins in May is free until that same date, not for 6 months from joining.
+- **Founders get the same free season.** Their `free_until` is the free season's end. Today it's `flock_opens_at + 6 months` (`place_grant`), which equals July 1 only if opening day is Jan 1.
+- **Who can join:** anyone with a Kya & Co. account, on the web, iPhone or Android, by a "Join the Flock" step. That step grants a free-season membership until `free_season_ends_at`. This is new. Today only founders, gift recipients, comps and admins can use the Flock (`private.can_use_flock`).
+- **At the end of the free season, a member with no card on file** loses Flock access. Their posts, journeys and profile are kept, and they can rejoin at $30 by adding a card. A founder with no card on file also loses the founding spot and the $15 price, for good.
+- **Released founding spots aren't refilled (confirm).** Claims are closed by July, and refilling would need an invitation flow nobody else uses.
+- **Billing is simple:** every subscription starts with `trial_end` = `free_season_ends_at`, known from opening day. There's no per-person trial length and no resync.
+- **The earlier 14-day card window is gone.** So are `card_due_at`, the day-7 and day-12 reminders, the waitlist invitation for released spots, and the 14-day release job.
 
----
+### Jan 1 or Jan 4
 
-## a) Pricing as it's defined right now
-
-| Plan | Price | Billing period | Where it's defined |
+| What | Opening Jan 1 (Fri) | Opening Jan 4 (Mon) | Notes |
 |---|---|---|---|
-| **Founding** (Flock) | **$15** | **a month** | `src/locales/en.jsonc` `founding.price` "$15 a month"; `founding_claims.locked_price_cents integer not null default 1500` (`20261022172114_founding_claims.sql`) |
-| Founding: free months | **first 6 months free, counted from opening day** | n/a | `founding.locked`: "Locked for as long as you're a member. Your first six months are free."; `founding.next`: "Your six free months start when it opens."; `20261107120000_flock_entitlement_grants.sql`: "Founding starts at flock_opens_at; six free months (free_until = current_period_end = flock_opens_at + 6 months), status 'trialing'." |
-| Founding: price lock | **$15 for as long as the membership lasts; lost for good on cancelling** | n/a | `founding.nextPrice`: "After that, it's $15 a month for as long as you're a member."; `entitlements.free_until` comment: "if a founding membership is cancelled, the founding price does not come back (a later return pays the regular price)." |
-| Founding: cap | **50 spots** | n/a | `private.founding_cap()` returns `50`; `founding_claims.spot_number check (spot_number between 1 and 50)` |
-| Founding: close | **the end of Dec 31, 2026, Indianapolis time** (midnight Jan 1, 2027 `America/Indiana/Indianapolis` = 05:00 UTC) | n/a | `private.founding_deadline()`: `timestamp '2027-01-01 00:00:00' at time zone 'America/Indiana/Indianapolis'`; copy `founding.deadline`: "Founding spots close December 31" |
-| Founding: payment at claim | **none** | n/a | `founding.noPayment`: "No card and no payment today."; `founding.noCard`: "No card needed today." |
-| Flock, regular | **$30**, period not stated (it sits under "$15 a month", which implies monthly) | ? | `founding.regular`: "Regular price $30" |
-| Flock, annual | not defined as a subscription; the schema has a plan `annual` | ? | `entitlements.plan` check includes `'annual'` (`20261020180000_flock_foundation.sql`); a gifted year grants plan `annual` |
-| Flock, one year (gift) | **$300** one-off | 1 year, not renewing | Vercel `STRIPE_PRICE_FLOCK_YEAR_GIFT` comment: "Stripe LIVE price: The Flock, one year (gift), $300 one-off." The live amount is read from Stripe (`src/lib/gifts.functions.ts`). |
-| App premium | **$9.99** a month, marked "Coming soon" | monthly | `flock.journeys.premium.price` "$9.99", `.priceLine` "a month · or join the Flock to share journeys too", `.soon` "Coming soon" |
-| App premium, one year (gift) | **$79** one-off | 1 year, not renewing | Vercel `STRIPE_PRICE_APP_PREMIUM_YEAR_GIFT` comment: "$79 one-off". The one production purchase (refunded) was 7900 cents. |
-| Chapter lead, comp | free (granted by admins) | n/a | plans `chapter_lead`, `comp` in the entitlements check |
+| Opening moment | 00:00 Eastern, Jan 1 | 00:00 Eastern, Jan 4 | `flock_today()` uses New York time and the founding deadline uses Indianapolis time. Both are Eastern, so they agree. |
+| Day of the week | New Year's Day, a holiday; you may not want to be on support duty | A working Monday | |
+| Free season ends (6 months) | **Thu, Jul 1, 2027** | Sun, Jul 4, 2027 (a holiday) | With Jan 4, set `free_season_ends_at` to **Tue, Jul 6** instead, so first charges and "your free season ends today" emails don't land on the Fourth. |
+| "Add your card" email (about 30 days before) | about **Tue, Jun 1** | about **Sun, Jun 6** (send Mon, Jun 7) | Reminders go out about 7 days and 1 day before the end. |
+| Founders' `free_until` | Jul 1 | Jul 6 if you take the advice above (Jul 4 if it's worked out from opening day) | Comes from `free_season_ends_at` once PR B lands. |
+| Founding claims close | Jan 31 (30 days after opening) | Jan 31 (27 days after opening) | The same either way. |
+| Gift years (if they start at the free season's end, section h) | start Jul 1 | start Jul 6 | |
+| Pre-opening work (list below) | due **Dec 31**, so about 6 working weeks with the holidays in them | due **Jan 3**: one extra weekend, no extra working days | Jan 4 mainly buys a calmer opening day, not build time. |
+| Opening-day emails | go out on New Year's Day | go out on a Monday | Monday email usually does better. |
 
-**So "$15/month after 6 months" means:** the first **6 months are free, starting on opening day** (not on the day someone claims or pays). After that it's **$15 a month, locked for as long as the membership continues**. Both apply together: 6 free months plus a permanent price lock, not a 6-month lock. If they cancel, the founding price is gone for good.
+---
 
-### Questions for you (undefined or contradictory)
+## a) Pricing as it's defined right now (and what changes)
 
-1. ~~"Pay before Dec 31" vs. the promise on the page.~~ **Answered by decision 1:** claim only through Dec 31; add a card ($0 due) within 14 days of opening day or the spot is released.
-2. **Opening day.** It isn't set. The copy says "January", and CLAUDE.md's example is `2027-01-05`. It now also starts each founder's **14-day card window**, and web payments must be live by then.
-3. **Regular price period.** Is "$30" a month?
-4. **Annual Flock plan.** Is there one for regular members, and at what price? Is it $300, the same as the gift (that's less than 12 × $30 = $360)? Is there an annual founding option?
-5. **App premium.** Is it in scope for this build, at $9.99 a month (and $79 a year)? Flock already includes premium.
-6. **Apple prices.** Should the Apple price be exactly $15.00 and $30.00, or $14.99 and $29.99? Check which price points App Store Connect offers in USD. Outside the US, Apple prices include VAT.
-7. **What counts as "cancelled"** for losing the founding price: turning off auto-renew, or the membership actually ending? (Recommendation below.)
-8. **Giving.** The gift copy says "a share of every membership going to rescue and conservation", and gifts use 20%, or 40% on double-giving days (`private.double_giving_days()`). Does that apply to subscriptions, and is it measured on the gross price or on what's left after Apple and Stripe fees?
-9. **Countries and currency.** USD only? Can founders be outside the US?
-10. **Android.** The Play app gets the same web code. Do you want Play billing in this build, or Android hidden from purchase for now?
+| Plan | Today, in code and copy | After these decisions | Where it's defined |
+|---|---|---|---|
+| **Founding** (Flock) | $15 a month | **$15 a month, locked for life once billing starts; lost on cancel** | `founding.price`; `founding_claims.locked_price_cents default 1500` (`20261022172114_founding_claims.sql`) |
+| Founding: free months | first 6 months free, from opening day | **the free season, the same end date as everyone** | `founding.locked`, `founding.next`; `place_grant` (`free_until = flock_opens_at + 6 months`, `20261107120000_flock_entitlement_grants.sql`) |
+| Founding: cap | 50 | 50 | `private.founding_cap()`; `spot_number between 1 and 50` |
+| Founding: close | end of **Dec 31, 2026**, Indianapolis | end of **Jan 31, 2027**, Indianapolis (`2027-02-01 00:00 America/Indiana/Indianapolis`) | `private.founding_deadline()`; copy `founding.deadline` |
+| Founding: card | none at claim | **none at claim or opening; add one (from about 30 days before the end) by the end of the free season, or lose the spot** | `founding.noPayment`, `founding.noCard` |
+| Flock, regular | "$30", period not stated | **$30 a month after the free season** | `founding.regular` "Regular price $30"; the website already says "Monthly $30 per month" |
+| Flock, free season | doesn't exist | **free for everyone who joins in the first 6 months** | new: `flock_settings.free_season_ends_at` and a free-season grant |
+| Flock, annual | not defined; the schema has plan `annual` | still open (question 4) | `entitlements.plan` check |
+| Flock, one year (gift) | $300 one-off; the year starts at the later of redemption and opening day | **open:** most of a gifted year would overlap the free season (question 12) | Vercel `STRIPE_PRICE_FLOCK_YEAR_GIFT` comment; `place_grant` |
+| App premium | $9.99 a month, "Coming soon" | still open (question 5) | `flock.journeys.premium.*` |
+| App premium, one year (gift) | $79 one-off | unchanged | Vercel `STRIPE_PRICE_APP_PREMIUM_YEAR_GIFT` comment |
+| Rescue adopters (website) | "six months of free membership for anyone who adopts a parrot and applies within 60 days" (thekyaproject.com/community) | **open:** how it works after the free season (question 13) | Website only; nothing in the app grants it |
+| Chapter lead, comp | free, granted by admins | unchanged | plans `chapter_lead`, `comp` |
+
+### Questions for you
+
+1. ~~"Pay before Dec 31."~~ **Answered:** no card before or at opening; the card goes on about 30 days before the free season ends.
+2. ~~Opening day.~~ **Answered:** Jan 1, 2027, possibly Jan 4. See "Jan 1 or Jan 4".
+3. ~~Is "$30" a month?~~ **Answered:** $30 a month after the free season.
+4. **Annual Flock plan.** Is there one for regular members, at what price ($300, the same as the gift, is less than 12 × $30 = $360), and is there an annual founding option?
+5. **App premium.** Is it in this build, at $9.99 a month (and $79 a year)? The Flock already includes premium.
+6. **Apple prices.** Exactly $15.00 and $30.00, or $14.99 and $29.99? Check the USD price points App Store Connect offers. Outside the US, Apple's prices include VAT.
+7. **What counts as "cancelled"** for losing the founding price: turning off auto-renew, or the membership actually ending?
+8. **Giving.** Gifts send 20% to rescue and conservation (40% on double-giving days, `private.double_giving_days()`). Does that apply to subscriptions, and is it on the gross price or after Apple and Stripe fees?
+9. **Countries and currency.** USD only? Can founders live outside the US?
+10. **Android.** Play billing in this build, or Android members subscribe on the web?
+11. **New: one end date.** Does the free season end on one date for everyone (recommended), so a May joiner gets weeks, not months?
+12. **New: gift years.** A gifted Flock year redeemed now starts on opening day, so about half of it falls in the free season. Should gift years start when the free season ends?
+13. **New: the rescue-adopter offer** on the website. During the free season it means nothing extra. Afterwards, is it 6 months from the adoption application, granted by hand as a comp?
 
 ---
 
 ## b) Recommended setup
 
-**Recommendation: Stripe for web (including all founding billing), plus RevenueCat for in-app purchase in the iOS app (and later Android). One source of truth in Supabase.**
+**Recommendation: Stripe for web (including all founding billing), plus RevenueCat for in-app purchase in the iOS app (and later Android), with one source of truth in Supabase.** The free season doesn't change this; it changes *when* each piece must exist (section g).
 
 Why this split:
 
-- **Founding billing on Stripe, for everyone.**
-  - Stripe can start billing on an **exact date** (`trial_end` = the founder's `free_until`). Apple free trials only come in fixed lengths counted from the purchase date (3 days, 1 or 2 weeks, 1, 2, 3 or 6 months, 1 year), so an Apple trial can't end on "opening day + 6 months" for someone who subscribes in December or March.
-  - Stripe can enforce "cancel and the price is gone". On Apple, a lapsed subscriber can resubscribe to the same product from their Apple account settings, outside the app, at the old price.
-  - It's 50 people, and Stripe takes about 3% instead of Apple's 15–30%.
-- **RevenueCat for iOS in-app purchase.** It wraps StoreKit 2: receipt checks, App Store Server Notifications, renewals, billing retry, restore and family sharing. It sends one webhook to us. It's free until $2.5k a month in tracked revenue, then 1%. Building StoreKit server handling ourselves is several weeks of work and easy to get wrong.
-- **Don't route Stripe through RevenueCat.** Our Stripe webhook pattern already works for gifts and writes straight to Supabase. Keep that, and have RevenueCat's webhook write the Apple and Google rows. RevenueCat's Stripe integration can be connected later for dashboards only.
+- **Founding billing on Stripe.**
+  - Stripe can start billing on an **exact date** (`trial_end` = `free_season_ends_at`). Apple's free trials come only in fixed lengths counted from the purchase date, so they can't end on July 1 for someone who buys in June.
+  - Stripe can enforce "cancel and the price is gone". On Apple, a lapsed subscriber can resubscribe to the same product outside the app at the old price.
+  - It's 50 people, at about 3% instead of 15–30%.
+- **RevenueCat for iOS in-app purchase.** It wraps StoreKit 2 (receipts, server notifications, renewals, billing retry, restore) and sends one webhook to us. It's free until $2.5k a month in tracked revenue, then 1%.
+- **Don't route Stripe through RevenueCat.** The existing gift webhook pattern writes straight to Supabase; keep it. RevenueCat's webhook writes the Apple and Google rows.
 
-**Apple's rules that shape this** (App Review Guidelines; check the current text before submitting, since this area changed in 2025):
+**Apple's rules that shape this** (check the current text before submitting):
 
-- **3.1.1:** digital subscriptions sold *inside* the iOS app must use in-app purchase. A Flock membership is a digital service, so the app can't show Stripe Checkout or a "pay on the web" button, except under the US rule below.
-- **3.1.3(b) Multiplatform services:** someone who subscribed on the web may use that membership in the iOS app, *provided the same items are also available as in-app purchases.* So once regular sign-ups exist in the app, the iOS app needs in-app purchase. Founders using free, already-granted access before then is fine.
-- **US storefront only:** since the May 2025 court order in *Epic v. Apple*, apps on the **US** App Store may include buttons and links to buy on the web, with no Apple commission. Apple appealed. **Confirm it's still in force before relying on it**, and don't build the plan around it. Outside the US you'd need Apple's External Purchase Link entitlement (commission, extra screens) or nothing.
-- **Talking to customers outside the app** (email) about web prices is allowed, so founders can get "set up your founding membership" emails that link to the web.
-- **3.1.2:** the in-app paywall must show the price, period, that it auto-renews, how to cancel, and links to the Terms of Use (EULA) and Privacy Policy. It needs a **Restore purchases** button.
-- **5.1.1(v):** account deletion must explain that an Apple subscription has to be cancelled in Apple's settings. Our deletion flow will need that line once in-app purchase exists.
-- **Commission:** 30%, or **15% in the Small Business Program** (under $1M a year; you have to enroll). Subscriptions also drop to 15% after a subscriber's first year.
+- **3.1.1:** digital subscriptions sold *inside* the iOS app must use in-app purchase.
+- **3.1.3(b) multiplatform:** someone who subscribed on the web may use the membership in the app, *provided the same items are also available as in-app purchases*.
+  - **During the free season nothing is sold anywhere, so free access in the app is fine with no in-app purchase.**
+  - In-app purchase has to be live by the time paid memberships exist, which means before the card emails go out in June.
+- **US storefront only:** since the May 2025 *Epic v. Apple* order, US apps may link to web purchase. Apple appealed. Confirm it's still in force before relying on it; outside the US it isn't allowed without Apple's entitlement.
+- **Emailing customers** about web prices is allowed, so the "add your card" email can link to the web.
+- **3.1.2:** the paywall must show the price, period, auto-renewal, how to cancel, and links to the EULA and Privacy Policy, plus **Restore purchases**.
+- **5.1.1(v):** account deletion must say an Apple subscription is cancelled in Apple's settings.
+- **1.2 (user-generated content):** the app needs a way to filter, report and **block** abusive users, and published contact information. Reporting exists; **blocking doesn't** (pre-opening list).
+- **Commission:** 30%, or **15% in the Small Business Program** (enroll), and 15% after a subscriber's first year.
 
-**Can web sign-ups be offered inside the iOS app?** Outside the US, no: no button, link or price for the web checkout. In the US storefront, currently yes (see above). The safe design is that the iOS app never shows Stripe. The founder card step (from opening day) is a web page reached from the opening-day email. If it's opened inside the app, it must hide the Stripe button when `isNativeApp()` and say "open this link in your browser"; the app otherwise shows only the in-app purchase paywall.
+**Inside the iOS app:** the card step is a web page reached from the June email. Opened inside the app, it hides the Stripe button when `isNativeApp()` and says "open this link in your browser". From June the app shows only the in-app purchase paywall.
 
 ---
 
 ## c) How paid status reaches the app
 
-**One source of truth:** `public.entitlements`, read through `is_flock_member()` / `has_app_premium()`, which already exist. Their rule is already right for payments: `active`/`trialing` = access; `past_due`/`canceled` = access until `current_period_end`.
+**One source of truth:** `public.entitlements`, read through `is_flock_member()` / `has_app_premium()`. Their rule already fits payments: `active`/`trialing` = access; `past_due`/`canceled` = access until `current_period_end`.
 
-**Writers (all server-side, as today; app users still have no write access):**
+**Writers (all server-side; app users still have no write access):**
 
 | Source | Writes | Keyed on |
 |---|---|---|
-| Founding claim, gifts, comp | existing triggers and admin functions (unchanged) | `founding_claim_id`, `gift_purchase_id`, one manual row |
-| **Stripe billing webhook** (new route, own secret) | `source = 'stripe'` rows | `external_ref` = Stripe subscription id (unique index `entitlements_source_external_ref_key` already exists) |
-| **RevenueCat webhook** (new route, Authorization header) | `source = 'apple'` / `'google'` rows | `external_ref` = the store's original transaction id |
+| Founding claim, gifts, comp | existing triggers and admin functions | `founding_claim_id`, `gift_purchase_id`, manual |
+| **Free-season join** (new, PR B) | one row per member, `status = 'trialing'`, ending at `free_season_ends_at` | user id (one per person) |
+| **Stripe billing webhook** (new route, own secret) | `source = 'stripe'` rows | `external_ref` = Stripe subscription id |
+| **RevenueCat webhook** (new route) | `source = 'apple'` / `'google'` rows | `external_ref` = original transaction id |
 
-**Additive schema (one migration):**
+**The free-season row needs a value the `entitlements` checks don't allow today:**
 
-- `billing_customers` (user_id ↔ Stripe customer id)
-- `billing_events` (provider, event id, unique, received_at, payload hash): idempotency plus an audit trail; never content
-- `entitlements` gains `product_id`, `will_renew`, `cancel_at_period_end`
-- `founding_claims` gains `forfeited_at`
+- `plan` allows `founding, monthly, annual, app_premium, chapter_lead, comp`;
+- `source` began as `stripe, apple, google, manual`, and later migrations added the grant sources.
 
-**Webhooks never trust event order.** On any event, fetch the current subscription (Stripe API, or RevenueCat `GET /subscribers/{app_user_id}`) and write the row from that. This is the same idempotent pattern as `record_gift_purchase`. A database error returns 500 so the provider retries.
+Either reuse `plan = 'comp'` with a new `source = 'free_season'`, or add a plan value. Both change an existing table's check constraint. **Under the Flock rules that needs your explicit approval in that PR**, plus a check that care flows are unaffected. `entitlements` is Flock-only, so the care-app risk is low.
 
-**Identity:** the RevenueCat `app_user_id` and the Stripe customer metadata both hold the **Supabase user id**. RevenueCat is configured only after sign-in, with that id, so purchases never land on anonymous ids.
+**Additive schema for billing (one migration, after opening):**
+
+- `billing_customers` (user ↔ Stripe customer);
+- `billing_events` (provider, event id, unique; idempotency and audit; never content);
+- `entitlements` gains `product_id`, `will_renew` and `cancel_at_period_end`;
+- `founding_claims` gains `released_at` (no card by the end of the free season) and `forfeited_at` (a paid founding membership that ended).
+
+**Webhooks never trust event order:** on any event, re-read the subscription from Stripe or RevenueCat and write the row from that, as `record_gift_purchase` does. A database error returns 500 so the provider retries.
+
+**Identity:** the RevenueCat `app_user_id` and the Stripe customer metadata hold the Supabase user id. RevenueCat is configured only after sign-in.
 
 **Events:**
 
 | Case | Stripe (web) | Apple via RevenueCat | Entitlement row |
 |---|---|---|---|
-| Subscribe | `checkout.session.completed`, `customer.subscription.created` | `INITIAL_PURCHASE` | `trialing` or `active`, `current_period_end` = trial end or period end |
-| Renew | `invoice.paid`, `customer.subscription.updated` | `RENEWAL` | `active`, new `current_period_end` |
-| Turn off auto-renew | `subscription.updated` (`cancel_at_period_end`) | `CANCELLATION` (`unsubscribe`) | stays `active`/`trialing`; `will_renew = false`; access to period end |
+| Add card in June | `checkout.session.completed`, `customer.subscription.created` (trial to `free_season_ends_at`) | n/a | `trialing`, `current_period_end` = season end |
+| Subscribe after the season | the same, no trial | `INITIAL_PURCHASE` | `active` |
+| Renew | `invoice.paid` | `RENEWAL` | `active`, new period end |
+| Turn off auto-renew | `subscription.updated` (`cancel_at_period_end`) | `CANCELLATION` | access to period end, `will_renew = false` |
 | Turn it back on | `subscription.updated` | `UNCANCELLATION` | `will_renew = true` |
-| Ends | `customer.subscription.deleted` | `EXPIRATION` | `canceled`, `current_period_end` = end; **founding: set `founding_claims.forfeited_at`** |
-| Failed payment | `invoice.payment_failed` (Smart Retries) | `BILLING_ISSUE` (Apple billing retry; turn on a **16-day grace period**) | `past_due`, `current_period_end` = end of grace period, so access continues meanwhile |
-| Refund | `charge.refunded` | `CANCELLATION` with reason `CUSTOMER_SUPPORT` (Apple refund) | ends access now (`current_period_end = now()`) for a full refund; a partial refund keeps access (same idea as gifts) |
-| Restore purchases (iOS) | n/a | the app calls RevenueCat `restorePurchases()`, then our `syncMyPurchases` server function re-reads RevenueCat and upserts | row reappears; RevenueCat's "transfer" setting: **keep with original user** (stops one Apple ID unlocking several accounts) |
-| New device or platform | nothing to do: access follows the **Supabase account**, so signing in anywhere (web, iPhone, Android) reads the same entitlements | | |
-| Account deletion | cancel the Stripe subscription in `deleteMyAccount`; tell iOS users to cancel in Apple settings | | rows cascade away, as today |
+| Ends | `customer.subscription.deleted` | `EXPIRATION` | `canceled`; **founding: `forfeited_at`** |
+| Failed payment | `invoice.payment_failed` (Smart Retries) | `BILLING_ISSUE` (16-day grace) | `past_due`, access through the grace period |
+| Refund | `charge.refunded` | `CANCELLATION` (`CUSTOMER_SUPPORT`) | a full refund ends access now; a partial one keeps it |
+| Restore (iOS) | n/a | `restorePurchases()`, then `syncMyPurchases` | row reappears; transfer setting "keep with original" |
+| Free season ends, no card | n/a | n/a | the free-season row simply ends; a founder's claim gets `released_at` (end-of-season job) |
+| New device | access follows the Supabase account | | |
+| Account deletion | cancel the Stripe subscription in `deleteMyAccount`; tell iOS users to cancel in Apple | | rows cascade, as today |
 
 ---
 
-## d) Billing founding pricing correctly after the 6 months
+## d) Billing founding pricing correctly after the free season
 
-**Web (Stripe), the recommended path for all 50:**
+**Web (Stripe), for all 50 and for regular members who pay on the web:**
 
-- **Products:** one Stripe product "The Flock", with a **Founding $15/month** price that is never edited (that's the lock) and a **Regular $30/month** price. A later price change means a new price object; founding subscriptions keep theirs.
-- **Founder sign-up (decision 1):** opens on opening day. Checkout `mode=subscription` with the founding price, `subscription_data.trial_end = free_until` (known by then: opening day + 6 months), card collected, **$0 due**. Only for people with a claim that hasn't been released or forfeited, and only from opening day until the 14-day window closes; the server function checks all of this.
-- **The 14-day window:** `card_due_at = flock_opens_at + 14 days`, stored on the claim when opening day is set. Reminder emails go out on about day 7 and day 12. A daily cron hook (through `call_cron_hook`) releases claims that pass `card_due_at` without a subscription: it sets `released_at`, ends the founding entitlement, and sends the "your spot was released" email.
-- **If opening day moves** after some founders have added cards, a one-off admin action updates `trial_end` on their subscriptions (Stripe allows this while a trial is running). It isn't needed in the normal flow.
-- **Founders with a card who cancel during the free months:** their subscription ends at `free_until` (cancel at period end), and the founding price is forfeited then (see decision 4).
-- **Cancelling:** through the Stripe Customer Portal. Recommendation: **turning off auto-renew is reversible until the period ends; the price is forfeited only when the subscription actually ends** (`customer.subscription.deleted` sets `forfeited_at`). After that, Checkout offers only the regular price.
+- **Products:** one product, "The Flock", with a **Founding $15/month** price that is never edited (that's the lock) and a **Regular $30/month** price. A price change later is a new price object; founding subscriptions keep theirs.
+- **The card step (opens about 30 days before the end):** Checkout `mode=subscription`, `subscription_data.trial_end = free_season_ends_at`, card collected, **$0 due**.
+  - A founder with a claim that isn't released or forfeited gets the founding price.
+  - Everyone else gets the regular price.
+  - The server function checks this; the native app never shows it.
+- **Emails:**
+  - "Add your card" about 30 days before the end, to every member with a free-season or founding row and no subscription;
+  - reminders about 7 days and 1 day before;
+  - a "card on file, first charge on {date}" confirmation;
+  - after the end, "your free season ended" (regular) or "your founding spot was released" (founder).
+- **End of the free season:** a cron hook (through `call_cron_hook`) runs once, just after `free_season_ends_at`. For every founder without a subscription, it sets `released_at` and sends the email. Free-season rows end on their own date, with no job needed. The job never releases a founder who has a subscription, even a `past_due` one.
+- **Founders who add a card and then cancel before July:** the subscription ends at the trial end, and the price is forfeited then.
+- **Cancelling:** through the Stripe Customer Portal. **Turning off auto-renew is reversible until the period ends; the founding price is forfeited only when the subscription actually ends.**
 
-**iOS (Apple):** what Apple allows:
+**iOS (Apple):**
 
-- **Introductory offers:** a free trial, pay-as-you-go or pay-up-front, **once per subscription group per Apple ID**, in fixed lengths only (including 6 months). They can't end on a set date.
-- **Offer codes:** one-time or custom codes giving free or discounted months (**whole months**, for new, existing or lapsed subscribers), redeemed in the app or through an App Store link. They could approximate "free until July 5" by issuing a code for the months left, but only to the nearest month, and it's a lot of manual work.
-- **Promotional offers / win-back offers:** for current or lapsed subscribers, signed by our server. Not suitable for a first purchase.
-- **Price changes:** when you change a product's price, Apple lets you **keep current subscribers on their old price**. A separate "Founding" product at $15 that never changes is cleaner.
+- **Introductory offers** are once per subscription group per Apple ID, in fixed lengths only, so they can't end on July 1.
+- **Offer codes** are whole months only.
+- **Keeping old subscribers on an old price** is possible, but a separate never-changing product is cleaner.
 
-**Recommendation for iOS:** **don't sell founding in the app at all.** Founders set up billing on the web (by the opening-day email link). In the app they're already members through the entitlement. The iOS subscription group has only the regular products (monthly, plus annual if you want one), with no founding product and no free trial. That avoids the date mismatch, the forfeiture hole, and double free months. If a founder buys the regular plan in the app anyway, that's their choice, but the paywall should say "Founding members: check your email" when the account has a claim.
+**Recommendation for iOS:**
+
+- **Don't sell founding in the app.**
+- **Show no in-app paywall during the free season** (the app says "Free until July 1").
+- From the June card emails, the paywall offers only the regular plan, with **no free trial**. Someone who buys in June is charged in June, so the paywall should say "You're free until July 1; subscribing now starts billing today. Or add a card on the web at no charge until July 1."
+  - The web half of that sentence is allowed only in the US storefront, if the court order still stands. Otherwise drop it and start the iOS paywall **on** the season's end.
+- When the account has a claim, it says "Founding members: check your email".
 
 ---
 
 ## e) What you do by hand, in order
 
-Durations are typical, not promised. Apple and Stripe can be slower in December.
+### Before opening day
 
-1. **App Store Connect: Paid Apps agreement, banking, tax forms (W-9)** under Business. 15 minutes of forms; **1–3 business days** (sometimes about a week) for Apple to verify the bank. Nothing in-app can be tested until it's active.
-2. **App Store Small Business Program enrollment** (15% instead of 30%). 10 minutes; Apple says **about 2 weeks**.
-3. **Stripe: confirm the account is ready for subscriptions.** Turn on **Stripe Tax** (decision below) and register where you must collect. 30–60 minutes.
-4. **Stripe products and prices** (test mode first, then live): The Flock, Founding $15/mo and Regular $30/mo (plus annual if chosen). Customer Portal settings (cancel at period end, update card, invoices). 30 minutes per mode.
-5. **Stripe webhook endpoint for billing** (new URL, its own signing secret), with the events from section c. Add the secret and price ids to Vercel: Production gets live values, Preview gets test values. 15 minutes.
-6. **App Store Connect: subscription group "The Flock"** and products (regular monthly; annual if chosen), with prices, display names, descriptions, a review screenshot and review notes. Optionally app premium products. 1–2 hours.
-7. **App Store Connect: turn on Billing Grace Period (16 days)** and set the **App Store Server Notifications V2** URL to RevenueCat's. 10 minutes.
-8. **App Store Connect: create an In-App Purchase key** (a separate .p8 from the API key you used today) for RevenueCat. 5 minutes.
-9. **RevenueCat account:** project, iOS app (bundle `com.thekyaproject.app`), upload the in-app purchase key, import products, an entitlement `flock`, an offering, webhook URL plus Authorization secret, transfer behavior "keep with original". 1–2 hours.
-10. **Terms of Use / EULA link** for subscriptions (Apple's standard EULA is fine), plus Privacy Policy updates to mention payment processors. **Add the founding terms, including the 14-day card window and the release to the waitlist (decision 1)**, and approve the matching `/founding` copy. Do this **as early as possible**, ideally before more people claim, and in any case before opening day. 1–2 hours, plus legal review if you want it.
-11. **Apple review account:** a dedicated account that can reach the paywall while the Flock is hidden (decision below), with credentials in the review notes. 15 minutes.
-12. **Submit the iOS build with the in-app purchase products attached.** A first in-app purchase must go in with an app version. Review is **usually 24–48 hours**; first subscriptions are often rejected once on metadata (price wording, missing EULA link), so allow **about a week** including a resubmit. Apple has slowed or paused submissions around **Dec 23–27** in past years; plan around that.
+1. **Approve the legal pages:** community terms, privacy for the Flock, community guidelines, and the founding terms (section f, PR A). 2–4 hours plus legal review if you want it.
+2. **Approve every copy change in the wording list** (section i). 1 hour.
+3. **Decide the care-app entry point** for the Flock (h3), and approve the gate change (`flock_enabled()` for members). This is the launch decision the Flock rules reserve for you.
+4. **Vet sign-off on the launch blockers already in CLAUDE.md:**
+   - **"An avian vet must confirm both thresholds before launch"** (diet conversion's weight pause and notice);
+   - the vet-nudge phrase lists (`review_status = 'draft'`);
+   - the smoothed weight rules.
+
+   Plan for the vet's turnaround, which is the item most likely to slip.
+5. **Approve content:** the 14 journey templates and their milestones (all `draft`), Today's ideas for at least the first two weeks (`ready`), the Library's opening items, and the Start here posts.
+6. **Name reviewers** for `/admin/review` over the holidays (you, plus any chapter leads).
+7. **Set opening day and the free season's end** in the SQL editor on the day you're ready. `admin_set_flock_opens_at` exists; the end date needs PR B. 5 minutes.
+8. **Opening-day emails** in Brevo: founders (list 9), the waitlist (23 people), and optionally all app users. 1–2 hours.
+9. **Website (Webflow):** update the founding card and `/community` (section i). 1 hour.
+
+### Before June 1 (payments)
+
+10. **App Store Connect:** the Paid Apps agreement, banking and tax forms (1–3 business days to verify); Small Business Program enrollment (about 2 weeks). **Start these in January;** there's no reason to wait.
+11. **Stripe:** Stripe Tax decision and registration; products and prices in test, then live (The Flock: Founding $15/mo, Regular $30/mo, plus annual if chosen); Customer Portal; the billing webhook endpoint and secret into Vercel (Production live, Preview test). About 2 hours.
+12. **App Store Connect:** subscription group "The Flock", regular products, review screenshot and notes; Billing Grace Period (16 days); the Server Notifications V2 URL pointing to RevenueCat; an In-App Purchase key. 2 hours.
+13. **RevenueCat:** project, iOS app, key, products, entitlement `flock`, offering, webhook and secret, transfer "keep with original". 1–2 hours.
+14. **EULA link** on the paywall (Apple's standard one is fine) and the privacy policy line about payment processors.
+15. **Submit the iOS build with the in-app purchase products** by about **May 10**, allowing a week for a first-subscription rejection and resubmit. Apple's reviewer can reach the Flock normally by then, because it's open, so **no review allowlist is needed** (the old PR 11 is dropped).
 
 ---
 
 ## f) The build as small PRs, in order
 
-Every PR follows the Flock safety rules: additive database changes only; no Flock UI, route or network call for non-admins; a "Free-user impact" section; and the free-user regression check green. Nothing below opens the Flock.
+Every PR follows the Flock safety rules:
 
-**Copy first (before more claims, and in any case before opening day):**
+- database changes are additive only (anything else needs your approval in that PR);
+- a "Free-user impact" section;
+- the free-user regression check green.
 
-0. **Founding page and terms: the 14-day card window.** Add the decision 1 line to `/founding` (the offer and the "What happens next" step) and to the terms, and send the same notice to existing claimants. Copy only: no change to the claim flow, which stays card-free. *Free users: none (`/founding` is a public page; the care app isn't touched).*
+The opening PR (C) is the one that deliberately makes the Flock visible to members. It must still leave the care app identical for people who don't join, apart from the entry point you approve.
 
-**Web and founding (needed by opening day):**
+### Before opening day (Nov 18 – Dec 31)
 
-1. **Billing schema.** The migration from section c (`billing_customers`, `billing_events`, the new `entitlements` columns, `founding_claims.forfeited_at`, plus **`card_due_at` and `released_at`** for decision 1, and the upsert functions in `private`), with `supabase/checks/billing_checks.sql`. No callers yet. *Free users: none (new tables and columns only).*
-2. **Stripe billing webhook.** New route `/api/public/stripe/billing` with its own secret (the gift route stays untouched). It handles the section c events, writes `source='stripe'` rows, and includes fixture tests (`npm run test:billing`). Without the env var it returns 503. *Free users: none.*
-3. **Founding card step (web only, from opening day).** A server function `createFoundingCheckout`: signed in, has a claim that isn't released or forfeited, opening day set and passed, before `card_due_at`, never in the native app. Plus a founder page `/founding/membership` (add card, or "card on file, first charge on {date}", with a Customer Portal link) and a thanks state. Behind a server setting `FOUNDING_BILLING_ENABLED` so it can merge dark. *Free users: none; only claim holders can reach it.*
-4. **Opening-day and window emails.** The opening-day email ("add your card within 14 days, $0 due"), reminders on about day 7 and day 12, a "card on file, first charge on {date}" confirmation, and a "your spot was released" notice. Sent by a cron hook through `call_cron_hook`, idempotent per founder and email. *Free users: none.*
-5. **Card window and release.** When opening day is set, store `card_due_at` on every claim. A daily cron hook releases claims past `card_due_at` with no subscription (sets `released_at`, ends the founding entitlement, frees the spot), plus an admin invitation that offers a released spot to a waitlist person with their own 14-day window. *Free users: none.* (This replaces the old "opening-day resync" PR, which is no longer needed because nobody has a subscription before opening day.)
-6. **Admin view.** `/admin/founding` shows each claim's state: claimed, card on file (first charge date), past due, released, forfeited, invited from the waitlist. Plus the "offer released spot" action. *Admins only.*
+- **A. Founding terms and deadline.**
+  - A migration moves `private.founding_deadline()` to `2027-02-01 00:00 America/Indiana/Indianapolis` (end of Jan 31). This changes an existing Flock function, not a care-app one; pin it in `supabase/checks`.
+  - New copy for `/founding`, the founder screens and the website (section i): the free season, "close January 31", and "add a card by the end of the free season or the spot is released".
+  - An email to existing claimants.
+  - *Free users: none (`/founding` is public; care app untouched).*
+- **B. Free-season grant.**
+  - `flock_settings.free_season_ends_at` and `admin_set_free_season_ends_at()`.
+  - `place_grant` uses it for founders' `free_until` instead of `opens + 6 months`, rescheduling grants that haven't started (as setting opening day does today).
+  - `flock_join()`, which grants the free-season row (needs the entitlements check value, section c), and pins in `flock_entitlement_grants_checks.sql`.
+  - *Free users: none until C (only callable by signed-in users, and nothing calls it yet).*
+- **C. Opening the Flock to members (the launch PR).**
+  - A "Join the Flock" screen: region, profile basics, and the community guidelines to accept.
+  - `can_use_flock` counts free-season members.
+  - `flock_enabled()` becomes true for members, and for everyone wherever you approve the entry point.
+  - Merge dark behind the existing settings, and switch it on with the SQL setting on opening day, not with a deploy.
+  - *Free users: this is the one deliberate change: the approved entry point only. Before-and-after screenshots, and an updated free-user regression check that asserts exactly that.*
+- **D. Member blocking (Apple 1.2).** `flock_blocks`, a "Block" action on profiles, posts and comments, and blocked members' posts, comments, reactions and notifications filtered out by the existing visibility functions. Plus a contact line in the Flock. *Free users: none.*
+- **E. Stickiness events** (section "What we're learning in the free season"). Fired only from Flock code (lazy-loaded), never from the care app. *Free users: none.*
+- **F. Gift years start at the free season's end** (only if you decide so, h7). Changes `place_grant` for gifts, plus the gift and redeem copy. Gifts are already for sale, so do it before opening.
+- **G. Legal pages.** `/terms` gains community sections (your posts and photos, the licence to show them to members, conduct, moderation and removal, age, memberships and billing to come); `/privacy` gains what Flock members see (matching `flock.you.privacy.tsx`), chapters, photos and payment processors. Your text, wired in. *Free users: shared pages; the wording changes, the layout doesn't.*
 
-**iOS (needed before regular sign-ups open in the app):**
+### After opening, web payments (Feb – May; live by about June 1)
 
-7. **Native plugin build (1.3).** Add `@revenuecat/purchases-capacitor`, `cap sync ios`, bump the build. JavaScript calls are guarded with `nativePluginAvailable("Purchases")` and **configure RevenueCat only after `flock_enabled()` is true**, so non-admins make no RevenueCat network calls. Check the plugin's JavaScript against the installed builds, per CLAUDE.md. Ship this build early; it does nothing visible.
-8. **RevenueCat webhook and sync.** `/api/public/hooks/revenuecat` (Authorization check), plus a `syncMyPurchases` server function (re-reads RevenueCat), writing `apple`/`google` rows. Tests with RevenueCat sample payloads. *Free users: none.*
-9. **iOS paywall inside `/flock`** (behind `flock_enabled()`): price, period, auto-renew text, EULA and privacy links, **Restore purchases**, "Founding members: check your email". *Admins only until launch.*
-10. **Account deletion and settings text.** The Apple-subscription line in deletion, and the membership line in settings, both behind `flock_enabled()` / entitlement. Touches shared code, so this needs before-and-after evidence that free users see no change.
-11. **Review access.** Let the Apple review account pass `flock_enabled()` (an allowlist row, admin-set), only if you choose that over submitting with the launch build.
+1. **Billing schema** (section c), with `supabase/checks/billing_checks.sql`.
+2. **Stripe billing webhook**, `/api/public/stripe/billing`, with its own secret and fixture tests (`npm run test:billing`). It returns 503 without the env var.
+3. **Card step**, `/flock/membership` (and the founder view of it): add a card ($0 due until the season's end), or "card on file, first charge on {date}", with a Customer Portal link. The founding price applies to unreleased claims. It's never shown in the native app, and sits behind `BILLING_ENABLED`.
+4. **Card emails:** about 30 days, 7 days and 1 day before, the confirmation, and the end-of-season notices. A cron hook through `call_cron_hook`, idempotent per member and email.
+5. **End-of-season job:** release founders without a subscription, and send the emails.
+6. **Admin view**, `/admin/founding` and `/admin/members`: free season, card on file, past due, released, forfeited.
 
-**Later / optional:** annual plans, app premium subscriptions, Android Play billing through RevenueCat, the giving ledger for subscriptions.
+### After opening, iOS (spring; in-app purchase live by June 1)
+
+7. **Native plugin build (1.3):** `@revenuecat/purchases-capacitor`, guarded by `nativePluginAvailable("Purchases")`, and configured only after `flock_enabled()`. Check its JavaScript against the installed builds. **Ship by about March 15**, so most people have it by June.
+8. **RevenueCat webhook and `syncMyPurchases`.**
+9. **iOS paywall inside `/flock`**, shown from the card emails on (section d).
+10. **Account deletion and settings text** for subscriptions. This touches shared code, so it needs before-and-after evidence.
+
+**Dropped from the earlier plan:**
+
+- the 14-day card window, `card_due_at`, the day-7 and day-12 reminders, and the waitlist invitation for released spots;
+- the review allowlist (old PR 11).
+
+**Later or optional:** annual plans, app premium subscriptions, Android Play billing, and the giving ledger for subscriptions.
 
 ---
 
 ## g) Timeline
 
-Revised for decision 1: **the target is payments live by opening day**, not Dec 31. Dec 31 stays the claim deadline only, as built today. Assuming work starts Nov 18 and you do the manual steps in parallel.
-
-| Week | Web / founding | iOS |
+| When | Web / Flock | iOS |
 |---|---|---|
-| Nov 18–24 | **PR 0 (copy and terms) first**, then PR 1, PR 2; you: approve the 14-day wording and terms, Stripe products (test), Stripe Tax decision, Paid Apps agreement, Small Business Program | |
-| Nov 25 – Dec 1 (Thanksgiving) | PR 3 on preview with test cards; notice to existing claimants | you: subscription group and products, in-app purchase key, RevenueCat set up |
-| Dec 2–8 | PR 4, PR 5 | PR 7 (plugin build), submit by about Dec 8 |
-| Dec 9–15 | PR 6; live Stripe prices and webhook; a full dry run on production with your own claim (open → email → card → first charge date) | PR 8, PR 9 on TestFlight with sandbox accounts |
-| Dec 16–31 | buffer; founding claims close Dec 31 | holiday slowdown; avoid submitting in-app purchase review Dec 20–28 |
-| Opening day (early Jan) | opening-day emails go out; **first founding card on file within the first days**; window closes opening day + 14 | submit build plus in-app purchase products; live about 1–2 weeks after submission |
-| Opening day + 14 | spots without a card released; waitlist invitations | |
-| About opening day + 6 months (July 2027) | **first founding charges** | |
+| Nov 18–30 | PRs A and G drafts; you: legal text, copy approvals, the entry point decision (h3), vet contacted | |
+| Dec 1–14 | PRs B, D, E (and F if chosen); content approvals; reviewers named | nothing to ship: the Flock already works in installed builds (remote-URL mode) |
+| Dec 15–23 | PR C merged dark; a full dry run on production with admin accounts (join → post → journey → report → block → kill switch) | check the Flock on iPhone, iPad and Duo |
+| Dec 24–31 | buffer; no merges after about Dec 28 | |
+| **Jan 1 (or Jan 4)** | **opening**: set opening day and the season's end, switch on, send the emails | |
+| Jan 31 | founding claims close | |
+| Feb – Mar | billing PRs 1–3 on preview with test cards; Stripe test products | Paid Apps agreement, Small Business Program; PR 7 shipped by Mar 15 |
+| Apr – May | PRs 4–6; live Stripe; a dry run with your own founding claim | App Store Connect products, RevenueCat, PRs 8–10; submit by about May 10 |
+| **About Jun 1** (Jun 7 with Jan 4) | **payments live**; "add your card" emails | in-app purchase live |
+| About Jun 24 and Jun 30 | reminders | |
+| **About Jul 1** (Jul 6 with Jan 4) | **first charges**; founders without a card released; free-season access ends for members without a card | |
 
-- **Web payments ready by opening day is comfortable** if opening day is early January: the web PRs fit in about 4 weeks, finishing around Dec 15 and leaving the holidays as a buffer.
-- **First paying founding member:** a card on file **in the first days after opening day**. The first *charge* is still about 6 months later, at `free_until`.
-- **iOS in-app purchase** is still needed before regular (non-founding) sign-ups open in the iOS app. If opening day is early January, the app will be about 1–2 weeks behind web for regular sign-ups (see h2 and h7).
+**What to cut if it gets tight:**
 
-**What to cut or move if it gets tight:**
+- **Before opening:** PR F (gifts) can ship in January if no gift has been redeemed by then. None has, as of today.
+- **Before opening:** stickiness events beyond weekly active members and joins can follow in the first week.
+- **For payments:** push the June date rather than skipping the webhook's idempotency or the end-of-season job's safety check.
 
-- Push opening day out by a week or two rather than open without the card step and emails (PRs 3–5). The card window depends on them.
-- iOS in-app purchase can follow opening day; regular sign-ups start on the web.
-- Annual plans, app premium subscriptions and Android billing all move after launch.
-- The admin view (PR 6) can be SQL for the first weeks; the "offer released spot" action is only needed from opening day + 14.
+**Not to cut before opening:**
 
-**Not to cut:** the copy and terms change (PR 0) before opening day, the webhook's idempotency and the forfeiture rule, the release job's checks (never release a founder who has a card on file), and the native-app guard on the Stripe step.
+- the legal pages;
+- member blocking;
+- the vet sign-offs CLAUDE.md marks as launch blockers;
+- the free-user regression check updated for the entry point;
+- the kill switch tested on production.
 
 ---
 
@@ -240,18 +341,132 @@ Revised for decision 1: **the target is payments live by opening day**, not Dec 
 
 | # | Decision | Recommendation |
 |---|---|---|
-| 1 | ~~What "pay before Dec 31" means for founders~~ | **Decided Nov 17, 2026:** claim only through Dec 31, no card or Stripe before opening day. On opening day founders are emailed to add a card on the web ($0 due, first charge at `free_until`); no card within 14 days means the spot is released to the waitlist. See "Decision 1". |
-| 2 | Opening day | Pick a date **no earlier than about Jan 5, 2027**, since web payments (PRs 0–5) need to be live and dry-run by then. Avoid the first days of January if you want a buffer after the holidays. Founders, gifts and comps open first, with regular web sign-ups; iOS regular sign-ups follow once in-app purchase is approved. |
-| 3 | Where founders are billed | **Web/Stripe only**; no founding product in the App Store. |
-| 4 | When the founding price is lost | **When the subscription ends**, not when auto-renew is turned off; a failed payment that recovers within the grace period doesn't count. A founder released at day 14 (decision 1) loses the spot and the price too. |
-| 5 | Regular price and plans | **$30/month confirmed**; annual **$300** (the same as the gift, about 2 months free) if you want one, otherwise monthly only at launch. |
-| 6 | Apple prices | **$14.99 / $29.99** if App Store Connect doesn't offer $15.00 / $30.00 exactly. Same on web for consistency, or $15 / $30 on web if you prefer round numbers (it's allowed to differ). |
-| 7 | iOS in-app purchase timing | **January, with or just after opening.** Ship the plugin build (PR 7) in early December so it's widely installed by then. |
-| 8 | How Apple's reviewer sees the paywall while the Flock is hidden | **Submit the in-app purchase products with the opening build**, so no exception to the gate is needed. If you need approval before opening, add a single admin-set allowlist for the review account (PR 11). This widens `flock_enabled()`, which is your launch decision. |
-| 9 | Sales tax on web | **Turn on Stripe Tax** (about 0.5% per transaction) and register where required. Apple handles tax for in-app purchase. |
-| 10 | Refund policy | **A full refund ends access immediately; a partial one keeps it.** No automatic refunds for unused time on cancel. |
-| 11 | Giving share on subscriptions | **The same rate as gifts (20%), on what's left after fees,** recorded per payment; design it after launch. |
-| 12 | Android | **No purchase in the Android app at launch.** Android members subscribe on the web; add Play billing through RevenueCat later. Check Google's current user-choice and external-offer rules before linking out from the Android app. |
-| 13 | App premium | **Leave it out of this build.** Flock includes premium; add premium subscriptions once Flock billing is stable. |
-| 14 | Released spots: who gets them and on what terms (new, from decision 1) | **Offer them to the waitlist in sign-up order, one invitation at a time, each with its own 14-day card window and the full founding terms** (6 free months from when they join, then $15). Admin-sent, so you can skip anyone. Keep the 50-spot cap; no new open claims after Dec 31. |
-| 15 | A founder who signs in during the window but misses it (new, from decision 1) | **No automatic extensions;** you can extend one by hand from `/admin/founding` (a support action). The reminders on about day 7 and day 12 make a missed window unlikely. |
+| 1 | ~~Founders' card flow~~ | **Decided Nov 18:** no card before or at opening; add a card from about 30 days before the end, or the spot is released. |
+| 2 | ~~Opening day~~ | **Decided:** Jan 1, 2027, possibly Jan 4. **If you're unsure, Jan 4:** a working day, the same build deadline, and the free season ends on Jul 6 instead of a holiday. |
+| 3 | How non-members find the Flock in the care app | **One entry point only: a "Community" button where admins see it today, plus a single dismissible Home card in the first two weeks.** Everything else in the care app stays identical. This is the one place "nothing changes for free users" bends, so it's yours to approve. |
+| 4 | One end date for the free season | **Yes, one stored date for everyone** (Jul 1, or Jul 6 with a Jan 4 opening). One email date, one charge date, one rule to explain. |
+| 5 | Who can join | **Anyone with a Kya & Co. account, on any platform.** It's free, and the care app is the funnel. |
+| 6 | Released founding spots | **Don't refill them in July.** Show the real count ("44 founding members"). Refilling needs an invitation flow for a handful of people. |
+| 7 | Gift years | **Start gift years at the free season's end** (PR F), and say so on `/gift` and `/redeem`. Otherwise a $300 gift buys about 6 paid months. |
+| 8 | The rescue-adopter offer | **Keep it on the website, and grant it by hand as a 6-month comp from approval after the free season.** It's a few people a year; automate it later. |
+| 9 | Where founders are billed | **Web/Stripe only;** no founding product in the App Store. |
+| 10 | When the founding price is lost | **When the subscription ends**, not when auto-renew is turned off; a payment that recovers within grace doesn't count. A founder released at the free season's end loses it too. |
+| 11 | Annual plan | **Monthly only at launch; add $300/year in the autumn** once you know retention. |
+| 12 | Apple prices | **$14.99 / $29.99** if $15.00 / $30.00 aren't offered; the web can stay round. |
+| 13 | iOS in-app purchase timing | **Live by June 1**, plugin build by March 15, submit by May 10. |
+| 14 | Paywall during the free season | **None.** The paywall appears with the June emails, and in-app purchases bill from the purchase day (no fixed-date trials on Apple). |
+| 15 | Sales tax on web | **Turn on Stripe Tax** (about 0.5%). |
+| 16 | Refunds | **A full refund ends access; a partial one keeps it;** no refunds for unused time. |
+| 17 | Giving share on subscriptions | **20% after fees, like gifts; design it before the first charges in July,** not before opening. |
+| 18 | Android | **No in-app purchase at launch;** Android members pay on the web. |
+| 19 | App premium | **Leave it out of this build.** |
+| 20 | Missed card deadline (founders) | **No automatic grace;** you can restore a released founder by hand within 14 days of the end (support action). |
+
+---
+
+## i) Every place the Dec 31 deadline or "6 months from opening" appears
+
+Found on Nov 18, 2026. **Nothing here has been changed yet.** Line numbers are on `main` at `6d64a11`. Copy fallbacks in `.tsx` files repeat the `en.jsonc` strings and change with them.
+
+### App copy (`src/locales/en.jsonc` and the matching fallbacks)
+
+| Where | Text today | Change |
+|---|---|---|
+| `en.jsonc:2620` `founding.deadline`; `src/routes/founding.tsx:230` | "Founding spots close December 31" | → January 31 |
+| `en.jsonc:2629` `founding.locked`; `founding.tsx:205` | "Locked for as long as you're a member. Your first six months are free." | → free season wording ("Free until July 1, like everyone who joins in the first six months") |
+| `en.jsonc:2630` `founding.metaDescription`; `founding.tsx:34` | "…with your first six months free." | → the same |
+| `en.jsonc:2631` `founding.next`; `founding.tsx:365` | "We'll email you before the Flock opens in January. Your six free months start when it opens." | → "opens January 1… free until July 1; we'll ask for a card in June" |
+| `en.jsonc:2632` `founding.nextPrice` | "After that, it's $15 a month for as long as you're a member." | add "once you've added a card by July 1" |
+| `en.jsonc:2634`, `2635` `founding.noCard`, `founding.noPayment` | "No card needed today." / "No card and no payment today." | still true; add when a card is asked for |
+| `en.jsonc:2627` `founding.line`; `founding.tsx:137` | "…opening in January." | → "opening January 1" |
+| `en.jsonc:2622` `founding.fullBody`; `founding.tsx:243` | "The Flock opens in January…" | → the date, or "is open; join free" after opening |
+| `en.jsonc:2624` `founding.justClosed` | "Founding spots have closed." | no change (the database decides when) |
+| `en.jsonc:2648` `founding.regular` | "Regular price $30" | → "$30 a month after the free season" |
+| `src/lib/flockProfile.ts:66` | "Founding · $15/mo · first 6 months free once the Flock opens" | → "free until {end}" |
+| `src/routes/_authenticated/admin.founding.tsx:203–205` | "Six months after opening" (fallback when `free_until` is unset) | → "When the free season ends" |
+| `src/lib/flockAccess.ts:20, 29` | "When the Flock opens" / "Active (free months)" | → "Active (free season)" |
+| `en.jsonc:2742` `gift.timingFlock`; `src/lib/giftCopy.ts:11` | "The year starts when the Flock opens in January, or on the day it's redeemed if that's later." | depends on h7 |
+| `en.jsonc:2743` `gift.timingPremium`; `giftCopy.ts:12` | "…when app premium launches in January…" | depends on whether premium launches in January (h19) |
+| `en.jsonc:3538` `redeem.doneFlock`; `src/routes/redeem.tsx:100` | "Your year in the Flock starts when it opens in January." | depends on h7 |
+| `en.jsonc:3540` `redeem.donePremium`; `redeem.tsx:101` | "…starts when it launches in January." | depends on h19 |
+| `en.jsonc:2378` `flock.today.empty.start` | "…once the Flock opens." | fine after opening; optional |
+
+Only English has `founding.*`, `gift.*` and `redeem.*` strings today, so there are no translations to redo.
+
+### Emails (`src/locales/emails.en.jsonc` and Brevo)
+
+| Where | Text today | Change |
+|---|---|---|
+| `emails.en.jsonc:760` `email.gift.timingFlock` | "The year starts when the Flock opens in January…" | depends on h7 |
+| `emails.en.jsonc:761` `email.gift.timingPremium`, `:787` `email.gift.recipient.aboutPremium` | "…app premium launches in January…" | depends on h19 |
+| **Brevo** (not in the repo): any founding, waitlist or "Founding 50" list 9 emails or automations | not readable from here | check for "December 31", "six free months" or "opens in January" in Brevo's templates and automations |
+| `src/lib/founding.functions.ts:84` (comment) | list 9 consent: "We'll email you before the Flock opens" | still true |
+
+### Database (`supabase/`)
+
+| Where | Today | Change |
+|---|---|---|
+| `migrations/20261022172114_founding_claims.sql:33–42` `private.founding_deadline()` | `timestamp '2027-01-01 00:00:00' at time zone 'America/Indiana/Indianapolis'` | new migration → `2027-02-01 00:00:00` (PR A). `claim_founding_spot` and `founding_status` (lines 116, 191) read it and need no change. |
+| `migrations/20261107120000_flock_entitlement_grants.sql:26–27, 227, 265–266` `place_grant` | `free_until = current_period_end = v_opens + interval '6 months'` | new migration → `free_season_ends_at` (PR B) |
+| same file, `:76` comment on `entitlements.free_until` | "end of the six free months (flock_opens_at + 6 months)" | update the comment in PR B |
+| `checks/flock_entitlement_grants_checks.sql:90, 103–105, 130–135` | expects `opens + interval '6 months'` | update with PR B |
+| Production functions containing "6 months" | only `place_grant` (checked Nov 18) | |
+| Production functions using the deadline | `founding_deadline`, `claim_founding_spot`, `founding_status` | |
+
+### Tests
+
+| Where | Text |
+|---|---|
+| `scripts/flock-shell.test.ts:172–175, 219` | "Jan 5, 2027" to "Jul 5, 2027" sample dates; "first 6 months free once the Flock opens" |
+| `e2e/flock.shell.ts:1974` | "Founding · $15/mo · first 6 months free once the Flock opens" |
+
+### Docs and comments
+
+| Where | Text |
+|---|---|
+| `CLAUDE.md`, Flock "Access (entitlements)" and "Opening day" | "six free months from opening day"; a gift year "from the later of redemption and opening day"; example date `2027-01-05` |
+| `src/lib/founding.functions.ts:11–13` | "six free months from the day the Flock opens" |
+| `src/routes/_authenticated/admin.founding.tsx:55` | "free months from opening day" |
+| `src/lib/gifts.ts:18–19` | "like the Founding 50 deadline" (a time-zone note only) |
+
+### Website (thekyaproject.com, Webflow)
+
+| Page | Text today | Change |
+|---|---|---|
+| Home and `/community`, the "Join the Founding 50" card | "Your first six months free"; "$15 a month, locked in for as long as you're a member" | → free season and "claims close January 31"; "locked in" → "locked in once billing starts in July" |
+| `/community` | "The first 50 members from the waitlist lock in founding perks for life… Regular pricing below applies after that." and "Monthly $30 per month" | says "from the waitlist" (claims are open to anyone with an account); add "after the free season" |
+| `/community` | "A kind, judgment-free space for parrot people, opening soon" | → "opening January 1" |
+| `/community` | "six months of free membership for anyone who adopts a parrot and applies within 60 days of their rescue" | see h8 |
+
+Only the home page and `/community` were read; other Webflow pages, blog posts and CMS items weren't checked for these phrases.
+
+### A different Dec 31 (gift send dates, not the founding deadline)
+
+`GIFT_SEND_LAST_DATE = "2026-12-31"` (`src/lib/gifts.ts:15`), `gift.errDate` (`en.jsonc:2720`), `gift.sendOnHint` (`en.jsonc:2741`), `src/routes/gift.index.tsx:67, 234`, `scripts/gifts.test.ts:62–67`. This limits when a *dated gift email* can be scheduled. It doesn't need to change for these decisions. Extend it only if you want to keep selling dated gifts into January.
+
+---
+
+## What we're learning in the free season
+
+Six months free is the best chance to learn whether the Flock is worth $30 a month before anyone pays it. **Today PostHog records nothing Flock-specific.** In the last 30 days the only events on `/flock` pages were admin `$pageview`s, clip uploads and web vitals. `flock_check_completed` is the care app's daily check for several birds, not the community. Sign-ins are identified (`$identify`), so per-person counts work once events exist.
+
+These events are worth having from day one. All of them fire only from Flock code (lazy-loaded, never the care app) and carry **no content**: no post text, names or photos.
+
+| # | Measures | Event(s) | Tracked today? | To add |
+|---|---|---|---|---|
+| 1 | **Weekly active members**: the main stickiness number | `flock_active` once per member per day (properties: `founding`, `chapter`, `platform`), plus person properties `flock_member`, `flock_founding`, `flock_joined_at` | **Partly.** `$pageview` on `/flock/*` exists, but it can't tell members from admins or visitors | send `flock_active` from FlockShell on the first Flock screen of the day; set the person properties at join; exclude admins |
+| 2 | **Joins and where they come from** | `flock_joined` (`source`: care-app entry point, email, website, founding page; `founding`; `region`) | **No** (only `founding_spot_claimed` for the 50) | send from the join screen after `flock_join()` succeeds |
+| 3 | **Journey starts and completions** | `journey_started` (template slug or custom, private or community), `journey_milestone_reached` (number), `journey_finished`, `journey_paused` (diet weight safeguard, kind only) | **No** (clip upload events only) | send after each RPC succeeds (`journey_start`, `journey_reach_milestone`, `journey_set_status`) |
+| 4 | **Library reads** | `library_item_opened` (item id, type, `read_seconds` bucket on leave) | **Partly** (pageviews of `/flock/library/*`, no item id or time) | send from the Library item screen |
+| 5 | **Contribution, not only reading** | `flock_contributed` (`kind`: post, comment, reaction, idea_tried, event_rsvp; `space`) | **No** | one event from each create function's success path |
+| 6 | **Coming back without being reminded** | a session flag `opened_from` = `push`, `email` or `direct` on `flock_active` | **Partly.** Email links already carry `utm_source=email` (`src/lib/emailTracking.ts`); push taps carry **no** source tag | add `utm_source=push` (or `?from=push`) to push deep links in `src/lib/pushNative.ts` and the service worker; then `opened_from` = `direct` when neither is present and the referrer isn't an email |
+
+**The numbers to watch in a PostHog dashboard:**
+
+- weekly active members ÷ members, by join week;
+- the share of members active in 3 or more of their first 4 weeks;
+- journey completion within 30 days;
+- the share of weekly actives who contributed;
+- the share of active days that started `direct`.
+
+Check the dashboard monthly, and once more in early June before the card emails, so pricing decisions (annual plan, reminders) rest on real retention.
