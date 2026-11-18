@@ -227,7 +227,7 @@ function Counter({ claimed, cap }: { claimed: number; cap: number }) {
       <div className="mt-3 h-2.5 overflow-hidden rounded-full" style={{ background: K.mist }} aria-hidden="true">
         <div className="h-full rounded-full" style={{ width: `${pct}%`, background: K.moss }} />
       </div>
-      <p className="m-0 mt-3 text-[14.5px]" style={{ color: K.quiet }}>{t("founding.deadline", "Founding spots close December 31")}</p>
+      <p className="m-0 mt-3 text-[14.5px]" style={{ color: K.quiet }}>{t("founding.deadline", "Founding spots close at 11:59 pm Eastern on Sunday, January 31, 2027, or sooner if all 50 are claimed.")}</p>
     </KyaCard>
   );
 }

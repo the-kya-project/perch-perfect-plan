@@ -2617,7 +2617,7 @@
   "founding.claiming": "Saving your spot…",
   "founding.confirm": "Confirm my founding spot",
   "founding.counter": "{{claimed}} of {{cap}} spots claimed",
-  "founding.deadline": "Founding spots close December 31",
+  "founding.deadline": "Founding spots close at 11:59 pm Eastern on Sunday, January 31, 2027, or sooner if all 50 are claimed.",
   "founding.doneTitle": "You're one of the Founding 50.",
   "founding.fullBody": "The Flock opens in January. Leave your email and we'll tell you the day it does.",
   "founding.fullTitle": "The Founding 50 is full",
