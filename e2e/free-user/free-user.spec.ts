@@ -6,7 +6,7 @@
 import { test, expect, type BrowserContext, type Page } from "@playwright/test";
 import {
   DUO, IPHONE, closeWelcome, dayFromToday, dismissOpenInApp, expectOnlyCareTabs, newContext,
-  nextFlockGate, requireEnv, signIn, watchForFlock, type FlockLeak,
+  gotNothing, nextFlockGate, readLibraryDirectly, requireEnv, signIn, watchForFlock, type FlockLeak,
 } from "./helpers";
 
 const BIRD = `Pip ${Date.now().toString(36).slice(-4)}`;
@@ -174,4 +174,24 @@ test("10. Duo / wide layout: the side column shows only the care tabs", async ({
 
 test("11. no Flock code, RPC or table was touched all run", async () => {
   expect(leaks, "Flock requests made for a free account").toEqual([]);
+});
+
+test("12. the library's rows and files can't be read directly, signed in or out", async () => {
+  // The app's own Supabase address, key and this account's session, taken
+  // from the app's gate call (nothing is configured for this step).
+  const req = page.waitForRequest((r) => /\/rest\/v1\/rpc\/flock_enabled\b/.test(r.url()) && r.method() === "POST", { timeout: 45_000 });
+  await page.goto("/dashboard");
+  const gate = await req;
+  const supabaseUrl = new URL(gate.url()).origin;
+  const headers = await gate.allHeaders();
+  const apikey = headers["apikey"];
+  const token = (headers["authorization"] ?? "").replace(/^Bearer\s+/i, "");
+  expect(apikey, "the app's publishable key").toBeTruthy();
+  expect(token, "the free account's session").toBeTruthy();
+
+  for (const [who, t] of [["free account", token], ["signed out", null]] as const) {
+    const reads = await readLibraryDirectly(supabaseUrl, apikey, t);
+    console.log(`library, ${who}: ${reads.map((r) => `${r.what} → ${r.status}${r.rows === null ? "" : ` (${r.rows})`}`).join("; ")}`);
+    for (const r of reads) expect(gotNothing(r), `${who}: ${r.what} returned ${r.status} ${r.body}`).toBe(true);
+  }
 });

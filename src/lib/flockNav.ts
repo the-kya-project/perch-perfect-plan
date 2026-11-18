@@ -68,8 +68,17 @@ export type ChapterTab = "posts" | "events" | "resources" | "members";
 export const CHAPTER_TABS: ChapterTab[] = ["posts", "events", "resources", "members"];
 
 // ---- Library -------------------------------------------------------------
-export type LibraryType = "all" | "guides" | "recordings" | "podcast";
-export const LIBRARY_TYPES: LibraryType[] = ["all", "guides", "recordings", "podcast"];
+// The type chips are the library's four resource types (library_resources.
+// resource_type); the subject chips are its topics, the same list the
+// database allows (20261118120000_flock_library.sql). Keep them in step.
+export type LibraryType = "all" | "guides" | "checklists" | "videos" | "links";
+export const LIBRARY_TYPES: LibraryType[] = ["all", "guides", "checklists", "videos", "links"];
+export type LibraryResourceType = "guide" | "checklist" | "video" | "link";
+export const LIBRARY_RESOURCE_TYPES: LibraryResourceType[] = ["guide", "checklist", "video", "link"];
+/** A type chip's resource type; "all" is none. */
+export function resourceTypeFor(type: LibraryType): LibraryResourceType | null {
+  return type === "all" ? null : (type.slice(0, -1) as LibraryResourceType);
+}
 export type LibrarySubject = "foraging" | "diet" | "training" | "hormones" | "conservation";
 export const LIBRARY_SUBJECTS: LibrarySubject[] = ["foraging", "diet", "training", "hormones", "conservation"];
 

@@ -13,12 +13,16 @@
  * failure so it can gate a merge.
  */
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import { rememberMode, rememberedMode } from "@/lib/flock";
 import { avatarInitial } from "@/lib/accountInitial";
 import {
   CHAPTER_TABS, FLOCK_DESTS, FLOCK_REDIRECTS, FLOCK_SPACES, JOURNEYS_FILTERS, LIBRARY_SUBJECTS, LIBRARY_TYPES, TODAY_FILTERS,
   chapterLine, destForPath, isFlockFullScreenPath, isFlockOnboardingPath, pick, pickOptional, pickQuery,
+  LIBRARY_RESOURCE_TYPES, resourceTypeFor,
 } from "@/lib/flockNav";
+import { parseBody, parseInline, plainText, safeHref } from "@/lib/libraryMarkdown";
+import { normalizeUrl, publishProblems, speciesFromText } from "@/lib/flockLibraryRules";
 import { birdsLine, filterRoster, speciesGroup, topGroups } from "@/lib/flockMembers";
 import { TALLEST, WIDEST, jpegSize, photoFrame } from "@/lib/flockPhotos";
 import { dateBlock, eventIcs, goersLine, longWhen, shortWhen } from "@/lib/flockEvents";
@@ -135,7 +139,7 @@ check("the chips and spaces are the ones in the design", () => {
   assert.deepEqual(TODAY_FILTERS, ["everything", "learn", "good", "start"]);
   assert.deepEqual(JOURNEYS_FILTERS, ["for-you", "following", "tricks", "basics"]);
   assert.deepEqual(CHAPTER_TABS, ["posts", "events", "resources", "members"]);
-  assert.deepEqual(LIBRARY_TYPES, ["all", "guides", "recordings", "podcast"]);
+  assert.deepEqual(LIBRARY_TYPES, ["all", "guides", "checklists", "videos", "links"]);
   assert.deepEqual(LIBRARY_SUBJECTS, ["foraging", "diet", "training", "hormones", "conservation"]);
 });
 check("bad or old filter links fall back instead of breaking", () => {
@@ -145,6 +149,53 @@ check("bad or old filter links fall back instead of breaking", () => {
   assert.equal(pickOptional("learn", FLOCK_SPACES), "learn");
   assert.equal(pickOptional("everything", FLOCK_SPACES), undefined);
   assert.equal(pickOptional(undefined, CHAPTER_TABS), undefined);
+});
+check("library: each type chip is one resource type; the lists match the database's", () => {
+  assert.deepEqual(LIBRARY_RESOURCE_TYPES, ["guide", "checklist", "video", "link"]);
+  assert.equal(resourceTypeFor("all"), null);
+  assert.deepEqual(LIBRARY_TYPES.filter((t) => t !== "all").map(resourceTypeFor), LIBRARY_RESOURCE_TYPES);
+  // The migration's allowed topics are the subject chips, in order.
+  const sql = readFileSync("supabase/migrations/20261118120000_flock_library.sql", "utf8");
+  const topics = sql.match(/topics <@ array\[([^\]]+)\]/)![1].match(/'([a-z]+)'/g)!.map((x) => x.slice(1, -1));
+  assert.deepEqual(topics, LIBRARY_SUBJECTS);
+  const types = sql.match(/resource_type in \(([^)]+)\)/)![1].match(/'([a-z]+)'/g)!.map((x) => x.slice(1, -1));
+  assert.deepEqual(types, LIBRARY_RESOURCE_TYPES);
+});
+check("library body: headings, lists, checklists, callouts, paragraphs", () => {
+  const b = parseBody("# Why forage\nWild parrots spend **hours**\nfinding food.\n\n## Start\n- one\n* two\n1. first\n2) second\n- [ ] cup\n- [x] box\n> Stay close.\n> Watch.\n\nThe end.");
+  assert.deepEqual(b.map((x) => x.kind), ["heading", "paragraph", "heading", "list", "list", "checklist", "quote", "paragraph"]);
+  assert.deepEqual(b[0], { kind: "heading", level: 2, content: [{ kind: "text", text: "Why forage" }] });
+  assert.deepEqual(b[1], { kind: "paragraph", content: [{ kind: "text", text: "Wild parrots spend " }, { kind: "strong", text: "hours" }, { kind: "text", text: " finding food." }] });
+  assert.equal((b[2] as any).level, 3);
+  assert.deepEqual((b[3] as any).items.length, 2);
+  assert.equal((b[4] as any).ordered, true);
+  assert.deepEqual((b[5] as any).items.map((i: any) => i.checked), [false, true]);
+  assert.equal(plainText("# Hi\n- **a** b\n> c"), "Hi a b c");
+  // A paragraph between two checklists ends the first.
+  assert.equal(parseBody("- [ ] a\nnote\n- [ ] b").filter((x) => x.kind === "checklist").length, 2);
+});
+check("library body: only web and email links; nothing becomes HTML", () => {
+  assert.deepEqual(parseInline("See [the AAV](https://www.aav.org) and *this*."), [
+    { kind: "text", text: "See " }, { kind: "link", text: "the AAV", href: "https://www.aav.org" }, { kind: "text", text: " and " }, { kind: "em", text: "this" }, { kind: "text", text: "." },
+  ]);
+  assert.deepEqual(parseInline("[x](javascript:alert(1))")[0].kind, "text");
+  assert.equal(safeHref("data:text/html,hi"), null);
+  assert.equal(safeHref("mailto:hello@example.com"), "mailto:hello@example.com");
+  assert.deepEqual(parseInline("Go to https://example.com/a."), [{ kind: "text", text: "Go to " }, { kind: "link", text: "https://example.com/a", href: "https://example.com/a" }, { kind: "text", text: "." }]);
+  assert.deepEqual(parseInline("<script>alert(1)</script>"), [{ kind: "text", text: "<script>alert(1)</script>" }]);
+  assert.deepEqual(parseInline("2 * 3 * 4"), [{ kind: "text", text: "2 * 3 * 4" }]);
+});
+check("library editing: species tags, links and what publishing needs", () => {
+  assert.deepEqual(speciesFromText(" Sun conure, caique,\nSun Conure, , African  grey"), ["Sun conure", "caique", "African grey"]);
+  assert.equal(speciesFromText(Array.from({ length: 20 }, (_, i) => `s${i}`).join(",")).length, 12);
+  assert.equal(normalizeUrl("  "), null);
+  assert.equal(normalizeUrl("youtube.com/x"), "https://youtube.com/x");
+  assert.equal(normalizeUrl("http://a.org"), "http://a.org");
+  const ok = { title: "T", summary: "S", topics: ["diet"], resource_type: "guide" as const, external_url: null };
+  assert.deepEqual(publishProblems(ok), []);
+  assert.deepEqual(publishProblems({ ...ok, title: " ", summary: "", topics: [] }), ["title", "summary", "topics"]);
+  assert.deepEqual(publishProblems({ ...ok, resource_type: "video" }), ["url"]);
+  assert.deepEqual(publishProblems({ ...ok, resource_type: "link", external_url: "https://x.org" }), []);
 });
 check("library search text: trimmed to 100 characters, blank is none", () => {
   assert.equal(pickQuery("pellets"), "pellets");
