@@ -63,7 +63,7 @@ export function membershipSummary(rows: EntitlementRow[], isAdmin: boolean, now:
   const live = rows.filter((e) => !(e.status === "canceled" && e.current_period_end && new Date(e.current_period_end).getTime() <= t));
   const founding = live.find((e) => e.plan === "founding");
   if (founding) {
-    if (!founding.starts_at) return { title: "Founding member", line: "Founding · $15/mo · first 6 months free once the Flock opens" };
+    if (!founding.starts_at) return { title: "Founding member", line: "Founding · $15/mo · free for everyone until Jul 6, 2027" };
     const free = founding.free_until ?? founding.current_period_end;
     return { title: "Founding member", line: free ? `Founding · $15/mo · free until ${day(free)}` : "Founding · $15/mo" };
   }

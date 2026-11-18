@@ -1977,7 +1977,7 @@ test.describe("welcome, setup, profiles and chapters (admin, phone)", () => {
     await expect(page).toHaveURL(/\/flock\/you$/);
     await expect(page.getByRole("heading", { level: 1 })).toHaveText("Brittany K.");
     await expect(page.getByText("Community is separate from care reminders")).toBeVisible();
-    await expect(page.getByText("Founding · $15/mo · first 6 months free once the Flock opens")).toBeVisible();
+    await expect(page.getByText("Founding · $15/mo · free for everyone until Jul 6, 2027")).toBeVisible();
     await page.getByRole("button", { name: /Privacy/ }).click();
     await expect(page).toHaveURL(/\/flock\/you\/privacy$/);
     const see = page.getByTestId("privacy-see");
