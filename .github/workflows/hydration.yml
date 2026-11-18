@@ -72,6 +72,7 @@ jobs:
         run: |
           npm run test:account-deletion
           npm run test:account-files
+          npm run test:storage-orphans
 
       # The Community (Flock) shell, same build: the five tabs, redirects,
       # chips, the Spaces sheet (focus, Escape, swipe), the Duo column, and

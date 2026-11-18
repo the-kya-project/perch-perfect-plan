@@ -68,6 +68,8 @@
     "test:cron-telemetry": "npx --yes vite-node scripts/cron-telemetry.test.ts",
     "test:account-deletion": "npx --yes vite-node scripts/account-deletion.test.ts",
     "test:account-files": "npx --yes vite-node scripts/account-files.test.ts",
+    "test:storage-orphans": "npx --yes vite-node scripts/storage-orphans.test.ts",
+    "storage:orphans": "npx --yes vite-node scripts/storage-orphans.ts",
     "test:save-errors": "npx --yes vite-node scripts/save-errors.test.ts",
     "test:cron-auth": "npx --yes vite-node scripts/cron-auth.test.ts",
     "test:native-app-tags": "npx --yes vite-node scripts/native-app-tags.test.ts"
