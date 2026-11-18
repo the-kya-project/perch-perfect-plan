@@ -223,7 +223,7 @@ check("before the Flock has an opening day", () => {
 check("founding free months, scheduled then active", () => {
   const f = ent({ status: "trialing", starts_at: "2027-01-05T00:00:00Z", ends_at: "2027-07-05T00:00:00Z" });
   assert.equal(accessCells(f, new Date("2026-12-01T00:00:00Z")).state, "Scheduled");
-  assert.deepEqual(accessCells(f, NOW), { starts: "Jan 5, 2027", ends: "Jul 5, 2027", state: "Active (free season)" });
+  assert.deepEqual(accessCells(f, NOW), { starts: "Jan 5, 2027", ends: "Jul 5, 2027", state: "Active (free months)" });
 });
 check("gift year: active, expired, refunded", () => {
   const g = ent({ starts_at: "2027-01-05T00:00:00Z", ends_at: "2028-01-05T00:00:00Z" });
@@ -267,7 +267,7 @@ check("member count line", () => {
 });
 check("membership: founding before and after opening", () => {
   const f = { plan: "founding", status: "trialing", source: "founding", starts_at: null, current_period_end: null, free_until: null };
-  assert.equal(membershipSummary([f], false).line, "Founding · $15/mo · free for everyone until Jul 6, 2027");
+  assert.equal(membershipSummary([f], false).line, "Founding · $15/mo · first 6 months free once the Flock opens");
   const open = { ...f, starts_at: "2027-01-05T06:00:00Z", free_until: "2027-07-05T06:00:00Z", current_period_end: "2027-07-05T06:00:00Z" };
   assert.equal(membershipSummary([open], false, new Date("2027-02-01T00:00:00Z")).line, "Founding · $15/mo · free until Jul 5, 2027");
 });
