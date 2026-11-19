@@ -2648,7 +2648,7 @@
   "founding.regionQ": "Which region are you in?",
   "founding.regionsError": "We couldn't load the regions. Refresh the page to try again.",
   "founding.regionsLoading": "Loading regions…",
-  "founding.regular": "Regular price $30 a month after July 6, 2027",
+  "founding.regular": "Regular price $30 a month or $300 a year after July 6, 2027",
   "founding.selectRegion": "Select your region",
   "founding.spotNumber": "#{{n}} of {{cap}}",
   "founding.title": "Be one of the Founding 50",
