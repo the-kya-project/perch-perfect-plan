@@ -81,7 +81,8 @@ All of these are decided (section h).
 | Flock, free season | doesn't exist | **free for everyone who joins in the first 6 months, until Tue, Jul 6, 2027** | new: `flock_settings.free_season_ends_at` and a free-season grant |
 | Flock, annual | not defined; the schema has plan `annual` | **monthly only at launch; $300 a year later, once retention is known** | `entitlements.plan` check |
 | Flock, one year (gift) | $300 one-off; the year starts at the later of redemption and opening day | **the year starts when the free season ends (Jul 6, 2027)** | Vercel `STRIPE_PRICE_FLOCK_YEAR_GIFT` comment; `place_grant` |
-| App premium | $9.99 a month, "Coming soon" | **not in this build** | `flock.journeys.premium.*` |
+| App premium | $9.99 a month, "Coming soon" | **$9.99 a month or $79 a year, on sale when billing starts after Jul 6, 2027** (changed Nov 19); a 14-day trial for new members | `flock.journeys.premium.*` |
+| Kya's Crew | not defined | **$45 a month or $450 a year, on sale when billing starts after Jul 6, 2027** (decided Nov 19); includes everything in a Flock membership; 25% to rescue and conservation partners; each Crew member sponsors six free months for a new rescue adopter; no trial | none yet (build item 6d) |
 | App premium, one year (gift) | $79 one-off | unchanged | Vercel `STRIPE_PRICE_APP_PREMIUM_YEAR_GIFT` comment |
 | Rescue adopters (website) | "six months of free membership for anyone who adopts a parrot and applies within 60 days" (thekyaproject.com/community) | **kept; after the free season, a 6-month comp granted by hand from approval** | Website only; nothing in the app grants it |
 | Chapter lead, comp | free, granted by admins | unchanged | plans `chapter_lead`, `comp` |
@@ -92,10 +93,12 @@ All of these are decided (section h).
 2. **Opening day:** Mon, Jan 4, 2027. The free season ends Tue, Jul 6, 2027.
 3. **Regular price:** $30 a month after the free season.
 4. **Annual plan:** monthly only at launch; $300 a year later, once retention is known. No annual founding option.
-5. **App premium:** not in this build. A Flock membership includes it.
+5. **App premium (changed Nov 19):** $9.99 a month or $79 a year, on sale when billing starts after Jul 6, 2027. A Flock membership includes it.
+5a. **Kya's Crew (decided Nov 19):** $45 a month or $450 a year, on sale when billing starts after Jul 6, 2027. It includes everything in a Flock membership. 25% of each Crew membership goes to rescue and conservation partners, and each Crew member sponsors six free months for a new rescue adopter.
+5b. **Free trial (decided Nov 19):** once billing starts after Jul 6, 2027, new Flock and Premium members get 14 days free. Founders, rescue adopters and Kya's Crew get no trial.
 6. **Apple prices:** $14.99 / $29.99 if App Store Connect doesn't offer exactly $15.00 / $30.00. The web stays $15 / $30.
 7. **What "cancelled" means:** the membership actually ends. Turning off auto-renew doesn't count, and neither does a failed payment that recovers within the grace period.
-8. **Giving on subscriptions:** 20% after fees, like gifts, designed before the first charges on Jul 6.
+8. **Giving:** 20% of every membership and gift, 25% for Kya's Crew, and 40% of gifts on double-giving days; designed before the first charges on Jul 6.
 9. **Currency:** USD only. Founders anywhere can pay by card on the web; Apple converts in-app prices itself.
 10. **Android:** web-only payment for now, with a check of Google Play's rules before anything paid appears in the Android app (h14).
 11. **One end date:** yes, Tue, Jul 6, 2027 for everyone.
@@ -212,7 +215,7 @@ Either reuse `plan = 'comp'` with a new `source = 'free_season'`, or add a plan 
 
 - **Don't sell founding in the app.**
 - **Show no in-app paywall during the free season** (the app says "Free until July 6").
-- From the June card emails, the paywall offers only the regular plan, with **no free trial**. Someone who buys in June is charged in June, so the paywall should say "You're free until July 6; subscribing now starts billing today. Or add a card on the web at no charge until July 6."
+- From the June card emails, the paywall offers the regular plans. Free-season members who add a plan before Jul 6 get no trial (they're already free until Jul 6); **from Jul 7, new Flock and Premium members get a 14-day free trial** (an Apple introductory offer), and founders, rescue adopters and Kya's Crew get none. Someone who buys in June is charged in June, so the paywall should say "You're free until July 6; subscribing now starts billing today. Or add a card on the web at no charge until July 6."
   - The web half of that sentence is allowed only in the US storefront, if the court order still stands. Otherwise drop it and start the iOS paywall **on** the season's end.
 - When the account has a claim, it says "Founding members: check your email".
 
@@ -279,7 +282,7 @@ The opening PR (C) is the one that deliberately makes the Flock visible to membe
   - `flock_join()`, which grants the free-season row (needs the entitlements check value, section c), and pins in `flock_entitlement_grants_checks.sql`.
   - *Free users: none until C (only callable by signed-in users, and nothing calls it yet).*
 - **C. Opening the Flock to members (the launch PR).**
-  - A "Join the Flock" screen: region, profile basics, and the community guidelines to accept.
+  - A "Join the Flock" screen: region, profile basics, the community guidelines to accept, and **a required "I'm 18 or older" confirmation** (legal draft D8; the Flock is 18+, the app 13+). Without it, the join step can't finish; the answer and its time are stored on the member's Flock profile. Pinned in the join checks.
   - `can_use_flock` counts free-season members.
   - `flock_enabled()` becomes true for members, and for everyone wherever you approve the entry point.
   - Merge dark behind the existing settings, and switch it on with the SQL setting on opening day, not with a deploy.
@@ -287,6 +290,7 @@ The opening PR (C) is the one that deliberately makes the Flock visible to membe
 - **D. Member blocking (Apple 1.2).** `flock_blocks`, a "Block" action on profiles, posts and comments, and blocked members' posts, comments, reactions and notifications filtered out by the existing visibility functions. Plus a contact line in the Flock. *Free users: none.*
 - **E. Stickiness events** (section "What we're learning in the free season"). Fired only from Flock code (lazy-loaded), never from the care app. *Free users: none.*
 - **F. Gift years start at the free season's end** (decided, h5). Changes `place_grant` for gifts, plus the gift and redeem copy. Gifts are already for sale, so do it before opening.
+- **H. Founding members page** (decided Nov 19). A `show_on_founders_page` choice (default off) on the founding claim, set by one **unchecked** checkbox ("Show me on the founding members page") on `/founding`'s region step and changeable later on the founder's Flock profile; a `/flock/founders` page that lists only founders who opted in, through a SECURITY DEFINER function returning display name, photo, region and the founder badge (nothing else). Additive only. Ready by Dec 11 so the perk is real on Jan 4. *Free users: none (`/founding` is public; the page is inside the Flock).*
 - **G. Legal pages.** `/terms` gains community sections (your posts and photos, the licence to show them to members, conduct, moderation and removal, age, memberships and billing to come); `/privacy` gains what Flock members see (matching `flock.you.privacy.tsx`), chapters, photos and payment processors. Your text, wired in. *Free users: shared pages; the wording changes, the layout doesn't.*
 
 ### After opening, web payments (Feb – May; live by about June 1)
@@ -301,6 +305,14 @@ The opening PR (C) is the one that deliberately makes the Flock visible to membe
 6b. **Deleting a post keeps it hidden for 180 days** (legal draft D10). Today `flock_post_delete` and `flock_comment_delete` delete at once, along with the comments on a post. Change them to set a `deleted_at` that hides the post (or comment) and its comments from everyone at once, including the author, and add a daily SQL job (pg_cron, like `flock-event-reminders-hourly`, no HTTP) that permanently deletes rows and their photos 180 days later. **Deleting a whole account stays immediate**, with no hold. Pin in `flock_posts_checks.sql`. **The new privacy policy's post-deletion wording can't go live until this ships.** *Free users: none.*
 6c. **Removed content and reports are deleted after 180 days** (legal draft D9). The same daily job deletes reviewer-removed content (`flock_moderation` status removed) and closed reports 180 days after they were resolved. Today they're kept with no end date. Pin in `flock_moderation_checks.sql`. *Free users: none.*
 
+**Ready when billing starts (after Jul 6, 2027; built Feb–May with the items above):**
+
+6d. **Kya's Crew** (decided Nov 19). Plans and prices: $45 a month and $450 a year, new Stripe prices on "The Flock" product (or its own product), stored as `plan` `crew_monthly` / `crew_annual` (an `entitlements` check change, which needs Brittany's approval in that PR). It **includes everything in a Flock membership**: `is_flock_member()` and `has_app_premium()` count it. **Giving:** the subscription giving ledger records 25% for Crew rows (20% for everything else). **Rescue-adopter sponsorship:** each active Crew member sponsors six free months for a new rescue adopter: a `crew_sponsorships` count, and when Brittany approves an adopter (who applied through a partner rescue within 60 days of adopting), the six-month comp is drawn from that count; the admin view shows sponsored and used. **No trial.** Purchase paths: **web** through Stripe Checkout; **iPhone** as two App Store products in "The Flock" group ($44.99 / $449.99 if exact prices aren't offered) through RevenueCat; **Android** web-only until the Google Play check (h14). *Free users: none.*
+6e. **Premium** (changed Nov 19). Plans and prices: $9.99 a month and $79 a year (`plan` `app_premium`), Stripe prices and two App Store products in a "Kya & Co. Premium" group through RevenueCat; Android web-only until the Google Play check. A 14-day trial for new members (6f). Shown only where premium features are offered; nothing changes for free users before Jul 6. *Free users: the premium offer appears from Jul 7, after Brittany approves its placement.*
+6f. **14-day free trial** (decided Nov 19). From Jul 7, 2027, a new Flock (monthly or yearly) or Premium subscriber gets 14 days free: Stripe `trial_period_days: 14`, and an Apple introductory offer of two weeks free. **No trial** for founders, rescue adopters (comps), Kya's Crew, or anyone who already had a paid plan or a trial. The card step during the free season keeps `trial_end = free_season_ends_at`, not 14 days. Pinned in `npm run test:billing`.
+6g. **Cancel online in Membership and billing** (decided Nov 19). A "Cancel membership" option under You → Membership and billing, ready when billing starts, so a member can cancel in a few taps: web subscriptions cancel through Stripe (at period end, with the date shown); App Store and Google Play subscriptions show the store's steps and a button to the store's subscription page. Also lists the plan, the next charge date and the refund rule. The terms point here.
+6h. **Yearly renewal reminder** (decided Nov 19). An email 30 days before each yearly renewal (web and app-store subscribers): the plan, the price, the renewal date and how to cancel. A daily cron hook through `call_cron_hook`, idempotent per subscription and renewal date. **The lawyer confirms it meets California's automatic renewal law** (legal draft note).
+
 ### After opening, iOS (spring; in-app purchase live by June 1)
 
 7. **Native plugin build (1.3):** `@revenuecat/purchases-capacitor`, guarded by `nativePluginAvailable("Purchases")`, and configured only after `flock_enabled()`. Check its JavaScript against the installed builds. **Ship by about March 15**, so most people have it by June.
@@ -313,7 +325,7 @@ The opening PR (C) is the one that deliberately makes the Flock visible to membe
 - the 14-day card window, `card_due_at`, the day-7 and day-12 reminders, and the waitlist invitation for released spots;
 - the review allowlist (old PR 11).
 
-**Later:** the annual plan ($300 a year, once retention is known), app premium subscriptions, Android Play billing (only after the Google Play check, h14), and the giving ledger for subscriptions (before Jul 6).
+**Later:** the annual plan ($300 a year, once retention is known), Android Play billing (only after the Google Play check, h14), and the giving ledger for subscriptions (before Jul 6).
 
 ---
 
@@ -368,10 +380,10 @@ Numbers 1–16 match the list in the Nov 18 review; 17–21 are the earlier deci
 | 9 | iOS in-app purchase timing | **Live by Tue, Jun 1:** plugin build by Mon, Mar 15; submit by Mon, May 10. |
 | 10 | Paywall during the free season | **None.** The iOS paywall appears with the Jun 7 emails, and in-app purchases bill from the purchase day. |
 | 11 | Sales tax on web | **Stripe Tax on** (about 0.5%). **Task:** confirm state sales-tax treatment of a digital membership with your accountant **by Sat, May 1, 2027** (before Jun 1), before registering and going live. |
-| 12 | Refunds | **A full refund ends access; a partial one keeps it;** no refunds for unused time. |
-| 13 | Giving share on subscriptions | **20% after fees, like gifts,** designed before the first charges on Jul 6. |
+| 12 | Refunds | **Changed Nov 19 (legal draft D1, D14):** cancel any time; a full refund on request within 14 days of a first payment on a plan or of a yearly renewal, otherwise none; a member removed for breaking the rules gets the unused time refunded. A full refund ends access. Apple and Google purchases follow the store's process. |
+| 13 | Giving share | **20% of every membership and gift, 25% for Kya's Crew, 40% of gifts on double-giving days,** designed before the first charges on Jul 6. |
 | 14 | Android | **Web-only payment for now.** **Task:** before anything paid appears in the Android app, confirm Google Play's current billing rules for digital subscriptions in the US, including the exceptions after *Epic v. Google*, **by Sat, May 1, 2027** (before Jun 1). Until then the Android app shows no price, paywall or subscribe link. |
-| 15 | App premium | **Not in this build.** |
+| 15 | App premium | **Changed Nov 19: $9.99 a month or $79 a year, on sale when billing starts after Jul 6, 2027,** with a 14-day trial for new members. Kya's Crew ($45 / $450) goes on sale at the same time. |
 | 16 | Missed card deadline (founders) | **No automatic grace;** you can restore a released founder by hand within 14 days of Jul 6 (a support action). |
 | 17 | Opening day | **Mon, Jan 4, 2027,** 00:00 Eastern. |
 | 18 | Founders' card flow | **No card before or at opening;** add a card from Jun 7, by Jul 6, or the spot is released. Claims close Jan 31, 2027. |

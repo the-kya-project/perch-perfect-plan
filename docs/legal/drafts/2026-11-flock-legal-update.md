@@ -4,7 +4,7 @@
 
 **Updated Nov 19, 2026** with Brittany's decisions on every open item (section 5) and the pricing and plan changes made since the first draft: the Flock opens Mon, Jan 4, 2027 and is free for everyone until Tue, Jul 6, 2027; $30 a month or $300 a year; Kya's Crew; Premium $9.99 a month or $79 a year; founding with no closing date; giving of 20% of every membership (25% for Kya's Crew).
 
-What's still open is marked `[DECISION NEEDED LATER: …]`, `[CONFIRM: …]`, `[NOTE FOR BRITTANY: …]` or `[ADD WHEN …]`. Have a lawyer review both pages before they go live, especially the paid-plan, refund, age and governing-law sections.
+What's still open is marked `[DECISION NEEDED LATER: …]`, `[NOTE FOR BRITTANY: …]`, `[NOTE FOR THE LAWYER: …]` or `[ADD WHEN …]`. Have a lawyer review both pages before they go live, especially the paid-plan, refund, age and governing-law sections.
 
 Contents:
 
@@ -49,7 +49,7 @@ Read from the code on `main` as of #475. Everything below is stored in Supabase 
 | **Comments and replies** (`flock_comments`) | Text, optional photo, who you replied to | Anyone who can see what was commented on. A comment on a "Just me" journey stays inside the household. |
 | **Reactions** (`flock_reactions`) | Which of four reactions, on what | Members who can see the thing. The "who reacted" list shows each person's name and region. |
 | **Reports** (`flock_reports`) | Reporter, reason, optional note | Reviewers see the reason and note, not who reported. The reported member isn't told who reported them. |
-| **Review queue and moderation** (`flock_moderation`, review notes) | Hidden or removed status, reviewer, review notes, notices sent to authors | Reviewers (admins today; chapter leads for their own chapter's events). Content stays up until 3 open reports, then it's hidden until reviewed. Removed content is hidden from everyone but its author. Today it stays in the database with no end date; decision 9 sets 180 days (a build item). |
+| **Review queue and moderation** (`flock_moderation`, review notes) | Hidden or removed status, reviewer, review notes, notices sent to authors | Reviewers (the Kya team). Content stays up until 3 open reports, then it's hidden until reviewed. Removed content is hidden from everyone but its author. Today it stays in the database with no end date; decision 9 sets 180 days (a build item). |
 | **Chapters** | Your chapter is your region | Chapter members see each other in the Members tab: name, photo, badges, shown birds' names and species. |
 | **Events and RSVPs** (`flock_events`, `flock_event_rsvps`) | Suggested events (title, time, place or online link), going or maybe, day-before reminders | The chapter's members, once approved. The online link goes only to people going, the host and managers. "Who's going" names are shown to the chapter. If a host deletes their account, the event stays without a host. |
 | **Journeys** (`journeys`, `journey_updates`, milestones, follows, finisher tips) | Journey, milestones, captions, video clips (Cloudflare Stream), engagement, weigh-ins used by Diet conversion | "Just me": the bird's household only. "Community": Flock members, and Premium members read-only. Clips play through one-hour signed links. Finisher tips show with no names, and never to the person who wrote them. |
@@ -123,20 +123,23 @@ Read from the code on `main` as of #475. Everything below is stored in Supabase 
 | D9 | **Removed content and reports** | Content removed by reviewers, and reports, are kept for 180 days, then deleted. |
 | D10 | **Deleting a post** | The post and the comments on it are hidden right away and kept for 180 days, then permanently deleted. Deleting a whole account still removes your content right away, without the 180-day hold. **The app deletes posts immediately today, so this part of the policy can't go live until the code matches** (a build item). |
 | D11 | **Featuring member content** | Never outside the Flock (newsletter, social media or anywhere else) without asking that member first. |
-| D12 | **Giving** | "20% of every membership" (25% for Kya's Crew). |
+| D12 | **Giving** | 20% of every membership and gift, 25% for Kya's Crew, and 40% of gifts on double-giving days. |
 | D13 | **Governing law** | Indiana law, courts in Allen County, Indiana. No arbitration clause. |
 | D14 | **Removing a paying member** | If we remove a paying member for breaking the community rules, we refund the unused time. |
 | D15 | **Free trials** | Once billing starts after Jul 6, 2027, new Flock and Premium members get a 14-day free trial. Founding members, rescue adopters and Kya's Crew don't. |
-| D16 | **Who reviews content** | "The Kya team." |
+| D16 | **Who reviews content** | "The Kya team" is the only wording for who reviews content and approves event suggestions, defined once in each page as The Kya Project's staff and the people who help run the Flock on our behalf. |
 
 **Pricing and plans (as of Nov 19, 2026):**
 
 - The Flock opens Mon, Jan 4, 2027. It's free for everyone until Tue, Jul 6, 2027; billing starts after that.
 - The Flock: $30 a month or $300 a year.
-- Kya's Crew: $45 a month or $450 a year. 25% of each Crew membership goes to rescue and conservation partners, and each Crew member sponsors six free months for a new rescue adopter.
+- Kya's Crew: $45 a month or $450 a year, and it includes everything in a Flock membership. 25% of each Crew membership goes to rescue and conservation partners, and each Crew member sponsors six free months for a new rescue adopter.
 - Premium (app only): $9.99 a month or $79 a year.
 - Founding: $15 a month for life, the first 50 people, no closing date. Founders add a card by Jul 6, 2027 to keep the spot and price. If a founding membership ends, the founding price ends with it.
-- Rescue adopters through partner rescues: six free months, starting after Jul 6, 2027.
+- Rescue adopters: six free months for people who apply through a partner rescue within 60 days of adopting, starting after Jul 6, 2027.
+- Kya's Crew and Premium go on sale when billing starts after Jul 6, 2027.
+- Yearly renewal reminders go out 30 days before a yearly plan renews.
+- Payment records are kept for 7 years.
 
 ---
 
@@ -182,7 +185,7 @@ We do not sell your personal data.
 **Other members can see:**
 
 - your display name, region (your chapter), bio and profile photo
-- your founder or chapter-lead badge, if you have one
+- any Flock badge you have, such as the founder badge
 - the birds you choose to show: their name, species and photo
 
 **Members never see** your email, your address, your birds' care records or care plans, your sits and sitters, or your health checks and health notes.
@@ -207,7 +210,7 @@ We do not sell your personal data.
 
 **Reports:** when you report something, the person you reported isn't told who you are, and reviewers see your reason and note, not your name.
 
-**Reviewers.** Reported content, Do good posts and event suggestions are reviewed by the Kya team.
+**Reviewers.** Reported content, Do good posts and event suggestions are reviewed by the Kya team (The Kya Project's staff and the people who help run the Flock on our behalf).
 
 **Your household.** People you've added to a bird's household can see that bird's journeys, as they can see its care.
 
@@ -292,7 +295,7 @@ Your contact record with our email provider is managed separately and isn't remo
 
 ### How long we keep your data
 
-We keep your data while you have an account. When you delete it, we remove it as described above. Our database provider keeps daily backups for 7 days, so deleted data is gone from backups within a week. Error reports are kept for up to a year, or until you delete your account. We keep payment records as long as tax law requires [DECISION NEEDED LATER: how long payment records are kept; usually 7 years in the US, confirm with your accountant]. Posts you delete, content removed by a reviewer, and reports are kept for 180 days, then deleted.
+We keep your data while you have an account. When you delete it, we remove it as described above. Our database provider keeps daily backups for 7 days, so deleted data is gone from backups within a week. Error reports are kept for up to a year, or until you delete your account. We keep payment records for 7 years, as tax law requires. [NOTE FOR BRITTANY: confirm the 7 years with your accountant.] Posts you delete, content removed by a reviewer, and reports are kept for 180 days, then deleted.
 
 ### Children
 
@@ -344,7 +347,7 @@ We never feature your Flock posts, photos or journeys outside the Flock, in our 
 
 **Membership.** The Flock opens on Monday, January 4, 2027. Everyone who joins is free until Tuesday, July 6, 2027, and billing starts after that. A Flock membership includes everything in Kya & Co. Premium.
 
-**Rescue adopters.** If you adopt a parrot through one of our partner rescues, you can get six months of Flock membership free. Those six months start after July 6, 2027.
+**Rescue adopters.** If you adopt a parrot from one of our partner rescues and apply through that rescue within 60 days of adopting, you can get six months of Flock membership free. Those six months start after July 6, 2027.
 
 **What we offer.**
 
@@ -355,7 +358,7 @@ We never feature your Flock posts, photos or journeys outside the Flock, in our 
 **Chapters and events.**
 
 - Your chapter comes from the region on your profile.
-- Chapter events are organized by members and chapter leads, not by The Kya Project, unless we say otherwise. Go at your own judgment.
+- Chapter events are organized by members, not by The Kya Project, unless we say otherwise. Event suggestions are approved by the Kya team (The Kya Project's staff and the people who help run the Flock on our behalf) before they appear. Go at your own judgment.
 - Please meet in public places, and leave birds at home unless the host says they're welcome.
 - The Kya Project isn't responsible for what happens at or travelling to an event.
 
@@ -386,10 +389,10 @@ We never feature your Flock posts, photos or journeys outside the Flock, in our 
 | Plan | Price |
 |---|---|
 | Flock membership | $30 a month, or $300 a year |
-| Kya's Crew | $45 a month, or $450 a year. 25% of each Crew membership goes to rescue and conservation partners, and each Crew member sponsors six free months for a new rescue adopter. [CONFIRM: Kya's Crew includes everything in a Flock membership.] |
+| Kya's Crew | $45 a month, or $450 a year. 25% of each Crew membership goes to rescue and conservation partners, and each Crew member sponsors six free months for a new rescue adopter. It includes everything in a Flock membership. |
 | Kya & Co. Premium (app only) | $9.99 a month, or $79 a year |
 
-Nobody is charged for a Flock or Kya's Crew membership before July 6, 2027.
+Nobody is charged before July 6, 2027. Kya's Crew and Premium go on sale when billing starts after that date.
 
 Prices are in US dollars and don't include taxes. Where taxes apply, they're added at checkout. [NOTE FOR BRITTANY: confirm with your accountant which states require sales tax on memberships before this goes live.]
 
@@ -407,12 +410,12 @@ Prices are in US dollars and don't include taxes. Where taxes apply, they're add
 **Auto-renewal.**
 
 - Monthly and yearly plans renew automatically at the end of each period, at the then-current price, until you cancel.
-- We'll remind you by email before a yearly plan renews. [DECISION NEEDED LATER: how many days before; 7 is common.]
+- We'll email you 30 days before a yearly plan renews. [NOTE FOR THE LAWYER: confirm this reminder, and the cancel and trial wording, meet California's automatic renewal law.]
 - If a price changes, we'll tell you at least [DECISION NEEDED LATER: notice period for price changes] before it applies to your next renewal. The founding price never changes.
 
 **How to cancel.**
 
-- **Bought on the website:** cancel any time in the app under You, then Membership and billing. [DECISION NEEDED LATER: this screen doesn't exist yet. Either build it with the payments step, or point to emailing us until then.]
+- **Bought on the website:** cancel online in a few taps, any time, in the app under You, then Membership and billing.
 - **Bought in the iPhone app:** cancel in your iPhone's Settings, under your name, then Subscriptions.
 - **Bought in the Android app:** cancel in Google Play, under Payments and subscriptions.
 
@@ -431,7 +434,7 @@ When you cancel, you keep access until the end of the period you've paid for, an
 - The buyer can get a full refund within 30 days of purchase if the gift hasn't been redeemed. After that, gifts aren't refunded. A refunded gift's code stops working.
 - If the recipient already has a membership, the gift's time is added after it, so no time is lost.
 
-**Giving back.** 20% of every membership and gift goes to rescue and conservation partners. For Kya's Crew, it's 25% of each membership.
+**Giving back.** 20% of every membership and gift goes to rescue and conservation partners. For Kya's Crew, it's 25% of each membership. On double-giving days, it's 40% of every gift.
 
 ### Acceptable use
 
@@ -485,5 +488,7 @@ These steps are for later. This PR changes none of them.
    - **Free trials (D15):** a 14-day trial for new Flock and Premium members once billing starts; none for founders, rescue adopters or Kya's Crew.
    - **Refunds (D1, D2):** the 14-day refund window for first payments and yearly renewals, and the 30-day window for unredeemed gifts, in the admin tools and support steps.
    - **Ages (D8):** the Flock's join step asks people to confirm they're 18 or older.
-   - **Kya's Crew:** the plan, its 25% giving share and its sponsored rescue-adopter months exist nowhere in the code or the payments plan yet.
+   - **Kya's Crew and Premium:** on sale when billing starts, with the Crew's 25% giving share and sponsored rescue-adopter months.
+   - **Cancel online:** a cancel option in Membership and billing, ready when billing starts.
+   - **Yearly renewal reminder:** an email 30 days before each yearly renewal.
    - **Founding members page:** opt-in, one unchecked checkbox in the claim flow (the plan's PR H).
