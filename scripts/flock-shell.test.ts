@@ -29,6 +29,7 @@ import { dateBlock, eventIcs, goersLine, longWhen, shortWhen } from "@/lib/flock
 import { AAV_FIND_A_VET_URL, POST_SPACES, findVetSigns, mergeFeed, vetNudgeTier, rateLimitKind, replyPrefix, threadComments } from "@/lib/flockPosts";
 import { defaultDisplayName, greetingName, isAutomaticDisplayName, memberCountLine, membershipSummary } from "@/lib/flockProfile";
 import { accessCells, accessDay } from "@/lib/flockAccess";
+import { foundingClosedCase } from "@/lib/foundingClosed";
 import {
   birdPronoun, canStartCustom, customProblem, daysSince, clipPhase, isNectarEater, rollingAverage, showVetReminder, youngOrUnknownAge, defaultVisibility, groupTemplates, isLocked, journeyDay, journeyDays,
   nextMilestone, possessive, progressOf, skillInSentence, startHere, trimTrailingBlanks, vetCheckLine, visibilityChoices, wantsTip,
@@ -220,10 +221,10 @@ check("no entitlement", () => {
 check("before the Flock has an opening day", () => {
   assert.deepEqual(accessCells(ent({ status: "trialing" }), NOW), { starts: "When the Flock opens", ends: "—", state: "Waiting for opening day" });
 });
-check("founding free months, scheduled then active", () => {
-  const f = ent({ status: "trialing", starts_at: "2027-01-05T00:00:00Z", ends_at: "2027-07-05T00:00:00Z" });
+check("founding free season, scheduled then active", () => {
+  const f = ent({ status: "trialing", starts_at: "2027-01-04T05:00:00Z", ends_at: "2027-07-06T04:00:00Z" });
   assert.equal(accessCells(f, new Date("2026-12-01T00:00:00Z")).state, "Scheduled");
-  assert.deepEqual(accessCells(f, NOW), { starts: "Jan 5, 2027", ends: "Jul 5, 2027", state: "Active (free months)" });
+  assert.deepEqual(accessCells(f, NOW), { starts: "Jan 4, 2027", ends: "Jul 6, 2027", state: "Active (free season)" });
 });
 check("gift year: active, expired, refunded", () => {
   const g = ent({ starts_at: "2027-01-05T00:00:00Z", ends_at: "2028-01-05T00:00:00Z" });
@@ -267,9 +268,15 @@ check("member count line", () => {
 });
 check("membership: founding before and after opening", () => {
   const f = { plan: "founding", status: "trialing", source: "founding", starts_at: null, current_period_end: null, free_until: null };
-  assert.equal(membershipSummary([f], false).line, "Founding · $15/mo · first 6 months free once the Flock opens");
-  const open = { ...f, starts_at: "2027-01-05T06:00:00Z", free_until: "2027-07-05T06:00:00Z", current_period_end: "2027-07-05T06:00:00Z" };
-  assert.equal(membershipSummary([open], false, new Date("2027-02-01T00:00:00Z")).line, "Founding · $15/mo · free until Jul 5, 2027");
+  assert.equal(membershipSummary([f], false).line, "Founding · free until Jul 6, 2027, then $15/mo for life");
+  const open = { ...f, starts_at: "2027-01-04T05:00:00Z", free_until: "2027-07-06T04:00:00Z", current_period_end: "2027-07-06T04:00:00Z" };
+  assert.equal(membershipSummary([open], false, new Date("2027-02-01T00:00:00Z")).line, "Founding · free until Jul 6, 2027, then $15/mo for life");
+});
+check("founding: which full box shows (before and after opening day)", () => {
+  assert.equal(foundingClosedCase(new Date("2026-12-10T12:00:00Z")), "full");
+  assert.equal(foundingClosedCase(new Date("2027-01-04T04:59:59Z")), "full");
+  assert.equal(foundingClosedCase(new Date("2027-01-04T05:00:00Z")), "fullOpen");
+  assert.equal(foundingClosedCase(new Date("2027-03-02T12:00:00Z")), "fullOpen");
 });
 check("membership: gifts, comp, admin, none", () => {
   const g = { plan: "annual", status: "active", source: "gift", starts_at: "2027-01-05T06:00:00Z", current_period_end: "2028-01-05T06:00:00Z", free_until: null };

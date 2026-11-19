@@ -1,16 +1,18 @@
 // The Founding 50 (/founding): the public counter and the claim.
 //
 // The rules live in the database (supabase/migrations/*_founding_claims.sql):
-// claim_founding_spot() takes the lock, checks the deadline against the
-// database clock, refuses a second claim and anything past 50, and saves the
+// claim_founding_spot() takes the lock, refuses a second claim and anything
+// past 50 (there's no closing date: founding_deadline() is infinity), and saves the
 // region to flock_profiles. This file only carries the calls and adds the
 // claimant to the Brevo "Founding 50" list afterwards (BREVO_FOUNDING_LIST_ID;
 // a missing id or Brevo error raises a save-error alert).
 //
 // A claim also grants a founding entitlement (database trigger, migration
-// 20261107120000_flock_entitlement_grants): six free months from the day the
-// Flock opens (flock_settings.flock_opens_at), stored as free_until; billing
-// at the locked $15 starts from free_until in the payments step.
+// 20261107120000_flock_entitlement_grants): free from opening day
+// (flock_settings.flock_opens_at) until the free season ends
+// (flock_settings.free_season_ends_at, Jul 6, 2027; migration
+// 20261119150000_founding_free_season_end), stored as free_until; billing at
+// the locked $15 starts from free_until in the payments step.
 // FOUNDING PRICE IS ONE-WAY: if a founding membership is cancelled, the
 // founding price does not come back. A returning member pays the regular
 // price; payments code must never re-apply locked_price_cents after a cancel.

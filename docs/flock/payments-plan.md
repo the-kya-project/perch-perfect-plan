@@ -5,6 +5,8 @@ Status: **plan only, for Brittany's review.** Nothing in code, settings, App Sto
 - **Nov 17, 2026:** first written.
 - **Nov 18, 2026:** rewritten for the **free-season decisions** below. They replace the earlier "Decision 1" (founders add a card within 14 days of opening day), which is withdrawn.
 - **Nov 18, 2026 (later):** opening day set to **Mon, Jan 4, 2027** and the free season's end to **Tue, Jul 6, 2027**; every remaining decision and pricing question decided (section h). Merged as the plan of record.
+- **Nov 19, 2026:** **no founding deadline.** Claims stay open until all 50 spots are claimed; the Jan 31, 2027 close is dropped (`20261119160000_founding_no_deadline.sql`). The site and app don't mention a closing date. **Giving is "20% of every membership"** everywhere (built into costs).
+- **Nov 19, 2026:** **yearly plan from opening day.** The Flock is $30 a month or $300 a year (about $25 a month), both offered from Jan 4 and both billed from the free season's end, Jul 6, 2027. This replaces "monthly only at launch; $300 a year later". Founding stays $15 a month for life (no yearly founding option).
 
 What was read:
 
@@ -34,8 +36,8 @@ What was read:
 
 1. **Opening day is Monday, January 4, 2027** (00:00 Eastern). An earlier draft said Friday, Jan 1; "What depends on the date" below shows what that choice moves.
 2. **Free season.** Everyone who joins the Flock during the first 6 months after opening day is free. **The free season ends Tuesday, July 6, 2027**, one stored date for everyone (`flock_settings.free_season_ends_at`). Nobody is charged before then.
-3. **Prices.** The founding members (the first 50) keep **$15 a month, locked for life once billing starts**, and lose it if they cancel. The **regular price after the free season is $30 a month.**
-4. **Founding claims close Jan 31, 2027, not Dec 31, 2026,** so people can try the Flock before claiming. The cap stays at 50.
+3. **Prices.** The founding members (the first 50) keep **$15 a month, locked for life once billing starts**, and lose it if they cancel. The **regular price after the free season is $30 a month or $300 a year** (about $25 a month); both are offered from opening day, and nobody is charged before Jul 6, 2027.
+4. **Founding claims have no closing date (changed Nov 19).** They stay open until all 50 spots are claimed. (Nov 18 had moved the close to Jan 31, 2027; that's withdrawn.) The pages don't mention a date or say "until all 50 are claimed".
 5. **No card before or at opening.**
    - **About 30 days before the free season ends,** everyone gets an email asking them to add a card on the web ($0 due, first charge when the free season ends).
    - **Founders who haven't added a card by the end of the free season lose their founding spot.**
@@ -47,8 +49,8 @@ All of these are decided (section h).
 - **The free season ends on one date for everyone: Tue, Jul 6, 2027.** It's stored as its own setting, `flock_settings.free_season_ends_at`, set together with opening day rather than worked out from it. Someone who joins in May is free until July 6, not for 6 months from joining.
 - **Founders get the same free season.** Their `free_until` is the free season's end. Today it's `flock_opens_at + 6 months` (`place_grant`), which with a Jan 4 opening would be Sun, Jul 4; PR B makes it Jul 6.
 - **Who can join:** anyone with a Kya & Co. account, on the web, iPhone or Android, by a "Join the Flock" step. That step grants a free-season membership until `free_season_ends_at`. This is new. Today only founders, gift recipients, comps and admins can use the Flock (`private.can_use_flock`).
-- **At the end of the free season, a member with no card on file** loses Flock access. Their posts, journeys and profile are kept, and they can rejoin at $30 by adding a card. A founder with no card on file also loses the founding spot and the $15 price, for good.
-- **Released founding spots aren't refilled.** Claims are closed by July, and refilling would need an invitation flow nobody else uses.
+- **At the end of the free season, a member with no card on file** loses Flock access. Their posts, journeys and profile are kept, and they can rejoin at $30 a month or $300 a year by adding a card. A founder with no card on file also loses the founding spot and the $15 price, for good.
+- **Released founding spots aren't refilled.** A released claim still counts toward the 50, and refilling would need an invitation flow nobody else uses.
 - **Billing is simple:** every subscription starts with `trial_end` = `free_season_ends_at`, known from opening day. There's no per-person trial length and no resync.
 - **The earlier 14-day card window is gone.** So are `card_due_at`, the day-7 and day-12 reminders, the waitlist invitation for released spots, and the 14-day release job.
 
@@ -61,7 +63,7 @@ All of these are decided (section h).
 | Free season ends | Thu, Jul 1, 2027 | **Tue, Jul 6, 2027** | Six months from Jan 4 would be Sun, Jul 4, a holiday, so the stored date is Jul 6: first charges and "your free season ends today" emails don't land on the Fourth. |
 | "Add your card" email (about 30 days before) | about Tue, Jun 1 | **Mon, Jun 7** | Reminders on **Tue, Jun 29** and **Mon, Jul 5**. |
 | Founders' `free_until` | Jul 1 | **Jul 6** | Comes from `free_season_ends_at` once PR B lands. |
-| Founding claims close | Jan 31 (30 days after opening) | Jan 31 (27 days after opening) | The same either way. |
+| Founding claims close | no date (decided Nov 19) | no date (decided Nov 19) | Open until all 50 are claimed. |
 | Gift years (start at the free season's end, h5) | start Jul 1 | **start Jul 6** | |
 | Pre-opening work (section e) | due Dec 31 | **due Sun, Jan 3**: one extra weekend, no extra working days | Jan 4 mainly buys a calmer opening day, not build time. |
 | Opening-day emails | go out on New Year's Day | go out on a Monday | Monday email usually does better. |
@@ -75,11 +77,11 @@ All of these are decided (section h).
 | **Founding** (Flock) | $15 a month | **$15 a month, locked for life once billing starts; lost on cancel** | `founding.price`; `founding_claims.locked_price_cents default 1500` (`20261022172114_founding_claims.sql`) |
 | Founding: free months | first 6 months free, from opening day | **the free season, ending Tue, Jul 6, 2027** | `founding.locked`, `founding.next`; `place_grant` (`free_until = flock_opens_at + 6 months`, `20261107120000_flock_entitlement_grants.sql`) |
 | Founding: cap | 50 | 50 | `private.founding_cap()`; `spot_number between 1 and 50` |
-| Founding: close | end of **Dec 31, 2026**, Indianapolis | end of **Jan 31, 2027**, Indianapolis (`2027-02-01 00:00 America/Indiana/Indianapolis`) | `private.founding_deadline()`; copy `founding.deadline` |
+| Founding: close | end of **Dec 31, 2026**, Indianapolis | **no date: open until all 50 are claimed** (changed Nov 19; `founding_deadline()` returns infinity) | `private.founding_deadline()`; `founding.deadline` copy removed |
 | Founding: card | none at claim | **none at claim or opening; add one (from about 30 days before the end) by the end of the free season, or lose the spot** | `founding.noPayment`, `founding.noCard` |
-| Flock, regular | "$30", period not stated | **$30 a month after the free season** | `founding.regular` "Regular price $30"; the website already says "Monthly $30 per month" |
+| Flock, regular | "$30", period not stated | **$30 a month after the free season** | `founding.regular` "Regular price $30 a month or $300 a year after July 6, 2027"; the website's monthly plan |
 | Flock, free season | doesn't exist | **free for everyone who joins in the first 6 months, until Tue, Jul 6, 2027** | new: `flock_settings.free_season_ends_at` and a free-season grant |
-| Flock, annual | not defined; the schema has plan `annual` | **monthly only at launch; $300 a year later, once retention is known** | `entitlements.plan` check |
+| Flock, yearly | not defined; the schema has plan `annual`; the website said "$20 per month, billed annually" ($240) | **$300 a year (about $25 a month), offered from opening day, first charge Jul 6, 2027** | `entitlements.plan` check; the website's yearly plan |
 | Flock, one year (gift) | $300 one-off; the year starts at the later of redemption and opening day | **the year starts when the free season ends (Jul 6, 2027)** | Vercel `STRIPE_PRICE_FLOCK_YEAR_GIFT` comment; `place_grant` |
 | App premium | $9.99 a month, "Coming soon" | **$9.99 a month or $79 a year, on sale when billing starts after Jul 6, 2027** (changed Nov 19); a 14-day trial for new members | `flock.journeys.premium.*` |
 | Kya's Crew | not defined | **$45 a month or $450 a year, on sale when billing starts after Jul 6, 2027** (decided Nov 19); includes everything in a Flock membership; 25% to rescue and conservation partners; each Crew member sponsors six free months for a new rescue adopter; no trial | none yet (build item 6d) |
@@ -92,13 +94,13 @@ All of these are decided (section h).
 1. **Pay before Dec 31?** No card before or at opening; the card goes on from Jun 7, by the free season's end.
 2. **Opening day:** Mon, Jan 4, 2027. The free season ends Tue, Jul 6, 2027.
 3. **Regular price:** $30 a month after the free season.
-4. **Annual plan:** monthly only at launch; $300 a year later, once retention is known. No annual founding option.
+4. **Yearly plan (changed Nov 19):** $300 a year (about $25 a month), offered from opening day alongside monthly; both start billing when the free season ends, Jul 6, 2027. No yearly founding option.
 5. **App premium (changed Nov 19):** $9.99 a month or $79 a year, on sale when billing starts after Jul 6, 2027. A Flock membership includes it.
 5a. **Kya's Crew (decided Nov 19):** $45 a month or $450 a year, on sale when billing starts after Jul 6, 2027. It includes everything in a Flock membership. 25% of each Crew membership goes to rescue and conservation partners, and each Crew member sponsors six free months for a new rescue adopter.
 5b. **Free trial (decided Nov 19):** once billing starts after Jul 6, 2027, new Flock and Premium members get 14 days free. Founders, rescue adopters and Kya's Crew get no trial.
-6. **Apple prices:** $14.99 / $29.99 if App Store Connect doesn't offer exactly $15.00 / $30.00. The web stays $15 / $30.
+6. **Apple prices:** $14.99 / $29.99 / $299.99 if App Store Connect doesn't offer exactly $15.00 / $30.00 / $300.00. The web stays $15 / $30 / $300. Kya's Crew and Premium follow the same rule (build items 6d, 6e).
 7. **What "cancelled" means:** the membership actually ends. Turning off auto-renew doesn't count, and neither does a failed payment that recovers within the grace period.
-8. **Giving:** 20% of every membership and gift, 25% for Kya's Crew, and 40% of gifts on double-giving days; designed before the first charges on Jul 6.
+8. **Giving:** 20% of every membership and gift (of what members pay, less refunds, like gifts; built into costs), 25% for Kya's Crew, and 40% of gifts on double-giving days; designed before the first charges on Jul 6.
 9. **Currency:** USD only. Founders anywhere can pay by card on the web; Apple converts in-app prices itself.
 10. **Android:** web-only payment for now, with a check of Google Play's rules before anything paid appears in the Android app (h14).
 11. **One end date:** yes, Tue, Jul 6, 2027 for everyone.
@@ -162,6 +164,7 @@ Either reuse `plan = 'comp'` with a new `source = 'free_season'`, or add a plan 
 - `billing_customers` (user ↔ Stripe customer);
 - `billing_events` (provider, event id, unique; idempotency and audit; never content);
 - `entitlements` gains `product_id`, `will_renew` and `cancel_at_period_end`;
+- a paid row's `plan` comes from the price: Regular $30/month → `monthly`, Regular $300/year → `annual`, Founding $15/month → `founding` (both regular values already pass the check, so the yearly plan needs no constraint change);
 - `founding_claims` gains `released_at` (no card by the end of the free season) and `forfeited_at` (a paid founding membership that ended).
 
 **Webhooks never trust event order:** on any event, re-read the subscription from Stripe or RevenueCat and write the row from that, as `record_gift_purchase` does. A database error returns 500 so the provider retries.
@@ -191,10 +194,10 @@ Either reuse `plan = 'comp'` with a new `source = 'free_season'`, or add a plan 
 
 **Web (Stripe), for all 50 and for regular members who pay on the web:**
 
-- **Products:** one product, "The Flock", with a **Founding $15/month** price that is never edited (that's the lock) and a **Regular $30/month** price. A price change later is a new price object; founding subscriptions keep theirs.
+- **Products:** one product, "The Flock", with a **Founding $15/month** price that is never edited (that's the lock), a **Regular $30/month** price and a **Regular $300/year** price. A price change later is a new price object; founding subscriptions keep theirs.
 - **The card step (opens about 30 days before the end):** Checkout `mode=subscription`, `subscription_data.trial_end = free_season_ends_at`, card collected, **$0 due**.
   - A founder with a claim that isn't released or forfeited gets the founding price.
-  - Everyone else gets the regular price.
+  - Everyone else picks monthly ($30) or yearly ($300). Both use the same `trial_end`, so a yearly member's first $300 charge is on Jul 6, 2027 and renews each Jul 6.
   - The server function checks this; the native app never shows it.
 - **Emails:**
   - "Add your card" on **Mon, Jun 7** (about 30 days before the end), to every member with a free-season or founding row and no subscription;
@@ -215,7 +218,7 @@ Either reuse `plan = 'comp'` with a new `source = 'free_season'`, or add a plan 
 
 - **Don't sell founding in the app.**
 - **Show no in-app paywall during the free season** (the app says "Free until July 6").
-- From the June card emails, the paywall offers the regular plans. Free-season members who add a plan before Jul 6 get no trial (they're already free until Jul 6); **from Jul 7, new Flock and Premium members get a 14-day free trial** (an Apple introductory offer), and founders, rescue adopters and Kya's Crew get none. Someone who buys in June is charged in June, so the paywall should say "You're free until July 6; subscribing now starts billing today. Or add a card on the web at no charge until July 6."
+- From the June card emails, the paywall offers the regular plans (monthly and yearly). Free-season members who add a plan before Jul 6 get no trial (they're already free until Jul 6); **from Jul 7, new Flock and Premium members get a 14-day free trial** (an Apple introductory offer), and founders, rescue adopters and Kya's Crew get none. Someone who buys in June is charged in June, so the paywall should say "You're free until July 6; subscribing now starts billing today. Or add a card on the web at no charge until July 6."
   - The web half of that sentence is allowed only in the US storefront, if the court order still stands. Otherwise drop it and start the iOS paywall **on** the season's end.
 - When the account has a claim, it says "Founding members: check your email".
 
@@ -231,7 +234,7 @@ Dates assume opening at 00:00 Eastern on **Mon, Jan 4, 2027**. Durations are typ
 |---|---|---|
 | ~~Nov 18~~ | ~~Decide the entry point, the free season's end, gift years, released spots and the rest~~ | **Done** (section h) |
 | **Wed, Nov 25** (sign-off by **Fri, Dec 18**) | **Avian vet sign-off:** the diet conversion weight thresholds (pause and notice), the smoothed weight rules, and the vet-nudge phrase lists (all `review_status = 'draft'`). CLAUDE.md: "An avian vet must confirm both thresholds before launch". **This is the opening-day blocker most likely to slip:** it depends on someone else's calendar in December. Contact the vet by Nov 25. If the sign-off isn't in by Dec 18, open on Jan 4 with `journeys_enabled()` limited to admins (or diet conversion held back) rather than move opening day. | your time: 1 hour; the vet's: days to weeks |
-| **Fri, Dec 4** | **Legal text:** community terms (your posts and photos, the licence to show them to members, conduct, moderation and removal, age, memberships and billing to come), privacy for the Flock, community guidelines, and updated founding terms (claims close Jan 31; free until Jul 6; add a card by Jul 6 or the spot is released) | 2–4 hours plus optional legal review |
+| **Fri, Dec 4** | **Legal text:** community terms (your posts and photos, the licence to show them to members, conduct, moderation and removal, age, memberships and billing to come), privacy for the Flock, community guidelines, and updated founding terms (no closing date, open until 50 are claimed; free until Jul 6; add a card by Jul 6 or the spot is released) | 2–4 hours plus optional legal review |
 | **Fri, Dec 4** | **Approve the copy** in the wording list (section i) | 1 hour |
 | **Fri, Dec 18** | **Approve content:** the 14 journey templates and milestones, Today's ideas through Jan 17 (`ready`), the Library's opening items, the Start here posts | 4–6 hours |
 | **Fri, Dec 18** | **Approve the opening PR (C):** the entry point and `flock_enabled()` for members. This is the launch decision the Flock rules reserve for you. | 30 minutes |
@@ -240,7 +243,6 @@ Dates assume opening at 00:00 Eastern on **Mon, Jan 4, 2027**. Durations are typ
 | **Wed, Dec 30** | **Opening emails** drafted and scheduled in Brevo for Mon, Jan 4 morning: founders (list 9), the waitlist (23), and optionally all app users | 1–2 hours |
 | **Wed, Dec 30** | **Website (Webflow):** the founding card and `/community` (section i), published on Jan 4 | 1 hour |
 | **Mon, Jan 4, 00:00 Eastern** | **Open:** `select public.admin_set_flock_opens_at('2027-01-04 00:00 America/New_York');`, set the free season's end to `2027-07-06 00:00 America/New_York` (PR B's admin function), and switch on PR C's setting. Check the free-user regression check and save-error alerts that morning. | 30 minutes |
-| Sun, Jan 31 | Founding claims close (automatic, end of day Indianapolis time) | none |
 
 ### Before June 1 (payments)
 
@@ -249,11 +251,11 @@ Dates assume opening at 00:00 Eastern on **Mon, Jan 4, 2027**. Durations are typ
 | **Fri, Jan 15** | **App Store Connect:** the Paid Apps agreement, banking and tax forms (1–3 business days to verify the bank); Small Business Program enrollment (about 2 weeks) | 30 minutes of forms |
 | **Sat, May 1** | **Sales tax:** confirm with your accountant how each state treats a digital membership (taxable or not, and where you must register), before Stripe Tax is registered and live prices go on. Stripe Tax is on either way (h11). | 1 meeting |
 | **Sat, May 1** | **Android:** confirm Google Play's current billing rules for digital subscriptions in the US, including the exceptions after *Epic v. Google* (whether an app may link to or mention web purchase, and on what terms). Payment stays web-only, and **nothing paid appears in the Android app until this check is done**: no price, paywall or "subscribe" link (h14). | 1–2 hours of reading |
-| **Fri, May 7** | **Stripe:** Stripe Tax registration per the accountant; products and prices in test, then live (The Flock: Founding $15/mo, Regular $30/mo); Customer Portal; the billing webhook endpoint and secret into Vercel (Production live, Preview test) | about 2 hours |
-| **Fri, May 7** | **App Store Connect:** subscription group "The Flock" with Regular at $29.99 (or $30.00 if offered); Billing Grace Period (16 days); the Server Notifications V2 URL pointing to RevenueCat; an In-App Purchase key | 2 hours |
-| **Fri, May 7** | **RevenueCat:** project, iOS app, key, product, entitlement `flock`, offering, webhook and secret, transfer "keep with original" | 1–2 hours |
+| **Fri, May 7** | **Stripe:** Stripe Tax registration per the accountant; products and prices in test, then live (The Flock: Founding $15/mo, Regular $30/mo, Regular $300/yr); Customer Portal; the billing webhook endpoint and secret into Vercel (Production live, Preview test) | about 2 hours |
+| **Fri, May 7** | **App Store Connect:** subscription group "The Flock" with Regular monthly at $29.99 (or $30.00 if offered) and Regular yearly at $299.99 (or $300.00); Billing Grace Period (16 days); the Server Notifications V2 URL pointing to RevenueCat; an In-App Purchase key | 2 hours |
+| **Fri, May 7** | **RevenueCat:** project, iOS app, key, both products (monthly and yearly), entitlement `flock`, an offering with both packages, webhook and secret, transfer "keep with original" | 1–2 hours |
 | **Fri, May 7** | **EULA link** on the paywall (Apple's standard one) and the privacy policy line about payment processors | 30 minutes |
-| **Mon, May 10** | **Submit the iOS build with the in-app purchase product,** allowing a week for a first-subscription rejection and resubmit. The Flock is open by then, so the reviewer can reach it; no review allowlist is needed. | 1 hour plus review time |
+| **Mon, May 10** | **Submit the iOS build with both in-app purchase products (monthly and yearly),** allowing a week for a first-subscription rejection and resubmit. The Flock is open by then, so the reviewer can reach it; no review allowlist is needed. | 1 hour plus review time |
 | **Tue, Jun 1** | **Payments live:** Stripe and in-app purchase; a dry run with your own founding claim | 1 hour |
 | Mon, Jun 7 | "Add your card" emails go out (automatic) | none |
 
@@ -272,8 +274,8 @@ The opening PR (C) is the one that deliberately makes the Flock visible to membe
 ### Before opening day (Nov 18 – Jan 3)
 
 - **A. Founding terms and deadline.**
-  - A migration moves `private.founding_deadline()` to `2027-02-01 00:00 America/Indiana/Indianapolis` (end of Jan 31). This changes an existing Flock function, not a care-app one; pin it in `supabase/checks`.
-  - New copy for `/founding`, the founder screens and the website (section i): the free season, "close January 31", and "add a card by the end of the free season or the spot is released".
+  - ~~A migration moves `private.founding_deadline()` to the end of Jan 31~~ (#478); then, Nov 19, no closing date at all (`20261119160000_founding_no_deadline.sql`). Pinned in `supabase/checks/founding_deadline_checks.sql`.
+  - New copy for `/founding`, the founder screens and the website (section i): the free season and the perks; no closing date and no card details on the pages (the claimant email carries the card rule).
   - An email to existing claimants.
   - *Free users: none (`/founding` is public; care app untouched).*
 - **B. Free-season grant.**
@@ -290,14 +292,14 @@ The opening PR (C) is the one that deliberately makes the Flock visible to membe
 - **D. Member blocking (Apple 1.2).** `flock_blocks`, a "Block" action on profiles, posts and comments, and blocked members' posts, comments, reactions and notifications filtered out by the existing visibility functions. Plus a contact line in the Flock. *Free users: none.*
 - **E. Stickiness events** (section "What we're learning in the free season"). Fired only from Flock code (lazy-loaded), never from the care app. *Free users: none.*
 - **F. Gift years start at the free season's end** (decided, h5). Changes `place_grant` for gifts, plus the gift and redeem copy. Gifts are already for sale, so do it before opening.
-- **H. Founding members page** (decided Nov 19). A `show_on_founders_page` choice (default off) on the founding claim, set by one **unchecked** checkbox ("Show me on the founding members page") on `/founding`'s region step and changeable later on the founder's Flock profile; a `/flock/founders` page that lists only founders who opted in, through a SECURITY DEFINER function returning display name, photo, region and the founder badge (nothing else). Additive only. Ready by Dec 11 so the perk is real on Jan 4. *Free users: none (`/founding` is public; the page is inside the Flock).*
+- **H. Founding members page** (decided Nov 19, h22). A `show_on_founders_page` choice (default off) on the founding claim, set by one **unchecked** checkbox ("Show me on the founding members page") on `/founding`'s region step and changeable later on the founder's Flock profile; a `/flock/founders` page that lists only founders who opted in, through a SECURITY DEFINER function returning display name, photo, region and the founder badge (nothing else). Additive only. Ready by Dec 11 so the perk is real on Jan 4. *Free users: none (`/founding` is public; the page is inside the Flock).*
 - **G. Legal pages.** `/terms` gains community sections (your posts and photos, the licence to show them to members, conduct, moderation and removal, age, memberships and billing to come); `/privacy` gains what Flock members see (matching `flock.you.privacy.tsx`), chapters, photos and payment processors. Your text, wired in. *Free users: shared pages; the wording changes, the layout doesn't.*
 
 ### After opening, web payments (Feb – May; live by about June 1)
 
 1. **Billing schema** (section c), with `supabase/checks/billing_checks.sql`.
 2. **Stripe billing webhook**, `/api/public/stripe/billing`, with its own secret and fixture tests (`npm run test:billing`). It returns 503 without the env var.
-3. **Card step**, `/flock/membership` (and the founder view of it): add a card ($0 due until the season's end), or "card on file, first charge on {date}", with a Customer Portal link. The founding price applies to unreleased claims. It's never shown in the native app, and sits behind `BILLING_ENABLED`.
+3. **Card step**, `/flock/membership` (and the founder view of it): choose monthly ($30) or yearly ($300) and add a card ($0 due until the season's end), or "card on file, first charge on {date}", with a Customer Portal link. The founding price applies to unreleased claims. It's never shown in the native app, and sits behind `BILLING_ENABLED`.
 4. **Card emails:** about 30 days, 7 days and 1 day before, the confirmation, and the end-of-season notices. A cron hook through `call_cron_hook`, idempotent per member and email.
 5. **End-of-season job:** release founders without a subscription, and send the emails.
 6. **Admin view**, `/admin/founding` and `/admin/members`: free season, card on file, past due, released, forfeited.
@@ -325,7 +327,7 @@ The opening PR (C) is the one that deliberately makes the Flock visible to membe
 - the 14-day card window, `card_due_at`, the day-7 and day-12 reminders, and the waitlist invitation for released spots;
 - the review allowlist (old PR 11).
 
-**Later:** the annual plan ($300 a year, once retention is known), Android Play billing (only after the Google Play check, h14), and the giving ledger for subscriptions (before Jul 6).
+**Later:** Android Play billing (only after the Google Play check, h14), and the giving ledger for subscriptions (before Jul 6).
 
 ---
 
@@ -334,12 +336,11 @@ The opening PR (C) is the one that deliberately makes the Flock visible to membe
 | When | Web / Flock | iOS |
 |---|---|---|
 | Nov 18–30 | **PR A** (founding deadline and copy, claimant email) by **Nov 30**; PR G drafted; you: vet contacted by Nov 25 | |
-| Dec 1–11 | PR B by **Dec 4**; PRs D, E, F and G by **Dec 11**; you: legal text and copy by Dec 4 | nothing to ship: the Flock works in installed builds (remote-URL mode) |
+| Dec 1–11 | PR B by **Dec 4**; PRs D, E, F, G and H by **Dec 11**; you: legal text and copy by Dec 4 | nothing to ship: the Flock works in installed builds (remote-URL mode) |
 | Dec 14–18 | **PR C** merged dark by **Dec 18**; you: content approved, vet sign-off in, PR C approved | |
 | Dec 21–23 | dry run on production; reviewers named | the Flock checked on iPhone, iPad and Duo |
 | Dec 24 – Jan 3 | buffer; **no merges after Mon, Dec 28**; emails and website scheduled by Dec 30 | |
 | **Mon, Jan 4** | **opening** at 00:00 Eastern: set the dates, switch on, emails that morning | |
-| Sun, Jan 31 | founding claims close | |
 | Feb – Mar | billing PRs 1–3 on preview with test cards | Paid Apps agreement by Jan 15; PR 7 shipped by **Mon, Mar 15** |
 | Apr – May | PRs 4–6; accountant and Google Play checks by **May 1**; live Stripe by **May 7** | App Store Connect, RevenueCat, PRs 8–10; submit by **Mon, May 10** |
 | **Tue, Jun 1** | **payments live**; dry run with your own claim | in-app purchase live |
@@ -381,21 +382,22 @@ Numbers 1–16 match the list in the Nov 18 review; 17–21 are the earlier deci
 | 10 | Paywall during the free season | **None.** The iOS paywall appears with the Jun 7 emails, and in-app purchases bill from the purchase day. |
 | 11 | Sales tax on web | **Stripe Tax on** (about 0.5%). **Task:** confirm state sales-tax treatment of a digital membership with your accountant **by Sat, May 1, 2027** (before Jun 1), before registering and going live. |
 | 12 | Refunds | **Changed Nov 19 (legal draft D1, D14):** cancel any time; a full refund on request within 14 days of a first payment on a plan or of a yearly renewal, otherwise none; a member removed for breaking the rules gets the unused time refunded. A full refund ends access. Apple and Google purchases follow the store's process. |
-| 13 | Giving share | **20% of every membership and gift, 25% for Kya's Crew, 40% of gifts on double-giving days,** designed before the first charges on Jul 6. |
+| 13 | Giving share | **20% of every membership and gift (what members pay, less refunds, like gifts; built into costs), 25% for Kya's Crew, 40% of gifts on double-giving days,** designed before the first charges on Jul 6. |
 | 14 | Android | **Web-only payment for now.** **Task:** before anything paid appears in the Android app, confirm Google Play's current billing rules for digital subscriptions in the US, including the exceptions after *Epic v. Google*, **by Sat, May 1, 2027** (before Jun 1). Until then the Android app shows no price, paywall or subscribe link. |
 | 15 | App premium | **Changed Nov 19: $9.99 a month or $79 a year, on sale when billing starts after Jul 6, 2027,** with a 14-day trial for new members. Kya's Crew ($45 / $450) goes on sale at the same time. |
 | 16 | Missed card deadline (founders) | **No automatic grace;** you can restore a released founder by hand within 14 days of Jul 6 (a support action). |
 | 17 | Opening day | **Mon, Jan 4, 2027,** 00:00 Eastern. |
-| 18 | Founders' card flow | **No card before or at opening;** add a card from Jun 7, by Jul 6, or the spot is released. Claims close Jan 31, 2027. |
-| 19 | Annual plan | **Monthly only at launch;** add $300 a year later, once retention is known. |
-| 20 | Apple prices | **$14.99 / $29.99** if exact $15.00 / $30.00 aren't offered; the web stays $15 / $30. |
+| 18 | Founders' card flow | **No card before or at opening;** add a card from Jun 7, by Jul 6, or the spot is released. No closing date for claims (open until 50). |
+| 19 | Yearly plan | **Changed Nov 19: $300 a year from opening day, alongside $30 a month;** both billed from Jul 6, 2027. No yearly founding option. |
+| 20 | Apple prices | **$14.99 / $29.99 / $299.99** if exact $15.00 / $30.00 / $300.00 aren't offered; the web stays $15 / $30 / $300. |
 | 21 | Currency | **USD only.** |
+| 22 | Founding members page | **Opt-in (decided Nov 19).** One checkbox in the claim flow, **unchecked by default** ("Show me on the founding members page"), stored with the claim; founders can change it later on their Flock profile. The page lists only founders who opted in, with the same public fields members already see (display name, photo, region, founder badge). Built in PR H, not in PR A. |
 
 ---
 
 ## i) Every place the Dec 31 deadline or "6 months from opening" appears
 
-Found on Nov 18, 2026. **Nothing here has been changed yet.** Line numbers are on `main` at `6d64a11`. Copy fallbacks in `.tsx` files repeat the `en.jsonc` strings and change with them.
+Found on Nov 18, 2026. **Nov 19:** PR A changes the founding rows below (the deadline in #478; the founding copy, the profile and admin lines, and founders' `free_until` = Jul 6, 2027 in `20261119150000_founding_free_season_end.sql`). Gift and redeem rows wait for PR F; the rest of `place_grant` for PR B. Line numbers are on `main` at `6d64a11`. Copy fallbacks in `.tsx` files repeat the `en.jsonc` strings and change with them.
 
 ### App copy (`src/locales/en.jsonc` and the matching fallbacks)
 
@@ -463,7 +465,7 @@ Only English has `founding.*`, `gift.*` and `redeem.*` strings today, so there a
 | Page | Text today | Change |
 |---|---|---|
 | Home and `/community`, the "Join the Founding 50" card | "Your first six months free"; "$15 a month, locked in for as long as you're a member" | → free season and "claims close January 31"; "locked in" → "locked in once billing starts in July" |
-| `/community` | "The first 50 members from the waitlist lock in founding perks for life… Regular pricing below applies after that." and "Monthly $30 per month" | says "from the waitlist" (claims are open to anyone with an account); add "after the free season" |
+| `/community` | "The first 50 members from the waitlist lock in founding perks for life… Regular pricing below applies after that." and "Monthly $30 per month", "Annual $20 per month, billed annually" | says "from the waitlist" (claims are open to anyone with an account); add "after the free season"; yearly → $300 a year (about $25 a month) |
 | `/community` | "A kind, judgment-free space for parrot people, opening soon" | → "opening January 4" |
 | `/community` | "six months of free membership for anyone who adopts a parrot and applies within 60 days of their rescue" | keep (h6); add that it starts after the free season |
 
@@ -498,4 +500,4 @@ These events are worth having from day one. All of them fire only from Flock cod
 - the share of weekly actives who contributed;
 - the share of active days that started `direct`.
 
-Check the dashboard monthly, and once more by Tue, Jun 1, before the Jun 7 card emails, so pricing decisions (annual plan, reminders) rest on real retention.
+Check the dashboard monthly, and once more by Tue, Jun 1, before the Jun 7 card emails, so pricing decisions (monthly vs. yearly mix, reminders) rest on real retention.

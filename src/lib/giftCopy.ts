@@ -14,6 +14,6 @@ export function giftTiming(t: TFunction, plan: GiftPlan): string {
 
 export function planBlurb(t: TFunction, plan: GiftPlan): string {
   return plan === "flock_year"
-    ? t("gift.planFlockBlurb", "The Kya Project's community for parrot people: expert Q&As, local chapters, and a share of every membership going to rescue and conservation.")
+    ? t("gift.planFlockBlurb", "The Kya Project's community for parrot people: expert Q&As, local chapters, and 20% of every membership going to rescue and conservation.")
     : t("gift.planPremiumBlurb", "The paid tier of Kya & Co., the app that helps keep a bird healthy every day.");
 }
