@@ -274,8 +274,9 @@ function friendlyStartError(t: TFunction, e: unknown): string {
   const msg = (e as { message?: string })?.message ?? "";
   if (/diet_not_for_nectar_eaters/.test(msg)) return t("flock.journeys.setup.errNectar", "This journey isn't made for lories and lorikeets. Your avian vet is the best guide for any changes.");
   if (/already has this journey going/.test(msg)) return t("flock.journeys.setup.errGoing", "This bird already has this journey going.");
-  // The database's refusal text still says "app premium" (journey_start, 20261107200000); members see the Flock wording.
-  if (/comes with app premium/.test(msg)) return t("flock.journeys.setup.errFlockOnly", "This journey is only available to Flock members.");
+  // journey_start's refusal ("this journey comes with Flock membership", 20261120150000;
+  // "…app premium" before it) always shows as this Flock sentence.
+  if (/this journey comes with (Flock membership|app premium)/.test(msg)) return t("flock.journeys.setup.errFlockOnly", "This journey is only available to Flock members.");
   if (/comes with Flock membership/.test(msg)) return t("flock.journeys.setup.errShare", "Sharing with the community comes with Flock membership.");
   if (/one custom journey at a time/.test(msg)) return t("flock.journeys.customLimit.title", "One custom journey at a time");
   return t("flock.journeys.setup.error", "We couldn't start the journey. Check your connection and try again.");

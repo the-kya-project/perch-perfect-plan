@@ -272,6 +272,26 @@ check("membership: founding before and after opening", () => {
   const open = { ...f, starts_at: "2027-01-04T05:00:00Z", free_until: "2027-07-06T04:00:00Z", current_period_end: "2027-07-06T04:00:00Z" };
   assert.equal(membershipSummary([open], false, new Date("2027-02-01T00:00:00Z")).line, "Founding · free until Jul 6, 2027, then $15/mo for life");
 });
+check("founding: the regular price leads with $25 a month billed annually, then $30 month to month", () => {
+  const want = "Regular price $25 a month billed annually, or $30 month to month.";
+  const en = readFileSync("src/locales/en.jsonc", "utf8");
+  assert.ok(en.includes(`"founding.regular": "${want}"`), "en.jsonc founding.regular");
+  const page = readFileSync("src/routes/founding.tsx", "utf8");
+  assert.ok(page.includes(`t("founding.regular", "${want}")`), "founding.tsx fallback matches en.jsonc");
+  assert.ok(!/\$30 a month or \$300 a year/.test(en + page), "old regular-price wording is gone");
+});
+
+check("journeys: no 'app premium' wording; the locked-journey refusal shows the Flock sentence", () => {
+  const setup = readFileSync("src/routes/_authenticated/flock.journeys.setup.tsx", "utf8");
+  const m = setup.match(/if \((\/this journey comes with[^/]*\/)\.test\(msg\)\)/);
+  assert.ok(m, "setup maps journey_start's refusal");
+  const re = new RegExp(m![1].slice(1, -1));
+  assert.ok(re.test("this journey comes with Flock membership"));
+  assert.ok(re.test("this journey comes with app premium"), "older text still maps (before the migration runs)");
+  assert.ok(!/app premium/i.test(readFileSync("e2e/journey-fixture.json", "utf8")), "e2e journey fixture");
+  assert.ok(!/app premium/i.test(readFileSync("src/locales/en.jsonc", "utf8")), "en.jsonc");
+});
+
 check("founding: which full box shows (before and after opening day)", () => {
   assert.equal(foundingClosedCase(new Date("2026-12-10T12:00:00Z")), "full");
   assert.equal(foundingClosedCase(new Date("2027-01-04T04:59:59Z")), "full");
