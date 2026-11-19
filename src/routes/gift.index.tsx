@@ -8,7 +8,7 @@ import { useTranslation } from "react-i18next";
 import i18next from "i18next";
 import { track } from "@/lib/analytics";
 import { createGiftCheckout, getGiftOptions, type GiftOption } from "@/lib/gifts.functions";
-import { formatCents, giftToday, GIFT_MESSAGE_MAX, GIFT_NAME_MAX, GIFT_SEND_LAST_DATE, type GiftPlan } from "@/lib/gifts";
+import { formatCents, giftToday, GIFT_MESSAGE_MAX, GIFT_NAME_MAX, GIFT_PLANS, GIFT_SEND_LAST_DATE, type GiftPlan } from "@/lib/gifts";
 import { K, KyaCard, KyaHeading } from "@/components/kya";
 import { giftPlanName, giftTiming, planBlurb } from "@/lib/giftCopy";
 import { FrontDoorBody, FrontDoorError, FrontDoorHeader, FrontDoorPage, LegalLinks } from "@/components/frontDoor";
@@ -25,7 +25,7 @@ export const Route = createFileRoute("/gift/")({
   validateSearch: search,
   head: () => ({ meta: [
     { title: i18next.t("gift.pageTitle", "Give a gift membership — The Kya Project") },
-    { name: "description", content: i18next.t("gift.metaDescription", "Give a year in the Flock or a year of app premium to the parrot person in your life.") },
+    { name: "description", content: i18next.t("gift.metaDescription", "Give a year in the Flock to the parrot person in your life.") },
   ]}),
   component: GiftPage,
 });
@@ -141,7 +141,7 @@ function GiftPage() {
           <form onSubmit={submit} noValidate className="flex flex-col gap-5">
             <fieldset className="m-0 flex flex-col gap-3 border-0 p-0">
               <legend className="mb-3 p-0"><KyaHeading size={21} as="h2">{t("gift.chooseTitle", "Choose a gift")}</KyaHeading></legend>
-              {(["flock_year", "app_premium_year"] as const).map((p) => (
+              {GIFT_PLANS.map((p) => (
                 <label
                   key={p}
                   className="flex cursor-pointer items-start gap-3 rounded-[18px] border-2 bg-white p-4 focus-within:ring-2 focus-within:ring-[#2d6a4f]/40"

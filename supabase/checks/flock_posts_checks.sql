@@ -1,7 +1,7 @@
 -- Verification for 20261108100000_flock_posts.
 --
 -- Self-contained and leaves nothing behind: three Flock members (two in Great
--- Lakes, one in Texas), an app premium member, a free user and a household
+-- Lakes, one in Texas), a former member, a free user and a household
 -- member; posts, comments, replies, photos, reactions and a "Just me" journey.
 -- Checks who reads and writes what, then rolls back.
 --   "FLOCK POSTS CHECKS: n passed, 0 failed"           → all good
@@ -12,7 +12,7 @@ declare
   m1  uuid := gen_random_uuid();  -- Flock member, Great Lakes, owns the birds
   m2  uuid := gen_random_uuid();  -- Flock member, Great Lakes
   m3  uuid := gen_random_uuid();  -- Flock member, Texas
-  pr  uuid := gen_random_uuid();  -- app premium (no Flock)
+  pr  uuid := gen_random_uuid();  -- former member (membership ended; app premium is gone)
   fr  uuid := gen_random_uuid();  -- free
   hh  uuid := gen_random_uuid();  -- household on m1's birds (free tier)
   b1  uuid := gen_random_uuid();  -- m1's bird, shown
@@ -29,7 +29,8 @@ begin
     (m1, 'comp', 'active', 'manual', now() - interval '1 day'),
     (m2, 'comp', 'active', 'manual', now() - interval '1 day'),
     (m3, 'comp', 'active', 'manual', now() - interval '1 day'),
-    (pr, 'app_premium', 'active', 'manual', now() - interval '1 day');
+    (pr, 'comp', 'canceled', 'manual', now() - interval '60 days');
+  update public.entitlements set current_period_end = now() - interval '1 day' where user_id = pr;
   insert into public.birds (id, owner_id, name, species, photo_url) values
     (b1, m1, 'Kiwi', 'Cockatiel', m1::text || '/kiwi.jpg'), (b2, m1, 'Mango', 'Conure', m1::text || '/mango.jpg');
   insert into public.bird_members (bird_id, user_id, role) values (b1, hh, 'household'), (b2, hh, 'household') on conflict do nothing;
@@ -53,7 +54,7 @@ begin
   select id into up from public.journey_updates where journey_id = jp limit 1;
   reset role;
 
-  -- 1) Non-members (app premium, free) can't read or write anything.
+  -- 1) Non-members (a former member, free) can't read or write anything.
   ok := true;
   for n in 1..2 loop
     perform set_config('request.jwt.claims', json_build_object('sub', (array[pr, fr])[n], 'role', 'authenticated')::text, true);

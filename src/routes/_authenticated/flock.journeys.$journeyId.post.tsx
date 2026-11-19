@@ -119,7 +119,7 @@ function Camera({ journeyId, birdId, birdName, skill, next, onClose, onUploaded 
   );
 }
 
-/** At a journey's clip limit (free 10, app premium 20): Flock members have none. */
+/** At a journey's clip limit (free accounts: 10): Flock members have none. */
 function ClipLimitCard({ used, onBack }: { used: number; onBack: () => void }) {
   const { t } = useTranslation();
   return (
@@ -129,7 +129,7 @@ function ClipLimitCard({ used, onBack }: { used: number; onBack: () => void }) {
         {t("flock.journeys.limit.line", "That's as many as this plan keeps on one journey. Flock members can add as many clips as they like, up to 20 minutes each.")}
       </p>
       <Link to="/flock/you/membership" className="text-[15px] font-[700]" style={{ color: K.moss }}>
-        {t("flock.journeys.premium.compare", "Compare with Flock membership")}
+        {t("flock.journeys.limit.compare", "Compare with Flock membership")}
       </Link>
       <KyaPrimaryButton onClick={onBack}>{t("flock.journeys.post.backToJourney", "Back to the journey")}</KyaPrimaryButton>
     </div>

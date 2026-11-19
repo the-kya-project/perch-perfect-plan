@@ -2032,7 +2032,6 @@ export type Database = {
         }
         Returns: undefined
       }
-      has_app_premium: { Args: { p_user_id?: string }; Returns: boolean }
       is_admin: { Args: { p_user_id?: string }; Returns: boolean }
       is_flock_member: { Args: { p_user_id?: string }; Returns: boolean }
       record_gift_purchase: {

@@ -1,8 +1,9 @@
 import { useState, type ReactNode } from "react";
-import { Link } from "@tanstack/react-router";
+import { useNavigate } from "@tanstack/react-router";
 import { Check, ChevronRight, Lock } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { K, KyaHeading, KyaPrimaryButton, KyaSheet } from "@/components/kya";
+import { flockSheetTitle } from "@/lib/journeys";
 
 const CHIP_ON_BG = "#cdeab0";
 const CHIP_OFF_BORDER = "#c9d3c8";
@@ -30,7 +31,7 @@ export function TemplateRow({ name, meta, known, going, locked, onClick, testId 
       onClick={onClick}
       data-template={testId}
       data-locked={locked ? "true" : undefined}
-      aria-label={locked ? t("flock.journeys.start.lockedAria", "{{name}}, comes with app premium", { name }) : undefined}
+      aria-label={locked ? t("flock.journeys.start.lockedAria", "{{name}}, part of the Flock", { name }) : undefined}
       className="flex min-h-[56px] w-full items-center gap-3 rounded-[14px] bg-white px-3.5 py-2 text-left active:scale-[0.99]"
       style={{ color: K.forest }}
     >
@@ -112,35 +113,36 @@ export function FlowFooter({ children }: { children: ReactNode }) {
   );
 }
 
-/** Free users tapping a premium template (Batch 4, screen 7). Payments don't
- *  exist yet, so the main button says "Coming soon" and does nothing. */
-export function PremiumSheet({ onClose }: { onClose: () => void }) {
+/** A free account tapping a Flock-only journey. No price: the Flock is free
+ *  until July 2027. The button goes to the founding page until the join step
+ *  exists. */
+export function FlockOnlySheet({ slug, journey, bird, onClose }: { slug: string; journey: string; bird?: string; onClose: () => void }) {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   return (
     <KyaSheet
       onClose={onClose}
       closeLabel={t("flock.region.close", "Close")}
       title={(
         <div className="flex flex-col gap-1">
-          <span className="text-[11.5px] font-[700] uppercase tracking-[0.06em]" style={{ color: K.moss }}>{t("flock.journeys.premium.eyebrow", "App premium")}</span>
-          <KyaHeading size={23}>{t("flock.journeys.premium.title", "Tricks come with app premium")}</KyaHeading>
+          <span className="text-[11.5px] font-[700] uppercase tracking-[0.06em]" style={{ color: K.moss }}>{t("flock.journeys.flockOnly.eyebrow", "Part of the Flock")}</span>
+          <KyaHeading size={23}>{flockSheetTitle(t, slug, journey, bird)}</KyaHeading>
         </div>
       )}
     >
-      <div data-testid="premium-sheet" className="flex flex-col gap-3">
+      <div data-testid="flock-only-sheet" className="flex flex-col gap-3">
         <p className="m-0 text-[15px] leading-[1.5]" style={{ color: K.ink }}>
-          {t("flock.journeys.premium.line", "Unlock every trick and husbandry journey, unlimited custom journeys, and longer clips, plus the premium care features.")}
+          {t("flock.journeys.flockOnly.line", "Tricks like this one are only available to Flock members.")}
         </p>
-        <p className="m-0 flex flex-wrap items-baseline gap-x-1.5" style={{ color: K.forest }}>
-          <span className="text-[22px] font-[700]">{t("flock.journeys.premium.price", "$9.99")}</span>
-          <span className="text-[13px]" style={{ color: K.quiet }}>{t("flock.journeys.premium.priceLine", "a month · or join the Flock to share journeys too")}</span>
+        <p className="m-0 text-[15px] leading-[1.5]" style={{ color: K.ink }}>
+          {t("flock.journeys.flockOnly.about", "The Flock is The Kya Project's community, where you'll find your local chapter, a library of guides and recordings, and every training journey, including tricks, nail trims, and stationing.")}
         </p>
-        <KyaPrimaryButton onClick={() => { /* Payments aren't built yet. */ }}>
-          {t("flock.journeys.premium.soon", "Coming soon")}
+        <p className="m-0 rounded-[14px] px-3.5 py-3 text-[15px] font-[700] leading-[1.45]" style={{ background: "#e8f3dc", color: K.forest }}>
+          {t("flock.journeys.flockOnly.free", "Be an early Flock member and join for free until July 2027.")}
+        </p>
+        <KyaPrimaryButton onClick={() => void navigate({ to: "/founding", search: { src: "journey-sheet" } })}>
+          {t("flock.journeys.flockOnly.join", "Join the Flock free")}
         </KyaPrimaryButton>
-        <Link to="/flock/you/membership" className="self-center py-2 text-[14px] font-[700] underline-offset-4 hover:underline" style={{ color: K.moss }}>
-          {t("flock.journeys.premium.compare", "Compare with Flock membership")}
-        </Link>
       </div>
     </KyaSheet>
   );
@@ -153,7 +155,7 @@ export function CustomLimitSheet({ onClose }: { onClose: () => void }) {
     <KyaSheet onClose={onClose} closeLabel={t("flock.region.close", "Close")} title={<KyaHeading size={23}>{t("flock.journeys.customLimit.title", "One custom journey at a time")}</KyaHeading>}>
       <div data-testid="custom-limit-sheet" className="flex flex-col gap-3">
         <p className="m-0 text-[15px] leading-[1.5]" style={{ color: K.ink }}>
-          {t("flock.journeys.customLimit.line", "You have a journey you wrote yourself going already. Finish it, or mark it \"We're happy where we are,\" to write another. With app premium, you can write as many as you like.")}
+          {t("flock.journeys.customLimit.line", "Free accounts can have one custom journey going at a time. Flock members can start as many as they like.")}
         </p>
         <KyaPrimaryButton onClick={onClose}>{t("flock.journeys.customLimit.ok", "Got it")}</KyaPrimaryButton>
       </div>

@@ -1,6 +1,6 @@
 -- Verification for 20261107220000_journeys_updates.
 --
--- Self-contained and leaves nothing behind: makes a free user, a premium user,
+-- Self-contained and leaves nothing behind: makes a free user, a paid Flock member,
 -- a Flock member, an admin and a stranger, birds, clips, journeys and weights,
 -- checks posting, milestones, finishing, tips, sharing, status and Diet
 -- conversion's weight safeguard, then raises so everything rolls back.
@@ -10,7 +10,7 @@
 do $$
 declare
   fr  uuid := gen_random_uuid();  -- free
-  pr  uuid := gen_random_uuid();  -- app premium
+  pr  uuid := gen_random_uuid();  -- Flock member on a paid annual plan (app premium is gone)
   fm  uuid := gen_random_uuid();  -- Flock member
   adm uuid := gen_random_uuid();  -- admin
   st  uuid := gen_random_uuid();  -- stranger
@@ -27,7 +27,7 @@ begin
   from unnest(array[fr, pr, fm, adm, st]) as x;
   insert into public.user_roles (user_id, role) values (adm, 'admin');
   insert into public.entitlements (user_id, plan, status, source, starts_at) values
-    (pr, 'app_premium', 'active', 'manual', now() - interval '1 day'),
+    (pr, 'annual',      'active', 'manual', now() - interval '1 day'),
     (fm, 'comp',        'active', 'manual', now() - interval '1 day');
   insert into public.birds (id, owner_id, name, species) values
     (bf, fr, 'Kiwi', 'Cockatiel'), (bp, pr, 'Mango', 'Sun conure'), (bm, fm, 'Echo', 'Amazon'), (bd, fm, 'Juno', 'Amazon');
@@ -108,7 +108,7 @@ begin
   if n = 2 and exists (select 1 from public.journey_finisher_tips where journey_id = jm) then
     passed := passed + 1; else failed := array_append(failed, 'finished: no more posts; tip after finish'); end if;
 
-  -- 6) Finisher tips: app premium and members read them; free accounts get none; no direct reads.
+  -- 6) Finisher tips: Flock members read them; free accounts get none; no direct reads.
   -- (Tips show only from finished journeys and never to their own author, so
   --  this one is written by someone else and its journey counts as finished.)
   insert into public.journey_finisher_tips (journey_id, template_id, author_id, body)
@@ -127,7 +127,7 @@ begin
   select count(*) into n from public.journey_finisher_tips_for('wave');
   reset role;
   update public.journeys set status = 'active' where id = jp;
-  if ok and n = 0 then passed := passed + 1; else failed := array_append(failed, 'finisher tips: premium and members only'); end if;
+  if ok and n = 0 then passed := passed + 1; else failed := array_append(failed, 'finisher tips: members only'); end if;
 
   -- 7) Sharing a milestone and community visibility are for Flock members.
   perform set_config('request.jwt.claims', json_build_object('sub', fr, 'role', 'authenticated')::text, true);

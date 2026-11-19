@@ -6,7 +6,6 @@
  * ones later):
  *   STRIPE_SECRET_KEY                    sk_test_… / sk_live_…
  *   STRIPE_PRICE_FLOCK_YEAR_GIFT         one-off price for a year of the Flock
- *   STRIPE_PRICE_APP_PREMIUM_YEAR_GIFT   one-off price for a year of app premium
  *   STRIPE_WEBHOOK_SECRET                whsec_… for /api/public/stripe/webhook
  *
  * A preview must never charge real cards: like the Supabase guard in
@@ -37,7 +36,6 @@ export function getStripe(): Stripe {
 
 const PRICE_ENV: Record<GiftPlan, string> = {
   flock_year: "STRIPE_PRICE_FLOCK_YEAR_GIFT",
-  app_premium_year: "STRIPE_PRICE_APP_PREMIUM_YEAR_GIFT",
 };
 
 export function giftPriceId(plan: GiftPlan): string {

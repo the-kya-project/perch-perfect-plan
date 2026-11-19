@@ -314,7 +314,7 @@ type SeedJourney = {
   clips?: number; followers?: number; following?: boolean;
 };
 type JourneyMockOpts = {
-  tier?: "free" | "premium" | "flock"; openCustom?: number; knownSlugs?: string[];
+  tier?: "free" | "flock"; openCustom?: number; knownSlugs?: string[];
   seed?: SeedJourney[]; canAddClip?: boolean;
   weight?: {
     level: "none" | "notice" | "pause"; start: number; now: number;
@@ -336,7 +336,6 @@ async function mockJourneys(context: BrowserContext, opts: JourneyMockOpts, bird
   const tier = opts.tier ?? "flock";
   const limits = {
     free: { max_clip_seconds: 60, max_clips_per_journey: 10, max_open_custom: 1, max_upload_bytes: 262144000, can_use_premium: false, can_share: false, can_view_community: false },
-    premium: { max_clip_seconds: 300, max_clips_per_journey: 20, max_open_custom: null, max_upload_bytes: 1073741824, can_use_premium: true, can_share: false, can_view_community: true },
     flock: { max_clip_seconds: 1200, max_clips_per_journey: null, max_open_custom: null, max_upload_bytes: 2000000000, can_use_premium: true, can_share: true, can_view_community: true },
   }[tier];
   const json = (route: Route, body: unknown, status = 200) =>
@@ -680,7 +679,7 @@ test.describe("journeys: start a journey (admin, phone)", () => {
     await page.getByTestId("pick-bird").locator("[data-bird]", { hasText: "Echo" }).click();
     const list = page.getByTestId("template-list");
     await expect(list.getByRole("heading", { name: "The basics · free" })).toBeVisible();
-    await expect(list.getByRole("heading", { name: "Tricks and more · premium" })).toBeVisible();
+    await expect(list.getByRole("heading", { name: "Flock journeys" })).toBeVisible();
     await expect(list.locator("[data-template]")).toHaveCount(7);
     await expect(list.locator("[data-template='target-training']")).toContainText("Echo knows this");
     await expect(list.locator("[data-template='step-up']")).toContainText("7 milestones · usually 2–6 weeks");
@@ -934,16 +933,16 @@ test.describe("journeys: posting updates and milestones (admin, phone)", () => {
   });
 
   test("at the clip limit the camera offers Flock membership instead", async ({ browser, baseURL }) => {
-    const { context, page } = await open(browser, baseURL!, { admin: true, journeys: { tier: "premium", seed: [stepUp], canAddClip: false } });
+    const { context, page } = await open(browser, baseURL!, { admin: true, journeys: { tier: "free", seed: [stepUp], canAddClip: false } });
     await page.goto(`/flock/journeys/00000000-0000-4000-8000-0000000074a1/post`);
     const card = page.getByTestId("clip-limit");
-    await expect(card.getByRole("heading")).toHaveText("This journey has 20 clips");
+    await expect(card.getByRole("heading")).toHaveText("This journey has 10 clips");
     await expect(card.getByRole("link", { name: "Compare with Flock membership" })).toHaveAttribute("href", "/flock/you/membership");
     await context.close();
   });
 
-  test("free and premium post privately: Posting to just you, no Change", async ({ browser, baseURL }) => {
-    const { context, page } = await open(browser, baseURL!, { admin: true, journeys: { tier: "premium", seed: [{ ...stepUp, visibility: "private" }] } });
+  test("free accounts post privately: Posting to just you, no Change", async ({ browser, baseURL }) => {
+    const { context, page } = await open(browser, baseURL!, { admin: true, journeys: { tier: "free", seed: [{ ...stepUp, visibility: "private" }] } });
     await page.goto(`/flock/journeys/00000000-0000-4000-8000-0000000074a1/post?clip=${CLIP}`);
     await expect(page.getByTestId("posting-to")).toHaveText("Posting to just you");
     await expect(page.getByTestId("posting-to").getByRole("button", { name: "Change" })).toHaveCount(0);
@@ -1067,17 +1066,6 @@ test.describe("journeys: pages, the Journeys tab, following and Today (admin, ph
     await follow.click();
     await expect(follow).toHaveText("Following");
     expect(journeys.calls.find((c) => c.fn === "journey_follow")!.args).toMatchObject({ p_journey_id: "00000000-0000-4000-8000-0000000074a3", p_follow: true });
-    await context.close();
-  });
-
-  test("app premium reads community journeys but can't follow or cheer", async ({ browser, baseURL }) => {
-    const { context, page } = await open(browser, baseURL!, { admin: true, journeys: { tier: "premium", seed: [kiwi] } });
-    await page.goto(`/flock/journeys/00000000-0000-4000-8000-0000000074a3`);
-    await expect(page.getByRole("heading", { level: 1 })).toHaveText("Kiwi · Recall");
-    await expect(page.getByTestId("follow")).toHaveCount(0);
-    await page.getByTestId("clip-grid").locator("[data-tile]").first().click();
-    await expect(page.getByTestId("story")).toBeVisible();
-    await expect(page.getByTestId("go-bird")).toHaveCount(0);
     await context.close();
   });
 
@@ -1206,23 +1194,25 @@ test.describe("journeys: finisher tips (admin, phone)", () => {
 });
 
 test.describe("journeys: what a free account sees", () => {
-  test("premium templates are locked and explain app premium; only Just me; one custom journey at a time", async ({ browser, baseURL }) => {
+  test("Flock-only templates are locked and explain the Flock with no price; only Just me; one custom journey at a time", async ({ browser, baseURL }) => {
     const { context, page, journeys } = await open(browser, baseURL!, { admin: true, journeys: { tier: "free", openCustom: 1 } });
     await page.goto("/flock/journeys/start");
     await page.getByTestId("pick-bird").locator("[data-bird]", { hasText: "Buzz" }).click();
     await expect(page.locator("[data-locked]")).toHaveCount(2);
     await page.locator("[data-template='wave']").click();
-    const sheet = page.getByTestId("premium-sheet");
-    await expect(page.getByRole("heading", { name: "Tricks come with app premium" })).toBeVisible();
-    await expect(sheet).toContainText("Unlock every trick and husbandry journey, unlimited custom journeys, and longer clips, plus the premium care features.");
-    await expect(sheet).toContainText("$9.99");
-    await sheet.getByRole("button", { name: "Coming soon" }).click();
-    await expect(sheet).toBeVisible();
-    await expect(sheet.getByRole("link", { name: "Compare with Flock membership" })).toHaveAttribute("href", "/flock/you/membership");
+    const sheet = page.getByTestId("flock-only-sheet");
+    await expect(page.getByText("Part of the Flock", { exact: true })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Teach Buzz to wave" })).toBeVisible();
+    await expect(sheet).toContainText("Tricks like this one are only available to Flock members.");
+    await expect(sheet).toContainText("The Flock is The Kya Project's community, where you'll find your local chapter, a library of guides and recordings, and every training journey, including tricks, nail trims, and stationing.");
+    await expect(sheet).toContainText("Be an early Flock member and join for free until July 2027.");
+    await expect(sheet.getByRole("button", { name: "Join the Flock free" })).toBeVisible();
+    await expect(sheet).not.toContainText("$");
+    await expect(page.locator("[data-template='wave']")).toHaveAttribute("aria-label", "Wave, part of the Flock");
     await page.keyboard.press("Escape");
     await page.getByTestId("write-own").click();
     await expect(page.getByTestId("custom-limit-sheet")).toHaveText(
-      "You have a journey you wrote yourself going already. Finish it, or mark it \"We're happy where we are,\" to write another. With app premium, you can write as many as you like.Got it");
+      "Free accounts can have one custom journey going at a time. Flock members can start as many as they like.Got it");
     await page.getByRole("button", { name: "Got it" }).click();
     await page.locator("[data-template='step-up']").click();
     await expect(page.getByTestId("visibility").locator("[role='radio']")).toHaveText(["Just me"]);

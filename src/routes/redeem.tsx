@@ -96,9 +96,7 @@ function RedeemPage() {
             <section className="rounded-[20px] p-5" style={{ background: K.lime, color: K.forest }}>
               <p className="m-0 text-[13px] font-[700] uppercase tracking-[0.06em]">{giftPlanName(t, redeemed)}</p>
               <h2 ref={doneRef} tabIndex={-1} className="m-0 mt-1 text-[22px] font-[700] leading-[1.2] outline-none" style={{ fontFamily: SERIF }}>
-                {redeemed === "flock_year"
-                  ? t("redeem.doneFlock", "Your gift is saved. Your year in the Flock starts when it opens in January.")
-                  : t("redeem.donePremium", "Your gift is saved. Your year of app premium starts when it launches in January.")}
+                {t("redeem.doneFlock", "Your gift is saved. Your year in the Flock starts when it opens in January.")}
               </h2>
             </section>
             <p className="m-0 text-[15px] leading-[1.5]" style={{ color: K.ink }}>
