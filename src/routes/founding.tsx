@@ -213,7 +213,7 @@ function Offer() {
         t("founding.perkMonthly", "A monthly founders' call with Brittany"),
         t("founding.perkVote", "A vote on the first expert Q&As and the first chapters"),
         t("founding.perkEarly", "Early access to new features, journeys, and library guides"),
-        t("founding.perkPage", "A place on the founding members page"),
+        t("founding.perkPage", "A place on the founding members page, if you'd like one"),
       ]} />
     </>
   );
