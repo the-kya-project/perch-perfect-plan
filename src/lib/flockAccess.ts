@@ -26,5 +26,5 @@ export function accessCells(a: AccessDates | undefined, now: Date = new Date()):
   if (a.status === "canceled" && end <= t) return { starts, ends, state: "Ended" };
   if (t < start) return { starts, ends, state: "Scheduled" };
   if (t >= end) return { starts, ends, state: "Expired" };
-  return { starts, ends, state: a.status === "trialing" ? "Active (free months)" : "Active" };
+  return { starts, ends, state: a.status === "trialing" ? "Active (free season)" : "Active" };
 }

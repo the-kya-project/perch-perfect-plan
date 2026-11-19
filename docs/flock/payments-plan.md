@@ -380,7 +380,7 @@ Numbers 1–16 match the list in the Nov 18 review; 17–21 are the earlier deci
 
 ## i) Every place the Dec 31 deadline or "6 months from opening" appears
 
-Found on Nov 18, 2026. **Nothing here has been changed yet.** Line numbers are on `main` at `6d64a11`. Copy fallbacks in `.tsx` files repeat the `en.jsonc` strings and change with them.
+Found on Nov 18, 2026. **Nov 19:** PR A changes the founding rows below (the deadline in #478; the founding copy, the profile and admin lines, and founders' `free_until` = Jul 6, 2027 in `20261119150000_founding_free_season_end.sql`). Gift and redeem rows wait for PR F; the rest of `place_grant` for PR B. Line numbers are on `main` at `6d64a11`. Copy fallbacks in `.tsx` files repeat the `en.jsonc` strings and change with them.
 
 ### App copy (`src/locales/en.jsonc` and the matching fallbacks)
 
