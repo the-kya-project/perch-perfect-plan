@@ -63,19 +63,20 @@ export function membershipSummary(rows: EntitlementRow[], isAdmin: boolean, now:
   const live = rows.filter((e) => !(e.status === "canceled" && e.current_period_end && new Date(e.current_period_end).getTime() <= t));
   const founding = live.find((e) => e.plan === "founding");
   if (founding) {
-    if (!founding.starts_at) return { title: "Founding member", line: "Founding · $15/mo · first 6 months free once the Flock opens" };
+    // Before opening day is set the grant has no dates yet; the free season
+    // still ends Jul 6, 2027 (flock_settings.free_season_ends_at).
+    if (!founding.starts_at) return { title: "Founding member", line: "Founding · free until Jul 6, 2027, then $15/mo for life" };
     const free = founding.free_until ?? founding.current_period_end;
-    return { title: "Founding member", line: free ? `Founding · $15/mo · free until ${day(free)}` : "Founding · $15/mo" };
+    return { title: "Founding member", line: free ? `Founding · free until ${day(free)}, then $15/mo for life` : "Founding · $15/mo for life" };
   }
   const order = (e: EntitlementRow) => (current(e, t) ? 0 : e.starts_at ? 1 : 2);
-  const best = [...live].filter((e) => e.plan !== "app_premium" || live.every((x) => x.plan === "app_premium"))
-    .sort((a, b) => order(a) - order(b))[0];
+  // App premium is gone: an old "app_premium" row (none exist; new ones are
+  // refused) never counts as a membership here.
+  const best = [...live].filter((e) => e.plan !== "app_premium").sort((a, b) => order(a) - order(b))[0];
   if (best) {
-    const what = best.source === "gift"
-      ? best.plan === "app_premium" ? "Gift · app premium" : "Gift membership"
+    const what = best.source === "gift" ? "Gift membership"
       : best.plan === "comp" ? "Complimentary membership"
       : best.plan === "chapter_lead" ? "Chapter lead"
-      : best.plan === "app_premium" ? "App premium"
       : "Membership";
     if (!best.starts_at) return { title: what, line: `${what} · starts when the Flock opens` };
     if (!current(best, t) && new Date(best.starts_at).getTime() > t) return { title: what, line: `${what} · starts ${day(best.starts_at)}` };

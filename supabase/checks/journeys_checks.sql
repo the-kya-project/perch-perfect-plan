@@ -1,7 +1,7 @@
 -- Verification for 20261107200000_journeys_core.
 --
--- Self-contained and leaves nothing behind: it makes a free user, a premium
--- user, a Flock member, an admin, a household member and a stranger, birds and
+-- Self-contained and leaves nothing behind: it makes a free user, a member on
+-- a paid annual plan, a Flock member, an admin, a household member and a stranger, birds and
 -- clips, then checks every access rule, and raises so the whole block rolls
 -- back. The exception message IS the result:
 --   "JOURNEYS CHECKS: n passed, 0 failed"           → all good
@@ -10,7 +10,7 @@
 do $$
 declare
   fr  uuid := gen_random_uuid();  -- free
-  pr  uuid := gen_random_uuid();  -- app premium
+  pr  uuid := gen_random_uuid();  -- Flock member on a paid annual plan (app premium is gone)
   fm  uuid := gen_random_uuid();  -- Flock member
   adm uuid := gen_random_uuid();  -- admin, no membership
   hh  uuid := gen_random_uuid();  -- household member on fr's bird
@@ -28,7 +28,7 @@ begin
   from unnest(array[fr, pr, fm, adm, hh, st]) as u;
   insert into public.user_roles (user_id, role) values (adm, 'admin');
   insert into public.entitlements (user_id, plan, status, source, starts_at) values
-    (pr, 'app_premium', 'active', 'manual', now() - interval '1 day'),
+    (pr, 'annual',      'active', 'manual', now() - interval '1 day'),
     (fm, 'comp',        'active', 'manual', now() - interval '1 day');
   insert into public.birds (id, owner_id, name, species) values
     (bf, fr, 'Kiwi', 'Cockatiel'), (bf2, fr, 'Pip', 'Budgie'), (bp, pr, 'Mango', 'Sun conure'),
@@ -71,7 +71,7 @@ begin
   -- From here journeys are on for everyone, so each tier's rules can be checked.
   update public.journey_settings set audience = 'everyone';
 
-  -- 3) Free: all 14 templates are listed (premium ones show, locked).
+  -- 3) Free: all 14 templates are listed (the 7 Flock-only ones show, locked).
   perform set_config('request.jwt.claims', json_build_object('sub', fr, 'role', 'authenticated')::text, true);
   set local role authenticated;
   select count(*) into n from public.journey_templates;
@@ -91,14 +91,14 @@ begin
   reset role;
   if ok then passed := passed + 1; else failed := array_append(failed, 'free: start Step up with already-does and day-one clip'); end if;
 
-  -- 5) Free: a premium template is refused.
+  -- 5) Free: a Flock-only template is refused.
   perform set_config('request.jwt.claims', json_build_object('sub', fr, 'role', 'authenticated')::text, true);
   set local role authenticated;
   denied := false;
   begin perform public.journey_start(bf, 'wave', null, null, null, 'most_days', 'private', null);
   exception when insufficient_privilege then denied := true; end;
   reset role;
-  if denied then passed := passed + 1; else failed := array_append(failed, 'free: premium template refused'); end if;
+  if denied then passed := passed + 1; else failed := array_append(failed, 'free: Flock-only template refused'); end if;
 
   -- 6) Free: sharing with the community is refused.
   perform set_config('request.jwt.claims', json_build_object('sub', fr, 'role', 'authenticated')::text, true);
@@ -150,22 +150,23 @@ begin
   reset role;
   if n = 3 then passed := passed + 1; else failed := array_append(failed, 'custom: 3 to 8 milestones and a name'); end if;
 
-  -- 10) Premium: premium templates, unlimited custom journeys, still private only.
+  -- 10) A paid Flock plan (annual here; Kya's Crew is a Flock plan too): every
+  --     template, unlimited custom journeys and sharing. App premium is gone,
+  --     so nobody is ever on the old 'premium' level.
   perform set_config('request.jwt.claims', json_build_object('sub', pr, 'role', 'authenticated')::text, true);
   set local role authenticated;
   select * into r from public.journey_my_access();
-  ok := r.tier = 'premium' and r.can_use_premium and not r.can_share and r.can_view_community
-    and r.max_clip_seconds = 300 and r.max_clips_per_journey = 20 and r.max_open_custom is null;
+  ok := r.tier = 'flock' and r.can_use_premium and r.can_share and r.can_view_community
+    and r.max_clip_seconds = 1200 and r.max_clips_per_journey is null and r.max_open_custom is null;
   begin
     perform public.journey_start(bp, 'wave', null, null, null, 'most_days', 'private', null);
     perform public.journey_start(bp, null, 'A', array['1','2','3'], null, 'weekends', 'private', null);
     perform public.journey_start(bp, null, 'B', array['1','2','3'], null, 'weekends', 'private', null);
+    perform public.journey_start(bp, 'spin', null, null, null, 'most_days', 'community', null);
   exception when others then ok := false; end;
-  denied := false;
-  begin perform public.journey_start(bp, 'spin', null, null, null, 'most_days', 'community', null);
-  exception when insufficient_privilege then denied := true; end;
   reset role;
-  if ok and denied then passed := passed + 1; else failed := array_append(failed, 'premium: every template, unlimited custom, private only'); end if;
+  ok := ok and private.journey_tier(pr) = 'flock' and private.journey_tier(fr) = 'free' and private.journey_tier(adm) = 'flock';
+  if ok then passed := passed + 1; else failed := array_append(failed, 'paid Flock plan: every template, unlimited custom, sharing; two levels only'); end if;
 
   -- 11) Flock member: may share with the community; clips up to 20 minutes, no clip limit.
   perform set_config('request.jwt.claims', json_build_object('sub', fm, 'role', 'authenticated')::text, true);
@@ -294,7 +295,7 @@ begin
     into v;
   if denied and ok and v::boolean then passed := passed + 1; else failed := array_append(failed, 'admin edits template text'); end if;
 
-  -- 20) The seed: 7 free, 7 premium, the doc's milestone counts, Diet conversion's safeguards.
+  -- 20) The seed: 7 free, 7 Flock-only (stored as 'premium'), the doc's milestone counts, Diet conversion's safeguards.
   select count(*) filter (where tier = 'free') = 7 and count(*) filter (where tier = 'premium') = 7
      and (select count(*) from public.journey_template_milestones m join public.journey_templates t on t.id = m.template_id where t.slug = 'spin') = 5
      and (select count(*) from public.journey_template_milestones m join public.journey_templates t on t.id = m.template_id where t.slug = 'step-up') = 7

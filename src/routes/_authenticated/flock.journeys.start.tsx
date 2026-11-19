@@ -4,13 +4,13 @@ import { useTranslation } from "react-i18next";
 import { K, KyaLink } from "@/components/kya";
 import { FlockSubPage } from "@/components/flock/FlockSubPage";
 import { BirdThumb } from "@/components/flock/FlockPeople";
-import { CustomLimitSheet, FlowFooter, JourneyEyebrow, PremiumSheet, TemplateRow } from "@/components/flock/JourneyParts";
+import { CustomLimitSheet, FlowFooter, JourneyEyebrow, FlockOnlySheet, TemplateRow } from "@/components/flock/JourneyParts";
 import { useOwnBirdPhotoUrls } from "@/lib/flockData";
 import { useBirdJourneys, useBirdSkills, useJourneyAccess, useJourneyBirds, useJourneyTemplates } from "@/lib/journeyData";
 import { canStartCustom, groupTemplates, isLocked, type JourneyTemplate } from "@/lib/journeys";
 
-// Start a journey (JourneyFlow, screen 1): the basics (free), then tricks and
-// more (premium, locked for free accounts), known skills marked, and "Write
+// Start a journey (JourneyFlow, screen 1): the basics (free), then Flock
+// journeys (locked for free accounts), known skills marked, and "Write
 // your own journey" at the bottom. With more than one bird, pick the bird first.
 export const Route = createFileRoute("/_authenticated/flock/journeys/start")({
   validateSearch: (s: Record<string, unknown>): { bird?: string } => ({ bird: typeof s.bird === "string" ? s.bird : undefined }),
@@ -28,7 +28,7 @@ function StartJourney() {
   const { data: skills } = useBirdSkills(bird?.id);
   const { data: open } = useBirdJourneys(bird?.id);
   const { data: photos } = useOwnBirdPhotoUrls(birds, 96);
-  const [sheet, setSheet] = useState<"premium" | "custom" | null>(null);
+  const [sheet, setSheet] = useState<"custom" | JourneyTemplate | null>(null);
 
   if (birds && !bird) {
     return (
@@ -57,7 +57,7 @@ function StartJourney() {
   const meta = (tp: JourneyTemplate) => t("flock.journeys.start.meta", "{{count}} milestones · usually {{length}}", { count: tp.milestones.length, length: tp.typical_length });
   const pick = (tp: JourneyTemplate) => {
     if (!bird) return;
-    if (isLocked(tp, access)) { setSheet("premium"); return; }
+    if (isLocked(tp, access)) { setSheet(tp); return; }
     void navigate({ to: "/flock/journeys/setup", search: { bird: bird.id, template: tp.slug } });
   };
   const row = (tp: JourneyTemplate) => (
@@ -83,7 +83,7 @@ function StartJourney() {
         )}
         <JourneyEyebrow>{t("flock.journeys.start.basics", "The basics · free")}</JourneyEyebrow>
         {groups.basics.map(row)}
-        <div className="pt-1.5"><JourneyEyebrow>{t("flock.journeys.start.more", "Tricks and more · premium")}</JourneyEyebrow></div>
+        <div className="pt-1.5"><JourneyEyebrow>{t("flock.journeys.start.more", "Flock journeys")}</JourneyEyebrow></div>
         {groups.more.map(row)}
       </div>
       <FlowFooter>
@@ -101,7 +101,7 @@ function StartJourney() {
           {t("flock.journeys.start.writeOwn", "Write your own journey")}
         </button>
       </FlowFooter>
-      {sheet === "premium" && <PremiumSheet onClose={() => setSheet(null)} />}
+      {sheet && sheet !== "custom" && <FlockOnlySheet slug={sheet.slug} journey={sheet.name} bird={bird?.name} onClose={() => setSheet(null)} />}
       {sheet === "custom" && <CustomLimitSheet onClose={() => setSheet(null)} />}
     </FlockSubPage>
   );

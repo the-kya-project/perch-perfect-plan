@@ -13,7 +13,7 @@
  */
 import assert from "node:assert/strict";
 import Stripe from "stripe";
-import { giftToday, isAllowedSendDate, formatGiftDate, formatCents, GIFT_CODE_PATTERN, applyGiftRefund, giftKeptCents, giftGivingCents, giftGrantsMembership } from "@/lib/gifts";
+import { giftToday, isAllowedSendDate, formatGiftDate, formatCents, GIFT_CODE_PATTERN, GIFT_PLANS, isGiftPlan, applyGiftRefund, giftKeptCents, giftGivingCents, giftGrantsMembership } from "@/lib/gifts";
 import { buildGiftReceiptEmail, buildGiftRecipientEmail, type GiftRow } from "@/lib/giftEmails.server";
 
 let passed = 0;
@@ -125,11 +125,16 @@ await check("recipient: subject is the headline, redeem link carries the code", 
   assert.ok(e.html.includes("/redeem?code=KYA-7H3Q-PX2M"));
   assert.ok(!e.html.includes("<script>") && !e.html.includes("<b>Rivera"));
 });
-await check("recipient: app premium wording and a nameless buyer", () => {
-  const e = buildGiftRecipientEmail({ ...base, plan: "app_premium_year", buyer_name: null, message: null });
-  assert.ok(e.text.includes("a year of app premium"));
+await check("recipient: a nameless buyer, and no app premium wording (app premium is gone)", () => {
+  const e = buildGiftRecipientEmail({ ...base, buyer_name: null, message: null });
+  assert.ok(e.text.includes("a year in the Flock"));
   assert.ok(e.text.includes("Someone who cares about you and your bird"));
-  assert.ok(e.text.includes("when app premium launches in January"));
+  assert.ok(!/premium/i.test(e.text) && !/premium/i.test(e.html));
+  assert.ok(!/premium/i.test(buildGiftReceiptEmail(base).text));
+});
+await check("the only gift plan is a year in the Flock", () => {
+  assert.deepEqual([...GIFT_PLANS], ["flock_year"]);
+  assert.equal(isGiftPlan("app_premium_year"), false);
 });
 await check("both emails carry the PO Box and no unsubscribe link", () => {
   for (const e of [buildGiftReceiptEmail(base), buildGiftRecipientEmail(base)]) {

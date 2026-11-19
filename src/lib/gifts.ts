@@ -5,7 +5,10 @@
 // variables, see stripe.server.ts), so test and live can differ without a code
 // change. What lives here is everything that isn't money.
 
-export const GIFT_PLANS = ["flock_year", "app_premium_year"] as const;
+// The only gift is a year in the Flock. "app_premium_year" was retired (app
+// premium is gone); the database keeps the value for one refunded record, but a
+// trigger refuses new ones (20261119170000_remove_app_premium.sql).
+export const GIFT_PLANS = ["flock_year"] as const;
 export type GiftPlan = (typeof GIFT_PLANS)[number];
 
 export function isGiftPlan(v: unknown): v is GiftPlan {

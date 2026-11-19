@@ -39,6 +39,7 @@
     "test:supabase-env": "npx --yes vite-node scripts/supabase-env.test.ts",
     "test:flock-shell": "npx --yes vite-node scripts/flock-shell.test.ts",
     "test:clip-playback": "npx --yes vite-node scripts/clip-playback-check.ts",
+    "test:clip-playback:safari": "npx --yes vite-node scripts/clip-playback-safari.ts",
     "test:preview-services": "npx --yes vite-node scripts/preview-services.test.ts",
     "test:setup-progress": "npx --yes vite-node scripts/setup-progress.test.ts",
     "test:home-defaults": "npx --yes vite-node scripts/home-defaults.test.ts",
@@ -66,8 +67,10 @@
     "test:poison-control": "npx --yes vite-node scripts/poison-control.test.ts",
     "test:cron-telemetry": "npx --yes vite-node scripts/cron-telemetry.test.ts",
     "test:account-deletion": "npx --yes vite-node scripts/account-deletion.test.ts",
+    "test:account-files": "npx --yes vite-node scripts/account-files.test.ts",
     "test:save-errors": "npx --yes vite-node scripts/save-errors.test.ts",
-    "test:cron-auth": "npx --yes vite-node scripts/cron-auth.test.ts"
+    "test:cron-auth": "npx --yes vite-node scripts/cron-auth.test.ts",
+    "test:native-app-tags": "npx --yes vite-node scripts/native-app-tags.test.ts"
   },
   "dependencies": {
     "@capacitor/android": "^8.5.3",

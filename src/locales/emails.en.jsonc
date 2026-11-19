@@ -754,11 +754,8 @@
 
   // ---- Gift memberships (src/lib/giftEmails.server.ts) ----
   "email.gift.planFlock": "a year in the Flock",
-  "email.gift.planPremium": "a year of app premium",
   "email.gift.badgeFlock": "The Flock &middot; 1 year",
-  "email.gift.badgePremium": "App premium &middot; 1 year",
   "email.gift.timingFlock": "Gifts can be redeemed anytime. The year starts when the Flock opens in January, or on the day it's redeemed if that's later.",
-  "email.gift.timingPremium": "Gifts can be redeemed anytime. The year starts when app premium launches in January, or on the day it's redeemed if that's later.",
   "email.gift.codeLabel": "Gift code",
   "email.gift.hi": "Hi {{first}},",
   "email.gift.hiNoName": "Hi there,",
@@ -783,8 +780,7 @@
   "email.gift.recipient.pill": "A gift for you",
   "email.gift.recipient.intro": "{{from}} gave you {{plan}} from The Kya Project.",
   "email.gift.recipient.fromNobody": "Someone who cares about you and your bird",
-  "email.gift.recipient.aboutFlock": "The Flock is The Kya Project's community for parrot people, with expert Q&amp;As, local chapters, and a share of every membership going to parrot rescue and conservation. It opens in January.",
-  "email.gift.recipient.aboutPremium": "App premium is the paid tier of Kya &amp; Co., the app that helps you keep your bird healthy every day. It launches in January.",
+  "email.gift.recipient.aboutFlock": "The Flock is The Kya Project's community for parrot people, with expert Q&amp;As, local chapters, and 20% of every membership going to parrot rescue and conservation. It opens in January.",
   "email.gift.recipient.noteTitle": "A note from {{from}}",
   "email.gift.recipient.noteTitleNobody": "A note for you",
   "email.gift.recipient.cardTitle": "Your gift",

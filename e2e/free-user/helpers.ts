@@ -50,10 +50,10 @@ export async function newContext(browser: Browser, opts: BrowserContextOptions =
 // The community's own chunks: Flock*-* components (except FlockHealthDuo,
 // the care app's all-birds health view), SpacesSheet-*, and every flock.*
 // route chunk (flock-*, flock.you.edit-*, flock.members.$userId-*, ...).
-const FLOCK_CHUNK = /\/assets\/(?!FlockHealthDuo)(Flock\w+|SpacesSheet|flock\w*(\.[\w$-]+)*)-[\w-]+\.js(\?|$)/;
+const FLOCK_CHUNK = /\/assets\/(?!FlockHealthDuo)(Flock\w+|SpacesSheet|LibraryParts|AdminOnly|admin\.library\w*(\.[\w$-]+)*|flock\w*(\.[\w$-]+)*)-[\w-]+\.js(\?|$)/;
 // Flock-only RPCs. flock_enabled is the gate itself and is allowed.
-const FLOCK_RPC = /\/rest\/v1\/rpc\/(founding_status|admin_founding_claims|is_flock_member|admin_grant_entitlement|admin_revoke_entitlement|admin_set_flock_ui|admin_set_flock_opens_at|flock_visible_birds|flock_member_profile|flock_chapter|flock_chapter_members|flock_my_setup)\b/;
-const FLOCK_TABLE = /\/rest\/v1\/(flock_settings|flock_profiles|flock_shown_birds|member_profiles|regions|entitlements|user_roles|founding_claims)\b/;
+const FLOCK_RPC = /\/rest\/v1\/rpc\/(founding_status|admin_founding_claims|is_flock_member|admin_grant_entitlement|admin_revoke_entitlement|admin_set_flock_ui|admin_set_flock_opens_at|flock_visible_birds|flock_member_profile|flock_chapter|flock_chapter_members|flock_my_setup|flock_library_search|flock_library_resource)\b/;
+const FLOCK_TABLE = /\/rest\/v1\/(flock_settings|flock_profiles|flock_shown_birds|member_profiles|regions|entitlements|user_roles|founding_claims|library_resources)\b|\/storage\/v1\/object\/(?:sign\/|authenticated\/|public\/)?flock-library\//;
 
 export type FlockLeak = { url: string; why: string };
 
@@ -155,4 +155,40 @@ export async function blockAllWrites(context: BrowserContext): Promise<Blocked[]
 export function dayFromToday(n: number): string {
   const d = new Date(Date.now() + n * 86_400_000);
   return new Intl.DateTimeFormat("en-CA", { timeZone: "America/New_York", year: "numeric", month: "2-digit", day: "2-digit" }).format(d);
+}
+
+// ── The library's data, read directly ──────────────────────────────────────
+/** The staging check fixture (supabase/staging/free-user.sql): one published
+ *  resource with a PDF, so "no rows" means RLS said no, not "nothing there". */
+export const LIBRARY_FIXTURE = { id: "5ea9f6a1-0000-4000-8000-00000000f1b1", pdf: "files/5ea9f6a1-0000-4000-8000-00000000f1b2.pdf" };
+
+export type DirectRead = { what: string; status: number; rows: number | null; body: string };
+
+/** Asks Supabase directly (outside the app, the way someone poking at the API
+ *  would) for the library's rows and files, as this signed-in account and as
+ *  nobody. `supabaseUrl` and `apikey` come from the app's own requests. */
+export async function readLibraryDirectly(supabaseUrl: string, apikey: string, token: string | null): Promise<DirectRead[]> {
+  const headers: Record<string, string> = { apikey, "content-type": "application/json", ...(token ? { authorization: `Bearer ${token}` } : {}) };
+  const call = async (what: string, path: string, init: RequestInit = {}): Promise<DirectRead> => {
+    const r = await fetch(`${supabaseUrl}${path}`, { ...init, headers: { ...headers, ...(init.headers as Record<string, string> | undefined) } });
+    const body = await r.text();
+    let rows: number | null = null;
+    try { const j = JSON.parse(body); if (Array.isArray(j)) rows = j.length; else if (j && typeof j === "object" && ("signedURL" in j || "signedUrl" in j)) rows = 1; } catch { /* not JSON */ }
+    return { what, status: r.status, rows, body: body.slice(0, 200) };
+  };
+  return Promise.all([
+    call("table: every row", "/rest/v1/library_resources?select=id,title,status"),
+    call("table: the fixture", `/rest/v1/library_resources?select=id&id=eq.${LIBRARY_FIXTURE.id}`),
+    call("search", "/rest/v1/rpc/flock_library_search", { method: "POST", body: "{}" }),
+    call("one resource", "/rest/v1/rpc/flock_library_resource", { method: "POST", body: JSON.stringify({ p_id: LIBRARY_FIXTURE.id }) }),
+    call("sign the PDF", `/storage/v1/object/sign/flock-library/${LIBRARY_FIXTURE.pdf}`, { method: "POST", body: JSON.stringify({ expiresIn: 60 }) }),
+    call("download the PDF", `/storage/v1/object/authenticated/flock-library/${LIBRARY_FIXTURE.pdf}`),
+    call("list the bucket", "/storage/v1/object/list/flock-library", { method: "POST", body: JSON.stringify({ prefix: "files", limit: 100 }) }),
+  ]);
+}
+
+/** Nothing came back: an error status, or an empty list. */
+export function gotNothing(r: DirectRead): boolean {
+  if (r.status >= 400) return true;
+  return r.status < 300 && r.rows === 0;
 }

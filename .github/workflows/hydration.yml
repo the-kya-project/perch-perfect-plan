@@ -65,6 +65,14 @@ jobs:
       - name: Repeat the tap-while-loading test on WebKit
         run: npx playwright test -c e2e navigation.spec.ts --repeat-each 10 --project 'webkit-*'
 
+      # Account deletion: every file a person left (Flock photos, care photos,
+      # Cloudflare clips) is removed, another member's never is, and a failed
+      # run is safe to repeat. In-memory database and buckets; nothing real.
+      - name: Account deletion
+        run: |
+          npm run test:account-deletion
+          npm run test:account-files
+
       # The Community (Flock) shell, same build: the five tabs, redirects,
       # chips, the Spaces sheet (focus, Escape, swipe), the Duo column, and
       # that everyone but admins is sent Home with no Community code loaded.

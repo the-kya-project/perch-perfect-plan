@@ -314,7 +314,7 @@ type SeedJourney = {
   clips?: number; followers?: number; following?: boolean;
 };
 type JourneyMockOpts = {
-  tier?: "free" | "premium" | "flock"; openCustom?: number; knownSlugs?: string[];
+  tier?: "free" | "flock"; openCustom?: number; knownSlugs?: string[];
   seed?: SeedJourney[]; canAddClip?: boolean;
   weight?: {
     level: "none" | "notice" | "pause"; start: number; now: number;
@@ -336,7 +336,6 @@ async function mockJourneys(context: BrowserContext, opts: JourneyMockOpts, bird
   const tier = opts.tier ?? "flock";
   const limits = {
     free: { max_clip_seconds: 60, max_clips_per_journey: 10, max_open_custom: 1, max_upload_bytes: 262144000, can_use_premium: false, can_share: false, can_view_community: false },
-    premium: { max_clip_seconds: 300, max_clips_per_journey: 20, max_open_custom: null, max_upload_bytes: 1073741824, can_use_premium: true, can_share: false, can_view_community: true },
     flock: { max_clip_seconds: 1200, max_clips_per_journey: null, max_open_custom: null, max_upload_bytes: 2000000000, can_use_premium: true, can_share: true, can_view_community: true },
   }[tier];
   const json = (route: Route, body: unknown, status = 200) =>
@@ -509,7 +508,7 @@ async function mockJourneys(context: BrowserContext, opts: JourneyMockOpts, bird
 }
 
 // Community code chunks (FlockHealthDuo is the care app's, not Community's).
-const FLOCK_CHUNK = /\/assets\/(?!FlockHealthDuo)(Flock\w+|SpacesSheet|CommentThread|ReportSheet|IdeaParts|EventParts|admin\.(?:review|ideas)|Post(?:Compose|Feed|Parts)|Journey\w+|[jJ]ourney\w*(\.[\w$-]+)*|flock\w*(\.[\w$-]+)*)-[\w-]+\.js/;
+const FLOCK_CHUNK = /\/assets\/(?!FlockHealthDuo)(Flock\w+|SpacesSheet|CommentThread|ReportSheet|IdeaParts|EventParts|admin\.(?:review|ideas|library)|LibraryParts|AdminOnly|Post(?:Compose|Feed|Parts)|Journey\w+|[jJ]ourney\w*(\.[\w$-]+)*|flock\w*(\.[\w$-]+)*)-[\w-]+\.js/;
 
 const tabs = (page: Page) => page.locator("nav[aria-label='Community']:visible [data-flock-tab]");
 
@@ -615,11 +614,13 @@ test.describe("as an admin, on a phone", () => {
     await expect(page.getByRole("searchbox", { name: "Search the library" })).toBeVisible();
     const type = page.getByRole("group", { name: "Type" }).getByRole("button");
     const subject = page.getByRole("group", { name: "Subject" }).getByRole("button");
-    await expect(type).toHaveText(["All", "Guides", "Recordings", "Podcast"]);
+    await expect(type).toHaveText(["All", "Guides", "Checklists", "Videos", "Links"]);
     await expect(subject).toHaveText(["Foraging", "Diet", "Training", "Hormones", "Conservation"]);
-    await type.filter({ hasText: "Podcast" }).click();
+    // Nothing published yet: the shelves are filling.
+    await expect(page.getByTestId("flock-empty")).toContainText("The shelves are filling");
+    await type.filter({ hasText: "Videos" }).click();
     await subject.filter({ hasText: "Hormones" }).click();
-    await expect(page).toHaveURL(/type=podcast/);
+    await expect(page).toHaveURL(/type=videos/);
     await expect(page).toHaveURL(/subject=hormones/);
     await subject.filter({ hasText: "Hormones" }).click(); // a second tap clears it
     await expect(page).not.toHaveURL(/subject=/);
@@ -678,7 +679,7 @@ test.describe("journeys: start a journey (admin, phone)", () => {
     await page.getByTestId("pick-bird").locator("[data-bird]", { hasText: "Echo" }).click();
     const list = page.getByTestId("template-list");
     await expect(list.getByRole("heading", { name: "The basics · free" })).toBeVisible();
-    await expect(list.getByRole("heading", { name: "Tricks and more · premium" })).toBeVisible();
+    await expect(list.getByRole("heading", { name: "Flock journeys" })).toBeVisible();
     await expect(list.locator("[data-template]")).toHaveCount(7);
     await expect(list.locator("[data-template='target-training']")).toContainText("Echo knows this");
     await expect(list.locator("[data-template='step-up']")).toContainText("7 milestones · usually 2–6 weeks");
@@ -932,16 +933,16 @@ test.describe("journeys: posting updates and milestones (admin, phone)", () => {
   });
 
   test("at the clip limit the camera offers Flock membership instead", async ({ browser, baseURL }) => {
-    const { context, page } = await open(browser, baseURL!, { admin: true, journeys: { tier: "premium", seed: [stepUp], canAddClip: false } });
+    const { context, page } = await open(browser, baseURL!, { admin: true, journeys: { tier: "free", seed: [stepUp], canAddClip: false } });
     await page.goto(`/flock/journeys/00000000-0000-4000-8000-0000000074a1/post`);
     const card = page.getByTestId("clip-limit");
-    await expect(card.getByRole("heading")).toHaveText("This journey has 20 clips");
+    await expect(card.getByRole("heading")).toHaveText("This journey has 10 clips");
     await expect(card.getByRole("link", { name: "Compare with Flock membership" })).toHaveAttribute("href", "/flock/you/membership");
     await context.close();
   });
 
-  test("free and premium post privately: Posting to just you, no Change", async ({ browser, baseURL }) => {
-    const { context, page } = await open(browser, baseURL!, { admin: true, journeys: { tier: "premium", seed: [{ ...stepUp, visibility: "private" }] } });
+  test("free accounts post privately: Posting to just you, no Change", async ({ browser, baseURL }) => {
+    const { context, page } = await open(browser, baseURL!, { admin: true, journeys: { tier: "free", seed: [{ ...stepUp, visibility: "private" }] } });
     await page.goto(`/flock/journeys/00000000-0000-4000-8000-0000000074a1/post?clip=${CLIP}`);
     await expect(page.getByTestId("posting-to")).toHaveText("Posting to just you");
     await expect(page.getByTestId("posting-to").getByRole("button", { name: "Change" })).toHaveCount(0);
@@ -1065,17 +1066,6 @@ test.describe("journeys: pages, the Journeys tab, following and Today (admin, ph
     await follow.click();
     await expect(follow).toHaveText("Following");
     expect(journeys.calls.find((c) => c.fn === "journey_follow")!.args).toMatchObject({ p_journey_id: "00000000-0000-4000-8000-0000000074a3", p_follow: true });
-    await context.close();
-  });
-
-  test("app premium reads community journeys but can't follow or cheer", async ({ browser, baseURL }) => {
-    const { context, page } = await open(browser, baseURL!, { admin: true, journeys: { tier: "premium", seed: [kiwi] } });
-    await page.goto(`/flock/journeys/00000000-0000-4000-8000-0000000074a3`);
-    await expect(page.getByRole("heading", { level: 1 })).toHaveText("Kiwi · Recall");
-    await expect(page.getByTestId("follow")).toHaveCount(0);
-    await page.getByTestId("clip-grid").locator("[data-tile]").first().click();
-    await expect(page.getByTestId("story")).toBeVisible();
-    await expect(page.getByTestId("go-bird")).toHaveCount(0);
     await context.close();
   });
 
@@ -1204,23 +1194,25 @@ test.describe("journeys: finisher tips (admin, phone)", () => {
 });
 
 test.describe("journeys: what a free account sees", () => {
-  test("premium templates are locked and explain app premium; only Just me; one custom journey at a time", async ({ browser, baseURL }) => {
+  test("Flock-only templates are locked and explain the Flock with no price; only Just me; one custom journey at a time", async ({ browser, baseURL }) => {
     const { context, page, journeys } = await open(browser, baseURL!, { admin: true, journeys: { tier: "free", openCustom: 1 } });
     await page.goto("/flock/journeys/start");
     await page.getByTestId("pick-bird").locator("[data-bird]", { hasText: "Buzz" }).click();
     await expect(page.locator("[data-locked]")).toHaveCount(2);
     await page.locator("[data-template='wave']").click();
-    const sheet = page.getByTestId("premium-sheet");
-    await expect(page.getByRole("heading", { name: "Tricks come with app premium" })).toBeVisible();
-    await expect(sheet).toContainText("Unlock every trick and husbandry journey, unlimited custom journeys, and longer clips, plus the premium care features.");
-    await expect(sheet).toContainText("$9.99");
-    await sheet.getByRole("button", { name: "Coming soon" }).click();
-    await expect(sheet).toBeVisible();
-    await expect(sheet.getByRole("link", { name: "Compare with Flock membership" })).toHaveAttribute("href", "/flock/you/membership");
+    const sheet = page.getByTestId("flock-only-sheet");
+    await expect(page.getByText("Part of the Flock", { exact: true })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Teach Buzz to wave" })).toBeVisible();
+    await expect(sheet).toContainText("Tricks like this one are only available to Flock members.");
+    await expect(sheet).toContainText("The Flock is The Kya Project's community, where you'll find your local chapter, a library of guides and recordings, and every training journey, including tricks, nail trims, and stationing.");
+    await expect(sheet).toContainText("Be an early Flock member and join for free until July 2027.");
+    await expect(sheet.getByRole("button", { name: "Join the Flock free" })).toBeVisible();
+    await expect(sheet).not.toContainText("$");
+    await expect(page.locator("[data-template='wave']")).toHaveAttribute("aria-label", "Wave, part of the Flock");
     await page.keyboard.press("Escape");
     await page.getByTestId("write-own").click();
     await expect(page.getByTestId("custom-limit-sheet")).toHaveText(
-      "You have a journey you wrote yourself going already. Finish it, or mark it \"We're happy where we are,\" to write another. With app premium, you can write as many as you like.Got it");
+      "Free accounts can have one custom journey going at a time. Flock members can start as many as they like.Got it");
     await page.getByRole("button", { name: "Got it" }).click();
     await page.locator("[data-template='step-up']").click();
     await expect(page.getByTestId("visibility").locator("[role='radio']")).toHaveText(["Just me"]);
@@ -1238,8 +1230,12 @@ test("everyone else: every /flock URL sends them Home and no Community code load
     // The gate (flock_enabled) is the only Community call a non-admin ever makes.
     const calls: string[] = [];
     context.on("request", (r) => { const m = r.url().match(/\/rpc\/((?:flock|journey)_\w+)/); if (m && m[1] !== "flock_enabled") calls.push(m[1]); });
+    // Nor the library's table or files.
+    context.on("request", (r) => { if (/\/rest\/v1\/library_resources\b|\/storage\/v1\/object\/(?:sign\/)?flock-library\//.test(r.url())) calls.push(r.url()); });
     for (const path of ["/flock", "/flock/journeys", "/flock/journeys/start", "/flock/journeys/setup?bird=x&template=step-up", "/flock/journeys/known?bird=x", "/flock/journeys/00000000-0000-4000-8000-0000000074a1/post", "/flock/journeys/00000000-0000-4000-8000-0000000074a1/milestone/1", "/flock/journeys/00000000-0000-4000-8000-0000000074a1/story", "/flock/journeys/00000000-0000-4000-8000-0000000074a1/compare", "/flock/chapter", "/flock/library", "/flock/spaces", "/flock/learn", "/flock?space=good",
       "/flock/post/new", "/flock/post/00000000-0000-4000-8000-0000000079a1", "/flock/you/notifications", "/admin/review", "/flock/idea", "/admin/ideas", "/flock/chapter?tab=events", "/flock/events/new",
+      "/flock/library/00000000-0000-4000-8000-0000000090a1", "/flock/library?type=guides&subject=foraging&q=cups", "/admin/library", "/admin/library/new",
+      "/admin/library/00000000-0000-4000-8000-0000000090a1",
       "/flock/events/00000000-0000-4000-8000-0000000083a1"]) {
       await page.goto(path);
       await expect(page, `${size} ${path}`).toHaveURL(/\/dashboard/);
@@ -1971,7 +1967,7 @@ test.describe("welcome, setup, profiles and chapters (admin, phone)", () => {
     await expect(page).toHaveURL(/\/flock\/you$/);
     await expect(page.getByRole("heading", { level: 1 })).toHaveText("Brittany K.");
     await expect(page.getByText("Community is separate from care reminders")).toBeVisible();
-    await expect(page.getByText("Founding · $15/mo · first 6 months free once the Flock opens")).toBeVisible();
+    await expect(page.getByText("Founding · free until Jul 6, 2027, then $15/mo for life")).toBeVisible();
     await page.getByRole("button", { name: /Privacy/ }).click();
     await expect(page).toHaveURL(/\/flock\/you\/privacy$/);
     const see = page.getByTestId("privacy-see");
@@ -2090,6 +2086,287 @@ test.describe("photos and clips at their own shape, never the player's error (ad
     const both = Promise.all([page.waitForRequest(/signed-token-0/), page.waitForRequest(/signed-token-1/)]);
     await page.goto(`/flock/journeys/${id}/compare`);
     await both;
+    await context.close();
+  });
+});
+
+// ---- The library (20261118120000_flock_library) ---------------------------------------------
+
+type LibraryState = {
+  rows: Record<string, any>[];
+  searches: Record<string, any>[];
+  writes: { method: string; body: any; url: string }[];
+  uploads: string[];
+  removed: string[];
+};
+
+/** The library the way the database answers: flock_library_search and
+ *  flock_library_resource return published rows only; the admin reads and
+ *  writes library_resources; files in flock-library are signed and uploaded. */
+async function mockLibrary(context: BrowserContext, rows: Record<string, any>[] = []): Promise<LibraryState> {
+  const state: LibraryState = { rows, searches: [], writes: [], uploads: [], removed: [] };
+  const cors = { "access-control-allow-origin": "*", "access-control-allow-headers": "*", "access-control-allow-methods": "*" };
+  const json = (route: Route, body: unknown, status = 200) => route.fulfill({ status, contentType: "application/json", headers: cors, body: JSON.stringify(body) });
+  const full = (r: any) => ({
+    summary: "", body: "", topics: [], species: [], cover_path: null, external_url: null, attachment_path: null, status: "draft",
+    vet_reviewed: false, vet_reviewer: null, vet_reviewed_on: null, published_at: null, updated_at: new Date().toISOString(), resource_type: "guide", ...r,
+  });
+  await context.route(`${MOCK}/rest/v1/rpc/flock_library_*`, async (route) => {
+    const fn = new URL(route.request().url()).pathname.split("/").pop();
+    const a = (route.request().postDataJSON() ?? {}) as Record<string, any>;
+    const live = state.rows.map(full).filter((r) => r.status === "published");
+    if (fn === "flock_library_search") {
+      state.searches.push(a);
+      const words = String(a.p_q ?? "").toLowerCase().split(/\s+/).filter(Boolean);
+      return json(route, live
+        .filter((r) => !a.p_type || r.resource_type === a.p_type)
+        .filter((r) => !a.p_topic || r.topics.includes(a.p_topic))
+        .filter((r) => words.every((w) => [r.title, r.summary, r.body, ...r.species].join(" ").toLowerCase().includes(w)))
+        .sort((x, y) => String(y.published_at).localeCompare(String(x.published_at)))
+        .map((r) => ({ ...r, has_attachment: !!r.attachment_path })));
+    }
+    if (fn === "flock_library_resource") return json(route, live.filter((r) => r.id === a.p_id));
+    return json(route, null);
+  });
+  await context.route(`${MOCK}/rest/v1/library_resources**`, async (route) => {
+    const req = route.request();
+    if (req.method() === "OPTIONS") return route.fulfill({ status: 204, headers: cors });
+    const url = new URL(req.url());
+    const idEq = url.searchParams.get("id")?.replace(/^eq\./, "");
+    if (req.method() === "GET") return json(route, state.rows.map(full).filter((r) => !idEq || r.id === idEq));
+    const body = req.postDataJSON();
+    state.writes.push({ method: req.method(), body, url: req.url() });
+    if (req.method() === "POST") {
+      const id = `00000000-0000-4000-8000-0000000091${String(state.rows.length + 1).padStart(2, "0")}`;
+      state.rows.push(full({ ...body, id, published_at: body.status === "published" ? new Date().toISOString() : null }));
+      return json(route, [{ id }], 201);
+    }
+    if (req.method() === "PATCH") {
+      const r = state.rows.find((x) => x.id === idEq);
+      if (r) Object.assign(r, body, { published_at: r.published_at ?? (body.status === "published" ? new Date().toISOString() : null) });
+      return route.fulfill({ status: 204, headers: cors, body: "" });
+    }
+    if (req.method() === "DELETE") { state.rows = state.rows.filter((x) => x.id !== idEq); return route.fulfill({ status: 204, headers: cors, body: "" }); }
+    return json(route, []);
+  });
+  await context.route(`${MOCK}/storage/v1/object/**`, async (route) => {
+    const req = route.request();
+    const path = new URL(req.url()).pathname;
+    if (!path.includes("/flock-library")) return route.fallback();
+    if (req.method() === "OPTIONS") return route.fulfill({ status: 204, headers: cors });
+    if (req.method() === "POST" && path.startsWith("/storage/v1/object/sign/flock-library")) {
+      const body = req.postDataJSON() ?? {};
+      return json(route, ((body.paths ?? []) as string[]).map((p) => ({ path: p, signedURL: `/object/sign/flock-library/${p}?token=t`, error: null })));
+    }
+    if (req.method() === "DELETE") { state.removed.push(...(((req.postDataJSON() ?? {}).prefixes ?? []) as string[])); return json(route, []); }
+    if (req.method() === "POST" || req.method() === "PUT") {
+      const key = path.replace("/storage/v1/object/flock-library/", "");
+      state.uploads.push(key);
+      return json(route, { Key: `flock-library/${key}`, Id: key });
+    }
+    // A signed file: a small JPEG for covers, a stub for PDFs.
+    if (path.endsWith(".jpg")) return route.fulfill({ status: 200, contentType: "image/jpeg", body: readFileSync("public/brand/email/juno.jpg") });
+    return route.fulfill({ status: 200, contentType: "application/pdf", body: "%PDF-1.4\n%%EOF\n" });
+  });
+  return state;
+}
+
+const FORAGING = "00000000-0000-4000-8000-0000000090a1";
+const HORMONES = "00000000-0000-4000-8000-0000000090a2";
+const VIDEO = "00000000-0000-4000-8000-0000000090a3";
+const DRAFT = "00000000-0000-4000-8000-0000000090a4";
+const LIBRARY_ROWS = () => [
+  { id: FORAGING, title: "Foraging for beginners", summary: "Start small with paper cups and work up.", resource_type: "guide", topics: ["foraging"], species: ["Sun conure", "Caique"],
+    body: "# Why forage\nWild parrots spend **hours** finding food.\n\n## Start here\n- Wrap a treat in a paper cup\n- Hand it over\n\n> Stay close the first time.",
+    cover_path: "covers/00000000-0000-4000-8000-00000000c0a1.jpg", attachment_path: "files/00000000-0000-4000-8000-00000000f0a1.pdf",
+    status: "published", vet_reviewed: true, vet_reviewer: "Dr. Example, DVM", vet_reviewed_on: "2026-11-10", published_at: "2026-11-12T12:00:00Z" },
+  { id: HORMONES, title: "Hormone season checklist", summary: "What to change in spring.", resource_type: "checklist", topics: ["hormones"], species: [],
+    body: "- [ ] Shorten the day to 10–12 hours\n- [ ] Remove nest-like spaces", status: "published", published_at: "2026-11-14T12:00:00Z" },
+  { id: VIDEO, title: "Target training in five minutes", summary: "A chopstick and a treat.", resource_type: "video", topics: ["training"], species: [],
+    external_url: "https://example.com/target", status: "published", published_at: "2026-11-13T12:00:00Z" },
+  { id: DRAFT, title: "Unfinished draft", summary: "", resource_type: "guide", topics: [], status: "draft" },
+];
+
+test.describe("the library (admin, phone)", () => {
+  test("the list, the filters and search query real data; drafts never show", async ({ browser, baseURL }) => {
+    const { context, page } = await open(browser, baseURL!, { admin: true });
+    const lib = await mockLibrary(context, LIBRARY_ROWS());
+    await page.goto("/flock/library");
+    const results = page.getByTestId("library-results");
+    // Newest first; the draft isn't there.
+    await expect(results.locator("[data-resource]")).toHaveCount(3);
+    await expect(results.locator("[data-resource]").first()).toContainText("Hormone season checklist");
+    await expect(results).not.toContainText("Unfinished draft");
+    await expect(results.locator(`[data-resource='${FORAGING}']`)).toContainText("Vet reviewed");
+    await expect(results.locator(`[data-resource='${HORMONES}'] [data-testid='card-vet']`)).toHaveCount(0);
+    await expect(page.getByTestId("manage-library")).toBeVisible();
+
+    const type = page.getByRole("group", { name: "Type" }).getByRole("button");
+    const subject = page.getByRole("group", { name: "Subject" }).getByRole("button");
+    await type.filter({ hasText: "Videos" }).click();
+    await expect(page).toHaveURL(/type=videos/);
+    await expect(results.locator("[data-resource]")).toHaveCount(1);
+    await expect(results).toContainText("Target training in five minutes");
+    expect(lib.searches.at(-1)).toMatchObject({ p_type: "video", p_topic: null, p_q: null });
+    await type.filter({ hasText: "All" }).click();
+    await subject.filter({ hasText: "Foraging" }).click();
+    await expect(results.locator("[data-resource]")).toHaveCount(1);
+    expect(lib.searches.at(-1)).toMatchObject({ p_type: null, p_topic: "foraging" });
+    await subject.filter({ hasText: "Foraging" }).click();
+    await page.getByRole("searchbox", { name: "Search the library" }).fill("caique");
+    await expect(page).toHaveURL(/q=caique/);
+    await expect(results.locator("[data-resource]")).toHaveCount(1);
+    await expect(results).toContainText("Foraging for beginners");
+    expect(lib.searches.at(-1)).toMatchObject({ p_q: "caique" });
+    await page.getByRole("searchbox", { name: "Search the library" }).fill("pellets");
+    await expect(page.getByTestId("flock-empty")).toContainText("Nothing in the library matches that yet.");
+    await context.close();
+  });
+
+  test("a resource: body, type, tags, the PDF, and the vet badge only when it's on", async ({ browser, baseURL }) => {
+    const { context, page } = await open(browser, baseURL!, { admin: true });
+    await mockLibrary(context, LIBRARY_ROWS());
+    await page.goto("/flock/library");
+    await page.locator(`[data-resource='${FORAGING}']`).click();
+    await expect(page).toHaveURL(new RegExp(`/flock/library/${FORAGING}$`));
+    const view = page.getByTestId("resource-view");
+    await expect(view.getByRole("heading", { level: 2, name: "Foraging for beginners" })).toBeVisible();
+    await expect(page.getByTestId("resource-type")).toHaveText("Guide");
+    await expect(page.getByTestId("vet-badge")).toContainText("Reviewed by an avian vet");
+    await expect(page.getByTestId("vet-badge")).toContainText("Dr. Example, DVM");
+    await expect(page.getByTestId("resource-tags")).toContainText("Foraging");
+    await expect(page.getByTestId("resource-tags")).toContainText("Sun conure");
+    await expect(page.getByTestId("resource-tags")).toContainText("Caique");
+    const body = page.getByTestId("resource-body");
+    await expect(body.getByRole("heading", { name: "Why forage" })).toBeVisible();
+    await expect(body.locator("strong")).toHaveText("hours");
+    await expect(body.locator("li")).toHaveText(["Wrap a treat in a paper cup", "Hand it over"]);
+    await expect(page.getByTestId("resource-pdf")).toHaveAttribute("href", /flock-library\/files\/.+\.pdf\?token=t/);
+    await expect(page.getByTestId("resource-cover")).toBeVisible();
+    // The Library tab stays current.
+    await expect(page.locator("[data-flock-tab='library']").first()).toHaveAttribute("aria-current", "page");
+
+    // A checklist ticks, and no vet badge when the flag is off.
+    await page.goto(`/flock/library/${HORMONES}`);
+    await expect(page.getByTestId("resource-type")).toHaveText("Checklist");
+    await expect(page.getByTestId("vet-badge")).toHaveCount(0);
+    const box = page.getByTestId("checklist").getByRole("checkbox").first();
+    await box.check();
+    await expect(box).toBeChecked();
+    await page.reload();
+    await expect(page.getByTestId("checklist").getByRole("checkbox").first()).toBeChecked();
+
+    // A video opens its link; a draft or unknown id reads as not found.
+    await page.goto(`/flock/library/${VIDEO}`);
+    await expect(page.getByTestId("resource-link")).toHaveAttribute("href", "https://example.com/target");
+    await expect(page.getByTestId("resource-link")).toHaveText("Watch the video");
+    await page.goto(`/flock/library/${DRAFT}`);
+    await expect(page.getByTestId("flock-empty")).toContainText("This isn't in the library");
+    await context.close();
+  });
+
+  test("admin: write a resource, preview it, publish, edit it live, unpublish, delete", async ({ browser, baseURL }) => {
+    const { context, page } = await open(browser, baseURL!, { admin: true });
+    const lib = await mockLibrary(context, []);
+    await page.goto("/flock/library");
+    await expect(page.getByTestId("flock-empty")).toContainText("The shelves are filling");
+    await page.getByTestId("manage-library").click();
+    await expect(page).toHaveURL(/\/admin\/library$/);
+    await expect(page.getByTestId("admin-library-empty")).toBeVisible();
+    await page.getByTestId("new-resource").click();
+    await expect(page).toHaveURL(/\/admin\/library\/new$/);
+    await expect(page.getByTestId("editor-status")).toHaveText("Draft");
+
+    await page.getByTestId("resource-title").fill("Foraging for beginners");
+    await page.locator("[data-choice='type-checklist']").click();
+    // Not publishable yet: it says what's missing.
+    await expect(page.getByTestId("publish-needs")).toContainText("a short summary, at least one topic");
+    await expect(page.getByRole("button", { name: "Publish" })).toBeDisabled();
+    await page.getByTestId("resource-summary").fill("Start small with paper cups.");
+    await page.getByTestId("resource-body-input").fill("# Start here\n- [ ] Wrap a treat in a paper cup\n- [ ] Hand it over");
+    await page.locator("[data-choice='topic-foraging']").click();
+    await page.getByTestId("resource-species").fill("Sun conure, caique, Sun Conure");
+    await page.getByRole("switch", { name: "Reviewed by an avian vet" }).click();
+    await page.getByTestId("resource-reviewer").fill("Dr. Example, DVM");
+
+    // A cover photo and a PDF go to the private bucket.
+    await page.getByTestId("cover-input").setInputFiles("public/brand/email/juno.jpg");
+    await expect(page.getByText("Cover photo added")).toBeVisible();
+    await page.getByTestId("pdf-input").setInputFiles({ name: "foraging.pdf", mimeType: "application/pdf", buffer: Buffer.from("%PDF-1.4\n%%EOF\n") });
+    await expect(page.getByText("PDF attached")).toBeVisible();
+    expect(lib.uploads).toHaveLength(2);
+    expect(lib.uploads[0]).toMatch(/^covers\/[0-9a-f-]{36}\.jpg$/);
+    expect(lib.uploads[1]).toMatch(/^files\/[0-9a-f-]{36}\.pdf$/);
+    // Not a PDF: a kind message, nothing uploaded.
+    await page.getByTestId("pdf-input").setInputFiles({ name: "notes.txt", mimeType: "text/plain", buffer: Buffer.from("hello") });
+    await expect(page.getByTestId("editor-error")).toHaveText("That isn't a PDF. Choose a .pdf file.");
+    expect(lib.uploads).toHaveLength(2);
+
+    // Preview: exactly the member view, unsaved changes included.
+    await page.getByRole("tab", { name: "Preview" }).click();
+    const preview = page.getByTestId("resource-preview");
+    await expect(preview.getByRole("heading", { level: 2, name: "Foraging for beginners" })).toBeVisible();
+    await expect(preview.getByTestId("resource-type")).toHaveText("Checklist");
+    await expect(preview.getByTestId("vet-badge")).toContainText("Dr. Example, DVM");
+    await expect(preview.getByTestId("resource-tags")).toHaveText(/Foraging\s*Sun conure\s*caique/);
+    await expect(preview.getByTestId("checklist").getByRole("checkbox")).toHaveCount(2);
+    await page.getByRole("tab", { name: "Edit" }).click();
+
+    await page.getByRole("button", { name: "Publish" }).click();
+    await expect(page.getByTestId("editor-notice")).toHaveText("Published. Members can find it in the Library.");
+    await expect(page).toHaveURL(/\/admin\/library\/00000000-0000-4000-8000-000000009101$/);
+    await expect(page.getByTestId("editor-status")).toHaveText("Published");
+    const created = lib.writes.find((w) => w.method === "POST")!.body;
+    expect(created).toMatchObject({
+      title: "Foraging for beginners", resource_type: "checklist", status: "published", topics: ["foraging"], species: ["Sun conure", "caique"],
+      vet_reviewed: true, vet_reviewer: "Dr. Example, DVM",
+    });
+    expect(created.cover_path).toBe(lib.uploads[0]);
+    expect(created.attachment_path).toBe(lib.uploads[1]);
+
+    // Edit it live, then unpublish.
+    await page.getByTestId("resource-summary").fill("Start small with paper cups, then boxes.");
+    await page.getByRole("button", { name: "Save changes" }).click();
+    await expect(page.getByTestId("editor-notice")).toHaveText("Saved. Members see the new version.");
+    await page.getByRole("button", { name: "Unpublish" }).click();
+    await expect(page.getByTestId("editor-notice")).toHaveText("Unpublished. It's a draft again, hidden from members.");
+    await expect(page.getByTestId("editor-status")).toHaveText("Draft");
+    expect(lib.writes.filter((w) => w.method === "PATCH").map((w) => w.body.status)).toEqual(["published", "draft"]);
+
+    // The list shows it as a draft; members' list is empty again.
+    await page.goto("/admin/library");
+    await expect(page.getByTestId("admin-library-list").locator("[data-status='draft']")).toContainText("Foraging for beginners");
+    await page.goto("/flock/library");
+    await expect(page.getByTestId("flock-empty")).toContainText("The shelves are filling");
+
+    // Delete takes its files with it.
+    await page.goto("/admin/library/00000000-0000-4000-8000-000000009101");
+    await page.getByTestId("delete-resource").click();
+    await page.getByTestId("delete-confirm").click();
+    await expect(page).toHaveURL(/\/admin\/library$/);
+    await expect(page.getByTestId("admin-library-empty")).toBeVisible();
+    expect(lib.writes.at(-1)!.method).toBe("DELETE");
+    await expect.poll(() => lib.removed.sort()).toEqual([...lib.uploads].sort());
+    await context.close();
+  });
+
+  test("a video or link can't be published without its web link", async ({ browser, baseURL }) => {
+    const { context, page } = await open(browser, baseURL!, { admin: true });
+    const lib = await mockLibrary(context, []);
+    await page.goto("/admin/library/new");
+    await page.getByTestId("resource-title").fill("Target training");
+    await page.locator("[data-choice='type-video']").click();
+    await page.getByTestId("resource-summary").fill("Five minutes a day.");
+    await page.locator("[data-choice='topic-training']").click();
+    await expect(page.getByTestId("publish-needs")).toContainText("the web link");
+    await expect(page.getByRole("button", { name: "Publish" })).toBeDisabled();
+    // A draft saves without it.
+    await page.getByRole("button", { name: "Save draft" }).click();
+    await expect(page.getByTestId("editor-notice")).toHaveText("Draft saved. Only admins can see it.");
+    await page.getByTestId("resource-url").fill("youtube.com/watch?v=abc");
+    await page.getByRole("button", { name: "Publish" }).click();
+    await expect(page.getByTestId("editor-notice")).toHaveText("Published. Members can find it in the Library.");
+    expect(lib.writes.at(-1)!.body).toMatchObject({ status: "published", external_url: "https://youtube.com/watch?v=abc" });
     await context.close();
   });
 });
