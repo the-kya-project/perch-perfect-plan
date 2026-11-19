@@ -149,7 +149,7 @@ Why this split:
 | Source | Writes | Keyed on |
 |---|---|---|
 | Founding claim, gifts, comp | existing triggers and admin functions | `founding_claim_id`, `gift_purchase_id`, manual |
-| **Free-season join** (new, PR B) | one row per member, `status = 'trialing'`, ending at `free_season_ends_at` | user id (one per person) |
+| **Free-season join** (built in PR B) | one row per member: `plan = 'comp'`, `source = 'free_season'`, **`status = 'active'`** (never `trialing`), ending at `free_season_ends_at` | user id (one per person) |
 | **Stripe billing webhook** (new route, own secret) | `source = 'stripe'` rows | `external_ref` = Stripe subscription id |
 | **RevenueCat webhook** (new route) | `source = 'apple'` / `'google'` rows | `external_ref` = original transaction id |
 
@@ -158,7 +158,9 @@ Why this split:
 - `plan` allows `founding, monthly, annual, app_premium, chapter_lead, comp`;
 - `source` began as `stripe, apple, google, manual`, and later migrations added the grant sources.
 
-Either reuse `plan = 'comp'` with a new `source = 'free_season'`, or add a plan value. Both change an existing table's check constraint. **Under the Flock rules that needs your explicit approval in that PR**, plus a check that care flows are unaffected. `entitlements` is Flock-only, so the care-app risk is low.
+**Decided and built (PR B, approved Nov 19):** `plan = 'comp'` with a new `source = 'free_season'`, status `active`. Why not `trialing`: Stripe rows use `trialing` for a real trial that converts to a charge, so a free-season row must never look like one. A check constraint (`entitlements_free_season_shape`) holds every free-season row to comp + active, with no `external_ref`, `free_until`, founding claim or gift. **Billing rule:** billing code never reads, converts, charges or counts down a `source = 'free_season'` row. A member who adds a card gets a separate Stripe row; the free-season row just ends on its date. Free-season rows also never queue or stretch a gift (`place_grant` leaves them out).
+
+The options were: reuse `plan = 'comp'` with a new `source = 'free_season'`, or add a plan value. Both change an existing table's check constraint. **Under the Flock rules that needs your explicit approval in that PR**, plus a check that care flows are unaffected. `entitlements` is Flock-only, so the care-app risk is low.
 
 **Additive schema for billing (one migration, after opening):**
 
