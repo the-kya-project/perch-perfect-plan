@@ -12,6 +12,10 @@
 //   GET  /auth/v1/verify                       current link → confirm + ?code=…;
 //                                              old link → the exact error redirect
 //                                              Supabase builds (otp_expired)
+//   POST /auth/v1/verify {token_hash, type}    verifyOtp, from our /verify page:
+//                                              current link → confirm + a session;
+//                                              used or old link → 403 otp_expired
+//   GET  /auth/v1/user                         the user behind a session issued above
 //   POST /rest/v1/rpc/auth_email_confirmed     the /link-expired server check
 //   GET  /rest/v1/<table>                      read-only rows from the sitter
 //                                              fixture (e2e/sitter-fixture.mjs), with
@@ -21,7 +25,8 @@
 //   everything else under /auth/v1             "no session"
 //
 // Test helpers (not Supabase): POST /__seed {email, confirmed} pre-creates an
-// account; GET /__links?email= returns its link tokens; GET /__photo.png?delay=ms
+// account; GET /__links?email= returns its link tokens (and how many times
+// verifyOtp was called with any of them, `verifyCalls`); GET /__photo.png?delay=ms
 // is a bird photo that arrives late.
 //
 //   node e2e/mock-supabase.mjs        (port from MOCK_SUPABASE_PORT, default 54399)
@@ -30,7 +35,8 @@ import http from "node:http";
 import { sitterFixture } from "./sitter-fixture.mjs";
 
 const port = Number(process.env.MOCK_SUPABASE_PORT || 54399);
-const users = new Map(); // email → { id, confirmed, token, tokens[] }
+const users = new Map(); // email → { id, confirmed, token, tokens[], verifyCalls }
+const sessions = new Map(); // access_token → user body
 let n = 0;
 const fixture = sitterFixture(`http://127.0.0.1:${port}`);
 // 1x1 PNG.
@@ -133,20 +139,20 @@ http
         return u ? send(res, 200, { ...u, aud: "authenticated", role: "authenticated", app_metadata: {}, identities: [], created_at: now() }) : send(res, 404, { code: 404, msg: "User not found" });
       }
       if (p === "/__seed") {
-        const u = { id: newId(), confirmed: !!body.confirmed, tokens: [] };
+        const u = { id: newId(), confirmed: !!body.confirmed, tokens: [], verifyCalls: 0 };
         if (!u.confirmed) issue(u);
         users.set(email(body.email), u);
         return send(res, 200, { ok: true });
       }
       if (p === "/__links") {
         const u = users.get(email(url.searchParams.get("email")));
-        return send(res, u ? 200 : 404, u ? { confirmed: u.confirmed, tokens: u.tokens, current: u.token } : { error: "no such user" });
+        return send(res, u ? 200 : 404, u ? { confirmed: u.confirmed, tokens: u.tokens, current: u.token, verifyCalls: u.verifyCalls ?? 0 } : { error: "no such user" });
       }
       if (p === "/auth/v1/signup") {
         const e = email(body.email);
         const existing = users.get(e);
         if (existing) return send(res, 200, userBody(e, existing, []));
-        const u = { id: newId(), confirmed: false, tokens: [] };
+        const u = { id: newId(), confirmed: false, tokens: [], verifyCalls: 0 };
         issue(u);
         users.set(e, u);
         return send(res, 200, userBody(e, u));
@@ -156,6 +162,28 @@ http
         // Supabase: a confirmed account gets a 200 and no email.
         if (u && !u.confirmed) issue(u);
         return send(res, 200, {});
+      }
+      if (p === "/auth/v1/verify" && req.method === "POST") {
+        // verifyOtp({ token_hash, type }): what our /verify page calls on its tap.
+        const hash = String(body.token_hash ?? "");
+        const entry = [...users.entries()].find(([, x]) => x.tokens.includes(hash));
+        if (entry) entry[1].verifyCalls = (entry[1].verifyCalls ?? 0) + 1;
+        const [e, u] = entry ?? [];
+        if (!u || u.confirmed || u.token !== hash) {
+          return send(res, 403, { code: 403, error_code: "otp_expired", msg: "Email link is invalid or has expired" });
+        }
+        u.confirmed = true;
+        u.token = null;
+        const user = { ...userBody(e, u), email_confirmed_at: now(), confirmed_at: now() };
+        const b64 = (o) => Buffer.from(JSON.stringify(o)).toString("base64url");
+        const exp = Math.floor(Date.now() / 1000) + 3600;
+        const access_token = `${b64({ alg: "HS256", typ: "JWT" })}.${b64({ sub: u.id, email: e, role: "authenticated", aud: "authenticated", exp })}.mock`;
+        sessions.set(access_token, user);
+        return send(res, 200, { access_token, token_type: "bearer", expires_in: 3600, expires_at: exp, refresh_token: `refresh-${hash}`, user });
+      }
+      if (p === "/auth/v1/user" && req.method === "GET") {
+        const user = sessions.get(String(req.headers.authorization ?? "").replace(/^Bearer /i, ""));
+        if (user) return send(res, 200, user);
       }
       if (p === "/auth/v1/verify") {
         const token = url.searchParams.get("token");

@@ -3347,26 +3347,10 @@
   "farewell.you": "jij",
   // your bird
   "farewell.yourBird": "je vogel",
-  // This is where the flock gathers. Posts will show up here soon.
-  "flock.feed.line": "Hier komt de Flock samen. Berichten verschijnen hier binnenkort.",
-  // Feed
-  "flock.feed.title": "Feed",
-  // Guides, recordings, and the podcast will live here.
-  "flock.learn.line": "Gidsen, opnames en de podcast komen hier te staan.",
-  // Learn
-  "flock.learn.title": "Leren",
   // Community
   "flock.nav.aria": "Community",
   // My birds
   "flock.nav.care": "Mijn vogels",
-  // Feed
-  "flock.nav.feed": "Feed",
-  // Learn
-  "flock.nav.learn": "Leren",
-  // Spaces
-  "flock.nav.spaces": "Ruimtes",
-  // Spaces for every kind of question, coming soon.
-  "flock.spaces.line": "Ruimtes voor elk soort vraag, binnenkort beschikbaar.",
   // Spaces
   "flock.spaces.title": "Ruimtes",
   // Add weight
@@ -3875,8 +3859,6 @@
   "fullCheck.save": "Check van {{name}} opslaan",
   // {{name}}'s check is saved to the health log.
   "fullCheck.savedLine": "De check van {{name}} staat in het gezondheidslogboek.",
-  // Save
-  "fullCheck.saveShort": "Opslaan",
   // Saving…
   "fullCheck.saving": "Opslaan…",
   // {{name}}'s daily check
@@ -7339,14 +7321,42 @@
   "updatesDuo.tagWeigh": "Wegen nodig",
   // Checking your link…
   "verifyLink.checking": "Je link wordt gecontroleerd…",
+  // Confirm my new email
+  "verifyLink.emailChange.button": "Bevestig mijn nieuwe e-mail",
+  // Tap below to finish updating your email.
+  "verifyLink.emailChange.line": "Tik hieronder om je nieuwe e-mailadres in te stellen.",
+  // Confirm your new email
+  "verifyLink.emailChange.title": "Bevestig je nieuwe e-mail",
   // It may have expired or already been used. Sign in, or ask for a new email.
   "verifyLink.failedBody": "Misschien is hij verlopen of al gebruikt. Log in, of vraag een nieuwe e-mail aan.",
   // This link didn't work
   "verifyLink.failedTitle": "Deze link werkte niet",
+  // Accept invite
+  "verifyLink.invite.button": "Uitnodiging accepteren",
+  // Tap below to join the household.
+  "verifyLink.invite.line": "Tik hieronder om je bij het huishouden aan te sluiten.",
+  // Accept your invite
+  "verifyLink.invite.title": "Accepteer je uitnodiging",
   // Opening your link — Kya & Co.
   "verifyLink.pageTitle": "Je link openen — Kya & Co.",
-  // One moment
-  "verifyLink.title": "Een momentje",
+  // Reset my password
+  "verifyLink.recovery.button": "Wachtwoord opnieuw instellen",
+  // Tap below to choose a new password.
+  "verifyLink.recovery.line": "Tik hieronder om een nieuw wachtwoord te kiezen.",
+  // Reset your password
+  "verifyLink.recovery.title": "Stel je wachtwoord opnieuw in",
+  // Sign me in
+  "verifyLink.signIn.button": "Log me in",
+  // Tap below to sign in.
+  "verifyLink.signIn.line": "Tik hieronder om in te loggen.",
+  // Sign in to Kya & Co.
+  "verifyLink.signIn.title": "Inloggen bij Kya & Co.",
+  // Confirm my email
+  "verifyLink.signup.button": "Bevestig mijn e-mail",
+  // One quick tap and you're in.
+  "verifyLink.signup.line": "Eén tikje en je bent binnen.",
+  // Confirm your email
+  "verifyLink.signup.title": "Bevestig je e-mail",
   // Go to sign in
   "verifyLink.toSignIn": "Naar inloggen",
   // None
