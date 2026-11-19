@@ -87,7 +87,7 @@ begin
 
   -- 6) Opening day set but still ahead: founding is scheduled, not active.
   select * into e from public.entitlements where user_id = fdr and source = 'founding';
-  if e.starts_at = opens and e.free_until = opens + interval '6 months' and e.current_period_end = e.free_until
+  if e.starts_at = opens and e.free_until = private.free_season_ends_at() and e.current_period_end = e.free_until
      and not private.is_flock_member(fdr)
   then passed := passed + 1; else failed := array_append(failed, 'founding scheduled for opening'); end if;
 
@@ -100,9 +100,9 @@ begin
   opens := date_trunc('second', now()) - interval '1 day';
   perform private.set_flock_opens_at(opens);
 
-  -- 8) Founding after opening: a member (trialing), six free months from opening.
+  -- 8) Founding after opening: a member (trialing), free until the free season ends (Jul 6, 2027).
   select * into e from public.entitlements where user_id = fdr and source = 'founding';
-  if private.is_flock_member(fdr) and e.status = 'trialing' and e.free_until = opens + interval '6 months'
+  if private.is_flock_member(fdr) and e.status = 'trialing' and e.free_until = private.free_season_ends_at()
   then passed := passed + 1; else failed := array_append(failed, 'founding active from opening'); end if;
 
   -- 9) Flock membership includes app premium.
@@ -127,12 +127,12 @@ begin
     failed := array_append(failed, 'refund ends access (never started)');
   end if;
 
-  -- 13) Stacking: a founder's Flock gift queues after the free months.
+  -- 13) Stacking: a founder's Flock gift queues after the free season.
   insert into public.gift_purchases (plan, buyer_email, recipient_name, amount_paid_cents, stripe_checkout_session_id, gift_code)
   values ('flock_year', 'b@checks.invalid', 'F', 24900, 'cs_fgf_' || tag, private.new_gift_code()) returning id into gf;
   update public.gift_purchases set status = 'redeemed', redeemed_by = fdr, redeemed_at = now() where id = gf;
   select * into e from public.entitlements where gift_purchase_id = gf;
-  if e.starts_at = opens + interval '6 months' and e.current_period_end = opens + interval '6 months' + interval '1 year'
+  if e.starts_at = private.free_season_ends_at() and e.current_period_end = private.free_season_ends_at() + interval '1 year'
      and private.is_flock_member(fdr)
   then passed := passed + 1; else failed := array_append(failed, 'gift stacks after founding'); end if;
 

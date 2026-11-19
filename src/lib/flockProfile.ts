@@ -63,9 +63,11 @@ export function membershipSummary(rows: EntitlementRow[], isAdmin: boolean, now:
   const live = rows.filter((e) => !(e.status === "canceled" && e.current_period_end && new Date(e.current_period_end).getTime() <= t));
   const founding = live.find((e) => e.plan === "founding");
   if (founding) {
-    if (!founding.starts_at) return { title: "Founding member", line: "Founding · $15/mo · first 6 months free once the Flock opens" };
+    // Before opening day is set the grant has no dates yet; the free season
+    // still ends Jul 6, 2027 (flock_settings.free_season_ends_at).
+    if (!founding.starts_at) return { title: "Founding member", line: "Founding · free until Jul 6, 2027, then $15/mo for life" };
     const free = founding.free_until ?? founding.current_period_end;
-    return { title: "Founding member", line: free ? `Founding · $15/mo · free until ${day(free)}` : "Founding · $15/mo" };
+    return { title: "Founding member", line: free ? `Founding · free until ${day(free)}, then $15/mo for life` : "Founding · $15/mo for life" };
   }
   const order = (e: EntitlementRow) => (current(e, t) ? 0 : e.starts_at ? 1 : 2);
   const best = [...live].filter((e) => e.plan !== "app_premium" || live.every((x) => x.plan === "app_premium"))

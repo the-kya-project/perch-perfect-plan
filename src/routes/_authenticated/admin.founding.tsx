@@ -52,7 +52,7 @@ function AdminFounding() {
     },
   });
 
-  // Each claim's founding entitlement (free months from opening day), by spot.
+  // Each claim's founding entitlement (free until the free season ends, Jul 6, 2027), by spot.
   const { data: access } = useQuery({
     queryKey: ["admin-founding-entitlements"],
     enabled: isAdmin === true,
@@ -200,9 +200,9 @@ function AdminFounding() {
   );
 }
 
-/** End of the six free months (billing starts here), or when it will be set. */
+/** End of the free season (billing starts here), or when it will be set. */
 function freeUntil(iso: string | null | undefined): string {
-  return iso ? accessDay(iso) : "Six months after opening";
+  return iso ? accessDay(iso) : "When the free season ends (Jul 6, 2027)";
 }
 
 function formatDate(iso: string): string {
