@@ -13,6 +13,7 @@ import { claimFoundingSpot, getFoundingStatus, type ClaimRefusal } from "@/lib/f
 import { K, SERIF, KyaCard, KyaHeading, KyaPrimaryButton, KyaSecondaryButton } from "@/components/kya";
 import { CheckListCard, FrontDoorBody, FrontDoorError, FrontDoorHeader, FrontDoorPage, LegalLinks } from "@/components/frontDoor";
 import { WaitlistModal } from "@/components/WaitlistCard";
+import { foundingClosedCase } from "@/lib/foundingClosed";
 
 // The Founding 50: public offer page for the first Flock members. Anyone can
 // view it; claiming needs an account. The Flock itself stays hidden behind
@@ -134,7 +135,7 @@ function FoundingPage() {
         title={step === "done" ? t("founding.doneTitle", "You're one of the Founding 50.") : t("founding.title", "Be one of the Founding 50")}
         line={step === "done"
           ? undefined
-          : t("founding.line", "The Flock is The Kya Project's community for parrot people, and it opens on Monday, January 4, 2027. Its first 50 members get the best price we'll ever offer and a hand in shaping what it becomes.")}
+          : t("founding.line", "The Flock is The Kya Project's community for parrot people, and it opens on Monday, January 4, 2027. Its first 50 members get our lowest price and a hand in shaping what it becomes.")}
       />
       <FrontDoorBody>
         {loading ? (
@@ -176,11 +177,16 @@ function FoundingPage() {
             {isOpen ? (
               <KyaPrimaryButton onClick={startClaim}>{t("founding.claimButton", "Claim my founding spot")}</KyaPrimaryButton>
             ) : (
-              <Full />
+              <Full claimed={status?.claimed ?? 0} cap={status?.cap ?? 50} />
             )}
             {isOpen && (
               <p className="m-0 text-center text-[13.5px] leading-[1.45]" style={{ color: K.quiet }}>
                 {t("founding.noCard", "No card is needed now. You'll create a free Kya & Co. account, or sign in, to hold your spot. We'll ask for a card in June, before anything is charged.")}
+              </p>
+            )}
+            {isOpen && (
+              <p className="m-0 text-center text-[13.5px] leading-[1.45]" style={{ color: K.quiet }}>
+                {t("founding.cardRule", "To keep your founding spot and price, add a card by July 6, 2027. We'll send you a reminder in June.")}
               </p>
             )}
           </>
@@ -236,16 +242,31 @@ function Counter({ claimed, cap }: { claimed: number; cap: number }) {
 }
 
 /** Spots gone or past the deadline: launch news through the existing waitlist form. */
-function Full() {
+function Full({ claimed, cap }: { claimed: number; cap: number }) {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const [open, setOpen] = useState(false);
+  // ssr: false, so reading the clock here can't cause a hydration mismatch.
+  const which = foundingClosedCase(claimed, cap);
+  const title = which === "closed"
+    ? t("founding.closedTitle", "Founding spots have closed")
+    : t("founding.fullTitle", "The Founding 50 is full");
+  const body = which === "full"
+    ? t("founding.fullBody", "All 50 founding spots have been claimed. The Flock opens on Monday, January 4, 2027, and it's free for everyone until July 6. Leave your email and we'll let you know when it opens.")
+    : which === "fullOpen"
+      ? t("founding.fullOpenBody", "All 50 founding spots have been claimed. The Flock is open now, and it's free for everyone until July 6, 2027.")
+      : t("founding.closedBody", "Founding claims closed on January 31, 2027. The Flock is open now, and it's free for everyone until July 6, 2027.");
   return (
     <section className="rounded-[20px] p-5" style={{ background: K.lime, color: K.forest }}>
-      <KyaHeading size={22}>{t("founding.fullTitle", "The Founding 50 is full")}</KyaHeading>
-      <p className="m-0 mt-2 text-[15px] leading-[1.5]">
-        {t("founding.fullBody", "The Flock opens on Monday, January 4, 2027, and it's free for everyone until July 6. Leave your email and we'll let you know when it opens.")}
-      </p>
-      <div className="mt-4"><KyaPrimaryButton onClick={() => setOpen(true)}>{t("founding.launchNews", "Get launch news")}</KyaPrimaryButton></div>
+      <KyaHeading size={22}>{title}</KyaHeading>
+      <p className="m-0 mt-2 text-[15px] leading-[1.5]">{body}</p>
+      <div className="mt-4">
+        {which === "full" ? (
+          <KyaPrimaryButton onClick={() => setOpen(true)}>{t("founding.launchNews", "Get launch news")}</KyaPrimaryButton>
+        ) : (
+          <KyaPrimaryButton onClick={() => void navigate({ to: "/dashboard" })}>{t("founding.toApp", "Go to Kya & Co.")}</KyaPrimaryButton>
+        )}
+      </div>
       {open && <WaitlistModal onClose={() => setOpen(false)} />}
     </section>
   );
@@ -369,6 +390,9 @@ function Confirmation({ spotNumber, cap }: { spotNumber: number; cap: number }) 
         </p>
         <p className="m-0 mt-3 text-[14.5px] leading-[1.5]" style={{ color: K.quiet }}>
           {t("founding.nextPrice", "When billing starts, your price is $15 a month, locked in for life. If your membership ends, the founding price ends with it.")}
+        </p>
+        <p className="m-0 mt-3 text-[14.5px] leading-[1.5]" style={{ color: K.quiet }}>
+          {t("founding.cardRule", "To keep your founding spot and price, add a card by July 6, 2027. We'll send you a reminder in June.")}
         </p>
       </KyaCard>
       <KyaSecondaryButton onClick={() => void navigate({ to: "/dashboard" })}>{t("founding.toApp", "Go to Kya & Co.")}</KyaSecondaryButton>

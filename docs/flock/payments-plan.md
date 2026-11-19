@@ -289,6 +289,7 @@ The opening PR (C) is the one that deliberately makes the Flock visible to membe
 - **D. Member blocking (Apple 1.2).** `flock_blocks`, a "Block" action on profiles, posts and comments, and blocked members' posts, comments, reactions and notifications filtered out by the existing visibility functions. Plus a contact line in the Flock. *Free users: none.*
 - **E. Stickiness events** (section "What we're learning in the free season"). Fired only from Flock code (lazy-loaded), never from the care app. *Free users: none.*
 - **F. Gift years start at the free season's end** (decided, h5). Changes `place_grant` for gifts, plus the gift and redeem copy. Gifts are already for sale, so do it before opening.
+- **H. Founding members page** (decided, h22). A `show_on_founders_page` choice (default off) on the founding claim, set by one unchecked checkbox on `/founding`'s region step and changeable on the founder's Flock profile; a `/flock/founders` page that lists only opted-in founders through a SECURITY DEFINER function returning display name, photo, region and the founder badge (nothing else). Additive only. Ready by Dec 11 so the copy's promise holds on Jan 4. *Free users: none (`/founding` is public; the page is inside the Flock).*
 - **G. Legal pages.** `/terms` gains community sections (your posts and photos, the licence to show them to members, conduct, moderation and removal, age, memberships and billing to come); `/privacy` gains what Flock members see (matching `flock.you.privacy.tsx`), chapters, photos and payment processors. Your text, wired in. *Free users: shared pages; the wording changes, the layout doesn't.*
 
 ### After opening, web payments (Feb – May; live by about June 1)
@@ -321,7 +322,7 @@ The opening PR (C) is the one that deliberately makes the Flock visible to membe
 | When | Web / Flock | iOS |
 |---|---|---|
 | Nov 18–30 | **PR A** (founding deadline and copy, claimant email) by **Nov 30**; PR G drafted; you: vet contacted by Nov 25 | |
-| Dec 1–11 | PR B by **Dec 4**; PRs D, E, F and G by **Dec 11**; you: legal text and copy by Dec 4 | nothing to ship: the Flock works in installed builds (remote-URL mode) |
+| Dec 1–11 | PR B by **Dec 4**; PRs D, E, F, G and H by **Dec 11**; you: legal text and copy by Dec 4 | nothing to ship: the Flock works in installed builds (remote-URL mode) |
 | Dec 14–18 | **PR C** merged dark by **Dec 18**; you: content approved, vet sign-off in, PR C approved | |
 | Dec 21–23 | dry run on production; reviewers named | the Flock checked on iPhone, iPad and Duo |
 | Dec 24 – Jan 3 | buffer; **no merges after Mon, Dec 28**; emails and website scheduled by Dec 30 | |
@@ -377,6 +378,7 @@ Numbers 1–16 match the list in the Nov 18 review; 17–21 are the earlier deci
 | 19 | Yearly plan | **Changed Nov 19: $300 a year from opening day, alongside $30 a month;** both billed from Jul 6, 2027. No yearly founding option. |
 | 20 | Apple prices | **$14.99 / $29.99 / $299.99** if exact $15.00 / $30.00 / $300.00 aren't offered; the web stays $15 / $30 / $300. |
 | 21 | Currency | **USD only.** |
+| 22 | Founding members page | **Opt-in (decided Nov 19).** One checkbox in the claim flow, **unchecked by default** ("Show me on the founding members page"), stored with the claim; founders can change it later on their Flock profile. The page lists only founders who opted in, with the same public fields members already see (display name, photo, region, founder badge). Built in PR H, not in PR A. |
 
 ---
 
