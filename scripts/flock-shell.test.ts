@@ -31,7 +31,7 @@ import { defaultDisplayName, greetingName, isAutomaticDisplayName, memberCountLi
 import { accessCells, accessDay } from "@/lib/flockAccess";
 import { foundingClosedCase } from "@/lib/foundingClosed";
 import {
-  birdPronoun, canStartCustom, customProblem, daysSince, clipPhase, isNectarEater, rollingAverage, showVetReminder, youngOrUnknownAge, defaultVisibility, groupTemplates, isLocked, journeyDay, journeyDays,
+  birdPronoun, canStartCustom, customProblem, daysSince, clipPhase, flockSheetTitle, isNectarEater, rollingAverage, showVetReminder, youngOrUnknownAge, defaultVisibility, groupTemplates, isLocked, journeyDay, journeyDays,
   nextMilestone, possessive, progressOf, skillInSentence, startHere, trimTrailingBlanks, vetCheckLine, visibilityChoices, wantsTip,
   type JourneyTemplate,
 } from "@/lib/journeys";
@@ -300,7 +300,14 @@ check("journeys: templates group into the basics, then tricks and more, in catal
   assert.deepEqual(g.basics.map((x) => x.slug), ["scale", "recall"]);
   assert.deepEqual(g.more.map((x) => x.slug), ["wave", "spin"]);
 });
-check("journeys: premium templates lock without app premium", () => {
+check("journeys: the Flock-only sheet's title names the bird (no price anywhere)", () => {
+  const t = ((_k: string, d: string, o?: Record<string, string>) => d.replace(/\{\{(\w+)\}\}/g, (_m, n) => o?.[n] ?? "")) as unknown as Parameters<typeof flockSheetTitle>[0];
+  assert.equal(flockSheetTitle(t, "high-five", "High five", "Echo"), "Teach Echo to high five");
+  assert.equal(flockSheetTitle(t, "nail-trims", "Nail trims", "Echo"), "Teach Echo to be calm for nail trims");
+  assert.equal(flockSheetTitle(t, "stationing", "Stationing", "Echo"), "Teach Echo to station");
+  assert.equal(flockSheetTitle(t, "wave", "Wave", undefined), "Wave");
+});
+check("journeys: Flock-only templates (stored as \"premium\") lock for free accounts", () => {
   assert.equal(isLocked({ tier: "premium" }, { can_use_premium: false }), true);
   assert.equal(isLocked({ tier: "premium" }, undefined), true);
   assert.equal(isLocked({ tier: "premium" }, { can_use_premium: true }), false);

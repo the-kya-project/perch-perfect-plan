@@ -70,14 +70,13 @@ export function membershipSummary(rows: EntitlementRow[], isAdmin: boolean, now:
     return { title: "Founding member", line: free ? `Founding · free until ${day(free)}, then $15/mo for life` : "Founding · $15/mo for life" };
   }
   const order = (e: EntitlementRow) => (current(e, t) ? 0 : e.starts_at ? 1 : 2);
-  const best = [...live].filter((e) => e.plan !== "app_premium" || live.every((x) => x.plan === "app_premium"))
-    .sort((a, b) => order(a) - order(b))[0];
+  // App premium is gone: an old "app_premium" row (none exist; new ones are
+  // refused) never counts as a membership here.
+  const best = [...live].filter((e) => e.plan !== "app_premium").sort((a, b) => order(a) - order(b))[0];
   if (best) {
-    const what = best.source === "gift"
-      ? best.plan === "app_premium" ? "Gift · app premium" : "Gift membership"
+    const what = best.source === "gift" ? "Gift membership"
       : best.plan === "comp" ? "Complimentary membership"
       : best.plan === "chapter_lead" ? "Chapter lead"
-      : best.plan === "app_premium" ? "App premium"
       : "Membership";
     if (!best.starts_at) return { title: what, line: `${what} · starts when the Flock opens` };
     if (!current(best, t) && new Date(best.starts_at).getTime() > t) return { title: what, line: `${what} · starts ${day(best.starts_at)}` };

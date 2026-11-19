@@ -1,8 +1,8 @@
 // Journey clips for viewers, and deleting a journey with its videos.
 //
 // Playback: the database decides who may see a journey (journey_clip_refs,
-// asked as the caller: the bird's household, or a community journey for app
-// premium and Flock members, never a "Just me" journey from outside the
+// asked as the caller: the bird's household, or a community journey for
+// Flock members, never a "Just me" journey from outside the
 // household). Only then does the server sign short-lived Cloudflare tokens and
 // hand back the player URL, a thumbnail and an HLS manifest. Nobody gets a
 // clip reference or an unsigned link.
