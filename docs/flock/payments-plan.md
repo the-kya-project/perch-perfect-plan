@@ -5,6 +5,7 @@ Status: **plan only, for Brittany's review.** Nothing in code, settings, App Sto
 - **Nov 17, 2026:** first written.
 - **Nov 18, 2026:** rewritten for the **free-season decisions** below. They replace the earlier "Decision 1" (founders add a card within 14 days of opening day), which is withdrawn.
 - **Nov 18, 2026 (later):** opening day set to **Mon, Jan 4, 2027** and the free season's end to **Tue, Jul 6, 2027**; every remaining decision and pricing question decided (section h). Merged as the plan of record.
+- **Nov 19, 2026:** **no founding deadline.** Claims stay open until all 50 spots are claimed; the Jan 31, 2027 close is dropped (`20261119160000_founding_no_deadline.sql`). The site and app don't mention a closing date. **Giving is "20% of every membership"** everywhere (built into costs).
 - **Nov 19, 2026:** **yearly plan from opening day.** The Flock is $30 a month or $300 a year (about $25 a month), both offered from Jan 4 and both billed from the free season's end, Jul 6, 2027. This replaces "monthly only at launch; $300 a year later". Founding stays $15 a month for life (no yearly founding option).
 
 What was read:
@@ -36,7 +37,7 @@ What was read:
 1. **Opening day is Monday, January 4, 2027** (00:00 Eastern). An earlier draft said Friday, Jan 1; "What depends on the date" below shows what that choice moves.
 2. **Free season.** Everyone who joins the Flock during the first 6 months after opening day is free. **The free season ends Tuesday, July 6, 2027**, one stored date for everyone (`flock_settings.free_season_ends_at`). Nobody is charged before then.
 3. **Prices.** The founding members (the first 50) keep **$15 a month, locked for life once billing starts**, and lose it if they cancel. The **regular price after the free season is $30 a month or $300 a year** (about $25 a month); both are offered from opening day, and nobody is charged before Jul 6, 2027.
-4. **Founding claims close Jan 31, 2027, not Dec 31, 2026,** so people can try the Flock before claiming. The cap stays at 50.
+4. **Founding claims have no closing date (changed Nov 19).** They stay open until all 50 spots are claimed. (Nov 18 had moved the close to Jan 31, 2027; that's withdrawn.) The pages don't mention a date or say "until all 50 are claimed".
 5. **No card before or at opening.**
    - **About 30 days before the free season ends,** everyone gets an email asking them to add a card on the web ($0 due, first charge when the free season ends).
    - **Founders who haven't added a card by the end of the free season lose their founding spot.**
@@ -49,7 +50,7 @@ All of these are decided (section h).
 - **Founders get the same free season.** Their `free_until` is the free season's end. Today it's `flock_opens_at + 6 months` (`place_grant`), which with a Jan 4 opening would be Sun, Jul 4; PR B makes it Jul 6.
 - **Who can join:** anyone with a Kya & Co. account, on the web, iPhone or Android, by a "Join the Flock" step. That step grants a free-season membership until `free_season_ends_at`. This is new. Today only founders, gift recipients, comps and admins can use the Flock (`private.can_use_flock`).
 - **At the end of the free season, a member with no card on file** loses Flock access. Their posts, journeys and profile are kept, and they can rejoin at $30 a month or $300 a year by adding a card. A founder with no card on file also loses the founding spot and the $15 price, for good.
-- **Released founding spots aren't refilled.** Claims are closed by July, and refilling would need an invitation flow nobody else uses.
+- **Released founding spots aren't refilled.** A released claim still counts toward the 50, and refilling would need an invitation flow nobody else uses.
 - **Billing is simple:** every subscription starts with `trial_end` = `free_season_ends_at`, known from opening day. There's no per-person trial length and no resync.
 - **The earlier 14-day card window is gone.** So are `card_due_at`, the day-7 and day-12 reminders, the waitlist invitation for released spots, and the 14-day release job.
 
@@ -62,7 +63,7 @@ All of these are decided (section h).
 | Free season ends | Thu, Jul 1, 2027 | **Tue, Jul 6, 2027** | Six months from Jan 4 would be Sun, Jul 4, a holiday, so the stored date is Jul 6: first charges and "your free season ends today" emails don't land on the Fourth. |
 | "Add your card" email (about 30 days before) | about Tue, Jun 1 | **Mon, Jun 7** | Reminders on **Tue, Jun 29** and **Mon, Jul 5**. |
 | Founders' `free_until` | Jul 1 | **Jul 6** | Comes from `free_season_ends_at` once PR B lands. |
-| Founding claims close | Jan 31 (30 days after opening) | Jan 31 (27 days after opening) | The same either way. |
+| Founding claims close | no date (decided Nov 19) | no date (decided Nov 19) | Open until all 50 are claimed. |
 | Gift years (start at the free season's end, h5) | start Jul 1 | **start Jul 6** | |
 | Pre-opening work (section e) | due Dec 31 | **due Sun, Jan 3**: one extra weekend, no extra working days | Jan 4 mainly buys a calmer opening day, not build time. |
 | Opening-day emails | go out on New Year's Day | go out on a Monday | Monday email usually does better. |
@@ -76,7 +77,7 @@ All of these are decided (section h).
 | **Founding** (Flock) | $15 a month | **$15 a month, locked for life once billing starts; lost on cancel** | `founding.price`; `founding_claims.locked_price_cents default 1500` (`20261022172114_founding_claims.sql`) |
 | Founding: free months | first 6 months free, from opening day | **the free season, ending Tue, Jul 6, 2027** | `founding.locked`, `founding.next`; `place_grant` (`free_until = flock_opens_at + 6 months`, `20261107120000_flock_entitlement_grants.sql`) |
 | Founding: cap | 50 | 50 | `private.founding_cap()`; `spot_number between 1 and 50` |
-| Founding: close | end of **Dec 31, 2026**, Indianapolis | end of **Jan 31, 2027**, Indianapolis (`2027-02-01 00:00 America/Indiana/Indianapolis`) | `private.founding_deadline()`; copy `founding.deadline` |
+| Founding: close | end of **Dec 31, 2026**, Indianapolis | **no date: open until all 50 are claimed** (changed Nov 19; `founding_deadline()` returns infinity) | `private.founding_deadline()`; `founding.deadline` copy removed |
 | Founding: card | none at claim | **none at claim or opening; add one (from about 30 days before the end) by the end of the free season, or lose the spot** | `founding.noPayment`, `founding.noCard` |
 | Flock, regular | "$30", period not stated | **$30 a month after the free season** | `founding.regular` "Regular price $30 a month or $300 a year after July 6, 2027"; the website's monthly plan |
 | Flock, free season | doesn't exist | **free for everyone who joins in the first 6 months, until Tue, Jul 6, 2027** | new: `flock_settings.free_season_ends_at` and a free-season grant |
@@ -96,7 +97,7 @@ All of these are decided (section h).
 5. **App premium:** not in this build. A Flock membership includes it.
 6. **Apple prices:** $14.99 / $29.99 / $299.99 if App Store Connect doesn't offer exactly $15.00 / $30.00 / $300.00. The web stays $15 / $30 / $300.
 7. **What "cancelled" means:** the membership actually ends. Turning off auto-renew doesn't count, and neither does a failed payment that recovers within the grace period.
-8. **Giving on subscriptions:** 20% after fees, like gifts, designed before the first charges on Jul 6.
+8. **Giving on subscriptions:** 20% of every membership (of what members pay, less refunds, like gifts; built into costs), designed before the first charges on Jul 6.
 9. **Currency:** USD only. Founders anywhere can pay by card on the web; Apple converts in-app prices itself.
 10. **Android:** web-only payment for now, with a check of Google Play's rules before anything paid appears in the Android app (h14).
 11. **One end date:** yes, Tue, Jul 6, 2027 for everyone.
@@ -230,7 +231,7 @@ Dates assume opening at 00:00 Eastern on **Mon, Jan 4, 2027**. Durations are typ
 |---|---|---|
 | ~~Nov 18~~ | ~~Decide the entry point, the free season's end, gift years, released spots and the rest~~ | **Done** (section h) |
 | **Wed, Nov 25** (sign-off by **Fri, Dec 18**) | **Avian vet sign-off:** the diet conversion weight thresholds (pause and notice), the smoothed weight rules, and the vet-nudge phrase lists (all `review_status = 'draft'`). CLAUDE.md: "An avian vet must confirm both thresholds before launch". **This is the opening-day blocker most likely to slip:** it depends on someone else's calendar in December. Contact the vet by Nov 25. If the sign-off isn't in by Dec 18, open on Jan 4 with `journeys_enabled()` limited to admins (or diet conversion held back) rather than move opening day. | your time: 1 hour; the vet's: days to weeks |
-| **Fri, Dec 4** | **Legal text:** community terms (your posts and photos, the licence to show them to members, conduct, moderation and removal, age, memberships and billing to come), privacy for the Flock, community guidelines, and updated founding terms (claims close Jan 31; free until Jul 6; add a card by Jul 6 or the spot is released) | 2–4 hours plus optional legal review |
+| **Fri, Dec 4** | **Legal text:** community terms (your posts and photos, the licence to show them to members, conduct, moderation and removal, age, memberships and billing to come), privacy for the Flock, community guidelines, and updated founding terms (no closing date, open until 50 are claimed; free until Jul 6; add a card by Jul 6 or the spot is released) | 2–4 hours plus optional legal review |
 | **Fri, Dec 4** | **Approve the copy** in the wording list (section i) | 1 hour |
 | **Fri, Dec 18** | **Approve content:** the 14 journey templates and milestones, Today's ideas through Jan 17 (`ready`), the Library's opening items, the Start here posts | 4–6 hours |
 | **Fri, Dec 18** | **Approve the opening PR (C):** the entry point and `flock_enabled()` for members. This is the launch decision the Flock rules reserve for you. | 30 minutes |
@@ -239,7 +240,6 @@ Dates assume opening at 00:00 Eastern on **Mon, Jan 4, 2027**. Durations are typ
 | **Wed, Dec 30** | **Opening emails** drafted and scheduled in Brevo for Mon, Jan 4 morning: founders (list 9), the waitlist (23), and optionally all app users | 1–2 hours |
 | **Wed, Dec 30** | **Website (Webflow):** the founding card and `/community` (section i), published on Jan 4 | 1 hour |
 | **Mon, Jan 4, 00:00 Eastern** | **Open:** `select public.admin_set_flock_opens_at('2027-01-04 00:00 America/New_York');`, set the free season's end to `2027-07-06 00:00 America/New_York` (PR B's admin function), and switch on PR C's setting. Check the free-user regression check and save-error alerts that morning. | 30 minutes |
-| Sun, Jan 31 | Founding claims close (automatic, end of day Indianapolis time) | none |
 
 ### Before June 1 (payments)
 
@@ -271,8 +271,8 @@ The opening PR (C) is the one that deliberately makes the Flock visible to membe
 ### Before opening day (Nov 18 – Jan 3)
 
 - **A. Founding terms and deadline.**
-  - A migration moves `private.founding_deadline()` to `2027-02-01 00:00 America/Indiana/Indianapolis` (end of Jan 31). This changes an existing Flock function, not a care-app one; pin it in `supabase/checks`.
-  - New copy for `/founding`, the founder screens and the website (section i): the free season, "close January 31", and "add a card by the end of the free season or the spot is released".
+  - ~~A migration moves `private.founding_deadline()` to the end of Jan 31~~ (#478); then, Nov 19, no closing date at all (`20261119160000_founding_no_deadline.sql`). Pinned in `supabase/checks/founding_deadline_checks.sql`.
+  - New copy for `/founding`, the founder screens and the website (section i): the free season and the perks; no closing date and no card details on the pages (the claimant email carries the card rule).
   - An email to existing claimants.
   - *Free users: none (`/founding` is public; care app untouched).*
 - **B. Free-season grant.**
@@ -327,7 +327,6 @@ The opening PR (C) is the one that deliberately makes the Flock visible to membe
 | Dec 21–23 | dry run on production; reviewers named | the Flock checked on iPhone, iPad and Duo |
 | Dec 24 – Jan 3 | buffer; **no merges after Mon, Dec 28**; emails and website scheduled by Dec 30 | |
 | **Mon, Jan 4** | **opening** at 00:00 Eastern: set the dates, switch on, emails that morning | |
-| Sun, Jan 31 | founding claims close | |
 | Feb – Mar | billing PRs 1–3 on preview with test cards | Paid Apps agreement by Jan 15; PR 7 shipped by **Mon, Mar 15** |
 | Apr – May | PRs 4–6; accountant and Google Play checks by **May 1**; live Stripe by **May 7** | App Store Connect, RevenueCat, PRs 8–10; submit by **Mon, May 10** |
 | **Tue, Jun 1** | **payments live**; dry run with your own claim | in-app purchase live |
@@ -369,12 +368,12 @@ Numbers 1–16 match the list in the Nov 18 review; 17–21 are the earlier deci
 | 10 | Paywall during the free season | **None.** The iOS paywall appears with the Jun 7 emails, and in-app purchases bill from the purchase day. |
 | 11 | Sales tax on web | **Stripe Tax on** (about 0.5%). **Task:** confirm state sales-tax treatment of a digital membership with your accountant **by Sat, May 1, 2027** (before Jun 1), before registering and going live. |
 | 12 | Refunds | **A full refund ends access; a partial one keeps it;** no refunds for unused time. |
-| 13 | Giving share on subscriptions | **20% after fees, like gifts,** designed before the first charges on Jul 6. |
+| 13 | Giving share on subscriptions | **20% of every membership** (what members pay, less refunds, like gifts; built into costs), designed before the first charges on Jul 6. |
 | 14 | Android | **Web-only payment for now.** **Task:** before anything paid appears in the Android app, confirm Google Play's current billing rules for digital subscriptions in the US, including the exceptions after *Epic v. Google*, **by Sat, May 1, 2027** (before Jun 1). Until then the Android app shows no price, paywall or subscribe link. |
 | 15 | App premium | **Not in this build.** |
 | 16 | Missed card deadline (founders) | **No automatic grace;** you can restore a released founder by hand within 14 days of Jul 6 (a support action). |
 | 17 | Opening day | **Mon, Jan 4, 2027,** 00:00 Eastern. |
-| 18 | Founders' card flow | **No card before or at opening;** add a card from Jun 7, by Jul 6, or the spot is released. Claims close Jan 31, 2027. |
+| 18 | Founders' card flow | **No card before or at opening;** add a card from Jun 7, by Jul 6, or the spot is released. No closing date for claims (open until 50). |
 | 19 | Yearly plan | **Changed Nov 19: $300 a year from opening day, alongside $30 a month;** both billed from Jul 6, 2027. No yearly founding option. |
 | 20 | Apple prices | **$14.99 / $29.99 / $299.99** if exact $15.00 / $30.00 / $300.00 aren't offered; the web stays $15 / $30 / $300. |
 | 21 | Currency | **USD only.** |

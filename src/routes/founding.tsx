@@ -177,16 +177,11 @@ function FoundingPage() {
             {isOpen ? (
               <KyaPrimaryButton onClick={startClaim}>{t("founding.claimButton", "Claim my founding spot")}</KyaPrimaryButton>
             ) : (
-              <Full claimed={status?.claimed ?? 0} cap={status?.cap ?? 50} />
+              <Full />
             )}
             {isOpen && (
               <p className="m-0 text-center text-[13.5px] leading-[1.45]" style={{ color: K.quiet }}>
-                {t("founding.noCard", "No card is needed now. You'll create a free Kya & Co. account, or sign in, to hold your spot. We'll ask for a card in June, before anything is charged.")}
-              </p>
-            )}
-            {isOpen && (
-              <p className="m-0 text-center text-[13.5px] leading-[1.45]" style={{ color: K.quiet }}>
-                {t("founding.cardRule", "To keep your founding spot and price, add a card by July 6, 2027. We'll send you a reminder in June.")}
+                {t("founding.noCard", "You'll create a free Kya & Co. account, or sign in, to hold your spot.")}
               </p>
             )}
           </>
@@ -236,26 +231,21 @@ function Counter({ claimed, cap }: { claimed: number; cap: number }) {
       <div className="mt-3 h-2.5 overflow-hidden rounded-full" style={{ background: K.mist }} aria-hidden="true">
         <div className="h-full rounded-full" style={{ width: `${pct}%`, background: K.moss }} />
       </div>
-      <p className="m-0 mt-3 text-[14.5px]" style={{ color: K.quiet }}>{t("founding.deadline", "Founding spots close at 11:59 pm Eastern on Sunday, January 31, 2027, or sooner if all 50 are claimed.")}</p>
     </KyaCard>
   );
 }
 
-/** Spots gone or past the deadline: launch news through the existing waitlist form. */
-function Full({ claimed, cap }: { claimed: number; cap: number }) {
+/** All 50 claimed: launch news before opening day, the app after it. */
+function Full() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   // ssr: false, so reading the clock here can't cause a hydration mismatch.
-  const which = foundingClosedCase(claimed, cap);
-  const title = which === "closed"
-    ? t("founding.closedTitle", "Founding spots have closed")
-    : t("founding.fullTitle", "The Founding 50 is full");
+  const which = foundingClosedCase();
+  const title = t("founding.fullTitle", "The Founding 50 is full");
   const body = which === "full"
     ? t("founding.fullBody", "All 50 founding spots have been claimed. The Flock opens on Monday, January 4, 2027, and it's free for everyone until July 6. Leave your email and we'll let you know when it opens.")
-    : which === "fullOpen"
-      ? t("founding.fullOpenBody", "All 50 founding spots have been claimed. The Flock is open now, and it's free for everyone until July 6, 2027.")
-      : t("founding.closedBody", "Founding claims closed on January 31, 2027. The Flock is open now, and it's free for everyone until July 6, 2027.");
+    : t("founding.fullOpenBody", "All 50 founding spots have been claimed. The Flock is open now, and it's free for everyone until July 6, 2027.");
   return (
     <section className="rounded-[20px] p-5" style={{ background: K.lime, color: K.forest }}>
       <KyaHeading size={22}>{title}</KyaHeading>
@@ -364,7 +354,6 @@ function RegionStep({ source, onBack, onClaimed, onRefused }: {
       >
         {submitting ? t("founding.claiming", "Saving your spot…") : t("founding.confirm", "Confirm my founding spot")}
       </button>
-      <p className="m-0 text-center text-[13.5px]" style={{ color: K.quiet }}>{t("founding.noPayment", "No card and no payment now. We'll ask for a card in June, before anything is charged.")}</p>
       <KyaSecondaryButton onClick={onBack}>{t("founding.back", "Back")}</KyaSecondaryButton>
     </form>
   );
@@ -386,13 +375,10 @@ function Confirmation({ spotNumber, cap }: { spotNumber: number; cap: number }) 
       <KyaCard className="p-5">
         <KyaHeading size={20}>{t("founding.nextTitle", "What happens next")}</KyaHeading>
         <p className="m-0 mt-2 text-[15px] leading-[1.5]" style={{ color: K.ink }}>
-          {t("founding.next", "The Flock opens on Monday, January 4, 2027, and we'll email you before then. It's free for everyone until Tuesday, July 6. We'll ask for a card in June, before anything is charged.")}
+          {t("founding.next", "The Flock opens on Monday, January 4, 2027, and we'll email you before then. It's free for everyone until Tuesday, July 6.")}
         </p>
         <p className="m-0 mt-3 text-[14.5px] leading-[1.5]" style={{ color: K.quiet }}>
           {t("founding.nextPrice", "When billing starts, your price is $15 a month, locked in for life. If your membership ends, the founding price ends with it.")}
-        </p>
-        <p className="m-0 mt-3 text-[14.5px] leading-[1.5]" style={{ color: K.quiet }}>
-          {t("founding.cardRule", "To keep your founding spot and price, add a card by July 6, 2027. We'll send you a reminder in June.")}
         </p>
       </KyaCard>
       <KyaSecondaryButton onClick={() => void navigate({ to: "/dashboard" })}>{t("founding.toApp", "Go to Kya & Co.")}</KyaSecondaryButton>

@@ -1,8 +1,8 @@
 // The Founding 50 (/founding): the public counter and the claim.
 //
 // The rules live in the database (supabase/migrations/*_founding_claims.sql):
-// claim_founding_spot() takes the lock, checks the deadline against the
-// database clock, refuses a second claim and anything past 50, and saves the
+// claim_founding_spot() takes the lock, refuses a second claim and anything
+// past 50 (there's no closing date: founding_deadline() is infinity), and saves the
 // region to flock_profiles. This file only carries the calls and adds the
 // claimant to the Brevo "Founding 50" list afterwards (BREVO_FOUNDING_LIST_ID;
 // a missing id or Brevo error raises a save-error alert).
