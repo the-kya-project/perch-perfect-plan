@@ -81,7 +81,7 @@ All of these are decided (section h).
 | Founding: cap | 50 | 50 | `private.founding_cap()`; `spot_number between 1 and 50` |
 | Founding: close | end of **Dec 31, 2026**, Indianapolis | **no date: open until all 50 are claimed** (changed Nov 19; `founding_deadline()` returns infinity) | `private.founding_deadline()`; `founding.deadline` copy removed |
 | Founding: card | none at claim | **none at claim or opening; add one (from about 30 days before the end) by the end of the free season, or lose the spot** | `founding.noPayment`, `founding.noCard` |
-| Flock, regular | "$30", period not stated | **$30 a month after the free season** | `founding.regular` "Regular price $30 a month or $300 a year after July 6, 2027"; the website's monthly plan |
+| Flock, regular | "$30", period not stated | **$30 month to month after the free season** | `founding.regular` (changing to "Regular price $25 a month billed annually, or $30 month to month."); the website's monthly plan |
 | Flock, free season | doesn't exist | **free for everyone who joins in the first 6 months, until Tue, Jul 6, 2027** | new: `flock_settings.free_season_ends_at` and a free-season grant |
 | Flock, yearly | not defined; the schema has plan `annual`; the website said "$20 per month, billed annually" ($240) | **$25 a month billed annually ($300 a year), offered from opening day, first charge Jul 6, 2027** | `entitlements.plan` check; the website's yearly plan |
 | Flock, one year (gift) | $300 one-off; the year starts at the later of redemption and opening day | **the year starts when the free season ends (Jul 6, 2027)** | Vercel `STRIPE_PRICE_FLOCK_YEAR_GIFT` comment; `place_grant` |
@@ -417,7 +417,7 @@ Found on Nov 18, 2026. **Nov 19:** PR A changes the founding rows below (the dea
 | `en.jsonc:2627` `founding.line`; `founding.tsx:137` | "…opening in January." | → "opening January 4" |
 | `en.jsonc:2622` `founding.fullBody`; `founding.tsx:243` | "The Flock opens in January…" | → the date, or "is open; join free" after opening |
 | `en.jsonc:2624` `founding.justClosed` | "Founding spots have closed." | no change (the database decides when) |
-| `en.jsonc:2648` `founding.regular` | "Regular price $30" | → "$30 a month after the free season" |
+| `en.jsonc:2657` `founding.regular` | "Regular price $30 a month or $300 a year after July 6, 2027" | → "Regular price $25 a month billed annually, or $30 month to month." (decided Nov 19) |
 | `src/lib/flockProfile.ts:66` | "Founding · $15/mo · first 6 months free once the Flock opens" | → "free until {end}" |
 | `src/routes/_authenticated/admin.founding.tsx:203–205` | "Six months after opening" (fallback when `free_until` is unset) | → "When the free season ends" |
 | `src/lib/flockAccess.ts:20, 29` | "When the Flock opens" / "Active (free months)" | → "Active (free season)" |
