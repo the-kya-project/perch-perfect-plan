@@ -4944,35 +4944,11 @@
     "farewell.yourBird": {
       "stamp": "fb5d7aead9178f25"
     },
-    "flock.feed.line": {
-      "stamp": "5abc3ea9e9229c38"
-    },
-    "flock.feed.title": {
-      "stamp": "adce1c8628974107"
-    },
-    "flock.learn.line": {
-      "stamp": "de8049d847970562"
-    },
-    "flock.learn.title": {
-      "stamp": "aa7e05f2df2ed05e"
-    },
     "flock.nav.aria": {
       "stamp": "856262315fd175c0"
     },
     "flock.nav.care": {
       "stamp": "ac0b3154b5476f5c"
-    },
-    "flock.nav.feed": {
-      "stamp": "adce1c8628974107"
-    },
-    "flock.nav.learn": {
-      "stamp": "aa7e05f2df2ed05e"
-    },
-    "flock.nav.spaces": {
-      "stamp": "2a10581379fa1095"
-    },
-    "flock.spaces.line": {
-      "stamp": "b1b12aa5ce9233f6"
     },
     "flock.spaces.title": {
       "stamp": "2a10581379fa1095"
@@ -10917,17 +10893,59 @@
     "verifyLink.checking": {
       "stamp": "c015955d0df27063"
     },
+    "verifyLink.emailChange.button": {
+      "stamp": "df7e73b8de800f3a"
+    },
+    "verifyLink.emailChange.line": {
+      "stamp": "f532eb9300baf702"
+    },
+    "verifyLink.emailChange.title": {
+      "stamp": "9446ef5a9625b612"
+    },
     "verifyLink.failedBody": {
       "stamp": "f109a0dcf178e2e2"
     },
     "verifyLink.failedTitle": {
       "stamp": "42b831e02a9634d2"
     },
+    "verifyLink.invite.button": {
+      "stamp": "1cd07c7876a522ca"
+    },
+    "verifyLink.invite.line": {
+      "stamp": "f37117252ca50a90"
+    },
+    "verifyLink.invite.title": {
+      "stamp": "3f612c46010b99b0"
+    },
     "verifyLink.pageTitle": {
       "stamp": "236d785bd1335513"
     },
-    "verifyLink.title": {
-      "stamp": "71b85967e04d36e5"
+    "verifyLink.recovery.button": {
+      "stamp": "9fa63028f547e39e"
+    },
+    "verifyLink.recovery.line": {
+      "stamp": "b5104e34a65719c9"
+    },
+    "verifyLink.recovery.title": {
+      "stamp": "636cdfe8e9d916c1"
+    },
+    "verifyLink.signIn.button": {
+      "stamp": "3a70143145066d2d"
+    },
+    "verifyLink.signIn.line": {
+      "stamp": "76718b3015917770"
+    },
+    "verifyLink.signIn.title": {
+      "stamp": "9606bea02f9ec73f"
+    },
+    "verifyLink.signup.button": {
+      "stamp": "53e92199f931aa33"
+    },
+    "verifyLink.signup.line": {
+      "stamp": "c5bfe879a0ac1c1a"
+    },
+    "verifyLink.signup.title": {
+      "stamp": "b2f49a28af73eede"
     },
     "verifyLink.toSignIn": {
       "stamp": "080fc6c138699cbd"
