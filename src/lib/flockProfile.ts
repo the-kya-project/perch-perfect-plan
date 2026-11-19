@@ -69,9 +69,19 @@ export function membershipSummary(rows: EntitlementRow[], isAdmin: boolean, now:
     const free = founding.free_until ?? founding.current_period_end;
     return { title: "Founding member", line: free ? `Founding · free until ${day(free)}, then $15/mo for life` : "Founding · $15/mo for life" };
   }
-  const order = (e: EntitlementRow) => (current(e, t) ? 0 : e.starts_at ? 1 : 2);
-  const best = [...live].filter((e) => e.plan !== "app_premium" || live.every((x) => x.plan === "app_premium"))
+  // A running membership first, then one waiting to start; within each, the
+  // free season comes after any other kind (a gift year, a comp), and once
+  // the free season has ended it isn't shown at all.
+  const freeSeason = (e: EntitlementRow) => e.source === "free_season";
+  const ended = (e: EntitlementRow) => !!e.current_period_end && new Date(e.current_period_end).getTime() <= t;
+  const order = (e: EntitlementRow) => (current(e, t) ? 0 : e.starts_at ? 2 : 4) + (freeSeason(e) ? 1 : 0);
+  const best = [...live].filter((e) => !(freeSeason(e) && ended(e)))
+    .filter((e, _i, rows) => e.plan !== "app_premium" || rows.every((x) => x.plan === "app_premium"))
     .sort((a, b) => order(a) - order(b))[0];
+  if (best && freeSeason(best)) {
+    const free = best.current_period_end ? `Free until ${day(best.current_period_end)}` : "Free during the free season";
+    return { title: "Free season", line: best.starts_at ? free : `${free} · starts when the Flock opens` };
+  }
   if (best) {
     const what = best.source === "gift"
       ? best.plan === "app_premium" ? "Gift · app premium" : "Gift membership"

@@ -278,6 +278,25 @@ check("founding: which full box shows (before and after opening day)", () => {
   assert.equal(foundingClosedCase(new Date("2027-01-04T05:00:00Z")), "fullOpen");
   assert.equal(foundingClosedCase(new Date("2027-03-02T12:00:00Z")), "fullOpen");
 });
+check("membership: the free season says Free until Jul 6, 2027, and never outranks a gift or a comp", () => {
+  const fs = { plan: "comp", status: "active", source: "free_season", starts_at: "2027-01-04T05:00:00Z", current_period_end: "2027-07-06T04:00:00Z", free_until: null };
+  const during = new Date("2027-02-01T00:00:00Z");
+  assert.deepEqual(membershipSummary([fs], false, during), { title: "Free season", line: "Free until Jul 6, 2027" });
+  assert.equal(membershipSummary([{ ...fs, starts_at: null }], false).line, "Free until Jul 6, 2027 · starts when the Flock opens");
+  // A gift year that starts when the free season ends: the free season shows while it runs.
+  const gift = { plan: "annual", status: "active", source: "gift", starts_at: "2027-07-06T04:00:00Z", current_period_end: "2028-07-06T04:00:00Z", free_until: null };
+  assert.equal(membershipSummary([gift, fs], false, during).line, "Free until Jul 6, 2027");
+  // Once it ends, the gift year is what's left.
+  assert.equal(membershipSummary([gift, fs], false, new Date("2027-08-01T00:00:00Z")).line, "Gift membership · until Jul 6, 2028");
+  // A running gift or comp wins over the free season.
+  const running = { ...gift, starts_at: "2027-01-04T05:00:00Z", current_period_end: "2028-01-04T05:00:00Z" };
+  assert.equal(membershipSummary([fs, running], false, during).line, "Gift membership · until Jan 4, 2028");
+  // Founding always wins.
+  const f = { plan: "founding", status: "trialing", source: "founding", starts_at: "2027-01-04T05:00:00Z", current_period_end: "2027-07-06T04:00:00Z", free_until: "2027-07-06T04:00:00Z" };
+  assert.equal(membershipSummary([fs, f], false, during).title, "Founding member");
+  // After the free season, a free-season row alone is no membership.
+  assert.equal(membershipSummary([fs], false, new Date("2027-07-06T04:00:00Z")).line, "No membership yet");
+});
 check("membership: gifts, comp, admin, none", () => {
   const g = { plan: "annual", status: "active", source: "gift", starts_at: "2027-01-05T06:00:00Z", current_period_end: "2028-01-05T06:00:00Z", free_until: null };
   assert.equal(membershipSummary([g], false, new Date("2027-03-01T00:00:00Z")).line, "Gift membership · until Jan 5, 2028");
