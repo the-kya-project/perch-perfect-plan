@@ -17,7 +17,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { deleteAllUnderPrefix } from "./account.functions";
+import { deleteAllUnderPrefix } from "./storageSweep";
 import { isCfClip, cfUid, CLIP_COLUMNS } from "./clipRef";
 
 // Buckets keyed "<bird_id>/..." — a prefix sweep gets everything.
