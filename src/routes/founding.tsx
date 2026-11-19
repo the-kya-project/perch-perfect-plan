@@ -200,7 +200,7 @@ function Offer() {
         <p className="m-0 text-[13px] font-[700] uppercase tracking-[0.06em]" style={{ color: K.moss }}>{t("founding.offerLabel", "Founding price")}</p>
         <p className="m-0 mt-1.5 flex flex-wrap items-baseline gap-x-2">
           <span className="text-[34px] font-[700] leading-none" style={{ fontFamily: SERIF, color: K.forest }}>{t("founding.price", "$15 a month")}</span>
-          <span className="text-[14.5px]" style={{ color: K.quiet }}>{t("founding.regular", "Regular price $30 a month or $300 a year after July 6, 2027")}</span>
+          <span className="text-[14.5px]" style={{ color: K.quiet }}>{t("founding.regular", "Regular price $25 a month billed annually, or $30 month to month.")}</span>
         </p>
         <p className="m-0 mt-3 text-[15px] leading-[1.5]" style={{ color: K.ink }}>
           {t("founding.locked", "The Flock is free for everyone until Tuesday, July 6, 2027. When billing starts, your founding price stays at $15 a month for life. If your membership ends, the founding price ends with it.")}
