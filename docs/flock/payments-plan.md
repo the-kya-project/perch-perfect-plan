@@ -7,6 +7,7 @@ Status: **plan only, for Brittany's review.** Nothing in code, settings, App Sto
 - **Nov 18, 2026 (later):** opening day set to **Mon, Jan 4, 2027** and the free season's end to **Tue, Jul 6, 2027**; every remaining decision and pricing question decided (section h). Merged as the plan of record.
 - **Nov 19, 2026:** **no founding deadline.** Claims stay open until all 50 spots are claimed; the Jan 31, 2027 close is dropped (`20261119160000_founding_no_deadline.sql`). The site and app don't mention a closing date. **Giving is "20% of every membership"** everywhere (built into costs).
 - **Nov 19, 2026:** **yearly plan from opening day.** The Flock is $30 a month or $300 a year (about $25 a month), both offered from Jan 4 and both billed from the free season's end, Jul 6, 2027. This replaces "monthly only at launch; $300 a year later". Founding stays $15 a month for life (no yearly founding option).
+- **Nov 19, 2026:** **no automatic emails to members.** Brittany writes and sends every member email herself, from Brevo, when she's ready. Nothing in the app sends, schedules or automates an email to members: no opening-day send, no card emails or reminders, no end-of-season notices, no renewal reminders. The app's part is giving her accurate lists to send to (who has a card on file, who doesn't, upcoming renewals). Care-app emails (onboarding, gifts, alerts to Brittany) are unchanged.
 
 What was read:
 
@@ -39,7 +40,7 @@ What was read:
 3. **Prices.** The founding members (the first 50) keep **$15 a month, locked for life once billing starts**, and lose it if they cancel. The **regular price after the free season is $30 a month or $300 a year** (about $25 a month); both are offered from opening day, and nobody is charged before Jul 6, 2027.
 4. **Founding claims have no closing date (changed Nov 19).** They stay open until all 50 spots are claimed. (Nov 18 had moved the close to Jan 31, 2027; that's withdrawn.) The pages don't mention a date or say "until all 50 are claimed".
 5. **No card before or at opening.**
-   - **About 30 days before the free season ends,** everyone gets an email asking them to add a card on the web ($0 due, first charge when the free season ends).
+   - **About 30 days before the free season ends,** Brittany emails everyone asking them to add a card on the web ($0 due, first charge when the free season ends). She sends it herself from Brevo; the app doesn't send it.
    - **Founders who haven't added a card by the end of the free season lose their founding spot.**
 
 ### How the plan applies them
@@ -60,13 +61,13 @@ All of these are decided (section h).
 |---|---|---|---|
 | Opening moment | 00:00 Eastern, Jan 1 | 00:00 Eastern, Jan 4 | `flock_today()` uses New York time and the founding deadline uses Indianapolis time. Both are Eastern, so they agree. |
 | Day of the week | New Year's Day, a holiday; you may not want to be on support duty | A working Monday | |
-| Free season ends | Thu, Jul 1, 2027 | **Tue, Jul 6, 2027** | Six months from Jan 4 would be Sun, Jul 4, a holiday, so the stored date is Jul 6: first charges and "your free season ends today" emails don't land on the Fourth. |
-| "Add your card" email (about 30 days before) | about Tue, Jun 1 | **Mon, Jun 7** | Reminders on **Tue, Jun 29** and **Mon, Jul 5**. |
+| Free season ends | Thu, Jul 1, 2027 | **Tue, Jul 6, 2027** | Six months from Jan 4 would be Sun, Jul 4, a holiday, so the stored date is Jul 6: first charges don't land on the Fourth. |
+| "Add your card" email (about 30 days before; Brittany sends it) | about Tue, Jun 1 | **Mon, Jun 7** | Suggested reminders on **Tue, Jun 29** and **Mon, Jul 5**, also sent by Brittany. |
 | Founders' `free_until` | Jul 1 | **Jul 6** | Comes from `free_season_ends_at` once PR B lands. |
 | Founding claims close | no date (decided Nov 19) | no date (decided Nov 19) | Open until all 50 are claimed. |
 | Gift years (start at the free season's end, h5) | start Jul 1 | **start Jul 6** | |
 | Pre-opening work (section e) | due Dec 31 | **due Sun, Jan 3**: one extra weekend, no extra working days | Jan 4 mainly buys a calmer opening day, not build time. |
-| Opening-day emails | go out on New Year's Day | go out on a Monday | Monday email usually does better. |
+| Opening-day emails (Brittany sends them) | New Year's Day | a Monday | Monday email usually does better. |
 
 ---
 
@@ -199,12 +200,13 @@ Either reuse `plan = 'comp'` with a new `source = 'free_season'`, or add a plan 
   - A founder with a claim that isn't released or forfeited gets the founding price.
   - Everyone else picks monthly ($30) or yearly ($300). Both use the same `trial_end`, so a yearly member's first $300 charge is on Jul 6, 2027 and renews each Jul 6.
   - The server function checks this; the native app never shows it.
-- **Emails:**
+- **Emails (Brittany sends all of them from Brevo; the app sends none):**
   - "Add your card" on **Mon, Jun 7** (about 30 days before the end), to every member with a free-season or founding row and no subscription;
-  - reminders on **Tue, Jun 29** and **Mon, Jul 5**;
-  - a "card on file, first charge on {date}" confirmation;
+  - suggested reminders on **Tue, Jun 29** and **Mon, Jul 5**;
   - after the end, "your free season ended" (regular) or "your founding spot was released" (founder).
-- **End of the free season:** a cron hook (through `call_cron_hook`) runs once, just after `free_season_ends_at`. For every founder without a subscription, it sets `released_at` and sends the email. Free-season rows end on their own date, with no job needed. The job never releases a founder who has a subscription, even a `past_due` one.
+  - The app's part is the lists: `/admin/members` and `/admin/founding` export, as CSV, who has a card on file and who doesn't (founders and everyone else separately), with first names and emails, so she can upload a list to Brevo and send. The card step's own screen shows "card on file, first charge on {date}" instead of a confirmation email.
+  - **Stripe's own customer emails are turned off** (Stripe Dashboard → Settings → Customer emails: receipts, upcoming renewal, failed payment, trial ending), so Stripe doesn't email members either. Apple and Google send their own purchase receipts for app-store subscriptions; those can't be turned off.
+- **End of the free season:** a database job runs once, just after `free_season_ends_at`. For every founder without a subscription, it sets `released_at`. **It sends no email**; the "founding spot released" list appears in `/admin/founding` for Brittany to email. Free-season rows end on their own date, with no job needed. The job never releases a founder who has a subscription, even a `past_due` one.
 - **Founders who add a card and then cancel before July:** the subscription ends at the trial end, and the price is forfeited then.
 - **Cancelling:** through the Stripe Customer Portal. **Turning off auto-renew is reversible until the period ends; the founding price is forfeited only when the subscription actually ends.**
 
@@ -240,7 +242,7 @@ Dates assume opening at 00:00 Eastern on **Mon, Jan 4, 2027**. Durations are typ
 | **Fri, Dec 18** | **Approve the opening PR (C):** the entry point and `flock_enabled()` for members. This is the launch decision the Flock rules reserve for you. | 30 minutes |
 | **Mon, Dec 21 – Wed, Dec 23** | **Dry run on production** with admin accounts: join → post → journey → report → block → kill switch, on the web, iPhone, iPad and Duo | 1 day |
 | **Wed, Dec 23** | **Name reviewers** for `/admin/review` from Jan 4 (you, plus any chapter leads) | 15 minutes |
-| **Wed, Dec 30** | **Opening emails** drafted and scheduled in Brevo for Mon, Jan 4 morning: founders (list 9), the waitlist (23), and optionally all app users | 1–2 hours |
+| **Wed, Dec 30** | **Opening emails** drafted in Brevo, ready for you to send on Mon, Jan 4 morning: founders (list 9), the waitlist (23), and optionally all app users. Nothing is scheduled to send on its own. | 1–2 hours |
 | **Wed, Dec 30** | **Website (Webflow):** the founding card and `/community` (section i), published on Jan 4 | 1 hour |
 | **Mon, Jan 4, 00:00 Eastern** | **Open:** `select public.admin_set_flock_opens_at('2027-01-04 00:00 America/New_York');`, set the free season's end to `2027-07-06 00:00 America/New_York` (PR B's admin function), and switch on PR C's setting. Check the free-user regression check and save-error alerts that morning. | 30 minutes |
 
@@ -251,13 +253,13 @@ Dates assume opening at 00:00 Eastern on **Mon, Jan 4, 2027**. Durations are typ
 | **Fri, Jan 15** | **App Store Connect:** the Paid Apps agreement, banking and tax forms (1–3 business days to verify the bank); Small Business Program enrollment (about 2 weeks) | 30 minutes of forms |
 | **Sat, May 1** | **Sales tax:** confirm with your accountant how each state treats a digital membership (taxable or not, and where you must register), before Stripe Tax is registered and live prices go on. Stripe Tax is on either way (h11). | 1 meeting |
 | **Sat, May 1** | **Android:** confirm Google Play's current billing rules for digital subscriptions in the US, including the exceptions after *Epic v. Google* (whether an app may link to or mention web purchase, and on what terms). Payment stays web-only, and **nothing paid appears in the Android app until this check is done**: no price, paywall or "subscribe" link (h14). | 1–2 hours of reading |
-| **Fri, May 7** | **Stripe:** Stripe Tax registration per the accountant; products and prices in test, then live (The Flock: Founding $15/mo, Regular $30/mo, Regular $300/yr); Customer Portal; the billing webhook endpoint and secret into Vercel (Production live, Preview test) | about 2 hours |
+| **Fri, May 7** | **Stripe:** Stripe Tax registration per the accountant; products and prices in test, then live (The Flock: Founding $15/mo, Regular $30/mo, Regular $300/yr); Customer Portal; the billing webhook endpoint and secret into Vercel (Production live, Preview test); and **turn off Stripe's customer emails** (Settings → Customer emails), so Stripe sends members nothing | about 2 hours |
 | **Fri, May 7** | **App Store Connect:** subscription group "The Flock" with Regular monthly at $29.99 (or $30.00 if offered) and Regular yearly at $299.99 (or $300.00); Billing Grace Period (16 days); the Server Notifications V2 URL pointing to RevenueCat; an In-App Purchase key | 2 hours |
 | **Fri, May 7** | **RevenueCat:** project, iOS app, key, both products (monthly and yearly), entitlement `flock`, an offering with both packages, webhook and secret, transfer "keep with original" | 1–2 hours |
 | **Fri, May 7** | **EULA link** on the paywall (Apple's standard one) and the privacy policy line about payment processors | 30 minutes |
 | **Mon, May 10** | **Submit the iOS build with both in-app purchase products (monthly and yearly),** allowing a week for a first-subscription rejection and resubmit. The Flock is open by then, so the reviewer can reach it; no review allowlist is needed. | 1 hour plus review time |
 | **Tue, Jun 1** | **Payments live:** Stripe and in-app purchase; a dry run with your own founding claim | 1 hour |
-| Mon, Jun 7 | "Add your card" emails go out (automatic) | none |
+| Mon, Jun 7 | **You send the "Add your card" emails** from Brevo, to the no-card lists exported from `/admin/members` and `/admin/founding` (reminders Jun 29 and Jul 5, also yours) | 1–2 hours each |
 
 ---
 
@@ -276,7 +278,7 @@ The opening PR (C) is the one that deliberately makes the Flock visible to membe
 - **A. Founding terms and deadline.**
   - ~~A migration moves `private.founding_deadline()` to the end of Jan 31~~ (#478); then, Nov 19, no closing date at all (`20261119160000_founding_no_deadline.sql`). Pinned in `supabase/checks/founding_deadline_checks.sql`.
   - New copy for `/founding`, the founder screens and the website (section i): the free season and the perks; no closing date and no card details on the pages (the claimant email carries the card rule).
-  - An email to existing claimants.
+  - An email to existing claimants, drafted for Brittany to send herself.
   - *Free users: none (`/founding` is public; care app untouched).*
 - **B. Free-season grant.**
   - `flock_settings.free_season_ends_at` and `admin_set_free_season_ends_at()`.
@@ -300,10 +302,10 @@ The opening PR (C) is the one that deliberately makes the Flock visible to membe
 1. **Billing schema** (section c), with `supabase/checks/billing_checks.sql`.
 2. **Stripe billing webhook**, `/api/public/stripe/billing`, with its own secret and fixture tests (`npm run test:billing`). It returns 503 without the env var.
 3. **Card step**, `/flock/membership` (and the founder view of it): choose monthly ($30) or yearly ($300) and add a card ($0 due until the season's end), or "card on file, first charge on {date}", with a Customer Portal link. The founding price applies to unreleased claims. It's never shown in the native app, and sits behind `BILLING_ENABLED`.
-4. **Card emails:** about 30 days, 7 days and 1 day before, the confirmation, and the end-of-season notices. A cron hook through `call_cron_hook`, idempotent per member and email.
-5. **End-of-season job:** release founders without a subscription, and send the emails.
+4. **Email lists, not emails** (changed Nov 19: Brittany sends every member email herself). CSV exports from `/admin/members` and `/admin/founding`: members with no card on file, founders with no card on file, members with a card (first charge date), and after the season's end, released founders. First name and email only, admins only. **No cron hook and no email is sent by the app.**
+5. **End-of-season job:** release founders without a subscription. It sends no email.
 6. **Admin view**, `/admin/founding` and `/admin/members`: free season, card on file, past due, released, forfeited.
-6a. **Failed founding payment alert** (legal draft D7, decided Nov 19). Every time a founding member's payment fails (Stripe `invoice.payment_failed` on a founding subscription), email brittany@thekyaproject.com through Brevo, the way save-error alerts are sent: the member's display name and spot number, the amount, the attempt and Stripe's next retry date, and a link to `/admin/founding`. One email per failed payment, idempotent on the Stripe event id. **Nothing changes automatically** (no release, no price change): Brittany contacts the member personally first. Pinned by fixture tests in `npm run test:billing`. *Free users: none.*
+6a. **Failed founding payment alert** (legal draft D7, decided Nov 19). An alert **to Brittany only**, like the save-error alerts; members get no email. Every time a founding member's payment fails (Stripe `invoice.payment_failed` on a founding subscription), email brittany@thekyaproject.com through Brevo, the way save-error alerts are sent: the member's display name and spot number, the amount, the attempt and Stripe's next retry date, and a link to `/admin/founding`. One email per failed payment, idempotent on the Stripe event id. **Nothing changes automatically** (no release, no price change): Brittany contacts the member personally first. Pinned by fixture tests in `npm run test:billing`. *Free users: none.*
 6b. **Deleting a post keeps it hidden for 180 days** (legal draft D10). Today `flock_post_delete` and `flock_comment_delete` delete at once, along with the comments on a post. Change them to set a `deleted_at` that hides the post (or comment) and its comments from everyone at once, including the author, and add a daily SQL job (pg_cron, like `flock-event-reminders-hourly`, no HTTP) that permanently deletes rows and their photos 180 days later. **Deleting a whole account stays immediate**, with no hold. Pin in `flock_posts_checks.sql`. **The new privacy policy's post-deletion wording can't go live until this ships.** *Free users: none.*
 6c. **Removed content and reports are deleted after 180 days** (legal draft D9). The same daily job deletes reviewer-removed content (`flock_moderation` status removed) and closed reports 180 days after they were resolved. Today they're kept with no end date. Pin in `flock_moderation_checks.sql`. *Free users: none.*
 
@@ -313,7 +315,7 @@ The opening PR (C) is the one that deliberately makes the Flock visible to membe
 6e. **Premium** (changed Nov 19). Plans and prices: $9.99 a month and $79 a year (`plan` `app_premium`), Stripe prices and two App Store products in a "Kya & Co. Premium" group through RevenueCat; Android web-only until the Google Play check. A 14-day trial for new members (6f). Shown only where premium features are offered; nothing changes for free users before Jul 6. *Free users: the premium offer appears from Jul 7, after Brittany approves its placement.*
 6f. **14-day free trial** (decided Nov 19). From Jul 7, 2027, a new Flock (monthly or yearly) or Premium subscriber gets 14 days free: Stripe `trial_period_days: 14`, and an Apple introductory offer of two weeks free. **No trial** for founders, rescue adopters (comps), Kya's Crew, or anyone who already had a paid plan or a trial. The card step during the free season keeps `trial_end = free_season_ends_at`, not 14 days. Pinned in `npm run test:billing`.
 6g. **Cancel online in Membership and billing** (decided Nov 19). A "Cancel membership" option under You → Membership and billing, ready when billing starts, so a member can cancel in a few taps: web subscriptions cancel through Stripe (at period end, with the date shown); App Store and Google Play subscriptions show the store's steps and a button to the store's subscription page. Also lists the plan, the next charge date and the refund rule. The terms point here.
-6h. **Yearly renewal reminder** (decided Nov 19). An email 30 days before each yearly renewal (web and app-store subscribers): the plan, the price, the renewal date and how to cancel. A daily cron hook through `call_cron_hook`, idempotent per subscription and renewal date. **The lawyer confirms it meets California's automatic renewal law** (legal draft note).
+6h. **Yearly renewal reminder** (decided Nov 19; changed Nov 19 to sent by Brittany). An email 30 days before each yearly renewal: the plan, the price, the renewal date and how to cancel. **Brittany sends it herself**; the app's part is an admin list of yearly renewals in the next 45 days (first name, email, plan, price, renewal date), exported as CSV. The first yearly renewals are Jul 6, 2028, so the first reminders are due about Jun 6, 2028. **Ask the lawyer** whether a reminder sent by hand meets California's automatic renewal law, and put a recurring calendar reminder on the renewal dates: a missed reminder could be a legal problem, which an automatic send would avoid.
 
 ### After opening, iOS (spring; in-app purchase live by June 1)
 
@@ -339,13 +341,13 @@ The opening PR (C) is the one that deliberately makes the Flock visible to membe
 | Dec 1–11 | PR B by **Dec 4**; PRs D, E, F, G and H by **Dec 11**; you: legal text and copy by Dec 4 | nothing to ship: the Flock works in installed builds (remote-URL mode) |
 | Dec 14–18 | **PR C** merged dark by **Dec 18**; you: content approved, vet sign-off in, PR C approved | |
 | Dec 21–23 | dry run on production; reviewers named | the Flock checked on iPhone, iPad and Duo |
-| Dec 24 – Jan 3 | buffer; **no merges after Mon, Dec 28**; emails and website scheduled by Dec 30 | |
-| **Mon, Jan 4** | **opening** at 00:00 Eastern: set the dates, switch on, emails that morning | |
+| Dec 24 – Jan 3 | buffer; **no merges after Mon, Dec 28**; opening emails drafted (not scheduled) and website ready by Dec 30 | |
+| **Mon, Jan 4** | **opening** at 00:00 Eastern: set the dates, switch on; you send the opening emails that morning | |
 | Feb – Mar | billing PRs 1–3 on preview with test cards | Paid Apps agreement by Jan 15; PR 7 shipped by **Mon, Mar 15** |
 | Apr – May | PRs 4–6; accountant and Google Play checks by **May 1**; live Stripe by **May 7** | App Store Connect, RevenueCat, PRs 8–10; submit by **Mon, May 10** |
 | **Tue, Jun 1** | **payments live**; dry run with your own claim | in-app purchase live |
-| **Mon, Jun 7** | "add your card" emails | iOS paywall appears |
-| Tue, Jun 29 and Mon, Jul 5 | reminders | |
+| **Mon, Jun 7** | you send the "add your card" emails | iOS paywall appears |
+| Tue, Jun 29 and Mon, Jul 5 | you send the reminders | |
 | **Tue, Jul 6** | **free season ends; first charges**; founders without a card released; free-season access ends for members without a card | |
 
 **What to cut if it gets tight:**
