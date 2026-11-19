@@ -12,9 +12,9 @@
 --      rows are left out of place_grant's queueing and premium-overlap sums.
 --   3. Chapter leads (and founders) already have a membership: flock_join()
 --      does nothing for them and creates no row.
---   4. When the free season ends, a free-season row stops granting both Flock
---      access and app premium; founders' and gift holders' rows follow their
---      own dates.
+--   4. When the free season ends, a free-season row stops granting Flock
+--      access (and with it Flock journeys; app premium itself was removed in
+--      20261119170000); founders' and gift holders' rows follow their own dates.
 --
 -- Changes to existing objects (all Flock-only; nothing the care app uses):
 --   - entitlements_source_check gains 'free_season' (widened; every existing

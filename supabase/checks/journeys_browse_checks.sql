@@ -1,7 +1,7 @@
 -- Verification for 20261107230000_journeys_browse.
 --
--- Self-contained and leaves nothing behind: two Flock members, an app premium
--- member, a free user, a household member and an admin; a community journey and
+-- Self-contained and leaves nothing behind: two Flock members, a member on a
+-- paid annual plan (app premium is gone; every paid plan is the Flock), a free user, a household member and an admin; a community journey and
 -- a "Just me" journey with clips, milestones and reactions. Checks who sees,
 -- follows, reacts, gets clip references and deletes, then rolls back.
 --   "JOURNEYS BROWSE CHECKS: n passed, 0 failed"           → all good
@@ -11,7 +11,7 @@ do $$
 declare
   m1  uuid := gen_random_uuid();  -- Flock member, owns the birds
   m2  uuid := gen_random_uuid();  -- another Flock member
-  pr  uuid := gen_random_uuid();  -- app premium
+  pr  uuid := gen_random_uuid();  -- Flock member on a paid annual plan
   fr  uuid := gen_random_uuid();  -- free
   hh  uuid := gen_random_uuid();  -- household on m1's bird (free tier)
   b1  uuid := gen_random_uuid();  -- m1's bird, shown, with a photo
@@ -26,7 +26,7 @@ begin
   insert into public.entitlements (user_id, plan, status, source, starts_at) values
     (m1, 'comp', 'active', 'manual', now() - interval '1 day'),
     (m2, 'comp', 'active', 'manual', now() - interval '1 day'),
-    (pr, 'app_premium', 'active', 'manual', now() - interval '1 day');
+    (pr, 'annual', 'active', 'manual', now() - interval '1 day');
   insert into public.birds (id, owner_id, name, species, photo_url) values
     (b1, m1, 'Kiwi', 'Cockatiel', m1::text || '/kiwi.jpg'), (b2, m1, 'Mango', 'Conure', m1::text || '/mango.jpg');
   insert into public.bird_members (bird_id, user_id, role) values (b1, hh, 'household'), (b2, hh, 'household') on conflict do nothing;
@@ -70,7 +70,7 @@ begin
   reset role;
   if n = 1 then passed := passed + 1; else failed := array_append(failed, 'household sees its own Just me journey'); end if;
 
-  -- 3) A community journey: members and app premium see it; free accounts don't.
+  -- 3) A community journey: members (a paid plan too) see it; free accounts don't.
   ok := true;
   for n in 1..2 loop
     perform set_config('request.jwt.claims', json_build_object('sub', (array[m2, pr])[n], 'role', 'authenticated')::text, true);
@@ -83,9 +83,9 @@ begin
   set local role authenticated;
   ok := ok and not exists (select 1 from public.journey_feed('for_you', 50)) and not exists (select 1 from public.journey_view(jc));
   reset role;
-  if ok then passed := passed + 1; else failed := array_append(failed, 'community journeys: members and premium, not free'); end if;
+  if ok then passed := passed + 1; else failed := array_append(failed, 'community journeys: members, not free'); end if;
 
-  -- 4) Following is for Flock members: premium and free can't; nobody follows a Just me journey.
+  -- 4) Following is for Flock members: free accounts can't; nobody follows a Just me journey.
   perform set_config('request.jwt.claims', json_build_object('sub', m2, 'role', 'authenticated')::text, true);
   set local role authenticated;
   n := public.journey_follow(jc, true);
@@ -96,13 +96,13 @@ begin
   ok := ok and denied;
   reset role;
   n := 0;
-  for r in select unnest(array[pr, fr]) as who loop
+  for r in select unnest(array[fr]) as who loop
     perform set_config('request.jwt.claims', json_build_object('sub', r.who, 'role', 'authenticated')::text, true);
     set local role authenticated;
     begin perform public.journey_follow(jc, true); exception when insufficient_privilege then n := n + 1; end;
     reset role;
   end loop;
-  if ok and n = 2 then passed := passed + 1; else failed := array_append(failed, 'following: members only'); end if;
+  if ok and n = 1 then passed := passed + 1; else failed := array_append(failed, 'following: members only'); end if;
 
   -- 5) Reactions are for Flock members, on things they may see.
   perform set_config('request.jwt.claims', json_build_object('sub', m2, 'role', 'authenticated')::text, true);
@@ -117,13 +117,13 @@ begin
   ok := ok and denied;
   reset role;
   n := 0;
-  for r in select unnest(array[pr, fr]) as who loop
+  for r in select unnest(array[fr]) as who loop
     perform set_config('request.jwt.claims', json_build_object('sub', r.who, 'role', 'authenticated')::text, true);
     set local role authenticated;
     begin perform public.journey_react('journey_update', uc, 'love_this', true); exception when insufficient_privilege then n := n + 1; end;
     reset role;
   end loop;
-  if ok and n = 2 then passed := passed + 1; else failed := array_append(failed, 'reactions: members only, visible things only'); end if;
+  if ok and n = 1 then passed := passed + 1; else failed := array_append(failed, 'reactions: members only, visible things only'); end if;
 
   -- 6) Clip references only for people who may see the journey (the server signs from these).
   perform set_config('request.jwt.claims', json_build_object('sub', pr, 'role', 'authenticated')::text, true);
@@ -207,7 +207,7 @@ begin
   where s.nspname = 'public' and p.prosecdef and p.proname like 'journey%';
   if n = 3 and r.count = 0 then passed := passed + 1; else failed := array_append(failed, 'no direct access; invoker wrappers only'); end if;
 
-  -- 12) Finisher tips: from finished journeys only, to app premium and members
+  -- 12) Finisher tips: from finished journeys only, to Flock members
   --     only, never your own, no names, newest first with a count; admins hide.
   declare
     t1 uuid; t2 uuid; t3 uuid; ja uuid; jb uuid; jx uuid; wave uuid;
@@ -226,7 +226,7 @@ begin
     select id into t1 from public.journey_finisher_tips where journey_id = ja;
     select id into t2 from public.journey_finisher_tips where journey_id = jb;
 
-    -- Another member and app premium see m1's two tips, newest first, with the count; no names.
+    -- Another member and a paid-plan member see m1's two tips, newest first, with the count; no names.
     ok := true;
     for n in 1..2 loop
       perform set_config('request.jwt.claims', json_build_object('sub', (array[m2, pr])[n], 'role', 'authenticated')::text, true);

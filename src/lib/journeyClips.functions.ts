@@ -1,7 +1,7 @@
 // Uploads for journey clips (Community). The care app's createClipUpload caps
 // every clip at 60 seconds; a journey clip's cap depends on the member's tier
-// (public.journey_limits: free 60 s, app premium 5 min, Flock 20 min) and a
-// journey may have a clip limit (free 10, app premium 20, Flock none).
+// (public.journey_limits: free 60 s, Flock 20 min) and a
+// journey may have a clip limit (free 10, Flock none).
 //
 // The database decides, as the caller: journey_clip_allowance() checks they can
 // use journeys, have access to the bird, and (for an existing journey) haven't

@@ -3,7 +3,12 @@
 // these again (20261107200000_journeys_core.sql); these only decide what to
 // show, never what's allowed.
 
-export type JourneyTier = "free" | "premium" | "flock";
+import type { TFunction } from "i18next";
+
+/** Two levels: free (the 7 husbandry journeys, one custom journey at a time)
+ *  and Flock (every journey; Kya's Crew is a Flock plan). App premium is gone. */
+export type JourneyTier = "free" | "flock";
+
 export type JourneyRhythm = "most_days" | "few_times_week" | "weekends";
 export type JourneyVisibility = "community" | "private";
 export type JourneyStatus = "active" | "paused" | "finished" | "happy_where_we_are";
@@ -15,6 +20,7 @@ export type JourneyAccess = {
   max_open_custom: number | null;
   open_custom: number;
   max_upload_bytes: number;
+  /** Can use Flock-only templates (the column keeps its old name). */
   can_use_premium: boolean;
   can_share: boolean;
   can_view_community: boolean;
@@ -26,6 +32,7 @@ export type JourneyTemplate = {
   slug: string;
   name: string;
   category: "husbandry" | "foundations" | "food" | "tricks";
+  /** "premium" is the stored name for a Flock-only template. */
   tier: "free" | "premium";
   purpose: string;
   done_when: string;
@@ -44,13 +51,13 @@ export const CUSTOM_MAX = 8;
 export const CUSTOM_NAME_MAX = 60;
 export const MILESTONE_MAX = 300;
 
-/** "The basics · free", then "Tricks and more · premium", each in catalog order. */
+/** "The basics · free", then "Flock journeys", each in catalog order. */
 export function groupTemplates(templates: JourneyTemplate[]): { basics: JourneyTemplate[]; more: JourneyTemplate[] } {
   const sorted = [...templates].sort((a, b) => a.sort_order - b.sort_order || a.name.localeCompare(b.name));
   return { basics: sorted.filter((t) => t.tier === "free"), more: sorted.filter((t) => t.tier === "premium") };
 }
 
-/** A premium template for someone without app premium (or the Flock). */
+/** A Flock-only template for someone who isn't in the Flock. */
 export function isLocked(t: Pick<JourneyTemplate, "tier">, access: Pick<JourneyAccess, "can_use_premium"> | undefined): boolean {
   return t.tier === "premium" && !access?.can_use_premium;
 }
@@ -233,4 +240,21 @@ export function clipPhase(o: {
     return o.processingSince !== undefined && o.now - o.processingSince >= o.budgetMs ? "stalled" : "processing";
   }
   return "ready";
+}
+
+/** The sheet's title: the journey with the bird's name ("Teach Echo to high
+ *  five"). Flock-only templates have their own wording; anything else falls
+ *  back to "[Journey] with [Bird]". */
+export function flockSheetTitle(t: TFunction, slug: string, journey: string, bird: string | undefined): string {
+  if (!bird) return journey;
+  switch (slug) {
+    case "wave": return t("flock.journeys.flockOnly.title.wave", "Teach {{bird}} to wave", { bird });
+    case "high-five": return t("flock.journeys.flockOnly.title.highFive", "Teach {{bird}} to high five", { bird });
+    case "spin": return t("flock.journeys.flockOnly.title.spin", "Teach {{bird}} to spin", { bird });
+    case "retrieve": return t("flock.journeys.flockOnly.title.retrieve", "Teach {{bird}} to retrieve", { bird });
+    case "hang-upside-down": return t("flock.journeys.flockOnly.title.hangUpsideDown", "Teach {{bird}} to hang upside down", { bird });
+    case "nail-trims": return t("flock.journeys.flockOnly.title.nailTrims", "Teach {{bird}} to be calm for nail trims", { bird });
+    case "stationing": return t("flock.journeys.flockOnly.title.stationing", "Teach {{bird}} to station", { bird });
+    default: return t("flock.journeys.flockOnly.title.other", "{{journey}} with {{bird}}", { journey, bird });
+  }
 }

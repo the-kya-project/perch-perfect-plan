@@ -41,10 +41,10 @@ export type GiftRow = {
 
 const firstName = (name: string | null | undefined) => (name ?? "").trim().split(/\s+/)[0] ?? "";
 
+// One gift today: a year in the Flock (app premium is gone).
 function planWords(t: ReturnType<typeof emailT>, plan: GiftPlan) {
-  return plan === "flock_year"
-    ? { plan: t("email.gift.planFlock"), badge: t("email.gift.badgeFlock"), timing: t("email.gift.timingFlock") }
-    : { plan: t("email.gift.planPremium"), badge: t("email.gift.badgePremium"), timing: t("email.gift.timingPremium") };
+  void plan;
+  return { plan: t("email.gift.planFlock"), badge: t("email.gift.badgeFlock"), timing: t("email.gift.timingFlock") };
 }
 
 /** Message text, escaped, with the buyer's line breaks kept. */
@@ -105,7 +105,7 @@ export function buildGiftRecipientEmail(g: GiftRow): BuiltEmail {
   const blocks: FlockBlock[] = [
     { kind: "p", text: t("email.gift.hi", { first: escapeHtml(firstName(g.recipient_name)) || escapeHtml(g.recipient_name) }) },
     { kind: "lead", text: t("email.gift.recipient.intro", { from, plan: w.plan }) },
-    { kind: "p", text: g.plan === "flock_year" ? t("email.gift.recipient.aboutFlock") : t("email.gift.recipient.aboutPremium") },
+    { kind: "p", text: t("email.gift.recipient.aboutFlock") },
     ...(g.message
       ? [{
           kind: "highlight" as const,

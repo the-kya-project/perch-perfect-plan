@@ -37,7 +37,9 @@ type Gift = {
   gift_code: string;
 };
 
-const PLAN_LABEL: Record<string, string> = { flock_year: "The Flock, 1 year", app_premium_year: "App premium, 1 year" };
+// Only the Flock year is sold. A retired plan (one refunded app premium gift
+// from before app premium was removed) shows under its stored name.
+const PLAN_LABEL: Record<string, string> = { flock_year: "The Flock, 1 year" };
 const NO_PROMO = "(none)";
 
 function AdminGifts() {

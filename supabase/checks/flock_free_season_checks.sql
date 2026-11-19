@@ -16,7 +16,6 @@ declare
   fdr uuid := gen_random_uuid();  -- founder
   cld uuid := gen_random_uuid();  -- chapter lead
   gft uuid := gen_random_uuid();  -- Flock gift holder
-  gpr uuid := gen_random_uuid();  -- app premium gift holder
   j1  uuid := gen_random_uuid();  -- joiner
   tag text := substr(replace(gen_random_uuid()::text, '-', ''), 1, 12);
   passed int := 0; failed text[] := '{}';
@@ -27,7 +26,7 @@ declare
 begin
   insert into auth.users (instance_id, id, aud, role, email, raw_app_meta_data, raw_user_meta_data, created_at, updated_at)
   select '00000000-0000-0000-0000-000000000000', u, 'authenticated', 'authenticated', u::text || '@checks.invalid', '{}', '{}', now(), now()
-  from unnest(array[adm, fre, cmp, fdr, cld, gft, gpr, j1]) as u;
+  from unnest(array[adm, fre, cmp, fdr, cld, gft, j1]) as u;
   insert into public.user_roles (user_id, role) values (adm, 'admin');
   insert into public.entitlements (user_id, plan, status, source, starts_at) values (cmp, 'comp', 'active', 'manual', now() - interval '1 day');
   insert into public.entitlements (user_id, plan, status, source, starts_at) values (cld, 'chapter_lead', 'active', 'chapter_lead', now() - interval '1 day');
@@ -35,10 +34,7 @@ begin
   values (fdr, (select coalesce(max(spot_number), 0) + 1 from public.founding_claims), 'great-lakes');
   insert into public.gift_purchases (plan, buyer_email, recipient_name, amount_paid_cents, stripe_checkout_session_id, gift_code)
   values ('flock_year', 'b@checks.invalid', 'G1', 30000, 'cs_fs1_' || tag, private.new_gift_code()) returning id into g1;
-  insert into public.gift_purchases (plan, buyer_email, recipient_name, amount_paid_cents, stripe_checkout_session_id, gift_code)
-  values ('app_premium_year', 'b@checks.invalid', 'G2', 7900, 'cs_fs2_' || tag, private.new_gift_code()) returning id into g2;
   update public.gift_purchases set status = 'redeemed', redeemed_by = gft, redeemed_at = now() where id = g1;
-  update public.gift_purchases set status = 'redeemed', redeemed_by = gpr, redeemed_at = now() where id = g2;
 
   -- Start like production today: no opening day, the stored Jul 6, 2027 end, UI on.
   update public.flock_settings set flock_opens_at = null, ui_enabled = true,
@@ -98,7 +94,6 @@ begin
   perform private.reschedule_pending_grants(null);
   select * into before_f from public.entitlements where user_id = fdr and source = 'founding';
   select * into before_g from public.entitlements where user_id = gft and source = 'gift';
-  select * into before_p from public.entitlements where user_id = gpr and source = 'gift';
   select * into before_c from public.entitlements where user_id = cld and source = 'chapter_lead';
 
   -- 5) Joining: one active row from opening day to the free season's end, no
@@ -113,7 +108,7 @@ begin
   select * into e from public.entitlements where user_id = j1 and source = 'free_season';
   ok := ok and (select count(*) from public.entitlements where user_id = j1) = 1
     and e.plan = 'comp' and e.status = 'active' and e.external_ref is null and e.free_until is null
-    and not private.is_flock_member(j1) and not private.has_app_premium(j1);
+    and not private.is_flock_member(j1) and private.journey_tier(j1) = 'free';
   if ok then passed := passed + 1; else failed := array_append(failed, 'join: one row, opening day to season end, nothing before'); end if;
 
   -- 6) Founders: nothing is created and their founding row is untouched.
@@ -136,9 +131,9 @@ begin
      and row(e.*) is not distinct from row(before_c.*) then passed := passed + 1;
   else failed := array_append(failed, 'chapter lead: no second row'); end if;
 
-  -- 8) Gift holders can join, and their gift rows (Flock and premium) don't
+  -- 8) Gift holders can join, and their gift rows don't
   --    change: not when they join, and not when grants are rescheduled.
-  for r in select unnest(array[gft, gpr]) as u loop
+  for r in select unnest(array[gft]) as u loop
     perform set_config('request.jwt.claims', json_build_object('sub', r.u, 'role', 'authenticated')::text, true);
     set local role authenticated;
     perform * from public.flock_join();
@@ -148,9 +143,6 @@ begin
   select * into e from public.entitlements where user_id = gft and source = 'gift';
   ok := row(e.*) is not distinct from row(before_g.*)
     and exists (select 1 from public.entitlements where user_id = gft and source = 'free_season');
-  select * into e from public.entitlements where user_id = gpr and source = 'gift';
-  ok := ok and row(e.*) is not distinct from row(before_p.*)
-    and exists (select 1 from public.entitlements where user_id = gpr and source = 'free_season');
   if ok then passed := passed + 1; else failed := array_append(failed, 'gift holders join; gift rows unchanged'); end if;
 
   -- 9) The admin setter moves every free-season row's end (and founders'
@@ -185,11 +177,11 @@ begin
   if (select starts_at from public.entitlements where user_id = j1 and source = 'free_season') = now() + interval '20 days'
   then passed := passed + 1; else failed := array_append(failed, 'opening day moves the start'); end if;
 
-  -- 11) After opening day: free-season members have Flock and premium; the
+  -- 11) After opening day: free-season members have the Flock (and Flock journeys); the
   --     setter now refuses to move the season's end.
   update public.flock_settings set flock_opens_at = now() - interval '30 days' where id;
   perform private.reschedule_pending_grants(null);
-  ok := private.is_flock_member(j1) and private.has_app_premium(j1) and private.can_use_flock(j1);
+  ok := private.is_flock_member(j1) and private.journey_tier(j1) = 'flock' and private.can_use_flock(j1);
   perform set_config('request.jwt.claims', json_build_object('sub', adm, 'role', 'authenticated')::text, true);
   set local role authenticated;
   st := null; begin perform public.admin_set_free_season_ends_at(season_end + interval '1 day'); exception when others then st := sqlstate; end;
@@ -199,23 +191,21 @@ begin
   -- Snapshot the founder's and gift holders' rows as they stand after opening.
   select * into before_f from public.entitlements where user_id = fdr and source = 'founding';
   select * into before_g from public.entitlements where user_id = gft and source = 'gift';
-  select * into before_p from public.entitlements where user_id = gpr and source = 'gift';
 
   -- 12) The free season ends: free-season members lose Flock access AND
-  --     premium; founders and gift holders keep theirs, their rows untouched.
+  --     Flock journeys (app premium is gone, #482); founders and gift holders
+  --     keep theirs, their rows untouched.
   --     (Simulated by putting the end an hour in the past, as the setter would
   --     before opening; founders' started rows keep their own dates.)
   update public.flock_settings set free_season_ends_at = now() - interval '1 hour' where id;
   perform private.reschedule_pending_grants(null);
-  ok := not private.is_flock_member(j1) and not private.has_app_premium(j1) and not private.can_use_flock(j1)
-    -- A gift holder who joined keeps the gift year (Flock includes premium) and the premium holder keeps premium.
-    and private.is_flock_member(gft) and private.has_app_premium(gft)
-    and private.has_app_premium(gpr) and not private.is_flock_member(gpr)
+  ok := not private.is_flock_member(j1) and private.journey_tier(j1) = 'free' and not private.can_use_flock(j1)
+    -- A gift holder who joined keeps the gift year.
+    and private.is_flock_member(gft) and private.journey_tier(gft) = 'flock'
     and private.is_flock_member(fdr)
     and row((select x from public.entitlements x where x.user_id = fdr and x.source = 'founding').*) is not distinct from row(before_f.*)
-    and row((select x from public.entitlements x where x.user_id = gft and x.source = 'gift').*) is not distinct from row(before_g.*)
-    and row((select x from public.entitlements x where x.user_id = gpr and x.source = 'gift').*) is not distinct from row(before_p.*);
-  if ok then passed := passed + 1; else failed := array_append(failed, 'season end: free-season access and premium end; founders and gifts keep theirs'); end if;
+    and row((select x from public.entitlements x where x.user_id = gft and x.source = 'gift').*) is not distinct from row(before_g.*);
+  if ok then passed := passed + 1; else failed := array_append(failed, 'season end: free-season access ends; founders and gifts keep theirs'); end if;
 
   -- 13) After the free season, joining is refused and creates nothing.
   perform set_config('request.jwt.claims', json_build_object('sub', fre, 'role', 'authenticated')::text, true);

@@ -217,7 +217,7 @@ export function useJourneyTips() {
 }
 
 /** "From members who've done [Skill]": finished members' tips, newest first,
- *  text only. App premium and Flock members get them; free accounts get none,
+ *  text only. Flock members get them; free accounts get none,
  *  and nobody gets their own (journey_finisher_tips_for). */
 export function useFinisherTips(slug: string | null | undefined, enabled = true) {
   return useQuery({

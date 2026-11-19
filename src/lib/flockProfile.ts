@@ -76,18 +76,18 @@ export function membershipSummary(rows: EntitlementRow[], isAdmin: boolean, now:
   const ended = (e: EntitlementRow) => !!e.current_period_end && new Date(e.current_period_end).getTime() <= t;
   const order = (e: EntitlementRow) => (current(e, t) ? 0 : e.starts_at ? 2 : 4) + (freeSeason(e) ? 1 : 0);
   const best = [...live].filter((e) => !(freeSeason(e) && ended(e)))
-    .filter((e, _i, rows) => e.plan !== "app_premium" || rows.every((x) => x.plan === "app_premium"))
+    // App premium is gone: an old "app_premium" row (none exist; new ones are
+    // refused) never counts as a membership here.
+    .filter((e) => e.plan !== "app_premium")
     .sort((a, b) => order(a) - order(b))[0];
   if (best && freeSeason(best)) {
     const free = best.current_period_end ? `Free until ${day(best.current_period_end)}` : "Free during the free season";
     return { title: "Free season", line: best.starts_at ? free : `${free} · starts when the Flock opens` };
   }
   if (best) {
-    const what = best.source === "gift"
-      ? best.plan === "app_premium" ? "Gift · app premium" : "Gift membership"
+    const what = best.source === "gift" ? "Gift membership"
       : best.plan === "comp" ? "Complimentary membership"
       : best.plan === "chapter_lead" ? "Chapter lead"
-      : best.plan === "app_premium" ? "App premium"
       : "Membership";
     if (!best.starts_at) return { title: what, line: `${what} · starts when the Flock opens` };
     if (!current(best, t) && new Date(best.starts_at).getTime() > t) return { title: what, line: `${what} · starts ${day(best.starts_at)}` };
