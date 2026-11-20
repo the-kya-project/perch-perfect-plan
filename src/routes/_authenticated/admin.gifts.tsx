@@ -37,6 +37,10 @@ type Gift = {
   gift_code: string;
 };
 
+// The gift rules shown to admins, matching /gift, /redeem and the emails.
+const GIFT_RULES =
+  "A gift year starts when the free season ends (July 6, 2027), or on redemption if that's later. Gifts never expire. An unredeemed gift can be refunded within 30 days of purchase. 20% of every gift goes to rescue and conservation partners, 40% on double-giving days.";
+
 // Only the Flock year is sold. A retired plan (one refunded app premium gift
 // from before app premium was removed) shows under its stored name.
 const PLAN_LABEL: Record<string, string> = { flock_year: "The Flock, 1 year" };
@@ -125,6 +129,7 @@ function AdminGifts() {
         error={error ? `Couldn't load gifts: ${(error as Error).message}` : null}
         emptyText="No gifts yet."
         summary={<>
+          <p className="m-0 text-[13.5px] leading-[1.45]" style={{ color: K.quiet }}>{GIFT_RULES}</p>
           <AdminTotals title="By plan" rows={totals(byPlan)} emptyText="No paid gifts yet." />
           <AdminTotals title="By promo code" rows={totals(byPromo)} emptyText="No paid gifts yet." />
         </>}
@@ -173,6 +178,7 @@ function AdminGifts() {
           </p>
         ) : isLoading ? null : (
           <>
+            <p className="m-0 text-[14px] leading-[1.5]" style={{ color: K.quiet }}>{GIFT_RULES}</p>
             <Totals title="By plan" groups={byPlan} />
             <Totals title="By promo code" groups={byPromo} />
 

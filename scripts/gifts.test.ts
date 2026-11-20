@@ -15,6 +15,9 @@ import assert from "node:assert/strict";
 import Stripe from "stripe";
 import { giftToday, isAllowedSendDate, formatGiftDate, formatCents, GIFT_CODE_PATTERN, GIFT_PLANS, isGiftPlan, applyGiftRefund, giftKeptCents, giftGivingCents, giftGrantsMembership } from "@/lib/gifts";
 import { buildGiftReceiptEmail, buildGiftRecipientEmail, type GiftRow } from "@/lib/giftEmails.server";
+import { giftGivingNote, giftPriceParts, giftRefundNote, giftTiming } from "@/lib/giftCopy";
+import { readFileSync } from "node:fs";
+import type { TFunction } from "i18next";
 
 let passed = 0;
 async function check(name: string, fn: () => void | Promise<void>) {
@@ -132,6 +135,42 @@ await check("recipient: a nameless buyer, and no app premium wording (app premiu
   assert.ok(!/premium/i.test(e.text) && !/premium/i.test(e.html));
   assert.ok(!/premium/i.test(buildGiftReceiptEmail(base).text));
 });
+// The fallbacks are what /gift and /redeem show (en.jsonc must match them).
+const fakeT = ((_k: string, def: string, o?: Record<string, string>) =>
+  def.replace(/\{\{(\w+)\}\}/g, (_m, k: string) => o?.[k] ?? "")) as unknown as TFunction;
+
+await check("gift copy: opens Jan 4, free until Jul 6, the year starts after the free season, never expires", () => {
+  const timing = giftTiming(fakeT, "flock_year");
+  for (const want of ["Monday, January 4, 2027", "free for everyone until July 6, 2027", "starts when the free season ends", "redeemed if that's later", "Gifts never expire"]) {
+    assert.ok(timing.includes(want), want);
+  }
+  assert.ok(giftRefundNote(fakeT).includes("full refund within 30 days"));
+  assert.ok(giftGivingNote(fakeT).includes("20% of every gift") && giftGivingNote(fakeT).includes("40% on double-giving days"));
+});
+
+await check("gift price leads with the monthly rate: $25 a month, then $300 for the year", () => {
+  assert.deepEqual(giftPriceParts(fakeT, 30000), { monthly: "$25 a month", year: "$300 for the year, paid once" });
+});
+
+await check("gift copy: no 'opens in January' or six free months anywhere (app, emails, pages)", () => {
+  const files = ["src/locales/en.jsonc", "src/locales/emails.en.jsonc", "src/lib/giftCopy.ts", "src/routes/gift.index.tsx", "src/routes/gift.thanks.tsx", "src/routes/redeem.tsx", "src/routes/_authenticated/admin.gifts.tsx"];
+  for (const f of files) {
+    const txt = readFileSync(f, "utf8");
+    assert.ok(!/opens in January|launches in January|six (free )?months|6 months free/i.test(txt), f);
+  }
+  const en = readFileSync("src/locales/en.jsonc", "utf8");
+  assert.ok(en.includes(`"gift.timingFlock": "${giftTiming(fakeT, "flock_year")}"`), "en.jsonc timing matches the fallback");
+});
+
+await check("emails: both say when the gift year starts; the receipt has the 30-day refund", () => {
+  const receipt = buildGiftReceiptEmail(base).text, recipient = buildGiftRecipientEmail(base).text;
+  for (const txt of [receipt, recipient]) {
+    assert.ok(txt.includes("starts when the free season ends") && txt.includes("July 6, 2027") && !/opens in January/.test(txt));
+  }
+  assert.ok(receipt.includes("full refund within 30 days"));
+  assert.ok(recipient.includes("It opens Monday, January 4, 2027"));
+});
+
 await check("the only gift plan is a year in the Flock", () => {
   assert.deepEqual([...GIFT_PLANS], ["flock_year"]);
   assert.equal(isGiftPlan("app_premium_year"), false);

@@ -200,11 +200,15 @@ begin
   update public.flock_settings set free_season_ends_at = now() - interval '1 hour' where id;
   perform private.reschedule_pending_grants(null);
   ok := not private.is_flock_member(j1) and private.journey_tier(j1) = 'free' and not private.can_use_flock(j1)
-    -- A gift holder who joined keeps the gift year.
+    -- A gift holder who joined: the gift year (not yet started) moved with the
+    -- season's end, so it starts on redemption (later than the new end) and
+    -- they keep the Flock (20261120180000).
     and private.is_flock_member(gft) and private.journey_tier(gft) = 'flock'
+    and (select x.starts_at from public.entitlements x where x.user_id = gft and x.source = 'gift')
+        = greatest((select redeemed_at from public.gift_purchases where redeemed_by = gft), now() - interval '1 hour')
+    and (select x.current_period_end = x.starts_at + interval '1 year' from public.entitlements x where x.user_id = gft and x.source = 'gift')
     and private.is_flock_member(fdr)
-    and row((select x from public.entitlements x where x.user_id = fdr and x.source = 'founding').*) is not distinct from row(before_f.*)
-    and row((select x from public.entitlements x where x.user_id = gft and x.source = 'gift').*) is not distinct from row(before_g.*);
+    and row((select x from public.entitlements x where x.user_id = fdr and x.source = 'founding').*) is not distinct from row(before_f.*);
   if ok then passed := passed + 1; else failed := array_append(failed, 'season end: free-season access ends; founders and gifts keep theirs'); end if;
 
   -- 13) After the free season, joining is refused and creates nothing.

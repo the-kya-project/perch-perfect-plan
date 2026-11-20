@@ -1,4 +1,6 @@
--- Verification for 20261107120000_flock_entitlement_grants and
+-- Verification for 20261107120000_flock_entitlement_grants,
+-- 20261120180000_flock_gift_year_after_free_season (gift years start when the
+-- free season ends) and
 -- 20261119170000_remove_app_premium (no app premium can be sold or granted).
 --
 -- Self-contained and leaves nothing behind: it makes its own people, claims and
@@ -87,9 +89,11 @@ begin
      and not private.is_flock_member(fdr)
   then passed := passed + 1; else failed := array_append(failed, 'founding scheduled for opening'); end if;
 
-  -- 7) A Flock gift redeemed before opening starts at opening (not yet started).
+  -- 7) A Flock gift redeemed before opening starts when the free season ends
+  --    (20261120180000), not at opening.
   select * into e from public.entitlements where gift_purchase_id = g1;
-  if e.starts_at = opens and e.current_period_end = opens + interval '1 year' and not private.is_flock_member(r1)
+  if e.starts_at = private.free_season_ends_at() and e.current_period_end = private.free_season_ends_at() + interval '1 year'
+     and not private.is_flock_member(r1)
   then passed := passed + 1; else failed := array_append(failed, 'gift not yet started'); end if;
 
   -- The Flock opened yesterday.
@@ -115,9 +119,10 @@ begin
   if n = 2 and not exists (select 1 from public.entitlements where plan = 'app_premium' and user_id in (r2, fdr))
   then passed := passed + 1; else failed := array_append(failed, 'app premium cannot be granted'); end if;
 
-  -- 10) Flock gift: the year starts at the later of redemption and opening (redemption, today).
+  -- 10) Flock gift after opening: still waiting for the free season's end
+  --     (everyone is free until then through Join the Flock, not the gift).
   select * into e from public.entitlements where gift_purchase_id = g1;
-  if private.is_flock_member(r1) and e.starts_at = (select redeemed_at from public.gift_purchases where id = g1)
+  if not private.is_flock_member(r1) and e.starts_at = private.free_season_ends_at()
      and e.current_period_end = e.starts_at + interval '1 year'
   then passed := passed + 1; else failed := array_append(failed, 'flock gift active'); end if;
 
@@ -132,15 +137,12 @@ begin
   if n = 1 and to_regprocedure('private.has_app_premium(uuid)') is null and to_regprocedure('public.has_app_premium(uuid)') is null
   then passed := passed + 1; else failed := array_append(failed, 'app premium cannot be sold'); end if;
 
-  -- 12) A refund after redemption ends access.
-  if private.is_flock_member(r3) then
-    update public.gift_purchases set status = 'refunded', refunded_at = now(), amount_refunded_cents = 24900 where id = g3;
-    select * into e from public.entitlements where gift_purchase_id = g3;
-    if not private.is_flock_member(r3) and e.status = 'canceled'
-    then passed := passed + 1; else failed := array_append(failed, 'refund ends access'); end if;
-  else
-    failed := array_append(failed, 'refund ends access (never started)');
-  end if;
+  -- 12) A refund after redemption cancels the gift year (here before it has
+  --     started; gift_refund_checks.sql covers refunds generally).
+  update public.gift_purchases set status = 'refunded', refunded_at = now(), amount_refunded_cents = 24900 where id = g3;
+  select * into e from public.entitlements where gift_purchase_id = g3;
+  if not private.is_flock_member(r3) and e.status = 'canceled'
+  then passed := passed + 1; else failed := array_append(failed, 'refund ends access'); end if;
 
   -- 13) Stacking: a founder's Flock gift queues after the free season.
   insert into public.gift_purchases (plan, buyer_email, recipient_name, amount_paid_cents, stripe_checkout_session_id, gift_code)
@@ -166,7 +168,9 @@ begin
   select count(*) into n from public.entitlements where user_id in (fdr, r1);
   if n = 3 then passed := passed + 1; else failed := array_append(failed, 'idempotent grants'); end if;
 
-  -- 16) Expired: a Flock gift whose year ran out. (Opening long ago, redeemed two years ago.)
+  -- 16) Expired: a Flock gift whose year ran out. (Opening and the free
+  --     season's end long ago, redeemed two years ago.)
+  update public.flock_settings set free_season_ends_at = now() - interval '30 months' where id;
   perform private.set_flock_opens_at(now() - interval '3 years');
   insert into public.gift_purchases (plan, buyer_email, recipient_name, amount_paid_cents, stripe_checkout_session_id, gift_code)
   values ('flock_year', 'b@checks.invalid', 'R5', 24900, 'cs_fg5_' || tag, private.new_gift_code()) returning id into g5;
@@ -187,8 +191,8 @@ begin
   if private.is_flock_member(cld) then passed := passed + 1; else failed := array_append(failed, 'chapter lead'); end if;
   if not private.is_flock_member(rev) then passed := passed + 1; else failed := array_append(failed, 'revoked'); end if;
 
-  -- 19) The RPCs answer for yourself as before.
-  perform set_config('request.jwt.claims', json_build_object('sub', r1, 'role', 'authenticated')::text, true);
+  -- 19) The RPCs answer for yourself as before (the comp member).
+  perform set_config('request.jwt.claims', json_build_object('sub', cmp, 'role', 'authenticated')::text, true);
   set local role authenticated;
   ok := public.is_flock_member();
   reset role;

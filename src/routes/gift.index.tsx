@@ -10,7 +10,7 @@ import { track } from "@/lib/analytics";
 import { createGiftCheckout, getGiftOptions, type GiftOption } from "@/lib/gifts.functions";
 import { formatCents, giftToday, GIFT_MESSAGE_MAX, GIFT_NAME_MAX, GIFT_PLANS, GIFT_SEND_LAST_DATE, type GiftPlan } from "@/lib/gifts";
 import { K, KyaCard, KyaHeading } from "@/components/kya";
-import { giftPlanName, giftTiming, planBlurb } from "@/lib/giftCopy";
+import { giftGivingNote, giftPlanName, giftPriceParts, giftRefundNote, giftTiming, planBlurb } from "@/lib/giftCopy";
 import { FrontDoorBody, FrontDoorError, FrontDoorHeader, FrontDoorPage, LegalLinks } from "@/components/frontDoor";
 
 // Gift memberships: a public page, no account needed to buy. Payment happens on
@@ -113,6 +113,10 @@ function GiftPage() {
     const o = options.find((x) => x.plan === p);
     return o ? formatCents(o.amountCents, o.currency) : "";
   };
+  const priceParts = (p: GiftPlan) => {
+    const o = options.find((x) => x.plan === p);
+    return o ? giftPriceParts(t, o.amountCents, o.currency) : null;
+  };
 
   return (
     <FrontDoorPage duoForm>
@@ -151,8 +155,9 @@ function GiftPage() {
                   <span className="min-w-0 flex-1">
                     <span className="flex flex-wrap items-baseline justify-between gap-x-3">
                       <span className="text-[17px] font-[700]" style={{ color: K.forest }}>{giftPlanName(t, p)}</span>
-                      <span className="text-[17px] font-[700]" style={{ color: K.forest }}>{price(p)}</span>
+                      <span className="text-[17px] font-[700]" style={{ color: K.forest }}>{priceParts(p)?.monthly}</span>
                     </span>
+                    {priceParts(p) && <span className="mt-0.5 block text-right text-[13.5px]" style={{ color: K.quiet }}>{priceParts(p)!.year}</span>}
                     <span className="mt-1 block text-[14.5px] leading-[1.45]" style={{ color: K.quiet }}>{planBlurb(t, p)}</span>
                   </span>
                 </label>
@@ -252,6 +257,8 @@ function GiftPage() {
 
             <section className="rounded-[20px] p-5" style={{ background: K.lime, color: K.forest }}>
               <p className="m-0 text-[15px] leading-[1.5]">{giftTiming(t, plan)}</p>
+              <p className="m-0 mt-2 text-[15px] leading-[1.5]">{giftRefundNote(t)}</p>
+              <p className="m-0 mt-2 text-[15px] leading-[1.5]">{giftGivingNote(t)}</p>
             </section>
 
             {submitError && <div ref={errorRef} tabIndex={-1} className="outline-none"><FrontDoorError>{submitError}</FrontDoorError></div>}

@@ -296,7 +296,7 @@ The opening PR (C) is the one that deliberately makes the Flock visible to membe
   - *Free users: this is the one deliberate change: the approved entry point only. Before-and-after screenshots, and an updated free-user regression check that asserts exactly that.*
 - **D. Member blocking (Apple 1.2).** `flock_blocks`, a "Block" action on profiles, posts and comments, and blocked members' posts, comments, reactions and notifications filtered out by the existing visibility functions. Plus a contact line in the Flock. *Free users: none.*
 - **E. Stickiness events** (section "What we're learning in the free season"). Fired only from Flock code (lazy-loaded), never from the care app. *Free users: none.*
-- **F. Gift years start at the free season's end** (decided, h5). Changes `place_grant` for gifts, plus the gift and redeem copy. Gifts are already for sale, so do it before opening.
+- **F. Gift years start at the free season's end** (decided, h5; **built Nov 20, 2026**). `place_grant` starts a gift year at the later of redemption and `free_season_ends_at`, a full year from there, re-placed while it hasn't started when the season's end or opening day moves (`20261120180000_flock_gift_year_after_free_season.sql`, `supabase/checks/flock_gift_year_checks.sql`). Copy on `/gift`, `/redeem`, `/admin/gifts` and both gift emails: opens Mon, Jan 4, 2027; free for everyone until Jul 6, 2027; the gift year starts then (or on redemption if later); gifts never expire; refund within 30 days if unredeemed; 20% of every gift to partners, 40% on double-giving days; the price leads with $25 a month. No gift had been redeemed on production (one refunded app premium gift with no entitlement).
 - **H. Founding members page** (decided Nov 19, h22). A `show_on_founders_page` choice (default off) on the founding claim, set by one **unchecked** checkbox ("Show me on the founding members page") on `/founding`'s region step and changeable later on the founder's Flock profile; a `/flock/founders` page that lists only founders who opted in, through a SECURITY DEFINER function returning display name, photo, region and the founder badge (nothing else). Additive only. Ready by Dec 11 so the perk is real on Jan 4. *Free users: none (`/founding` is public; the page is inside the Flock).*
 - **G. Legal pages.** `/terms` gains community sections (your posts and photos, the licence to show them to members, conduct, moderation and removal, age, memberships and billing to come); `/privacy` gains what Flock members see (matching `flock.you.privacy.tsx`), chapters, photos and payment processors. Your text, wired in. *Free users: shared pages; the wording changes, the layout doesn't.*
 
@@ -421,9 +421,9 @@ Found on Nov 18, 2026. **Nov 19:** PR A changes the founding rows below (the dea
 | `src/lib/flockProfile.ts:66` | "Founding · $15/mo · first 6 months free once the Flock opens" | → "free until {end}" |
 | `src/routes/_authenticated/admin.founding.tsx:203–205` | "Six months after opening" (fallback when `free_until` is unset) | → "When the free season ends" |
 | `src/lib/flockAccess.ts:20, 29` | "When the Flock opens" / "Active (free months)" | → "Active (free season)" |
-| `en.jsonc:2742` `gift.timingFlock`; `src/lib/giftCopy.ts:11` | "The year starts when the Flock opens in January, or on the day it's redeemed if that's later." | → "The year starts when the free season ends, July 6, 2027" (h5) |
+| `en.jsonc:2742` `gift.timingFlock`; `src/lib/giftCopy.ts:11` | "The year starts when the Flock opens in January, or on the day it's redeemed if that's later." | done (PR F, Nov 20) |
 | `en.jsonc:2743` `gift.timingPremium`; `giftCopy.ts:12` | "…when app premium launches in January…" | done: removed with the premium gift (PR #482) |
-| `en.jsonc:3538` `redeem.doneFlock`; `src/routes/redeem.tsx:100` | "Your year in the Flock starts when it opens in January." | → "The year starts when the free season ends, July 6, 2027" (h5) |
+| `en.jsonc:3538` `redeem.doneFlock`; `src/routes/redeem.tsx:100` | "Your year in the Flock starts when it opens in January." | done (PR F, Nov 20) |
 | `en.jsonc:3540` `redeem.donePremium`; `redeem.tsx:101` | "…starts when it launches in January." | done: removed with the premium gift (PR #482) |
 | `en.jsonc:2378` `flock.today.empty.start` | "…once the Flock opens." | fine after opening; optional |
 
@@ -433,7 +433,7 @@ Only English has `founding.*`, `gift.*` and `redeem.*` strings today, so there a
 
 | Where | Text today | Change |
 |---|---|---|
-| `emails.en.jsonc:760` `email.gift.timingFlock` | "The year starts when the Flock opens in January…" | → "The year starts when the free season ends, July 6, 2027" (h5) |
+| `emails.en.jsonc:760` `email.gift.timingFlock` | "The year starts when the Flock opens in January…" | done (PR F, Nov 20) |
 | `emails.en.jsonc:761` `email.gift.timingPremium`, `:787` `email.gift.recipient.aboutPremium` | "…app premium launches in January…" | done: removed with the premium gift (PR #482) |
 | **Brevo** (not in the repo): any founding, waitlist or "Founding 50" list 9 emails or automations | not readable from here | check for "December 31", "six free months" or "opens in January" in Brevo's templates and automations |
 | `src/lib/founding.functions.ts:84` (comment) | list 9 consent: "We'll email you before the Flock opens" | still true |

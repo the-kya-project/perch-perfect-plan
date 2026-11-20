@@ -80,6 +80,7 @@ export function buildGiftReceiptEmail(g: GiftRow): BuiltEmail {
     { kind: "p", text: t("email.gift.receipt.redeem", { recipient, link: redeemLink }) },
     { kind: "p", text: w.timing },
     { kind: "p", text: t("email.gift.receipt.giving", { percent }) },
+    { kind: "p", text: t("email.gift.receipt.refund", { recipient }) },
     { kind: "p", text: t("email.gift.receipt.reply") },
     { kind: "signature" },
   ];
