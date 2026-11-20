@@ -168,9 +168,10 @@ begin
     else failed := array_append(failed, format('profiles: viewer %s sees the old rows (%s vs %s)', v, cardinality(actual), cardinality(expected))); end if;
   end loop;
 
-  -- 10) The same thing in plain words: a plain owner sees no profiles; the
-  --     admin sees all five of this block's; a leftover non-member sees only their own; m1 and
-  --     m3 can't see each other (a block works both ways) but see m2.
+  -- 10) The same thing in plain words, counting only this block's profiles (a
+  --     branch may hold others): a plain owner sees none; the admin sees all
+  --     five; a leftover non-member sees only their own; m1 and m3 can't see
+  --     each other (a block works both ways) but m1 sees m2.
   select count(*) into n from public.flock_profiles where user_id = any(fx);
   ok := n = 5;
   perform set_config('request.jwt.claims', json_build_object('sub', a, 'role', 'authenticated')::text, true);
