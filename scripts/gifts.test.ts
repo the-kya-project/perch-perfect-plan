@@ -15,7 +15,7 @@ import assert from "node:assert/strict";
 import Stripe from "stripe";
 import { giftToday, isAllowedSendDate, formatGiftDate, formatCents, GIFT_CODE_PATTERN, GIFT_PLANS, isGiftPlan, applyGiftRefund, giftKeptCents, giftGivingCents, giftGrantsMembership } from "@/lib/gifts";
 import { buildGiftReceiptEmail, buildGiftRecipientEmail, type GiftRow } from "@/lib/giftEmails.server";
-import { giftGivingNote, giftPriceParts, giftRefundNote, giftTiming } from "@/lib/giftCopy";
+import { giftGivingNote, giftPlanName, giftPriceParts, giftRedeemed, giftRefundNote, giftTiming } from "@/lib/giftCopy";
 import { readFileSync } from "node:fs";
 import type { TFunction } from "i18next";
 
@@ -139,40 +139,63 @@ await check("recipient: a nameless buyer, and no app premium wording (app premiu
 const fakeT = ((_k: string, def: string, o?: Record<string, string>) =>
   def.replace(/\{\{(\w+)\}\}/g, (_m, k: string) => o?.[k] ?? "")) as unknown as TFunction;
 
-await check("gift copy: opens Jan 4, free until Jul 6, the year starts after the free season, never expires", () => {
-  const timing = giftTiming(fakeT, "flock_year");
-  for (const want of ["Monday, January 4, 2027", "free for everyone until July 6, 2027", "starts when the free season ends", "redeemed if that's later", "Gifts never expire"]) {
-    assert.ok(timing.includes(want), want);
+await check("gift copy: opens Jan 4, free until Jul 6, starts after the free season, says when it ends, never expires", () => {
+  const year = giftTiming(fakeT, "flock_year"), half = giftTiming(fakeT, "flock_half_year");
+  for (const timing of [year, half]) {
+    for (const want of ["Monday, January 4, 2027", "free for everyone until July 6, 2027", "when the free season ends", "redeemed if that's later", "Gifts never expire"]) {
+      assert.ok(timing.includes(want), want);
+    }
   }
+  assert.ok(year.includes("A year in the Flock") && year.includes("through July 6, 2028"));
+  assert.ok(half.includes("Six months in the Flock") && half.includes("through January 6, 2028"));
+  assert.ok(giftRedeemed(fakeT, "flock_year").includes("through July 6, 2028"));
+  assert.ok(giftRedeemed(fakeT, "flock_half_year").includes("through January 6, 2028"));
+  assert.equal(giftPlanName(fakeT, "flock_half_year"), "The Flock, six months");
+  assert.equal(giftPlanName(fakeT, "flock_year"), "The Flock, one year");
   assert.ok(giftRefundNote(fakeT).includes("full refund within 30 days"));
   assert.ok(giftGivingNote(fakeT).includes("20% of every gift") && giftGivingNote(fakeT).includes("40% on double-giving days"));
 });
 
-await check("gift price leads with the monthly rate: $25 a month, then $300 for the year", () => {
-  assert.deepEqual(giftPriceParts(fakeT, 30000), { monthly: "$25 a month", year: "$300 for the year, paid once" });
+await check("gift prices: $150 and $300, each 'That's $25 a month, paid once.'", () => {
+  assert.deepEqual(giftPriceParts(fakeT, "flock_half_year", 15000), { price: "$150", perMonth: "That's $25 a month, paid once." });
+  assert.deepEqual(giftPriceParts(fakeT, "flock_year", 30000), { price: "$300", perMonth: "That's $25 a month, paid once." });
 });
 
 await check("gift copy: no 'opens in January' or six free months anywhere (app, emails, pages)", () => {
   const files = ["src/locales/en.jsonc", "src/locales/emails.en.jsonc", "src/lib/giftCopy.ts", "src/routes/gift.index.tsx", "src/routes/gift.thanks.tsx", "src/routes/redeem.tsx", "src/routes/_authenticated/admin.gifts.tsx"];
   for (const f of files) {
     const txt = readFileSync(f, "utf8");
-    assert.ok(!/opens in January|launches in January|six (free )?months|6 months free/i.test(txt), f);
+    assert.ok(!/opens in January|launches in January|six free months|first six months|six months free|6 months free/i.test(txt), f);
   }
   const en = readFileSync("src/locales/en.jsonc", "utf8");
-  assert.ok(en.includes(`"gift.timingFlock": "${giftTiming(fakeT, "flock_year")}"`), "en.jsonc timing matches the fallback");
-});
-
-await check("emails: both say when the gift year starts; the receipt has the 30-day refund", () => {
-  const receipt = buildGiftReceiptEmail(base).text, recipient = buildGiftRecipientEmail(base).text;
-  for (const txt of [receipt, recipient]) {
-    assert.ok(txt.includes("starts when the free season ends") && txt.includes("July 6, 2027") && !/opens in January/.test(txt));
+  for (const [k, plan] of [["gift.timingFlock", "flock_year"], ["gift.timingFlockHalf", "flock_half_year"]] as const) {
+    assert.ok(en.includes(`"${k}": "${giftTiming(fakeT, plan)}"`), `en.jsonc ${k} matches the fallback`);
   }
-  assert.ok(receipt.includes("full refund within 30 days"));
-  assert.ok(recipient.includes("It opens Monday, January 4, 2027"));
+  for (const [k, plan] of [["redeem.doneFlock", "flock_year"], ["redeem.doneFlockHalf", "flock_half_year"]] as const) {
+    assert.ok(en.includes(`"${k}": "${giftRedeemed(fakeT, plan)}"`), `en.jsonc ${k} matches the fallback`);
+  }
 });
 
-await check("the only gift plan is a year in the Flock", () => {
-  assert.deepEqual([...GIFT_PLANS], ["flock_year"]);
+await check("emails: each says which gift it is, when it runs and when it starts; the receipt has the 30-day refund", () => {
+  for (const [plan, gift, runs] of [
+    ["flock_year", "A year in the Flock", "Jul 6, 2027 to Jul 6, 2028"],
+    ["flock_half_year", "Six months in the Flock", "Jul 6, 2027 to Jan 6, 2028"],
+  ] as const) {
+    const receipt = buildGiftReceiptEmail({ ...base, plan }).text, recipient = buildGiftRecipientEmail({ ...base, plan }).text;
+    for (const txt of [receipt, recipient]) {
+      assert.ok(txt.includes(gift), `${plan}: ${gift}`);
+      assert.ok(txt.includes(runs), `${plan}: ${runs}`);
+      assert.ok(txt.includes("when the free season ends") && !/opens in January/.test(txt));
+    }
+    assert.ok(receipt.includes("full refund within 30 days"));
+    assert.ok(recipient.includes("It opens Monday, January 4, 2027"));
+  }
+  assert.ok(buildGiftRecipientEmail({ ...base, plan: "flock_half_year" }).text.includes("six months in the Flock"));
+});
+
+await check("gifts are six months or a year in the Flock, six months first", () => {
+  assert.deepEqual([...GIFT_PLANS], ["flock_half_year", "flock_year"]);
+  assert.equal(isGiftPlan("flock_half_year"), true);
   assert.equal(isGiftPlan("app_premium_year"), false);
 });
 await check("both emails carry the PO Box and no unsubscribe link", () => {

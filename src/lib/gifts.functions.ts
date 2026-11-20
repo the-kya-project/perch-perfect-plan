@@ -11,20 +11,26 @@ import { GIFT_MESSAGE_MAX, GIFT_NAME_MAX, GIFT_PLANS, isAllowedSendDate, type Gi
 export type GiftOption = { plan: GiftPlan; amountCents: number; currency: string };
 export type GiftOptions = { available: boolean; options: GiftOption[] };
 
-/** The two plans with their prices, read from Stripe so the page always shows
+/** The gift plans with their prices, read from Stripe so the page always shows
  *  what Checkout will charge. `available: false` when Stripe isn't configured
  *  for this deployment yet (production, until live keys are added). */
 export const getGiftOptions = createServerFn({ method: "GET" }).handler(async (): Promise<GiftOptions> => {
   const { getStripe, giftPriceId, StripeNotConfigured } = await import("./stripe.server");
   try {
     const stripe = getStripe();
-    const options = await Promise.all(
-      GIFT_PLANS.map(async (plan) => {
-        const price = await stripe.prices.retrieve(giftPriceId(plan));
+    // A plan whose price isn't configured in this deployment yet is left out
+    // rather than taking the whole page down (the six-month gift goes live once
+    // STRIPE_PRICE_FLOCK_HALF_YEAR_GIFT is set).
+    const found = await Promise.all(
+      GIFT_PLANS.map(async (plan): Promise<GiftOption | null> => {
+        let id: string;
+        try { id = giftPriceId(plan); } catch (err) { if (err instanceof StripeNotConfigured) return null; throw err; }
+        const price = await stripe.prices.retrieve(id);
         return { plan, amountCents: price.unit_amount ?? 0, currency: price.currency };
       }),
     );
-    return { available: true, options };
+    const options = found.filter((o): o is GiftOption => o !== null);
+    return { available: options.length > 0, options };
   } catch (err) {
     if (err instanceof StripeNotConfigured) return { available: false, options: [] };
     console.error("[gifts] price lookup failed", err instanceof Error ? err.message : err);

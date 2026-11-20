@@ -5,11 +5,15 @@
 // variables, see stripe.server.ts), so test and live can differ without a code
 // change. What lives here is everything that isn't money.
 
-// The only gift is a year in the Flock. "app_premium_year" was retired (app
-// premium is gone); the database keeps the value for one refunded record, but a
-// trigger refuses new ones (20261119170000_remove_app_premium.sql).
-export const GIFT_PLANS = ["flock_year"] as const;
+// Gifts are six months or a year in the Flock, six months listed first so the
+// smaller gift is the easy choice (20261120200000_flock_gift_six_months.sql).
+// "app_premium_year" was retired (app premium is gone); the database keeps the
+// value for one refunded record, but a trigger refuses new ones.
+export const GIFT_PLANS = ["flock_half_year", "flock_year"] as const;
 export type GiftPlan = (typeof GIFT_PLANS)[number];
+
+/** How many months a gift runs. */
+export const GIFT_MONTHS: Record<GiftPlan, number> = { flock_half_year: 6, flock_year: 12 };
 
 export function isGiftPlan(v: unknown): v is GiftPlan {
   return typeof v === "string" && (GIFT_PLANS as readonly string[]).includes(v);

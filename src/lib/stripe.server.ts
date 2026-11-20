@@ -5,6 +5,7 @@
  * Environment (Vercel; Preview holds test-mode values, Production gets live
  * ones later):
  *   STRIPE_SECRET_KEY                    sk_test_… / sk_live_…
+ *   STRIPE_PRICE_FLOCK_HALF_YEAR_GIFT    one-off price for six months of the Flock
  *   STRIPE_PRICE_FLOCK_YEAR_GIFT         one-off price for a year of the Flock
  *   STRIPE_WEBHOOK_SECRET                whsec_… for /api/public/stripe/webhook
  *
@@ -35,6 +36,7 @@ export function getStripe(): Stripe {
 }
 
 const PRICE_ENV: Record<GiftPlan, string> = {
+  flock_half_year: "STRIPE_PRICE_FLOCK_HALF_YEAR_GIFT",
   flock_year: "STRIPE_PRICE_FLOCK_YEAR_GIFT",
 };
 

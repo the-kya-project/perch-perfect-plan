@@ -39,11 +39,11 @@ type Gift = {
 
 // The gift rules shown to admins, matching /gift, /redeem and the emails.
 const GIFT_RULES =
-  "A gift year starts when the free season ends (July 6, 2027), or on redemption if that's later. Gifts never expire. An unredeemed gift can be refunded within 30 days of purchase. 20% of every gift goes to rescue and conservation partners, 40% on double-giving days.";
+  "Gifts are six months or a year in the Flock. Each starts when the free season ends (July 6, 2027), or on redemption if that's later, and runs six months or a year from there. Gifts never expire. An unredeemed gift can be refunded within 30 days of purchase. 20% of every gift goes to rescue and conservation partners, 40% on double-giving days.";
 
-// Only the Flock year is sold. A retired plan (one refunded app premium gift
+// Six months and a year in the Flock are sold. A retired plan (one refunded app premium gift
 // from before app premium was removed) shows under its stored name.
-const PLAN_LABEL: Record<string, string> = { flock_year: "The Flock, 1 year" };
+const PLAN_LABEL: Record<string, string> = { flock_half_year: "The Flock, 6 months", flock_year: "The Flock, 1 year" };
 const NO_PROMO = "(none)";
 
 function AdminGifts() {

@@ -9,7 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { getReadySession } from "@/lib/authReady";
 import { track } from "@/lib/analytics";
 import { isGiftPlan, type GiftPlan } from "@/lib/gifts";
-import { giftPlanName } from "@/lib/giftCopy";
+import { giftPlanName, giftRedeemed } from "@/lib/giftCopy";
 import { K, SERIF, KyaCard, KyaHeading, KyaPrimaryButton, KyaSecondaryButton } from "@/components/kya";
 import { FrontDoorBody, FrontDoorHeader, FrontDoorPage, LegalLinks } from "@/components/frontDoor";
 
@@ -96,7 +96,7 @@ function RedeemPage() {
             <section className="rounded-[20px] p-5" style={{ background: K.lime, color: K.forest }}>
               <p className="m-0 text-[13px] font-[700] uppercase tracking-[0.06em]">{giftPlanName(t, redeemed)}</p>
               <h2 ref={doneRef} tabIndex={-1} className="m-0 mt-1 text-[22px] font-[700] leading-[1.2] outline-none" style={{ fontFamily: SERIF }}>
-                {t("redeem.doneFlock", "Your gift is saved. The Flock opens Monday, January 4, 2027, and it's free for everyone until July 6, 2027. Your gift year starts when the free season ends, or today if it already has.")}
+                {giftRedeemed(t, redeemed)}
               </h2>
             </section>
             <p className="m-0 text-[15px] leading-[1.5]" style={{ color: K.ink }}>
