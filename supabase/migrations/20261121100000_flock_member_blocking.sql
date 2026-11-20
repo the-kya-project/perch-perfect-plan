@@ -43,6 +43,8 @@ create index if not exists flock_blocks_blocked_idx on public.flock_blocks (bloc
 alter table public.flock_blocks enable row level security;
 revoke all on public.flock_blocks from anon, authenticated;
 grant select on public.flock_blocks to authenticated;
+-- The server runs as service_role (RLS bypassed, table privileges not).
+grant select, insert, update, delete on public.flock_blocks to service_role;
 drop policy if exists "flock_blocks own read" on public.flock_blocks;
 -- Your own blocks only. Nobody can see who blocked them. Writes go through
 -- flock_block().
