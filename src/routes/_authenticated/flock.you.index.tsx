@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { Bell, CreditCard, ShieldCheck } from "lucide-react";
+import { Bell, CreditCard, ShieldCheck, UserX } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { K, KyaCard, KyaHeading, KyaIconTile, KyaRow } from "@/components/kya";
 import { FlockAvatar } from "@/components/flock/FlockPeople";
@@ -58,6 +58,12 @@ function FlockYou() {
             title={t("flock.you.privacy", "Privacy")}
             detail={t("flock.you.privacyLine", "What members can see")}
             onClick={() => void navigate({ to: "/flock/you/privacy" })}
+          />
+          <KyaRow
+            leading={<KyaIconTile tone="mist"><UserX className="size-5" /></KyaIconTile>}
+            title={t("flock.you.blocked", "Blocked members")}
+            detail={t("flock.you.blockedLine", "See who you've blocked, and unblock")}
+            onClick={() => void navigate({ to: "/flock/you/blocked" })}
             last
           />
         </KyaCard>

@@ -114,6 +114,7 @@ import { Route as AuthenticatedFlockMembersIndexRouteImport } from './routes/_au
 import { Route as AuthenticatedFlockMembersUserIdRouteImport } from './routes/_authenticated/flock.members.$userId'
 import { Route as AuthenticatedFlockPostNewRouteImport } from './routes/_authenticated/flock.post.new'
 import { Route as AuthenticatedFlockYouIndexRouteImport } from './routes/_authenticated/flock.you.index'
+import { Route as AuthenticatedFlockYouBlockedRouteImport } from './routes/_authenticated/flock.you.blocked'
 import { Route as AuthenticatedFlockYouEditRouteImport } from './routes/_authenticated/flock.you.edit'
 import { Route as AuthenticatedFlockYouMembershipRouteImport } from './routes/_authenticated/flock.you.membership'
 import { Route as AuthenticatedFlockYouNotificationsRouteImport } from './routes/_authenticated/flock.you.notifications'
@@ -722,6 +723,12 @@ const AuthenticatedFlockYouIndexRoute =
     path: '/you/',
     getParentRoute: () => AuthenticatedFlockRoute,
   } as any)
+const AuthenticatedFlockYouBlockedRoute =
+  AuthenticatedFlockYouBlockedRouteImport.update({
+    id: '/you/blocked',
+    path: '/you/blocked',
+    getParentRoute: () => AuthenticatedFlockRoute,
+  } as any)
 const AuthenticatedFlockYouEditRoute =
   AuthenticatedFlockYouEditRouteImport.update({
     id: '/you/edit',
@@ -1006,6 +1013,7 @@ export interface FileRoutesByFullPath {
   '/flock/library/$resourceId': typeof AuthenticatedFlockLibraryResourceIdRoute
   '/flock/members/$userId': typeof AuthenticatedFlockMembersUserIdRoute
   '/flock/post/new': typeof AuthenticatedFlockPostNewRoute
+  '/flock/you/blocked': typeof AuthenticatedFlockYouBlockedRoute
   '/flock/you/edit': typeof AuthenticatedFlockYouEditRoute
   '/flock/you/membership': typeof AuthenticatedFlockYouMembershipRoute
   '/flock/you/notifications': typeof AuthenticatedFlockYouNotificationsRoute
@@ -1136,6 +1144,7 @@ export interface FileRoutesByTo {
   '/flock/library/$resourceId': typeof AuthenticatedFlockLibraryResourceIdRoute
   '/flock/members/$userId': typeof AuthenticatedFlockMembersUserIdRoute
   '/flock/post/new': typeof AuthenticatedFlockPostNewRoute
+  '/flock/you/blocked': typeof AuthenticatedFlockYouBlockedRoute
   '/flock/you/edit': typeof AuthenticatedFlockYouEditRoute
   '/flock/you/membership': typeof AuthenticatedFlockYouMembershipRoute
   '/flock/you/notifications': typeof AuthenticatedFlockYouNotificationsRoute
@@ -1275,6 +1284,7 @@ export interface FileRoutesById {
   '/_authenticated/flock/library/$resourceId': typeof AuthenticatedFlockLibraryResourceIdRoute
   '/_authenticated/flock/members/$userId': typeof AuthenticatedFlockMembersUserIdRoute
   '/_authenticated/flock/post/new': typeof AuthenticatedFlockPostNewRoute
+  '/_authenticated/flock/you/blocked': typeof AuthenticatedFlockYouBlockedRoute
   '/_authenticated/flock/you/edit': typeof AuthenticatedFlockYouEditRoute
   '/_authenticated/flock/you/membership': typeof AuthenticatedFlockYouMembershipRoute
   '/_authenticated/flock/you/notifications': typeof AuthenticatedFlockYouNotificationsRoute
@@ -1414,6 +1424,7 @@ export interface FileRouteTypes {
     | '/flock/library/$resourceId'
     | '/flock/members/$userId'
     | '/flock/post/new'
+    | '/flock/you/blocked'
     | '/flock/you/edit'
     | '/flock/you/membership'
     | '/flock/you/notifications'
@@ -1544,6 +1555,7 @@ export interface FileRouteTypes {
     | '/flock/library/$resourceId'
     | '/flock/members/$userId'
     | '/flock/post/new'
+    | '/flock/you/blocked'
     | '/flock/you/edit'
     | '/flock/you/membership'
     | '/flock/you/notifications'
@@ -1682,6 +1694,7 @@ export interface FileRouteTypes {
     | '/_authenticated/flock/library/$resourceId'
     | '/_authenticated/flock/members/$userId'
     | '/_authenticated/flock/post/new'
+    | '/_authenticated/flock/you/blocked'
     | '/_authenticated/flock/you/edit'
     | '/_authenticated/flock/you/membership'
     | '/_authenticated/flock/you/notifications'
@@ -2499,6 +2512,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedFlockYouIndexRouteImport
       parentRoute: typeof AuthenticatedFlockRoute
     }
+    '/_authenticated/flock/you/blocked': {
+      id: '/_authenticated/flock/you/blocked'
+      path: '/you/blocked'
+      fullPath: '/flock/you/blocked'
+      preLoaderRoute: typeof AuthenticatedFlockYouBlockedRouteImport
+      parentRoute: typeof AuthenticatedFlockRoute
+    }
     '/_authenticated/flock/you/edit': {
       id: '/_authenticated/flock/you/edit'
       path: '/you/edit'
@@ -2751,6 +2771,7 @@ interface AuthenticatedFlockRouteChildren {
   AuthenticatedFlockLibraryResourceIdRoute: typeof AuthenticatedFlockLibraryResourceIdRoute
   AuthenticatedFlockMembersUserIdRoute: typeof AuthenticatedFlockMembersUserIdRoute
   AuthenticatedFlockPostNewRoute: typeof AuthenticatedFlockPostNewRoute
+  AuthenticatedFlockYouBlockedRoute: typeof AuthenticatedFlockYouBlockedRoute
   AuthenticatedFlockYouEditRoute: typeof AuthenticatedFlockYouEditRoute
   AuthenticatedFlockYouMembershipRoute: typeof AuthenticatedFlockYouMembershipRoute
   AuthenticatedFlockYouNotificationsRoute: typeof AuthenticatedFlockYouNotificationsRoute
@@ -2789,6 +2810,7 @@ const AuthenticatedFlockRouteChildren: AuthenticatedFlockRouteChildren = {
     AuthenticatedFlockLibraryResourceIdRoute,
   AuthenticatedFlockMembersUserIdRoute: AuthenticatedFlockMembersUserIdRoute,
   AuthenticatedFlockPostNewRoute: AuthenticatedFlockPostNewRoute,
+  AuthenticatedFlockYouBlockedRoute: AuthenticatedFlockYouBlockedRoute,
   AuthenticatedFlockYouEditRoute: AuthenticatedFlockYouEditRoute,
   AuthenticatedFlockYouMembershipRoute: AuthenticatedFlockYouMembershipRoute,
   AuthenticatedFlockYouNotificationsRoute:

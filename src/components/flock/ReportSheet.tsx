@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import type { TFunction } from "i18next";
 import { K, KyaHeading, KyaPrimaryButton, KyaSheet } from "@/components/kya";
 import { REPORT_REASONS, report, useInvalidateModeration, type ReportReason, type ReportSubject } from "@/lib/flockModeration";
+import { blockMember, blockName, useInvalidateAfterBlock } from "@/lib/flockBlocks";
 
 export function reasonLabel(t: TFunction, r: ReportReason): string {
   switch (r) {
@@ -13,10 +14,16 @@ export function reasonLabel(t: TFunction, r: ReportReason): string {
   }
 }
 
-/** Report a post, comment or journey update: a reason, an optional note. */
-export function ReportSheet({ type, id, onClose }: { type: ReportSubject; id: string; onClose: () => void }) {
+/** Report a post, comment or journey update: a reason, an optional note.
+ *  With `alsoBlock` ("Block and report"), the report goes first, then the
+ *  block, so the report never depends on the block. */
+export function ReportSheet({ type, id, onClose, alsoBlock, onBlocked }: {
+  type: ReportSubject; id: string; onClose: () => void;
+  alsoBlock?: { userId: string; name: string | null | undefined }; onBlocked?: () => void;
+}) {
   const { t } = useTranslation();
   const invalidate = useInvalidateModeration();
+  const invalidateBlocks = useInvalidateAfterBlock();
   const [reason, setReason] = useState<ReportReason | null>(null);
   const [note, setNote] = useState("");
   const [busy, setBusy] = useState(false);
@@ -26,21 +33,29 @@ export function ReportSheet({ type, id, onClose }: { type: ReportSubject; id: st
     if (!reason) return;
     setBusy(true);
     setError(null);
-    try { await report(type, id, reason, note); setDone(true); void invalidate(); }
+    try {
+      await report(type, id, reason, note);
+      if (alsoBlock) { await blockMember(alsoBlock.userId); void invalidateBlocks(); }
+      setDone(true); void invalidate();
+    }
     catch { setError(t("flock.report.error", "We couldn't send that. Try again.")); }
     finally { setBusy(false); }
   };
-  const title = type === "comment" ? t("flock.report.titleComment", "Report this comment")
+  const close = () => { if (done && alsoBlock) onBlocked?.(); onClose(); };
+  const title = alsoBlock ? t("flock.block.reportTitle", "Block and report")
+    : type === "comment" ? t("flock.report.titleComment", "Report this comment")
     : type === "journey_update" ? t("flock.report.titleUpdate", "Report this update")
     : t("flock.report.titlePost", "Report this post");
   return (
-    <KyaSheet onClose={onClose} closeLabel={t("flock.region.close", "Close")} title={<KyaHeading size={23}>{done ? t("flock.report.thanksTitle", "Thanks for telling us") : title}</KyaHeading>}>
+    <KyaSheet onClose={close} closeLabel={t("flock.region.close", "Close")} title={<KyaHeading size={23}>{done ? t("flock.report.thanksTitle", "Thanks for telling us") : title}</KyaHeading>}>
       {done ? (
         <div className="flex flex-col gap-4" data-testid="report-done">
           <p className="m-0 text-[15px] leading-[1.5]" style={{ color: K.ink }}>
-            {t("flock.report.thanks", "We'll take a look. Your report is private: the person who posted it won't know it was you.")}
+            {alsoBlock
+              ? t("flock.block.reportThanks", "We'll take a look. You've also blocked {{name}}, so you won't see each other in the Flock. Neither the report nor the block is shown to them.", { name: blockName(t, alsoBlock.name) })
+              : t("flock.report.thanks", "We'll take a look. Your report is private: the person who posted it won't know it was you.")}
           </p>
-          <KyaPrimaryButton onClick={onClose}>{t("flock.report.close", "Done")}</KyaPrimaryButton>
+          <KyaPrimaryButton onClick={close}>{t("flock.report.close", "Done")}</KyaPrimaryButton>
         </div>
       ) : (
         <div className="flex flex-col gap-3" data-testid="report-sheet">
@@ -61,7 +76,7 @@ export function ReportSheet({ type, id, onClose }: { type: ReportSubject; id: st
           </label>
           {error && <p role="alert" className="m-0 text-[14px]" style={{ color: K.red }}>{error}</p>}
           <KyaPrimaryButton onClick={() => void send()} disabled={!reason || busy}>
-            {busy ? t("flock.report.sending", "Sending…") : t("flock.report.send", "Send report")}
+            {busy ? t("flock.report.sending", "Sending…") : alsoBlock ? t("flock.block.reportSend", "Report and block") : t("flock.report.send", "Send report")}
           </KyaPrimaryButton>
         </div>
       )}

@@ -8,10 +8,13 @@ import { FlockEmpty, FlockSubTabs } from "@/components/flock/FlockChips";
 import { ComposePrompt, LoadMore, PostList } from "@/components/flock/PostFeed";
 import { EventCard } from "@/components/flock/EventParts";
 import { useChapterEvents, useEventRules } from "@/lib/flockEvents";
-import { CalendarPlus, Search } from "lucide-react";
+import { CalendarPlus, MoreHorizontal, Search } from "lucide-react";
 import { FlockChips } from "@/components/flock/FlockChips";
 import { FlockAvatar, FounderBadge } from "@/components/flock/FlockPeople";
-import { useAvatarUrls } from "@/lib/flockData";
+import { useAvatarUrls, useMyId } from "@/lib/flockData";
+import { ActionSheet } from "@/components/flock/PostParts";
+import { BlockSheet } from "@/components/flock/BlockSheet";
+import { blockActions } from "@/lib/flockBlocks";
 import { birdsLine, filterRoster, topGroups, useChapterRoster, type SpeciesGroup } from "@/lib/flockMembers";
 import { useFlockFeed } from "@/lib/flockPostData";
 import { RegionSheet } from "@/components/flock/FlockPeople";
@@ -217,6 +220,9 @@ function ChapterMembers({ slug, empty }: { slug: string; empty: React.ReactNode 
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { data: roster, isLoading } = useChapterRoster(slug);
+  const { data: myId } = useMyId();
+  const [menuFor, setMenuFor] = useState<{ user_id: string; display_name: string } | null>(null);
+  const [blockFor, setBlockFor] = useState<{ user_id: string; display_name: string } | null>(null);
   const { data: urls } = useAvatarUrls((roster ?? []).map((m) => m.photo_path));
   const [query, setQuery] = useState("");
   const [group, setGroup] = useState<SpeciesGroup | "everyone">("everyone");
@@ -243,9 +249,9 @@ function ChapterMembers({ slug, empty }: { slug: string; empty: React.ReactNode 
       ) : (
         <ul className="m-0 flex list-none flex-col overflow-hidden rounded-[18px] bg-white p-0" data-testid="chapter-members">
           {shown.map((m, i) => (
-            <li key={m.user_id} style={{ borderTop: i ? `1px solid ${K.line}` : undefined }}>
+            <li key={m.user_id} className="flex items-center" style={{ borderTop: i ? `1px solid ${K.line}` : undefined }}>
               <button type="button" onClick={() => void navigate({ to: "/flock/members/$userId", params: { userId: m.user_id } })} data-member={m.user_id}
-                className="flex min-h-[64px] w-full items-center gap-3 px-4 py-2.5 text-left" style={{ color: K.forest }}>
+                className="flex min-h-[64px] min-w-0 flex-1 items-center gap-3 py-2.5 pl-4 pr-2 text-left" style={{ color: K.forest }}>
                 <FlockAvatar name={m.display_name} url={m.photo_path ? urls?.get(m.photo_path) : null} size={44} />
                 <span className="flex min-w-0 flex-1 flex-col gap-0.5">
                   <span className="flex flex-wrap items-center gap-1.5 text-[15.5px] font-[700]">
@@ -262,10 +268,22 @@ function ChapterMembers({ slug, empty }: { slug: string; empty: React.ReactNode 
                   </span>
                 </span>
               </button>
+              {myId && m.user_id !== myId && (
+                <button type="button" onClick={() => setMenuFor(m)} data-member-menu={m.user_id}
+                  aria-label={t("flock.members.options", "Options for {{name}}", { name: m.display_name })}
+                  className="mr-2 grid size-11 shrink-0 place-items-center rounded-full" style={{ color: K.quiet }}>
+                  <MoreHorizontal className="size-5" aria-hidden="true" />
+                </button>
+              )}
             </li>
           ))}
         </ul>
       )}
+      {menuFor && (
+        <ActionSheet title={t("flock.members.options", "Options for {{name}}", { name: menuFor.display_name })} onClose={() => setMenuFor(null)}
+          actions={blockActions(t, { authorId: menuFor.user_id, myId, name: menuFor.display_name, onBlock: () => { const m = menuFor; setMenuFor(null); setBlockFor(m); } })} />
+      )}
+      {blockFor && <BlockSheet userId={blockFor.user_id} name={blockFor.display_name} onClose={() => setBlockFor(null)} />}
       <p className="m-0 px-2 text-center text-[13px]" style={{ color: K.quiet }} data-testid="members-footer">
         {t("flock.members.footer", "Only first names and birds show here. Members choose what else to share.")}
       </p>

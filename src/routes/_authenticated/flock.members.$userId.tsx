@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { UserRound } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { K, KyaCard, KyaHeading } from "@/components/kya";
@@ -7,9 +7,11 @@ import { FlockSubPage } from "@/components/flock/FlockSubPage";
 import { FlockEmpty } from "@/components/flock/FlockChips";
 import { BirdThumb, FlockAvatar, FounderBadge } from "@/components/flock/FlockPeople";
 import { chapterLine } from "@/lib/flockNav";
-import { useAvatarUrls, useBirdPhotoUrls, useIsAdmin, useMemberProfile, useVisibleBirds } from "@/lib/flockData";
+import { useAvatarUrls, useBirdPhotoUrls, useIsAdmin, useMemberProfile, useMyId, useVisibleBirds } from "@/lib/flockData";
 import { setChapterLead, useChapterLeadOf, useInvalidateMembers } from "@/lib/flockMembers";
 import { ConfirmSheet } from "@/components/flock/PostParts";
+import { BlockSheet } from "@/components/flock/BlockSheet";
+import { blockName } from "@/lib/flockBlocks";
 
 // Another member: photo or initial, name, region, bio, founding badge, and the
 // birds they chose to show. Nothing else exists to show (flock_member_profile).
@@ -30,6 +32,9 @@ function FlockMember() {
   const [confirming, setConfirming] = useState(false);
   const [busy, setBusy] = useState(false);
   const [leadError, setLeadError] = useState<string | null>(null);
+  const [blocking, setBlocking] = useState(false);
+  const navigate = useNavigate();
+  const { data: myId } = useMyId();
   const isLead = !!leadOf;
   if (!isLoading && !m) {
     return (
@@ -91,6 +96,16 @@ function FlockMember() {
             {isLead ? t("flock.members.removeLead", "Remove as chapter lead") : t("flock.members.makeLead", "Make chapter lead of {{chapter}}", { chapter: m.region_name })}
           </button>
         </KyaCard></div>
+      )}
+      {m && myId && myId !== userId && (
+        <button type="button" onClick={() => setBlocking(true)} data-testid="member-block"
+          className="mx-auto min-h-[44px] px-4 text-[15px] font-[700] underline underline-offset-4" style={{ color: K.red }}>
+          {t("flock.block.action", "Block {{name}}", { name: blockName(t, m.display_name) })}
+        </button>
+      )}
+      {blocking && m && (
+        <BlockSheet userId={userId} name={m.display_name} onClose={() => setBlocking(false)}
+          onBlocked={() => void navigate({ to: "/flock", replace: true })} />
       )}
       {confirming && m && (
         <ConfirmSheet busy={busy} onClose={() => setConfirming(false)}

@@ -29,6 +29,7 @@ import { dateBlock, eventIcs, goersLine, longWhen, shortWhen } from "@/lib/flock
 import { AAV_FIND_A_VET_URL, POST_SPACES, findVetSigns, mergeFeed, vetNudgeTier, rateLimitKind, replyPrefix, threadComments } from "@/lib/flockPosts";
 import { defaultDisplayName, greetingName, isAutomaticDisplayName, memberCountLine, membershipSummary } from "@/lib/flockProfile";
 import { accessCells, accessDay } from "@/lib/flockAccess";
+import { blockActions, blockName } from "@/lib/flockBlocks";
 import { foundingClosedCase } from "@/lib/foundingClosed";
 import {
   birdPronoun, canStartCustom, customProblem, daysSince, clipPhase, flockSheetTitle, isNectarEater, rollingAverage, showVetReminder, youngOrUnknownAge, defaultVisibility, groupTemplates, isLocked, journeyDay, journeyDays,
@@ -628,6 +629,20 @@ check("photos at their own shape: 4:5 to 1.91:1, never cropped inside, tall ones
   const sof0 = [0xff, 0xc0, 0x00, 0x11, 0x08, 0x06, 0x40, 0x03, 0x84, 0x03, 0x01, 0x22, 0x00, 0x02, 0x11, 0x01, 0x03, 0x11, 0x01];
   assert.deepEqual(jpegSize(new Uint8Array([0xff, 0xd8, ...app0, ...sof0])), { width: 900, height: 1600 });
   assert.equal(jpegSize(new Uint8Array([0x89, 0x50, 0x4e, 0x47])), null, "not a JPEG");
+});
+
+check("blocking menus: Block and Block and report on someone else's things only", () => {
+  const tt = ((k: string, d: string, o?: Record<string, string>) => d.replace("{{name}}", o?.name ?? "")) as unknown as Parameters<typeof blockActions>[0];
+  const noop = () => undefined;
+  let a = blockActions(tt, { authorId: "u2", myId: "u1", name: "Alex R.", onBlock: noop, onBlockAndReport: noop });
+  assert.deepEqual(a.map((x) => [x.key, x.label]), [["block", "Block Alex R."], ["block-report", "Block and report"]]);
+  a = blockActions(tt, { authorId: "u2", myId: null, name: "Alex R.", onBlock: noop });
+  assert.deepEqual(a.map((x) => x.key), ["block"], "profiles, journeys and lists: Block only (nothing to report)");
+  assert.deepEqual(blockActions(tt, { authorId: "u1", myId: "u1", name: "Me", onBlock: noop }), [], "never on your own things");
+  assert.deepEqual(blockActions(tt, { authorId: null, myId: "u1", name: "x", onBlock: noop }), [], "never without an author");
+  assert.equal(blockName(tt, "  "), "this member");
+  assert.equal(blockName(tt, null), "this member");
+  assert.equal(blockName(tt, "Priya S."), "Priya S.");
 });
 
 console.log(`\n${passed} passed${process.exitCode ? ", some FAILED" : ""}`);
