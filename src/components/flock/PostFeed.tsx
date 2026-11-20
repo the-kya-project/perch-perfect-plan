@@ -7,6 +7,8 @@ import { FlockAvatar } from "@/components/flock/FlockPeople";
 import { useCardBirdPhotos } from "@/components/flock/JourneyBrowse";
 import { ActionSheet, ConfirmSheet, PostCard } from "@/components/flock/PostParts";
 import { ReportSheet } from "@/components/flock/ReportSheet";
+import { BlockSheet } from "@/components/flock/BlockSheet";
+import { blockActions } from "@/lib/flockBlocks";
 import { useAvatarUrls, useMyProfile, type FlockPhotoSrc } from "@/lib/flockData";
 import { deletePost, useInvalidatePosts, usePostPhotos, type FlockPost } from "@/lib/flockPostData";
 import type { PostSpace } from "@/lib/flockPosts";
@@ -23,7 +25,9 @@ export function usePostMedia(posts: FlockPost[]) {
   };
 }
 
-/** A post's press-and-hold menu: Edit / Delete on your own, Reply on others'. */
+/** A post's press-and-hold menu: Edit / Delete on your own; Reply, Report,
+ *  Block and Block and report on others'. After a block, `onDeleted` runs too
+ *  (the post is gone for you, so a post page leaves). */
 export function PostMenus({ menuFor, setMenuFor, onDeleted }: {
   menuFor: FlockPost | null; setMenuFor: (p: FlockPost | null) => void; onDeleted?: () => void;
 }) {
@@ -32,6 +36,8 @@ export function PostMenus({ menuFor, setMenuFor, onDeleted }: {
   const invalidate = useInvalidatePosts();
   const [confirmFor, setConfirmFor] = useState<FlockPost | null>(null);
   const [reportFor, setReportFor] = useState<FlockPost | null>(null);
+  const [blockFor, setBlockFor] = useState<FlockPost | null>(null);
+  const [blockReportFor, setBlockReportFor] = useState<FlockPost | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const p = menuFor;
@@ -48,10 +54,20 @@ export function PostMenus({ menuFor, setMenuFor, onDeleted }: {
               ? [
                 { key: "reply", label: t("flock.posts.reply", "Reply"), onClick: () => { setMenuFor(null); void navigate({ to: "/flock/post/$postId", params: { postId: p.post_id }, search: { focus: 1 } }); } },
                 { key: "report", label: t("flock.report.action", "Report"), onClick: () => { setMenuFor(null); setReportFor(p); } },
+                ...blockActions(t, {
+                  authorId: p.author_id, myId: null, name: p.author_name,
+                  onBlock: () => { setMenuFor(null); setBlockFor(p); },
+                  onBlockAndReport: () => { setMenuFor(null); setBlockReportFor(p); },
+                }),
               ]
               : []} />
       )}
       {reportFor && <ReportSheet type="post" id={reportFor.post_id} onClose={() => setReportFor(null)} />}
+      {blockReportFor && (
+        <ReportSheet type="post" id={blockReportFor.post_id} alsoBlock={{ userId: blockReportFor.author_id, name: blockReportFor.author_name }}
+          onBlocked={() => onDeleted?.()} onClose={() => setBlockReportFor(null)} />
+      )}
+      {blockFor && <BlockSheet userId={blockFor.author_id} name={blockFor.author_name} onBlocked={() => onDeleted?.()} onClose={() => setBlockFor(null)} />}
       {confirmFor && (
         <ConfirmSheet busy={busy} onClose={() => { setConfirmFor(null); setError(null); }}
           title={t("flock.posts.deleteTitle", "Delete this post?")}

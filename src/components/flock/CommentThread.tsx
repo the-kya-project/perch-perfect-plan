@@ -6,6 +6,8 @@ import { FlockAvatar } from "@/components/flock/FlockPeople";
 import { reactionLabel } from "@/components/flock/JourneyBrowse";
 import { rateMessage } from "@/components/flock/PostCompose";
 import { ReportSheet } from "@/components/flock/ReportSheet";
+import { BlockSheet } from "@/components/flock/BlockSheet";
+import { blockActions } from "@/lib/flockBlocks";
 import { FramedPhoto, PhotoViewer } from "@/components/flock/PhotoViewer";
 import { ActionSheet, ConfirmSheet, ReactionPicker, timeAgo, useLongPress, useReactionState, VetNudgeCard } from "@/components/flock/PostParts";
 import { AvatarError } from "@/lib/flockAvatar";
@@ -94,6 +96,8 @@ export function CommentThread({ type, id, ownerName, focus, canComment, top }: {
   const [menuFor, setMenuFor] = useState<FlockComment | null>(null);
   const [confirmFor, setConfirmFor] = useState<FlockComment | null>(null);
   const [reportFor, setReportFor] = useState<FlockComment | null>(null);
+  const [blockFor, setBlockFor] = useState<FlockComment | null>(null);
+  const [blockReportFor, setBlockReportFor] = useState<FlockComment | null>(null);
   const [nudge, setNudge] = useState<VetTier | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -224,9 +228,19 @@ export function CommentThread({ type, id, ownerName, focus, canComment, top }: {
             : [
               ...(canComment ? [{ key: "reply", label: t("flock.posts.reply", "Reply"), onClick: () => { const c = menuFor; setMenuFor(null); startReply(c); } }] : []),
               { key: "report", label: t("flock.report.action", "Report"), onClick: () => { const c = menuFor; setMenuFor(null); setReportFor(c); } },
+              ...blockActions(t, {
+                authorId: menuFor.author_id, myId: null, name: menuFor.author_name,
+                onBlock: () => { const c = menuFor; setMenuFor(null); setBlockFor(c); },
+                onBlockAndReport: () => { const c = menuFor; setMenuFor(null); setBlockReportFor(c); },
+              }),
             ]} />
       )}
       {reportFor && <ReportSheet type="comment" id={reportFor.comment_id} onClose={() => setReportFor(null)} />}
+      {blockReportFor && (
+        <ReportSheet type="comment" id={blockReportFor.comment_id} alsoBlock={{ userId: blockReportFor.author_id, name: blockReportFor.author_name }}
+          onClose={() => setBlockReportFor(null)} />
+      )}
+      {blockFor && <BlockSheet userId={blockFor.author_id} name={blockFor.author_name} onClose={() => setBlockFor(null)} />}
       {confirmFor && (
         <ConfirmSheet busy={busy} onClose={() => setConfirmFor(null)}
           title={t("flock.posts.deleteCommentTitle", "Delete this comment?")}

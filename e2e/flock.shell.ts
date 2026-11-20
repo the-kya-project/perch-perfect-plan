@@ -53,6 +53,8 @@ type FlockState = {
   /** Step 5B: the Members tab and who leads. */
   roster?: Record<string, any>[];
   leadOf?: Record<string, string>;
+  /** Build D: who this account has blocked (hidden from feeds, threads and lists, as the database does). */
+  blocks: { user_id: string; display_name: string | null; photo_path: null; blocked_at: string }[];
 };
 
 async function mockFlock(context: BrowserContext, userId: string, opts: { setupDone: boolean; region?: string }): Promise<FlockState> {
@@ -73,7 +75,9 @@ async function mockFlock(context: BrowserContext, userId: string, opts: { setupD
     schedule: [],
     events: [],
     eventRules: { region_slug: "great-lakes", region_name: "Great Lakes", member_count: 8, in_person_min: 15, in_person_open: false, can_manage: false },
+    blocks: [],
   };
+  const blocked = (id: string) => state.blocks.some((b) => b.user_id === id);
   const neighbours: Record<string, { user_id: string; display_name: string }[]> = {
     "great-lakes": [{ user_id: "00000000-0000-4000-8000-00000000c001", display_name: "Ada L." }],
     texas: [{ user_id: "00000000-0000-4000-8000-00000000c002", display_name: "Cy T." }, { user_id: "00000000-0000-4000-8000-00000000c003", display_name: "Dee R." }],
@@ -148,12 +152,21 @@ async function mockFlock(context: BrowserContext, userId: string, opts: { setupD
       comment_count: state.comments.filter((c) => c.subject_id === p.post_id).length,
     });
     if (fn === "flock_feed") {
-      const visible = state.posts.filter((p) => p.status === "live" || p.author_id === userId)
+      const visible = state.posts.filter((p) => (p.status === "live" || p.author_id === userId) && !blocked(p.author_id))
         .filter((p) => args.p_space === "everything" || p.space === args.p_space)
         .sort((a, b) => b.created_at.localeCompare(a.created_at));
       return json(route, visible.map(postRow));
     }
-    if (fn === "flock_post") { const p = state.posts.find((x) => x.post_id === args.p_post_id); return json(route, p ? [postRow(p)] : []); }
+    if (fn === "flock_post") { const p = state.posts.find((x) => x.post_id === args.p_post_id && !blocked(x.author_id)); return json(route, p ? [postRow(p)] : []); }
+    if (fn === "flock_block") {
+      if (args.p_on === false) state.blocks = state.blocks.filter((b) => b.user_id !== args.p_user_id);
+      else if (!blocked(args.p_user_id)) {
+        const name = state.posts.find((p) => p.author_id === args.p_user_id)?.author_name ?? state.comments.find((c) => c.author_id === args.p_user_id)?.author_name ?? null;
+        state.blocks.unshift({ user_id: args.p_user_id, display_name: name, photo_path: null, blocked_at: ago(0) });
+      }
+      return json(route, null);
+    }
+    if (fn === "flock_my_blocks") return json(route, state.blocks);
     if (fn === "flock_vet_signs") return json(route, ["fluffed up", "sleeping a lot", "isn't eating", "tail bobbing", "bleeding"]);
     if (fn === "flock_vet_sign_tiers") return json(route, [
       ...["fluffed up all day", "sleeping a lot", "isn't eating", "tail bobbing", "bleeding"].map((phrase) => ({ phrase, tier: "today" })),
@@ -168,7 +181,7 @@ async function mockFlock(context: BrowserContext, userId: string, opts: { setupD
     }
     if (fn === "flock_post_edit") { const p = state.posts.find((x) => x.post_id === args.p_post_id); if (p) { p.title = args.p_title; p.body = args.p_body; p.edited_at = ago(0); } return json(route, p?.space === "good" ? "pending" : "live"); }
     if (fn === "flock_comments_for") {
-      return json(route, state.comments.filter((c) => c.subject_type === args.p_subject_type && c.subject_id === args.p_subject_id).map((c) => ({
+      return json(route, state.comments.filter((c) => c.subject_type === args.p_subject_type && c.subject_id === args.p_subject_id && !blocked(c.author_id)).map((c) => ({
         ...counts(c), comment_id: c.comment_id, parent_id: c.parent_id ?? null, author_id: c.author_id, author_name: c.author_name, author_region: "Great Lakes",
         author_photo_path: null, reply_to_name: c.reply_to_name ?? null, body: c.body, has_photo: false, created_at: c.created_at, edited_at: c.edited_at ?? null,
         is_mine: c.author_id === userId,
@@ -1388,7 +1401,7 @@ test.describe("posts, comments and reactions (admin, phone)", () => {
 
     // Someone else's: Reply / Report / Cancel.
     await page.locator(`[data-comment='${PRIYA_C}']`).getByTestId("comment-more").click();
-    await expect(page.getByTestId("action-sheet").getByRole("button")).toHaveText(["Reply", "Report", "Cancel"]);
+    await expect(page.getByTestId("action-sheet").getByRole("button")).toHaveText(["Reply", "Report", "Block Priya S.", "Block and report", "Cancel"]);
     await page.getByTestId("action-sheet").locator("[data-action='cancel']").click();
     await expect(page.getByTestId("action-sheet")).toHaveCount(0);
     await context.close();
@@ -1438,7 +1451,7 @@ test.describe("posts, comments and reactions (admin, phone)", () => {
     // Someone else's post: Reply / Report / Cancel.
     await page.goto("/flock");
     await page.locator(`[data-post='${POST}']`).getByTestId("post-more").click();
-    await expect(page.getByTestId("action-sheet").getByRole("button")).toHaveText(["Reply", "Report", "Cancel"]);
+    await expect(page.getByTestId("action-sheet").getByRole("button")).toHaveText(["Reply", "Report", "Block Alex R.", "Block and report", "Cancel"]);
     await page.getByTestId("action-sheet").locator("[data-action='cancel']").click();
 
     state.rateLimit = "posts";
@@ -1478,7 +1491,7 @@ test.describe("reporting, the review queue and notifications (admin, phone)", ()
     seedPost(state);
     await page.goto("/flock");
     await page.locator(`[data-post='${POST}']`).getByTestId("post-more").click();
-    await expect(page.getByTestId("action-sheet").getByRole("button")).toHaveText(["Reply", "Report", "Cancel"]);
+    await expect(page.getByTestId("action-sheet").getByRole("button")).toHaveText(["Reply", "Report", "Block Alex R.", "Block and report", "Cancel"]);
     await page.getByTestId("action-sheet").locator("[data-action='report']").click();
     const sheet = page.getByTestId("report-sheet");
     await expect(sheet.getByRole("radio")).toHaveText(["Unkind or harassing", "Unsafe advice for birds", "Spam or selling", "Something else"]);
@@ -1492,11 +1505,59 @@ test.describe("reporting, the review queue and notifications (admin, phone)", ()
 
     await page.goto(`/flock/post/${POST}`);
     await page.locator(`[data-comment='${COMMENT}']`).getByTestId("comment-more").click();
-    await expect(page.getByTestId("action-sheet").getByRole("button")).toHaveText(["Reply", "Report", "Cancel"]);
+    await expect(page.getByTestId("action-sheet").getByRole("button")).toHaveText(["Reply", "Report", "Block Alex R.", "Block and report", "Cancel"]);
     await page.getByTestId("action-sheet").locator("[data-action='report']").click();
     await page.getByTestId("report-sheet").locator("[data-reason='spam']").click();
     await page.getByTestId("report-sheet").getByRole("button", { name: "Send report" }).click();
     expect(state.calls.filter((c) => c.fn === "flock_report").at(-1)!.args).toMatchObject({ p_subject_type: "comment", p_subject_id: COMMENT, p_reason: "spam", p_note: null });
+    await context.close();
+  });
+
+  test("block from a post, block and report from a comment, and unblock from Blocked members", async ({ browser, baseURL }) => {
+    const { context, page, state } = await open(browser, baseURL!, { admin: true });
+    seedPost(state);
+    const PRIYA = "00000000-0000-4000-8000-00000000e002";
+    const PRIYA_POST = "00000000-0000-4000-8000-0000000079a2";
+    const PRIYA_COMMENT = "00000000-0000-4000-8000-0000000079c2";
+    state.posts.push({ post_id: PRIYA_POST, author_id: PRIYA, author_name: "Priya S.", space: "learn", body: "Our first foraging box!", status: "live", created_at: hoursAgo(3) });
+    state.comments.push({ comment_id: PRIYA_COMMENT, subject_type: "post", subject_id: POST, author_id: PRIYA, author_name: "Priya S.", body: "Please don't.", created_at: hoursAgo(0.5) });
+
+    // Block from a post's menu: a calm confirmation, and the post is gone.
+    await page.goto("/flock");
+    await page.locator(`[data-post='${POST}']`).getByTestId("post-more").click();
+    await page.getByTestId("action-sheet").locator("[data-action='block']").click();
+    await expect(page.getByRole("heading", { name: "Block Alex R.?" })).toBeVisible();
+    await expect(page.getByText("They won't be told.")).toBeVisible();
+    await page.getByTestId("confirm-delete").click();
+    await expect.poll(() => state.calls.find((c) => c.fn === "flock_block")?.args).toMatchObject({ p_user_id: ALEX, p_on: true });
+    await expect(page.locator(`[data-post='${POST}']`)).toHaveCount(0);
+    await expect(page.locator(`[data-post='${PRIYA_POST}']`)).toBeVisible();
+
+    // Block and report from a comment: the report goes first, then the block.
+    state.blocks = [];
+    await page.goto(`/flock/post/${POST}`);
+    await page.locator(`[data-comment='${PRIYA_COMMENT}']`).getByTestId("comment-more").click();
+    await page.getByTestId("action-sheet").locator("[data-action='block-report']").click();
+    const sheet = page.getByTestId("report-sheet");
+    await sheet.locator("[data-reason='unkind']").click();
+    await sheet.getByRole("button", { name: "Report and block" }).click();
+    await expect(page.getByTestId("report-done")).toContainText("You've also blocked Priya S.");
+    const order = state.calls.filter((c) => c.fn === "flock_report" || c.fn === "flock_block").map((c) => c.fn);
+    expect(order.slice(-2)).toEqual(["flock_report", "flock_block"]);
+    expect(state.calls.filter((c) => c.fn === "flock_report").at(-1)!.args).toMatchObject({ p_subject_type: "comment", p_subject_id: PRIYA_COMMENT, p_reason: "unkind" });
+    await page.getByRole("button", { name: "Done" }).click();
+    await expect(page.locator(`[data-comment='${PRIYA_COMMENT}']`)).toHaveCount(0);
+
+    // Flock settings, Blocked members: the list, and Unblock.
+    await page.goto("/flock/you");
+    await page.getByText("Blocked members").click();
+    await expect(page).toHaveURL(/\/flock\/you\/blocked$/);
+    await expect(page.getByTestId("blocked-list").locator("li")).toHaveText([/Priya S\./]);
+    await page.getByTestId("unblock").click();
+    await expect(page.getByRole("heading", { name: "Unblock Priya S.?" })).toBeVisible();
+    await page.getByTestId("confirm-delete").click();
+    await expect.poll(() => state.calls.filter((c) => c.fn === "flock_block").at(-1)?.args).toMatchObject({ p_user_id: PRIYA, p_on: false });
+    await expect(page.getByText("No one is blocked")).toBeVisible();
     await context.close();
   });
 

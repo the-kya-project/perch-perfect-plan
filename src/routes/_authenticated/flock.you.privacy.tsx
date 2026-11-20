@@ -5,7 +5,8 @@ import { K, KyaCard, KyaHeading } from "@/components/kya";
 import { FlockSubPage } from "@/components/flock/FlockSubPage";
 
 // Privacy: exactly what other members see, and what they never see. Keep this
-// in step with the flock_* functions in 20261107180000_flock_profiles.sql.
+// in step with the flock_* functions in 20261107180000_flock_profiles.sql
+// (and blocking, 20261121100000_flock_member_blocking.sql).
 export const Route = createFileRoute("/_authenticated/flock/you/privacy")({
   component: FlockPrivacy,
 });
@@ -50,6 +51,7 @@ function FlockPrivacy() {
             t("flock.privacy.never.sits", "Your sits and sitters"),
             t("flock.privacy.never.health", "Health checks and health notes"),
             t("flock.privacy.never.weights", "Weights"),
+            t("flock.privacy.never.blocked", "Anything of yours, if you've blocked them or they've blocked you"),
           ]} />
         </div>
       </KyaCard>

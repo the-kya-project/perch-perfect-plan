@@ -6,6 +6,9 @@ import { K, KyaPrimaryButton, KyaSecondaryButton } from "@/components/kya";
 import { FlockSubPage } from "@/components/flock/FlockSubPage";
 import { FlockEmpty } from "@/components/flock/FlockChips";
 import { ClipTile, JourneyMenuSheet, shortDay } from "@/components/flock/JourneyBrowse";
+import { ActionSheet } from "@/components/flock/PostParts";
+import { BlockSheet } from "@/components/flock/BlockSheet";
+import { blockActions } from "@/lib/flockBlocks";
 import { FinisherTipsCard } from "@/components/flock/JourneyParts";
 import { ClipTileState } from "@/components/flock/JourneyClipView";
 import { DietDisclaimer, HowToMakeItWork, VetReminderCard, WeighTodayCard } from "@/components/flock/JourneyDiet";
@@ -47,6 +50,8 @@ function JourneyPage() {
   const dietTips = diet && mine ? (templates?.find((x) => x.slug === "diet-conversion")?.tips ?? []) : [];
   const [vetBusy, setVetBusy] = useState(false);
   const [menu, setMenu] = useState(false);
+  const [otherMenu, setOtherMenu] = useState(false);
+  const [blocking, setBlocking] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   if (!isLoading && !card) {
@@ -72,14 +77,24 @@ function JourneyPage() {
       className="grid size-11 place-items-center rounded-full" style={{ background: K.forestDeep, color: "#fff" }}>
       <MoreHorizontal className="size-5" aria-hidden="true" />
     </button>
-  ) : access?.can_share ? (
-    <button type="button" data-testid="follow" aria-pressed={card.following}
-      onClick={() => void act(() => followJourney(journeyId, !card.following))}
-      className="min-h-[40px] rounded-full px-4 text-[14px] font-[700]"
-      style={card.following ? { background: "transparent", border: "1.5px solid #9bcab8", color: "#fff" } : { background: K.sunflower, color: K.forest }}>
-      {card.following ? t("flock.journeys.page.following", "Following") : t("flock.journeys.page.follow", "Follow")}
-    </button>
-  ) : null);
+  ) : (
+    <div className="flex items-center gap-2">
+      {access?.can_share && (
+        <button type="button" data-testid="follow" aria-pressed={card.following}
+          onClick={() => void act(() => followJourney(journeyId, !card.following))}
+          className="min-h-[40px] rounded-full px-4 text-[14px] font-[700]"
+          style={card.following ? { background: "transparent", border: "1.5px solid #9bcab8", color: "#fff" } : { background: K.sunflower, color: K.forest }}>
+          {card.following ? t("flock.journeys.page.following", "Following") : t("flock.journeys.page.follow", "Follow")}
+        </button>
+      )}
+      {card.owner_id && (
+        <button type="button" onClick={() => setOtherMenu(true)} aria-label={t("flock.journeys.page.menu", "Journey options")} data-testid="journey-other-menu"
+          className="grid size-11 place-items-center rounded-full" style={{ background: K.forestDeep, color: "#fff" }}>
+          <MoreHorizontal className="size-5" aria-hidden="true" />
+        </button>
+      )}
+    </div>
+  ));
 
   return (
     <FlockSubPage
@@ -150,6 +165,14 @@ function JourneyPage() {
         )}
         {diet && card && <DietDisclaimer birdName={card.bird_name} className="pt-2" />}
       </div>
+      {otherMenu && card && (
+        <ActionSheet title={t("flock.journeys.page.menu", "Journey options")} onClose={() => setOtherMenu(false)}
+          actions={blockActions(t, { authorId: card.owner_id, myId: null, name: card.owner_name, onBlock: () => { setOtherMenu(false); setBlocking(true); } })} />
+      )}
+      {blocking && card?.owner_id && (
+        <BlockSheet userId={card.owner_id} name={card.owner_name} onClose={() => setBlocking(false)}
+          onBlocked={() => void navigate({ to: "/flock/journeys", replace: true })} />
+      )}
       {menu && card && (
         <JourneyMenuSheet status={card.status} visibility={card.visibility} canShare={!!access?.can_share} clipCount={withClips.length}
           onClose={() => setMenu(false)}
