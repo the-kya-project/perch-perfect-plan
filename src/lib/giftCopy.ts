@@ -8,18 +8,18 @@ export function giftPlanName(t: TFunction, plan: GiftPlan): string {
     : t("gift.planFlockName", "The Flock, one year");
 }
 
-/** When the gift starts and, if redeemed by the free season's end, when it ends. */
+/** The start rule, in words (no fixed dates: they depend on redemption). */
 export function giftTiming(t: TFunction, plan: GiftPlan): string {
   return plan === "flock_half_year"
-    ? t("gift.timingFlockHalf", "The Flock opens Monday, January 4, 2027, and it's free for everyone until July 6, 2027. Six months in the Flock start when the free season ends, or on the day the gift is redeemed if that's later. Redeemed by July 6, 2027, they run through January 6, 2028. Gifts never expire.")
-    : t("gift.timingFlock", "The Flock opens Monday, January 4, 2027, and it's free for everyone until July 6, 2027. A year in the Flock starts when the free season ends, or on the day the gift is redeemed if that's later. Redeemed by July 6, 2027, it runs through July 6, 2028. Gifts never expire.");
+    ? t("gift.timingFlockHalf", "The Flock opens Monday, January 4, 2027. Six months in the Flock start the day the gift is redeemed and run for six months. Since the Flock is free for everyone until July 6, 2027, a gift redeemed before then starts when the free season ends, so none of it goes unused. Gifts never expire.")
+    : t("gift.timingFlock", "The Flock opens Monday, January 4, 2027. A year in the Flock starts the day the gift is redeemed and runs for a year. Since the Flock is free for everyone until July 6, 2027, a gift redeemed before then starts when the free season ends, so none of it goes unused. Gifts never expire.");
 }
 
 /** What /redeem says once the code is saved. */
 export function giftRedeemed(t: TFunction, plan: GiftPlan): string {
   return plan === "flock_half_year"
-    ? t("redeem.doneFlockHalf", "Your gift is saved. The Flock opens Monday, January 4, 2027, and it's free for everyone until July 6, 2027. Your six months in the Flock start then and run through January 6, 2028. If you're redeeming after July 6, 2027, they start today.")
-    : t("redeem.doneFlock", "Your gift is saved. The Flock opens Monday, January 4, 2027, and it's free for everyone until July 6, 2027. Your year in the Flock starts then and runs through July 6, 2028. If you're redeeming after July 6, 2027, it starts today.");
+    ? t("redeem.doneFlockHalf", "Your gift is saved. Six months in the Flock start the day they're redeemed and run for six months. Since the Flock is free for everyone until July 6, 2027, a gift redeemed before then starts when the free season ends, so none of it goes unused.")
+    : t("redeem.doneFlock", "Your gift is saved. A year in the Flock starts the day it's redeemed and runs for a year. Since the Flock is free for everyone until July 6, 2027, a gift redeemed before then starts when the free season ends, so none of it goes unused.");
 }
 
 export function planBlurb(t: TFunction, plan: GiftPlan): string {

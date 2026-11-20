@@ -37,6 +37,9 @@ function RedeemPage() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [redeemed, setRedeemed] = useState<GiftPlan | null>(null);
+  // The redeemer's own dates, once the Flock's opening day is set (until then
+  // the gift has no dates yet, so nothing extra is shown).
+  const [dates, setDates] = useState<{ start: string; end: string } | null>(null);
   const doneRef = useRef<HTMLHeadingElement>(null);
 
   const { data: session, isLoading } = useQuery({
@@ -68,6 +71,7 @@ function RedeemPage() {
       } else if (row.ok && isGiftPlan(row.plan)) {
         track("gift_redeemed", { plan: row.plan });
         setRedeemed(row.plan);
+        void loadGiftDates().then(setDates);
       } else if (row.reason === "rate_limited") {
         setError(t("redeem.rateLimited", "That's a lot of tries in a short time. Please wait an hour, then try again."));
       } else {
@@ -98,6 +102,11 @@ function RedeemPage() {
               <h2 ref={doneRef} tabIndex={-1} className="m-0 mt-1 text-[22px] font-[700] leading-[1.2] outline-none" style={{ fontFamily: SERIF }}>
                 {giftRedeemed(t, redeemed)}
               </h2>
+              {dates && (
+                <p className="m-0 mt-2 text-[15px] font-[700]">
+                  {t("redeem.yourDates", "Your dates: {{start}} to {{end}}.", dates)}
+                </p>
+              )}
             </section>
             <p className="m-0 text-[15px] leading-[1.5]" style={{ color: K.ink }}>
               {t("redeem.doneNext", "We'll email you before it starts. There's nothing else you need to do.")}
@@ -156,4 +165,23 @@ function RedeemPage() {
       </FrontDoorBody>
     </FrontDoorPage>
   );
+}
+
+/** The newest gift membership on the signed-in account (the one just
+ *  redeemed), as Eastern dates. Null while it has no dates yet. */
+async function loadGiftDates(): Promise<{ start: string; end: string } | null> {
+  try {
+    const { data } = await supabase
+      .from("entitlements")
+      .select("starts_at, current_period_end")
+      .eq("source", "gift")
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (!data?.starts_at || !data.current_period_end) return null;
+    const f = (iso: string) => new Date(iso).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric", timeZone: "America/New_York" });
+    return { start: f(data.starts_at), end: f(data.current_period_end) };
+  } catch {
+    return null;
+  }
 }

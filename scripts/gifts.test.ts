@@ -139,17 +139,16 @@ await check("recipient: a nameless buyer, and no app premium wording (app premiu
 const fakeT = ((_k: string, def: string, o?: Record<string, string>) =>
   def.replace(/\{\{(\w+)\}\}/g, (_m, k: string) => o?.[k] ?? "")) as unknown as TFunction;
 
-await check("gift copy: opens Jan 4, free until Jul 6, starts after the free season, says when it ends, never expires", () => {
+await check("gift copy: the start rule in words, no fixed end dates, never expires", () => {
   const year = giftTiming(fakeT, "flock_year"), half = giftTiming(fakeT, "flock_half_year");
-  for (const timing of [year, half]) {
-    for (const want of ["Monday, January 4, 2027", "free for everyone until July 6, 2027", "when the free season ends", "redeemed if that's later", "Gifts never expire"]) {
-      assert.ok(timing.includes(want), want);
-    }
+  const rule = "Since the Flock is free for everyone until July 6, 2027, a gift redeemed before then starts when the free season ends, so none of it goes unused.";
+  assert.ok(year.includes("A year in the Flock starts the day the gift is redeemed and runs for a year.") && year.includes(rule) && year.includes("Gifts never expire"));
+  assert.ok(half.includes("Six months in the Flock start the day the gift is redeemed and run for six months.") && half.includes(rule) && half.includes("Gifts never expire"));
+  assert.ok(giftRedeemed(fakeT, "flock_year").includes("runs for a year") && giftRedeemed(fakeT, "flock_year").includes(rule));
+  assert.ok(giftRedeemed(fakeT, "flock_half_year").includes("run for six months") && giftRedeemed(fakeT, "flock_half_year").includes(rule));
+  for (const txt of [year, half, giftRedeemed(fakeT, "flock_year"), giftRedeemed(fakeT, "flock_half_year")]) {
+    assert.ok(!/2028|runs through|run through/.test(txt), txt);
   }
-  assert.ok(year.includes("A year in the Flock") && year.includes("through July 6, 2028"));
-  assert.ok(half.includes("Six months in the Flock") && half.includes("through January 6, 2028"));
-  assert.ok(giftRedeemed(fakeT, "flock_year").includes("through July 6, 2028"));
-  assert.ok(giftRedeemed(fakeT, "flock_half_year").includes("through January 6, 2028"));
   assert.equal(giftPlanName(fakeT, "flock_half_year"), "The Flock, six months");
   assert.equal(giftPlanName(fakeT, "flock_year"), "The Flock, one year");
   assert.ok(giftRefundNote(fakeT).includes("full refund within 30 days"));
@@ -176,21 +175,28 @@ await check("gift copy: no 'opens in January' or six free months anywhere (app, 
   }
 });
 
-await check("emails: each says which gift it is, when it runs and when it starts; the receipt has the 30-day refund", () => {
-  for (const [plan, gift, runs] of [
-    ["flock_year", "A year in the Flock", "Jul 6, 2027 to Jul 6, 2028"],
-    ["flock_half_year", "Six months in the Flock", "Jul 6, 2027 to Jan 6, 2028"],
+await check("emails: each says which gift it is and the start rule, with no fixed end date; the receipt has the 30-day refund", () => {
+  for (const [plan, gift, length] of [
+    ["flock_year", "A year in the Flock", "runs for a year"],
+    ["flock_half_year", "Six months in the Flock", "run for six months"],
   ] as const) {
     const receipt = buildGiftReceiptEmail({ ...base, plan }).text, recipient = buildGiftRecipientEmail({ ...base, plan }).text;
     for (const txt of [receipt, recipient]) {
       assert.ok(txt.includes(gift), `${plan}: ${gift}`);
-      assert.ok(txt.includes(runs), `${plan}: ${runs}`);
-      assert.ok(txt.includes("when the free season ends") && !/opens in January/.test(txt));
+      assert.ok(txt.includes(length) && txt.includes("starts when the free season ends, so none of it goes unused"), `${plan}: rule`);
+      assert.ok(!/2028|Runs:|runs through|run through|opens in January/.test(txt), `${plan}: no fixed end date`);
     }
     assert.ok(receipt.includes("full refund within 30 days"));
     assert.ok(recipient.includes("It opens Monday, January 4, 2027"));
   }
   assert.ok(buildGiftRecipientEmail({ ...base, plan: "flock_half_year" }).text.includes("six months in the Flock"));
+});
+
+await check("no fixed gift end dates anywhere in the copy (pages, emails, locales)", () => {
+  for (const f of ["src/locales/en.jsonc", "src/locales/emails.en.jsonc", "src/lib/giftCopy.ts", "src/lib/giftEmails.server.ts", "src/routes/gift.index.tsx", "src/routes/gift.thanks.tsx", "src/routes/redeem.tsx"]) {
+    const txt = readFileSync(f, "utf8");
+    assert.ok(!/January 6, 2028|July 6, 2028|Jan 6, 2028|Jul 6, 2028/.test(txt), f);
+  }
 });
 
 await check("gifts are six months or a year in the Flock, six months first", () => {
