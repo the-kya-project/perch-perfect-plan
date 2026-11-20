@@ -10,7 +10,7 @@ import { track } from "@/lib/analytics";
 import { createGiftCheckout, getGiftOptions, type GiftOption } from "@/lib/gifts.functions";
 import { formatCents, giftToday, GIFT_MESSAGE_MAX, GIFT_NAME_MAX, GIFT_PLANS, GIFT_SEND_LAST_DATE, type GiftPlan } from "@/lib/gifts";
 import { K, KyaCard, KyaHeading } from "@/components/kya";
-import { giftPlanName, giftTiming, planBlurb } from "@/lib/giftCopy";
+import { giftGivingNote, giftPlanName, giftPriceParts, giftRefundNote, giftTiming, planBlurb } from "@/lib/giftCopy";
 import { FrontDoorBody, FrontDoorError, FrontDoorHeader, FrontDoorPage, LegalLinks } from "@/components/frontDoor";
 
 // Gift memberships: a public page, no account needed to buy. Payment happens on
@@ -25,7 +25,7 @@ export const Route = createFileRoute("/gift/")({
   validateSearch: search,
   head: () => ({ meta: [
     { title: i18next.t("gift.pageTitle", "Give a gift membership — The Kya Project") },
-    { name: "description", content: i18next.t("gift.metaDescription", "Give a year in the Flock to the parrot person in your life.") },
+    { name: "description", content: i18next.t("gift.metaDescription", "Give six months or a year in the Flock to the parrot person in your life.") },
   ]}),
   component: GiftPage,
 });
@@ -40,7 +40,7 @@ function GiftPage() {
   const { data: opts, isLoading } = useQuery({ queryKey: ["gift-options"], queryFn: () => optionsFn(), staleTime: 10 * 60_000 });
 
   const today = giftToday();
-  const [plan, setPlan] = useState<GiftPlan>("flock_year");
+  const [plan, setPlan] = useState<GiftPlan>("flock_half_year");
   const [recipientName, setRecipientName] = useState("");
   const [message, setMessage] = useState("");
   const [delivery, setDelivery] = useState<"email" | "self">("email");
@@ -113,6 +113,16 @@ function GiftPage() {
     const o = options.find((x) => x.plan === p);
     return o ? formatCents(o.amountCents, o.currency) : "";
   };
+  const priceParts = (p: GiftPlan) => {
+    const o = options.find((x) => x.plan === p);
+    return o ? giftPriceParts(t, p, o.amountCents, o.currency) : null;
+  };
+  // Only plans with a price in this deployment are offered; if the chosen one
+  // isn't among them (the six-month price not set up yet), use the first.
+  const offered = GIFT_PLANS.filter((p) => options.some((o) => o.plan === p));
+  useEffect(() => {
+    if (offered.length > 0 && !offered.includes(plan)) setPlan(offered[0]!);
+  }, [offered.join(","), plan]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <FrontDoorPage duoForm>
@@ -141,7 +151,7 @@ function GiftPage() {
           <form onSubmit={submit} noValidate className="flex flex-col gap-5">
             <fieldset className="m-0 flex flex-col gap-3 border-0 p-0">
               <legend className="mb-3 p-0"><KyaHeading size={21} as="h2">{t("gift.chooseTitle", "Choose a gift")}</KyaHeading></legend>
-              {GIFT_PLANS.map((p) => (
+              {offered.map((p) => (
                 <label
                   key={p}
                   className="flex cursor-pointer items-start gap-3 rounded-[18px] border-2 bg-white p-4 focus-within:ring-2 focus-within:ring-[#2d6a4f]/40"
@@ -151,8 +161,9 @@ function GiftPage() {
                   <span className="min-w-0 flex-1">
                     <span className="flex flex-wrap items-baseline justify-between gap-x-3">
                       <span className="text-[17px] font-[700]" style={{ color: K.forest }}>{giftPlanName(t, p)}</span>
-                      <span className="text-[17px] font-[700]" style={{ color: K.forest }}>{price(p)}</span>
+                      <span className="text-[17px] font-[700]" style={{ color: K.forest }}>{priceParts(p)?.price}</span>
                     </span>
+                    {priceParts(p) && <span className="mt-0.5 block text-right text-[13.5px]" style={{ color: K.quiet }}>{priceParts(p)!.perMonth}</span>}
                     <span className="mt-1 block text-[14.5px] leading-[1.45]" style={{ color: K.quiet }}>{planBlurb(t, p)}</span>
                   </span>
                 </label>
@@ -252,6 +263,8 @@ function GiftPage() {
 
             <section className="rounded-[20px] p-5" style={{ background: K.lime, color: K.forest }}>
               <p className="m-0 text-[15px] leading-[1.5]">{giftTiming(t, plan)}</p>
+              <p className="m-0 mt-2 text-[15px] leading-[1.5]">{giftRefundNote(t)}</p>
+              <p className="m-0 mt-2 text-[15px] leading-[1.5]">{giftGivingNote(t)}</p>
             </section>
 
             {submitError && <div ref={errorRef} tabIndex={-1} className="outline-none"><FrontDoorError>{submitError}</FrontDoorError></div>}

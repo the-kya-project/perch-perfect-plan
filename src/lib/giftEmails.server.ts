@@ -41,10 +41,16 @@ export type GiftRow = {
 
 const firstName = (name: string | null | undefined) => (name ?? "").trim().split(/\s+/)[0] ?? "";
 
-// One gift today: a year in the Flock (app premium is gone).
+// Six months or a year in the Flock: which gift it is, and the start rule
+// (no fixed end date: it depends on when the gift is redeemed).
 function planWords(t: ReturnType<typeof emailT>, plan: GiftPlan) {
-  void plan;
-  return { plan: t("email.gift.planFlock"), badge: t("email.gift.badgeFlock"), timing: t("email.gift.timingFlock") };
+  const half = plan === "flock_half_year";
+  return {
+    plan: t(half ? "email.gift.planFlockHalf" : "email.gift.planFlock"),
+    gift: t(half ? "email.gift.giftFlockHalf" : "email.gift.giftFlock"),
+    badge: t(half ? "email.gift.badgeFlockHalf" : "email.gift.badgeFlock"),
+    timing: t(half ? "email.gift.timingFlockHalf" : "email.gift.timingFlock"),
+  };
 }
 
 /** Message text, escaped, with the buyer's line breaks kept. */
@@ -59,6 +65,7 @@ export function buildGiftReceiptEmail(g: GiftRow): BuiltEmail {
   const percent = Math.round(Number(g.giving_rate) * 100);
 
   const rows = [
+    { label: t("email.gift.rowGift"), value: w.gift },
     { label: t("email.gift.codeLabel"), value: g.gift_code },
     ...(g.recipient_email && g.send_on
       ? [{ label: t("email.gift.receipt.rowDelivery"), value: escapeHtml(formatGiftDate(g.send_on)) }]
@@ -80,6 +87,7 @@ export function buildGiftReceiptEmail(g: GiftRow): BuiltEmail {
     { kind: "p", text: t("email.gift.receipt.redeem", { recipient, link: redeemLink }) },
     { kind: "p", text: w.timing },
     { kind: "p", text: t("email.gift.receipt.giving", { percent }) },
+    { kind: "p", text: t("email.gift.receipt.refund", { recipient }) },
     { kind: "p", text: t("email.gift.receipt.reply") },
     { kind: "signature" },
   ];
@@ -113,7 +121,10 @@ export function buildGiftRecipientEmail(g: GiftRow): BuiltEmail {
           body: messageHtml(g.message),
         }]
       : []),
-    { kind: "summaryCard", title: t("email.gift.recipient.cardTitle"), badge: w.badge, rows: [{ label: t("email.gift.codeLabel"), value: g.gift_code }] },
+    { kind: "summaryCard", title: t("email.gift.recipient.cardTitle"), badge: w.badge, rows: [
+      { label: t("email.gift.rowGift"), value: w.gift },
+      { label: t("email.gift.codeLabel"), value: g.gift_code },
+    ] },
     { kind: "button", label: t("email.gift.recipient.cta"), href: redeemHref },
     { kind: "p", text: t("email.gift.recipient.howTo") },
     { kind: "p", text: w.timing },

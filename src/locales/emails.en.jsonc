@@ -754,8 +754,14 @@
 
   // ---- Gift memberships (src/lib/giftEmails.server.ts) ----
   "email.gift.planFlock": "a year in the Flock",
+  "email.gift.giftFlock": "A year in the Flock",
+  "email.gift.giftFlockHalf": "Six months in the Flock",
+  "email.gift.planFlockHalf": "six months in the Flock",
   "email.gift.badgeFlock": "The Flock &middot; 1 year",
-  "email.gift.timingFlock": "Gifts can be redeemed anytime. The year starts when the Flock opens in January, or on the day it's redeemed if that's later.",
+  "email.gift.badgeFlockHalf": "The Flock &middot; 6 months",
+  "email.gift.timingFlock": "The Flock opens Monday, January 4, 2027. A year in the Flock starts the day the gift is redeemed and runs for a year. Since the Flock is free for everyone until July 6, 2027, a gift redeemed before then starts when the free season ends, so none of it goes unused. Gifts never expire.",
+  "email.gift.timingFlockHalf": "The Flock opens Monday, January 4, 2027. Six months in the Flock start the day the gift is redeemed and run for six months. Since the Flock is free for everyone until July 6, 2027, a gift redeemed before then starts when the free season ends, so none of it goes unused. Gifts never expire.",
+  "email.gift.rowGift": "Gift",
   "email.gift.codeLabel": "Gift code",
   "email.gift.hi": "Hi {{first}},",
   "email.gift.hiNoName": "Hi there,",
@@ -772,6 +778,7 @@
   "email.gift.receipt.noteTitle": "Your note",
   "email.gift.receipt.redeem": "To redeem it, {{recipient}} goes to <a href=\"{{link}}\">app.thekyaproject.com/redeem</a>, signs in or creates a free account, and enters the code.",
   "email.gift.receipt.giving": "{{percent}}% of what you paid goes to parrot rescue and conservation. Thank you for that, too.",
+  "email.gift.receipt.refund": "If {{recipient}} hasn't redeemed it yet, you can get a full refund within 30 days of buying it. Just reply to this email. Gifts never expire, so there's no rush otherwise.",
   "email.gift.receipt.reply": "If anything about your gift isn't right, reply to this email and I'll sort it out.",
   "email.gift.receipt.foot": "You're getting this because you bought a gift membership from The Kya Project.",
 
@@ -780,7 +787,7 @@
   "email.gift.recipient.pill": "A gift for you",
   "email.gift.recipient.intro": "{{from}} gave you {{plan}} from The Kya Project.",
   "email.gift.recipient.fromNobody": "Someone who cares about you and your bird",
-  "email.gift.recipient.aboutFlock": "The Flock is The Kya Project's community for parrot people, with expert Q&amp;As, local chapters, and 20% of every membership going to parrot rescue and conservation. It opens in January.",
+  "email.gift.recipient.aboutFlock": "The Flock is The Kya Project's community for parrot people, with expert Q&amp;As, local chapters, and 20% of every membership going to parrot rescue and conservation. It opens Monday, January 4, 2027, and it's free for everyone until July 6, 2027.",
   "email.gift.recipient.noteTitle": "A note from {{from}}",
   "email.gift.recipient.noteTitleNobody": "A note for you",
   "email.gift.recipient.cardTitle": "Your gift",

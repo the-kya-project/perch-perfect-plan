@@ -15,6 +15,9 @@ import assert from "node:assert/strict";
 import Stripe from "stripe";
 import { giftToday, isAllowedSendDate, formatGiftDate, formatCents, GIFT_CODE_PATTERN, GIFT_PLANS, isGiftPlan, applyGiftRefund, giftKeptCents, giftGivingCents, giftGrantsMembership } from "@/lib/gifts";
 import { buildGiftReceiptEmail, buildGiftRecipientEmail, type GiftRow } from "@/lib/giftEmails.server";
+import { giftGivingNote, giftPlanName, giftPriceParts, giftRedeemed, giftRefundNote, giftTiming } from "@/lib/giftCopy";
+import { readFileSync } from "node:fs";
+import type { TFunction } from "i18next";
 
 let passed = 0;
 async function check(name: string, fn: () => void | Promise<void>) {
@@ -132,8 +135,73 @@ await check("recipient: a nameless buyer, and no app premium wording (app premiu
   assert.ok(!/premium/i.test(e.text) && !/premium/i.test(e.html));
   assert.ok(!/premium/i.test(buildGiftReceiptEmail(base).text));
 });
-await check("the only gift plan is a year in the Flock", () => {
-  assert.deepEqual([...GIFT_PLANS], ["flock_year"]);
+// The fallbacks are what /gift and /redeem show (en.jsonc must match them).
+const fakeT = ((_k: string, def: string, o?: Record<string, string>) =>
+  def.replace(/\{\{(\w+)\}\}/g, (_m, k: string) => o?.[k] ?? "")) as unknown as TFunction;
+
+await check("gift copy: the start rule in words, no fixed end dates, never expires", () => {
+  const year = giftTiming(fakeT, "flock_year"), half = giftTiming(fakeT, "flock_half_year");
+  const rule = "Since the Flock is free for everyone until July 6, 2027, a gift redeemed before then starts when the free season ends, so none of it goes unused.";
+  assert.ok(year.includes("A year in the Flock starts the day the gift is redeemed and runs for a year.") && year.includes(rule) && year.includes("Gifts never expire"));
+  assert.ok(half.includes("Six months in the Flock start the day the gift is redeemed and run for six months.") && half.includes(rule) && half.includes("Gifts never expire"));
+  assert.ok(giftRedeemed(fakeT, "flock_year").includes("runs for a year") && giftRedeemed(fakeT, "flock_year").includes(rule));
+  assert.ok(giftRedeemed(fakeT, "flock_half_year").includes("run for six months") && giftRedeemed(fakeT, "flock_half_year").includes(rule));
+  for (const txt of [year, half, giftRedeemed(fakeT, "flock_year"), giftRedeemed(fakeT, "flock_half_year")]) {
+    assert.ok(!/2028|runs through|run through/.test(txt), txt);
+  }
+  assert.equal(giftPlanName(fakeT, "flock_half_year"), "The Flock, six months");
+  assert.equal(giftPlanName(fakeT, "flock_year"), "The Flock, one year");
+  assert.ok(giftRefundNote(fakeT).includes("full refund within 30 days"));
+  assert.ok(giftGivingNote(fakeT).includes("20% of every gift") && giftGivingNote(fakeT).includes("40% on double-giving days"));
+});
+
+await check("gift prices: $150 and $300, each 'That's $25 a month, paid once.'", () => {
+  assert.deepEqual(giftPriceParts(fakeT, "flock_half_year", 15000), { price: "$150", perMonth: "That's $25 a month, paid once." });
+  assert.deepEqual(giftPriceParts(fakeT, "flock_year", 30000), { price: "$300", perMonth: "That's $25 a month, paid once." });
+});
+
+await check("gift copy: no 'opens in January' or six free months anywhere (app, emails, pages)", () => {
+  const files = ["src/locales/en.jsonc", "src/locales/emails.en.jsonc", "src/lib/giftCopy.ts", "src/routes/gift.index.tsx", "src/routes/gift.thanks.tsx", "src/routes/redeem.tsx", "src/routes/_authenticated/admin.gifts.tsx"];
+  for (const f of files) {
+    const txt = readFileSync(f, "utf8");
+    assert.ok(!/opens in January|launches in January|six free months|first six months|six months free|6 months free/i.test(txt), f);
+  }
+  const en = readFileSync("src/locales/en.jsonc", "utf8");
+  for (const [k, plan] of [["gift.timingFlock", "flock_year"], ["gift.timingFlockHalf", "flock_half_year"]] as const) {
+    assert.ok(en.includes(`"${k}": "${giftTiming(fakeT, plan)}"`), `en.jsonc ${k} matches the fallback`);
+  }
+  for (const [k, plan] of [["redeem.doneFlock", "flock_year"], ["redeem.doneFlockHalf", "flock_half_year"]] as const) {
+    assert.ok(en.includes(`"${k}": "${giftRedeemed(fakeT, plan)}"`), `en.jsonc ${k} matches the fallback`);
+  }
+});
+
+await check("emails: each says which gift it is and the start rule, with no fixed end date; the receipt has the 30-day refund", () => {
+  for (const [plan, gift, length] of [
+    ["flock_year", "A year in the Flock", "runs for a year"],
+    ["flock_half_year", "Six months in the Flock", "run for six months"],
+  ] as const) {
+    const receipt = buildGiftReceiptEmail({ ...base, plan }).text, recipient = buildGiftRecipientEmail({ ...base, plan }).text;
+    for (const txt of [receipt, recipient]) {
+      assert.ok(txt.includes(gift), `${plan}: ${gift}`);
+      assert.ok(txt.includes(length) && txt.includes("starts when the free season ends, so none of it goes unused"), `${plan}: rule`);
+      assert.ok(!/2028|Runs:|runs through|run through|opens in January/.test(txt), `${plan}: no fixed end date`);
+    }
+    assert.ok(receipt.includes("full refund within 30 days"));
+    assert.ok(recipient.includes("It opens Monday, January 4, 2027"));
+  }
+  assert.ok(buildGiftRecipientEmail({ ...base, plan: "flock_half_year" }).text.includes("six months in the Flock"));
+});
+
+await check("no fixed gift end dates anywhere in the copy (pages, emails, locales)", () => {
+  for (const f of ["src/locales/en.jsonc", "src/locales/emails.en.jsonc", "src/lib/giftCopy.ts", "src/lib/giftEmails.server.ts", "src/routes/gift.index.tsx", "src/routes/gift.thanks.tsx", "src/routes/redeem.tsx"]) {
+    const txt = readFileSync(f, "utf8");
+    assert.ok(!/January 6, 2028|July 6, 2028|Jan 6, 2028|Jul 6, 2028/.test(txt), f);
+  }
+});
+
+await check("gifts are six months or a year in the Flock, six months first", () => {
+  assert.deepEqual([...GIFT_PLANS], ["flock_half_year", "flock_year"]);
+  assert.equal(isGiftPlan("flock_half_year"), true);
   assert.equal(isGiftPlan("app_premium_year"), false);
 });
 await check("both emails carry the PO Box and no unsubscribe link", () => {

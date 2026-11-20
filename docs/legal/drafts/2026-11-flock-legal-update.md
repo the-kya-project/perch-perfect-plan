@@ -138,7 +138,7 @@ Read from the code on `main` as of #475. Everything below is stored in Supabase 
 - Founding: $15 a month for life, the first 50 people, no closing date. Founders add a card by Jul 6, 2027 to keep the spot and price. If a founding membership ends, the founding price ends with it.
 - Rescue adopters: six free months for people who apply through a partner rescue within 60 days of adopting, starting after Jul 6, 2027.
 - Kya's Crew goes on sale when billing starts after Jul 6, 2027.
-- Gifts are Flock gifts only: a year in the Flock.
+- Gifts are six months or a year in the Flock ($150 or $300, paid once).
 - Yearly renewal reminders go out 30 days before a yearly plan renews.
 - Payment records are kept for 7 years.
 
@@ -427,8 +427,8 @@ When you cancel, you keep access until the end of the period you've paid for, an
 
 **Gift memberships.**
 
-- A gift is a year in the Flock, paid for once, through Stripe. It doesn't renew.
-- A gift year starts on the later of the day the gift is redeemed and July 6, 2027, the end of the free season.
+- A gift is six months or a year in the Flock, paid for once, through Stripe. It doesn't renew.
+- A gift starts on the later of the day it's redeemed and July 6, 2027, the end of the free season, and runs six months or a year from that day.
 - Gift codes never expire.
 - A gift code can be redeemed once, on one account.
 - The buyer can get a full refund within 30 days of purchase if the gift hasn't been redeemed. After that, gifts aren't refunded. A refunded gift's code stops working.
