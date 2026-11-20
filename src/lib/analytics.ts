@@ -137,7 +137,21 @@ export type AnalyticsEventName =
   // the Stripe webhook (giftTelemetry.server.ts), not from here.
   | "gift_page_viewed"
   | "gift_checkout_started"
-  | "gift_redeemed";
+  | "gift_redeemed"
+  // The Flock's stickiness events (payments plan, build E). Sent ONLY through
+  // trackFlock() in src/lib/flockAnalytics.ts, which sends nothing for anyone
+  // outside the Flock and carries no content. Never call track() with these.
+  | "flock_active"
+  | "flock_joined"
+  | "flock_post_created"
+  | "flock_comment_created"
+  | "flock_reaction_added"
+  | "flock_library_resource_opened"
+  | "flock_journey_started"
+  | "flock_journey_milestone_reached"
+  | "flock_journey_finished"
+  | "flock_idea_tried"
+  | "flock_event_rsvped";
 
 type EventProps = Record<string, string | number | boolean | null | undefined>;
 
@@ -361,6 +375,20 @@ export function track(name: AnalyticsEventName, props?: EventProps) {
   const send = () => dispatch(name, safe);
   if (ready) send();
   else queue.push(send);
+}
+
+/** Set PostHog person properties on the identified person (PostHog only;
+ *  Plausible has no people). Same PII scrub as track(). Used by Flock code
+ *  (src/lib/flockAnalytics.ts) to mark members, and admin/test accounts. */
+export function setPersonProperties(props: EventProps) {
+  const safe = scrub(props);
+  const run = () => {
+    if (!isBrowser() || readEnv().provider !== "posthog") return;
+    const ph = (window as any).posthog;
+    if (typeof ph?.setPersonProperties === "function") ph.setPersonProperties(safe);
+  };
+  if (ready) run();
+  else queue.push(run);
 }
 
 /** Identify the current user. The id is hashed before being sent. */

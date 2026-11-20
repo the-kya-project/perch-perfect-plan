@@ -5,6 +5,7 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { getFlockIdeaPhotos, type IdeaPhoto } from "@/lib/flockPostMedia.functions";
+import { trackFlock } from "@/lib/flockAnalytics";
 
 const sb = supabase as any;
 function must<T>(r: { data: T; error: unknown }): T {
@@ -54,6 +55,7 @@ export function useIdeaPhotos(ideaId: string | null | undefined, enabled = true)
 
 export async function tryIdea(ideaId: string, outcome: IdeaOutcome, birdId: string | null, photoPath: string | null): Promise<void> {
   must(await sb.rpc("flock_idea_try", { p_idea_id: ideaId, p_outcome: outcome, p_bird_id: birdId, p_photo_path: photoPath }));
+  trackFlock("flock_idea_tried", { outcome, has_photo: !!photoPath, has_bird: !!birdId });
 }
 
 /** "Sun conure" → "sun conures"; "African grey" → "African greys". For "Most popular with …". */

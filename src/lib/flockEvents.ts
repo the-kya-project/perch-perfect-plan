@@ -5,6 +5,7 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { getFlockEventPhoto } from "@/lib/flockPostMedia.functions";
+import { trackFlock } from "@/lib/flockAnalytics";
 
 const sb = supabase as any;
 function must<T>(r: { data: T; error: unknown }): T {
@@ -75,6 +76,7 @@ export function useEventRules() {
 
 export async function rsvp(id: string, answer: RsvpAnswer | null): Promise<void> {
   must(await sb.rpc("flock_event_rsvp", { p_event_id: id, p_answer: answer }));
+  if (answer) trackFlock("flock_event_rsvped", { answer });
 }
 
 export type EventDraft = {

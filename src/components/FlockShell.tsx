@@ -11,6 +11,7 @@ import { defaultDisplayName } from "@/lib/flockProfile";
 import { RAIL_TAB_CLASS, RAIL_TAB_OFF_STYLE, RAIL_TAB_ON_STYLE, useDuoRail, useTabFit } from "@/components/DuoRail";
 import { SpacesSheet } from "@/components/flock/SpacesSheet";
 import { rememberMode } from "@/lib/flock";
+import { trackFlockActive } from "@/lib/flockAnalytics";
 import { FLOCK_DESTS, destForPath, isFlockFullScreenPath, isFlockOnboardingPath, type FlockDest } from "@/lib/flockNav";
 
 // The Community's own chrome (the Flock; admins only until launch, the /flock
@@ -141,6 +142,9 @@ export function FlockShell({ children }: { children: ReactNode }) {
   const api = useMemo<SpacesApi>(() => ({ open: (el) => { trigger.current = el; setSpacesOpen(true); } }), []);
   // A new screen closes the sheet (picking a space navigates).
   useEffect(() => { setSpacesOpen(false); }, [pathname]);
+  // Daily active member (flock_active): only the first Flock screen of the
+  // day sends, and only for a member or admin (src/lib/flockAnalytics.ts).
+  useEffect(() => { trackFlockActive(); }, [pathname]);
 
   return (
     <SpacesContext.Provider value={api}>
