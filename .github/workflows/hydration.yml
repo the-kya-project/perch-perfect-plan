@@ -80,6 +80,7 @@ jobs:
       - name: Community shell (admin and non-admin)
         run: |
           npm run test:flock-shell
+          npm run test:flock-analytics
           npx playwright test -c e2e/flock.config.ts
 
       - name: Upload the report (screenshots and traces of failures)

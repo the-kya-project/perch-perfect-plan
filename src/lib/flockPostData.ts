@@ -11,6 +11,7 @@ import { AvatarError, reencodeJpegSized } from "@/lib/flockAvatar";
 import { deleteFlockComment, deleteFlockPost, getFlockPostPhotos, type PostPhotoMap } from "@/lib/flockPostMedia.functions";
 import type { ReactionKind } from "@/lib/journeyData";
 import type { FeedSpace, PostSpace, PostStatus, VetSign } from "@/lib/flockPosts";
+import { trackFlock } from "@/lib/flockAnalytics";
 
 const sb = supabase as any;
 const STALE = 30_000;
@@ -161,6 +162,10 @@ export async function createPost(input: {
     p_space: input.space, p_title: input.title.trim() || null, p_body: input.body, p_photo_paths: input.photoPaths,
     p_bird_id: input.birdId, p_vet_nudged: input.vetNudged,
   })));
+  trackFlock("flock_post_created", {
+    space: input.space, status: rows[0]?.status, has_photo: input.photoPaths.length > 0,
+    photo_count: input.photoPaths.length, has_bird: !!input.birdId,
+  });
   return rows[0];
 }
 
@@ -175,10 +180,12 @@ export async function deletePost(id: string): Promise<void> {
 export async function createComment(input: {
   type: CommentSubject; id: string; replyTo: string | null; body: string; photoPath: string | null; vetNudged: boolean;
 }): Promise<string> {
-  return must(await sb.rpc("flock_comment_create", {
+  const id = must(await sb.rpc("flock_comment_create", {
     p_subject_type: input.type, p_subject_id: input.id, p_reply_to: input.replyTo, p_body: input.body,
     p_photo_path: input.photoPath, p_vet_nudged: input.vetNudged,
   })) as string;
+  trackFlock("flock_comment_created", { subject_type: input.type, is_reply: !!input.replyTo, has_photo: !!input.photoPath });
+  return id;
 }
 
 export async function editComment(id: string, body: string): Promise<void> {
@@ -192,6 +199,7 @@ export async function deleteComment(id: string): Promise<void> {
 /** A reaction on a post, comment, journey update or milestone. */
 export async function react(type: ReactSubject, id: string, kind: ReactionKind, on: boolean): Promise<void> {
   must(await sb.rpc("flock_react", { p_subject_type: type, p_subject_id: id, p_kind: kind, p_on: on }));
+  if (on) trackFlock("flock_reaction_added", { subject_type: type, kind });
 }
 
 /** After a change: posts, comments and counts reload (and journey cards, whose

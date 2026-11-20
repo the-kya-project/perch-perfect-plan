@@ -8,6 +8,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { getJourneyClips, type JourneyClip } from "@/lib/journeyMedia.functions";
 import type { Engagement, JourneyAccess, JourneyRhythm, JourneyStatus, JourneyTemplate, JourneyVisibility, VetCheck, WeightLevel } from "@/lib/journeys";
+import { trackFlock } from "@/lib/flockAnalytics";
 
 const sb = supabase as any;
 const STALE = 60_000;
@@ -154,6 +155,10 @@ export async function startJourney(input: {
     p_day_one_clip: input.dayOneClip ?? null,
   })) as string;
   if (input.vetCheck) await setVetCheck(id, input.vetCheck);
+  trackFlock("flock_journey_started", {
+    template: input.templateSlug ?? "custom", is_custom: !input.templateSlug, visibility: input.visibility,
+    milestone_count: input.customMilestones?.length ?? null, already_count: input.already.length,
+  });
   return id;
 }
 
@@ -290,7 +295,10 @@ export async function postJourneyUpdate(journeyId: string, clipRef: string, enga
   return must(await sb.rpc("journey_post_update", { p_journey_id: journeyId, p_clip_ref: clipRef, p_engagement: engagement, p_caption: caption.trim() || null })) as string;
 }
 export async function reachMilestone(journeyId: string, position: number): Promise<{ finished: boolean; done: number; total: number }> {
-  return (must(await sb.rpc("journey_reach_milestone", { p_journey_id: journeyId, p_position: position })) as any[])[0];
+  const res = (must(await sb.rpc("journey_reach_milestone", { p_journey_id: journeyId, p_position: position })) as any[])[0] as { finished: boolean; done: number; total: number };
+  trackFlock("flock_journey_milestone_reached", { position, done: res?.done, total: res?.total });
+  if (res?.finished) trackFlock("flock_journey_finished", { total: res.total });
+  return res;
 }
 export async function saveFinisherTip(journeyId: string, body: string): Promise<void> {
   must(await sb.rpc("journey_save_finisher_tip", { p_journey_id: journeyId, p_body: body }));
@@ -434,6 +442,7 @@ export async function followJourney(journeyId: string, follow: boolean): Promise
 }
 export async function reactTo(subject: "journey_update" | "journey_milestone", id: string, kind: ReactionKind, on: boolean): Promise<void> {
   must(await sb.rpc("journey_react", { p_subject_type: subject, p_subject_id: id, p_kind: kind, p_on: on }));
+  if (on) trackFlock("flock_reaction_added", { subject_type: subject, kind });
 }
 
 /** After a change: everything journey-shaped reloads. */
