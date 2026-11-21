@@ -58,6 +58,7 @@ import { Route as AuthenticatedBirdsBirdIdRouteImport } from './routes/_authenti
 import { Route as AuthenticatedBirdsNewRouteImport } from './routes/_authenticated/birds/new'
 import { Route as AuthenticatedFlockIndexRouteImport } from './routes/_authenticated/flock.index'
 import { Route as AuthenticatedFlockChapterRouteImport } from './routes/_authenticated/flock.chapter'
+import { Route as AuthenticatedFlockFoundersRouteImport } from './routes/_authenticated/flock.founders'
 import { Route as AuthenticatedFlockIdeaRouteImport } from './routes/_authenticated/flock.idea'
 import { Route as AuthenticatedFlockLearnRouteImport } from './routes/_authenticated/flock.learn'
 import { Route as AuthenticatedFlockSetupRouteImport } from './routes/_authenticated/flock.setup'
@@ -401,6 +402,12 @@ const AuthenticatedFlockChapterRoute =
   AuthenticatedFlockChapterRouteImport.update({
     id: '/chapter',
     path: '/chapter',
+    getParentRoute: () => AuthenticatedFlockRoute,
+  } as any)
+const AuthenticatedFlockFoundersRoute =
+  AuthenticatedFlockFoundersRouteImport.update({
+    id: '/founders',
+    path: '/founders',
     getParentRoute: () => AuthenticatedFlockRoute,
   } as any)
 const AuthenticatedFlockIdeaRoute = AuthenticatedFlockIdeaRouteImport.update({
@@ -961,6 +968,7 @@ export interface FileRoutesByFullPath {
   '/birds/$birdId': typeof AuthenticatedBirdsBirdIdRouteWithChildren
   '/birds/new': typeof AuthenticatedBirdsNewRoute
   '/flock/chapter': typeof AuthenticatedFlockChapterRoute
+  '/flock/founders': typeof AuthenticatedFlockFoundersRoute
   '/flock/idea': typeof AuthenticatedFlockIdeaRoute
   '/flock/learn': typeof AuthenticatedFlockLearnRoute
   '/flock/setup': typeof AuthenticatedFlockSetupRoute
@@ -1093,6 +1101,7 @@ export interface FileRoutesByTo {
   '/admin/review': typeof AuthenticatedAdminReviewRoute
   '/birds/new': typeof AuthenticatedBirdsNewRoute
   '/flock/chapter': typeof AuthenticatedFlockChapterRoute
+  '/flock/founders': typeof AuthenticatedFlockFoundersRoute
   '/flock/idea': typeof AuthenticatedFlockIdeaRoute
   '/flock/learn': typeof AuthenticatedFlockLearnRoute
   '/flock/setup': typeof AuthenticatedFlockSetupRoute
@@ -1232,6 +1241,7 @@ export interface FileRoutesById {
   '/_authenticated/birds/$birdId': typeof AuthenticatedBirdsBirdIdRouteWithChildren
   '/_authenticated/birds/new': typeof AuthenticatedBirdsNewRoute
   '/_authenticated/flock/chapter': typeof AuthenticatedFlockChapterRoute
+  '/_authenticated/flock/founders': typeof AuthenticatedFlockFoundersRoute
   '/_authenticated/flock/idea': typeof AuthenticatedFlockIdeaRoute
   '/_authenticated/flock/learn': typeof AuthenticatedFlockLearnRoute
   '/_authenticated/flock/setup': typeof AuthenticatedFlockSetupRoute
@@ -1372,6 +1382,7 @@ export interface FileRouteTypes {
     | '/birds/$birdId'
     | '/birds/new'
     | '/flock/chapter'
+    | '/flock/founders'
     | '/flock/idea'
     | '/flock/learn'
     | '/flock/setup'
@@ -1504,6 +1515,7 @@ export interface FileRouteTypes {
     | '/admin/review'
     | '/birds/new'
     | '/flock/chapter'
+    | '/flock/founders'
     | '/flock/idea'
     | '/flock/learn'
     | '/flock/setup'
@@ -1642,6 +1654,7 @@ export interface FileRouteTypes {
     | '/_authenticated/birds/$birdId'
     | '/_authenticated/birds/new'
     | '/_authenticated/flock/chapter'
+    | '/_authenticated/flock/founders'
     | '/_authenticated/flock/idea'
     | '/_authenticated/flock/learn'
     | '/_authenticated/flock/setup'
@@ -2118,6 +2131,13 @@ declare module '@tanstack/react-router' {
       path: '/chapter'
       fullPath: '/flock/chapter'
       preLoaderRoute: typeof AuthenticatedFlockChapterRouteImport
+      parentRoute: typeof AuthenticatedFlockRoute
+    }
+    '/_authenticated/flock/founders': {
+      id: '/_authenticated/flock/founders'
+      path: '/founders'
+      fullPath: '/flock/founders'
+      preLoaderRoute: typeof AuthenticatedFlockFoundersRouteImport
       parentRoute: typeof AuthenticatedFlockRoute
     }
     '/_authenticated/flock/idea': {
@@ -2756,6 +2776,7 @@ const AuthenticatedAccountRouteWithChildren =
 
 interface AuthenticatedFlockRouteChildren {
   AuthenticatedFlockChapterRoute: typeof AuthenticatedFlockChapterRoute
+  AuthenticatedFlockFoundersRoute: typeof AuthenticatedFlockFoundersRoute
   AuthenticatedFlockIdeaRoute: typeof AuthenticatedFlockIdeaRoute
   AuthenticatedFlockLearnRoute: typeof AuthenticatedFlockLearnRoute
   AuthenticatedFlockSetupRoute: typeof AuthenticatedFlockSetupRoute
@@ -2794,6 +2815,7 @@ interface AuthenticatedFlockRouteChildren {
 
 const AuthenticatedFlockRouteChildren: AuthenticatedFlockRouteChildren = {
   AuthenticatedFlockChapterRoute: AuthenticatedFlockChapterRoute,
+  AuthenticatedFlockFoundersRoute: AuthenticatedFlockFoundersRoute,
   AuthenticatedFlockIdeaRoute: AuthenticatedFlockIdeaRoute,
   AuthenticatedFlockLearnRoute: AuthenticatedFlockLearnRoute,
   AuthenticatedFlockSetupRoute: AuthenticatedFlockSetupRoute,

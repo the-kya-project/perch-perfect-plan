@@ -272,6 +272,7 @@ function RegionStep({ source, onBack, onClaimed, onRefused }: {
   const claimFn = useServerFn(claimFoundingSpot);
   const headingRef = useRef<HTMLHeadingElement>(null);
   const [region, setRegion] = useState("");
+  const [showOnPage, setShowOnPage] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -298,7 +299,7 @@ function RegionStep({ source, onBack, onClaimed, onRefused }: {
     setError(null);
     setSubmitting(true);
     try {
-      const res = await claimFn({ data: { regionSlug: region, source } });
+      const res = await claimFn({ data: { regionSlug: region, source, showOnFoundersPage: showOnPage } });
       if (res.ok) {
         track("founding_spot_claimed", { source: source ?? "direct", region: res.regionSlug });
         onClaimed(res.spotNumber);
@@ -345,6 +346,16 @@ function RegionStep({ source, onBack, onClaimed, onRefused }: {
         </select>
         {error && <p id="founding-region-error" role="alert" className="m-0 mt-2 text-[13.5px] font-[600]" style={{ color: K.red }}>{error}</p>}
         {isError && <p role="alert" className="m-0 mt-2 text-[13.5px] font-[600]" style={{ color: K.red }}>{t("founding.regionsError", "We couldn't load the regions. Refresh the page to try again.")}</p>}
+        <label className="mt-4 flex min-h-[44px] cursor-pointer items-start gap-3 text-[15px] leading-[1.45]" style={{ color: K.forest }}>
+          <input type="checkbox" checked={showOnPage} onChange={(e) => setShowOnPage(e.target.checked)} data-testid="founding-show-on-page"
+            className="mt-[3px] size-5 shrink-0" style={{ accentColor: K.forest }} />
+          <span>
+            <span className="font-[700]">{t("founding.showOnPage", "Show me on the founding members page.")}</span>
+            <span className="block text-[14px]" style={{ color: K.quiet }}>
+              {t("founding.showOnPageHint", "Flock members would see your name, photo, chapter and spot number. You can change this any time.")}
+            </span>
+          </span>
+        </label>
       </KyaCard>
       <button
         type="submit"

@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { Bell, CreditCard, ShieldCheck, UserX } from "lucide-react";
+import { Bell, CreditCard, ShieldCheck, Star, UserX } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { K, KyaCard, KyaHeading, KyaIconTile, KyaRow } from "@/components/kya";
 import { FlockAvatar } from "@/components/flock/FlockPeople";
@@ -52,6 +52,12 @@ function FlockYou() {
             title={t("flock.you.membership", "Membership and billing")}
             detail={membership.line}
             onClick={() => void navigate({ to: "/flock/you/membership" })}
+          />
+          <KyaRow
+            leading={<KyaIconTile tone="mist"><Star className="size-5" /></KyaIconTile>}
+            title={t("flock.founders.title", "Founding members")}
+            detail={t("flock.you.foundersLine", "The first 50, who helped start the Flock")}
+            onClick={() => void navigate({ to: "/flock/founders" })}
           />
           <KyaRow
             leading={<KyaIconTile tone="mist"><ShieldCheck className="size-5" /></KyaIconTile>}

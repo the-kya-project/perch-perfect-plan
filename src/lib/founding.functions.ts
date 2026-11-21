@@ -49,11 +49,12 @@ function refusalFrom(message: string): ClaimRefusal {
 
 export const claimFoundingSpot = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: { regionSlug: string; source?: string | null }) =>
+  .inputValidator((d: { regionSlug: string; source?: string | null; showOnFoundersPage?: boolean }) =>
     z
       .object({
         regionSlug: z.string().trim().min(1).max(64),
         source: z.string().trim().max(80).nullish(),
+        showOnFoundersPage: z.boolean().optional(),
       })
       .parse(d),
   )
@@ -67,6 +68,15 @@ export const claimFoundingSpot = createServerFn({ method: "POST" })
       const reason = refusalFrom(error?.message ?? "");
       if (reason === "error") console.error("[founding] claim failed", error?.message);
       return { ok: false, reason };
+    }
+
+    // "Show me on the founding members page" (unchecked unless chosen). Saved
+    // right after the claim; a failure never undoes the claim, and the founder
+    // can set it later on their Flock profile.
+    if (data.showOnFoundersPage === true) {
+      // Not in the generated types yet (20261121120000).
+      const { error: showError } = await (context.supabase as any).rpc("founding_set_show", { p_show: true });
+      if (showError) console.error("[founding] saving the founders page choice failed", showError.message);
     }
 
     // Brevo "Founding 50" list. Best effort and awaited (a serverless function

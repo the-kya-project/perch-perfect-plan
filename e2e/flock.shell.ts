@@ -55,6 +55,9 @@ type FlockState = {
   leadOf?: Record<string, string>;
   /** Build D: who this account has blocked (hidden from feeds, threads and lists, as the database does). */
   blocks: { user_id: string; display_name: string | null; photo_path: null; blocked_at: string }[];
+  /** Build H: the founding members page, and this account's own choice (null = no founding spot). */
+  founders: { display_name: string; photo_path: string | null; chapter_name: string | null; spot_number: number }[];
+  foundersShow: boolean | null;
 };
 
 async function mockFlock(context: BrowserContext, userId: string, opts: { setupDone: boolean; region?: string }): Promise<FlockState> {
@@ -76,6 +79,8 @@ async function mockFlock(context: BrowserContext, userId: string, opts: { setupD
     events: [],
     eventRules: { region_slug: "great-lakes", region_name: "Great Lakes", member_count: 8, in_person_min: 15, in_person_open: false, can_manage: false },
     blocks: [],
+    founders: [],
+    foundersShow: false,
   };
   const blocked = (id: string) => state.blocks.some((b) => b.user_id === id);
   const neighbours: Record<string, { user_id: string; display_name: string }[]> = {
@@ -109,6 +114,16 @@ async function mockFlock(context: BrowserContext, userId: string, opts: { setupD
     return json(route, [], 201);
   });
   await context.route(`${MOCK}/rest/v1/regions**`, (route) => json(route, REGIONS));
+  await context.route(`${MOCK}/rest/v1/founding_claims**`, (route) => {
+    const row = state.foundersShow == null ? null : { show_on_founders_page: state.foundersShow };
+    return wantsObject(route) ? (row ? json(route, row) : json(route, { code: "PGRST116" }, 406)) : json(route, row ? [row] : []);
+  });
+  await context.route(`${MOCK}/rest/v1/rpc/founding_set_show`, async (route) => {
+    const args = (route.request().postDataJSON() ?? {}) as Record<string, any>;
+    state.calls.push({ fn: "founding_set_show", args });
+    state.foundersShow = args.p_show === true;
+    return json(route, state.foundersShow);
+  });
   await context.route(`${MOCK}/rest/v1/entitlements**`, (route) =>
     json(route, [{ plan: "founding", status: "trialing", source: "founding", starts_at: null, current_period_end: null, free_until: null }]));
   await context.route(`${MOCK}/rest/v1/rpc/admin_*`, async (route) => {
@@ -142,6 +157,7 @@ async function mockFlock(context: BrowserContext, userId: string, opts: { setupD
     }
     if (fn === "flock_enabled") return route.fallback();
     state.calls.push({ fn: fn!, args });
+    if (fn === "flock_founders") return json(route, state.founders);
     const ago = (mins: number) => new Date(Date.now() - mins * 60_000).toISOString();
     const counts = (r: any) => ({ great_job: r.great_job ?? 0, been_there: r.been_there ?? 0, rooting_for_you: r.rooting_for_you ?? 0, love_this: r.love_this ?? 0, mine: r.mine ?? [] });
     const postRow = (p: any) => ({
@@ -1893,6 +1909,101 @@ test.describe("chapter members and leads (admin, phone)", () => {
     await expect(page.getByRole("dialog")).toContainText("They stop reviewing and editing Great Lakes events right away");
     await page.getByTestId("confirm-delete").click();
     expect(state.calls.filter((c) => c.fn === "admin_set_chapter_lead").at(-1)!.args).toEqual({ p_user_id: PRIYA, p_on: false });
+    await context.close();
+  });
+});
+
+test.describe("the founding members page (admin, phone)", () => {
+  test("the page: a thank-you line, opted-in founders in spot order with photo, name, chapter and spot; reached from Flock settings", async ({ browser, baseURL }) => {
+    const { context, page, state } = await open(browser, baseURL!, { admin: true });
+    state.founders = [
+      { display_name: "Ada L.", photo_path: null, chapter_name: "Great Lakes", spot_number: 1 },
+      { display_name: "Cleo M.", photo_path: null, chapter_name: "Texas", spot_number: 3 },
+    ];
+    await page.goto("/flock/you");
+    await page.getByText("Founding members", { exact: true }).click();
+    await expect(page).toHaveURL(/\/flock\/founders$/);
+    await expect(page.getByText("Thank you to the first 50, who helped start the Flock.")).toBeVisible();
+    const rows = page.getByTestId("founders-list").locator("li");
+    await expect(rows).toHaveCount(2);
+    await expect(rows.nth(0)).toContainText("Ada L.");
+    await expect(rows.nth(0)).toContainText("Great Lakes");
+    await expect(rows.nth(0)).toContainText("#1");
+    await expect(rows.nth(1)).toContainText("Cleo M.");
+    await expect(rows.nth(1)).toContainText("#3");
+    expect(state.calls.some((c) => c.fn === "flock_founders")).toBe(true);
+    await context.close();
+  });
+
+  test("the empty state: a gentle line when nobody has chosen to appear yet", async ({ browser, baseURL }) => {
+    const { context, page } = await open(browser, baseURL!, { admin: true });
+    await page.goto("/flock/founders");
+    await expect(page.getByText("No one here yet")).toBeVisible();
+    await expect(page.getByText("Founding members can choose to appear here.", { exact: false })).toBeVisible();
+    await context.close();
+  });
+
+  test("links: the founding perk line and a profile's founder badge open the page", async ({ browser, baseURL }) => {
+    const { context, page, state } = await open(browser, baseURL!, { admin: true });
+    await page.goto("/flock/you/membership");
+    await page.getByTestId("membership-founders-link").click();
+    await expect(page).toHaveURL(/\/flock\/founders$/);
+    const ADA = "00000000-0000-4000-8000-00000000f001";
+    state.roster = [{ user_id: ADA, display_name: "Ada L.", photo_path: null, is_founder: true, is_lead: false, birds: [] }];
+    await page.goto(`/flock/members/${ADA}`);
+    await page.getByTestId("member-founder-link").click();
+    await expect(page).toHaveURL(/\/flock\/founders$/);
+    await context.close();
+  });
+
+  test("a founder's toggle on Edit profile: unchecked until chosen, saved at once, and can be turned off", async ({ browser, baseURL }) => {
+    const { context, page, state } = await open(browser, baseURL!, { admin: true });
+    await page.goto("/flock/you/edit");
+    const toggle = page.getByTestId("founders-toggle");
+    await expect(toggle).toHaveAttribute("aria-checked", "false");
+    await expect(toggle).toContainText("Show me on the founding members page.");
+    await toggle.click();
+    await expect(toggle).toHaveAttribute("aria-checked", "true");
+    expect(state.calls.filter((c) => c.fn === "founding_set_show").at(-1)!.args).toEqual({ p_show: true });
+    await toggle.click();
+    await expect(toggle).toHaveAttribute("aria-checked", "false");
+    expect(state.calls.filter((c) => c.fn === "founding_set_show").at(-1)!.args).toEqual({ p_show: false });
+    await context.close();
+  });
+
+  test("no toggle for someone without a founding spot", async ({ browser, baseURL }) => {
+    const { context, page, state } = await open(browser, baseURL!, { admin: true });
+    state.foundersShow = null;
+    await page.route(`${MOCK}/rest/v1/rpc/flock_my_setup`, (route) => route.fulfill({ status: 200, contentType: "application/json", headers: { "access-control-allow-origin": "*" },
+      body: JSON.stringify([{ suggested_region: "great-lakes", founding_spot: null, setup_completed_at: new Date().toISOString() }]) }));
+    await page.goto("/flock/you/edit");
+    await expect(page.getByTestId("edit-name")).toBeVisible();
+    await expect(page.getByTestId("founders-toggle")).toHaveCount(0);
+    await context.close();
+  });
+
+  test("the claim page: \"Show me on the founding members page\" is unchecked by default and goes with the claim", async ({ browser, baseURL }) => {
+    const { context, page, state } = await open(browser, baseURL!, { admin: true });
+    state.foundersShow = null;  // no claim yet
+    const posts: string[] = [];
+    await page.route("**/_serverFn/**", (route) => {
+      if (route.request().method() !== "POST") return route.fallback();
+      posts.push(route.request().postData() ?? "");
+      return route.fulfill({ status: 500, body: "stopped by the test" });
+    });
+    await page.goto("/founding?claim=1");
+    const box = page.getByTestId("founding-show-on-page");
+    await expect(box).toBeVisible();
+    await expect(box).not.toBeChecked();
+    await page.locator("#founding-region").selectOption("great-lakes");
+    await page.getByRole("button", { name: "Confirm my founding spot" }).click();
+    await expect.poll(() => posts.length).toBe(1);
+    await box.check();
+    await page.getByRole("button", { name: "Confirm my founding spot" }).click();
+    await expect.poll(() => posts.length).toBe(2);
+    expect(posts[0]).toContain("showOnFoundersPage");
+    expect(posts[1]).toContain("showOnFoundersPage");
+    expect(posts[0]).not.toEqual(posts[1]);
     await context.close();
   });
 });
