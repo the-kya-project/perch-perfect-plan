@@ -30,6 +30,7 @@ import { AAV_FIND_A_VET_URL, POST_SPACES, findVetSigns, mergeFeed, vetNudgeTier,
 import { defaultDisplayName, greetingName, isAutomaticDisplayName, memberCountLine, membershipSummary } from "@/lib/flockProfile";
 import { accessCells, accessDay } from "@/lib/flockAccess";
 import { blockActions, blockName } from "@/lib/flockBlocks";
+import { spotLabel } from "@/lib/flockFounders";
 import { foundingClosedCase } from "@/lib/foundingClosed";
 import {
   birdPronoun, canStartCustom, customProblem, daysSince, clipPhase, flockSheetTitle, isNectarEater, rollingAverage, showVetReminder, youngOrUnknownAge, defaultVisibility, groupTemplates, isLocked, journeyDay, journeyDays,
@@ -643,6 +644,12 @@ check("blocking menus: Block and Block and report on someone else's things only"
   assert.equal(blockName(tt, "  "), "this member");
   assert.equal(blockName(tt, null), "this member");
   assert.equal(blockName(tt, "Priya S."), "Priya S.");
+});
+
+check("founding members page: a spot shows as #n", () => {
+  assert.equal(spotLabel(1), "#1");
+  assert.equal(spotLabel(50), "#50");
+  assert.equal(spotLabel(7.0), "#7");
 });
 
 console.log(`\n${passed} passed${process.exitCode ? ", some FAILED" : ""}`);

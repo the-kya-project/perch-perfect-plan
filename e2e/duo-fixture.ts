@@ -168,6 +168,6 @@ export function duoFixture(appOrigin: string, now = Date.now(), variant: DuoVari
         welcome_seen_at: variant === "new" ? null : iso(150 * DAY), created_at: iso(200 * DAY), time_zone: Intl.DateTimeFormat().resolvedOptions().timeZone,
       }, ...(filled ? [{ id: MEMBER_ID, first_name: "Sam", display_name: "Sam", locale: "en", welcome_seen_at: iso(100 * DAY), created_at: iso(100 * DAY) }] : [])],
     },
-    rpc: { flock_enabled: true, is_admin: true, admin_founding_claims: [], founding_status: { claimed: 12, total: 50 } } as Record<string, unknown>,
+    rpc: { flock_enabled: true, is_admin: true, admin_founding_claims: [], founding_status: { claimed: 12, cap: 50, open: true } } as Record<string, unknown>,
   };
 }

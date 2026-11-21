@@ -1,5 +1,5 @@
 import { useEffect, useId, useRef, useState } from "react";
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { Camera } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { K, KyaLink } from "@/components/kya";
@@ -9,8 +9,9 @@ import { chapterLine } from "@/lib/flockNav";
 import { AvatarError, removeAvatar, reencodeAvatar, uploadAvatar } from "@/lib/flockAvatar";
 import {
   saveFlockProfile, useAvatarUrls, useInvalidateFlock, useMyId, useMyProfile, useOwnBirdPhotoUrls, useOwnBirds,
-  useRegions, useShownChoices,
+  useMySetup, useRegions, useShownChoices,
 } from "@/lib/flockData";
+import { setFoundersChoice, useInvalidateFounders, useMyFoundersChoice } from "@/lib/flockFounders";
 
 // Edit profile: display name, bio, photo, region (= chapter) and shown birds.
 // Changing region moves you to that chapter as soon as it's saved.
@@ -149,6 +150,8 @@ function FlockEditProfile() {
         </FlockSection>
       </div>
 
+      <FoundersPageToggle />
+
       {error && <p role="alert" className="m-0 text-[15px]" style={{ color: K.red }}>{error}</p>}
       <button type="button" onClick={() => void save()} disabled={saving || !nameOk || !region}
         className="inline-flex min-h-[52px] w-full items-center justify-center rounded-full border-2 px-6 text-[16px] font-[700] active:scale-[0.99] disabled:opacity-50"
@@ -159,5 +162,38 @@ function FlockEditProfile() {
         <RegionSheet regions={regions} value={region} onClose={() => setPicking(false)} onPick={(s) => { setRegion(s); setPicking(false); }} />
       )}
     </FlockSubPage>
+  );
+}
+
+/** Founders only: "Show me on the founding members page", saved as soon as
+ *  it's switched (unchecked unless they chose it). */
+function FoundersPageToggle() {
+  const { t } = useTranslation();
+  const { data: setup } = useMySetup();
+  const founder = !!setup?.founding_spot;
+  const { data: shown } = useMyFoundersChoice(founder);
+  const invalidate = useInvalidateFounders();
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  if (!founder || shown == null) return null;
+  const toggle = async () => {
+    setBusy(true); setError(null);
+    try { await setFoundersChoice(!shown); await invalidate(); }
+    catch { setError(t("flock.founders.toggleError", "That didn't save. Try again.")); }
+    finally { setBusy(false); }
+  };
+  return (
+    <FlockSection title={t("flock.founders.toggleTitle", "Founding members page")}
+      hint={<>{t("flock.founders.toggleHint", "Members see your display name, photo, chapter and founding spot there. You can change this any time.")}{" "}
+        <Link to="/flock/founders" className="font-[700] underline underline-offset-4" style={{ color: K.moss }}>{t("flock.founders.see", "See the page")}</Link></>}>
+      <button type="button" role="switch" aria-checked={shown} onClick={() => void toggle()} disabled={busy} data-testid="founders-toggle"
+        className="flex min-h-[52px] w-full items-center justify-between gap-3 text-left text-[16px] font-[700] disabled:opacity-60" style={{ color: K.forest }}>
+        <span>{t("flock.founders.toggleLabel", "Show me on the founding members page.")}</span>
+        <span aria-hidden="true" className="relative h-7 w-12 shrink-0 rounded-full transition-colors" style={{ background: shown ? K.forest : K.line }}>
+          <span className="absolute top-0.5 size-6 rounded-full bg-white transition-all" style={{ left: shown ? 22 : 2 }} />
+        </span>
+      </button>
+      {error && <p role="alert" className="m-0 mt-2 text-[14px]" style={{ color: K.red }}>{error}</p>}
+    </FlockSection>
   );
 }

@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { CreditCard } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { K, KyaCard, KyaIconTile } from "@/components/kya";
@@ -25,6 +25,11 @@ function FlockMembership() {
           <div className="min-w-0">
             <p className="m-0 text-[17px] font-[700]" style={{ color: K.forest }}>{isLoading ? " " : m.title}</p>
             <p className="m-0 mt-1 text-[15px] leading-[1.5]" data-testid="membership-line" style={{ color: K.ink }}>{isLoading ? " " : m.line}</p>
+            {!isLoading && m.title === "Founding member" && (
+              <Link to="/flock/founders" data-testid="membership-founders-link" className="mt-2 inline-flex min-h-[44px] items-center text-[15px] font-[700] underline underline-offset-4" style={{ color: K.moss }}>
+                {t("flock.founders.meet", "Meet the founding members")}
+              </Link>
+            )}
           </div>
         </div>
       </KyaCard>
