@@ -1,16 +1,18 @@
 # The Flock: everything left before opening
 
+> **Updated Nov 21, 2026 (later): there is no opening date.** Brittany opens the Flock when the waitlist is full and everything in `docs/BACKLOG.md` is done, and sets the free season's end and the payments timeline then. Everything in Tracks 0, 1 and 2 below is required before opening (nothing is cut). The in-scope delight items are D1.1–D1.3, D2.1, D2.2, D3 and D5.1; D4 and D5.2 are out of scope for now. **The build order now lives in `docs/BACKLOG.md`**, and this document keeps the findings behind it. The schedule and the "does it fit" answer that were here have been removed, since both rested on dates that no longer exist.
+
 Status: **scoping only.** Written Nov 21, 2026 from `main` at `d8ec1f8`, read-only queries on production (`koyqdyamazuuwvqbttnj`), and the open and closed PRs. Nothing in code, settings, Supabase, Vercel, Stripe, RevenueCat, App Store Connect or Brevo was changed to write it.
 
-**Scope rule (Brittany, Nov 21):** everything below is required **before the Flock opens on Mon, Jan 4, 2027**, including anything older docs call "post-launch" or "February". **Code freeze is Mon, Dec 28.** Nothing ships after opening unless Brittany decides to cut it.
+**Scope rule (Brittany, Nov 21):** everything below is required **before the Flock opens**, including anything older docs call "post-launch". Nothing ships after opening unless Brittany decides to cut it.
 
 **Source of truth:** `docs/flock/payments-plan.md` (PR #474, as updated through Nov 20). Where an older doc disagrees, the plan wins (the docs to retire are listed under "Docs that disagree", below). Decisions in force:
 
 - The care app is free forever. App premium was removed on Nov 19 (#482). The journeys it would have included come with the Flock.
 - The Flock: $30 month to month or $300 a year ($25 a month billed annually). Kya's Crew: $37 a month billed annually ($444 a year) or $45 month to month.
-- Free for everyone until Tue, Jul 6, 2027. **Founding claims have no closing date** (open until all 50 are claimed; confirmed by Brittany Nov 21, matching the plan and production). Payments go live Tue, Jun 1, 2027; payment builds follow the plan's dates.
-- Gifts: six months or a year. **A gift redeemed during the free season starts on Jul 6, 2027; one redeemed after that starts on the day it's redeemed** (confirmed Nov 21; this is what's built: `20261120180000`, `20261120200000`).
-- **Kya's Crew (with its sponsored rescue-adopter seat), rescue partner codes and promo codes are built fully before Jan 4** (decided Nov 21), even though nothing is charged until Jul 6.
+- Free for everyone until the free season ends (a setting Brittany fills in when she opens). **Founding claims have no closing date** (open until all 50 are claimed). The payments timeline is set when she opens.
+- Gifts: six months or a year. **A gift redeemed during the free season starts when the free season ends; one redeemed after that starts on the day it's redeemed** (what's built: `20261120180000`, `20261120200000`).
+- **Kya's Crew (with its sponsored rescue-adopter seat), rescue partner codes and promo codes are built fully before opening** (decided Nov 21), switched off until billing starts.
 
 **How vet-related content is handled (Brittany, Nov 21).** Vet sign-off doesn't block building. We draft everything ourselves from published research, standard avian care guidance and Brittany's knowledge, then an avian vet checks and approves it. For every health-related feature:
 
@@ -23,10 +25,10 @@ Status: **scoping only.** Written Nov 21, 2026 from `main` at `d8ec1f8`, read-on
 
 ## Production today (read-only, Nov 21)
 
-- `flock_enabled()` = admin **and** the kill switch on. One admin account. `flock_opens_at` is not set; `free_season_ends_at` = Jul 6, 2027. `journeys_enabled()` audience = off. The kill switch has never been flipped (`flock_settings.updated_at` Nov 7).
+- `flock_enabled()` = admin **and** the kill switch on. One admin account. `flock_opens_at` is not set; `free_season_ends_at` still holds the Nov 19 value (unused until opening day is set; clearing it is a proposal). `journeys_enabled()` audience = off. The kill switch has never been flipped (`flock_settings.updated_at` Nov 7).
 - `founding_deadline()` returns infinity (no closing date). 1 founding claim; 2 entitlement rows (one founding, one manual comp).
 - All 150+ migrations in `main` are applied; nothing in production is missing from the repo.
-- Content: 14 journey templates and 14 Today's ideas, all `draft` (the ideas are scheduled Nov 8–21, so **nothing is scheduled for Jan 4 onward**); 0 library items; 0 chapter reviewers; 127 vet-nudge phrases, all `draft`.
+- Content: 14 journey templates and 14 Today's ideas, all `draft` (the ideas are scheduled Nov 8–21, so **nothing is scheduled after that**); 0 library items; 0 chapter reviewers; 127 vet-nudge phrases, all `draft`.
 - Scale: 62 accounts, 84 birds, 743 weigh-ins (172 in the last 30 days, 26 birds). The 1,000- and 10,000-user costs below are projections.
 
 **Found during the cleanup, needs Brittany:** PR #490's migration `20261121120000_rls_policy_speedups.sql` has the **same version number** as `20261121120000_flock_founders_page.sql` (#491), which is already applied on production. If #490 merges as it is, Supabase will treat that version as already applied or refuse it, so the policy rewrite would not run. #490 needs its migration renamed to a new timestamp before it merges (PR 0.2 below). Nothing was changed on #490.
@@ -39,16 +41,16 @@ Status: **scoping only.** Written Nov 21, 2026 from `main` at `d8ec1f8`, read-on
 
 | Item | Status | What's left |
 |---|---|---|
-| Avian vet sign-off (diet thresholds, smoothed weight rules, vet-nudge lists) | **Not started** | Contact the vet by **Wed, Nov 25**; sign-off by **Fri, Dec 18**. Now part of the bigger packet in B7. |
-| Legal text (community terms, Flock privacy, guidelines, founding terms) | **Partly done** | Draft in `docs/legal/drafts/2026-11-flock-legal-update.md` (#476), decisions D1–D16 made Nov 19. D5 (price-change notice) still open; no lawyer review yet. Final text due **Fri, Dec 4**. |
+| Avian vet sign-off (diet thresholds, smoothed weight rules, vet-nudge lists) | **Not started** | Runs in parallel and never blocks building; part of the packet in B7. |
+| Legal text (community terms, Flock privacy, guidelines, founding terms) | **Partly done** | Draft in `docs/legal/drafts/2026-11-flock-legal-update.md` (#476), decisions D1–D16 made Nov 19. D5 (price-change notice) still open; no lawyer review yet. Final text before 1.5 (legal pages). |
 | Approve the copy (plan section i) | **Partly done** | App founding and gift copy is updated (#480, #481, #486, #487). The website (Webflow: home and `/community`, still "$20 per month billed annually" and "six months free") isn't checked or updated. |
-| Approve content | **Not started** | 14 journey templates, Today's ideas for Jan 4–17 (none scheduled), the Library's opening items (0), Start here posts (0). Due Fri, Dec 18. Now also the content for the new features in B3 (challenges, chapter collections, badges). |
+| Approve content | **Not started** | 14 journey templates, Today's ideas for the first two weeks after opening (none scheduled), the Library's opening items (0), Start here posts (0). Now also the content for the new features in B3 (challenges, chapter collections, badges). |
 | Approve PR C (the launch PR) | **Not started** | PR C isn't built yet (below). |
-| Dry run on production | **Not started** | Dec 21–23: join → post → journey → report → block → kill switch, on web, iPhone, iPad and Duo. |
+| Dry run on production | **Not started** | When Brittany decides to open: join → post → journey → report → block → kill switch, on web, iPhone, iPad and Duo. |
 | Name reviewers | **Not started** | `flock_reviewers` is empty (admins review today). |
 | Opening emails drafted in Brevo; the email to existing claimants | **Not started** | No draft exists. Brittany writes and sends them herself; nothing is scheduled. |
-| Website (Webflow) | **Not started** | Founding card and `/community`, published Jan 4. |
-| Open on Jan 4 (SQL settings) | **Not started** | Set `flock_opens_at`, confirm `free_season_ends_at`, switch on PR C's setting. |
+| Website (Webflow) | **Not started** | Founding card and `/community`, published at opening (list in the dates PR). |
+| Open (SQL settings) | **Not started** | Set `flock_opens_at`, confirm `free_season_ends_at`, switch on PR C's setting. |
 
 ### The build (plan section f, PRs A–H)
 
@@ -95,9 +97,9 @@ None of these exist on production under any name (no badge, challenge, pod, prom
 | **Do good voting** | Not started; **no spec** | None. The founding page promises "a vote on the first expert Q&As and the first chapters" (`founding.tsx:214`), and nothing delivers it yet | Votes (one per member per item), a poll on Do good posts or a cause list, results under a minimum count, admin open/close/announce. One build can cover the founding vote too. |
 | **Member-submitted posts approved before going live** | **Done for Do good** (#459) | Do good posts start `pending` and go through `/admin/review`; editing sends them back | If *every* space should be pre-approved (learn, chapter, start), it's a small change to an existing Flock function, which needs approval. Needs a decision: Do good only, or all spaces? |
 | **Curated chapter collections** (e.g. avian vets) | Not started | The chapter Resources tab is an empty state ("Avian vets, rescues, and shops your chapter recommends will be collected here", `flock.chapter.tsx:53-55`); the Library is Flock-wide only | Chapter listings (kind: vet, rescue, shop; name, address, phone, link, note), a chapter-lead and admin editor, and a card-style list that doesn't look like posts. |
-| **The full badge set** (care badges earnable by free users too) | Not started; **no spec** | Founder and Chapter lead badges only (computed, no table); skills from finished journeys; the care app's Moments milestones. `flock.journeys.$journeyId.finished.tsx` says "Badges come in February" | Badge definitions and earned badges, awarding rules on care events (weigh-in streaks, health checks, a finished care plan) and Flock events, art for each badge. **Care badges show in the care app for free users**, which changes the free-user experience: needs Brittany's approval and before-and-after evidence. |
-| **Kya's Crew + sponsored rescue-adopter seat** | Not started; **spec exists** (plan item 6d) | One code comment | It sits on top of the billing foundation (plan items 1–3: billing tables, Stripe billing webhook, card step), none of which exists, so **building Crew before Jan 4 pulls those forward**. Then: Crew plans (an `entitlements` check change, which needs approval), Crew counted as a Flock membership, 25% giving, a sponsorship count that rescue-adopter comps draw from, the admin view, no trial. **Selling it in the iPhone app** needs App Store products, RevenueCat and a native build reviewed by Apple; built dark before Jan 4, and nothing is charged before Jul 6. |
-| **Rescue partner codes** | Not started; partly specced (today: a 6-month comp "granted by hand", plan h6) | None | Partners and their codes (uses, expiry), a redeem step (on Join or like `/redeem`) that records the adoption and goes to approval, a six-month comp starting after Jul 6 that draws on Crew sponsorships, an admin screen. |
+| **The full badge set** (care badges earnable by free users too) | Not started; **no spec** | Founder and Chapter lead badges only (computed, no table); skills from finished journeys; the care app's Moments milestones. `flock.journeys.$journeyId.finished.tsx` said badges would come later (fixed Nov 21) | Badge definitions and earned badges, awarding rules on care events (weigh-in streaks, health checks, a finished care plan) and Flock events, art for each badge. **Care badges show in the care app for free users**, which changes the free-user experience: needs Brittany's approval and before-and-after evidence. |
+| **Kya's Crew + sponsored rescue-adopter seat** | Not started; **spec exists** (plan item 6d) | One code comment | It sits on top of the billing foundation (plan items 1–3: billing tables, Stripe billing webhook, card step), none of which exists, so **building Crew before opening pulls those forward**. Then: Crew plans (an `entitlements` check change, which needs approval), Crew counted as a Flock membership, 25% giving, a sponsorship count that rescue-adopter comps draw from, the admin view, no trial. **Selling it in the iPhone app** needs App Store products, RevenueCat and a native build reviewed by Apple; built dark before opening, and nothing is charged before the free season ends. |
+| **Rescue partner codes** | Not started; partly specced (today: a 6-month comp "granted by hand", plan h6) | None | Partners and their codes (uses, expiry), a redeem step (on Join or like `/redeem`) that records the adoption and goes to approval, a six-month comp starting when the free season ends that draws on Crew sponsorships, an admin screen. |
 | **Promo codes** | **Partly done (gifts only)** | Gift Checkout accepts Stripe promotion codes; `/admin/gifts` totals by code | Codes for memberships (on the card step), rules for founding vs regular, Apple offer codes for iPhone (whole months only). Depends on the billing foundation. |
 | **Instagram share cards for journeys** | Not started | The care app's Moments share card (`src/lib/momentCard.ts`) to reuse; placeholders "Make a share card comes later" in the milestone and compare screens | A card renderer (1080×1350 and 1080×1920) for milestones, finishes and day-one-vs-now, photo metadata stripped, the share sheet with a download fallback, never anything from a "Just me" journey. |
 
@@ -130,7 +132,7 @@ Costs are **estimates**, projected from today's 62 accounts. "Session" = one foc
   - **Tests:** unit tests on made-up series; a replay of real history (read-only export) to count how often each tier would have fired per bird; weeks of shadow mode; Brittany's account first.
   - **Conservative starting values:** "call your vet today" at **10% below baseline** (a common avian first-aid rule of thumb: https://parrots.org/wp-content/uploads/2024/02/AvianFirstAid.pdf; https://www.harrisonsbirdfoods.com/tracking-what-matters-body-condition-in-the-companion-parrot-2/). "Keep an eye on this" at **5% over a week** (the Diet conversion's pause level). "Worth watching" at **2.5%** (the care app's existing amber level). Some guidance is stricter (about 2% in one weighing); there's no peer-reviewed consensus, so every value is draft with its source.
 - **e) Dependencies:** **avian vet review** before real users; no new accounts, no native build.
-- **f) By Dec 28:** **yes in shadow mode on Brittany's account**; not for real users until the vet approves.
+- **f) Before opening:** **yes in shadow mode on Brittany's account**; not for real users until the vet approves.
 
 ### 2. Today cards on Home (seasonal, holiday, weather; not vet-reviewed)
 
@@ -147,7 +149,7 @@ Costs are **estimates**, projected from today's 62 accounts. "Session" = one foc
   - Holidays wrong for the region (the app ships in Dutch too).
   - **Tests:** date selection across time zones, both languages, and the iPhone hydration check (read the date after the page loads).
 - **e) Dependencies:** none for seasonal. A WeatherKit key for weather (the Apple account exists). No native build.
-- **f) By Dec 28:** **seasonal and holiday, yes**; weather is marginal.
+- **f) Before opening:** **seasonal and holiday, yes**; weather is marginal.
 
 ### 3. Seasonal content calendar
 
@@ -156,7 +158,7 @@ Costs are **estimates**, projected from today's 62 accounts. "Session" = one foc
 - **c) Monthly cost:** **$0**.
 - **d) Risks:** a wrong-season card; translations drifting if the copy lives in the database. **Test:** every date resolves and every card exists in English and Dutch.
 - **e) Dependencies:** none. Brittany writes or approves the cards.
-- **f) By Dec 28:** **yes, as a file.**
+- **f) Before opening:** **yes, as a file.**
 
 ### 4. "Tell me about [bird]"
 
@@ -176,7 +178,7 @@ Costs are **estimates**, projected from today's 62 accounts. "Session" = one foc
   - Care text goes to an outside service, so the privacy policy needs a change.
   - **Tests:** 20–30 sample descriptions with expected results, run on every change; Brittany's account first.
 - **e) Dependencies:** an Anthropic API key in Vercel Production only (with a preview guard); a privacy-policy update; for speech on iPhone, likely a new app store build.
-- **f) By Dec 28:** **no**, alongside the Flock work. At most a typed-only prototype on Brittany's account.
+- **f) Before opening:** **no**, alongside the Flock work. At most a typed-only prototype on Brittany's account.
 
 ### 5. Weekly recap replacing the 10-day and 30-day lapse nudges
 
@@ -194,7 +196,7 @@ Costs are **estimates**, projected from today's 62 accounts. "Session" = one foc
   - Only about 9 people have web push, so reach is thin.
   - **Tests:** the dry-run mode the hooks already have, then Brittany's account only.
 - **e) Dependencies:** **Brittany's sign-off**: it changes what every user receives, and the email half would be a new automatic send.
-- **f) By Dec 28:** **push-only, yes**; email only with sign-off.
+- **f) Before opening:** **push-only, yes**; email only with sign-off.
 
 ---
 
@@ -229,7 +231,7 @@ Costs are **estimates**, projected from today's 62 accounts. "Session" = one foc
 | 1.2 | Vet-content settings file and health switches | Every threshold, phrase list and safety wording is listed in one file, marked draft with its source; each health feature has its own switch; a check fails if the database and the file disagree | L | — | Yes | Yes: health content |
 | 1.3 | 180-day hold on deleted posts (6b) | Deleting a post hides it at once and purges it 180 days later; account deletion stays immediate | M | — | Yes | Merge |
 | 1.4 | 180-day deletion of removed content and reports (6c) | Removed content and closed reports are purged 180 days after review | S | 1.3 | Yes | Merge |
-| 1.5 | Legal pages (G) | `/terms` and `/privacy` carry the approved community, billing and age text | M | Final legal text (Dec 4), 1.3 | No | Yes: legal |
+| 1.5 | Legal pages (G) | `/terms` and `/privacy` carry the approved community, billing and age text | M | Final legal text, 1.3 | No | Yes: legal |
 | 1.6 | Chapter collections | Each chapter's Resources tab lists vets, rescues and shops as cards, edited by leads and admins | L | Short spec | After spec | Content |
 | 1.7 | Instagram share cards | Members can share a milestone, finish or day-one-vs-now card; never from a "Just me" journey | L | Card design | After design | Design approval |
 | 1.8 | Do good voting (+ the founding vote) | Members can vote on Do good items and on the first expert Q&As and chapters; admins open, close and announce | L | Spec | After spec | Copy |
@@ -241,10 +243,10 @@ Costs are **estimates**, projected from today's 62 accounts. "Session" = one foc
 | 1.13b | Badges: care badges | Free users earn care badges in the care app | L | 1.13a | No | Yes: changes the free-user experience |
 | 1.14 | Billing foundation (plan 1–3) | Billing tables, the Stripe billing webhook and the card step exist, switched off | XL | — | Yes, in test mode | Yes: payments |
 | 1.15 | Kya's Crew + sponsored seat | Crew plans exist (dark), count as membership, record 25% giving and track sponsored adopter seats | L | 1.14 | No | Yes: payments, entitlements change |
-| 1.16 | Rescue partner codes | Partners get codes; an adopter redeems one and, once approved, gets six months starting Jul 6 | L | 1.15, spec | After spec | Yes: grants access |
+| 1.16 | Rescue partner codes | Partners get codes; an adopter redeems one and, once approved, gets six months starting when the free season ends | L | 1.15, spec | After spec | Yes: grants access |
 | 1.17 | Membership promo codes | Codes work on the card step with founding/regular rules (Apple offer codes listed for May) | M | 1.14 | No | Yes: payments |
-| 1.18 | **C. The launch PR** | Members can join (18+, guidelines accepted), the one entry point is in place, the free-user check asserts exactly that; it merges dark and is switched on with SQL on Jan 4 | L | 1.1, 1.5 | No | **Yes: the launch decision** |
-| 1.19 | Today's ideas and content loading | Jan 4–17 ideas `ready`, templates approved, library and Start here items in | — (her time) | Content approval | n/a | Yes |
+| 1.18 | **C. The launch PR** | Members can join (18+, guidelines accepted), the one entry point is in place, the free-user check asserts exactly that; it merges dark and is switched on with SQL on opening day | L | 1.1, 1.5 | No | **Yes: the launch decision** |
+| 1.19 | Today's ideas and content loading | Ideas `ready` for the first two weeks after opening, templates approved, library and Start here items in | — (her time) | Content approval | n/a | Yes |
 
 ### Track 2: care-app fixes (required)
 
@@ -341,77 +343,10 @@ There is **no single settings file** today: values are spread across database se
 
 ---
 
-## B8. Schedule, Nov 23 – Dec 28
+## B8–B9. Schedule and fit (removed Nov 21)
 
-Assumes overnight agents build and Brittany reviews. **Her review time is the limit, not build time:** every PR needs a read, a preview check and a merge, and every Flock PR needs its free-user evidence checked. Hours are her time.
+The week-by-week schedule and the "does it fit" answer were removed when Brittany decided there is no opening date. The order of work is `docs/BACKLOG.md`. Brittany's review time is still the limit, so one item at a time per area, with her approvals batched, keeps it moving.
 
-| Week | Build (parallel lanes) | Brittany's work | Her hours | Vet track |
-|---|---|---|---|---|
-| **Nov 23** (Thanksgiving week) | 0.3, 0.4, 1.1, 1.2, 1.3, 2.1 | Specs for chapter collections, voting, challenges, pods, insights, badges; decide 0.1/0.2, pre-approval scope, Skew Protection | 10–12 | Contact the vet by **Wed, Nov 25**; packet drafted (from 1.2) |
-| **Nov 30** | 1.4, 1.6, 1.8, 1.14 (start), 2.2, D1.1 | Reviews; card design for 1.7; legal text final by **Fri, Dec 4** | 14–16 | Packet sent by **Fri, Dec 4** |
-| **Dec 7** | 1.5, 1.7, 1.10, 1.13a, 1.14 (finish), 2.3 | Reviews; badge art; content writing | 16–18 | Vet questions back and forth |
-| **Dec 14** | 1.11, 1.12, 1.13b, 1.15, 1.16, 1.17, 1.18 (C, merged dark by **Fri, Dec 18**) | Reviews; approve content (templates, ideas, library, collections, challenges); approve C | 18–20 | **Sign-off by Fri, Dec 18**; values into the settings file |
-| **Dec 21** | Fixes only; 2.4/2.5 if decided | **Dry run on production** (1 day), name reviewers, opening emails and website drafted | 14–16 | Late items stay switched off |
-| **Dec 28** | **Freeze.** No merges after Mon, Dec 28 | Buffer; emails ready by Dec 30 | 4–6 | — |
+## Docs that disagreed (fixed Nov 21)
 
-**Delight tracks** would add D3 + D2.1 (about 2 sessions and 2–3 hours of her time) and D1.1–D1.2 in shadow mode (about 4 sessions and 4–6 hours) on top of these weeks.
-
----
-
-## B9. The honest answer
-
-**It doesn't all fit by Dec 28.** The required list is about **45–50 PR-sized sessions**. That's roughly twice what the payments plan scheduled for this window. Six of the new features (challenges, pods, insights, voting, badges, rescue codes) **have no spec yet**. Crew, rescue codes and promo codes sit on top of a billing foundation the plan had for February–May.
-
-Agents can build that many PRs. But it would take **about 75–90 hours of Brittany's review, testing, spec and content time in five weeks, including Thanksgiving and the holidays**: 15–20 hours a week, with the vet track and the legal text running alongside. That's where it breaks.
-
-### Option 1: keep Mon, Jan 4 and cut
-
-Open with what the plan already had (C, the contact line, legal pages, the 180-day holds, content, the dry run), plus the new pieces that are cheapest and most visible on day one:
-
-- chapter collections;
-- Instagram share cards;
-- Do good voting (which also delivers the promised founding vote);
-- the vet settings file and switches;
-- the care fixes (2.1–2.3, the translation check, /get credit).
-
-**Move to a spring track** that ships before payments go live:
-
-- challenges and buddy pods: better with real members to match;
-- Flock insights: needs enough member data and a privacy change;
-- the full badge set;
-- Kya's Crew, rescue partner codes and membership promo codes. None can be bought before Jul 6 anyway, so building them alongside the billing foundation in Feb–May costs members nothing.
-
-That's about 20–22 sessions and 10–13 hours a week of her time.
-
-### Option 2: keep everything and move opening day
-
-With specs written in the first two weeks, then building and reviewing at a pace of about 12–15 hours a week, everything fits a **code freeze of Mon, Feb 22 and an opening on Mon, Mar 1, 2027**.
-
-**Trade-offs:**
-- The free season stays Jul 6, 2027 (one setting), so it becomes about four months instead of six. Moving it to keep six months would push the first charges and the Jun 7 emails into September.
-- The opening-day copy that says "January 4" changes (founding page, gift pages, website), and founders and the waitlist need to hear it from Brittany.
-- Opening day moves with one admin setting, and unstarted grants re-date automatically.
-
-**Recommendation:** Option 1. Jan 4 is in the copy, the founders' expectations and the gift pages. Crew, codes and promo codes can't earn anything before Jul 6. And challenges, pods and insights get better once real members are there.
-
----
-
-## Docs that disagree with the payments plan (to retire or update)
-
-- **CLAUDE.md:**
-  - "Opening day" example uses `2027-01-05 00:00 America/Chicago` (truth: Mon, Jan 4, 00:00 America/New_York);
-  - the chapter Resources tab is "empty until February" (truth: required before Jan 4).
-- **`src/routes/_authenticated/flock.journeys.$journeyId.finished.tsx:12-14`:** "Badges come in February" (now required before opening).
-- **`docs/flock/payments-plan.md` itself, older passages:**
-  - the "state today" lines say `founding_deadline()` returns Jan 1, 2027 and there's no way to block (both out of date);
-  - section i still lists "→ January 31" and "claims close January 31" for the website (truth: no closing date);
-  - Crew, rescue offers and promo codes are scheduled after opening (truth: before Jan 4, decided Nov 21);
-  - promo codes, challenges, pods, insights, voting, collections, badges and share cards aren't in its before-opening lists.
-- **The website (Webflow)**, per the plan: "Annual $20 per month, billed annually", "your first six months free", "from the waitlist" (truth: $300 a year, free until Jul 6, open to anyone with an account). Not checked from the repo.
-- **`docs/legal/drafts/2026-11-flock-legal-update.md`:**
-  - the founding "vote" perk has no feature behind it;
-  - it doesn't cover partner codes, promo codes, challenges, voting or badges.
-- **`docs/BACKLOG.md`:** the translation check note says about 205 missing phrases (truth: 85 today).
-- **Test fixtures** (`scripts/flock-shell.test.ts`) use Jan 5, 2027 sample dates (harmless; mirrors the old date).
-
-No remaining app copy, email or CLAUDE.md line mentions $9.99, a Dec 31 or Jan 31 founding deadline, "6 months from opening" or "$20 a month yearly". The Dec 31 in `GIFT_SEND_LAST_DATE` is the last date a dated gift email can be scheduled, not the founding deadline.
+The stale lines found here (CLAUDE.md's opening-day example and the chapter Resources tab note, the payments plan's fixed dates and old deadline rows, the backlog's translation count, the old badges comment) were fixed in the PR that removed fixed dates. The legal draft and the website are left for Brittany; that PR's description lists what each needs.

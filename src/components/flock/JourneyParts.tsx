@@ -114,7 +114,7 @@ export function FlowFooter({ children }: { children: ReactNode }) {
 }
 
 /** A free account tapping a Flock-only journey. No price: the Flock is free
- *  until July 2027. The button goes to the founding page until the join step
+ *  for everyone while it's getting started. The button goes to the founding page until the join step
  *  exists. */
 export function FlockOnlySheet({ slug, journey, bird, onClose }: { slug: string; journey: string; bird?: string; onClose: () => void }) {
   const { t } = useTranslation();
@@ -138,7 +138,7 @@ export function FlockOnlySheet({ slug, journey, bird, onClose }: { slug: string;
           {t("flock.journeys.flockOnly.about", "The Flock is The Kya Project's community, where you'll find your local chapter, a library of guides and recordings, and every training journey, including tricks, nail trims, and stationing.")}
         </p>
         <p className="m-0 rounded-[14px] px-3.5 py-3 text-[15px] font-[700] leading-[1.45]" style={{ background: "#e8f3dc", color: K.forest }}>
-          {t("flock.journeys.flockOnly.free", "Be an early Flock member and join for free until July 2027.")}
+          {t("flock.journeys.flockOnly.free", "Join the Flock early, while it's free for everyone.")}
         </p>
         <KyaPrimaryButton onClick={() => void navigate({ to: "/founding", search: { src: "journey-sheet" } })}>
           {t("flock.journeys.flockOnly.join", "Join the Flock free")}

@@ -141,7 +141,7 @@ const fakeT = ((_k: string, def: string, o?: Record<string, string>) =>
 
 await check("gift copy: the start rule in words, no fixed end dates, never expires", () => {
   const year = giftTiming(fakeT, "flock_year"), half = giftTiming(fakeT, "flock_half_year");
-  const rule = "Since the Flock is free for everyone until July 6, 2027, a gift redeemed before then starts when the free season ends, so none of it goes unused.";
+  const rule = "While the Flock is still free for everyone, a gift redeemed then starts when the free season ends, so none of it goes unused.";
   assert.ok(year.includes("A year in the Flock starts the day the gift is redeemed and runs for a year.") && year.includes(rule) && year.includes("Gifts never expire"));
   assert.ok(half.includes("Six months in the Flock start the day the gift is redeemed and run for six months.") && half.includes(rule) && half.includes("Gifts never expire"));
   assert.ok(giftRedeemed(fakeT, "flock_year").includes("runs for a year") && giftRedeemed(fakeT, "flock_year").includes(rule));
@@ -187,7 +187,7 @@ await check("emails: each says which gift it is and the start rule, with no fixe
       assert.ok(!/2028|Runs:|runs through|run through|opens in January/.test(txt), `${plan}: no fixed end date`);
     }
     assert.ok(receipt.includes("full refund within 30 days"));
-    assert.ok(recipient.includes("It opens Monday, January 4, 2027"));
+    assert.ok(recipient.includes("It's free for everyone while we're getting started.") && !/January|July 6/.test(recipient), `${plan}: no fixed opening or free-season date`);
   }
   assert.ok(buildGiftRecipientEmail({ ...base, plan: "flock_half_year" }).text.includes("six months in the Flock"));
 });
