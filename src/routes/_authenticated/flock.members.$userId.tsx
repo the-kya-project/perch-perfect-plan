@@ -56,7 +56,11 @@ function FlockMember() {
                 {t("flock.members.lead", "Chapter lead")}
               </span>
             )}
-            {m?.is_founder && <FounderBadge />}
+            {m?.is_founder && (
+              <Link to="/flock/founders" aria-label={t("flock.founders.badgeLink", "Founding member: see the founding members")} data-testid="member-founder-link">
+                <FounderBadge />
+              </Link>
+            )}
           </div>
         )}
         {m?.bio && <p className="m-0 mt-3 max-w-[36ch] text-[15px] leading-[1.55]" style={{ color: K.ink }} data-testid="member-bio">{m.bio}</p>}
