@@ -1,4 +1,4 @@
--- Verification for 20261121120000_rls_policy_speedups.
+-- Verification for 20261121150000_rls_policy_speedups.
 --
 -- That migration rewrote the row-level security policies on notification_log,
 -- owner_home_defaults and flock_profiles for speed. This block proves they
