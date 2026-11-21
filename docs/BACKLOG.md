@@ -171,6 +171,34 @@ Where these items came from, with the detail behind each: `docs/flock/opening-sc
 - **Overnight alone:** no
 - **Needs Brittany:** payments, and the rules for which codes apply to which plans.
 
+### P1 The stored free-season end is cleared until Brittany sets it
+- **Done means:** `flock_settings.free_season_ends_at` can be empty before opening, is cleared, and loses its Nov 19 column default. `admin_set_flock_opens_at` refuses to open while the free season's end is empty, so the two are always set together. Pinned in `supabase/checks/flock_free_season_checks.sql`.
+- **Size:** S
+- **Depends on:** Brittany's yes
+- **Overnight alone:** no
+- **Needs Brittany:** approval. It changes a production setting and an existing Flock function.
+
+### P2 Public pages can read opening day and the free season's end
+- **Done means:** a small read-only function returns only those two settings, so the founding, gift and redeem pages can say "free until {date}" once they're set, and "while we're getting started" before then. Copy changes are shown before-and-after.
+- **Size:** M
+- **Depends on:** P1, Brittany's yes
+- **Overnight alone:** no
+- **Needs Brittany:** approval of the new database function and of the copy.
+
+### P3 The founding page's "all 50 claimed" message follows opening day
+- **Done means:** `foundingClosedCase` gets opening day from P2 instead of always showing the before-opening message.
+- **Size:** S
+- **Depends on:** P2
+- **Overnight alone:** yes, once P2 is merged
+- **Needs Brittany:** merge only.
+
+### P4 Dated gift emails aren't stuck at a fixed last day
+- **Done means:** the gift page lets a buyer pick any send date in a rolling window (for example the next 90 days) instead of stopping at `GIFT_SEND_LAST_DATE = 2026-12-31`, with `gift.errDate` and `gift.sendOnHint` updated. Pinned in `npm run test:gifts`.
+- **Size:** S
+- **Depends on:** Brittany's yes (before Dec 31, 2026, when dated gifts otherwise stop)
+- **Overnight alone:** no
+- **Needs Brittany:** approval. It changes the gift checkout, and the copy is shown before-and-after.
+
 ### 1.9 Pre-approval for more spaces (only if wanted)
 - **Done means:** posts in the spaces Brittany picks wait for review before other members see them, the way Do good posts already do.
 - **Size:** S
@@ -182,14 +210,7 @@ Where these items came from, with the detail behind each: `docs/flock/opening-sc
 
 ## Waiting on Brittany's spec
 
-**Agents never start these early.** Each waits for a short written spec from Brittany: what a member sees, what an admin does, and what's out of scope. Listed in the order she plans to write them.
-
-### 1.16 Rescue partner codes
-- **Done means:** a partner rescue gets a code. An adopter redeems it (on Join or a redeem page), the adoption details go to Brittany for approval, and an approved adopter gets six months in the Flock, starting when the free season ends, drawn from the Crew sponsorship count. Admin screens cover partners and codes.
-- **Size:** L
-- **Depends on:** 1.15, spec
-- **Overnight alone:** after spec
-- **Needs Brittany:** the spec. It grants access, so approval is needed in the PR.
+**Agents never start these early.** Each waits for a short written spec from Brittany: what a member sees, what an admin does, and what's out of scope. Listed in the order they're most useful to write: the first ones unblock the most visible work, and rescue partner codes come last because they can't be built until Kya's Crew (1.15) exists.
 
 ### 1.6 Curated chapter collections
 - **Done means:** each chapter's Resources tab lists recommended avian vets, rescues and shops as simple cards that don't look like posts (name, area, phone, link, a short note). Chapter leads and admins add and edit them.
@@ -250,6 +271,13 @@ Where these items came from, with the detail behind each: `docs/flock/opening-sc
 - **Depends on:** spec, and the privacy-policy line
 - **Overnight alone:** after spec
 - **Needs Brittany:** the spec, the opt-out wording, and approval. It reads care-app data for a members-only feature.
+
+### 1.16 Rescue partner codes
+- **Done means:** a partner rescue gets a code. An adopter redeems it (on Join or a redeem page), the adoption details go to Brittany for approval, and an approved adopter gets six months in the Flock, starting when the free season ends, drawn from the Crew sponsorship count. Admin screens cover partners and codes.
+- **Size:** L
+- **Depends on:** 1.15, spec
+- **Overnight alone:** after spec
+- **Needs Brittany:** the spec. It grants access, so approval is needed in the PR.
 
 ---
 
