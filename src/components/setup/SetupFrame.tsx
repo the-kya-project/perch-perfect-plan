@@ -7,6 +7,7 @@ import { createContext, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { X } from "lucide-react";
 import { S, SERIF } from "./controls";
+import { RailClose, useDuoRail } from "@/components/DuoRail";
 
 /** The six steps an owner sees, in flow order. */
 export const SETUP_PILLS = ["details", "food", "health", "behavior", "tips", "day"] as const;
@@ -64,6 +65,9 @@ export function SetupFrame({
   children: ReactNode;
 }) {
   const { t } = useTranslation();
+  // iPhone Duo side column: Close goes to the column, the footer to the
+  // bottom of the right half (same as TaskHeader / TaskFooter).
+  const inRail = !!useDuoRail();
   const currentIndex = current ? SETUP_PILLS.indexOf(current) : SETUP_PILLS.length;
   const [introSlot, setIntroSlot] = useState<HTMLElement | null>(null);
   const [panelSlot, setPanelSlot] = useState<HTMLElement | null>(null);
@@ -80,7 +84,7 @@ export function SetupFrame({
       <header className="text-white" style={{ background: S.forest }}>
         <div className="mx-auto max-w-md px-4 pb-[52px] pt-[calc(env(safe-area-inset-top)+14px)]">
           <div className="flex items-center justify-between gap-3">
-            <button
+            {inRail ? <span /> : <button
               type="button"
               onClick={onBack}
               aria-label={backLabel ?? t("setupFrame.close", "Close")}
@@ -88,7 +92,7 @@ export function SetupFrame({
               style={{ background: S.forestDeep }}
             >
               <X className="size-5" aria-hidden="true" />
-            </button>
+            </button>}
             <span className="min-w-0 truncate text-[14px] font-[700]" style={{ color: S.lime }}>{label}</span>
           </div>
 
@@ -98,6 +102,7 @@ export function SetupFrame({
           >
             {title}
           </h1>
+          <RailClose onClose={onBack} />
           <div ref={setIntroSlot} className="text-[15px] leading-[1.5] empty:hidden [&>*]:m-0 [&>*]:mt-2" style={{ color: S.mist }}>
             {home && <p>{home.subline}</p>}
             {intro && <p>{intro}</p>}
@@ -128,7 +133,12 @@ export function SetupFrame({
         </div>
       </main>
 
-      {(footer || belowFooter) && (
+      {inRail && footer ? (
+        <>
+          <div aria-hidden="true" className="h-[120px] shrink-0" />
+          <div className="duo-task-footer">{footer}</div>
+        </>
+      ) : (footer || belowFooter) && (
         <div className="sticky bottom-0 z-40">
           {footer && (
             <footer className="border-t bg-white" style={{ borderColor: S.footerLine }}>

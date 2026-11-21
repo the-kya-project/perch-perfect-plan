@@ -26,22 +26,8 @@ export function ConcernFlow({
    *  Unset (owner app) = unchanged. */
   ownerCallShown?: boolean;
 }) {
-  const { t } = useTranslation();
-  // Literal-key path-choice labels (moved off PassingGuidance's module-scope
-  // PATH_CHOICE_LABELS so i18next-parser can extract them and the sitter sees
-  // Dutch). Owner renders these through the English-pinned instance → the
-  // defaults below reproduce the original output byte-for-byte.
-  const pathChoiceLabel = (p: PassingPath, birdName: string): string => {
-    switch (p) {
-      case "necropsy": return t("passingGuidance.pathChoice.necropsy", "Keep {{name}} for a necropsy", { name: birdName });
-      case "burial": return t("passingGuidance.pathChoice.burial", "Prepare {{name}} for burial or cremation", { name: birdName });
-      case "vet": return t("passingGuidance.pathChoice.vet", "Bring {{name}} to the vet", { name: birdName });
-    }
-  };
-  const [step, setStep] = useState<"pause" | "paths" | PassingPath>(paused ? "paths" : "pause");
-  useEffect(() => {
-    if (paused && step === "pause") setStep("paths");
-  }, [paused, step]);
+  const pathChoiceLabel = usePathChoiceLabel();
+  const [step, setStep] = useConcernStep(paused);
 
   return (
     <KyaConcernSteps
@@ -50,6 +36,34 @@ export function ConcernFlow({
       ownerCallShown={ownerCallShown}
     />
   );
+}
+
+export type ConcernStep = "pause" | "paths" | PassingPath;
+
+/** Where the flow is: pause until the pause lands (or on a return visit to a
+ *  paused bird), then the path choice, then one path. Shared with the iPhone
+ *  Duo layout (duo/flows/ConcernDuo.tsx). */
+export function useConcernStep(paused: boolean): [ConcernStep, (s: ConcernStep) => void] {
+  const [step, setStep] = useState<ConcernStep>(paused ? "paths" : "pause");
+  useEffect(() => {
+    if (paused && step === "pause") setStep("paths");
+  }, [paused, step]);
+  return [step, setStep];
+}
+
+/** Literal-key path-choice labels (moved off PassingGuidance's module-scope
+ *  PATH_CHOICE_LABELS so i18next-parser can extract them and the sitter sees
+ *  Dutch). Owner renders these through the English-pinned instance → the
+ *  defaults below reproduce the original output byte-for-byte. */
+export function usePathChoiceLabel(): (p: PassingPath, birdName: string) => string {
+  const { t } = useTranslation();
+  return (p, birdName) => {
+    switch (p) {
+      case "necropsy": return t("passingGuidance.pathChoice.necropsy", "Keep {{name}} for a necropsy", { name: birdName });
+      case "burial": return t("passingGuidance.pathChoice.burial", "Prepare {{name}} for burial or cremation", { name: birdName });
+      case "vet": return t("passingGuidance.pathChoice.vet", "Bring {{name}} to the vet", { name: birdName });
+    }
+  };
 }
 
 // The three steps in the current Kya look: Newsreader headings, 15px K.ink

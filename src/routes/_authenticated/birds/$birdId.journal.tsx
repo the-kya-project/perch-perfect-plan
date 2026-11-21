@@ -28,6 +28,10 @@ import { localDateISO } from "@/lib/localDay";
 import i18next from "i18next";
 import type { TFunction } from "i18next";
 import { useTranslation } from "react-i18next";
+import { useDuoMode } from "@/lib/duo";
+import { RailBack } from "@/components/DuoRail";
+import { DuoTwoPane } from "@/components/duo/DuoBlocks";
+import { EmptyRecordCard, FilterChips, RecordCard, RecordCards, RecordGroupLabel, RecordListHeader } from "@/components/duo/records/RecordList";
 
 export const Route = createFileRoute("/_authenticated/birds/$birdId/journal")({
   head: () => ({ meta: [{ title: i18next.t("birdJournal.metaTitle", "Journal — Kya & Co.") }] }),
@@ -113,6 +117,7 @@ function JournalFacet() {
   // from the live list: after an edit saves and the query invalidates, the view
   // shows the new values instead of the stale snapshot it was opened with.
   const [viewingId, setViewingId] = useState<string | null>(null);
+  const duo = useDuoMode() === "sideways";
 
   const { data: bird } = useQuery({
     queryKey: ["bird-name", birdId],
@@ -175,6 +180,111 @@ function JournalFacet() {
   const viewing = viewingId ? all.find((e) => e.id === viewingId) ?? null : null;
 
   const shown = all.filter((e) => FILTERS.find((f) => f.value === filter)!.kinds.includes(e.kind));
+
+  const refresh = () => {
+    qc.invalidateQueries({ queryKey: ["journal-entries", birdId] });
+    qc.invalidateQueries({ queryKey: ["journal-attachment-counts", birdId] });
+  };
+
+  // iPhone Duo sideways: the entries on the left, the picked one (or the add
+  // form) on the right. Everywhere else, the page below, unchanged.
+  if (duo) {
+    const title = bird?.name
+      ? t("birdJournal.titleNamed", "{{name}}'s journal", { name: bird.name })
+      : t("birdJournal.titlePlain", "Journal");
+    // Only the chips whose kinds have entries (plus All).
+    const chips = FILTERS.filter((f) => f.value === "all" || all.some((e) => f.kinds.includes(e.kind)));
+    const current = shown.find((e) => e.id === viewingId) ?? shown[0] ?? null;
+    const left = (
+      <>
+        <RailBack onBack={goBack} />
+        <RecordListHeader
+          title={title}
+          line={t("birdJournal.body", "The little things you notice now can matter later.")}
+          addLabel={t("journalDuo.add", "Add")}
+          onAdd={canHealth ? () => setEditing("new") : undefined}
+          addActive={!!editing}
+        />
+        <div className="mt-4 flex flex-col gap-3">
+          <MemberContextBanner birdId={birdId} />
+          {chips.length > 2 && (
+            <FilterChips
+              label={t("birdJournal.filterLabel", "Show entries")}
+              options={chips.map((f) => ({ value: f.value, label: filterLabel(t, f.value) }))}
+              value={filter}
+              onChange={(v) => { setFilter(v); setEditing(null); }}
+            />
+          )}
+          {load.failed ? (
+            <LoadError onRetry={load.retry} />
+          ) : load.loading ? (
+            <div className="space-y-3" aria-hidden="true">
+              {[0, 1, 2].map((i) => <div key={i} className="h-20 animate-pulse rounded-[22px] bg-white" />)}
+            </div>
+          ) : all.length === 0 ? (
+            <p className="m-0 text-[16px] leading-[1.5]" style={{ color: K.quiet }}>{t("birdJournal.emptyIntro", "Nothing here yet. The journal is where you track health and behavior over time — molts, meds, vet visits, a new word, an off day. Add an entry whenever something's worth noting for the record.")}</p>
+          ) : shown.length === 0 ? (
+            <p className="m-0 text-[16px]" style={{ color: K.quiet }}>{emptyFilterText(t, filter)}</p>
+          ) : (
+            byMonth(shown).map((g) => (
+              <section key={g.key} className="flex flex-col gap-2">
+                <RecordGroupLabel>{g.label}</RecordGroupLabel>
+                <RecordCards label={g.label}>
+                  {g.entries.map((e) => (
+                    <RecordCard
+                      key={e.id}
+                      title={e.title || kindLabel(t, e.kind)}
+                      date={cardDate(e.occurred_on)}
+                      tag={kindLabel(t, e.kind)}
+                      tagTone={e.kind === "vet" ? "fine" : "neutral"}
+                      preview={e.body || ((attachCounts?.[e.id] ?? 0) > 0
+                        ? ((attachCounts?.[e.id] ?? 0) === 1 ? t("birdJournal.filesOne", "{{n}} file", { n: 1 }) : t("birdJournal.filesOther", "{{n}} files", { n: attachCounts?.[e.id] ?? 0 }))
+                        : undefined)}
+                      selected={!editing && current?.id === e.id}
+                      onSelect={() => { setViewingId(e.id); setEditing(null); }}
+                    />
+                  ))}
+                </RecordCards>
+              </section>
+            ))
+          )}
+        </div>
+      </>
+    );
+    const right = editing ? (
+      <EntryForm
+        key={editing === "new" ? "new" : editing.id}
+        inline
+        birdId={birdId}
+        entry={editing === "new" ? null : editing}
+        isOwner={isOwner}
+        onClose={() => setEditing(null)}
+        onSaved={() => { setEditing(null); refresh(); }}
+        onDeleted={() => { setEditing(null); setViewingId(null); refresh(); }}
+      />
+    ) : current ? (
+      <JournalEntryView
+        key={current.id}
+        inline
+        entry={current}
+        photoUrl={current.photo_path ? photoUrls?.[current.photo_path] ?? null : null}
+        kindLabel={kindLabel(t, current.kind)}
+        dateLabel={fullDate(current.occurred_on)}
+        canEdit={canHealth}
+        onEdit={() => setEditing(current)}
+        onClose={() => setViewingId(null)}
+      />
+    ) : (
+      <EmptyRecordCard
+        icon={<BookOpen />}
+        title={load.loading ? t("healthTab.loading", "Loading…") : t("birdJournal.emptyAllEntries", "No entries yet")}
+        body={load.loading ? undefined : canHealth
+          ? t("journalDuo.emptyBody", "Tap Add to note a molt, a vet visit or an off day. It'll open here.")
+          : t("journalDuo.emptyBodyViewer", "Entries will show here once they're added.")}
+      />
+    );
+    return <DuoTwoPane left={left} right={right} leftLabel={title} rightLabel={editing ? t("birdJournal.addEntryTitle", "Add an entry") : current?.title ?? undefined} />;
+  }
 
   return (
     <KyaPage>
@@ -338,7 +448,7 @@ function PickButton({ icon, children, accept, multiple, disabled, onChange }: { 
   );
 }
 
-function EntryForm({ birdId, entry, isOwner, onClose, onSaved, onDeleted }: { birdId: string; entry: Entry | null; isOwner: boolean; onClose: () => void; onSaved: () => void; onDeleted: () => void }) {
+function EntryForm({ birdId, entry, isOwner, onClose, onSaved, onDeleted, inline = false }: { birdId: string; entry: Entry | null; isOwner: boolean; onClose: () => void; onSaved: () => void; onDeleted: () => void; /** iPhone Duo: the form as the right pane's card. */ inline?: boolean }) {
   const { t } = useTranslation();
   const [deleting, setDeleting] = useState(false);
   const { confirm, sheet: confirmSheet } = useConfirm();
@@ -508,6 +618,7 @@ function EntryForm({ birdId, entry, isOwner, onClose, onSaved, onDeleted }: { bi
   return (
     <>
     <KyaSheet
+      inline={inline}
       onClose={busy ? () => {} : onClose}
       closeLabel={t("birdJournal.close", "Close")}
       title={<KyaHeading size={24}>{entry ? t("birdJournal.editEntry", "Edit entry") : t("birdJournal.addEntryTitle", "Add an entry")}</KyaHeading>}

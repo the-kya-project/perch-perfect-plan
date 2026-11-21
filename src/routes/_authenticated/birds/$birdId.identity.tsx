@@ -1,7 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { speciesLabel } from "@/lib/speciesLabel";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
+import { useCallback, useContext, useEffect, useRef, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import i18next, { type TFunction } from "i18next";
 import { supabase } from "@/integrations/supabase/client";
@@ -16,8 +16,8 @@ import { useCapability } from "@/lib/useCapability";
 import { signBirdPhoto, persistBirdPhoto } from "@/lib/birdPhoto";
 import { BirdPhotoCrop } from "@/components/BirdPhotoCrop";
 import { compressImageToDataUrl, dataUrlBytes, MAX_UPLOAD_BYTES } from "@/lib/imageUpload";
-import { K, KyaPage, KyaBody, KyaCard, KyaField, KyaHeading, KyaLink, KyaPrimaryButton, KyaSecondaryButton } from "@/components/kya";
-import { PageHeader, TaskHeader, useGoBack, useLeaveGuard } from "@/components/headers";
+import { K, KyaPage, KyaBody, KyaCard, KyaField, KyaHeading, KyaInCard, KyaLink, KyaPrimaryButton } from "@/components/kya";
+import { PageHeader, TaskFooter, TASK_FOOTER_SPACE, TaskHeader, useGoBack, useLeaveGuard } from "@/components/headers";
 import { friendlyError } from "@/lib/errorMessage";
 import { LoadError } from "@/components/LoadError";
 import { useLoadState } from "@/lib/useTooLong";
@@ -25,18 +25,22 @@ import { formatLocalDate } from "@/lib/dates";
 import { localDateISO } from "@/lib/localDay";
 import { ownerIntakeDate } from "@/lib/intakeDate";
 import { isMissingColumn } from "@/lib/missingColumn";
+import { BIRD_PHOTO_FOCUS } from "@/lib/birdPhotoFocus";
+import { useDuoMode } from "@/lib/duo";
+import { BirdSettingsDuo } from "@/components/duo/BirdSettingsDuo";
 
 type IdentitySearch = { edit?: 1 };
 
 export const Route = createFileRoute("/_authenticated/birds/$birdId/identity")({
   head: () => ({ meta: [{ title: i18next.t("birdIdentity.metaTitle", "Identity — Kya & Co.") }] }),
-  // ?edit=1 opens the edit form straight away (the vet summary's
-  // "Missing from [bird]'s record → Add them" link lands here).
+  // ?edit=1 IS the edit mode (the vet summary's "Missing from [bird]'s record
+  // → Add them" link lands here with it set). Keeping it in the URL lets the
+  // layout treat editing as a task (isTaskPath) and hide the bottom nav.
   validateSearch: (search: Record<string, unknown>): IdentitySearch => {
     const e = search.edit;
     return e === 1 || e === "1" || e === true ? { edit: 1 } : {};
   },
-  component: IdentityFacet,
+  component: IdentityFacetRoute,
 });
 
 type Identity = {
@@ -91,13 +95,24 @@ function flightLabel(t: TFunction, v: string | null | undefined): string | null 
 }
 const blank = (v: string | null | undefined) => !((v ?? "").trim());
 
+
+// iPhone Duo, two panes: this page in the card beside the bird's settings
+// tiles (BirdSettingsDuo). Editing stays a full task.
+function IdentityFacetRoute() {
+  const { birdId } = Route.useParams();
+  const search = Route.useSearch();
+  const navigate = useNavigate();
+  const goBack = useGoBack(useCallback(() => navigate({ to: "/birds/$birdId", params: { birdId } }), [navigate, birdId]));
+  if (useDuoMode() === "sideways" && !search.edit) return <BirdSettingsDuo birdId={birdId} selected="identity" onBack={goBack}><IdentityFacet /></BirdSettingsDuo>;
+  return <IdentityFacet />;
+}
+
 function IdentityFacet() {
   const { t } = useTranslation();
   const { birdId } = Route.useParams();
   const search = Route.useSearch();
   const navigate = useNavigate();
   const qc = useQueryClient();
-  const [editing, setEditing] = useState(false);
   // Editing the bird's identity is part of managing the flock (RLS: birds → manage_flock).
   // Household members without it view identity read-only.
   const canEditIdentity = useCapability("manage_flock", { birdId });
@@ -120,15 +135,12 @@ function IdentityFacet() {
   const load = useLoadState([birdQ]);
   const birdMissing = birdQ.isSuccess && !bird;
 
-  // ?edit=1 → open the form once the bird and the permission have loaded,
-  // then drop the param so a refresh or back doesn't reopen it.
-  const editApplied = useRef(false);
-  useEffect(() => {
-    if (!search.edit || editApplied.current || !bird || !canEditIdentity) return;
-    editApplied.current = true;
-    setEditing(true);
-    navigate({ to: "/birds/$birdId/identity", params: { birdId }, search: {}, replace: true });
-  }, [search.edit, bird, canEditIdentity, navigate, birdId]);
+  // Edit mode lives in the URL (?edit=1): the layout hides the bottom nav via
+  // isTaskPath, and the back gesture leaves the form the same way Close does.
+  // Only once the bird and the permission have loaded — a read-only member
+  // deep-linking with ?edit=1 stays on the view.
+  const editing = !!search.edit && !!bird && canEditIdentity;
+  const startEditing = useCallback(() => navigate({ to: "/birds/$birdId/identity", params: { birdId }, search: { edit: 1 } }), [navigate, birdId]);
 
   const name = bird?.name ?? t("planEditor.thisBird", "this bird");
   // 800px — the SAME width the Home flock card / bird-record hero resolve at, so
@@ -146,11 +158,17 @@ function IdentityFacet() {
 
   const goBack = useGoBack(useCallback(() => navigate({ to: "/birds/$birdId", params: { birdId } }), [navigate, birdId]));
   const canEdit = !!bird && canEditIdentity;
-  const openEdit = canEdit ? () => setEditing(true) : undefined;
+  const openEdit = canEdit ? startEditing : undefined;
+  // iPhone Duo pop-out card: the hatch date in its short form, on one line.
+  const inCard = useContext(KyaInCard);
   // Editing is a task: Close top left, and "Leave without saving?" when
   // something has changed. The form reports whether it has.
   const [formDirty, setFormDirty] = useState(false);
-  const stopEditing = useCallback(() => { setEditing(false); setFormDirty(false); }, []);
+  const stopEditing = useCallback(() => {
+    setFormDirty(false);
+    // Replace, so the browser Back button doesn't reopen the edit form.
+    navigate({ to: "/birds/$birdId/identity", params: { birdId }, search: {}, replace: true });
+  }, [navigate, birdId]);
   const { requestClose, guard: leaveGuard } = useLeaveGuard(formDirty, stopEditing);
 
   const sex = (bird?.sex ?? "").trim().toLowerCase();
@@ -172,7 +190,7 @@ function IdentityFacet() {
           onBack={goBack}
           title={bird ? t("birdIdentity.title", "{{name}}'s identity", { name: bird.name }) : t("birdIdentity.titleFallback", "Identity")}
           line={t("birdIdentity.body", "The details that make {{name}} officially {{name}}.", { name })}
-          action={canEdit && !editing ? { label: t("birdIdentity.edit", "Edit"), icon: <Pencil className="size-4" />, onClick: () => setEditing(true) } : undefined}
+          action={canEdit && !editing ? { label: t("birdIdentity.edit", "Edit"), icon: <Pencil className="size-4" />, onClick: startEditing } : undefined}
         />
       )}
       {leaveGuard}
@@ -188,7 +206,10 @@ function IdentityFacet() {
         ) : !bird ? (
           <div className="h-40 animate-pulse rounded-[20px] bg-white/70" />
         ) : editing ? (
-          <IdentityForm birdId={birdId} bird={bird} onClose={requestClose} onDirtyChange={setFormDirty} onSaved={() => { stopEditing(); crossInvalidate(); }} />
+          // Room at the end so the pinned Save footer never covers the form.
+          <div className={`flex flex-col gap-4 ${TASK_FOOTER_SPACE}`}>
+            <IdentityForm birdId={birdId} bird={bird} onDirtyChange={setFormDirty} onSaved={() => { stopEditing(); crossInvalidate(); }} />
+          </div>
         ) : (
           <>
             {/* Shared core (same birds columns the Basics tab edits) */}
@@ -198,7 +219,7 @@ function IdentityFacet() {
                   birds never repositioned) instead of centering on feet. */}
               <div className="relative grid size-14 shrink-0 place-items-center overflow-hidden rounded-[16px]" style={{ background: K.forest }}>
                 {photo ? (
-                  <BirdPhotoCrop url={photo.url} original={photo.original} position={bird.photo_position ?? "50% 20%"} alt={name} />
+                  <BirdPhotoCrop url={photo.url} original={photo.original} position={bird.photo_position ?? BIRD_PHOTO_FOCUS} alt={name} />
                 ) : (
                   <span className="text-[22px] font-[700]" style={{ color: K.lime, fontFamily: "'Newsreader', Georgia, serif" }}>{initial}</span>
                 )}
@@ -215,7 +236,7 @@ function IdentityFacet() {
             <KyaCard>
               <Row label={t("birdSetup.sex", "Sex")} value={sexValue(t, bird)} onAdd={openEdit} />
               <Row label={t("birdSetup.flight", "Flight")} value={flightLabel(t, bird.flight_status)} onAdd={openEdit} />
-              <Row label={t("birdPickers.hatchDate", "Hatch date")} value={bird.birth_date ? `${fmtDate(bird.birth_date)} (≈ ${approxAge(t, bird.birth_date)})` : null} onAdd={openEdit} />
+              <Row label={t("birdPickers.hatchDate", "Hatch date")} value={bird.birth_date ? (inCard ? hatchShort(t, bird.birth_date) : `${fmtDate(bird.birth_date)} (≈ ${approxAge(t, bird.birth_date)})`) : null} onAdd={openEdit} />
               <Row label={t("birdIdentity.microchip", "Microchip")} value={bird.microchip} onAdd={openEdit} />
               <Row label={t("birdIdentity.legBand", "Leg band")} value={bird.band_number} onAdd={openEdit} />
               <Row label={t("birdIdentity.origin", "Origin")} value={bird.origin} onAdd={openEdit} />
@@ -243,14 +264,17 @@ function sexValue(t: TFunction, b: Identity): string | null {
 function Row({ label, value, onAdd, last }: { label: string; value: string | null | undefined; onAdd?: () => void; last?: boolean }) {
   const { t } = useTranslation();
   const filled = !blank(value);
+  // iPhone Duo pop-out card (narrower than a phone): a tighter label column so
+  // "Not added" and Add stay on one line.
+  const inCard = useContext(KyaInCard);
   return (
-    <div className="flex min-h-[52px] items-center gap-3 px-4 py-2" style={{ borderBottom: last ? undefined : `1px solid ${K.line}` }}>
-      <span className="w-[108px] shrink-0 text-[14px]" style={{ color: K.quiet }}>{label}</span>
+    <div className={`flex min-h-[52px] items-center py-2 ${inCard ? "gap-2 px-3" : "gap-3 px-4"}`} style={{ borderBottom: last ? undefined : `1px solid ${K.line}` }}>
+      <span className={`${inCard ? "w-[92px]" : "w-[108px]"} shrink-0 text-[14px]`} style={{ color: K.quiet }}>{label}</span>
       {filled ? (
         <span className="min-w-0 flex-1 break-words py-1.5 text-[15px] font-[600]" style={{ color: K.forest }}>{value}</span>
       ) : (
         <span className="flex min-w-0 flex-1 items-center justify-between gap-2">
-          <span className="text-[15px]" style={{ color: K.quiet }}>{t("birdIdentity.notAdded", "Not added")}</span>
+          <span className={`text-[15px]${inCard ? " whitespace-nowrap" : ""}`} style={{ color: K.quiet }}>{t("birdIdentity.notAdded", "Not added")}</span>
           {onAdd && <KyaLink onClick={onAdd} className="px-1">{t("birdIdentity.add", "Add")}</KyaLink>}
         </span>
       )}
@@ -258,7 +282,7 @@ function Row({ label, value, onAdd, last }: { label: string; value: string | nul
   );
 }
 
-function IdentityForm({ birdId, bird, onClose, onSaved, onDirtyChange }: { birdId: string; bird: Identity; onClose: () => void; onSaved: () => void; onDirtyChange?: (dirty: boolean) => void }) {
+function IdentityForm({ birdId, bird, onSaved, onDirtyChange }: { birdId: string; bird: Identity; onSaved: () => void; onDirtyChange?: (dirty: boolean) => void }) {
   const { t } = useTranslation();
   const [f, setF] = useState({
     name: bird.name ?? "",
@@ -439,12 +463,13 @@ function IdentityForm({ birdId, bird, onClose, onSaved, onDirtyChange }: { birdI
         <p className="m-0 px-1 text-[13px] leading-[1.45]" style={{ color: K.quiet }}>{t("birdIdentity.allOptional", "All fields are optional — partial records are fine.")}</p>
       </KyaCard>
 
-      <div className="flex flex-col gap-2.5">
+      {/* Pinned Save, the one task button (Close top left leaves, with the
+          leave-without-saving guard when something changed). */}
+      <TaskFooter>
         <KyaPrimaryButton onClick={save} disabled={saving}>
           {saving ? t("birdIdentity.saving", "Saving…") : t("birdIdentity.save", "Save")}
         </KyaPrimaryButton>
-        <KyaSecondaryButton className="w-full" onClick={onClose} disabled={saving}>{t("birdIdentity.cancel", "Cancel")}</KyaSecondaryButton>
-      </div>
+      </TaskFooter>
     </>
   );
 }
@@ -466,6 +491,23 @@ function FormField({ id, label, children }: { id?: string; label: string; childr
 
 function fmtDate(iso: string): string {
   return formatLocalDate(new Date(`${iso}T12:00:00`), { year: "numeric", month: "short", day: "numeric" });
+}
+
+/** "Sep 26, 2024 · 2 yrs": the hatch date and age for the narrow Duo card. */
+function hatchShort(t: TFunction, iso: string): string {
+  const born = new Date(`${iso}T12:00:00`);
+  const now = new Date();
+  let months = (now.getFullYear() - born.getFullYear()) * 12 + now.getMonth() - born.getMonth();
+  if (now.getDate() < born.getDate()) months -= 1;
+  const days = Math.floor((now.getTime() - born.getTime()) / 86_400_000);
+  const age = days < 0
+    ? null
+    : months >= 12
+      ? t("birdIdentity.yrsShort", "{{count}} yrs", { count: Math.floor(months / 12) })
+      : months >= 1
+        ? t("birdIdentity.moShort", "{{count}} mo", { count: months })
+        : t("birdIdentity.daysShort", "{{count}} days", { count: days });
+  return age ? `${fmtDate(iso)} · ${age}` : fmtDate(iso);
 }
 
 function approxAge(t: TFunction, iso: string): string {

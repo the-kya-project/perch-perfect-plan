@@ -17,8 +17,17 @@ import { useTranslation } from "react-i18next";
 import type { TFunction } from "i18next";
 import { friendlyError } from "@/lib/errorMessage";
 import { pickVet } from "@/lib/emergency";
-import { ownerFirstName } from "@/components/sitter/sitterShared";
+import { isBirdPreview, ownerFirstName } from "@/components/sitter/sitterShared";
 import { localDateISO } from "@/lib/localDay";
+import { SitterAsideDuo } from "@/components/duo/sitter/SitterAsideDuo";
+
+/** When the sit ends: the link's expiry, the end of its last day in the
+ *  owner's time zone (enforce_sit_token_rules). Null if unknown. */
+function sitEndsAt(sit: unknown): number | null {
+  const v = (sit as { token_expires_at?: string | null } | null)?.token_expires_at;
+  const ms = v ? Date.parse(v) : NaN;
+  return Number.isFinite(ms) ? ms : null;
+}
 
 export const Route = createFileRoute("/sitter/$token/scan")({
   component: ScanPage,
@@ -100,10 +109,14 @@ function ScanPage() {
     onSuccess: async (res, p) => {
       track("health_scan_run", { severity: (res.triage as any)?.status ?? "unknown", had_photo: !!p.photoDataUrl });
       // Refresh the Today check card + the multi-bird dashboard so "Done at"
-      // shows as soon as Today renders.
+      // shows as soon as Today renders. The dashboard query isn't mounted on
+      // this screen, so a plain invalidate would only mark it stale — Today
+      // would then render its "Next: [bird] still needs a check" notice from
+      // the old per-bird statuses. refetchType "all" makes the await actually
+      // wait for fresh data before navigating.
       await Promise.all([
         qc.invalidateQueries({ queryKey: ["sitter-ctx", token] }),
-        qc.invalidateQueries({ queryKey: ["sitter-dashboard", token] }),
+        qc.invalidateQueries({ queryKey: ["sitter-dashboard", token], refetchType: "all" }),
         qc.invalidateQueries({ queryKey: ["sitter-scans", token, birdId] }),
       ]);
       toToday(true);
@@ -113,9 +126,16 @@ function ScanPage() {
 
   // One vet record (avian, else after-hours), so the name and number match.
   const vet = pickVet(ctx.contacts as any);
+  const preview = isOwnerPreview() || isBirdPreview(ctx);
 
+  // iPhone Duo: the check in the right half, which bird beside it (no-op
+  // wrappers on every other screen).
   return (
-    <>
+    <SitterAsideDuo
+      bird={ctx.bird}
+      title={t("sitter.today.birdsCheck", "{{name}}'s daily check", { name: ctx.bird.name })}
+      line={t("sitter.duo.scan.line", "Look at {{name}} as you answer. If anything worries you, call the vet: you'll never be in trouble for calling too soon.", { name: ctx.bird.name })}
+    >
       {/* The form stays mounted while past checks are open, so answers survive a peek. */}
       <div style={showHistory ? { display: "none" } : undefined}>
         <FullHealthCheck
@@ -127,7 +147,11 @@ function ScanPage() {
           vet={vet}
           ownerName={ownerFirstName(ctx, t)}
           submitting={m.isPending}
-          onSubmit={(p) => m.mutate(p)}
+          // Resolves true once saved, which drops the local draft.
+          onSubmit={(p) => m.mutateAsync(p).then(() => true, () => false)}
+          // The sitter's draft is kept per sit link and bird, and ends with the
+          // sit. Not in a preview: nothing there is saved anyway.
+          draftSit={preview ? undefined : { token, endsAt: sitEndsAt(ctx.sit) }}
           onLeave={() => toToday()}
           extra={
             <button
@@ -142,7 +166,7 @@ function ScanPage() {
         />
       </div>
       {showHistory && <ScanHistory token={token} birdId={birdId} birdName={ctx.bird.name} onBack={() => setShowHistory(false)} />}
-    </>
+    </SitterAsideDuo>
   );
 }
 

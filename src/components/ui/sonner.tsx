@@ -1,4 +1,5 @@
 import { Toaster as Sonner } from "sonner";
+import { useTranslation } from "react-i18next";
 
 type ToasterProps = React.ComponentProps<typeof Sonner>;
 
@@ -7,6 +8,9 @@ type ToasterProps = React.ComponentProps<typeof Sonner>;
 const DM_SANS = '"DM Sans", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif';
 
 const Toaster = ({ ...props }: ToasterProps) => {
+  // useTranslation re-renders on language change, so the close button's
+  // aria-label follows the sitter language toggle.
+  const { t } = useTranslation();
   return (
     <Sonner
       className="toaster group"
@@ -15,7 +19,7 @@ const Toaster = ({ ...props }: ToasterProps) => {
       closeButton
       style={{ fontFamily: DM_SANS }}
       toastOptions={{
-        closeButtonAriaLabel: "Dismiss",
+        closeButtonAriaLabel: t("toast.dismiss", "Dismiss"),
         style: { fontFamily: DM_SANS },
         classNames: {
           // Room on the right for the 44px close button.

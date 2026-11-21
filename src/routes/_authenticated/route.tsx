@@ -1,16 +1,63 @@
 import { createFileRoute, Outlet, redirect, useLocation, useNavigate } from "@tanstack/react-router";
-import { useEffect } from "react";
+import { pickUtms, withUtms } from "@/lib/utmCarry";
+import { useEffect, useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { AuthClientStalled, getReadySession } from "@/lib/authReady";
+import { readAuthLinkError } from "@/lib/authLinkError";
 import { applyOAuthAttribution } from "@/lib/attribution";
 import { ensureAccountTimeZone } from "@/lib/sitTimeZoneBackfill";
 import { PullToRefresh } from "@/components/PullToRefresh";
 import { OwnerTabBar, isTaskPath } from "@/components/OwnerTabBar";
 import { StartupSplash } from "@/components/StartupSplash";
+import { DuoRail, DuoRailProvider } from "@/components/DuoRail";
+import { useDuoLayout } from "@/lib/duo";
+import { FLOCK_ENABLED_QUERY, rememberMode, rememberedMode } from "@/lib/flock";
+
+/**
+ * Send the reader elsewhere from a signed-in page.
+ *
+ * On the page's first load a router redirect races React. The server sent
+ * this route's placeholder (it's ssr:false), and React is still checking that
+ * against the server's HTML when beforeLoad decides to leave. The router swaps
+ * its matches mid-check, React looks for the old one and gets undefined
+ * ("Cannot read properties of undefined (reading 'routeId')"), and recovers
+ * by rebuilding the page: React #422 + #520. That's the pair iPhones reported
+ * on /auth in Oct 2026, from people opening an email link while signed out
+ * (Mail opens Safari, which has no session). The iPhone hydration check
+ * (e2e/) caught it on WebKit; slowing Chromium's CPU 6x reproduces it.
+ *
+ * So on the first load we leave with a real page load instead: the browser
+ * fetches the destination fresh, with nothing half-checked to collide with.
+ * Later, in-app navigations keep the normal router redirect. "First load"
+ * means the router hasn't finished one yet (window.__kyaReady, set by
+ * RootComponent). The router is held on the pending splash while the browser
+ * leaves, and falls back to its own redirect if that somehow takes over 5s.
+ */
+async function leave(href: string, routerRedirect: () => never): Promise<never> {
+  if (typeof window !== "undefined" && !(window as { __kyaReady?: boolean }).__kyaReady) {
+    window.location.replace(href);
+    await new Promise((resolve) => setTimeout(resolve, 5000));
+  }
+  return routerRedirect();
+}
 
 export const Route = createFileRoute("/_authenticated")({
   ssr: false,
   beforeLoad: async ({ location }) => {
+    // An emailed link Supabase rejected (expired, already used, or replaced
+    // by a newer email) comes back here, to /welcome, with no session. Without
+    // this the guard below would bounce the reader to sign-in with no word of
+    // what happened. /link-expired explains and offers a fresh link.
+    // Campaign params (email / TikTok) must stay at the TOP LEVEL of wherever
+    // we send the reader, or PostHog and first-touch attribution lose them.
+    const utms = pickUtms(location.searchStr);
+    const linkError = readAuthLinkError(location.searchStr, location.hash);
+    if (linkError) {
+      return leave(withUtms(`/link-expired?reason=${encodeURIComponent(linkError.code)}`, utms), () => {
+        throw redirect({ to: "/link-expired", search: { reason: linkError.code, ...utms } as never, replace: true });
+      });
+    }
     // Cold-start safe read: waits for the persisted session to hydrate from
     // storage before deciding (see authReady). Without this, a cold launch in
     // the native webview read null before hydration and bounced signed-in
@@ -26,18 +73,20 @@ export const Route = createFileRoute("/_authenticated")({
       // and signInWithPassword awaits the same stuck promise — the hang just
       // moves to the sign-in button. So leave the page entirely and let the
       // client be built again from nothing.
-      const to = `/auth?mode=signin&redirect=${encodeURIComponent(location.href)}`;
+      const to = withUtms(`/auth?mode=signin&redirect=${encodeURIComponent(location.href)}`, utms);
       if (typeof window !== "undefined") window.location.assign(to);
       // Still throw the router redirect: if the hard load is slow to take
       // effect the reader sees /auth rather than the spinner, and the full load
       // supersedes it a moment later.
-      throw redirect({ to: "/auth", search: { mode: "signin" as const, redirect: location.href } });
+      throw redirect({ to: "/auth", search: { mode: "signin" as const, redirect: location.href, ...utms } as never });
     }
     if (!session) {
       // Remember where they were headed (e.g. a /past-birds email deep-link) so
       // /auth lands them there after sign-in instead of the default dashboard.
       // `href` keeps the query string: /birds/new?next=weight must survive.
-      throw redirect({ to: "/auth", search: { mode: "signin" as const, redirect: location.href } });
+      return leave(withUtms(`/auth?mode=signin&redirect=${encodeURIComponent(location.href)}`, utms), () => {
+        throw redirect({ to: "/auth", search: { mode: "signin" as const, redirect: location.href, ...utms } as never });
+      });
     }
     return { user: session.user };
   },
@@ -73,6 +122,24 @@ function isUserGone(error: { code?: string; message?: string } | null): boolean 
 
 function AuthenticatedLayout() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
+
+  // Reopen in the mode this device was last in. Only when the app opens on its
+  // default landing (Home), only once per app load, and only after the server
+  // confirms flock_enabled(): anyone who isn't an admin always opens in care,
+  // and a stale "flock" left on the device is cleared.
+  useEffect(() => {
+    if (rememberedMode() !== "flock" || window.location.pathname !== "/dashboard") return;
+    let cancelled = false;
+    void queryClient.fetchQuery(FLOCK_ENABLED_QUERY).catch(() => false).then((enabled) => {
+      if (cancelled) return;
+      if (enabled) void navigate({ to: "/flock", replace: true });
+      else rememberMode("care");
+    });
+    return () => { cancelled = true; };
+    // Once per app load: later visits to Home are deliberate.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // An account deleted ELSEWHERE — another device, or server-side — leaves this
   // device holding a session for a user that no longer exists. The guard above
@@ -112,23 +179,62 @@ function AuthenticatedLayout() {
   // Persistent owner bottom nav on every authenticated screen. Two deliberate
   // exceptions: the add-bird/setup wizard (SetupShell renders its own nav stacked
   // with the wizard footer), and the one-time welcome splash.
-  const pathname = useLocation({ select: (l) => l.pathname });
-  const hideNav =
-    pathname === "/welcome" || pathname === "/birds/new" ||
-    pathname.endsWith("/setup") || pathname.endsWith("/view-as-sitter") ||
+  const ownChrome = useLocation({ select: (l) =>
+    l.pathname === "/welcome" || l.pathname === "/birds/new" ||
+    l.pathname.endsWith("/setup") || l.pathname.endsWith("/view-as-sitter") ||
     // The sitter preview renders the sitter's OWN chrome (its iframe) — the
     // owner's bottom nav must not show under it.
-    pathname.startsWith("/sit-preview") ||
-    // Tasks (daily check, full health check, set up / edit a sit) end with
-    // one pinned button instead of the nav.
-    isTaskPath(pathname);
+    l.pathname.startsWith("/sit-preview") ||
+    // The Flock has its own bar (FlockShell).
+    l.pathname === "/flock" || l.pathname.startsWith("/flock/") });
+  // Tasks (daily check, full health check, set up / edit a sit, edit a
+  // bird's identity) end with one pinned button instead of the nav.
+  const task = useLocation({ select: (l) => isTaskPath(l.pathname, l.search as Record<string, unknown>) });
+  const hideNav = ownChrome || task;
 
+  // Landscape with room for two panes (iPhone Duo unfolded and sideways, see
+  // lib/duo.ts): the nav moves into a column on the right edge (DuoRail) on
+  // every signed-in screen, tasks included, with all its tabs: the tabs are
+  // always one tap away, so add a bird and set up a sit keep a draft. Add a
+  // bird and the care plan walkthrough give their own bottom nav up for it.
+  // The welcome splash, the sitter previews and the Flock keep their own
+  // chrome, exactly as today.
+  // From 1.2 the iOS app also puts it on the folded cover screen, on whichever
+  // edge the system names (lib/duo.ts resolveDuoLayout).
+  const duoLayout = useDuoLayout();
+  const railChrome = useLocation({ select: (l) => l.pathname === "/birds/new" || l.pathname.endsWith("/setup") });
+  // Community mode (admins only until launch): the column stays, with the
+  // Community tabs in it (FlockShell fills the slot). Only when the gate says
+  // yes, so for everyone else the column and the query are exactly as before:
+  // the gate isn't even asked off /flock.
+  const flockPath = useLocation({ select: (l) => l.pathname === "/flock" || l.pathname.startsWith("/flock/") });
+  const { data: flockOn } = useQuery({ ...FLOCK_ENABLED_QUERY, enabled: flockPath && !!duoLayout.rail });
+  const flockRail = flockPath && flockOn === true;
+  const rail = duoLayout.rail && (!ownChrome || railChrome || flockRail) ? duoLayout.rail : null;
+  const [railTop, setRailTop] = useState<HTMLElement | null>(null);
+  const [railTabs, setRailTabs] = useState<HTMLElement | null>(null);
+  useEffect(() => {
+    const html = document.documentElement;
+    html.classList.toggle("duo", !!rail);
+    html.classList.toggle("duo-two-pane", !!rail && duoLayout.split);
+    if (rail) html.setAttribute("data-duo-rail", rail);
+    else html.removeAttribute("data-duo-rail");
+    return () => {
+      html.classList.remove("duo", "duo-two-pane");
+      html.removeAttribute("data-duo-rail");
+    };
+  }, [rail, duoLayout.split]);
+
+  // One tree either way, so turning the phone doesn't remount the page (and
+  // lose what's half-typed in it).
   return (
-    <>
-      <PullToRefresh>
-        <Outlet />
-      </PullToRefresh>
-      {!hideNav && <OwnerTabBar />}
-    </>
+    <DuoRailProvider value={rail ? { edge: rail, top: railTop, tabs: flockRail ? railTabs : null } : null}>
+      <div className={rail ? "duo-content" : undefined}>
+        <PullToRefresh>
+          <Outlet />
+        </PullToRefresh>
+      </div>
+      {rail ? <DuoRail setTop={setRailTop} setTabs={flockRail ? setRailTabs : undefined} /> : !hideNav && <OwnerTabBar />}
+    </DuoRailProvider>
   );
 }

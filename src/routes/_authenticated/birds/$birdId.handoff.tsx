@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
@@ -13,6 +13,9 @@ import { PageHeader, useGoBack } from "@/components/headers";
 import { friendlyError } from "@/lib/errorMessage";
 import i18next from "i18next";
 import { useTranslation } from "react-i18next";
+import { useDuoMode } from "@/lib/duo";
+import { useBirdPhotos } from "@/lib/useBirdPhotos";
+import { HandoffDuo } from "@/components/duo/flows/HandoffDuo";
 
 export const Route = createFileRoute("/_authenticated/birds/$birdId/handoff")({
   head: () => ({ meta: [{ title: i18next.t("birdHandoff.metaTitle", "Hand off — Kya & Co.") }] }),
@@ -32,12 +35,18 @@ function HandoffFlow() {
     queryKey: ["handoff-bird", birdId],
     queryFn: async () => {
       const { data: u } = await getLocalUser();
-      const { data } = await supabase.from("birds").select("id, name, owner_id").eq("id", birdId).maybeSingle();
-      return { row: data as { id: string; name: string; owner_id: string } | null, uid: u.user?.id ?? null };
+      const { data } = await supabase.from("birds").select("id, name, owner_id, photo_url, photo_position").eq("id", birdId).maybeSingle();
+      return { row: data as { id: string; name: string; owner_id: string; photo_url: string | null; photo_position: string | null } | null, uid: u.user?.id ?? null };
     },
   });
   const name = bird?.row?.name ?? t("birdHandoff.thisBird", "this bird");
-  const notOwner = bird?.row && bird.uid && bird.row.owner_id !== bird.uid;
+  // Not the owner → this screen isn't for them. Redirect from an effect, not
+  // during render (navigating while rendering is a React warning and can loop);
+  // render nothing meanwhile.
+  const notOwner = !!(bird?.row && bird.uid && bird.row.owner_id !== bird.uid);
+  useEffect(() => {
+    if (notOwner) navigate({ to: "/birds/$birdId", params: { birdId }, replace: true });
+  }, [notOwner, navigate, birdId]);
 
   const create = useServerFn(createHandoff);
   const m = useMutation({
@@ -52,10 +61,29 @@ function HandoffFlow() {
   });
 
   const emailOk = /\S+@\S+\.\S+/.test(email.trim());
+  // iPhone Duo, sideways: the form left, the handoff preview right.
+  const duo = useDuoMode() === "sideways";
+  const photo = useBirdPhotos([bird?.row?.photo_url], 800)(bird?.row?.photo_url);
 
-  if (notOwner) {
-    navigate({ to: "/birds/$birdId", params: { birdId }, replace: true });
-    return null;
+  if (notOwner) return null;
+
+  if (duo) {
+    return (
+      <HandoffDuo
+        name={name}
+        photo={photo}
+        photoPosition={bird?.row?.photo_position}
+        email={email}
+        setEmail={setEmail}
+        recipientName={recipientName}
+        setRecipientName={setRecipientName}
+        canSend={emailOk}
+        sending={m.isPending}
+        onSend={() => m.mutate()}
+        onExport={() => navigate({ to: "/birds/$birdId/export", params: { birdId } })}
+        onBack={goBack}
+      />
+    );
   }
 
   return (

@@ -107,7 +107,7 @@ function PrimaryBtn({ children, onClick, disabled, tall = true, secondary = fals
 }
 
 export function DailyCheckCard({
-  birdId, name, today, surface, saveLabel, onSaved, canWeigh = true, showHeading = true, title, flat = false, saveSecondary = false,
+  birdId, name, today, surface, saveLabel, onSaved, canWeigh = true, showHeading = true, title, flat = false, saveSecondary = false, onDirtyChange,
 }: {
   birdId: string;
   name: string;
@@ -127,6 +127,10 @@ export function DailyCheckCard({
    *  (the flock check's pinned "Check [bird] next"). Home and the bird page
    *  leave this off, so Save stays sunflower there. */
   saveSecondary?: boolean;
+  /** Told whether the card holds input that isn't saved yet (a typed weight,
+   *  or "Something's different" with items or a note), so the flock check
+   *  never moves on and drops it. */
+  onDirtyChange?: (dirty: boolean) => void;
 }) {
   const { t } = useTranslation();
   const qc = useQueryClient();
@@ -156,6 +160,9 @@ export function DailyCheckCard({
   const hasWeight = canWeigh && typeof parsed === "number";
   const hint = today?.lastGrams != null ? String(today.lastGrams) : t("dailyCheck.gramsPlaceholder", "e.g. 95");
   const anyConcerning = Object.values(changes).some((v) => v === "concerning");
+  const dirty = grams.trim() !== "" || (different && (Object.keys(changes).length > 0 || note.trim() !== ""));
+  useEffect(() => { onDirtyChange?.(dirty); }, [dirty, onDirtyChange]);
+  useEffect(() => () => onDirtyChange?.(false), [onDirtyChange]);
   const concerningRed = Object.entries(changes).some(([k, v]) => v === "concerning" && RED_KEYS.has(k as ScanFieldKey));
 
   async function save(skipConfirm = false) {
@@ -420,7 +427,7 @@ export function DailyCheckCard({
                 {anyConcerning && (
                   // Amber, like the answer; red only when it's a call-the-vet-today sign.
                   <p className="m-0 rounded-[14px] px-3.5 py-3 text-[14px] leading-[1.45]" style={concerningRed ? { background: C.redFill, color: C.redInk } : { background: C.amberFill, color: C.amberInk }}>
-                    <b className="font-[700]">{t("dailyCheck.concerningTitle", "Concerning signs.")}</b>{" "}
+                    <b className="block font-[700]">{t("dailyCheck.concerningSigns", "Concerning signs")}</b>
                     {concerningRed
                       ? t("dailyCheck.concerningRed", "Call your avian vet today. We'll keep this flagged on {{name}}'s page.", { name })
                       : t("dailyCheck.concerningWatch", "Keep a close eye, and call your avian vet if it continues. We'll keep this flagged on {{name}}'s page.", { name })}

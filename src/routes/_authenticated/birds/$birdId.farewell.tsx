@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -14,6 +14,9 @@ import { PathDetail, type PassingPath, type VetContact } from "@/components/Pass
 import { toast } from "sonner";
 import { friendlyError } from "@/lib/errorMessage";
 import { useTranslation } from "react-i18next";
+import { useDuoMode } from "@/lib/duo";
+import { useBirdPhotos } from "@/lib/useBirdPhotos";
+import { FarewellDuo } from "@/components/duo/flows/FarewellDuo";
 
 // Owner mark-as-passed flow. Two states, one visit:
 //   ask      → the gentle confirmation screen
@@ -41,7 +44,7 @@ function Farewell() {
     queryFn: async () => {
       const { data: u } = await getLocalUser();
       const [bird, contacts, defaults, profile] = await Promise.all([
-        supabase.from("birds").select("id, name, passed_at, owner_id").eq("id", birdId).maybeSingle(),
+        supabase.from("birds").select("id, name, passed_at, owner_id, photo_url, photo_position").eq("id", birdId).maybeSingle(),
         supabase.from("emergency_contacts").select("*").eq("bird_id", birdId).maybeSingle(),
         u.user ? supabase.from("owner_emergency_defaults").select("*").eq("owner_id", u.user.id).maybeSingle() : Promise.resolve({ data: null } as any),
         u.user ? supabase.from("profiles").select("display_name").eq("id", u.user.id).maybeSingle() : Promise.resolve({ data: null } as any),
@@ -60,17 +63,22 @@ function Farewell() {
 
   const bird = data?.bird;
   const name = bird?.name ?? t("farewell.yourBird", "your bird");
+  // iPhone Duo, sideways: two panes (FarewellDuo), same states and confirm.
+  const duo = useDuoMode() === "sideways";
+  const photo = useBirdPhotos([bird?.photo_url], 800)(bird?.photo_url);
 
   // Never ambient: if the bird is already passed and we're not mid-flow (i.e.
-  // someone revisits this URL later), the memorial is the destination.
-  if (bird?.passed_at && step === "ask") {
-    navigate({ to: "/remembering", replace: true });
-    return null;
-  }
-  if (bird && !isOwner) {
-    navigate({ to: "/birds/$birdId", params: { birdId }, replace: true });
-    return null;
-  }
+  // someone revisits this URL later), the memorial is the destination. And a
+  // non-owner is bounced back to the bird page. Both redirect from an effect,
+  // not during render (navigating while rendering is a React warning and can
+  // loop); render nothing meanwhile.
+  const toMemorial = !!bird?.passed_at && step === "ask";
+  const notOwner = !!bird && !isOwner;
+  useEffect(() => {
+    if (toMemorial) navigate({ to: "/remembering", replace: true });
+    else if (notOwner) navigate({ to: "/birds/$birdId", params: { birdId }, replace: true });
+  }, [toMemorial, notOwner, navigate, birdId]);
+  if (toMemorial || notOwner) return null;
 
   async function confirm() {
     setBusy(true);
@@ -88,6 +96,25 @@ function Farewell() {
     } finally {
       setBusy(false);
     }
+  }
+
+  if (duo) {
+    return (
+      <FarewellDuo
+        step={step}
+        name={name}
+        photo={photo}
+        photoPosition={bird?.photo_position}
+        ownerName={data?.ownerName ?? t("farewell.you", "you")}
+        vet={data?.vet ?? { name: null, phone: null }}
+        busy={busy}
+        canConfirm={!!bird}
+        onConfirm={confirm}
+        onNotNow={() => navigate({ to: "/birds/$birdId", params: { birdId } })}
+        onDone={() => navigate({ to: "/dashboard" })}
+        onBack={goBack}
+      />
+    );
   }
 
   if (step === "guidance") {

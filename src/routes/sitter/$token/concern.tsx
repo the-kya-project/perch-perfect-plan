@@ -15,6 +15,7 @@ import { friendlyError } from "@/lib/errorMessage";
 import { K, KyaBody, KyaCard } from "@/components/kya";
 import { PageHeader, useGoBack } from "@/components/headers";
 import { VetCallRow, PersonCallRow } from "@/components/sitter/CallRows";
+import { SitterAsideDuo } from "@/components/duo/sitter/SitterAsideDuo";
 
 // "Something's wrong" — sitter-link entry into the shared ConcernFlow (pause →
 // path choice → path detail). The flow + copy live in ConcernFlow, shared with
@@ -34,7 +35,11 @@ function ConcernPage() {
   const goBack = useGoBack(useCallback(() => navigate({ to: "/sitter/$token", params: { token } }), [navigate, token]));
 
   const name = ctx.bird.name as string;
-  const owner = ((ctx as any).ownerName ?? "the owner") as string;
+  // Localized "the owner" fallback: the server sends a raw name or its own
+  // English placeholder; the client supplies the translated fallback.
+  const rawOwner = (((ctx as any).ownerName ?? "") as string).trim();
+  const hasOwnerName = !!rawOwner && rawOwner !== "the owner";
+  const owner = hasOwnerName ? rawOwner : t("sitter.common.theOwner", "the owner");
   const ownerPhone = ((ctx.contacts as any)?.owner_phone ?? null) as string | null;
   // One vet record, picked first, so the name and number always match.
   const picked = pickVet(ctx.contacts as any);
@@ -61,48 +66,56 @@ function ConcernPage() {
 
   // No KyaPage (owner tab-bar padding) and no extra bottom padding: the
   // sitter layout already leaves room for the bottom bar and the safe area.
+  // iPhone Duo: this page in the right half, the bird beside it (no-op
+  // wrappers on every other screen).
   return (
-    <div>
-      <PageHeader
-        title={t("sitter.concern.title", "Something's wrong with {{name}}", { name })}
-        line={line}
-        onBack={goBack}
-      />
-      <KyaBody>
-        {/* Calls first: the avian vet (red, same as Emergency), then the owner. */}
-        <div className="flex flex-col gap-2.5">
-          <VetCallRow
-            surface="mist"
-            label={vetIsAvian ? t("sitter.calls.avianVet", "Avian vet") : t("sitter.calls.emergencyVet", "After-hours emergency vet")}
-            name={vet.name}
-            phone={vet.phone}
-          />
-          <PersonCallRow
-            surface="mist"
-            label={t("sitter.calls.owner", "Owner")}
-            name={owner !== "the owner" ? owner : null}
-            phone={ownerPhone}
-          />
-        </div>
+    <SitterAsideDuo
+      bird={ctx.bird}
+      title={name}
+      line={t("sitter.duo.concern.line", "Take a breath. If it's urgent, call the vet first.")}
+    >
+      <div>
+        <PageHeader
+          title={t("sitter.concern.title", "Something's wrong with {{name}}", { name })}
+          line={line}
+          onBack={goBack}
+        />
+        <KyaBody>
+          {/* Calls first: the avian vet (red, same as Emergency), then the owner. */}
+          <div className="flex flex-col gap-2.5">
+            <VetCallRow
+              surface="mist"
+              label={vetIsAvian ? t("sitter.calls.avianVet", "Avian vet") : t("sitter.calls.emergencyVet", "After-hours emergency vet")}
+              name={vet.name}
+              phone={vet.phone}
+            />
+            <PersonCallRow
+              surface="mist"
+              label={t("sitter.calls.owner", "Owner")}
+              name={hasOwnerName ? owner : null}
+              phone={ownerPhone}
+            />
+          </div>
 
-        {/* Moved here from Today: the line that used to sit under the
-            "Something's wrong" link. */}
-        <p className="m-0 mt-2 px-1 text-[13.5px] font-[700]" style={{ color: K.quiet }}>
-          {t("sitter.today.somethingWrongHint", "If {{name}} has passed or is in serious trouble", { name })}
-        </p>
-        <KyaCard className="p-5">
-          <ConcernFlow
-            name={name}
-            ownerName={owner}
-            ownerPhone={ownerPhone}
-            vet={vet}
-            paused={!!(ctx as any).remindersPaused || m.isSuccess}
-            onPause={() => m.mutate()}
-            pausePending={m.isPending}
-            ownerCallShown
-          />
-        </KyaCard>
-      </KyaBody>
-    </div>
+          {/* Moved here from Today: the line that used to sit under the
+              "Something's wrong" link. */}
+          <p className="m-0 mt-2 px-1 text-[13.5px] font-[700]" style={{ color: K.quiet }}>
+            {t("sitter.today.somethingWrongHint", "If {{name}} has passed or is in serious trouble", { name })}
+          </p>
+          <KyaCard className="p-5">
+            <ConcernFlow
+              name={name}
+              ownerName={owner}
+              ownerPhone={ownerPhone}
+              vet={vet}
+              paused={!!(ctx as any).remindersPaused || m.isSuccess}
+              onPause={() => m.mutate()}
+              pausePending={m.isPending}
+              ownerCallShown
+            />
+          </KyaCard>
+        </KyaBody>
+      </div>
+    </SitterAsideDuo>
   );
 }

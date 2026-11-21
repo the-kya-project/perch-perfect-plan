@@ -691,6 +691,8 @@
   "email.bereavement.story": "If you ever want to share a favorite story about {{bird}}, you can reply to this email. I'd be honored to read it.",
   "email.bereavement.signoff": "Warmly,<br>Brittany",
   "email.bereavement.text": "Hi,\n\nI saw that {{birdName}} passed away, and I'm so sorry.\n\nLosing a bird is its own kind of grief. They're with us for years, sometimes decades, and they fill a home with a personality that people who haven't lived with a parrot don't always understand. Please be gentle with yourself.\n\n{{birdName}}'s record, journal and moments are safe in Kya & Co. whenever you want to look back. There's nothing you need to do, and you won't get any reminders about {{birdName}}.\n\nIf you ever want to share a favorite story about {{birdName}}, you can reply to this email. I'd be honored to read it.\n\nWarmly,\nBrittany",
+  "email.bereavement.sorryMany": "I saw that {{bird}} passed away, and I'm so sorry.",
+  "email.bereavement.textMany": "Hi,\n\nI saw that {{birdName}} passed away, and I'm so sorry.\n\nLosing a bird is its own kind of grief. They're with us for years, sometimes decades, and they fill a home with a personality that people who haven't lived with a parrot don't always understand. Please be gentle with yourself.\n\n{{birdName}}'s record, journal and moments are safe in Kya & Co. whenever you want to look back. There's nothing you need to do, and you won't get any reminders about {{birdName}}.\n\nIf you ever want to share a favorite story about {{birdName}}, you can reply to this email. I'd be honored to read it.\n\nWarmly,\nBrittany",
   // ---- Push notifications (server-only; src/lib/pushCopy.server.ts) ----
   // Rendered per RECIPIENT locale. Bird names are interpolated raw (push text is
   // not HTML). {{n}} is a plain number, not an i18next plural count.
@@ -748,5 +750,49 @@
   "email.auth.reauthentication.heading": "Your verification code",
   "email.auth.reauthentication.body": "Enter this code in the app to continue. It expires soon.",
   "email.auth.text": "{{heading}}\n\n{{body}}\n\n{{link}}\n\n{{foot}}",
-  "email.auth.textCode": "{{heading}}\n\n{{body}}\n\n{{code}}\n\n{{foot}}"
+  "email.auth.textCode": "{{heading}}\n\n{{body}}\n\n{{code}}\n\n{{foot}}",
+
+  // ---- Gift memberships (src/lib/giftEmails.server.ts) ----
+  "email.gift.planFlock": "a year in the Flock",
+  "email.gift.giftFlock": "A year in the Flock",
+  "email.gift.giftFlockHalf": "Six months in the Flock",
+  "email.gift.planFlockHalf": "six months in the Flock",
+  "email.gift.badgeFlock": "The Flock &middot; 1 year",
+  "email.gift.badgeFlockHalf": "The Flock &middot; 6 months",
+  "email.gift.timingFlock": "The Flock opens Monday, January 4, 2027. A year in the Flock starts the day the gift is redeemed and runs for a year. Since the Flock is free for everyone until July 6, 2027, a gift redeemed before then starts when the free season ends, so none of it goes unused. Gifts never expire.",
+  "email.gift.timingFlockHalf": "The Flock opens Monday, January 4, 2027. Six months in the Flock start the day the gift is redeemed and run for six months. Since the Flock is free for everyone until July 6, 2027, a gift redeemed before then starts when the free season ends, so none of it goes unused. Gifts never expire.",
+  "email.gift.rowGift": "Gift",
+  "email.gift.codeLabel": "Gift code",
+  "email.gift.hi": "Hi {{first}},",
+  "email.gift.hiNoName": "Hi there,",
+
+  "email.gift.receipt.headline": "Your gift is ready",
+  "email.gift.receipt.preview": "Here's the gift code for {{recipient}}, and a few things to know.",
+  "email.gift.receipt.pill": "Gift receipt",
+  "email.gift.receipt.introEmail": "Thank you for giving {{recipient}} {{plan}}. We'll email the gift to {{recipient}} on {{date}}. The code is below too, in case you'd like to share it yourself.",
+  "email.gift.receipt.introSelf": "Thank you for giving {{recipient}} {{plan}}. The gift code is below, so you can print this email, forward it, or copy the code into a card of your own.",
+  "email.gift.receipt.cardTitle": "A gift for {{recipient}}",
+  "email.gift.receipt.rowPaid": "Paid",
+  "email.gift.receipt.rowPromo": "Promo code",
+  "email.gift.receipt.rowDelivery": "Emailed to them",
+  "email.gift.receipt.noteTitle": "Your note",
+  "email.gift.receipt.redeem": "To redeem it, {{recipient}} goes to <a href=\"{{link}}\">app.thekyaproject.com/redeem</a>, signs in or creates a free account, and enters the code.",
+  "email.gift.receipt.giving": "{{percent}}% of what you paid goes to parrot rescue and conservation. Thank you for that, too.",
+  "email.gift.receipt.refund": "If {{recipient}} hasn't redeemed it yet, you can get a full refund within 30 days of buying it. Just reply to this email. Gifts never expire, so there's no rush otherwise.",
+  "email.gift.receipt.reply": "If anything about your gift isn't right, reply to this email and I'll sort it out.",
+  "email.gift.receipt.foot": "You're getting this because you bought a gift membership from The Kya Project.",
+
+  "email.gift.recipient.headline": "You've been given a gift",
+  "email.gift.recipient.preview": "{{from}} gave you {{plan}} from The Kya Project.",
+  "email.gift.recipient.pill": "A gift for you",
+  "email.gift.recipient.intro": "{{from}} gave you {{plan}} from The Kya Project.",
+  "email.gift.recipient.fromNobody": "Someone who cares about you and your bird",
+  "email.gift.recipient.aboutFlock": "The Flock is The Kya Project's community for parrot people, with expert Q&amp;As, local chapters, and 20% of every membership going to parrot rescue and conservation. It opens Monday, January 4, 2027, and it's free for everyone until July 6, 2027.",
+  "email.gift.recipient.noteTitle": "A note from {{from}}",
+  "email.gift.recipient.noteTitleNobody": "A note for you",
+  "email.gift.recipient.cardTitle": "Your gift",
+  "email.gift.recipient.cta": "Redeem your gift &rarr;",
+  "email.gift.recipient.howTo": "Redeeming takes a minute: sign in or create a free account, then enter the code. Your gift is saved to your account from then on.",
+  "email.gift.recipient.foot": "You're getting this because {{from}} sent you a gift membership from The Kya Project.",
+  "email.gift.recipient.footNobody": "You're getting this because someone sent you a gift membership from The Kya Project."
 }

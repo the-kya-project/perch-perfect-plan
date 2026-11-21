@@ -46,4 +46,11 @@ export default tseslint.config(
       "@typescript-eslint/no-unused-expressions": ["error", { allowShortCircuit: true, allowTernary: true }],
     },
   },
+  {
+    // Playwright tests (the iPhone hydration check) run in Node, and a
+    // fixture's `use()` callback is not a React hook.
+    files: ["e2e/**/*.{ts,mjs}"],
+    languageOptions: { globals: globals.node },
+    rules: { "react-hooks/rules-of-hooks": "off" },
+  },
 );

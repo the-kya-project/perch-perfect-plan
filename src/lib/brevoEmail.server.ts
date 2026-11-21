@@ -23,6 +23,7 @@ import { tagHtmlLinks, tagTextLinks, type EmailTag } from "./emailTracking";
 import { wrapEmailLinks, type ClickVariant } from "./emailClicks.server";
 
 const BREVO_SMTP_URL = "https://api.brevo.com/v3/smtp/email";
+const BREVO_BLOCKED_URL = "https://api.brevo.com/v3/smtp/blockedContacts";
 
 // Reserved names from RFC 2606 / RFC 6761. Nothing on these can ever receive
 // mail, so a send is a guaranteed hard bounce. QA accounts are provisioned at
@@ -73,6 +74,9 @@ export interface TransactionalEmail {
    *  bereavement note are written as personal notes that invite a reply, so the
    *  reply has to reach a mailbox someone reads. Omit for everything else. */
   replyTo?: { email: string; name?: string };
+  /** Display name for this send, when it isn't BREVO_SENDER_NAME (the alerts
+   *  come from "Kya & Co. Alerts"). The address is always the verified sender. */
+  senderName?: string;
   /** Extra SMTP headers. Used for List-Unsubscribe and List-Unsubscribe-Post,
    *  which is what makes the one-click button appear in Gmail and Apple Mail. */
   headers?: Record<string, string>;
@@ -112,12 +116,47 @@ export async function prepareContent(email: Pick<TransactionalEmail, "htmlConten
   });
 }
 
+/**
+ * Addresses Brevo won't deliver transactional email to: its blocklist, which
+ * holds hard bounces, spam complaints, transactional unsubscribes and our own
+ * manual blocks. Lower-cased. Null when it can't be read (no key, a preview,
+ * an API error): callers should wait and try again rather than send blind.
+ * Brevo pages this list 100 at a time.
+ */
+export async function brevoBlockedAddresses(): Promise<Map<string, string> | null> {
+  const apiKey = process.env.BREVO_API_KEY;
+  if (process.env.VERCEL_ENV === "preview" || !apiKey) return null;
+  const out = new Map<string, string>();
+  try {
+    for (let offset = 0; offset < 100_000; offset += 100) {
+      const res = await fetch(`${BREVO_BLOCKED_URL}?limit=100&offset=${offset}`, {
+        headers: { "api-key": apiKey, accept: "application/json" },
+      });
+      if (!res.ok) {
+        console.error("[brevoEmail] blocked contacts read failed", res.status, await res.text().catch(() => ""));
+        return null;
+      }
+      const body = (await res.json().catch(() => null)) as { contacts?: Array<{ email?: string; reason?: { code?: string } }> } | null;
+      const page = body?.contacts ?? [];
+      for (const c of page) if (c.email) out.set(c.email.trim().toLowerCase(), c.reason?.code ?? "blocked");
+      if (page.length < 100) return out;
+    }
+    return out;
+  } catch (err) {
+    console.error("[brevoEmail] blocked contacts network error", err);
+    return null;
+  }
+}
+
 export async function sendTransactionalEmail(
   email: TransactionalEmail,
-): Promise<{ ok: boolean; skipped?: string; status?: number }> {
+): Promise<{ ok: boolean; skipped?: string; status?: number; messageId?: string; error?: string }> {
   const apiKey = process.env.BREVO_API_KEY;
   const senderEmail = process.env.BREVO_SENDER_EMAIL;
-  const senderName = process.env.BREVO_SENDER_NAME || "The Kya Project";
+  const senderName = email.senderName || process.env.BREVO_SENDER_NAME || "The Kya Project";
+  // Previews never email anyone, even if a Brevo key reappears in Vercel's
+  // Preview scope: they run unreviewed PR code against staging data.
+  if (process.env.VERCEL_ENV === "preview") { console.warn("[brevoEmail] skipped: Vercel preview (email is off in previews)", { tag: email.tag }); return { ok: false, skipped: "preview-deployment" }; }
   if (!apiKey) { console.warn("[brevoEmail] skipped: BREVO_API_KEY not set"); return { ok: false, skipped: "brevo-api-key-not-configured" }; }
   if (!senderEmail) { console.warn("[brevoEmail] skipped: BREVO_SENDER_EMAIL not set"); return { ok: false, skipped: "brevo-sender-not-configured" }; }
   if (!email.to) { console.warn("[brevoEmail] skipped: no recipient"); return { ok: false, skipped: "no-recipient" }; }
@@ -146,12 +185,16 @@ export async function sendTransactionalEmail(
     if (!res.ok) {
       const text = await res.text().catch(() => "");
       console.error("[brevoEmail] send failed", res.status, text);
-      return { ok: false, status: res.status };
+      // Brevo's own message (e.g. "invalid email address"), for callers that
+      // report why a send failed. Never contains the API key.
+      return { ok: false, status: res.status, error: text.slice(0, 300) || `HTTP ${res.status}` };
     }
+    // Brevo's id for this message, for looking up its delivery events later.
+    const messageId = ((await res.json().catch(() => null)) as { messageId?: unknown } | null)?.messageId;
     console.log("[brevoEmail] sent ok", res.status, "to", email.to);
-    return { ok: true, status: res.status };
+    return { ok: true, status: res.status, ...(typeof messageId === "string" ? { messageId } : {}) };
   } catch (err) {
     console.error("[brevoEmail] network error", err);
-    return { ok: false, skipped: "network-error" };
+    return { ok: false, skipped: "network-error", error: err instanceof Error ? err.message : String(err) };
   }
 }

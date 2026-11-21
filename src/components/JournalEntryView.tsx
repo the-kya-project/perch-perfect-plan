@@ -7,7 +7,8 @@
 import type { ReactNode } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Pencil, Loader2, FileText, Paperclip } from "lucide-react";
-import { K, KyaHeading, KyaSecondaryButton, KyaSheet } from "@/components/kya";
+import { K, KyaHeading, KyaLink, KyaSecondaryButton, KyaSheet } from "@/components/kya";
+import { PopOutCard } from "@/components/duo/DuoBlocks";
 import { listJournalAttachments, signJournalAttachments } from "@/lib/journalAttachment";
 import { signJournalPhotos } from "@/lib/journalPhoto";
 import { useOpenSignedFile } from "@/lib/useOpenSignedFile";
@@ -29,7 +30,7 @@ export function JournalKindTag({ kind, children }: { kind: string; children: Rea
 }
 
 export function JournalEntryView({
-  entry, photoUrl, kindLabel, dateLabel, canEdit, onEdit, onClose,
+  entry, photoUrl, kindLabel, dateLabel, canEdit, onEdit, onClose, inline = false,
 }: {
   entry: ViewEntry;
   photoUrl: string | null;
@@ -38,6 +39,8 @@ export function JournalEntryView({
   canEdit: boolean;
   onEdit: () => void;
   onClose: () => void;
+  /** iPhone Duo: the entry as the right pane's pop-out card, Edit as a text link. */
+  inline?: boolean;
 }) {
   const { t } = useTranslation();
   const { openingKey, openSigned } = useOpenSignedFile();
@@ -50,27 +53,8 @@ export function JournalEntryView({
   });
   const files = attachments ?? [];
 
-  return (
-    <KyaSheet
-      onClose={onClose}
-      closeLabel={t("journalEntryView.close", "Close")}
-      title={
-        <>
-          <KyaHeading size={24}>{entry.title || kindLabel}</KyaHeading>
-          <div className="mt-2 flex items-center gap-2">
-            <JournalKindTag kind={entry.kind}>{kindLabel}</JournalKindTag>
-            <span className="text-[13px]" style={{ color: K.quiet }}>{dateLabel}</span>
-          </div>
-        </>
-      }
-      // Edit is gated on record_health — a viewer-preset member can open an
-      // entry but must not be offered a control RLS would reject.
-      footer={canEdit ? (
-        <KyaSecondaryButton className="w-full" icon={<Pencil className="size-4" />} onClick={onEdit}>
-          {t("journalEntryView.edit", "Edit")}
-        </KyaSecondaryButton>
-      ) : undefined}
-    >
+  const content = (
+    <>
       {entry.photo_path && photoUrl && (
         <button
           type="button"
@@ -79,7 +63,7 @@ export function JournalEntryView({
           className="relative block w-full overflow-hidden rounded-[16px] active:opacity-90"
           aria-label={t("journalEntryView.openPhoto", "Open photo full size")}
         >
-          <img src={photoUrl} alt="" className="block h-[200px] w-full object-cover" />
+          <img src={photoUrl} alt="" className={`block w-full object-cover ${inline ? "h-[260px]" : "h-[200px]"}`} />
           {openingKey === "photo" && (
             <span className="absolute inset-0 grid place-items-center bg-black/30">
               <Loader2 className="size-6 animate-spin text-white" />
@@ -113,6 +97,48 @@ export function JournalEntryView({
           </div>
         </div>
       )}
+    </>
+  );
+
+  if (inline) {
+    return (
+      <PopOutCard
+        eyebrow={
+          <span className="inline-flex flex-wrap items-center gap-2 normal-case tracking-normal">
+            <JournalKindTag kind={entry.kind}>{kindLabel}</JournalKindTag>
+            <span className="text-[14px] font-[600]">{dateLabel}</span>
+          </span>
+        }
+        title={entry.title || kindLabel}
+        footer={canEdit ? <KyaLink onClick={onEdit}><Pencil className="size-4" aria-hidden="true" /> {t("journalEntryView.edit", "Edit")}</KyaLink> : undefined}
+      >
+        {content}
+      </PopOutCard>
+    );
+  }
+
+  return (
+    <KyaSheet
+      onClose={onClose}
+      closeLabel={t("journalEntryView.close", "Close")}
+      title={
+        <>
+          <KyaHeading size={24}>{entry.title || kindLabel}</KyaHeading>
+          <div className="mt-2 flex items-center gap-2">
+            <JournalKindTag kind={entry.kind}>{kindLabel}</JournalKindTag>
+            <span className="text-[13px]" style={{ color: K.quiet }}>{dateLabel}</span>
+          </div>
+        </>
+      }
+      // Edit is gated on record_health — a viewer-preset member can open an
+      // entry but must not be offered a control RLS would reject.
+      footer={canEdit ? (
+        <KyaSecondaryButton className="w-full" icon={<Pencil className="size-4" />} onClick={onEdit}>
+          {t("journalEntryView.edit", "Edit")}
+        </KyaSecondaryButton>
+      ) : undefined}
+    >
+      {content}
     </KyaSheet>
   );
 }

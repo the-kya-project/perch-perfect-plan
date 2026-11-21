@@ -1590,6 +1590,12 @@
     "email.bereavement.text": {
       "stamp": "1b371aafe2097766"
     },
+    "email.bereavement.sorryMany": {
+      "stamp": "de03fdc327ee9ec3"
+    },
+    "email.bereavement.textMany": {
+      "stamp": "1b371aafe2097766"
+    },
     "push.common.yourBird": {
       "stamp": "fb5d7aead9178f25"
     },

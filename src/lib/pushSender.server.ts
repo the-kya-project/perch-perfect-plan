@@ -12,9 +12,14 @@ type EventKey =
   | "care_plan_reminder"
   | "weight_reminder"
   | "checkin_reminder"
-  | "health_concern";
+  | "health_concern"
+  // To the save-error alert inbox's account when an alert email can't go
+  // (save-error-alerts hook). Always sent, like health_concern.
+  | "ops_alert";
 
-const TOGGLE_COLUMN: Record<Exclude<EventKey, "health_concern">, string> = {
+const ALWAYS_SENT: ReadonlySet<EventKey> = new Set(["health_concern", "ops_alert"]);
+
+const TOGGLE_COLUMN: Record<Exclude<EventKey, "health_concern" | "ops_alert">, string> = {
   sitter_log: "push_sitter_log",
   care_plan_reminder: "push_care_plan_reminder",
   weight_reminder: "push_weight_reminder",
@@ -50,9 +55,9 @@ export async function sendPushToOwner(
 
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
-  // Toggle gate (skip for safety-critical health concerns).
-  if (eventKey !== "health_concern") {
-    const col = TOGGLE_COLUMN[eventKey];
+  // Toggle gate (skip for safety-critical health concerns and ops alerts).
+  if (!ALWAYS_SENT.has(eventKey)) {
+    const col = TOGGLE_COLUMN[eventKey as keyof typeof TOGGLE_COLUMN];
     const { data: profile } = await supabaseAdmin
       .from("profiles")
       .select(col)

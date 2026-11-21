@@ -11,14 +11,26 @@ import { K, KyaPage, KyaBody } from "@/components/kya";
 import { PageHeader } from "@/components/headers";
 import { EmergencyList, EmergencyRowSheet, type EmergencyValues, type RowKey } from "@/components/EmergencyContacts";
 import { useOwnerEmergency, useOwnerName } from "@/lib/useOwnerEmergency";
+import { z } from "zod";
+import { useDuoMode } from "@/lib/duo";
+import { AccountDuo } from "@/components/duo/AccountDuo";
 
 // Account emergency info: what a sitter sees if something goes wrong. Every
 // bird uses these values unless that bird has its own (see the bird's
 // emergency page). Stored in owner_emergency_defaults.
 export const Route = createFileRoute("/_authenticated/account/emergency")({
   head: () => ({ meta: [{ title: i18next.t("accountEmergency.metaTitle", "Emergency info — Kya & Co.") }] }),
-  component: AccountEmergency,
+  // iPhone Duo only: `all` shows the whole list in the card instead of the
+  // fields edited in place.
+  validateSearch: z.object({ all: z.coerce.boolean().optional().catch(undefined) }),
+  component: AccountEmergencyRoute,
 });
+
+function AccountEmergencyRoute() {
+  const { all } = Route.useSearch();
+  if (useDuoMode() === "sideways") return <AccountDuo selected="emergency">{all ? <AccountEmergency /> : null}</AccountDuo>;
+  return <AccountEmergency />;
+}
 
 function AccountEmergency() {
   const { t } = useTranslation();

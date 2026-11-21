@@ -602,11 +602,15 @@ export type Database = {
           created_at: string
           current_period_end: string | null
           external_ref: string | null
+          founding_claim_id: string | null
+          free_until: string | null
+          gift_purchase_id: string | null
           granted_by: string | null
           id: string
           note: string | null
           plan: string
           source: string
+          starts_at: string | null
           status: string
           updated_at: string
           user_id: string
@@ -615,11 +619,15 @@ export type Database = {
           created_at?: string
           current_period_end?: string | null
           external_ref?: string | null
+          founding_claim_id?: string | null
+          free_until?: string | null
+          gift_purchase_id?: string | null
           granted_by?: string | null
           id?: string
           note?: string | null
           plan: string
           source: string
+          starts_at?: string | null
           status: string
           updated_at?: string
           user_id: string
@@ -628,11 +636,15 @@ export type Database = {
           created_at?: string
           current_period_end?: string | null
           external_ref?: string | null
+          founding_claim_id?: string | null
+          free_until?: string | null
+          gift_purchase_id?: string | null
           granted_by?: string | null
           id?: string
           note?: string | null
           plan?: string
           source?: string
+          starts_at?: string | null
           status?: string
           updated_at?: string
           user_id?: string
@@ -673,6 +685,122 @@ export type Database = {
             referencedColumns: ["slug"]
           },
         ]
+      }
+      founding_claims: {
+        Row: {
+          claimed_at: string
+          id: string
+          locked_price_cents: number
+          region_slug: string
+          source: string | null
+          spot_number: number
+          user_id: string
+        }
+        Insert: {
+          claimed_at?: string
+          id?: string
+          locked_price_cents?: number
+          region_slug: string
+          source?: string | null
+          spot_number: number
+          user_id: string
+        }
+        Update: {
+          claimed_at?: string
+          id?: string
+          locked_price_cents?: number
+          region_slug?: string
+          source?: string | null
+          spot_number?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "founding_claims_region_slug_fkey"
+            columns: ["region_slug"]
+            isOneToOne: false
+            referencedRelation: "regions"
+            referencedColumns: ["slug"]
+          },
+        ]
+      }
+      gift_purchases: {
+        Row: {
+          amount_paid_cents: number
+          amount_refunded_cents: number
+          buyer_email: string
+          buyer_emailed_at: string | null
+          buyer_name: string | null
+          created_at: string
+          gift_code: string
+          giving_rate: number
+          id: string
+          message: string | null
+          plan: string
+          promo_code: string | null
+          purchased_at: string
+          recipient_email: string | null
+          recipient_emailed_at: string | null
+          recipient_name: string
+          redeemed_at: string | null
+          redeemed_by: string | null
+          refunded_at: string | null
+          send_on: string | null
+          status: string
+          stripe_checkout_session_id: string
+          stripe_payment_intent_id: string | null
+        }
+        Insert: {
+          amount_paid_cents: number
+          amount_refunded_cents?: number
+          buyer_email: string
+          buyer_emailed_at?: string | null
+          buyer_name?: string | null
+          created_at?: string
+          gift_code: string
+          giving_rate?: number
+          id?: string
+          message?: string | null
+          plan: string
+          promo_code?: string | null
+          purchased_at?: string
+          recipient_email?: string | null
+          recipient_emailed_at?: string | null
+          recipient_name: string
+          redeemed_at?: string | null
+          redeemed_by?: string | null
+          refunded_at?: string | null
+          send_on?: string | null
+          status?: string
+          stripe_checkout_session_id: string
+          stripe_payment_intent_id?: string | null
+        }
+        Update: {
+          amount_paid_cents?: number
+          amount_refunded_cents?: number
+          buyer_email?: string
+          buyer_emailed_at?: string | null
+          buyer_name?: string | null
+          created_at?: string
+          gift_code?: string
+          giving_rate?: number
+          id?: string
+          message?: string | null
+          plan?: string
+          promo_code?: string | null
+          purchased_at?: string
+          recipient_email?: string | null
+          recipient_emailed_at?: string | null
+          recipient_name?: string
+          redeemed_at?: string | null
+          redeemed_by?: string | null
+          refunded_at?: string | null
+          send_on?: string | null
+          status?: string
+          stripe_checkout_session_id?: string
+          stripe_payment_intent_id?: string | null
+        }
+        Relationships: []
       }
       guide_cards: {
         Row: {
@@ -1766,6 +1894,18 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_founding_claims: {
+        Args: never
+        Returns: {
+          claimed_at: string
+          email: string
+          name: string
+          region_name: string
+          region_slug: string
+          source: string
+          spot_number: number
+        }[]
+      }
       admin_grant_entitlement: {
         Args: {
           p_email: string
@@ -1793,6 +1933,48 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      admin_founding_entitlements: {
+        Args: never
+        Returns: {
+          ends_at: string | null
+          entitlement_id: string | null
+          free_until: string | null
+          spot_number: number
+          starts_at: string | null
+          status: string | null
+        }[]
+      }
+      admin_gift_entitlements: {
+        Args: never
+        Returns: {
+          ends_at: string | null
+          entitlement_id: string
+          gift_id: string
+          plan: string
+          starts_at: string | null
+          status: string
+        }[]
+      }
+      admin_set_flock_opens_at: {
+        Args: { p_opens_at: string | null }
+        Returns: {
+          flock_opens_at: string | null
+          id: boolean
+          ui_enabled: boolean
+          updated_at: string
+          updated_by: string | null
+        }
+      }
+      admin_set_flock_ui: {
+        Args: { p_enabled: boolean }
+        Returns: {
+          flock_opens_at: string | null
+          id: boolean
+          ui_enabled: boolean
+          updated_at: string
+          updated_by: string | null
+        }
+      }
       admin_revoke_entitlement: {
         Args: { p_email: string }
         Returns: {
@@ -1815,7 +1997,33 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      claim_founding_spot: {
+        Args: { p_region_slug: string; p_source?: string }
+        Returns: {
+          claimed_at: string
+          id: string
+          locked_price_cents: number
+          region_slug: string
+          source: string | null
+          spot_number: number
+          user_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "founding_claims"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       flock_enabled: { Args: never; Returns: boolean }
+      founding_status: {
+        Args: never
+        Returns: {
+          cap: number
+          claimed: number
+          open: boolean
+        }[]
+      }
       handoff_accept_transfer: {
         Args: {
           p_handoff_id: string
@@ -1824,9 +2032,37 @@ export type Database = {
         }
         Returns: undefined
       }
-      has_app_premium: { Args: { p_user_id?: string }; Returns: boolean }
       is_admin: { Args: { p_user_id?: string }; Returns: boolean }
       is_flock_member: { Args: { p_user_id?: string }; Returns: boolean }
+      record_gift_purchase: {
+        Args: {
+          p_amount_paid_cents: number
+          p_buyer_email: string
+          p_buyer_name: string | null
+          p_checkout_session_id: string
+          p_message: string | null
+          p_payment_intent_id: string | null
+          p_plan: string
+          p_promo_code: string | null
+          p_purchased_at: string
+          p_recipient_email: string | null
+          p_recipient_name: string
+          p_send_on: string | null
+        }
+        Returns: {
+          created: boolean
+          gift_code: string
+          id: string
+        }[]
+      }
+      redeem_gift: {
+        Args: { p_code: string }
+        Returns: {
+          ok: boolean
+          plan: string
+          reason: string
+        }[]
+      }
       safe_uuid: { Args: { t: string }; Returns: string }
     }
     Enums: {

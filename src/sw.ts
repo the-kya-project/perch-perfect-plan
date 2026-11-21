@@ -8,9 +8,10 @@
  * in `public/sw.js` that clobbered it at build time — leaving production with
  * push but NO caching, so every PWA launch re-downloaded the whole bundle.
  *
- * Registration is gated to production by `sw-register.ts`; when a new build
- * of this worker activates, that module reloads the page once (controllerchange)
- * so clients never keep running stale JS against a new worker.
+ * Registration is gated to production by `sw-register.ts`. A new build of
+ * this worker WAITS until a page asks it to take over (SKIP_WAITING), and never
+ * reloads a page itself: sw-register.ts decides when that's safe (nothing is
+ * mid-entry, or the owner tapped Update), so a reload can't wipe a form.
  */
 import { clientsClaim } from "workbox-core";
 import { cleanupOutdatedCaches, precacheAndRoute, type PrecacheEntry } from "workbox-precaching";
@@ -37,44 +38,34 @@ declare let self: ServiceWorkerGlobalScope & {
   __WB_MANIFEST: Array<PrecacheEntry | string>;
 };
 
-// New SW takes over on the next page load instead of waiting for every
-// controlled PWA window to close — without this, fixes can sit stuck behind
-// the old SW for days on iOS where the user never fully quits the app.
-self.skipWaiting();
+// A new build waits for a page to say it's a good moment (sw-register.ts:
+// a fresh open, back after a long time away, or the owner's Update tap).
+// Before, it took over at once and reloaded every open page, which could
+// wipe a health check mid-entry. The very first install has no page to
+// disturb and activates straight away; clientsClaim lets it control them.
+self.addEventListener("message", (event) => {
+  if ((event.data as { type?: string } | null)?.type === "SKIP_WAITING") void self.skipWaiting();
+});
 clientsClaim();
 
 /** The cache of last-served page HTML (offline fallback for navigations). */
 const HTML_SHELL_CACHE = "html-shell";
-
-// Was another build's worker in charge when this one installed? Only then is
-// activating an UPDATE that has to reach pages already open.
-let replacingAnotherBuild = false;
-self.addEventListener("install", () => {
-  replacingAnotherBuild = !!self.registration.active;
-});
 
 // A new build is taking over. Saved page HTML belongs to the build that saved
 // it and names that build's code files, which a deploy removes from the server
 // and this worker's precache. Serving it would load a page that can never
 // start (the 2026-10-21 iOS "stuck on the loading screen": a slow cold launch
 // fell back to old HTML, its scripts 404'd, and no app code ran to recover).
-// So drop it, then reload the open pages once onto this build. That reload is
-// what rescues a page already stuck on old HTML: it has no working code of its
-// own, so it can't ask. Once per activation, so it can never loop.
+// So drop it. Pages already open are NOT reloaded from here any more: a page
+// running app code decides for itself (sw-register.ts), and a page that can't
+// start is rescued by the inline startup guard in __root.tsx, which needs no
+// app code. Since the worker now waits instead of taking over mid-session, an
+// open page keeps its own build's precache until it's ready to move on.
 self.addEventListener("activate", (event) => {
-  const takeOver = (async () => {
+  event.waitUntil((async () => {
     await caches.delete(HTML_SHELL_CACHE);
     await self.clients.claim();
-  })();
-  event.waitUntil(takeOver);
-  // The reload must NOT be part of waitUntil: the reloaded page's request is
-  // held until this worker finishes activating, so waiting on it here would
-  // deadlock and freeze the page. Start it once activation is under way.
-  void takeOver.then(async () => {
-    if (!replacingAnotherBuild) return;
-    const windows = await self.clients.matchAll({ type: "window" });
-    await Promise.all(windows.map((c) => c.navigate(c.url).catch(() => null)));
-  });
+  })());
 });
 
 // ── Caching ────────────────────────────────────────────────────────────────

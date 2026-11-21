@@ -15,11 +15,12 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useServerFn } from "@tanstack/react-start";
 import { getBirdOwnerEmergency } from "@/lib/household.functions";
-import { ASPCA_POISON_CONTROL, EMERGENCY_FIELDS, emergencyDifferent, isPhoneField, mergeEmergency, phoneWarning, formatPhoneOnBlur } from "@/lib/emergency";
+import { EMERGENCY_FIELDS, emergencyDifferent, isPhoneField, mergeEmergency, phoneWarning, formatPhoneOnBlur } from "@/lib/emergency";
 import { friendlyError } from "@/lib/errorMessage";
 import { useConfirm } from "@/components/ConfirmSheet";
 import { BottomSheet } from "./BottomSheet";
 import { S, SERIF, TileCard, Tag, Field, TextField, SetupPrimaryButton, SetupTextButton, SetupSecondaryButton } from "./controls";
+import { useHomePoisonLine } from "@/lib/useHomePoisonLine";
 
 type RowKey = "avian_vet" | "emergency_vet" | "owner_phone" | "backup" | "poison_control" | "carrier" | "first_aid" | "spending";
 
@@ -40,7 +41,7 @@ function rowLabel(t: TFunction, k: RowKey): string {
     case "emergency_vet": return t("emergencySetup.emergencyVet", "Emergency vet");
     case "owner_phone": return t("emergencySetup.yourPhone", "Your phone");
     case "backup": return t("emergencySetup.backupContact", "Backup contact");
-    case "poison_control": return t("emergencySetup.aspca", "ASPCA Animal Poison Control");
+    case "poison_control": return t("emergencySetup.poisonControl", "Poison control");
     case "carrier": return t("emergencySetup.carrier", "Where is your pet carrier?");
     case "first_aid": return t("emergencySetup.firstAid", "Where is your first-aid kit?");
     case "spending": return t("emergencySetup.spending", "Vet spending limit without calling you");
@@ -128,7 +129,8 @@ export function EmergencyContactsScreen({
   // What this bird uses, per contact row: its own row, else the shared one.
   const merged = mergeEmergency(own, shared) as Record<string, string | null>;
   const eff = (k: string) => merged[k] ?? "";
-  const display = (k: string) => eff(k) || (k === "poison_control" ? ASPCA_POISON_CONTROL : "");
+  const poisonLine = useHomePoisonLine();
+  const display = (k: string) => eff(k) || (k === "poison_control" ? poisonLine?.display ?? "" : "");
 
   const missingOwnerPhone = loaded && !eff("owner_phone");
   const missingVetPhone = loaded && !eff("avian_vet_phone");

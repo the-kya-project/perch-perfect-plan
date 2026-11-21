@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { authErrorMessage } from "@/lib/authErrorMessage";
 import { CheckEmailView } from "@/components/CheckEmailView";
 import { K } from "@/components/kya";
+import { CONFIRM_RESEND_COOLDOWN_S } from "@/lib/confirmResend";
 import { useTranslation } from "react-i18next";
 import i18next from "i18next";
 
@@ -13,7 +14,7 @@ import i18next from "i18next";
 // data) by the auth page right before navigating here.
 export const PENDING_EMAIL_KEY = "ppc_pending_confirm_email";
 const RESEND_UNTIL_KEY = "ppc_confirm_resend_until";
-const RESEND_COOLDOWN_S = 30;
+const RESEND_COOLDOWN_S = CONFIRM_RESEND_COOLDOWN_S; // see lib/confirmResend
 const SENT_FLASH_MS = 2500;
 
 export const Route = createFileRoute("/confirm-email")({
@@ -34,16 +35,22 @@ function writeResendUntil(ts: number) {
 function ConfirmEmail() {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const [email] = useState(readEmail);
+  // null until read after mount. Reading sessionStorage during render gave the
+  // browser's first render an address the server never had ("We sent a link to
+  // <b></b>" vs "…<b>you@…</b>"), React #418. It shows up on a reload, e.g.
+  // when iOS reloads the tab after the person comes back from the Mail app.
+  const [email, setEmail] = useState<string | null>(null);
+  useEffect(() => setEmail(readEmail()), []);
   const [resending, setResending] = useState(false);
   const [cooldown, setCooldown] = useState(0);
   const [justSent, setJustSent] = useState(false);
+  const [resent, setResent] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const proceeded = useRef(false);
 
   // No pending email (e.g. opened this URL directly) → nothing to confirm.
   useEffect(() => {
-    if (!email) navigate({ to: "/auth", search: { mode: "signup" as const }, replace: true });
+    if (email === "") navigate({ to: "/auth", search: { mode: "signup" as const }, replace: true });
   }, [email, navigate]);
 
   // Recognize confirmation and move on. The owner clicks the link in their email
@@ -97,11 +104,18 @@ function ConfirmEmail() {
     setResending(true);
     setError(null);
     try {
-      const { error } = await supabase.auth.resend({ type: "signup", email });
+      // Same redirect the sign-up email carries (src/routes/auth.tsx), so the
+      // resent link also lands the confirmed owner on /welcome.
+      const { error } = await supabase.auth.resend({
+        type: "signup",
+        email,
+        options: { emailRedirectTo: window.location.origin + "/welcome" },
+      });
       if (error) throw error;
       writeResendUntil(Date.now() + RESEND_COOLDOWN_S * 1000);
       setCooldown(RESEND_COOLDOWN_S);
       setJustSent(true);
+      setResent(true);
     } catch (err: any) {
       setError(authErrorMessage(err, t("confirmEmail.couldNotResend", "Couldn't resend. Try again in a moment.")));
     } finally {
@@ -119,13 +133,14 @@ function ConfirmEmail() {
 
   return (
     <CheckEmailView
-      email={email}
+      email={email ?? ""}
       kind="signup"
       onBack={useDifferentEmail}
       onResend={resend}
       resending={resending}
       cooldown={cooldown}
       justSent={justSent}
+      resent={resent}
       error={error}
       onUseDifferentEmail={useDifferentEmail}
       footer={

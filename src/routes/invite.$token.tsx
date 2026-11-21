@@ -20,6 +20,7 @@ import { useTranslation, Trans } from "react-i18next";
 import type { TFunction } from "i18next";
 import i18next from "i18next";
 import { birdNames } from "@/lib/birdNames";
+import { BIRD_PHOTO_FOCUS } from "@/lib/birdPhotoFocus";
 
 // Public household-invite accept screen. Renders for logged-out visitors too;
 // the token is the access check. Never reveals bird data for an
@@ -117,10 +118,10 @@ function InviteAccept() {
   const owner = invite.inviterName ? firstNameOf(invite.inviterName) : t("invite.anOwner", "An owner");
   const names = invite.birdNames;
   const birds: BirdPreview[] = invite.birds ?? names.map((name) => ({ name, photoUrl: null, photoPosition: null }));
-  const many = names.length > 3;
-  const title = many
-    ? t("invite.titleManyBirds", "{{owner}} invited you to help care for {{count}} birds", { owner, count: names.length })
-    : t("invite.titleBirds", "{{owner}} invited you to help care for {{birds}}", { owner, birds: names.length ? birdNames(t, names) : t("nameList.yourBirds", "your birds") });
+  // birdNames handles every shape (incl. 4+ → "{{count}} birds"), so one key
+  // covers the title; the old invite.titleManyBirds carried a bogus _one
+  // plural form and is gone.
+  const title = t("invite.titleBirds", "{{owner}} invited you to help care for {{birds}}", { owner, birds: names.length ? birdNames(t, names) : t("nameList.yourBirds", "your birds") });
   const inviteEmail = invite.inviteeEmail.toLowerCase();
   const matches = !!session?.signedIn && session.email === inviteEmail;
   const wrongAccount = !!session?.signedIn && session.email !== inviteEmail;
@@ -242,7 +243,7 @@ function BirdAvatars({ birds }: { birds: BirdPreview[] }) {
       {shown.map((b, i) => (
         <span key={i} className={circle} style={{ ...ring, background: K.teal, color: K.forest, zIndex: shown.length - i }}>
           {b.photoUrl
-            ? <img src={b.photoUrl} alt="" className="size-full object-cover" style={{ objectPosition: b.photoPosition ?? "50% 20%" }} />
+            ? <img src={b.photoUrl} alt="" className="size-full object-cover" style={{ objectPosition: b.photoPosition ?? BIRD_PHOTO_FOCUS }} />
             : <span className="text-[20px] font-[700]" style={{ fontFamily: SERIF }}>{(b.name.trim()[0] ?? "?").toUpperCase()}</span>}
         </span>
       ))}

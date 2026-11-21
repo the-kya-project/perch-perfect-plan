@@ -12,6 +12,8 @@ import { setupStepNumber, type SetupStepKey } from "@/lib/setupSteps";
 import { S, SERIF } from "@/components/setup/controls";
 import { K, KyaPage, KyaBody, KyaIconTile, KyaPrimaryButton, KyaTag } from "@/components/kya";
 import { PageHeader } from "@/components/headers";
+import { useDuoMode } from "@/lib/duo";
+import { CarePlanOverviewDuo } from "@/components/duo/plan/CarePlanDuo";
 import {
   Eye, Feather, Soup, Heart, Hand, Video, Sun, Home as HomeIcon, Phone, Wand2,
 } from "lucide-react";
@@ -92,6 +94,7 @@ function CarePlanOverview() {
   const { t } = useTranslation();
   const { birdId } = Route.useParams();
   const navigate = useNavigate();
+  const duo = useDuoMode() === "sideways";
   const role = useBirdRole(birdId);
   // Edit access is capability-based now: owner OR a member with edit_care_plans
   // can open the section editor; everyone else sees the read-only care plan.
@@ -157,6 +160,22 @@ function CarePlanOverview() {
       </li>
     );
   };
+
+  // iPhone Duo (two panes): the sections as cards, the open one on the right.
+  if (duo) {
+    return (
+      <CarePlanOverviewDuo
+        birdId={birdId}
+        status={status}
+        canEdit={canEdit}
+        canPreview={canPreview}
+        onBack={() => navigate({ to: "/birds/$birdId", params: { birdId } })}
+        onOpenRow={openRow}
+        onWalkThrough={() => navigate({ to: "/birds/$birdId/setup", params: { birdId }, search: { step: 1 } })}
+        onViewAsSitter={() => navigate({ to: "/birds/$birdId/view-as-sitter", params: { birdId } })}
+      />
+    );
+  }
 
   return (
     <KyaPage>

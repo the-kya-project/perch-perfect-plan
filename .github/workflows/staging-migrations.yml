@@ -1,0 +1,81 @@
+# Keeps the persistent Supabase "staging" branch on main's schema.
+#
+# Every Vercel preview runs against staging, so staging has to have every
+# migration main has. Production gets them from the Supabase GitHub integration
+# on merge; staging is not linked to a git branch, so this job applies them: on
+# every push to main that touches supabase/migrations, `supabase db push` runs
+# only the files staging hasn't recorded yet.
+#
+# Needs one repository secret, STAGING_DB_URL: the staging branch's *session
+# pooler* connection string (Supabase → switch to the staging branch → Connect).
+# GitHub runners have no IPv6, so the direct db.<ref>.supabase.co host won't
+# connect. The job reads the project ref out of that string and refuses to run
+# unless it is staging's; the string itself is never printed.
+name: Staging migrations
+
+on:
+  push:
+    branches: [main]
+    paths: ["supabase/migrations/**"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: staging-migrations
+  cancel-in-progress: false
+
+jobs:
+  push:
+    runs-on: ubuntu-latest
+    env:
+      STAGING_DB_URL: ${{ secrets.STAGING_DB_URL }}
+      # Project refs are public (they're in every API URL); only the connection
+      # string is secret, and it is never echoed.
+      PRODUCTION_REF: koyqdyamazuuwvqbttnj
+      STAGING_REF: upygspynanvuxthgnaph
+    steps:
+      - name: Refuse anything but the staging project
+        shell: bash
+        run: |
+          if [ -z "$STAGING_DB_URL" ]; then
+            echo "::error::Repository secret STAGING_DB_URL is not set."
+            exit 1
+          fi
+          # Read the project ref out of the connection string. Session pooler:
+          #   postgresql://postgres.<ref>:<password>@aws-0-<region>.pooler.supabase.com:5432/postgres
+          # Direct: postgresql://postgres:<password>@db.<ref>.supabase.co:5432/postgres
+          rest="${STAGING_DB_URL#*://}"
+          user="${rest%%@*}"; user="${user%%:*}"
+          host="${STAGING_DB_URL##*@}"; host="${host%%[:/?]*}"
+          ref=""
+          if [[ "$user" == postgres.* ]]; then
+            ref="${user#postgres.}"
+          elif [[ "$host" =~ ^db\.([a-z0-9]+)\.supabase\.co$ ]]; then
+            ref="${BASH_REMATCH[1]}"
+          fi
+          if [ -z "$ref" ]; then
+            echo "::error::Could not read a Supabase project ref from STAGING_DB_URL. Use the staging branch's session pooler string."
+            exit 1
+          fi
+          if [ "$ref" = "$PRODUCTION_REF" ]; then
+            echo "::error::STAGING_DB_URL points at the PRODUCTION project ($PRODUCTION_REF). Refusing to run."
+            exit 1
+          fi
+          if [ "$ref" != "$STAGING_REF" ]; then
+            echo "::error::STAGING_DB_URL points at project $ref, not staging ($STAGING_REF). Refusing to run."
+            exit 1
+          fi
+          echo "Target: staging ($ref)"
+
+      - uses: actions/checkout@v4
+
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      # --include-all also applies a migration whose timestamp is older than
+      # the newest one staging already has (PRs merge out of order).
+      - name: Apply new migrations to staging
+        run: supabase db push --db-url "$STAGING_DB_URL" --include-all --yes

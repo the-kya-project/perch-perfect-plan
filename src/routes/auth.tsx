@@ -2,18 +2,21 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
-import { lovable } from "@/integrations/lovable";
-import { Loader2 } from "lucide-react";
+import { Check, Loader2 } from "lucide-react";
 import { track } from "@/lib/analytics";
 import { captureLead } from "@/lib/captureLead";
 import { attributionMetadata, getFirstTouch } from "@/lib/attribution";
 import { currentLocale } from "@/lib/i18n/ownerLocale";
 import { PENDING_EMAIL_KEY } from "./confirm-email";
-import { K, KyaLabel } from "@/components/kya";
+import { K, KyaLabel, KyaSecondaryButton } from "@/components/kya";
 import { FrontDoorBody, FrontDoorError, FrontDoorHeader, FrontDoorPage, LegalLinks } from "@/components/frontDoor";
-import { CheckEmailView } from "@/components/CheckEmailView";
+import { CheckEmailView, NewestLinkSent } from "@/components/CheckEmailView";
+import { CONFIRM_RESEND_COOLDOWN_S, confirmRedirectTo, takeSignInPrefill } from "@/lib/confirmResend";
 import { SocialSignInButtons } from "@/components/SocialSignInButtons";
+import { OpenInAppBar } from "@/components/OpenInAppBar";
+import { openInAppPath } from "@/lib/openInApp";
 import { authErrorMessage } from "@/lib/authErrorMessage";
+import { existingAccountSignal } from "@/lib/signupExisting";
 import { useTranslation, Trans } from "react-i18next";
 import i18next from "i18next";
 import { safeInternalPath, stashReturnTo, takeReturnTo } from "@/lib/returnTo";
@@ -45,7 +48,10 @@ function AuthPage() {
   const [password, setPassword] = useState("");
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
-  const [marketingOptIn, setMarketingOptIn] = useState(true);
+  // Unticked until the person ticks it: a pre-ticked box isn't consent under
+  // EU rules (most of the Dutch audience). Only the Brevo marketing list
+  // depends on it; onboarding emails follow notify_onboarding instead.
+  const [marketingOptIn, setMarketingOptIn] = useState(false);
   const [loading, setLoading] = useState(false);
   // Which button started the current request, for its spinner.
   const [busy, setBusy] = useState<"email" | "reset" | null>(null);
@@ -56,6 +62,18 @@ function AuthPage() {
   const [view, setView] = useState<"form" | "forgot" | "resetSent">("form");
   const [resetCooldown, setResetCooldown] = useState(0);
   const [resetJustSent, setResetJustSent] = useState(false);
+  // Sign-up hit an email that already has an account: that address, for the
+  // "You already have an account" card and its resend button.
+  const [existingEmail, setExistingEmail] = useState<string | null>(null);
+  // Came from /link-expired for an account that's already confirmed: fill in
+  // the email and say why they're here. Read after mount (sessionStorage).
+  const [confirmedNotice, setConfirmedNotice] = useState(false);
+  useEffect(() => {
+    const prefill = takeSignInPrefill();
+    if (!prefill) return;
+    setEmail(prefill.email);
+    setConfirmedNotice(true);
+  }, []);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
@@ -103,16 +121,23 @@ function AuthPage() {
   async function handleEmail(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
+    setExistingEmail(null);
     setLoading(true);
     setBusy("email");
     try {
       if (mode === "signup") {
+        // A new account lands on /welcome (straight away, or from the
+        // confirmation email), which forwards to a stashed deep link such as
+        // /founding. Only stash when there is one.
+        if (returnTo) stashReturnTo(returnTo);
         const { data, error } = await supabase.auth.signUp({
           email,
           password,
           options: {
             data: {
-              display_name: [firstName, lastName].filter(Boolean).join(" ") || email.split("@")[0],
+              // No name typed → no name. Never the part of the email before
+              // the @: emails would greet "Welcome to the flock, jdoe42."
+              display_name: [firstName, lastName].filter(Boolean).join(" ") || undefined,
               marketing_opt_in: marketingOptIn,
               // Read by the "Confirm signup" email template ({{ .Data.locale }}).
               locale: currentLocale(),
@@ -125,24 +150,19 @@ function AuthPage() {
             emailRedirectTo: window.location.origin + "/welcome",
           },
         });
-        // Already-registered email — handle BOTH Supabase configs the same way
-        // (bounce to sign-in, email persists on the same /auth route):
-        //   • Confirm-email OFF → signUp returns an error ("User already
-        //     registered"). Without this we'd just toast a raw error and leave
-        //     them on the form, free to keep retrying.
-        //   • Confirm-email ON → no error (anti-enumeration), but an obfuscated
-        //     user with an EMPTY identities array and no session — otherwise
-        //     we'd send them to "check your email to confirm" for a mail that
-        //     never comes.
-        const identities = (data?.user as { identities?: unknown[] } | null)?.identities;
-        const alreadyRegistered =
-          (!!error && /already\s*(registered|exist)/i.test(error.message ?? "")) ||
-          (!error && Array.isArray(identities) && identities.length === 0);
-        if (alreadyRegistered) {
-          // The card stays on the sign-in form this lands on (same page);
-          // it's the one place this shows, no toast on top of it.
-          setError(t("auth.emailAlreadyHasAccount", "That email already has an account — sign in instead."));
-          navigate({ to: "/auth", search: { mode: "signin" } });
+        // Already-registered email. With "Confirm email" on (production) this
+        // is NOT an error: Supabase returns a user with an empty identities
+        // array and no session. Without this we'd send them to "check your
+        // email" for a mail that never comes. See lib/signupExisting.ts.
+        const existing = existingAccountSignal({ data, error });
+        if (existing) {
+          // Say so plainly, with a way to get the confirmation email again
+          // (the usual reason someone signs up twice is that they never
+          // confirmed). The card stays on the sign-in form this lands on (same
+          // page, so the email and password they typed carry over).
+          setExistingEmail(email.trim());
+          track("signup_existing_account", { via: existing });
+          navigate({ to: "/auth", search: { mode: "signin", ...(returnTo ? { redirect: returnTo } : {}) } });
           return;
         }
         if (error) throw error; // any other signup error
@@ -286,7 +306,7 @@ function AuthPage() {
   const legalLinkCls = "inline-flex min-h-[44px] items-center px-0.5 align-middle font-[700] underline underline-offset-2";
 
   return (
-    <FrontDoorPage>
+    <FrontDoorPage duoForm>
       <FrontDoorHeader
         onBack={forgot ? backToSignInForm : () => navigate({ to: "/" })}
         title={title}
@@ -294,6 +314,12 @@ function AuthPage() {
       />
       <FrontDoorBody>
         {error && <FrontDoorError>{error}</FrontDoorError>}
+        {existingEmail && !forgot && <ExistingAccountCard email={existingEmail} />}
+        {confirmedNotice && !forgot && mode === "signin" && (
+          <div role="status" className="rounded-[16px] border-[1.5px] bg-white px-4 py-3 text-[14.5px] font-[600] leading-[1.45]" style={{ borderColor: K.forest, color: K.forest }}>
+            {t("auth.alreadyConfirmedSignIn", "Your email is already confirmed. Sign in to continue.")}
+          </div>
+        )}
 
         {forgot ? (
           <form
@@ -328,6 +354,8 @@ function AuthPage() {
                 straight to the dashboard (gated by an account flag), so only new
                 owners see it. The provider round trip can't carry a deep link,
                 so /welcome picks it up from the stash and forwards there instead. */}
+            {/* From an email link on an iPhone: offer the app first. */}
+            <OpenInAppBar variant="card" path={openInAppPath("/auth", returnTo ? `?redirect=${encodeURIComponent(returnTo)}` : "")} />
             <SocialSignInButtons
               redirectPath="/welcome"
               beforeStart={() => stashReturnTo(returnTo)}
@@ -444,13 +472,13 @@ function AuthPage() {
                 <Trans
                   i18nKey="auth.haveAccountSignIn"
                   defaults="Already have an account? <go>Sign in</go>"
-                  components={{ go: <Link to="/auth" search={{ mode: "signin" }} onClick={() => setError(null)} className={linkCls} style={{ color: K.moss }} /> }}
+                  components={{ go: <Link to="/auth" search={{ mode: "signin", ...(returnTo ? { redirect: returnTo } : {}) }} onClick={() => { setError(null); setExistingEmail(null); }} className={linkCls} style={{ color: K.moss }} /> }}
                 />
               ) : (
                 <Trans
                   i18nKey="auth.newHereCreate"
                   defaults="New here? <go>Create an account</go>"
-                  components={{ go: <Link to="/auth" search={{ mode: "signup" }} onClick={() => setError(null)} className={linkCls} style={{ color: K.moss }} /> }}
+                  components={{ go: <Link to="/auth" search={{ mode: "signup", ...(returnTo ? { redirect: returnTo } : {}) }} onClick={() => { setError(null); setExistingEmail(null); }} className={linkCls} style={{ color: K.moss }} /> }}
                 />
               )}
             </p>
@@ -462,6 +490,78 @@ function AuthPage() {
         </div>
       </FrontDoorBody>
     </FrontDoorPage>
+  );
+}
+
+
+/** Shown when sign-up meets an email that already has an account. Supabase
+ *  doesn't say whether that account is confirmed (it hides which emails are
+ *  registered), so this offers both ways forward: resend the confirmation, or
+ *  sign in on the form below. */
+function ExistingAccountCard({ email }: { email: string }) {
+  const { t } = useTranslation();
+  const [sending, setSending] = useState(false);
+  const [sent, setSent] = useState(false);
+  const [cooldown, setCooldown] = useState(0);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (cooldown <= 0) return;
+    const id = window.setTimeout(() => setCooldown((c) => c - 1), 1000);
+    return () => window.clearTimeout(id);
+  }, [cooldown]);
+
+  async function resend() {
+    if (sending || cooldown > 0) return;
+    setSending(true);
+    setError(null);
+    try {
+      // Same redirect as the sign-up email, so the link lands on /welcome.
+      const { error } = await supabase.auth.resend({
+        type: "signup",
+        email,
+        options: { emailRedirectTo: confirmRedirectTo() },
+      });
+      if (error) throw error;
+      setSent(true);
+      setCooldown(CONFIRM_RESEND_COOLDOWN_S);
+      track("signup_existing_resend", { ok: true });
+    } catch (err) {
+      setError(authErrorMessage(err, t("auth.couldNotResendConfirmation", "Couldn't resend. Try again in a moment.")));
+      track("signup_existing_resend", { ok: false });
+    } finally {
+      setSending(false);
+    }
+  }
+
+  const label = sending
+    ? t("auth.resendingConfirmation", "Sending…")
+    : cooldown > 0
+      ? t("auth.resendConfirmationIn", "Resend confirmation ({{cooldown}}s)", { cooldown })
+      : t("auth.resendConfirmation", "Resend confirmation");
+
+  return (
+    <div role="status" className="flex flex-col gap-3 rounded-[16px] border-[1.5px] bg-white px-4 py-3.5" style={{ borderColor: K.forest }}>
+      <p className="m-0 text-[14.5px] font-[600] leading-[1.45]" style={{ color: K.forest }}>
+        {t("auth.alreadyHaveAccountCheckInbox", "You already have an account — check your inbox or resend the confirmation.")}
+      </p>
+      <p className="m-0 text-[13.5px] leading-[1.45]" style={{ color: K.ink }}>
+        {t("confirmNote.newestLinkOnly", "If you ask for another email, only the link in the newest one will work.")}
+      </p>
+      {sent && <NewestLinkSent />}
+      {error && <p className="m-0 text-[13.5px] font-[500] leading-[1.45]" style={{ color: K.red }}>{error}</p>}
+      <KyaSecondaryButton
+        className="w-full"
+        onClick={() => void resend()}
+        disabled={sending || cooldown > 0}
+        icon={sending ? <Loader2 className="size-4 animate-spin" aria-hidden="true" /> : sent && cooldown > 0 ? <Check className="size-4" strokeWidth={3} aria-hidden="true" /> : undefined}
+      >
+        {label}
+      </KyaSecondaryButton>
+      <p className="m-0 text-[13px] leading-[1.45]" style={{ color: K.quiet }}>
+        {t("auth.alreadyConfirmedSignInBelow", "Already confirmed? Sign in below.")}
+      </p>
+    </div>
   );
 }
 

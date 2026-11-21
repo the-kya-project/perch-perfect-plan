@@ -12,13 +12,107 @@ import { formatLocalDate } from "@/lib/dates";
 import { parseCalendarDate } from "@/lib/localDay";
 import i18next from "i18next";
 import { useTranslation } from "react-i18next";
+import { BIRD_PHOTO_FOCUS } from "@/lib/birdPhotoFocus";
+import { useState } from "react";
+import { useDuoMode } from "@/lib/duo";
+import { RailBack } from "@/components/DuoRail";
+import { DuoMainButton, DuoTwoPane, PopOutCard } from "@/components/duo/DuoBlocks";
+import { EmptyRecordCard, RecordCard, RecordCards, RecordListHeader } from "@/components/duo/records/RecordList";
 
 // Past birds archive — read-only, sender-side memory of birds handed off.
 // Snapshots only (not linked to live records). Newest departures first.
 export const Route = createFileRoute("/_authenticated/past-birds")({
   head: () => ({ meta: [{ title: i18next.t("pastBirds.metaTitleRehome", "Birds you've helped rehome — Kya & Co.") }] }),
-  component: PastBirds,
+  component: PastBirdsRoute,
 });
+
+/** iPhone Duo sideways: past birds on the left, the picked keepsake on the
+ *  right. Everywhere else, unchanged. */
+function PastBirdsRoute() {
+  if (useDuoMode() === "sideways") return <PastBirdsDuo />;
+  return <PastBirds />;
+}
+
+function PastBirdsDuo() {
+  const { t } = useTranslation();
+  const navigate = useNavigate();
+  const router = useRouter();
+  const canGoBack = useCanGoBack();
+  const goBack = () => (canGoBack ? router.history.back() : navigate({ to: "/account" }));
+  const getBirds = useServerFn(getPastBirds);
+  const pastQ = useQuery({ queryKey: ["past-birds"], queryFn: () => getBirds() });
+  const load = useLoadState([pastQ]);
+  const birds = (pastQ.data?.birds ?? []) as any[];
+  const [pickId, setPickId] = useState<string | null>(null);
+  const current = birds.find((b) => b.id === pickId) ?? birds[0] ?? null;
+  const title = t("pastBirds.title", "Birds you've helped rehome");
+
+  const left = (
+    <>
+      <RailBack onBack={goBack} />
+      <RecordListHeader title={title} />
+      <div className="mt-5 flex flex-col gap-3">
+        {load.failed ? (
+          <LoadError onRetry={load.retry} />
+        ) : load.loading ? (
+          <div className="flex items-center gap-2 py-6 text-[15px]" style={{ color: K.quiet }}>
+            <Loader2 className="size-4 animate-spin" /> {t("pastBirds.loading", "Loading…")}
+          </div>
+        ) : birds.length === 0 ? (
+          <p className="m-0 text-[16px] leading-[1.5]" style={{ color: K.ink }}>{t("pastBirds.empty", "No past birds yet. When you hand off a bird, a memory of them will live here.")}</p>
+        ) : (
+          <>
+            <RecordCards label={title}>
+              {birds.map((b) => (
+                <RecordCard
+                  key={b.id}
+                  media={b.photo_thumb
+                    ? <img src={b.photo_thumb} alt="" className="size-12 shrink-0 rounded-full object-cover" style={{ objectPosition: b.photo_position || BIRD_PHOTO_FOCUS }} />
+                    : <KyaIconTile tone="mist" size={48}><Feather className="size-5" /></KyaIconTile>}
+                  title={b.bird_name}
+                  date={fmt(b.departed_on)}
+                  tag={b.was_foster ? t("pastBirds.foster", "Foster") : undefined}
+                  tagTone="fine"
+                  preview={b.species ? speciesLabel(t, b.species) : undefined}
+                  selected={current?.id === b.id}
+                  onSelect={() => setPickId(b.id)}
+                />
+              ))}
+            </RecordCards>
+            <p className="m-0 px-1 pt-1 text-[14px] leading-[1.5]" style={{ color: K.quiet }}>
+              {t("pastBirds.footer", "Their full records went with them. These are your keepsakes: who they were and where they went.")}
+            </p>
+          </>
+        )}
+      </div>
+    </>
+  );
+
+  const right = current ? (
+    <PopOutCard eyebrow={current.was_foster ? t("pastBirds.foster", "Foster") : undefined} title={current.bird_name}>
+      {current.photo_thumb && (
+        <span className="relative mb-4 block h-[260px] w-full overflow-hidden rounded-[20px]" style={{ background: K.mist }}>
+          <img src={current.photo_thumb} alt="" className="absolute inset-0 size-full object-cover" style={{ objectPosition: current.photo_position || BIRD_PHOTO_FOCUS }} />
+        </span>
+      )}
+      {current.species && <p className="m-0 text-[16px] font-[700]">{speciesLabel(t, current.species)}</p>}
+      <div className="mt-2 flex flex-col gap-1 text-[16px] leading-[1.5]" style={{ color: K.quiet }}>
+        <p className="m-0">{withYouLabel(current.intake_date, current.departed_on)}</p>
+        <p className="m-0">{whereLabel(current)}</p>
+      </div>
+    </PopOutCard>
+  ) : (
+    <EmptyRecordCard
+      icon={<Feather />}
+      title={load.loading ? t("pastBirds.loading", "Loading…") : t("pastBirdsDuo.emptyTitle", "No past birds yet")}
+      body={load.loading ? undefined : t("pastBirds.empty", "No past birds yet. When you hand off a bird, a memory of them will live here.")}
+    >
+      {!load.loading && <DuoMainButton onClick={() => navigate({ to: "/dashboard" })}>{t("pastBirds.backToFlock", "Back to your flock")}</DuoMainButton>}
+    </EmptyRecordCard>
+  );
+
+  return <DuoTwoPane left={left} right={right} leftLabel={title} rightLabel={current?.bird_name} />;
+}
 
 function PastBirds() {
   const { t } = useTranslation();
@@ -77,7 +171,7 @@ function PastBirdCard({ bird: b, last }: { bird: any; last: boolean }) {
     <div className="px-4 py-3.5" style={{ borderBottom: last ? undefined : `1px solid ${K.line}` }}>
       <div className="flex items-start gap-3">
         {b.photo_thumb ? (
-          <img src={b.photo_thumb} alt="" className="size-10 shrink-0 rounded-full object-cover" />
+          <img src={b.photo_thumb} alt="" className="size-10 shrink-0 rounded-full object-cover" style={{ objectPosition: b.photo_position ?? BIRD_PHOTO_FOCUS }} />
         ) : (
           <KyaIconTile tone="mist"><Feather className="size-5" /></KyaIconTile>
         )}

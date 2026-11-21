@@ -128,6 +128,27 @@ export async function deleteVideo(uid: string): Promise<void> {
   }
 }
 
+/**
+ * Make a trimmed copy of a video (Cloudflare's clip API): a new uid holding
+ * startTimeSeconds..endTimeSeconds of the original. Used by journey posts'
+ * Trim; the care app never calls it. The original is left alone (the caller
+ * decides whether to delete it).
+ */
+export async function clipVideo(uid: string, startSeconds: number, endSeconds: number, creator?: string): Promise<{ uid: string }> {
+  const r = await cf(`/stream/clip`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      clippedFromVideoUID: uid,
+      startTimeSeconds: Math.max(0, Math.floor(startSeconds)),
+      endTimeSeconds: Math.ceil(endSeconds),
+      requireSignedURLs: true,
+      ...(creator ? { creator } : {}),
+    }),
+  });
+  return { uid: r.uid as string };
+}
+
 export type StreamStatus = {
   uid: string;
   readyToStream: boolean;
@@ -168,4 +189,15 @@ export function iframeUrlForToken(token: string): string {
 export async function signedIframeUrl(uid: string, ttlSeconds = 3600): Promise<string> {
   const token = await signPlaybackToken(uid, ttlSeconds);
   return iframeUrlForToken(token);
+}
+
+/** The links a journey clip plays from, all carrying one signed token: the
+ *  Stream player, a thumbnail and the HLS manifest. Used by getJourneyClips
+ *  and by scripts/clip-playback-check.ts, so the check tests the real links. */
+export function signedClipUrls(token: string): { player: string; thumbnail: string; hls: string } {
+  return {
+    player: `https://iframe.videodelivery.net/${token}`,
+    thumbnail: `https://videodelivery.net/${token}/thumbnails/thumbnail.jpg?time=1s&height=480`,
+    hls: `https://videodelivery.net/${token}/manifest/video.m3u8`,
+  };
 }

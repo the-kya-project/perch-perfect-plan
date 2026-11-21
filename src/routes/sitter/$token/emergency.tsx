@@ -1,12 +1,19 @@
-import { useCallback } from "react";
+import { useCallback, useState, type ReactNode } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
 import type { TFunction } from "i18next";
-import { ChevronRight } from "lucide-react";
+import { AlertTriangle, ChevronRight, HeartPulse, MapPin, Phone } from "lucide-react";
 import { useSitterContext } from "./route";
 import { K, KyaHeading } from "@/components/kya";
 import { PageHeader, useGoBack } from "@/components/headers";
 import { VetCallRow, PersonCallRow } from "@/components/sitter/CallRows";
+import { BirdAvatar } from "@/components/sitter/sitterShared";
+import { defaultPoisonLines, warmRange } from "@/lib/poisonControl";
+import { useDuoMode } from "@/lib/duo";
+import { RailBack } from "@/components/DuoRail";
+import { DuoSectionReader, type ReaderSection } from "@/components/duo/DuoSectionReader";
+import { DUO } from "@/components/duo/DuoBlocks";
+import { SitterDuoTopBar } from "@/components/duo/sitter/SitterDuoRail";
 
 export const Route = createFileRoute("/sitter/$token/emergency")({
   component: Emergency,
@@ -19,13 +26,14 @@ function pronFor(sex: unknown): Pron {
   return c === "m" ? "m" : c === "f" ? "f" : "n";
 }
 
-/** The four rules. `name` null = several birds share this screen ("your bird"). */
-function rules(t: TFunction, name: string | null, p: Pron): string[] {
+/** The four rules. `name` null = several birds share this screen ("your bird").
+ *  `temp` is the keep-warm range in the reader's units (warmRange). */
+function rules(t: TFunction, name: string | null, p: Pron, temp: string): string[] {
   const warm = name === null
-    ? t("sitter.emergency.rule2_your", "Keep your bird warm: about 85–90°F if they seem sick or in shock. Heat on one side only.")
-    : p === "m" ? t("sitter.emergency.rule2_m", "Keep {{name}} warm: about 85–90°F if he seems sick or in shock. Heat on one side only.", { name })
-    : p === "f" ? t("sitter.emergency.rule2_f", "Keep {{name}} warm: about 85–90°F if she seems sick or in shock. Heat on one side only.", { name })
-    : t("sitter.emergency.rule2_n", "Keep {{name}} warm: about 85–90°F if they seem sick or in shock. Heat on one side only.", { name });
+    ? t("sitter.emergency.rule2_your", "Keep your bird warm: about {{temp}} if they seem sick or in shock. Heat on one side only.", { temp })
+    : p === "m" ? t("sitter.emergency.rule2_m", "Keep {{name}} warm: about {{temp}} if he seems sick or in shock. Heat on one side only.", { name, temp })
+    : p === "f" ? t("sitter.emergency.rule2_f", "Keep {{name}} warm: about {{temp}} if she seems sick or in shock. Heat on one side only.", { name, temp })
+    : t("sitter.emergency.rule2_n", "Keep {{name}} warm: about {{temp}} if they seem sick or in shock. Heat on one side only.", { name, temp });
   const quiet = name === null
     ? t("sitter.emergency.rule3_your", "Keep your bird somewhere quiet and dim, and handle them as little as possible.")
     : p === "m" ? t("sitter.emergency.rule3_m", "Keep him somewhere quiet and dim, and handle him as little as possible.")
@@ -40,12 +48,20 @@ function rules(t: TFunction, name: string | null, p: Pron): string[] {
 }
 
 function Emergency() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { token } = Route.useParams();
   const navigate = useNavigate();
   const { data: ctx } = useSitterContext(token);
   const c: Record<string, string | undefined> = (ctx.contacts ?? {}) as any;
+  // Where the bird is decides the units and whether a poison line is filled in
+  // when the owner left it empty (poisonControl.ts).
+  const homeTimeZone = (ctx as { homeTimeZone?: string | null }).homeTimeZone ?? null;
+  const temp = warmRange(homeTimeZone, i18n.language);
+  const poisonDefaults = c.poison_control ? [] : defaultPoisonLines(homeTimeZone);
+  const poisonPhone = c.poison_control || poisonDefaults[0]?.display || "";
   const goBack = useGoBack(useCallback(() => navigate({ to: "/sitter/$token", params: { token } }), [navigate, token]));
+  const duo = useDuoMode() === "sideways";
+  const [duoOpen, setDuoOpen] = useState("calls");
   const playbooks = [
     {
       title: t("sitter.emergency.pb_breathing_title", "Trouble breathing / open-mouth"),
@@ -53,7 +69,7 @@ function Emergency() {
       steps: [
         t("sitter.emergency.pb_breathing_step1", "Stop handling — birds need chest movement to breathe."),
         t("sitter.emergency.pb_breathing_step2", "Move the bird away from fumes, smoke, heat, and stress to fresh air."),
-        t("sitter.emergency.pb_breathing_step3", "Keep warm (~85–90°F if shocky, heat on ONE side only), quiet, and dim."),
+        t("sitter.emergency.pb_breathing_step3", "Keep warm (about {{temp}} if shocky, heat on ONE side only), quiet, and dim.", { temp }),
         t("sitter.emergency.pb_breathing_step4", "Don't mist, bathe, or force water."),
         t("sitter.emergency.pb_breathing_step5", "Call the avian vet and prepare to transport."),
       ],
@@ -78,7 +94,9 @@ function Emergency() {
         t("sitter.emergency.pb_poison_step2", "Do NOT make the bird vomit."),
         t("sitter.emergency.pb_poison_step3", "Save or photograph the packaging or material."),
         t("sitter.emergency.pb_poison_step4", "Note what was eaten or chewed and when."),
-        t("sitter.emergency.pb_poison_step5", "Call the avian vet or ASPCA Animal Poison Control: (888) 426-4435."),
+        poisonPhone
+          ? t("sitter.emergency.pb_poison_step5_line", "Call the avian vet or poison control: {{phone}}.", { phone: poisonPhone })
+          : t("sitter.emergency.pb_poison_step5_anyVet", "Call the owner's vet or an emergency vet right away, and bring the packaging with you."),
       ],
     },
     {
@@ -155,7 +173,7 @@ function Emergency() {
       signs: t("sitter.emergency.pb_transport_signs", "Any emergency requiring travel."),
       steps: [
         t("sitter.emergency.pb_transport_step1", "Use a small carrier or box lined with a towel — not loose bedding."),
-        t("sitter.emergency.pb_transport_step2", "Warm to ~85–90°F using a wrapped warm water bottle or heat pack on ONE side only."),
+        t("sitter.emergency.pb_transport_step2", "Warm to about {{temp}} using a wrapped warm water bottle or heat pack on ONE side only.", { temp }),
         t("sitter.emergency.pb_transport_step3", "Cover the carrier to keep it dark and quiet."),
         t("sitter.emergency.pb_transport_step4", "Bring the owner's care sheet, any medications, photos of abnormal droppings, and anything the bird ate or chewed (with packaging)."),
         t("sitter.emergency.pb_transport_step5", "Secure in the car. Drive calmly. No blasting music or vents at the bird."),
@@ -177,48 +195,154 @@ function Emergency() {
     { label: t("sitter.emergency.spendingLimit", "Spending limit"), value: c.spending_limit },
   ].filter((x) => !!x.value?.trim());
 
+  const pageTitle = ruleName ? t("sitter.emergency.pageTitleFor", "Emergency for {{name}}", { name: ruleName }) : t("sitter.emergency.pageTitle", "Emergency");
+  const switcher = showSwitcher && (
+    <div className="mt-5 flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" role="group" aria-label={t("sitter.emergency.whichBird", "Which bird")}>
+      {birds.map((b) => {
+        const active = b.id === ctx.activeBirdId;
+        return (
+          <button
+            key={b.id}
+            type="button"
+            aria-pressed={active}
+            onClick={() => navigate({ to: "/sitter/$token/emergency", params: { token }, search: { birdId: b.id }, replace: true })}
+            className="inline-flex h-12 shrink-0 items-center gap-2 rounded-full pl-[5px] pr-4 text-[15px] font-[700] active:scale-95"
+            style={active ? { background: K.lime, color: K.forest } : { background: K.forestDeep, color: "#fff" }}
+          >
+            {/* Shared avatar treatment (photo, or the initial on moss) — same as Today's bird switcher. */}
+            <BirdAvatar bird={b} size={38} />
+            {b.name}
+          </button>
+        );
+      })}
+    </div>
+  );
+  const differentNote = showSwitcher && birds.find((b) => b.id === ctx.activeBirdId)?.emergencyDifferent;
+
+  // iPhone Duo: the calls, "while you wait" and each emergency as big cards on
+  // the left; the open one on the right. Calls open first.
+  if (duo) {
+    const callRows: ReactNode = (
+      <div className="flex flex-col gap-2.5">
+        <VetCallRow surface="mist" label={t("sitter.calls.avianVet", "Avian vet")} name={c.avian_vet_name} phone={c.avian_vet_phone} />
+        <VetCallRow surface="mist" label={t("sitter.calls.emergencyVet", "After-hours emergency vet")} name={c.emergency_vet_name} phone={c.emergency_vet_phone} />
+        <PersonCallRow surface="mist" label={t("sitter.calls.owner", "Owner")} name={ownerName && ownerName !== "the owner" ? ownerName : null} phone={c.owner_phone} />
+        {c.backup_phone && <PersonCallRow surface="mist" label={t("sitter.calls.backup", "Backup contact")} name={c.backup_name} phone={c.backup_phone} />}
+        {c.poison_control || poisonDefaults.length === 0 ? (
+          <PersonCallRow
+            surface="mist"
+            label={t("sitter.emergency.poisonControl", "Poison control")}
+            phone={c.poison_control}
+            missingText={t("sitter.emergency.noPoisonLineAnyVet", "no public line here. Call the owner's vet or an emergency vet right away.")}
+          />
+        ) : (
+          <>
+            {poisonDefaults.map((line) => (
+              <PersonCallRow key={line.dial} surface="mist" label={t("sitter.emergency.poisonControl", "Poison control")} name={line.name} phone={line.dial} displayPhone={line.display} />
+            ))}
+            <p className="m-0 px-1 text-[14px] leading-[1.4]" style={{ color: K.quiet }}>
+              {poisonDefaults.length > 1
+                ? t("sitter.emergency.poisonFeeBoth", "Both poison lines charge a consultation fee.")
+                : t("sitter.emergency.poisonFeeOne", "This poison line charges a consultation fee.")}
+            </p>
+          </>
+        )}
+      </div>
+    );
+    const sections: ReaderSection[] = [
+      { key: "calls", title: t("sitter.duo.emergency.calls", "Who to call"), icon: <Phone />, preview: t("sitter.calls.avianVet", "Avian vet"), body: callRows },
+      {
+        key: "wait",
+        title: t("sitter.emergency.whileYouWait", "While you wait for the vet"),
+        icon: <HeartPulse />,
+        body: (
+          <>
+            <ol className="m-0 flex list-none flex-col gap-3 p-0">
+              {rules(t, ruleName, pronFor((ctx.bird as any).sex), temp).map((r, i) => (
+                <li key={i} className="flex gap-3 text-[18px] leading-[1.45]" style={{ color: K.ink }}>
+                  <span className="w-5 shrink-0 font-[700]" style={{ color: K.amberText }}>{i + 1}.</span>
+                  <span className="min-w-0 flex-1">{r}</span>
+                </li>
+              ))}
+            </ol>
+            <p className="m-0 mt-4 text-[17px] font-[700] leading-[1.45]" style={{ color: K.moss }}>
+              {t("sitter.emergency.callSoonNever", "You'll never be in trouble for calling too soon.")}
+            </p>
+          </>
+        ),
+      },
+      ...playbooks.map((p, i) => ({
+        key: `pb${i}`,
+        title: p.title,
+        icon: <AlertTriangle />,
+        preview: p.signs,
+        body: (
+          <div className="text-[17px] leading-[1.5]" style={{ color: K.ink }}>
+            {p.signs && (
+              <p className="m-0 rounded-[16px] p-4" style={{ background: DUO.bg, color: K.forest }}>
+                <span className="font-[700]">{t("sitter.emergency.signsLabel", "Signs")}:</span> {p.signs}
+              </p>
+            )}
+            <ol className="m-0 mt-4 flex list-decimal flex-col gap-2 pl-6">
+              {p.steps.map((step, j) => <li key={j}>{step}</li>)}
+            </ol>
+          </div>
+        ),
+      })),
+      ...(tiles.length > 0 ? [{
+        key: "where",
+        title: t("sitter.duo.emergency.where", "Where things are"),
+        icon: <MapPin />,
+        preview: tiles.map((x) => x.label).join(", "),
+        body: (
+          <div className="flex flex-col gap-3">
+            {tiles.map((x) => (
+              <div key={x.label} className="rounded-[16px] p-4" style={{ background: DUO.bg }}>
+                <p className="m-0 text-[14px]" style={{ color: K.quiet }}>{x.label}</p>
+                <p className="m-0 mt-1 break-words text-[18px] font-[700] leading-[1.35]" style={{ color: K.forest }}>{x.value}</p>
+              </div>
+            ))}
+          </div>
+        ),
+      }] : []),
+    ];
+    return (
+      <>
+        <RailBack onBack={goBack} />
+        <DuoSectionReader
+          top={<div className="mb-6"><SitterDuoTopBar token={token} light />{switcher && <div className="-mt-1">{switcher}</div>}</div>}
+          title={pageTitle}
+          line={differentNote
+            ? t("sitter.emergency.differentFor", "Different for {{name}}", { name: ctx.bird.name })
+            : t("sitter.emergency.subtitle", "Take a breath. Here's exactly what to do.")}
+          sections={sections}
+          selected={duoOpen}
+          onSelect={setDuoOpen}
+          leftExtra={
+            <p className="m-0 text-[13px]" style={{ color: K.quiet }}>
+              {t("sitter.emergency.footer", "Care guidance from The Kya Project · Parrot Care Bible for Pet Sitters.")}
+            </p>
+          }
+        />
+      </>
+    );
+  }
+
   return (
     <div className="setup-frame min-h-screen" style={{ background: K.forest, color: "#fff" }}>
       <PageHeader
         // Named for the bird when the screen is about one bird (a one-bird
         // sit, or a bird picked in the switcher); plain "Emergency" when
         // several birds share it.
-        title={ruleName ? t("sitter.emergency.pageTitleFor", "Emergency for {{name}}", { name: ruleName }) : t("sitter.emergency.pageTitle", "Emergency")}
+        title={pageTitle}
         line={t("sitter.emergency.subtitle", "Take a breath. Here's exactly what to do.")}
         onBack={goBack}
       >
-        {showSwitcher && (
-          <div className="mt-5 flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" role="group" aria-label={t("sitter.emergency.whichBird", "Which bird")}>
-            {birds.map((b) => {
-              const active = b.id === ctx.activeBirdId;
-              return (
-                <button
-                  key={b.id}
-                  type="button"
-                  aria-pressed={active}
-                  onClick={() => navigate({ to: "/sitter/$token/emergency", params: { token }, search: { birdId: b.id }, replace: true })}
-                  className="inline-flex h-12 shrink-0 items-center gap-2 rounded-full pl-[5px] pr-4 text-[15px] font-[700] active:scale-95"
-                  style={active ? { background: K.lime, color: K.forest } : { background: K.forestDeep, color: "#fff" }}
-                >
-                  {b.photo_url ? (
-                    <span className="size-[38px] shrink-0 overflow-hidden rounded-full" style={{ background: active ? "#fff" : K.forest }}>
-                      <img src={b.photo_url} alt="" className="size-full object-cover" style={{ objectPosition: b.photo_position || "center" }} />
-                    </span>
-                  ) : (
-                    <span className="grid size-[38px] shrink-0 place-items-center rounded-full text-[16px] font-[700]" style={{ background: K.teal, color: K.forest }} aria-hidden="true">
-                      {((b.name as string | undefined)?.trim().slice(0, 1) || "?").toUpperCase()}
-                    </span>
-                  )}
-                  {b.name}
-                </button>
-              );
-            })}
-          </div>
-        )}
+        {switcher}
       </PageHeader>
 
       <main className="mx-auto -mt-[30px] flex max-w-md flex-col gap-3 px-4 pb-32">
-        {showSwitcher && birds.find((b) => b.id === ctx.activeBirdId)?.emergencyDifferent && (
+        {differentNote && (
           <p className="m-0 px-1 text-[13.5px] font-[700]" style={{ color: K.lime }}>
             {t("sitter.emergency.differentFor", "Different for {{name}}", { name: ctx.bird.name })}
           </p>
@@ -228,16 +352,36 @@ function Emergency() {
         <VetCallRow label={t("sitter.calls.emergencyVet", "After-hours emergency vet")} name={c.emergency_vet_name} phone={c.emergency_vet_phone} />
         <PersonCallRow label={t("sitter.calls.owner", "Owner")} name={ownerName && ownerName !== "the owner" ? ownerName : null} phone={c.owner_phone} />
         {c.backup_phone && <PersonCallRow label={t("sitter.calls.backup", "Backup contact")} name={c.backup_name} phone={c.backup_phone} />}
-        <PersonCallRow
-          label={t("sitter.emergency.poisonControl", "Poison control")}
-          name={c.poison_control ? undefined : "ASPCA Animal Poison Control"}
-          phone={c.poison_control || "8884264435"}
-        />
+        {c.poison_control || poisonDefaults.length === 0 ? (
+          <PersonCallRow
+            label={t("sitter.emergency.poisonControl", "Poison control")}
+            phone={c.poison_control}
+            missingText={t("sitter.emergency.noPoisonLineAnyVet", "no public line here. Call the owner's vet or an emergency vet right away.")}
+          />
+        ) : (
+          <>
+            {poisonDefaults.map((line) => (
+              <PersonCallRow
+                key={line.dial}
+                label={t("sitter.emergency.poisonControl", "Poison control")}
+                name={line.name}
+                phone={line.dial}
+                displayPhone={line.display}
+              />
+            ))}
+            {/* Every line we fill in charges for the call; say so before they dial. */}
+            <p className="m-0 px-1 text-[13.5px] leading-[1.4]" style={{ color: "rgba(255,255,255,0.75)" }}>
+              {poisonDefaults.length > 1
+                ? t("sitter.emergency.poisonFeeBoth", "Both poison lines charge a consultation fee.")
+                : t("sitter.emergency.poisonFeeOne", "This poison line charges a consultation fee.")}
+            </p>
+          </>
+        )}
 
         <section className="mt-3 rounded-[20px] p-5" style={{ background: K.forestDeep }}>
           <KyaHeading size={20} className="text-[#f2b33d]">{t("sitter.emergency.whileYouWait", "While you wait for the vet")}</KyaHeading>
           <ol className="m-0 mt-3 flex list-none flex-col gap-2.5 p-0">
-            {rules(t, ruleName, pronFor((ctx.bird as any).sex)).map((r, i) => (
+            {rules(t, ruleName, pronFor((ctx.bird as any).sex), temp).map((r, i) => (
               <li key={i} className="flex gap-3 text-[15px] leading-[1.45] text-white">
                 <span className="w-4 shrink-0 font-[700]" style={{ color: K.sunflower }}>{i + 1}.</span>
                 <span className="min-w-0 flex-1">{r}</span>

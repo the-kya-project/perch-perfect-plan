@@ -1,0 +1,412 @@
+// Save-error alerting: what a failed save records (saveErrors.ts), and when
+// that becomes an urgent or daily email (saveErrorAlerts.ts).
+import assert from "node:assert/strict";
+import { classifySaveError, noteSaveError, saveErrorSignature, setSaveErrorRecorder, type SaveErrorShape } from "@/lib/saveErrors";
+import { friendlyError } from "@/lib/errorMessage";
+import { listAddFailureShape, QUIET_LIST_SKIPS } from "@/lib/brevoListFailures";
+import { addContactToList, listContactAttributes } from "@/lib/brevoContacts.server";
+import { listAddStatus } from "@/lib/serverSaveErrors.server";
+import { readFileSync } from "node:fs";
+import {
+  ALERT_SENDER_NAME, alertSettings, buildDailyEmail, buildDeliveryProblemPush, buildUrgentEmail, describeGroup, groupSaveErrors, planUrgent, sampleSaveErrorGroups,
+  type SaveErrorRow,
+} from "@/lib/saveErrorAlerts";
+
+let failed = 0;
+function check(name: string, fn: () => void) {
+  try { fn(); console.log(`ok - ${name}`); } catch (e) { failed++; console.error(`not ok - ${name}\n`, e); }
+}
+
+// The Oct 26 failure, exactly as PostgREST returned it to SitForm.
+const SITS_RLS = { code: "42501", message: 'new row violates row-level security policy for table "sits"', details: null, hint: null };
+
+// ---- What is recorded --------------------------------------------------------
+
+check("the Oct 26 sits error: permission, 42501, sits, write", () => {
+  assert.deepEqual(classifySaveError(SITS_RLS), { category: "permission", sqlstate: "42501", target: "sits", operation: "write" });
+});
+check("a server function's rethrown error (no code) is read from its text", () => {
+  const e = new Error('insert or update on table "health_scans" violates foreign key constraint "health_scans_bird_id_fkey"');
+  assert.deepEqual(classifySaveError(e), { category: "still_linked", sqlstate: "23503", target: "health_scans", operation: "write" });
+});
+check("SQLSTATE codes map to plain categories", () => {
+  const cat = (code: string) => classifySaveError({ code, message: "x" })?.category;
+  assert.equal(cat("23505"), "conflict");
+  assert.equal(cat("23502"), "missing_required");
+  assert.equal(cat("22P02"), "invalid");
+  assert.equal(cat("P0001"), "rejected");
+  assert.equal(cat("42P01"), "schema");
+  assert.equal(cat("PGRST204"), "schema");
+  assert.equal(cat("PGRST301"), "auth");
+  assert.equal(cat("57014"), "database");
+});
+check("delete blocked by a foreign key names the table and 'delete'", () => {
+  const s = classifySaveError({ code: "23503", message: 'update or delete on table "birds" violates foreign key constraint "x" on table "sits"' });
+  assert.equal(s?.target, "birds");
+  assert.equal(s?.operation, "delete");
+});
+check("permission denied for a function is an rpc", () => {
+  const s = classifySaveError({ code: "42501", message: "permission denied for function accept_household_invite" });
+  assert.deepEqual(s, { category: "permission", sqlstate: "42501", target: "accept_household_invite", operation: "rpc" });
+});
+check("storage RLS refusals are storage operations", () => {
+  const e = Object.assign(new Error("new row violates row-level security policy"), { name: "StorageApiError", status: 403 });
+  assert.deepEqual(classifySaveError(e), { category: "permission", sqlstate: "42501", target: null, operation: "storage" });
+});
+check("network failures and 5xx are recorded", () => {
+  assert.equal(classifySaveError(new TypeError("Failed to fetch"))?.category, "network");
+  assert.equal(classifySaveError(new TypeError("Load failed"))?.category, "network");
+  assert.equal(classifySaveError(Object.assign(new Error("Edge Function returned a non-2xx status code"), { status: 502 }))?.category, "server");
+});
+check("messages written for a person are not failures", () => {
+  assert.equal(classifySaveError(new Error("Pick a start and end date.")), null);
+  assert.equal(classifySaveError(new Error("Bird not in this sit.")), null);
+  assert.equal(classifySaveError(new Error("SITTER_LINK_EXPIRED")), null);
+  // Supabase auth: a wrong password is an answer, not a failure.
+  assert.equal(classifySaveError({ name: "AuthApiError", code: "invalid_credentials", status: 400, message: "Invalid login credentials" }), null);
+});
+check("the read-only sitter preview and cancelled requests are not failures", () => {
+  assert.equal(classifySaveError(new Error("This is a read-only preview — changes aren't saved.")), null);
+  assert.equal(classifySaveError(Object.assign(new Error("aborted"), { name: "AbortError" })), null);
+  assert.equal(classifySaveError(null), null);
+  assert.equal(classifySaveError("boom"), null);
+});
+check("nothing personal leaves: no message text in the shape", () => {
+  const s = classifySaveError({ code: "23505", message: 'duplicate key value violates unique constraint "birds_name_key" Key (name)=(Kiwi) already exists.' });
+  assert.ok(!JSON.stringify(s).includes("Kiwi"));
+  assert.deepEqual(Object.keys(s!).sort(), ["category", "operation", "sqlstate", "target"]);
+});
+check("a table name that isn't a plain identifier is dropped", () => {
+  assert.equal(classifySaveError({ code: "42501", message: 'new row violates row-level security policy for table "Kiwi Bird; drop"' })?.target, null);
+});
+
+// ---- friendlyError and the mutation cache hand errors to the recorder ------------
+
+// i18next isn't initialised here: a stand-in t returns each key's English default.
+const t = ((_key: string, fallback: string) => fallback) as unknown as Parameters<typeof friendlyError>[2];
+const recorded: SaveErrorShape[] = [];
+setSaveErrorRecorder((s) => recorded.push(s));
+
+check("friendlyError records a failed save once, and still says the friendly thing", () => {
+  recorded.length = 0;
+  const err = { ...SITS_RLS };
+  assert.equal(friendlyError(err, undefined, t), "You don't have permission to do that.");
+  noteSaveError(err); // the mutation cache seeing the same error object
+  friendlyError(err, "Could not create sit.", t);
+  assert.equal(recorded.length, 1);
+  assert.equal(saveErrorSignature(recorded[0]), "permission|42501|sits|write");
+});
+check("a successful save records nothing (friendlyError never runs; noting null/undefined is a no-op)", () => {
+  recorded.length = 0;
+  noteSaveError(null);
+  noteSaveError(undefined);
+  // supabase-js resolves a successful insert to { data, error: null }; callers
+  // only reach friendlyError(error) when error is set.
+  const result = { data: [{ id: 1 }], error: null };
+  if (result.error) friendlyError(result.error);
+  assert.equal(recorded.length, 0);
+});
+check("validation copy through friendlyError records nothing", () => {
+  recorded.length = 0;
+  assert.equal(friendlyError(new Error("Pick a start and end date."), undefined, t), "Pick a start and end date.");
+  assert.equal(recorded.length, 0);
+});
+check("a recorder that throws can't break friendlyError", () => {
+  setSaveErrorRecorder(() => { throw new Error("recorder down"); });
+  assert.equal(friendlyError({ code: "42501", message: "permission denied for table birds" }, undefined, t), "You don't have permission to do that.");
+  setSaveErrorRecorder(null);
+});
+
+// ---- When an email goes ------------------------------------------------------------
+
+const NOW = new Date("2026-10-27T15:00:00Z");
+const row = (minAgo: number, user: string, over: Partial<SaveErrorRow> = {}): SaveErrorRow => ({
+  created_at: new Date(NOW.getTime() - minAgo * 60_000).toISOString(),
+  category: "permission", sqlstate: "42501", target: "sits", operation: "write",
+  route: "/sits/new", platform: "ios", app_version: "1.4.2", user_hash: user, ...over,
+});
+const SITS = "permission|42501|sits|write";
+
+check("settings: defaults, daily-only, off, recipient, spike size", () => {
+  assert.deepEqual(alertSettings({}), { mode: "all", to: "brittany@thekyaproject.com", spikeUsers: 3 });
+  assert.equal(alertSettings({ SAVE_ERROR_ALERTS: "Daily" }).mode, "daily");
+  assert.equal(alertSettings({ SAVE_ERROR_ALERTS: "off" }).mode, "off");
+  assert.equal(alertSettings({ SAVE_ERROR_ALERTS: "nonsense" }).mode, "all");
+  assert.equal(alertSettings({ SAVE_ERROR_ALERT_TO: "ops@thekyaproject.com" }).to, "ops@thekyaproject.com");
+  assert.equal(alertSettings({ SAVE_ERROR_SPIKE_USERS: "5" }).spikeUsers, 5);
+  assert.equal(alertSettings({ SAVE_ERROR_SPIKE_USERS: "0" }).spikeUsers, 3);
+});
+check("grouping counts times, distinct people and platforms", () => {
+  const [g] = groupSaveErrors([row(5, "a"), row(4, "a"), row(3, "b", { platform: "web" }), row(2, null as unknown as string)]);
+  assert.equal(g.count, 4);
+  assert.equal(g.people, 3);
+  assert.deepEqual(g.platforms, { ios: 3, web: 1 });
+});
+check("a kind of error never emailed before is urgent (new)", () => {
+  const items = planUrgent([row(10, "a")], NOW, { known: new Set(), alertedToday: new Set(), spikeUsers: 3 });
+  assert.deepEqual(items.map((i) => [i.group.signature, i.reasons]), [[SITS, ["new"]]]);
+});
+check("a known kind is quiet below 3 people in an hour", () => {
+  const items = planUrgent([row(10, "a"), row(20, "b"), row(30, "a")], NOW, { known: new Set([SITS]), alertedToday: new Set(), spikeUsers: 3 });
+  assert.equal(items.length, 0);
+});
+check("3 distinct people within an hour is urgent (spike)", () => {
+  const items = planUrgent([row(10, "a"), row(20, "b"), row(59, "c")], NOW, { known: new Set([SITS]), alertedToday: new Set(), spikeUsers: 3 });
+  assert.deepEqual(items.map((i) => [i.reasons, i.group.people]), [[["spike"], 3]]);
+});
+check("3 people spread over more than an hour is not a spike", () => {
+  const items = planUrgent([row(10, "a"), row(20, "b"), row(61, "c")], NOW, { known: new Set([SITS]), alertedToday: new Set(), spikeUsers: 3 });
+  assert.equal(items.length, 0);
+});
+check("at most one urgent email per kind per day", () => {
+  const rows = [row(10, "a"), row(20, "b"), row(30, "c")];
+  assert.equal(planUrgent(rows, NOW, { known: new Set(), alertedToday: new Set([SITS]), spikeUsers: 3 }).length, 0);
+});
+check("network and expired sessions never make an urgent email", () => {
+  const rows = ["a", "b", "c", "d"].map((u, i) => row(i + 1, u, { category: "network", sqlstate: null, target: null, operation: null }))
+    .concat([row(5, "e", { category: "auth", sqlstate: "PGRST301", target: null, operation: null })]);
+  assert.equal(planUrgent(rows, NOW, { known: new Set(), alertedToday: new Set(), spikeUsers: 3 }).length, 0);
+});
+check("errors older than a day don't count as new", () => {
+  assert.equal(planUrgent([row(25 * 60, "a")], NOW, { known: new Set(), alertedToday: new Set(), spikeUsers: 3 }).length, 0);
+});
+
+// ---- What the emails say -------------------------------------------------------------
+
+check("plain-language description", () => {
+  assert.equal(describeGroup({ category: "permission", target: "sits", operation: "write" }), "The database refused the save (a permission rule said no), saving to sits");
+});
+check("urgent email: says URGENT, what failed, how many, where", () => {
+  const [g] = sampleSaveErrorGroups(NOW);
+  const e = buildUrgentEmail([{ group: g, reasons: ["new", "spike"] }]);
+  assert.match(e.subject, /^TEST: URGENT: saves failing in Kya & Co\. \(4 people in the last hour\)/);
+  assert.match(e.text, /7 times, 4 people\. Platforms: iOS app 4, web 3\./);
+  assert.match(e.text, /Screens: \/sits\/new/);
+  assert.match(e.html, /URGENT/);
+});
+check("daily email: nothing at all when nothing failed", () => {
+  assert.equal(buildDailyEmail([], { urgentToday: new Set() }), null);
+});
+check("daily email: says it isn't urgent, and lists every kind", () => {
+  const groups = sampleSaveErrorGroups(NOW);
+  const e = buildDailyEmail(groups, { urgentToday: new Set() })!;
+  assert.equal(e.subject, "TEST: Daily save errors: 9 failures in the last 24 hours (nothing urgent)");
+  assert.match(e.text, /or 3\+ people in an hour/);
+  assert.match(buildDailyEmail(groups, { urgentToday: new Set(), spikeUsers: 5 })!.text, /or 5\+ people in an hour/);
+  assert.match(e.html, /NOT URGENT/);
+  assert.match(e.text, /The save never reached the server/);
+  const withUrgent = buildDailyEmail(groups, { urgentToday: new Set([SITS]) })!;
+  assert.match(withUrgent.subject, /includes an urgent one/);
+  assert.match(withUrgent.text, /Already sent as urgent today\./);
+});
+check("emails escape HTML and carry no personal data fields", () => {
+  const g = { ...sampleSaveErrorGroups(NOW)[0], routes: ["/a<b>"] };
+  const e = buildUrgentEmail([{ group: g, reasons: ["new"] }]);
+  assert.ok(e.html.includes("/a&lt;b&gt;"));
+  assert.ok(!/@/.test(e.text.replace(/@thekyaproject\.com/g, "")));
+});
+
+// ---- Test sends can't be mistaken for an outage ---------------------------------------
+
+const real = (g: ReturnType<typeof sampleSaveErrorGroups>[number]) => { const { sample: _s, ...rest } = g; return rest; };
+check("sample data is always marked TEST: subject first, label at the top", () => {
+  for (const e of [
+    buildUrgentEmail([{ group: sampleSaveErrorGroups(NOW)[0], reasons: ["new"] }]),
+    buildDailyEmail(sampleSaveErrorGroups(NOW), { urgentToday: new Set() })!,
+  ]) {
+    assert.match(e.subject, /^TEST: /);
+    assert.match(e.text, /^TEST · SAMPLE DATA, NOT A REAL OUTAGE\n/);
+    // The label sits above the email's own content.
+    assert.ok(e.html.indexOf("TEST · SAMPLE DATA") < e.html.indexOf('<table role="presentation"'));
+  }
+});
+check("test: true marks real-shaped data too", () => {
+  const g = real(sampleSaveErrorGroups(NOW)[0]);
+  assert.match(buildUrgentEmail([{ group: g, reasons: ["new"] }], { test: true }).subject, /^TEST: /);
+  assert.match(buildDailyEmail([g], { urgentToday: new Set(), test: true })!.subject, /^TEST: /);
+});
+check("a real alert is never marked TEST", () => {
+  const groups = sampleSaveErrorGroups(NOW).map(real);
+  const u = buildUrgentEmail([{ group: groups[0], reasons: ["spike"] }]);
+  const d = buildDailyEmail(groups, { urgentToday: new Set() })!;
+  for (const e of [u, d]) {
+    assert.ok(!/TEST/.test(e.subject) && !/TEST/.test(e.html) && !/TEST/.test(e.text));
+  }
+  assert.match(u.subject, /^URGENT: /);
+});
+check("alerts come from Kya & Co. Alerts", () => {
+  assert.equal(ALERT_SENDER_NAME, "Kya & Co. Alerts");
+});
+
+// ---- When the alert email itself can't go: a push ----------------------------
+
+check("delivery push: a blocklisted address says so and how to fix it", () => {
+  const p = buildDeliveryProblemPush("blocked:unsubscribedViaEmail", { to: "brittany@thekyaproject.com" });
+  assert.equal(p.title, "Kya & Co. alerts can't reach your inbox");
+  assert.match(p.body, /Brevo has brittany@thekyaproject\.com on its blocklist \(unsubscribedViaEmail\)/);
+  assert.match(p.body, /Remove the address from Brevo's blocked contacts/);
+});
+check("delivery push: any other send failure", () => {
+  assert.match(buildDeliveryProblemPush("brevo-api-key-not-configured", { to: "a@b.co" }).body, /failed to send \(brevo-api-key-not-configured\)/);
+});
+check("delivery push: the test version says TEST and that nothing is wrong", () => {
+  const p = buildDeliveryProblemPush("blocked:unsubscribed", { to: "a@b.co", test: true });
+  assert.match(p.title, /^TEST: /);
+  assert.match(p.body, /^This is a test of the alert push; nothing is wrong\./);
+});
+
+// ---- Brevo list adds (server side): loud failures, quiet skips -------------
+
+check("list add: success and normal skips record nothing", () => {
+  assert.equal(listAddFailureShape({ ok: true, status: 201 }, "BREVO_WAITLIST_LIST_ID"), null);
+  for (const skipped of ["preview-deployment", "undeliverable-test-domain", "no-email"]) {
+    assert.equal(listAddFailureShape({ ok: false, skipped }, "BREVO_WAITLIST_LIST_ID"), null, skipped);
+  }
+  assert.equal(QUIET_LIST_SKIPS.size, 3);
+});
+check("list add: a missing list id is a config error naming the setting", () => {
+  assert.deepEqual(listAddFailureShape({ ok: false, skipped: "list-not-configured" }, "BREVO_FOUNDING_LIST_ID"),
+    { category: "config", sqlstate: null, target: "brevo_founding_list_id", operation: "brevo_list" });
+});
+check("list add: a missing API key is a config error on brevo_api_key", () => {
+  assert.deepEqual(listAddFailureShape({ ok: false, skipped: "brevo-api-key-not-configured" }, "BREVO_WAITLIST_LIST_ID"),
+    { category: "config", sqlstate: null, target: "brevo_api_key", operation: "brevo_list" });
+});
+check("list add: Brevo refusing or unreachable is a server error", () => {
+  assert.equal(listAddFailureShape({ ok: false, status: 400 }, "BREVO_WAITLIST_LIST_ID")?.category, "server");
+  assert.equal(listAddFailureShape({ ok: false, skipped: "network-error" }, "BREVO_WAITLIST_LIST_ID")?.category, "server");
+});
+check("list add: the target always fits the save_errors target rule", () => {
+  const shape = listAddFailureShape({ ok: false, status: 500 }, "BREVO_WAITLIST_LIST_ID");
+  assert.match(shape!.target!, /^[a-z_][a-z0-9_]{0,62}$/);
+});
+check("list add: status words for the waitlist_signups row", () => {
+  assert.equal(listAddStatus({ ok: true, status: 201 }), "added");
+  assert.equal(listAddStatus({ ok: false, skipped: "preview-deployment" }), "skipped:preview-deployment");
+  assert.equal(listAddStatus({ ok: false, skipped: "list-not-configured" }), "failed:list-not-configured");
+  assert.equal(listAddStatus({ ok: false, status: 400 }), "failed:brevo-400");
+});
+check("list add: contact attributes are only the ones Brevo has, and nothing empty", () => {
+  assert.deepEqual(listContactAttributes({ email: "a@b.co", firstName: "Ana", lastName: "Ruiz", source: "waitlist-app", chapterLeadInterest: 2, primaryChapter: 3 }),
+    { FIRSTNAME: "Ana", LASTNAME: "Ruiz", SOURCE: "waitlist-app", CHAPTER_LEAD_INTEREST: 2, PRIMARY_CHAPTER: 3 });
+  assert.deepEqual(listContactAttributes({ email: "a@b.co", firstName: null }), {});
+});
+check("alerts: a Brevo list failure reads as the setting, in capitals", () => {
+  assert.equal(describeGroup({ category: "config", target: "brevo_founding_list_id", operation: "brevo_list" }),
+    "The server is missing a setting it needs (adding someone to a Brevo list): BREVO_FOUNDING_LIST_ID");
+  assert.equal(describeGroup({ category: "server", target: "brevo_waitlist_list_id", operation: "brevo_list" }),
+    "The server failed while saving (adding someone to a Brevo list): BREVO_WAITLIST_LIST_ID");
+});
+check("alerts: a config failure on the server is urgent the first time", () => {
+  const now = new Date("2026-11-06T18:00:00Z");
+  const row: SaveErrorRow = { created_at: "2026-11-06T17:50:00Z", category: "config", sqlstate: null, target: "brevo_waitlist_list_id", operation: "brevo_list", route: "/waitlist", platform: "server", app_version: "1.2.0", user_hash: null };
+  const items = planUrgent([row], now, { known: new Set(), alertedToday: new Set(), spikeUsers: 3 });
+  assert.equal(items.length, 1);
+  assert.deepEqual(items[0].reasons, ["new"]);
+  assert.match(buildUrgentEmail(items).text, /BREVO_WAITLIST_LIST_ID/);
+  assert.match(buildUrgentEmail(items).text, /server/);
+});
+check("migration: save_errors takes config, server and brevo_list; both new tables are admin-read only", () => {
+  const sql = readFileSync("supabase/migrations/20261106180000_brevo_list_signups.sql", "utf8");
+  assert.match(sql, /'network', 'config'\)\)/);
+  assert.match(sql, /platform in \('web', 'ios', 'android', 'server'\)/);
+  assert.match(sql, /'server_fn', 'brevo_list'\)/);
+  for (const t of ["waitlist_signups", "site_form_holds"]) {
+    assert.match(sql, new RegExp(`alter table public\\.${t} enable row level security`));
+    assert.match(sql, new RegExp(`revoke all on table public\\.${t} from public, anon, authenticated`));
+    assert.match(sql, new RegExp(`for select to authenticated\\s+using \\(private\\.is_admin`));
+    assert.doesNotMatch(sql, new RegExp(`grant (insert|update|delete|all)[^;]*public\\.${t} to (anon|authenticated)`));
+  }
+});
+check("consent: the waitlist and founding go to their own list only, never the marketing list", () => {
+  const waitlist = readFileSync("src/lib/waitlist.functions.ts", "utf8");
+  const founding = readFileSync("src/lib/founding.functions.ts", "utf8");
+  assert.match(waitlist, /addContactToListReported\(\s*"BREVO_WAITLIST_LIST_ID"/);
+  assert.match(founding, /addContactToListReported\("BREVO_FOUNDING_LIST_ID"/);
+  for (const src of [waitlist, founding]) assert.doesNotMatch(src, /BREVO_LIST_ID"|sibforms/);
+});
+
+check("migration: the Google Form waitlist fits, and waitlist_signups stays admin-read only", () => {
+  const sql = readFileSync("supabase/migrations/20261106190000_waitlist_google_form.sql", "utf8");
+  assert.match(sql, /source in \('waitlist-app', 'waitlist-website', 'waitlist-google-form'\)/);
+  assert.match(sql, /chapter_lead_interest in \(1, 2, 3\)/);
+  assert.match(sql, /add column if not exists birds text/);
+  assert.match(sql, /add column if not exists location text/);
+  assert.match(sql, /alter table public\.waitlist_signups enable row level security/);
+  assert.doesNotMatch(sql, /grant (insert|update|delete|all)[^;]*to (anon|authenticated)/);
+});
+
+// addContactToList's guards, with the environment and fetch stubbed.
+async function withEnv(env: Record<string, string | undefined>, fn: () => Promise<void>) {
+  const saved = { ...process.env };
+  const savedFetch = globalThis.fetch;
+  Object.assign(process.env, env);
+  for (const [k, v] of Object.entries(env)) if (v === undefined) delete process.env[k];
+  try { await fn(); } finally { process.env = saved; globalThis.fetch = savedFetch; }
+}
+async function acheck(name: string, fn: () => Promise<void>) {
+  try { await fn(); console.log(`ok - ${name}`); } catch (e) { failed++; console.error(`not ok - ${name}\n`, e); }
+}
+await acheck("addContactToList: preview skips before anything else, quietly", () => withEnv({ VERCEL_ENV: "preview", BREVO_API_KEY: undefined }, async () => {
+  const r = await addContactToList("BREVO_WAITLIST_LIST_ID", { email: "a@b.co" });
+  assert.deepEqual(r, { ok: false, skipped: "preview-deployment" });
+  assert.equal(listAddFailureShape(r, "BREVO_WAITLIST_LIST_ID"), null);
+}));
+await acheck("addContactToList: a missing list id in production is reported", () => withEnv({ VERCEL_ENV: "production", BREVO_API_KEY: "k", BREVO_WAITLIST_LIST_ID: undefined }, async () => {
+  const r = await addContactToList("BREVO_WAITLIST_LIST_ID", { email: "a@b.co" });
+  assert.equal(listAddFailureShape(r, "BREVO_WAITLIST_LIST_ID")?.category, "config");
+}));
+// Stub Brevo: each call gets the next response; every request body is kept.
+function stubBrevo(responses: Array<[number, string]>) {
+  const bodies: any[] = [];
+  globalThis.fetch = (async (_u: unknown, init?: { body?: string }) => {
+    bodies.push(JSON.parse(init?.body ?? "{}"));
+    const [status, text] = responses[Math.min(bodies.length - 1, responses.length - 1)];
+    return new Response(status === 204 ? null : text, { status });
+  }) as typeof fetch;
+  return bodies;
+}
+const CONTACT = { email: "ana@gmail.com", firstName: "Ana", source: "waitlist-app", primaryChapter: 3 };
+
+await acheck("addContactToList: a new contact is created on list 4 with SOURCE, in one call", () => withEnv({ VERCEL_ENV: "production", BREVO_API_KEY: "k", BREVO_WAITLIST_LIST_ID: "4" }, async () => {
+  const bodies = stubBrevo([[201, "{\"id\":7}"]]);
+  const r = await addContactToList("BREVO_WAITLIST_LIST_ID", CONTACT);
+  assert.equal(r.ok, true);
+  assert.equal(bodies.length, 1);
+  assert.deepEqual(bodies[0].listIds, [4]);
+  assert.deepEqual(bodies[0].attributes, { FIRSTNAME: "Ana", SOURCE: "waitlist-app", PRIMARY_CHAPTER: 3 });
+  assert.equal(bodies[0].updateEnabled, undefined);
+}));
+await acheck("addContactToList: an existing contact joins list 4 but keeps its first-touch SOURCE", () => withEnv({ VERCEL_ENV: "production", BREVO_API_KEY: "k", BREVO_WAITLIST_LIST_ID: "4" }, async () => {
+  const bodies = stubBrevo([[400, "{\"code\":\"duplicate_parameter\",\"message\":\"Contact already exist\"}"], [204, ""]]);
+  const r = await addContactToList("BREVO_WAITLIST_LIST_ID", CONTACT);
+  assert.equal(r.ok, true);
+  assert.equal(bodies.length, 2);
+  assert.deepEqual(bodies[1].listIds, [4]);
+  assert.equal(bodies[1].updateEnabled, true);
+  assert.deepEqual(bodies[1].attributes, { FIRSTNAME: "Ana", PRIMARY_CHAPTER: 3 });
+  assert.equal("SOURCE" in bodies[1].attributes, false);
+  assert.equal(listAddFailureShape(r, "BREVO_WAITLIST_LIST_ID"), null);
+}));
+await acheck("addContactToList: any other Brevo 400 is reported, with no second call", () => withEnv({ VERCEL_ENV: "production", BREVO_API_KEY: "k", BREVO_WAITLIST_LIST_ID: "4" }, async () => {
+  const bodies = stubBrevo([[400, "{\"code\":\"invalid_parameter\"}"]]);
+  const r = await addContactToList("BREVO_WAITLIST_LIST_ID", CONTACT);
+  assert.equal(bodies.length, 1);
+  assert.equal(listAddFailureShape(r, "BREVO_WAITLIST_LIST_ID")?.category, "server");
+}));
+await acheck("addContactToList: a failed update after the duplicate answer is reported", () => withEnv({ VERCEL_ENV: "production", BREVO_API_KEY: "k", BREVO_WAITLIST_LIST_ID: "4" }, async () => {
+  stubBrevo([[400, "{\"code\":\"duplicate_parameter\"}"], [500, "oops"]]);
+  const r = await addContactToList("BREVO_WAITLIST_LIST_ID", CONTACT);
+  assert.equal(listAddFailureShape(r, "BREVO_WAITLIST_LIST_ID")?.category, "server");
+}));
+check("capture-lead keeps first-touch SOURCE too (create first, update without SOURCE)", () => {
+  const fn = readFileSync("supabase/functions/capture-lead/index.ts", "utf8");
+  assert.match(fn, /code !== "duplicate_parameter"/);
+  assert.match(fn, /const \{ SOURCE: _keep, \.\.\.rest \} = attributes;/);
+  assert.doesNotMatch(fn.split("const post =")[0], /updateEnabled: true/);
+});
+check("migration: safe_uuid gets the search_path production already has", () => {
+  assert.match(readFileSync("supabase/migrations/20261106180000_brevo_list_signups.sql", "utf8"), /alter function public\.safe_uuid\(text\) set search_path = '';/);
+});
+
+if (failed) process.exit(1);

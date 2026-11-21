@@ -7,8 +7,8 @@ import { K, KyaHeading, KyaPrimaryButton, KyaRequiredTag, KyaSheet } from "@/com
 import { useTranslation } from "react-i18next";
 import type { TFunction } from "i18next";
 
-// Region options mirror the Brevo form's PRIMARY_CHAPTER select (value = Brevo
-// category id).
+// Region options mirror Brevo's PRIMARY_CHAPTER attribute (value = Brevo
+// category id), which joinWaitlist sends along with a copy in waitlist_signups.
 const CHAPTERS: { value: string; label: string }[] = [
   { value: "1", label: "California" },
   { value: "2", label: "Florida" },
@@ -41,12 +41,13 @@ const inputCls = "min-h-[48px] w-full rounded-full border-[1.5px] bg-white px-4 
 const inputStyle = { borderColor: "#d5dfd5", color: "#1a3d2e" };
 
 // Lime community-waitlist card on Explore — the single accent moment. The button
-// opens a popup form whose fields map 1:1 to the Brevo waitlist form.
-export function WaitlistCard() {
+// opens a popup form whose fields map 1:1 to the Brevo waitlist attributes.
+export function WaitlistCard({ duo = false }: { duo?: boolean } = {}) {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   return (
-    <section className="rounded-[20px] p-5" style={{ background: K.lime, color: K.forest }}>
+    // The iPhone Duo's Explore uses the Duo blocks' green (#cfe9b7) and a larger radius.
+    <section className={duo ? "rounded-[24px] p-6" : "rounded-[20px] p-5"} style={{ background: duo ? "#cfe9b7" : K.lime, color: K.forest }}>
       <span className="inline-flex rounded-full px-2.5 py-1 text-[12px] font-[700] text-white" style={{ background: K.forest }}>{t("waitlist.comingSoonTag", "Coming soon")}</span>
       <KyaHeading size={21} className="mt-2.5">{t("waitlist.joinTheCommunity", "Join the community")}</KyaHeading>
       <p className="m-0 mt-2 text-[15px] leading-[1.5]">
@@ -58,7 +59,7 @@ export function WaitlistCard() {
   );
 }
 
-function WaitlistModal({ onClose }: { onClose: () => void }) {
+export function WaitlistModal({ onClose }: { onClose: () => void }) {
   const { t } = useTranslation();
   const join = useServerFn(joinWaitlist);
   const [firstName, setFirstName] = useState("");

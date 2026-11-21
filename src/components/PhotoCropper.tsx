@@ -14,9 +14,10 @@ type Props = {
 };
 
 function parsePos(p: string | null | undefined): { x: number; y: number } {
-  if (!p) return { x: 50, y: 50 };
+  // No saved crop: the upper part, where the head usually is (BIRD_PHOTO_FOCUS).
+  if (!p) return { x: 50, y: 25 };
   const m = p.match(/(-?\d+(?:\.\d+)?)\s*%\s+(-?\d+(?:\.\d+)?)\s*%/);
-  if (!m) return { x: 50, y: 50 };
+  if (!m) return { x: 50, y: 25 };
   return { x: clamp(Number(m[1])), y: clamp(Number(m[2])) };
 }
 function clamp(n: number, min = 0, max = 100) { return Math.max(min, Math.min(max, n)); }

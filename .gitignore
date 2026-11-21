@@ -75,3 +75,12 @@ docs/email-redesign/*
 !docs/email-redesign/README.md
 !docs/email-redesign/new-strings.json
 !docs/email-redesign/templates/
+
+# Playwright (iPhone hydration check, e2e/)
+/test-results/
+/playwright-report/
+
+# Design exports (stickers, character library, species picker). They live in
+# ~/Kya Project Design Assets/, never in git: output/ alone was 664 MB.
+/output/
+/outputs/

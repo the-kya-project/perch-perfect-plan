@@ -5,7 +5,7 @@ import { getLocalUser } from "@/integrations/supabase/currentUser";
 import { fetchBirdList } from "@/lib/birdListSelect";
 
 export function useOwnedBirds() {
-  const { data: birds, isLoading } = useQuery({
+  const { data: birds, isLoading, isError } = useQuery({
     queryKey: ["birds"],
     queryFn: async () => {
       // Identical to the dashboard's fetch so the shared ["birds"] cache has one shape.
@@ -19,7 +19,7 @@ export function useOwnedBirds() {
     queryFn: async () => (await getLocalUser()).data.user?.id ?? null,
   });
   const owned = ((birds ?? []) as any[]).filter((b) => b.owner_id === myId);
-  return { birds: (birds ?? []) as any[], owned, myId: myId ?? null, loading: isLoading || myId === undefined };
+  return { birds: (birds ?? []) as any[], owned, myId: myId ?? null, loading: isLoading || myId === undefined, failed: isError && birds === undefined };
 }
 
 /** Invalidate every list that shows sits. */

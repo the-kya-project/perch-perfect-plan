@@ -1,0 +1,252 @@
+import { useState, type ReactNode } from "react";
+import { useNavigate } from "@tanstack/react-router";
+import { Check, ChevronRight, Lock } from "lucide-react";
+import { useTranslation } from "react-i18next";
+import { K, KyaHeading, KyaPrimaryButton, KyaSheet } from "@/components/kya";
+import { flockSheetTitle } from "@/lib/journeys";
+
+const CHIP_ON_BG = "#cdeab0";
+const CHIP_OFF_BORDER = "#c9d3c8";
+
+/** Small uppercase label over a group ("The basics · free"). */
+export function JourneyEyebrow({ children }: { children: ReactNode }) {
+  return <h2 className="m-0 pt-1 text-[11.5px] font-[700] uppercase tracking-[0.06em]" style={{ color: "#5a8c7a" }}>{children}</h2>;
+}
+
+/** One template in the picker: name, "7 milestones · usually 2–6 weeks", and
+ *  either "[Bird] knows this", "Going now", a lock, or a chevron. */
+export function TemplateRow({ name, meta, known, going, locked, onClick, testId }: {
+  name: string;
+  meta: string;
+  known?: string | null;
+  going?: string | null;
+  locked?: boolean;
+  onClick: () => void;
+  testId?: string;
+}) {
+  const { t } = useTranslation();
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      data-template={testId}
+      data-locked={locked ? "true" : undefined}
+      aria-label={locked ? t("flock.journeys.start.lockedAria", "{{name}}, part of the Flock", { name }) : undefined}
+      className="flex min-h-[56px] w-full items-center gap-3 rounded-[14px] bg-white px-3.5 py-2 text-left active:scale-[0.99]"
+      style={{ color: K.forest }}
+    >
+      <span className="flex min-w-0 flex-1 flex-col">
+        <span className="text-[15px] font-[700]">{name}</span>
+        <span className="text-[12.5px]" style={{ color: K.quiet }}>{meta}</span>
+      </span>
+      {known ? (
+        <span className="shrink-0 rounded-full px-2 py-[3px] text-[11px] font-[700]" style={{ background: "#e5f4e4", color: K.moss }}>{known}</span>
+      ) : going ? (
+        <span className="shrink-0 rounded-full px-2 py-[3px] text-[11px] font-[700]" style={{ background: K.amberBg, color: K.amberText }}>{going}</span>
+      ) : null}
+      {locked
+        ? <Lock className="size-4 shrink-0" style={{ color: K.quiet }} aria-hidden="true" />
+        : <ChevronRight className="size-[18px] shrink-0" style={{ color: K.forest }} aria-hidden="true" />}
+    </button>
+  );
+}
+
+/** Pick-one chips: pale lime with a 2px forest border when chosen. */
+export function ChoiceChips<T extends string>({ label, options, value, onChange, testId, grid }: {
+  label: string;
+  options: { value: T; label: string }[];
+  value: T | null;
+  onChange: (v: T) => void;
+  testId?: string;
+  grid?: boolean;
+}) {
+  return (
+    <div role="radiogroup" aria-label={label} data-testid={testId} className={grid ? "grid grid-cols-3 gap-2" : "flex flex-wrap gap-2"}>
+      {options.map((o) => {
+        const on = o.value === value;
+        return (
+          <button
+            key={o.value}
+            type="button"
+            role="radio"
+            aria-checked={on}
+            data-value={o.value}
+            onClick={() => onChange(o.value)}
+            className={`min-h-[44px] rounded-full px-3.5 text-[14px] active:scale-[0.98] ${grid ? "text-center" : ""}`}
+            style={on
+              ? { background: CHIP_ON_BG, color: K.forest, border: `2px solid ${K.forest}`, fontWeight: 700 }
+              : { background: "#fff", color: K.forest, border: `1px solid ${CHIP_OFF_BORDER}`, fontWeight: 400, padding: "0 15px" }}
+          >
+            {o.label}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+/** Many-at-once chips (known skills): the same look, with a check when on. */
+export function ToggleChip({ on, label, onClick, testId }: { on: boolean; label: string; onClick: () => void; testId?: string }) {
+  return (
+    <button
+      type="button"
+      aria-pressed={on}
+      data-skill={testId}
+      onClick={onClick}
+      className="inline-flex min-h-[44px] items-center gap-1.5 rounded-full px-3.5 text-[14px] active:scale-[0.98]"
+      style={on
+        ? { background: CHIP_ON_BG, color: K.forest, border: `2px solid ${K.forest}`, fontWeight: 700 }
+        : { background: "#fff", color: K.forest, border: `1px solid ${CHIP_OFF_BORDER}`, fontWeight: 400, padding: "0 15px" }}
+    >
+      {on && <Check className="size-4" strokeWidth={2.75} aria-hidden="true" />}
+      {label}
+    </button>
+  );
+}
+
+/** The white footer pinned under a flow screen, holding its one main button. */
+export function FlowFooter({ children }: { children: ReactNode }) {
+  return (
+    <div className="sticky bottom-0 z-10 -mx-4 mt-2 bg-white px-4 pb-[max(16px,env(safe-area-inset-bottom))] pt-2.5" style={{ borderTop: "1px solid #e7ece6" }}>
+      {children}
+    </div>
+  );
+}
+
+/** A free account tapping a Flock-only journey. No price: the Flock is free
+ *  until July 2027. The button goes to the founding page until the join step
+ *  exists. */
+export function FlockOnlySheet({ slug, journey, bird, onClose }: { slug: string; journey: string; bird?: string; onClose: () => void }) {
+  const { t } = useTranslation();
+  const navigate = useNavigate();
+  return (
+    <KyaSheet
+      onClose={onClose}
+      closeLabel={t("flock.region.close", "Close")}
+      title={(
+        <div className="flex flex-col gap-1">
+          <span className="text-[11.5px] font-[700] uppercase tracking-[0.06em]" style={{ color: K.moss }}>{t("flock.journeys.flockOnly.eyebrow", "Part of the Flock")}</span>
+          <KyaHeading size={23}>{flockSheetTitle(t, slug, journey, bird)}</KyaHeading>
+        </div>
+      )}
+    >
+      <div data-testid="flock-only-sheet" className="flex flex-col gap-3">
+        <p className="m-0 text-[15px] leading-[1.5]" style={{ color: K.ink }}>
+          {t("flock.journeys.flockOnly.line", "Tricks like this one are only available to Flock members.")}
+        </p>
+        <p className="m-0 text-[15px] leading-[1.5]" style={{ color: K.ink }}>
+          {t("flock.journeys.flockOnly.about", "The Flock is The Kya Project's community, where you'll find your local chapter, a library of guides and recordings, and every training journey, including tricks, nail trims, and stationing.")}
+        </p>
+        <p className="m-0 rounded-[14px] px-3.5 py-3 text-[15px] font-[700] leading-[1.45]" style={{ background: "#e8f3dc", color: K.forest }}>
+          {t("flock.journeys.flockOnly.free", "Be an early Flock member and join for free until July 2027.")}
+        </p>
+        <KyaPrimaryButton onClick={() => void navigate({ to: "/founding", search: { src: "journey-sheet" } })}>
+          {t("flock.journeys.flockOnly.join", "Join the Flock free")}
+        </KyaPrimaryButton>
+      </div>
+    </KyaSheet>
+  );
+}
+
+/** Free users with a custom journey already open. */
+export function CustomLimitSheet({ onClose }: { onClose: () => void }) {
+  const { t } = useTranslation();
+  return (
+    <KyaSheet onClose={onClose} closeLabel={t("flock.region.close", "Close")} title={<KyaHeading size={23}>{t("flock.journeys.customLimit.title", "One custom journey at a time")}</KyaHeading>}>
+      <div data-testid="custom-limit-sheet" className="flex flex-col gap-3">
+        <p className="m-0 text-[15px] leading-[1.5]" style={{ color: K.ink }}>
+          {t("flock.journeys.customLimit.line", "Free accounts can have one custom journey going at a time. Flock members can start as many as they like.")}
+        </p>
+        <KyaPrimaryButton onClick={onClose}>{t("flock.journeys.customLimit.ok", "Got it")}</KyaPrimaryButton>
+      </div>
+    </KyaSheet>
+  );
+}
+
+/** A small progress ring with "3/7" inside, for journey rows. */
+export function MiniRing({ done, total, size = 40 }: { done: number; total: number; size?: number }) {
+  const stroke = 3.5;
+  const r = (size - stroke) / 2;
+  const c = 2 * Math.PI * r;
+  const pct = total > 0 ? Math.min(1, done / total) : 0;
+  return (
+    <span className="relative grid shrink-0 place-items-center" style={{ width: size, height: size }} aria-hidden="true">
+      <svg width={size} height={size} className="absolute inset-0 -rotate-90">
+        <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="#dfe7dd" strokeWidth={stroke} />
+        <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke={K.moss} strokeWidth={stroke} strokeLinecap="round" strokeDasharray={`${c * pct} ${c}`} />
+      </svg>
+      <span className="text-[10.5px] font-[700]" style={{ color: K.forest }}>{done}/{total}</span>
+    </span>
+  );
+}
+
+/** "Post an update for…" (Batch 4, screen 1): which journey, with when each
+ *  was last posted to, and "Or start a new journey". */
+export function WhichJourneySheet({ journeys, onPick, onStartNew, onClose }: {
+  journeys: { id: string; title: string; done: number; total: number; daysSince: number | null }[];
+  onPick: (id: string) => void;
+  onStartNew: () => void;
+  onClose: () => void;
+}) {
+  const { t } = useTranslation();
+  const last = (d: number | null) => d == null ? t("flock.journeys.which.never", "Nothing posted yet")
+    : d === 0 ? t("flock.journeys.which.today", "Last posted today")
+    : d === 1 ? t("flock.journeys.which.yesterday", "Last posted yesterday")
+    : d < 7 ? t("flock.journeys.which.days", "Last posted {{count}} days ago", { count: d })
+    : d < 14 ? t("flock.journeys.which.lastWeek", "Last posted last week")
+    : t("flock.journeys.which.weeks", "Last posted {{count}} weeks ago", { count: Math.floor(d / 7) });
+  return (
+    <KyaSheet onClose={onClose} closeLabel={t("flock.region.close", "Close")} title={<KyaHeading size={23}>{t("flock.journeys.which.title", "Post an update for…")}</KyaHeading>}>
+      <div className="flex flex-col gap-2" data-testid="which-journey">
+        {journeys.map((j) => (
+          <button key={j.id} type="button" data-journey={j.id} onClick={() => onPick(j.id)}
+            className="flex min-h-[60px] items-center gap-3 rounded-[14px] px-3 py-2 text-left active:scale-[0.99]"
+            style={{ border: `1px solid ${K.line}`, color: K.forest }}>
+            <MiniRing done={j.done} total={j.total} />
+            <span className="flex min-w-0 flex-1 flex-col">
+              <span className="truncate text-[15px] font-[700]">{j.title}</span>
+              <span className="text-[12.5px]" style={{ color: K.quiet }}>{last(j.daysSince)}</span>
+            </span>
+            <ChevronRight className="size-[18px] shrink-0" aria-hidden="true" />
+          </button>
+        ))}
+        <button type="button" onClick={onStartNew} className="self-start py-2 text-[14px] font-[700]" style={{ color: K.moss }}>
+          {t("flock.journeys.which.startNew", "Or start a new journey")}
+        </button>
+      </div>
+    </KyaSheet>
+  );
+}
+
+/** "From members who've done [Skill]" (JourneyEverywhere, screen 8): one tip
+ *  at a time, newest first, with "Next tip" (or a swipe) for more, and how many
+ *  members shared one. Text only, no names, until step 4. Shows nothing when
+ *  there are no tips, or for free accounts (the database returns none). */
+export function FinisherTipsCard({ skill, tips }: { skill: string; tips: { body: string; total: number }[] | undefined }) {
+  const { t } = useTranslation();
+  const [i, setI] = useState(0);
+  const [x0, setX0] = useState<number | null>(null);
+  if (!tips || tips.length === 0) return null;
+  const k = i % tips.length;
+  const next = () => setI((n) => n + 1);
+  return (
+    <section className="flex flex-col gap-1.5 rounded-[18px] px-4 py-3.5" style={{ background: "#fbf3df", color: K.forest }} data-testid="finisher-tips"
+      onTouchStart={(e) => setX0(e.touches[0].clientX)}
+      onTouchEnd={(e) => { if (x0 != null && Math.abs(e.changedTouches[0].clientX - x0) > 50) next(); setX0(null); }}>
+      <h2 className="m-0 text-[11.5px] font-[700] uppercase tracking-[0.06em]" style={{ color: K.amberText }}>
+        {t("flock.journeys.tips.eyebrow", "From members who've done {{skill}}", { skill })}
+      </h2>
+      <p className="m-0 text-[15px] leading-[1.45]" data-testid="finisher-tip-text" aria-live="polite">{`“${tips[k].body}”`}</p>
+      <div className="flex items-center gap-3">
+        <span className="flex-1 text-[12.5px]" style={{ color: K.quiet }}>
+          {t("flock.journeys.tips.shared", "Shared by {{count}} members who finished", { count: tips[0].total })}
+        </span>
+        {tips.length > 1 && (
+          <button type="button" onClick={next} className="min-h-[36px] text-[13px] font-[700]" style={{ color: K.amberText }} data-testid="next-tip">
+            {t("flock.journeys.tips.next", "Next tip")}
+          </button>
+        )}
+      </div>
+    </section>
+  );
+}

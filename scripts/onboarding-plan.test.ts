@@ -30,6 +30,7 @@ function acct(over: Partial<OnboardingAccount> = {}): OnboardingAccount {
   return {
     userId: "u1",
     createdAt: "2026-10-01T10:00:00Z",
+    confirmedAt: "2026-10-01T10:05:00Z",
     notifyOnboarding: true,
     hasBird: true,
     linkBird: { id: "b1", name: "Juno" },
@@ -51,10 +52,8 @@ check("only bird passed → paused, nothing logged", () =>
   assert.deepEqual(decide(acct({ hasBird: false, onlyPassedBirds: true }), RUN("2026-10-02")), { kind: "hold", reason: "bird_passed" }));
 
 console.log("\ncadence");
-check("new account → welcome", () => {
-  const d = decide(acct(), RUN("2026-10-01"));
-  assert.equal(d.kind === "act" && d.send?.stage, "welcome");
-});
+check("new account → the daily batch leaves the welcome to the welcome hook", () =>
+  assert.deepEqual(decide(acct(), RUN("2026-10-01")), { kind: "hold", reason: "awaiting_welcome" }));
 check("2 calendar days after a send → not due", () =>
   assert.equal(decide(acct({ log: [sent("welcome", "2026-10-01")] }), RUN("2026-10-03")).kind, "hold"));
 check("3 calendar days, even a few seconds earlier in the day → due", () => {

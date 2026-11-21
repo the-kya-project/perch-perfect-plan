@@ -12,6 +12,12 @@ import { CarePlanView, CARE_PLAN_SECTIONS, type CareSection } from "@/components
 import { K, KyaPage, KyaBody, KyaCard } from "@/components/kya";
 import { PageHeader } from "@/components/headers";
 import { Loader2 } from "lucide-react";
+import { useDuoMode } from "@/lib/duo";
+import { useBirdRole } from "@/lib/useBirdRole";
+import { CarePlanReadDuo, CARD_SECTIONS } from "@/components/duo/plan/CarePlanDuo";
+
+// The editor tab for each read-view card (the Duo's "Edit this section").
+const CARD_TAB = { food: "food", health: "health", behavior: "behavior", tips: "clips", routine: "routine", home: "home" } as const;
 
 // Owner / household-member read-only care plan. Thin data layer: fetches the
 // plan via the authenticated server fn and hands it to the shared CarePlanView
@@ -36,11 +42,30 @@ function HouseholdCarePlan() {
   const navigate = useNavigate();
   const canEdit = useCapability("edit_care_plans", { birdId });
   const getView = useServerFn(getHouseholdCarePlanView);
-  const { data, isLoading, isError } = useQuery({
+  const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ["household-care-plan", birdId],
     queryFn: () => getView({ data: { birdId } }),
     retry: false,
   });
+
+  const duo = useDuoMode() === "sideways";
+  const isOwner = useBirdRole(birdId) === "owner";
+
+  // iPhone Duo (two panes): the cards on the left, the open one on the right.
+  // The open card is ?section= (replace), like a deep link.
+  if (duo) {
+    return (
+      <CarePlanReadDuo
+        birdId={birdId}
+        section={section}
+        onSection={(card) => navigate({ to: "/birds/$birdId/care-plan", params: { birdId }, search: { section: CARD_SECTIONS[card][0] }, replace: true })}
+        canEdit={canEdit}
+        onBack={() => navigate({ to: "/birds/$birdId/plan", params: { birdId } })}
+        onEdit={(card) => navigate({ to: "/birds/$birdId/plan/editor", params: { birdId }, search: { tab: CARD_TAB[card] } })}
+        onSetUpSit={isOwner ? () => navigate({ to: "/sits/new", search: { bird: birdId } }) : undefined}
+      />
+    );
+  }
 
   const bird = (data?.bird ?? {}) as any;
   const name = (bird.name ?? t("planEditor.thisBird", "this bird")) as string;
@@ -66,6 +91,13 @@ function HouseholdCarePlan() {
           ) : (
             <CarePlanView
               data={data}
+              // An expired signed clip link: refetch the plan view (the same
+              // path that minted it) and hand back that clip's fresh URL.
+              refreshClipUrl={async (key) => {
+                const r = await refetch();
+                if (key === "baseline") return r.data?.baselineClipUrl ?? null;
+                return ((r.data?.watchClips ?? []) as { key: string; url: string }[]).find((x) => x.key === key)?.url ?? null;
+              }}
               targetSection={section}
               canEdit={canEdit}
               onEdit={() => navigate({ to: "/birds/$birdId/plan/editor", params: { birdId }, search: { tab: "food" } })}

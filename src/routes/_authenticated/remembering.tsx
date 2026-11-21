@@ -12,6 +12,7 @@ import { useLoadState } from "@/lib/useTooLong";
 import i18next from "i18next";
 import { useTranslation } from "react-i18next";
 import { ownerIntakeDate } from "@/lib/intakeDate";
+import { BIRD_PHOTO_FOCUS } from "@/lib/birdPhotoFocus";
 
 // Remembering — the memorial home for birds that have passed. Reached from the
 // app menu by choice, never from Home (a passed bird leaves the active flock
@@ -73,7 +74,7 @@ function Remembering() {
               <KyaCard key={b.id} className="p-5">
                 <div className="flex items-center gap-3">
                   {photo ? (
-                    <img src={photo.url} alt="" className="size-12 shrink-0 rounded-full object-cover" />
+                    <img src={photo.url} alt="" className="size-12 shrink-0 rounded-full object-cover" style={{ objectPosition: b.photo_position ?? BIRD_PHOTO_FOCUS }} />
                   ) : (
                     <KyaIconTile size={48} tone="mist"><Flower2 className="size-5" /></KyaIconTile>
                   )}

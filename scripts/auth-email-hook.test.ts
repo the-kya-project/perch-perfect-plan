@@ -8,7 +8,7 @@
  */
 import assert from "node:assert/strict";
 import { createHmac } from "node:crypto";
-import { verifyHookSignature, planAuthEmails, verifyUrl, type SendEmailHookPayload } from "@/lib/authEmailHook.server";
+import { verifyHookSignature, planAuthEmails, verifyUrl, appVerifyUrl, type SendEmailHookPayload } from "@/lib/authEmailHook.server";
 import { buildAuthEmail } from "@/lib/emailTemplates";
 
 let passed = 0;
@@ -77,11 +77,27 @@ check("signup → one email with a link to the user", () => {
   assert.equal(p.length, 1);
   assert.equal(p[0].to, "old@kya.test");
   assert.equal(p[0].kind, "signup");
-  assert.match(p[0].link!, /token=hashA&type=signup/);
+  assert.equal(p[0].link, "https://app.thekyaproject.com/verify?token_hash=hashA&type=signup&next=%2Fwelcome");
 });
-check("recovery → reset email", () => {
-  const p = planAuthEmails(payload("recovery"), SB);
+check("recovery → reset email, landing on /reset-password through /verify", () => {
+  const p = planAuthEmails(payload("recovery", { redirect_to: "https://app.thekyaproject.com/reset-password" }), SB);
   assert.deepEqual([p[0].kind, p[0].tag], ["recovery", "auth_recovery"]);
+  assert.equal(p[0].link, "https://app.thekyaproject.com/verify?token_hash=hashA&type=recovery&next=%2Freset-password");
+});
+check("app links: /verify on our domain, so the installed app can open them", () => {
+  // An invitee's confirmation goes back to their invite, query kept.
+  assert.equal(
+    appVerifyUrl("h", "signup", "https://app.thekyaproject.com/invite/tok?x=1"),
+    "https://app.thekyaproject.com/verify?token_hash=h&type=signup&next=%2Finvite%2Ftok%3Fx%3D1",
+  );
+  assert.equal(appVerifyUrl("h", "magiclink", "https://app.thekyaproject.com/"), "https://app.thekyaproject.com/verify?token_hash=h&type=magiclink");
+});
+check("other or missing redirect_to keeps Supabase's own link", () => {
+  for (const r of ["", "http://127.0.0.1:4173/welcome", "https://evil.example/welcome", "https://pet-sitter-git-x.vercel.app/welcome", "not a url"]) {
+    assert.equal(appVerifyUrl("h", "signup", r), null, r);
+  }
+  const p = planAuthEmails(payload("signup", { redirect_to: "http://127.0.0.1:4173/welcome" }), SB);
+  assert.match(p[0].link!, /^https:\/\/ref\.supabase\.co\/auth\/v1\/verify\?token=hashA&type=signup/);
 });
 check("reauthentication → code, no link", () => {
   const p = planAuthEmails(payload("reauthentication"), SB);
@@ -94,9 +110,9 @@ check("secure email change → two emails with the reversed hashes", () => {
   const toNew = p.find((e) => e.to === "new@kya.test")!;
   const toOld = p.find((e) => e.to === "old@kya.test")!;
   assert.equal(toNew.kind, "emailChangeNew");
-  assert.match(toNew.link!, /token=hashA&/);
+  assert.match(toNew.link!, /token_hash=hashA&type=email_change/);
   assert.equal(toOld.kind, "emailChangeCurrent");
-  assert.match(toOld.link!, /token=hashB&/);
+  assert.match(toOld.link!, /token_hash=hashB&type=email_change/);
 });
 check("single email change → only the new address", () => {
   const p = planAuthEmails(payload("email_change", {}, { new_email: "new@kya.test" }), SB);

@@ -3,122 +3,14 @@
 // the client bundle.
 
 import { createServerFn } from "@tanstack/react-start";
-import type { SupabaseClient } from "@supabase/supabase-js";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import type { Database } from "@/integrations/supabase/types";
+import { finishAccountDeletion } from "./accountDeletion";
+import type { SweepFailure } from "./storageSweep";
 
-type AdminStorage = SupabaseClient<Database>["storage"];
-
-// Production page size for storage listing. `.list()` defaults to 100 and caps
-// silently — without an advancing offset, objects beyond one page are never
-// deleted. Kept as a named constant (overridable via the helper's `pageSize`
-// argument) so the pagination loop can be proven with a handful of objects.
-export const STORAGE_LIST_PAGE_SIZE = 1000;
-
-// `.remove()` has no client-side cap; the Storage API rejects oversized delete
-// requests server-side, so we chunk paths to stay comfortably under that limit.
-export const STORAGE_REMOVE_BATCH_SIZE = 100;
-
-// Depth budget for the recursive walk. Real paths are 2 segments
-// (`<owner|bird>/<uuid>.jpg`); the deepest shape ever written was the legacy
-// `<userId>/baselines/<birdId>/droppings-*.jpeg` at 4. 8 is far above anything
-// real, and bounds the walk if a bucket ever returns a cyclic or malformed
-// listing so a deletion can't spin.
-export const STORAGE_MAX_DEPTH = 8;
-// Second, independent bound: total folders we will open. Depth alone doesn't
-// stop a pathologically wide tree.
-export const STORAGE_MAX_PREFIXES = 10_000;
-
-/** One object we could not remove. Logged so an operator can finish the job. */
-export type SweepFailure = { bucket: string; path: string; reason: string };
-
-// Supabase returns folders inside a listing as placeholder rows with a null id
-// (real objects always carry one). This is the only way to tell them apart.
-function isFolderRow(row: { id?: string | null }): boolean {
-  return row.id == null;
-}
-
-/**
- * Delete every object under `<prefix>/` in a bucket, at ANY depth.
- *
- * `.list()` is NOT recursive: it returns the immediate children of one prefix,
- * with sub-folders as null-id placeholder rows. The previous version pushed
- * those placeholder names straight into `.remove()`, which silently no-ops on a
- * path that isn't an object — so anything nested survived deletion while the
- * sweep reported success. That is how
- * `bird-photos/<userId>/baselines/<birdId>/droppings-*.jpeg` outlived an
- * account deletion. We now walk the tree.
- *
- * Never throws for a per-object or per-listing failure: it returns them. The
- * caller decides whether a failure is fatal — account deletion must finish
- * (an undeletable file must not strand a user with a live account), while
- * single-bird deletion stays fail-closed.
- */
-export async function deleteAllUnderPrefix(
-  storage: AdminStorage,
-  bucket: string,
-  prefix: string,
-  pageSize: number = STORAGE_LIST_PAGE_SIZE,
-): Promise<{ deleted: number; failures: SweepFailure[] }> {
-  const bucketApi = storage.from(bucket);
-  const failures: SweepFailure[] = [];
-  const paths: string[] = [];
-
-  // Breadth-first over prefixes. Collect every object first, remove after, so
-  // deletions never shift the offsets we're still reading.
-  const queue: Array<{ prefix: string; depth: number }> = [{ prefix, depth: 0 }];
-  let opened = 0;
-
-  while (queue.length) {
-    const { prefix: dir, depth } = queue.shift()!;
-    if (++opened > STORAGE_MAX_PREFIXES) {
-      failures.push({ bucket, path: dir, reason: `walk stopped: more than ${STORAGE_MAX_PREFIXES} folders` });
-      break;
-    }
-
-    for (let offset = 0; ; ) {
-      const { data: page, error } = await bucketApi.list(dir, { limit: pageSize, offset });
-      if (error) {
-        failures.push({ bucket, path: dir, reason: `list failed: ${error.message}` });
-        break;
-      }
-      const rows = page ?? [];
-      for (const row of rows) {
-        const full = `${dir}/${row.name}`;
-        if (isFolderRow(row)) {
-          if (depth + 1 > STORAGE_MAX_DEPTH) {
-            failures.push({ bucket, path: full, reason: `deeper than ${STORAGE_MAX_DEPTH} levels; not walked` });
-          } else {
-            queue.push({ prefix: full, depth: depth + 1 });
-          }
-        } else {
-          paths.push(full);
-        }
-      }
-      if (rows.length < pageSize) break;
-      offset += rows.length;
-    }
-  }
-
-  let deleted = 0;
-  for (let i = 0; i < paths.length; i += STORAGE_REMOVE_BATCH_SIZE) {
-    const chunk = paths.slice(i, i + STORAGE_REMOVE_BATCH_SIZE);
-    const { error } = await bucketApi.remove(chunk);
-    if (!error) {
-      deleted += chunk.length;
-      continue;
-    }
-    // A batch error says nothing about WHICH path failed, and we need exact
-    // paths in the log for anyone cleaning up. Retry one at a time to find out.
-    for (const path of chunk) {
-      const { error: one } = await bucketApi.remove([path]);
-      if (one) failures.push({ bucket, path, reason: `remove failed: ${one.message}` });
-      else deleted++;
-    }
-  }
-
-  return { deleted, failures };
-}
+export {
+  STORAGE_LIST_PAGE_SIZE, STORAGE_MAX_DEPTH, STORAGE_MAX_PREFIXES, STORAGE_REMOVE_BATCH_SIZE,
+  deleteAllUnderPrefix, type SweepFailure,
+} from "./storageSweep";
 
 export const deleteMyAccount = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -130,10 +22,13 @@ export const deleteMyAccount = createServerFn({ method: "POST" })
     // then the auth user itself. ON DELETE CASCADE on related tables takes
     // care of children of birds/sits/care_plans, but we delete explicitly
     // so anything without a cascade still goes.
-    const { data: birds } = await supabaseAdmin
+    const { data: birds, error: birdsError } = await supabaseAdmin
       .from("birds")
       .select("id")
       .eq("owner_id", userId);
+    // Without the bird list, their files can't be found once the birds are
+    // deleted below, so stop here (nothing deleted yet) and let them retry.
+    if (birdsError) throw new Error(`Could not read your birds: ${birdsError.message}`);
     const birdIds = (birds ?? []).map((b: any) => b.id as string);
 
     // Every media object we could not remove. Deleting the account is the
@@ -145,62 +40,15 @@ export const deleteMyAccount = createServerFn({ method: "POST" })
     // files, so continuing past a storage failure orphans bytes permanently.
     // That is why the log below carries bucket + full path — it is the sole
     // record left once the rows are gone.
-    const mediaFailures: SweepFailure[] = [];
-
-    async function sweep(bucket: string, prefix: string) {
-      try {
-        const { failures } = await deleteAllUnderPrefix(supabaseAdmin.storage, bucket, prefix);
-        mediaFailures.push(...failures);
-      } catch (e: any) {
-        // deleteAllUnderPrefix reports per-object failures rather than throwing,
-        // so reaching here means something unexpected (a client/network fault).
-        mediaFailures.push({ bucket, path: prefix, reason: `sweep threw: ${e?.message ?? e}` });
-      }
-    }
-
-    // bird-photos is keyed by the owner-uid folder; journal/moment, scan and
-    // attachment files are keyed by bird id.
-    await sweep("bird-photos", userId);
-    for (const birdId of birdIds) {
-      await sweep("journal-photos", birdId);
-      await sweep("scan-photos", birdId);
-      await sweep("journal-attachments", birdId);
-    }
-
-    // Cloudflare Stream clips live outside Supabase entirely, so no bucket
-    // sweep reaches them. A clip that fails to delete — a stale uid, a missing
-    // CLOUDFLARE_* env, Cloudflare being down — is logged like a file, not
-    // fatal: the alternative is an account that can never be deleted because of
-    // a video the user cannot see.
     //
-    // The uids come from clip_assets, not from the nine care_plans columns.
-    // Those columns hold only the CURRENT clip per slot, so a replaced clip, or
-    // one uploaded and abandoned before the care plan saved, was never seen
-    // here and its video was orphaned for good. The registry records every mint.
-    //
-    // ORDERING: this runs while every row still exists. clip_assets cascades on
-    // bird_id, so reading it after the row deletes below would read nothing and
-    // silently orphan every video. Nothing above this point deletes a row.
-    if (birdIds.length) {
-      try {
-        const { clipUidsForBirds, deleteStreamUids, forgetClipUids } = await import("./birdMedia.functions");
-        const uids = await clipUidsForBirds(supabaseAdmin, birdIds);
-        const { deletedUids, failures } = await deleteStreamUids(uids);
-        // Rows for videos confirmed gone. The birds are deleted below and would
-        // cascade these anyway, but that only holds while this stays in the
-        // same function as the row deletes.
-        await forgetClipUids(supabaseAdmin, deletedUids);
-        for (const f of failures) {
-          mediaFailures.push({ bucket: "cloudflare-stream", path: f.uid, reason: f.reason });
-        }
-      } catch (e: any) {
-        mediaFailures.push({
-          bucket: "cloudflare-stream",
-          path: birdIds.join(","),
-          reason: `clip cleanup threw: ${e?.message ?? e}`,
-        });
-      }
-    }
+    // Which files, and why each rule: accountMedia.ts. It reads everything it
+    // needs first (the rows are the only way to find the files), so it runs
+    // before any row delete below. A read error stops the deletion here with
+    // nothing deleted, so trying again starts from a full picture.
+    const { deleteAccountMedia } = await import("./accountMedia");
+    const { deleteStreamUids, forgetClipUids } = await import("./birdMedia.functions");
+    const media = await deleteAccountMedia(supabaseAdmin as any, userId, birdIds, { deleteStreamUids, forgetClipUids });
+    const mediaFailures: SweepFailure[] = media.failures;
 
     if (mediaFailures.length) {
       // The only surviving record of these objects once the rows are deleted.
@@ -262,22 +110,20 @@ export const deleteMyAccount = createServerFn({ method: "POST" })
       console.error(`[deleteMyAccount] user=${userId}: row cleanup errors: ${JSON.stringify(rowFailures)}`);
     }
 
-    // Finally, delete the auth user (also revokes all sessions). This one IS
-    // fatal: if it fails the account still exists, and reporting success would
-    // be a lie. Everything above is CASCADEd by this delete anyway.
-    const { error } = await supabaseAdmin.auth.admin.deleteUser(userId);
-    if (error) throw new Error(error.message);
-
-    // Then their analytics and error-report data in PostHog (the privacy policy
-    // promises this). Best-effort and AWAITED — post-response work is frozen on
-    // Vercel. A failure is logged inside and never fails the deletion.
+    // Finally, delete the auth user (also revokes all sessions; fatal on
+    // failure, and everything above is CASCADEd by it anyway), then their
+    // PostHog person, events and recordings (best-effort, awaited). See
+    // accountDeletion.ts for why that order and those failure rules.
     const { deletePostHogPerson } = await import("./posthogPersons.server");
-    const analytics = await deletePostHogPerson(userId);
+    const { analyticsDeleted } = await finishAccountDeletion(
+      { deleteAuthUser: (id) => supabaseAdmin.auth.admin.deleteUser(id), deletePostHogPerson },
+      userId,
+    );
 
     return {
       ok: true,
       mediaFailures: mediaFailures.length,
       rowFailures: rowFailures.length,
-      analyticsDeleted: analytics.ok,
+      analyticsDeleted,
     };
   });

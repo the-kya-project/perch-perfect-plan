@@ -31,14 +31,28 @@
  *    raw Supabase auth UUID.
  */
 
+import { DEPLOY_ENV, POSTHOG_PROJECT_KEY } from "./deployEnv";
 import { sanitizeAnalyticsEvent, sanitizeAnalyticsProperties } from "./urlScrub";
 import { scrubExceptionProperties } from "./errorScrub";
 import { hashUserId } from "./userHash";
+import { loadNativeAppTags, type NativeAppTags } from "./nativeAppInfo";
 
 // ---------------- Event catalogue ----------------
 
 export type AnalyticsEventName =
   | "owner_signup"
+  // Sign-up met an email that already has an account; and the resend from its card.
+  | "signup_existing_account"
+  | "signup_existing_resend"
+  // An emailed confirmation link Supabase rejected (expired, used, or replaced)
+  // landed on /link-expired; and the "Send a new link" tap there.
+  | "confirm_link_expired"
+  | "confirm_resend_from_expired"
+  // /verify (the landing page for every emailed auth link) was shown, and its
+  // button tapped. The token is redeemed only on the tap, so a link scanner
+  // shows up as a view with no tap. `type` is the link's kind (signup, …).
+  | "confirm_page_viewed"
+  | "confirm_tapped"
   | "guided_editor_opened"
   | "setup_stop_point_viewed"
   | "setup_stop_point_choice"
@@ -75,6 +89,17 @@ export type AnalyticsEventName =
   // exchange throw when native sign-in fails a few ms after it starts.
   | "native_oauth_init"
   | "native_oauth_token"
+  // The build has no SocialLogin plugin, so sign-in used the web flow in an
+  // in-app browser sheet instead (nativeOAuth webFallback). Its outcome comes
+  // back as native_oauth_exchanged / native_oauth_failed with via/stage
+  // "web_fallback".
+  | "native_oauth_fallback_web"
+  // The person closed or declined the native sheet (Apple 1001, Google -5,
+  // the plugin's USER_CANCELLED). Not a failure; previously logged as
+  // native_oauth_failed { stage: "cancelled" }.
+  | "native_oauth_cancelled"
+  // "Open in the Kya & Co. app" tapped in an iPhone browser (OpenInAppBar).
+  | "open_in_app_tapped"
   // Clip-upload diagnostics: compare picked file size app vs PWA
   | "clip_upload_picked"
   // Clip-upload timing: how long sending took (and the speed it implies), or
@@ -103,7 +128,30 @@ export type AnalyticsEventName =
   | "daily_check_saved"
   | "daily_check_different_opened"
   | "flock_check_completed"
-  | "extra_weight_added";
+  | "extra_weight_added"
+  // The Founding 50 page (/founding): `source` is its ?src=, `region` the
+  // chosen region slug.
+  | "founding_page_viewed"
+  | "founding_spot_claimed"
+  // Gift memberships (/gift, /redeem). gift_purchased is sent server-side by
+  // the Stripe webhook (giftTelemetry.server.ts), not from here.
+  | "gift_page_viewed"
+  | "gift_checkout_started"
+  | "gift_redeemed"
+  // The Flock's stickiness events (payments plan, build E). Sent ONLY through
+  // trackFlock() in src/lib/flockAnalytics.ts, which sends nothing for anyone
+  // outside the Flock and carries no content. Never call track() with these.
+  | "flock_active"
+  | "flock_joined"
+  | "flock_post_created"
+  | "flock_comment_created"
+  | "flock_reaction_added"
+  | "flock_library_resource_opened"
+  | "flock_journey_started"
+  | "flock_journey_milestone_reached"
+  | "flock_journey_finished"
+  | "flock_idea_tried"
+  | "flock_event_rsvped";
 
 type EventProps = Record<string, string | number | boolean | null | undefined>;
 
@@ -111,13 +159,12 @@ type EventProps = Record<string, string | number | boolean | null | undefined>;
 
 type Provider = "posthog" | "plausible" | null;
 
-// PostHog project key, hardcoded for production. It's a public client
-// identifier (it ships in the page source of every site running PostHog,
-// like any analytics key) — not a secret. It lives here rather than in a
-// Vercel env var because adding it as VITE_POSTHOG_KEY reliably broke
-// Vercel's runtime env bundling (EnvFileReadError 500s on every request,
-// reproduced twice on 2026-07-17). An env var still overrides when present.
-const PROD_POSTHOG_KEY = "phc_qkMPyAbqFHDcG6FdXFBQUsiyPsbMjbCX2hNSw2bddPKh";
+// The PostHog project key is a literal (POSTHOG_PROJECT_KEY in deployEnv.ts),
+// not a Vercel env var: adding it as VITE_POSTHOG_KEY reliably broke Vercel's
+// runtime env bundling (EnvFileReadError 500s on every request, reproduced
+// twice on 2026-07-17). It's a public client identifier, not a secret, and only
+// production builds carry it. An env var still overrides when present, except
+// in a Vercel preview, where analytics are off no matter what.
 
 function readEnv(): {
   provider: Provider;
@@ -128,13 +175,17 @@ function readEnv(): {
 } {
   // import.meta.env is statically inlined by Vite at build time.
   const env = (import.meta as any).env ?? {};
-  // The hardcoded key applies in production builds only, so dev and previews
-  // stay silent no-ops exactly as before.
-  const posthogKey: string | undefined =
-    env.VITE_POSTHOG_KEY || (import.meta.env.PROD ? PROD_POSTHOG_KEY : undefined);
+  // Vercel builds previews in production mode too, so import.meta.env.PROD
+  // alone let previews send to the production project. The key now comes from
+  // the deploy environment: production builds only, and nothing in a preview.
+  const preview = DEPLOY_ENV === "preview";
+  const posthogKey: string | undefined = preview
+    ? undefined
+    : env.VITE_POSTHOG_KEY || (import.meta.env.PROD ? POSTHOG_PROJECT_KEY ?? undefined : undefined);
   const raw = String(env.VITE_ANALYTICS_PROVIDER ?? "").toLowerCase().trim();
   let provider: Provider = null;
-  if (raw === "posthog" && posthogKey) provider = "posthog";
+  if (preview) provider = null;
+  else if (raw === "posthog" && posthogKey) provider = "posthog";
   else if (raw === "plausible" && env.VITE_PLAUSIBLE_DOMAIN) provider = "plausible";
   else if (!raw) {
     // Auto-detect when provider not explicitly set.
@@ -203,8 +254,26 @@ function loadScript(src: string, attrs: Record<string, string> = {}): Promise<vo
 
 // ---------------- PostHog adapter ----------------
 
-function beforeSend<T extends Record<string, any> | null>(event: T): T {
+/** The installed native app's version and build (src/lib/nativeAppInfo.ts),
+ *  read once before PostHog starts. Null in a browser: those events carry no
+ *  native tags. */
+let nativeTags: NativeAppTags | null = null;
+
+/** Set the native tags beforeSend adds. Exported only for scripts/native-app-tags.test.ts. */
+export function setNativeTagsForAnalytics(tags: NativeAppTags | null) {
+  nativeTags = tags;
+}
+
+/** PostHog `before_send`. Exported only for scripts/url-scrub.test.ts and
+ *  scripts/native-app-tags.test.ts. Adds native_app_version / native_build to
+ *  every event from a native app, $pageview and $exception included. Here
+ *  rather than posthog.register() so the first pageview (sent during init)
+ *  has them and reset() on sign-out can't drop them. */
+export function beforeSend<T extends Record<string, any> | null>(event: T): T {
   const out = sanitizeAnalyticsEvent(event);
+  if (out && nativeTags) {
+    (out as Record<string, any>).properties = { ...((out as Record<string, any>).properties ?? {}), ...nativeTags };
+  }
   if (out && (out as Record<string, any>).event === "$exception" && out.properties) {
     scrubExceptionProperties(out.properties);
   }
@@ -217,7 +286,10 @@ async function bootPostHog(key: string, host: string) {
   // array.js only replays init from its special `_i` queue — so the library
   // loaded and silently never initialized (empty token, no events). Verified
   // live on 2026-07-17: direct init on the loaded object beacons correctly.
-  await loadScript(`${host}/static/array.js`);
+  // Read the native app's version alongside the script load (at most 1.5s),
+  // so every event — the init pageview too — goes out tagged.
+  const [, tags] = await Promise.all([loadScript(`${host}/static/array.js`), loadNativeAppTags()]);
+  nativeTags = tags;
   const ph = (window as any).posthog;
   if (!ph || typeof ph.init !== "function" || ph.__loaded) {
     flush();
@@ -303,6 +375,20 @@ export function track(name: AnalyticsEventName, props?: EventProps) {
   const send = () => dispatch(name, safe);
   if (ready) send();
   else queue.push(send);
+}
+
+/** Set PostHog person properties on the identified person (PostHog only;
+ *  Plausible has no people). Same PII scrub as track(). Used by Flock code
+ *  (src/lib/flockAnalytics.ts) to mark members, and admin/test accounts. */
+export function setPersonProperties(props: EventProps) {
+  const safe = scrub(props);
+  const run = () => {
+    if (!isBrowser() || readEnv().provider !== "posthog") return;
+    const ph = (window as any).posthog;
+    if (typeof ph?.setPersonProperties === "function") ph.setPersonProperties(safe);
+  };
+  if (ready) run();
+  else queue.push(run);
 }
 
 /** Identify the current user. The id is hashed before being sent. */

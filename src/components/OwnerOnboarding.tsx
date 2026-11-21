@@ -3,10 +3,11 @@ import { useNavigate } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { getLocalUser } from "@/integrations/supabase/currentUser";
 import { BrandLockup } from "@/components/BrandLogo";
-import { K, KyaHeader, KyaHeading, KyaIconButton, KyaLink, KyaPrimaryButton } from "@/components/kya";
-import { ChevronLeft, ArrowRight, Feather, X } from "lucide-react";
+import { K, KyaCard, KyaGroupLabel, KyaHeader, KyaHeading, KyaIconButton, KyaIconTile, KyaLink, KyaPrimaryButton } from "@/components/kya";
+import { ChevronLeft, ArrowRight, Feather, ListChecks, Users, X } from "lucide-react";
 import { setTourDemo } from "@/lib/tourDemo";
 import { useTranslation } from "react-i18next";
+import { useCoachSpot } from "@/lib/useCoachSpot";
 import type { TFunction } from "i18next";
 
 // First-run owner orientation: a warm welcome, then a 10-step guided tour of the
@@ -56,15 +57,9 @@ const TOTAL = STEP_COUNT + 1; // + wrap-up = 10
 
 const PAD = 6;
 const GAP = 12;
+// The tour's own controls along the top (safe area + 44px buttons).
+const OVERLAY_TOP = 64;
 
-function isFixedEl(el: HTMLElement | null): boolean {
-  let n: HTMLElement | null = el;
-  while (n && n !== document.body) {
-    if (window.getComputedStyle(n).position === "fixed") return true;
-    n = n.parentElement;
-  }
-  return false;
-}
 
 type Phase = null | "welcome" | "coach";
 
@@ -85,6 +80,49 @@ function ProgressDots({ n, total, label }: { n: number; total: number; label: st
   );
 }
 
+/** A new owner's welcome: a photo and the three things that happen next, in
+ *  the space between the header and the buttons (it used to be empty, which
+ *  read as a page that hadn't loaded). The photo takes whatever height is left,
+ *  so nothing scrolls; on tall phones it stops growing and the block centres.
+ *  Below 620px of height (an iPhone SE in Safari is 548) there's no room for
+ *  it, so it's left out and the rows stand alone. */
+function WelcomePreview() {
+  const { t } = useTranslation();
+  const rows = [
+    { icon: <Feather className="size-4" />, text: t("ownerOnboarding.previewAddBird", "Add your bird") },
+    { icon: <ListChecks className="size-4" />, text: t("ownerOnboarding.previewDailyCare", "Set up their daily care") },
+    { icon: <Users className="size-4" />, text: t("ownerOnboarding.previewShareCare", "Share care with a sitter or household") },
+  ];
+  return (
+    <div className="flex min-h-0 flex-1 flex-col justify-center pb-5 sm:flex-none">
+      <div className="relative mb-4 min-h-[72px] flex-1 overflow-hidden rounded-[20px] sm:h-[200px] sm:flex-none [@media(max-height:619px)]:hidden" style={{ maxHeight: 280, background: K.lime }}>
+        <img
+          src="/brand/email/welcome.jpg"
+          alt=""
+          aria-hidden="true"
+          className="absolute inset-0 size-full object-cover"
+          style={{ objectPosition: "40% 18%" }}
+        />
+      </div>
+      <KyaGroupLabel>{t("ownerOnboarding.previewLabel", "What happens next")}</KyaGroupLabel>
+      <KyaCard className="mt-2 shrink-0">
+        <ul className="m-0 list-none p-0">
+          {rows.map((r, i) => (
+            <li
+              key={i}
+              className="flex min-h-[48px] items-center gap-3 px-3.5 py-1.5"
+              style={{ borderBottom: i < rows.length - 1 ? `1px solid ${K.line}` : undefined }}
+            >
+              <KyaIconTile size={32}>{r.icon}</KyaIconTile>
+              <span className="min-w-0 text-[15px] font-[600] leading-[1.3]">{r.text}</span>
+            </li>
+          ))}
+        </ul>
+      </KyaCard>
+    </div>
+  );
+}
+
 /** Sunflower main button for the coach bubble, sized to its label. */
 function CoachNext({ children, onClick }: { children: React.ReactNode; onClick: () => void }) {
   return (
@@ -98,7 +136,6 @@ function CoachNext({ children, onClick }: { children: React.ReactNode; onClick: 
     </button>
   );
 }
-type Spot = { rect: { top: number; left: number; width: number; height: number; bottom: number } | null; vw: number; vh: number };
 
 export function OwnerOnboarding() {
   const { t } = useTranslation();
@@ -109,7 +146,6 @@ export function OwnerOnboarding() {
   const [firstName, setFirstName] = useState("");
   // Actual owned-bird count (NOT demo) — decides the wrap-up variant.
   const [birdCount, setBirdCount] = useState(0);
-  const [spot, setSpot] = useState<Spot | null>(null);
   const bubbleRef = useRef<HTMLDivElement | null>(null);
   const [bubbleH, setBubbleH] = useState(160);
 
@@ -153,42 +189,10 @@ export function OwnerOnboarding() {
     return () => { cancelled = true; setTourDemo(false); window.removeEventListener(REPLAY_EVENT, onReplay); };
   }, []);
 
-  // Measure + track the current target; retry until it renders, re-measure on
-  // resize/scroll. Centered steps (no target) skip this.
-  useEffect(() => {
-    if (phase !== "coach" || !activeTarget) { setSpot(null); return; }
-    const target = activeTarget;
-    let raf = 0;
-    let tries = 0;
-    const measure = (): boolean => {
-      const el = document.querySelector(`[data-coach="${target}"]`);
-      const vw = window.innerWidth;
-      const vh = window.innerHeight;
-      if (!el) { setSpot({ rect: null, vw, vh }); return false; }
-      const r = el.getBoundingClientRect();
-      setSpot({ rect: { top: r.top, left: r.left, width: r.width, height: r.height, bottom: r.bottom }, vw, vh });
-      return true;
-    };
-    const tick = () => {
-      const el = document.querySelector(`[data-coach="${target}"]`) as HTMLElement | null;
-      if (el && !isFixedEl(el)) {
-        const r = el.getBoundingClientRect();
-        const delta = r.top - window.innerHeight * 0.28;
-        if (Math.abs(delta) > 4) window.scrollBy({ top: delta, behavior: "auto" });
-      }
-      const ok = measure();
-      if (!ok && tries < 40) { tries += 1; raf = requestAnimationFrame(tick); }
-    };
-    tick();
-    const onChange = () => measure();
-    window.addEventListener("resize", onChange);
-    window.addEventListener("scroll", onChange, true);
-    return () => {
-      if (raf) cancelAnimationFrame(raf);
-      window.removeEventListener("resize", onChange);
-      window.removeEventListener("scroll", onChange, true);
-    };
-  }, [phase, step, activeTarget]);
+  // Wait for the target, scroll it into the clear part of the screen, and
+  // follow it (useCoachSpot). A target that never appears (a new owner with
+  // no flock yet) leaves rect null: the bubble then sits centered.
+  const spot = useCoachSpot(activeTarget, step, bubbleH + GAP, { top: OVERLAY_TOP, bottom: 0 });
 
   useLayoutEffect(() => {
     if (phase !== "coach") return;
@@ -247,7 +251,7 @@ export function OwnerOnboarding() {
           )}
         </KyaHeader>
         <main className="relative mx-auto -mt-[26px] flex w-full max-w-md flex-1 flex-col rounded-t-[26px] px-4 pb-[max(env(safe-area-inset-bottom),24px)] pt-5 sm:flex-none" style={{ background: K.mist }}>
-          <div className="flex-1 sm:hidden" />
+          {hasBird ? <div className="flex-1 sm:hidden" /> : <WelcomePreview />}
           <KyaPrimaryButton onClick={startCoach}>{t("ownerOnboarding.showMeAround", "Show me around")}</KyaPrimaryButton>
           <div className="mt-1 text-center">
             {hasBird ? (
@@ -262,12 +266,13 @@ export function OwnerOnboarding() {
   }
 
   // ---- Coach + wrap-up ----
-  const rect = spot?.rect ?? null;
-  const vw = spot?.vw ?? (typeof window !== "undefined" ? window.innerWidth : 360);
-  const vh = spot?.vh ?? (typeof window !== "undefined" ? window.innerHeight : 640);
+  // Nothing over the target until it has been scrolled into place.
+  const rect = spot.status === "ready" && spot.stepKey === step ? spot.rect : null;
+  const vw = spot.vw || (typeof window !== "undefined" ? window.innerWidth : 360);
+  const vh = spot.vh || (typeof window !== "undefined" ? window.innerHeight : 640);
   const BW = Math.min(300, vw - 24);
-  const SAFE_TOP = 58;
-  const safeBottom = vh - 84;
+  const SAFE_TOP = Math.max(OVERLAY_TOP, spot.insets.top); // under the notch, any pinned header and the tour's own buttons
+  const safeBottom = vh - Math.max(84, spot.insets.bottom); // above the tab bar and the home bar
 
   // Centered bubble when there's no target (concept steps, wrap-up, or a target
   // that isn't on screen yet — e.g. a new owner with no flock).
@@ -292,7 +297,7 @@ export function OwnerOnboarding() {
   }
 
   return (
-    <div className="setup-frame fixed inset-0 z-[60]" style={{ color: K.forest }}>
+    <div className="setup-frame fixed inset-0 z-[60]" style={{ color: K.forest }} data-coach-overlay>
       {!centered ? (
         <div
           className="pointer-events-none absolute rounded-[14px] ring-2 ring-[#cdeab0] transition-all duration-200"

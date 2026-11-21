@@ -10,10 +10,12 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { buildHandoffInviteEmail, buildHandoffAcceptedEmail, buildHandoffDeclinedEmail } from "./emailTemplates";
 import { localeForUser, fallbackSomeoneLabel } from "./emailLocale.server";
+import { realPersonName } from "./personName.server";
 import { emailT } from "./i18n/emailI18n.server";
 import { purgeBirdMediaWith, pdfHandoffFailedMessage } from "./birdMedia.functions";
 import { ownerIntakeDate } from "./intakeDate";
 import { isMissingColumn } from "@/lib/missingColumn";
+import { signOwnerPhoto } from "./mediaSigning.server";
 
 async function getAdmin() {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -25,32 +27,12 @@ function appUrl() {
 function makeToken() {
   return (crypto.randomUUID() + crypto.randomUUID()).replace(/-/g, "");
 }
-/** Signed URL for a bird photo stored in the private bird-photos bucket
- *  (legacy data:/http values pass through). Same as household/sitter. */
-async function signBirdPhotoPath(sb: any, value: string | null | undefined): Promise<string | null> {
-  if (!value) return null;
-  if (value.startsWith("data:") || value.startsWith("http")) return value;
-  const { data } = await sb.storage.from("bird-photos").createSignedUrl(value, 3600);
-  return data?.signedUrl ?? null;
-}
 /** Display name, or null when there's nothing to show. Callers supply the fallback. */
 async function displayNameRaw(sb: any, userId: string): Promise<string | null> {
-  const { data } = await sb.from("profiles").select("display_name").eq("id", userId).maybeSingle();
-  const n = (data?.display_name ?? "").toString().trim();
-  if (n) return n;
-  try {
-    const { data: u } = await sb.auth.admin.getUserById(userId);
-    return (u?.user?.user_metadata?.display_name ?? "").toString().trim() || u?.user?.email?.split("@")[0] || null;
-  } catch { return null; }
+  return realPersonName(sb, userId);
 }
 async function displayName(sb: any, userId: string, locale: string = "en"): Promise<string> {
-  const { data } = await sb.from("profiles").select("display_name").eq("id", userId).maybeSingle();
-  const n = (data?.display_name ?? "").toString().trim();
-  if (n) return n;
-  try {
-    const { data: u } = await sb.auth.admin.getUserById(userId);
-    return (u?.user?.user_metadata?.display_name ?? "").toString().trim() || u?.user?.email?.split("@")[0] || fallbackSomeoneLabel(locale);
-  } catch { return fallbackSomeoneLabel(locale); }
+  return (await realPersonName(sb, userId)) ?? fallbackSomeoneLabel(locale);
 }
 async function sendEmail(to: string, toName: string | undefined, built: { subject: string; html: string; text: string }, tag: EmailTag) {
   const { sendTransactionalEmail } = await import("./brevoEmail.server");
@@ -327,14 +309,14 @@ export const getHandoff = createServerFn({ method: "GET" })
     // fallbacks in the reader's language.
     const senderName: string | null = await displayNameRaw(sb, h.sender_user_id as string);
     const { data: bird } = await sb.from("birds")
-      .select("name, species, sex, age, birth_date, photo_url, photo_position").eq("id", h.bird_id).maybeSingle();
+      .select("name, species, sex, age, birth_date, photo_url, photo_position, owner_id").eq("id", h.bird_id).maybeSingle();
     return {
       valid: true as const,
       senderName,
       birdName: (bird?.name ?? null) as string | null,
       // Preview for the accept screen: signed photo from the private bucket,
       // species/age/sex for the line under the title and the pronoun.
-      birdPhotoUrl: await signBirdPhotoPath(sb, bird?.photo_url),
+      birdPhotoUrl: await signOwnerPhoto(sb, bird?.photo_url, (bird as any)?.owner_id),
       birdPhotoPosition: (bird?.photo_position ?? null) as string | null,
       species: (bird?.species ?? null) as string | null,
       sex: (bird?.sex ?? null) as string | null,

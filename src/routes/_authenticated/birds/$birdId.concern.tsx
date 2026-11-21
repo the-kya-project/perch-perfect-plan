@@ -12,6 +12,8 @@ import { useLoadState } from "@/lib/useTooLong";
 import { toast } from "sonner";
 import { friendlyError } from "@/lib/errorMessage";
 import { useTranslation } from "react-i18next";
+import { useDuoMode } from "@/lib/duo";
+import { ConcernDuo } from "@/components/duo/flows/ConcernDuo";
 
 // "Something's wrong" for a HOUSEHOLD MEMBER covering an active sit — the
 // authenticated twin of /sitter/$token/concern, rendering the same shared
@@ -30,6 +32,7 @@ function CaregiverConcern() {
   const qc = useQueryClient();
   const ctxFn = useServerFn(getCaregiverConcernContext);
   const pauseFn = useServerFn(pauseCaregiverReminders);
+  const duo = useDuoMode() === "sideways";
   const goBack = useGoBack(useCallback(() => navigate({ to: "/birds/$birdId", params: { birdId } }), [navigate, birdId]));
 
   const ctxQ = useQuery({
@@ -59,6 +62,24 @@ function CaregiverConcern() {
     if (notCovering) navigate({ to: "/birds/$birdId", params: { birdId }, replace: true });
   }, [notCovering, navigate, birdId]);
   if (notCovering) return null;
+
+  // iPhone Duo, sideways: the steps left, the current step right. Loading and
+  // a failed load keep the regular page below.
+  if (duo && ctx?.covering && !load.failed) {
+    return (
+      <ConcernDuo
+        title={t("caregiverConcern.title", "Something's wrong with {{name}}", { name: ctx.birdName })}
+        name={ctx.birdName}
+        ownerName={ctx.ownerName || t("caregiverConcern.theOwner", "the owner")}
+        ownerPhone={ctx.ownerPhone}
+        vet={{ name: ctx.vetName, phone: ctx.vetPhone }}
+        paused={ctx.paused || m.isSuccess}
+        onPause={() => m.mutate()}
+        pausePending={m.isPending}
+        onBack={goBack}
+      />
+    );
+  }
 
   return (
     <KyaPage>

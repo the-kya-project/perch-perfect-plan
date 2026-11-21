@@ -33,7 +33,7 @@ const LINKS = "https://links.thekyaproject.com";
 
 // Paths that must never open the app.
 const BROWSER_ONLY = [
-  "/auth", "/welcome", "/invite/abc", "/handoff/abc", "/r/abc.def", "/api/public/unsubscribe/x/y/z",
+  "/auth", "/welcome", "/handoff/abc", "/r/abc.def", "/api/public/unsubscribe/x/y/z",
   "/sitter/tok", "/get", "/get-app", "/review", "/reset-password", "/confirm-email", "/privacy", "/terms", "/delete-account",
 ];
 
@@ -44,8 +44,20 @@ await check("home and every app screen open the app", () => {
     assert.ok(L.isAppLinkPath(p), p);
   }
 });
-await check("sign-in, invites, tracker, sitter and public pages stay in the browser", () => {
-  for (const p of BROWSER_ONLY) assert.ok(!L.isAppLinkPath(p), p);
+// Email links that open the app on iOS but aren't app screens.
+const EMAIL_LINKS = ["/invite/abc", "/verify"];
+await check("sign-in, tracker, sitter and public pages stay in the browser", () => {
+  for (const p of BROWSER_ONLY) {
+    assert.ok(!L.isAppLinkPath(p), p);
+    assert.ok(!L.isUniversalLinkPath(p), p);
+  }
+});
+await check("household invites and sign-in email links open the app, but aren't app screens", () => {
+  for (const p of EMAIL_LINKS) {
+    assert.ok(L.isUniversalLinkPath(p), p);
+    assert.ok(!L.isAppLinkPath(p), p);
+  }
+  assert.ok(!L.isUniversalLinkPath("/invited"), "whole segments only");
 });
 await check("a prefix only matches a whole segment (/birdsong is not /birds)", () => {
   assert.ok(!L.isAppLinkPath("/birdsong"));
@@ -65,12 +77,12 @@ await check("the ?code= exclusion comes first, so sign-in redirects never open t
 });
 await check("lists home plus each prefix and its /* twin, nothing else", () => {
   const paths = comps.slice(1).map((c) => c["/"]);
-  const want = ["/", ...L.APP_LINK_PREFIXES.flatMap((p) => [p, `${p}/*`])];
+  const want = ["/", ...[...L.APP_LINK_PREFIXES, ...L.EMAIL_LINK_PREFIXES].flatMap((p) => [p, `${p}/*`])];
   assert.deepEqual(paths, want);
 });
 await check("no browser-only path appears", () => {
   const paths = comps.map((c) => String(c["/"]));
-  for (const p of ["/auth", "/welcome", "/invite", "/handoff", "/r", "/sitter", "/api"]) {
+  for (const p of ["/auth", "/welcome", "/handoff", "/r", "/sitter", "/api", "/reset-password", "/confirm-email"]) {
     assert.ok(!paths.some((x) => x === p || x.startsWith(`${p}/`)), p);
   }
 });
@@ -148,6 +160,15 @@ await check("browser-only paths, other hosts, http and junk are ignored", () => 
   assert.equal(L.incomingLink("http://app.thekyaproject.com/birds/1"), null);
   assert.equal(L.incomingLink("not a url"), null);
 });
+await check("an invite or a sign-in email link opens on its page in the app, query kept", () => {
+  assert.deepEqual(L.incomingLink(`${APP}/invite/abc`), { kind: "route", href: "/invite/abc" });
+  assert.deepEqual(L.incomingLink(`${APP}/verify?token_hash=h&type=signup&next=%2Fwelcome`), { kind: "route", href: "/verify?token_hash=h&type=signup&next=%2Fwelcome" });
+  assert.equal(L.incomingLink(`${APP}/invite/abc?code=x`), null, "a ?code= sign-in return still stays in the browser");
+});
+await check("no /r/ link can lead to a sitter page: sitter links are never tracked", () => {
+  assert.equal(C.shouldTrack(`${APP}/sitter/tok`), false);
+  assert.equal(L.clickOriginFor(`${APP}/sitter/tok`, LINKS), APP, "and even if one were, it would stay on app.");
+});
 
 console.log("tracker host for email links");
 await check("unset → every tracked link stays on app.", () => {
@@ -189,8 +210,83 @@ await check("app screens get the banner, pointing at the same page", () => {
   assert.equal(L.smartAppBannerContent("/dashboard", "next=x"), "app-id=6795267221, app-argument=https://app.thekyaproject.com/dashboard?next=x");
 });
 await check("sitter, sign-in, invite and public pages get no banner", () => {
-  for (const p of BROWSER_ONLY) assert.equal(L.smartAppBannerContent(p, ""), null, p);
+  for (const p of [...BROWSER_ONLY, ...EMAIL_LINKS]) assert.equal(L.smartAppBannerContent(p, ""), null, p);
 });
 await check("a ?code= sign-in redirect gets no banner", () => assert.equal(L.smartAppBannerContent("/dashboard", "?code=abc"), null));
+
+console.log("open in the app (kyaco://)");
+const O = await import("@/lib/openInApp");
+await check("app screens open the same screen, query kept", () => {
+  assert.equal(O.openInAppPath("/birds/new", "?next=weight"), "/birds/new?next=weight");
+  assert.equal(O.openInAppPath("/dashboard", ""), "/dashboard");
+  assert.equal(O.appSchemeUrl("/birds/new?next=weight"), "kyaco://open/birds/new?next=weight");
+});
+await check("/auth opens the screen the email was for", () => {
+  assert.equal(O.openInAppPath("/auth", "?redirect=%2Fbirds%2Fnew%3Fnext%3Dweight"), "/birds/new?next=weight");
+  assert.equal(O.openInAppPath("/auth", ""), null, "no redirect: nothing to open");
+  assert.equal(O.openInAppPath("/auth", "?redirect=%2Fsitter%2Ftok"), null, "sitter link isn't an app screen");
+  assert.equal(O.openInAppPath("/auth", "?redirect=%2F%2Fevil.example"), null, "no open redirect");
+});
+await check("sitter, sign-in, invite and public pages don't offer it", () => {
+  for (const p of BROWSER_ONLY) if (p !== "/auth") assert.equal(O.openInAppPath(p, ""), null, p);
+  assert.equal(O.openInAppPath("/dashboard", "?code=abc"), null);
+});
+await check("the app routes kyaco:// links to app screens only", () => {
+  assert.deepEqual(L.incomingLink("kyaco://open/birds/new?next=weight"), { kind: "route", href: "/birds/new?next=weight" });
+  assert.deepEqual(L.incomingLink("kyaco://open"), { kind: "route", href: "/" });
+  assert.deepEqual(L.incomingLink("kyaco://open/sitter/tok"), { kind: "route", href: "/dashboard" });
+  assert.deepEqual(L.incomingLink("kyaco://open/dashboard?code=x"), { kind: "route", href: "/dashboard" });
+  assert.equal(L.incomingLink("kya://callback?code=x"), null, "the old OAuth scheme is ignored");
+});
+await check("Info.plist registers the scheme", () => {
+  const plist = readFileSync("ios/App/App/Info.plist", "utf8");
+  assert.ok(plist.includes(`<string>${O.APP_URL_SCHEME}</string>`));
+});
+
+console.log("web sign-in fallback (kyaco://auth-callback)");
+const R = await import("@/lib/oauthAppReturn");
+await check("Supabase returns to the fallback page, keeping where to go next", () => {
+  assert.equal(
+    R.appReturnRedirect(`${APP}/welcome`, "apple"),
+    `${APP}/app-signin-return?next=%2Fwelcome&p=apple`,
+  );
+  assert.equal(
+    R.appReturnRedirect(`${APP}/invite/abc`, "google"),
+    `${APP}/app-signin-return?next=%2Finvite%2Fabc&p=google`,
+  );
+});
+await check("next is always one of our own paths", () => {
+  assert.equal(R.safeNext("//evil.example"), "/welcome");
+  assert.equal(R.safeNext("https://evil.example"), "/welcome");
+  assert.equal(R.safeNext("/\\evil.example"), "/welcome");
+  assert.equal(R.safeNext(null), "/welcome");
+  assert.equal(R.safeNext("/handoff/tok?x=1"), "/handoff/tok?x=1");
+  assert.equal(R.readAppReturnParams("?code=c&next=%2F%2Fevil.example").next, "/welcome");
+});
+await check("the sheet hands code, next and provider to the app", () => {
+  const p = R.readAppReturnParams("?next=%2Fwelcome&p=apple&code=abc-123");
+  assert.deepEqual(p, { code: "abc-123", error: undefined, next: "/welcome", provider: "apple" });
+  assert.equal(R.appCallbackUrl(p), "kyaco://auth-callback?code=abc-123&next=%2Fwelcome&p=apple");
+});
+await check("a provider error is passed back too", () => {
+  const p = R.readAppReturnParams("?error=access_denied&error_description=User+cancelled&next=%2Fwelcome&p=google");
+  assert.equal(p.error, "User cancelled");
+  assert.equal(R.appCallbackUrl(p), "kyaco://auth-callback?error=User+cancelled&next=%2Fwelcome&p=google");
+});
+await check("the app routes the callback to the exchange page, code kept", () => {
+  assert.deepEqual(
+    L.incomingLink("kyaco://auth-callback?code=abc&next=%2Finvite%2Ftok&p=apple"),
+    { kind: "route", href: "/app-signin-return?code=abc&next=%2Finvite%2Ftok&p=apple" },
+  );
+  assert.deepEqual(
+    L.incomingLink("kyaco://auth-callback?next=%2F%2Fevil&code=abc"),
+    { kind: "route", href: "/app-signin-return?code=abc&next=%2Fwelcome" },
+  );
+  assert.deepEqual(L.incomingLink("kyaco://auth-callback"), { kind: "route", href: "/" }, "nothing to exchange: same as any other kyaco link");
+});
+await check("the exchange page isn't a Universal Link (its ?code= stays in the sheet)", () => {
+  assert.equal(L.isUniversalLinkPath(R.APP_RETURN_PATH), false);
+  assert.equal(L.incomingLink(`${APP}${R.APP_RETURN_PATH}?code=abc`), null);
+});
 
 console.log(`\n${passed} passed${process.exitCode ? ", some FAILED" : ""}`);

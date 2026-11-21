@@ -10,9 +10,15 @@ import { Link } from "@tanstack/react-router";
 import { Trans, useTranslation } from "react-i18next";
 import { K, KyaHeading, KyaIconButton } from "@/components/kya";
 import { BrandLockup } from "@/components/BrandLogo";
+import { useDuoMode } from "@/lib/duo";
+import { DuoFrontDoor, useInDuoFrontDoor } from "@/components/duo/SignedOutDuo";
 
-/** Full-height page on forest; the mist body fills whatever the header leaves. */
-export function FrontDoorPage({ children }: { children: ReactNode }) {
+/** Full-height page on forest; the mist body fills whatever the header leaves.
+ *  `duoForm`: on the iPhone Duo's two panes, the photo goes in the left half
+ *  and the form on white in the right half (DuoFrontDoor). */
+export function FrontDoorPage({ children, duoForm = false }: { children: ReactNode; duoForm?: boolean }) {
+  const duo = useDuoMode() === "sideways";
+  if (duoForm && duo) return <DuoFrontDoor>{children}</DuoFrontDoor>;
   return (
     <div className="setup-frame flex min-h-[100dvh] flex-col" style={{ background: K.forest, color: K.forest }}>
       {children}
@@ -30,6 +36,21 @@ export function FrontDoorHeader({ onBack, backLabel, title, line, children }: {
   children?: ReactNode;
 }) {
   const { t } = useTranslation();
+  // iPhone Duo form: on white in the right half; the left half has the logo.
+  if (useInDuoFrontDoor()) {
+    return (
+      <header className="px-8 pt-[max(calc(env(safe-area-inset-top)+16px),28px)]">
+        {onBack && (
+          <button type="button" aria-label={backLabel ?? t("frontDoor.back", "Back")} onClick={onBack} className="mb-4 grid size-11 place-items-center rounded-full text-white active:scale-95" style={{ background: K.forest }}>
+            <ArrowLeft className="size-5" />
+          </button>
+        )}
+        {title && <KyaHeading as="h1" size={30}>{title}</KyaHeading>}
+        {line && <p className="m-0 mt-2 text-[15px] leading-[1.5]" style={{ color: K.quiet }}>{line}</p>}
+        {children}
+      </header>
+    );
+  }
   return (
     <header className="text-white">
       <div className="mx-auto max-w-md px-5 pb-[46px] pt-[calc(env(safe-area-inset-top)+14px)]">
@@ -55,6 +76,13 @@ export function FrontDoorHeader({ onBack, backLabel, title, line, children }: {
 
 /** The mist body under the header, 26px rounded top corners, to the bottom of the screen. */
 export function FrontDoorBody({ children, className = "" }: { children: ReactNode; className?: string }) {
+  if (useInDuoFrontDoor()) {
+    return (
+      <main className="flex flex-1 flex-col bg-white">
+        <div className={`flex flex-1 flex-col gap-4 px-8 pb-[calc(env(safe-area-inset-bottom)+28px)] pt-5 ${className}`}>{children}</div>
+      </main>
+    );
+  }
   return (
     <main className="relative -mt-[26px] flex-1 rounded-t-[26px]" style={{ background: K.mist }}>
       <div className={`mx-auto flex max-w-md flex-col gap-4 px-4 pb-[max(env(safe-area-inset-bottom),28px)] pt-6 ${className}`}>{children}</div>

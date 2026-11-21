@@ -25,13 +25,15 @@ import { BirdPhotoCrop } from "@/components/BirdPhotoCrop";
 import { toast } from "sonner";
 import {
   Scale, BookOpen, IdCard, CalendarHeart, ClipboardList,
-  FileText, Pencil, ArrowRight, Camera, ChevronLeft, ChevronRight,
+  FileText, Pencil, ArrowRight, ArrowLeft, Camera, ChevronRight,
   Check, X, Heart, Loader2, Crop, HeartCrack, Siren, HandHeart, Trash2,
 } from "lucide-react";
 import { formatLocalDate } from "@/lib/dates";
 import { useDailyCheckToday, type BirdToday } from "@/lib/dailyCheck";
 import { K, KyaPage, KyaBody, KyaCard, KyaHeading, KyaIconButton, KyaLink, KyaPrimaryButton, KyaSecondaryButton, KyaRow, KyaTag, KyaAvatarStack, KyaSheet, KyaLabel, KyaIconTile } from "@/components/kya";
 import { HeaderPill, PageHeader } from "@/components/headers";
+import { RailBack, useDuoRail } from "@/components/DuoRail";
+import { useDuoMode } from "@/lib/duo";
 import { useConfirm } from "@/components/ConfirmSheet";
 import { daysAgo } from "@/lib/scanConcern";
 import { useCarePlanStatus } from "@/lib/useCarePlanStatus";
@@ -60,7 +62,7 @@ export function useBirdRecord(birdId: string) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("birds")
-        .select("id, owner_id, name, species, age, sex, flight_status, birth_date, photo_url, photo_position, setup_complete, setup_step, is_foster, became_permanent_on, intake_date")
+        .select("id, owner_id, name, species, age, sex, flight_status, birth_date, photo_url, photo_position, setup_complete, setup_step, is_foster, became_permanent_on, intake_date, passed_at")
         .eq("id", birdId)
         .maybeSingle();
       if (error) throw error;
@@ -72,6 +74,7 @@ export function useBirdRecord(birdId: string) {
 function BirdRecordHome() {
   const { birdId } = Route.useParams();
   const { data: bird, isPending, fetchStatus } = useBirdRecord(birdId);
+  const wide = useDuoMode() === "sideways";
 
   // Offline, React Query PAUSES the query (its default networkMode), so it never
   // settles: `isPending` stays true forever and the no-access guard below never
@@ -91,6 +94,29 @@ function BirdRecordHome() {
   // whose access was removed, and by any stale link to a deleted bird.
   if (!isPending && !bird) return <BirdNoAccess />;
 
+  // iPhone Duo unfolded and sideways: profile and summary on the left of the
+  // fold, recent records on the right.
+  if (wide) {
+    return (
+      <KyaPage>
+        <div className="duo-split">
+          <div className="duo-pane pb-nav">
+            <BirdRecordHero birdId={birdId} />
+            <main className="flex flex-col gap-4 px-4 pb-6 pt-4">
+              <MemberContextBanner birdId={birdId} />
+              {/* At most one gold button on the Duo: the checks are outline
+                  here, so "Create care plan" (fresh birds) is the only one. */}
+              <BirdRecordBody birdId={birdId} part="summary" quietChecks />
+            </main>
+          </div>
+          <main className="duo-pane flex flex-col gap-4 px-4 pb-nav pt-[calc(env(safe-area-inset-top)+14px)]">
+            <BirdRecordBody birdId={birdId} part="records" />
+          </main>
+        </div>
+      </KyaPage>
+    );
+  }
+
   return (
     <KyaPage>
       <div className="mx-auto max-w-md">
@@ -102,6 +128,25 @@ function BirdRecordHome() {
         </main>
       </div>
     </KyaPage>
+  );
+}
+
+/**
+ * A bird's record inside another page (Home on iPhone Duo, sideways: the
+ * selected bird beside the flock list). A shorter photo with no Back, then the
+ * same body as the bird page.
+ */
+export function BirdRecordPane({ birdId }: { birdId: string }) {
+  return (
+    <>
+      <BirdRecordHero birdId={birdId} pane />
+      <div className="flex flex-col gap-4 px-4 pb-6 pt-4">
+        <MemberContextBanner birdId={birdId} />
+        {/* Home's flock card holds the screen's one main button, so the checks
+            here are both outline buttons. */}
+        <BirdRecordBody birdId={birdId} quietChecks />
+      </div>
+    </>
   );
 }
 
@@ -162,7 +207,7 @@ function BirdNoAccess() {
 // the bottom, and the name with species · sex · age. Page-header rule: back top
 // left, at most one labeled action pill top right (owner: edit photo). No logo,
 // help, bell or account icons here.
-function BirdRecordHero({ birdId }: { birdId: string }) {
+function BirdRecordHero({ birdId, pane = false }: { birdId: string; pane?: boolean }) {
   const { t } = useTranslation();
   const navigate = useNavigate();
   // Back goes UP the hierarchy, not back in history: the bird's own pages
@@ -186,12 +231,16 @@ function BirdRecordHero({ birdId }: { birdId: string }) {
     bird?.is_foster && bird?.intake_date ? t("birdRecord.withYouSince", "With you since {{date}}", { date: fmtMonthYear(bird.intake_date) }) : null,
   ].filter(Boolean).join(" · ");
   const [photoSheet, setPhotoSheet] = useState(false);
+  // iPhone Duo side column: Back lives there. In a pane (Home's record beside
+  // the flock list) there's no Back at all.
+  const inRail = !!useDuoRail()?.top;
 
   return (
     <>
+      {!pane && <RailBack onBack={goBack} />}
       {/* Status-bar-safe top padding so the card never clips. */}
       <div className="px-4 pt-[calc(env(safe-area-inset-top)+14px)]">
-      <div className="relative h-[380px] w-full overflow-hidden rounded-[22px]" style={{ background: K.forest }}>
+      <div className={`relative ${pane ? "h-[260px]" : "h-[380px]"} w-full overflow-hidden rounded-[22px]`} style={{ background: K.forest }}>
         {photo?.url ? (
           <BirdPhotoCrop url={photo.url} original={photo.original} position={bird?.photo_position} alt={name} eager />
         ) : (
@@ -203,9 +252,11 @@ function BirdRecordHero({ birdId }: { birdId: string }) {
         <div className="pointer-events-none absolute inset-x-0 bottom-0 h-[60%]" style={{ background: "linear-gradient(to top, rgba(26,61,46,0.96), transparent)" }} />
 
         <div className="absolute inset-x-0 top-[14px] flex items-center justify-between gap-3 px-[14px]">
-          <KyaIconButton label={t("birdRecord.back", "Back")} onClick={goBack}>
-            <ChevronLeft className="size-6" aria-hidden="true" />
-          </KyaIconButton>
+          {pane || inRail ? <span /> : (
+            <KyaIconButton label={t("birdRecord.back", "Back")} onClick={goBack}>
+              <ArrowLeft className="size-5" aria-hidden="true" />
+            </KyaIconButton>
+          )}
           {isOwner && bird && (
             <HeaderPill action={{ label: t("birdRecord.editPhoto", "Edit photo"), icon: <Camera className="size-4" aria-hidden="true" />, onClick: () => setPhotoSheet(true) }} />
           )}
@@ -248,7 +299,12 @@ function whenLabel(t: TFunction, iso: string): string {
 }
 
 // The bird-record body without the hero.
-export function BirdRecordBody({ birdId }: { birdId: string }) {
+/** `part` splits the body for the two-column bird page on iPhone Duo:
+ *  "summary" (summary, setup, the record's pages, about) and "records"
+ *  (recent, who can see, changes). Omitted = all of it, in today's order. */
+export function BirdRecordBody({ birdId, part, quietChecks = false }: { birdId: string; part?: "summary" | "records"; quietChecks?: boolean }) {
+  const summary = part !== "records";
+  const records = part !== "summary";
   const { t } = useTranslation();
   const navigate = useNavigate();
   const role = useBirdRole(birdId);
@@ -336,13 +392,18 @@ export function BirdRecordBody({ birdId }: { birdId: string }) {
   const recentShown = showAllRecent ? recent : recent.slice(0, 4);
 
   const name = bird?.name ?? t("birdRecord.thisBird", "This bird");
+  // A bird marked as passed keeps its record as a memorial: no daily check, no
+  // care-plan nudges, no handoff (QA pass, Oct 2026: Remembering → "Their
+  // record" asked for a daily check on a bird that had died).
+  const passed = !!bird?.passed_at;
 
   return (
     <>
-      <SummaryCard birdId={birdId} weights={weights} today={dailyToday?.[birdId]} canCheck={canHealth} />
+      {summary && (<>
+      <SummaryCard birdId={birdId} weights={weights} today={dailyToday?.[birdId]} canCheck={canHealth && !passed} planExists={bird ? !!bird.setup_complete : true} passed={passed} quietChecks={quietChecks} />
 
       {/* Fresh bird → guide straight into the care plan. Prominent but skippable. */}
-      {bird && !bird.setup_complete && canEditPlan && (
+      {bird && !bird.setup_complete && canEditPlan && !passed && (
         // After the stop point ("Set up later") the basics are in, so the invite
         // picks up at behavior, tips, and the day instead of starting over at Food.
         <KyaCard className="p-4">
@@ -395,7 +456,7 @@ export function BirdRecordBody({ birdId }: { birdId: string }) {
       )}
 
       {/* Welcome to the flock — foster-fail, near the top (not destructive). */}
-      {canFlock && bird?.is_foster && <HandoffSection birdId={birdId} name={name} part="welcome" />}
+      {canFlock && bird?.is_foster && !passed && <HandoffSection birdId={birdId} name={name} part="welcome" />}
 
       {/* [Bird]'s record */}
       <KyaCard>
@@ -405,7 +466,7 @@ export function BirdRecordBody({ birdId }: { birdId: string }) {
             leading={<KyaIconTile size={38}><ClipboardList className="size-5" /></KyaIconTile>}
             title={t("birdRecord.carePlan", "Care plan")}
             detail={t("birdRecord.carePlanSectionsList", "Food, health, behavior, tips, and day")}
-            trailing={planStatus.loaded
+            trailing={planStatus.loaded && !passed
               ? planStatus.todo.length === 0
                 ? <KyaTag tone="lime">{t("birdRecord.planReady", "Ready")}</KyaTag>
                 : <KyaTag tone="amber">{t("birdRecord.planToFinish", "{{count}} to finish", { count: planStatus.todo.length })}</KyaTag>
@@ -427,6 +488,9 @@ export function BirdRecordBody({ birdId }: { birdId: string }) {
       {/* About [bird] — Species / Age / Hatch date / Sex / Flight (owner-editable). */}
       {bird && <BasicInfoCard birdId={birdId} bird={bird} name={name} editable={canFlock} />}
 
+      </>)}
+
+      {records && (<>
       {/* Recent */}
       <KyaCard id="bird-recent">
         <div className="flex items-center justify-between gap-3 px-4 pt-3">
@@ -474,10 +538,10 @@ export function BirdRecordBody({ birdId }: { birdId: string }) {
         <section className="flex flex-col gap-2.5 pt-1">
           <KyaHeading size={21} className="px-1">{t("birdRecord.ifThingsChangeHeading", "If things change for {{name}}", { name })}</KyaHeading>
           <KyaCard>
-            <HandoffSection birdId={birdId} name={name} part="handoff" pronoun={pronounOf(bird.sex)} />
+            {!passed && <HandoffSection birdId={birdId} name={name} part="handoff" pronoun={pronounOf(bird.sex)} />}
             {/* Mark as passed — owner-only. Opens the gentle confirm flow; the
                 record is preserved as a memorial, never deleted. */}
-            {isOwner && (
+            {isOwner && !passed && (
               <ChangeRow
                 icon={<Heart className="size-5" />}
                 tileBg={K.mist}
@@ -511,6 +575,8 @@ export function BirdRecordBody({ birdId }: { birdId: string }) {
         </div>
       )}
 
+      </>)}
+
       {/* Reposition the bird's photo (opened from the adjust-crop nudge). */}
       {photoSheet && bird && (
         <BirdPhotoSheet
@@ -530,12 +596,13 @@ export function BirdRecordBody({ birdId }: { birdId: string }) {
 /** Weight, last weighed and today's check, then the two ways into a check:
  *  the daily check (sunflower) and the full health check (white). Today's
  *  status lives in the third tile, which opens the check once it's done. */
-function SummaryCard({ birdId, weights, today, canCheck }: { birdId: string; weights?: WeightRow[]; today?: BirdToday; canCheck: boolean }) {
+function SummaryCard({ birdId, weights, today, canCheck, planExists, passed = false, quietChecks = false }: { birdId: string; weights?: WeightRow[]; today?: BirdToday; canCheck: boolean; planExists: boolean; passed?: boolean; quietChecks?: boolean }) {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const latest = weights?.[0];
   const days = latest ? daysAgo(latest.measured_at) : null;
-  const stale = days != null && days > STALE_DAYS;
+  // No "overdue" red on a bird that has passed.
+  const stale = !passed && days != null && days > STALE_DAYS;
   const check = today?.check ?? null;
   const tile = "flex min-h-[74px] flex-col justify-center rounded-[14px] px-3 py-2.5 text-left";
   const label = "block text-[12.5px]";
@@ -543,7 +610,7 @@ function SummaryCard({ birdId, weights, today, canCheck }: { birdId: string; wei
   const checkBtn = "inline-flex min-h-[48px] items-center justify-center rounded-full border-2 px-2 text-center text-[15px] font-[700] leading-tight active:scale-[0.99]";
   return (
     <KyaCard className="p-3.5" style={{ boxShadow: "0 10px 24px -16px rgba(18,41,31,.45)" }}>
-      <div className="grid grid-cols-3 gap-2">
+      <div className={`kya-summary-tiles grid gap-2 ${passed ? "grid-cols-2" : "grid-cols-3"}`}>
         <button type="button" onClick={() => navigate({ to: "/birds/$birdId/weight", params: { birdId } })} className={`${tile} active:opacity-80`} style={{ background: K.mist, color: K.forest }}>
           <span className={label} style={{ color: K.quiet }}>{t("birdRecord.tileWeight", "Weight")}</span>
           <span className={value}>{latest ? t("birdRecord.grams", "{{n}} g", { n: latest.grams.toLocaleString() }) : "—"}</span>
@@ -552,7 +619,7 @@ function SummaryCard({ birdId, weights, today, canCheck }: { birdId: string; wei
           <span className={label} style={{ color: K.quiet }}>{t("birdRecord.tileLastWeighed", "Last weighed")}</span>
           <span className={value} style={stale ? { color: K.red } : undefined}>{latest ? whenLabel(t, latest.measured_at) : t("birdRecord.notYet", "Not yet")}</span>
         </div>
-        {check ? (
+        {passed ? null : check ? (
           <button type="button" onClick={() => navigate({ to: "/birds/$birdId/scans/$scanId", params: { birdId, scanId: check.id } })} className={`${tile} active:opacity-80`} style={{ background: K.mist, color: K.forest }}>
             <span className={label} style={{ color: K.quiet }}>{t("birdRecord.tileDailyCheck", "Daily check")}</span>
             <span className={value}>{t("birdRecord.checkDone", "Done")}</span>
@@ -571,7 +638,11 @@ function SummaryCard({ birdId, weights, today, canCheck }: { birdId: string; wei
               type="button"
               onClick={() => navigate({ to: "/check", search: { bird: birdId } })}
               className={checkBtn}
-              style={{ background: K.sunflower, borderColor: K.forest, color: K.forest }}
+              // Fresh bird: "Create care plan" above is the one sunflower
+              // button, so Daily check stays white until the plan exists.
+              // Inside Home and on the Duo bird page (quietChecks) both are
+              // outline: Home's flock card or the care-plan invite is the one.
+              style={{ background: planExists && !quietChecks ? K.sunflower : "#fff", borderColor: K.forest, color: K.forest }}
             >
               {t("birdRecord.dailyCheckButton", "Daily check")}
             </button>

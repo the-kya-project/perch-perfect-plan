@@ -16,13 +16,17 @@
 // can never slow down or break the hook.
 
 // Public PostHog project key — the same client identifier analytics.ts already
-// ships in every page. Kept a literal on purpose: a Vercel env var for this key
-// previously 500'd production (see src/lib/analytics.ts).
-const POSTHOG_KEY = "phc_qkMPyAbqFHDcG6FdXFBQUsiyPsbMjbCX2hNSw2bddPKh";
+// ships in every page. Kept a literal on purpose (a Vercel env var for this key
+// previously 500'd production, see src/lib/analytics.ts), and present in
+// production builds only: previews and local runs send nothing (deployEnv.ts).
+import { POSTHOG_PROJECT_KEY } from "./deployEnv";
+import { scrubErrorMessage } from "./errorScrub";
 const POSTHOG_CAPTURE_URL = "https://us.i.posthog.com/capture/";
 const CAPTURE_TIMEOUT_MS = 2000;
 
 async function captureCronHookRun(properties: Record<string, unknown>): Promise<void> {
+  const env = (globalThis as { process?: { env?: Record<string, string | undefined> } }).process?.env;
+  if (!POSTHOG_PROJECT_KEY || env?.VERCEL_ENV !== "production") return;
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), CAPTURE_TIMEOUT_MS);
   try {
@@ -30,7 +34,7 @@ async function captureCronHookRun(properties: Record<string, unknown>): Promise<
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        api_key: POSTHOG_KEY,
+        api_key: POSTHOG_PROJECT_KEY,
         event: "cron_hook_run",
         distinct_id: "cron-hooks",
         properties,
@@ -45,13 +49,40 @@ async function captureCronHookRun(properties: Record<string, unknown>): Promise<
   }
 }
 
+// A short single token, e.g. "dry-run", "no_bird", "2026-10-26T15:00:00.000Z".
+const SAFE_TOKEN = /^[A-Za-z0-9_.:+-]{1,40}$/;
+
+/**
+ * What PostHog gets of a hook's JSON result. Hooks answer a person calling
+ * them by hand with a readable report, and some of that report is people:
+ * monthly-letter lists skipped accounts as "<email>: reason", the onboarding
+ * audit returns accounts with their emails. Sending the result verbatim put
+ * owners' email addresses into PostHog under the shared "cron-hooks" id, where
+ * deleting an account never reaches them (QA pass, Oct 2026). So only the
+ * shape goes: numbers and yes/no flags as they are, lists as `<key>_count`,
+ * nested objects summarised the same way (two levels deep), `error` scrubbed,
+ * and other strings only when they are a short single token.
+ */
+export function summarizeCronResult(value: Record<string, unknown>, depth = 0): Record<string, unknown> {
+  const out: Record<string, unknown> = {};
+  for (const [key, v] of Object.entries(value)) {
+    if (v === null || typeof v === "number" || typeof v === "boolean") out[key] = v;
+    else if (Array.isArray(v)) out[`${key}_count`] = v.length;
+    else if (typeof v === "string") {
+      if (key === "error") out[key] = scrubErrorMessage(v);
+      else if (SAFE_TOKEN.test(v)) out[key] = v;
+    } else if (typeof v === "object" && depth < 1) out[key] = summarizeCronResult(v as Record<string, unknown>, depth + 1);
+  }
+  return out;
+}
+
 type CronHandler<C extends { request: Request }> = (ctx: C) => Promise<Response>;
 
 /**
  * Wrap a cron hook handler so every invocation emits a `cron_hook_run` event
- * carrying the hook name, HTTP status, duration, and the hook's own JSON result
- * (planned/sent/considered/…) when present. The wrapped handler's behavior and
- * response are unchanged.
+ * carrying the hook name, HTTP status, duration, and a summary of the hook's
+ * own JSON result (sent/considered/…, list sizes; see summarizeCronResult).
+ * The wrapped handler's behavior and response are unchanged.
  */
 export function withCronTelemetry<C extends { request: Request }>(
   hook: string,
@@ -68,7 +99,7 @@ export function withCronTelemetry<C extends { request: Request }>(
         status: 500,
         duration_ms: Date.now() - started,
         threw: true,
-        error: err instanceof Error ? err.message : String(err),
+        error: scrubErrorMessage(err instanceof Error ? err.message : String(err)),
       });
       throw err; // behavior unchanged — the hook still fails exactly as before
     }
@@ -86,7 +117,7 @@ export function withCronTelemetry<C extends { request: Request }>(
       hook,
       status: response.status,
       duration_ms: Date.now() - started,
-      ...(result ? { ok: result.ok, result } : {}),
+      ...(result ? { ok: result.ok, result: summarizeCronResult(result) } : {}),
     });
     return response;
   };

@@ -1,0 +1,308 @@
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
+import { Download, Loader2 } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { formatCents, giftGivingCents, giftKeptCents } from "@/lib/gifts";
+import { accessCells } from "@/lib/flockAccess";
+import { useDuoMode } from "@/lib/duo";
+import { AdminListDuo, AdminTotals } from "@/components/duo/flows/AdminListDuo";
+import { K, KyaBackRow, KyaBody, KyaCard, KyaHeader, KyaHeading, KyaPage, KyaPrimaryButton, KyaSecondaryButton, KyaTitle } from "@/components/kya";
+
+// Admin-only list of gift memberships. RLS on gift_purchases is the gate: a
+// non-admin's select returns only gifts they redeemed themselves, and this page
+// doesn't query at all unless is_admin() says yes. Internal tool, so English
+// only (like /admin/founding).
+export const Route = createFileRoute("/_authenticated/admin/gifts")({
+  head: () => ({ meta: [
+    { title: "Gift memberships — Kya & Co." },
+    { name: "robots", content: "noindex,nofollow" },
+  ]}),
+  component: AdminGifts,
+});
+
+type Gift = {
+  id: string;
+  purchased_at: string;
+  plan: string;
+  buyer_email: string;
+  buyer_name: string | null;
+  recipient_name: string;
+  recipient_email: string | null;
+  send_on: string | null;
+  amount_paid_cents: number;
+  amount_refunded_cents: number;
+  promo_code: string | null;
+  giving_rate: number;
+  status: string;
+  gift_code: string;
+};
+
+// The gift rules shown to admins, matching /gift, /redeem and the emails.
+const GIFT_RULES =
+  "Gifts are six months or a year in the Flock. Each starts when the free season ends (July 6, 2027), or on redemption if that's later, and runs six months or a year from there. Gifts never expire. An unredeemed gift can be refunded within 30 days of purchase. 20% of every gift goes to rescue and conservation partners, 40% on double-giving days.";
+
+// Six months and a year in the Flock are sold. A retired plan (one refunded app premium gift
+// from before app premium was removed) shows under its stored name.
+const PLAN_LABEL: Record<string, string> = { flock_half_year: "The Flock, 6 months", flock_year: "The Flock, 1 year" };
+const NO_PROMO = "(none)";
+
+function AdminGifts() {
+  const navigate = useNavigate();
+  const duo = useDuoMode() === "sideways";
+  const { data: isAdmin, isLoading: adminLoading } = useQuery({
+    queryKey: ["is-admin"],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc("is_admin");
+      return !error && data === true;
+    },
+  });
+
+  const { data: gifts, isLoading, error } = useQuery({
+    queryKey: ["admin-gifts"],
+    enabled: isAdmin === true,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("gift_purchases")
+        .select("id, purchased_at, plan, buyer_email, buyer_name, recipient_name, recipient_email, send_on, amount_paid_cents, amount_refunded_cents, promo_code, giving_rate, status, gift_code")
+        .order("purchased_at", { ascending: false });
+      if (error) throw error;
+      return (data ?? []).map((g) => ({ ...g, giving_rate: Number(g.giving_rate) })) as Gift[];
+    },
+  });
+
+  // Each gift's entitlement (the access it grants once redeemed), by gift id.
+  const { data: access } = useQuery({
+    queryKey: ["admin-gift-entitlements"],
+    enabled: isAdmin === true,
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc("admin_gift_entitlements");
+      if (error) throw error;
+      return new Map((data ?? []).map((a) => [a.gift_id, a]));
+    },
+  });
+
+  const back = () => void navigate({ to: "/dashboard" });
+
+  if (adminLoading) {
+    return (
+      <KyaPage>
+        <div className="grid min-h-[60vh] place-items-center" role="status" aria-label="Loading">
+          <Loader2 className="size-8 animate-spin" style={{ color: K.moss }} />
+        </div>
+      </KyaPage>
+    );
+  }
+
+  if (!isAdmin) {
+    return (
+      <KyaPage>
+        <KyaHeader>
+          <KyaBackRow label="Back" onBack={back} />
+          <KyaTitle title="Page not available" line="This page is only for Kya & Co. admins." />
+        </KyaHeader>
+        <KyaBody>
+          <KyaPrimaryButton onClick={back}>Go to Home</KyaPrimaryButton>
+        </KyaBody>
+      </KyaPage>
+    );
+  }
+
+  const rows = gifts ?? [];
+  // Refunded gifts are listed but kept out of the totals. A partly refunded
+  // gift counts at what was kept, and so does its giving (20% or 40%).
+  const counted = rows.filter((g) => g.status !== "refunded");
+  const total = counted.reduce((n, g) => n + giftKeptCents(g), 0);
+  const giving = counted.reduce((n, g) => n + giftGivingCents(g), 0);
+  const byPlan = group(counted, (g) => PLAN_LABEL[g.plan] ?? g.plan);
+  const byPromo = group(counted, (g) => g.promo_code ?? NO_PROMO);
+  const line = isLoading ? "Loading…" : `${counted.length} paid ${counted.length === 1 ? "gift" : "gifts"} · ${formatCents(total)} · ${formatCents(giving)} to rescue and conservation`;
+
+  // iPhone Duo, sideways: totals and gifts as tiles on the left, the selected
+  // gift on the right.
+  if (duo) {
+    const totals = (g: Group[]) => g.map((x) => [x.key, `${x.count} · ${formatCents(x.cents)}`] as [string, string]);
+    return (
+      <AdminListDuo
+        title="Gift memberships"
+        line={line}
+        loading={isLoading}
+        error={error ? `Couldn't load gifts: ${(error as Error).message}` : null}
+        emptyText="No gifts yet."
+        summary={<>
+          <p className="m-0 text-[13.5px] leading-[1.45]" style={{ color: K.quiet }}>{GIFT_RULES}</p>
+          <AdminTotals title="By plan" rows={totals(byPlan)} emptyText="No paid gifts yet." />
+          <AdminTotals title="By promo code" rows={totals(byPromo)} emptyText="No paid gifts yet." />
+        </>}
+        items={rows.map((g) => ({
+          key: g.gift_code,
+          badge: formatCents(g.amount_paid_cents),
+          title: g.recipient_name,
+          preview: PLAN_LABEL[g.plan] ?? g.plan,
+          status: g.status,
+          tone: g.status === "refunded" ? "attention" : "fine",
+          eyebrow: formatDate(g.purchased_at),
+          detailTitle: `Gift for ${g.recipient_name}`,
+          rows: [
+            ["Plan", PLAN_LABEL[g.plan] ?? g.plan],
+            ["Status", <span key="s" style={{ color: g.status === "refunded" ? K.red : K.forest }}>{g.status}</span>],
+            ["Buyer", g.buyer_name ? `${g.buyer_name} · ${g.buyer_email}` : g.buyer_email],
+            ["Recipient", `${g.recipient_name}${g.recipient_email ? ` · ${g.recipient_email}` : " · (to buyer)"}`],
+            ["Send on", g.send_on],
+            ["Amount", amountText(g)],
+            ["Promo code", g.promo_code ?? "—"],
+            ["Giving", `${Math.round(g.giving_rate * 100)}%`],
+            ["Access", accessCells(access?.get(g.id)).state],
+            ["Access starts", accessCells(access?.get(g.id)).starts],
+            ["Access ends", accessCells(access?.get(g.id)).ends],
+          ],
+        }))}
+        onCsv={() => downloadCsv(rows)}
+        onBack={back}
+      />
+    );
+  }
+
+  return (
+    <KyaPage>
+      <KyaHeader>
+        <KyaBackRow label="Back" onBack={back} />
+        <KyaTitle
+          title="Gift memberships"
+          line={line}
+        />
+      </KyaHeader>
+      <KyaBody>
+        {error ? (
+          <p role="alert" className="m-0 rounded-[16px] border-[1.5px] bg-white px-4 py-3 text-[14px]" style={{ borderColor: K.red, color: K.red }}>
+            Couldn't load gifts: {(error as Error).message}
+          </p>
+        ) : isLoading ? null : (
+          <>
+            <p className="m-0 text-[14px] leading-[1.5]" style={{ color: K.quiet }}>{GIFT_RULES}</p>
+            <Totals title="By plan" groups={byPlan} />
+            <Totals title="By promo code" groups={byPromo} />
+
+            <KyaSecondaryButton onClick={() => downloadCsv(rows)} disabled={rows.length === 0} icon={<Download className="size-4" />}>
+              Download CSV
+            </KyaSecondaryButton>
+
+            <KyaCard>
+              <div className="overflow-x-auto" tabIndex={0} role="region" aria-label="Gifts table">
+                <table className="w-full min-w-[1180px] border-collapse text-left text-[14px]" style={{ color: K.ink }}>
+                  <caption className="sr-only">Gift memberships, newest first. Refunded gifts are listed but not counted in totals; partly refunded gifts count at what was kept.</caption>
+                  <thead>
+                    <tr style={{ background: K.mist }}>
+                      {["Date", "Plan", "Buyer", "Recipient", "Amount", "Promo code", "Giving", "Status", "Access", "Starts", "Ends"].map((h) => (
+                        <th key={h} scope="col" className="px-3 py-2.5 font-[700]" style={{ color: K.forest }}>{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {rows.map((g) => (
+                      <tr key={g.gift_code} className="border-t" style={{ borderColor: K.line }}>
+                        <td className="whitespace-nowrap px-3 py-2.5">{formatDate(g.purchased_at)}</td>
+                        <td className="px-3 py-2.5">{PLAN_LABEL[g.plan] ?? g.plan}</td>
+                        <td className="px-3 py-2.5">{g.buyer_name ? `${g.buyer_name} · ` : ""}{g.buyer_email}</td>
+                        <td className="px-3 py-2.5">{g.recipient_name}{g.recipient_email ? ` · ${g.recipient_email}` : " · (to buyer)"}</td>
+                        <td className="whitespace-nowrap px-3 py-2.5">{amountText(g)}</td>
+                        <td className="px-3 py-2.5">{g.promo_code ?? "—"}</td>
+                        <td className="px-3 py-2.5">{Math.round(g.giving_rate * 100)}%</td>
+                        <td className="px-3 py-2.5 font-[700]" style={{ color: g.status === "refunded" ? K.red : K.forest }}>{g.status}</td>
+                        <AccessTds cells={accessCells(access?.get(g.id))} />
+                      </tr>
+                    ))}
+                    {rows.length === 0 && (
+                      <tr><td colSpan={11} className="px-3 py-4" style={{ color: K.quiet }}>No gifts yet.</td></tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </KyaCard>
+          </>
+        )}
+      </KyaBody>
+    </KyaPage>
+  );
+}
+
+/** A gift's linked entitlement: what it grants and when. */
+function AccessTds({ cells }: { cells: { starts: string; ends: string; state: string } }) {
+  return (
+    <>
+      <td className="whitespace-nowrap px-3 py-2.5">{cells.state}</td>
+      <td className="whitespace-nowrap px-3 py-2.5">{cells.starts}</td>
+      <td className="whitespace-nowrap px-3 py-2.5">{cells.ends}</td>
+    </>
+  );
+}
+
+type Group = { key: string; count: number; cents: number };
+
+function group(rows: Gift[], keyOf: (g: Gift) => string): Group[] {
+  const m = new Map<string, Group>();
+  for (const g of rows) {
+    const k = keyOf(g);
+    const cur = m.get(k) ?? { key: k, count: 0, cents: 0 };
+    cur.count++;
+    cur.cents += giftKeptCents(g);
+    m.set(k, cur);
+  }
+  return [...m.values()].sort((a, b) => b.cents - a.cents || a.key.localeCompare(b.key));
+}
+
+function Totals({ title, groups }: { title: string; groups: Group[] }) {
+  return (
+    <KyaCard className="p-5">
+      <KyaHeading size={20}>{title}</KyaHeading>
+      {groups.length === 0 ? (
+        <p className="m-0 mt-2 text-[15px]" style={{ color: K.quiet }}>No paid gifts yet.</p>
+      ) : (
+        <ul className="m-0 mt-3 flex list-none flex-col gap-2 p-0">
+          {groups.map((g) => (
+            <li key={g.key} className="flex items-center justify-between gap-3 text-[15px]" style={{ color: K.ink }}>
+              <span className="min-w-0">{g.key}</span>
+              <span className="whitespace-nowrap font-[700]">{g.count} · {formatCents(g.cents)}</span>
+            </li>
+          ))}
+        </ul>
+      )}
+    </KyaCard>
+  );
+}
+
+/** "$249", or "$249 · $10 refunded" for a partly refunded gift. */
+function amountText(g: Gift): string {
+  const paid = formatCents(g.amount_paid_cents);
+  return g.status !== "refunded" && g.amount_refunded_cents > 0 ? `${paid} · ${formatCents(g.amount_refunded_cents)} refunded` : paid;
+}
+
+function formatDate(iso: string): string {
+  return new Date(iso).toLocaleString("en-US", { month: "short", day: "numeric", year: "numeric", hour: "numeric", minute: "2-digit" });
+}
+
+function csvCell(v: string | number | null): string {
+  const s = v == null ? "" : String(v);
+  // Quote everything; neutralise formula injection when opened in a spreadsheet.
+  const safe = /^[=+\-@\t\r]/.test(s) ? `'${s}` : s;
+  return `"${safe.replace(/"/g, '""')}"`;
+}
+
+function downloadCsv(rows: Gift[]) {
+  const header = ["purchased_at", "plan", "buyer_name", "buyer_email", "recipient_name", "recipient_email", "send_on", "amount_paid", "amount_refunded", "promo_code", "giving_rate", "status"];
+  const lines = [header.map(csvCell).join(",")];
+  for (const g of rows) {
+    lines.push([
+      g.purchased_at, g.plan, g.buyer_name, g.buyer_email, g.recipient_name, g.recipient_email, g.send_on,
+      (g.amount_paid_cents / 100).toFixed(2), (g.amount_refunded_cents / 100).toFixed(2), g.promo_code, g.giving_rate, g.status,
+    ].map(csvCell).join(","));
+  }
+  const blob = new Blob([lines.join("\r\n") + "\r\n"], { type: "text/csv;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `gift-memberships-${new Date().toISOString().slice(0, 10)}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}

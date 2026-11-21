@@ -1,12 +1,14 @@
 import { createFileRoute, Link, useNavigate, useLocation } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Eye, Loader2, X } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import i18next from "i18next";
 import { K } from "@/components/kya";
 import { PreviewNotice } from "@/components/PreviewNotice";
+import { catchUpBeforePreview, updateIsReady, updateNow } from "@/lib/sw-register";
+import { stalledFrameAction } from "@/lib/sitPreviewRecovery";
 
 // Owner "View as sitter" — previews the REAL token-based sitter view for a
 // specific sit (the exact renderer + content the sitter gets), in an iframe
@@ -61,6 +63,36 @@ function SitPreview() {
   // booting, so the load reads as progress instead of a frozen blank frame.
   const [frameReady, setFrameReady] = useState(false);
 
+  // The frame loads the live build, so an app left open across a release
+  // moves onto the new one first (lib/sitPreviewRecovery.ts). Until that check
+  // answers, the frame doesn't load.
+  const [caughtUp, setCaughtUp] = useState(false);
+  useEffect(() => {
+    let live = true;
+    catchUpBeforePreview().then((reloading) => { if (live && !reloading) setCaughtUp(true); }, () => { if (live) setCaughtUp(true); });
+    return () => { live = false; };
+  }, []);
+
+  // If the page in the frame still hasn't started shortly before its own
+  // 10-second check gives up, step in: onto a waiting build, or reload the
+  // frame once.
+  const frameRef = useRef<HTMLIFrameElement>(null);
+  const [frameKey, setFrameKey] = useState(0);
+  useEffect(() => {
+    if (!caughtUp || !src) return;
+    const loadedAt = Date.now();
+    const timer = window.setInterval(() => {
+      let started = false;
+      try { started = !!(frameRef.current?.contentWindow as { __kyaReady?: boolean } | null)?.__kyaReady; } catch { /* not readable: treat as not started */ }
+      const action = stalledFrameAction({ started, elapsedMs: Date.now() - loadedAt, updateReady: updateIsReady(), reloadedFrame: frameKey > 0 });
+      if (action === "wait") { if (started) window.clearInterval(timer); return; }
+      window.clearInterval(timer);
+      if (action === "update-app") void updateNow();
+      else if (action === "reload-frame") { setFrameReady(false); setFrameKey((k) => k + 1); }
+    }, 500);
+    return () => window.clearInterval(timer);
+  }, [caughtUp, src, frameKey]);
+
   // Household caregivers use the app itself — there's no sitter view to
   // preview. The sit cards no longer offer it, but an old link or a reload can
   // still land here: send them to the sit's own page instead.
@@ -113,13 +145,15 @@ function SitPreview() {
       </div>
 
       <div className="relative flex-1">
-        <iframe
+        {caughtUp && <iframe
+          key={frameKey}
+          ref={frameRef}
           src={src}
           title={t("sitPreview.iframeTitle", "Sitter view preview")}
           onLoad={() => setFrameReady(true)}
           className="absolute inset-0 size-full border-0"
           style={{ background: K.mist }}
-        />
+        />}
         {!frameReady && (
           <div className="setup-frame pointer-events-none absolute inset-0 flex items-center justify-center gap-2 text-[15px]" style={{ background: K.mist, color: K.quiet }}>
             <Loader2 className="size-4 animate-spin" aria-hidden="true" /> {t("sitPreview.loading", "Loading preview…")}

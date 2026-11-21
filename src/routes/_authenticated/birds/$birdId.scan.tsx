@@ -77,7 +77,8 @@ function OwnerScan() {
   const toRecord = useCallback(() => navigate({ to: "/birds/$birdId", params: { birdId } }), [navigate, birdId]);
   const goBack = useGoBack(toRecord);
 
-  async function onSubmit(p: FullCheckSubmit) {
+  /** True once the check is saved (FullHealthCheck then drops its draft). */
+  async function onSubmit(p: FullCheckSubmit): Promise<boolean> {
     setSubmitting(true);
     try {
       const { data: u } = await getLocalUser();
@@ -118,8 +119,10 @@ function OwnerScan() {
       // recent feed, today's check box and the weight timeline; a weigh-in also
       // updates Home pills (weights embedded in the birds query).
       invalidateAfterCheck(qc, birdId);
+      return true;
     } catch (e: any) {
       toast.error(friendlyError(e, t("ownerScan.logFailed", "Couldn't log the health check.")));
+      return false;
     } finally {
       setSubmitting(false);
     }

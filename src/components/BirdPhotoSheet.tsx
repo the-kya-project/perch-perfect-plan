@@ -10,6 +10,7 @@ import { BirdPhotoCrop } from "@/components/BirdPhotoCrop";
 import { useConfirm } from "@/components/ConfirmSheet";
 import { friendlyError } from "@/lib/errorMessage";
 import { Trans, useTranslation } from "react-i18next";
+import { BIRD_PHOTO_FOCUS } from "@/lib/birdPhotoFocus";
 
 // First-class bird-photo management. Opened from the camera button on the bird
 // main page hero. Menu → reposition step → save. The "focal point" is stored in
@@ -39,7 +40,7 @@ export function BirdPhotoSheet({
   // persist on save (data URL → uploaded; existing path → kept).
   const [editUrl, setEditUrl] = useState<string | null>(adjustNow ? displayUrl : null);
   const [pendingPhoto, setPendingPhoto] = useState<string | null>(adjustNow ? currentPhoto : null);
-  const [pos, setPos] = useState<string>(currentPosition ?? "50% 50%");
+  const [pos, setPos] = useState<string>(currentPosition ?? BIRD_PHOTO_FOCUS);
   const [busy, setBusy] = useState(false);
 
   const takeRef = useRef<HTMLInputElement>(null);
@@ -58,7 +59,7 @@ export function BirdPhotoSheet({
       }
       setEditUrl(dataUrl);
       setPendingPhoto(dataUrl);
-      setPos("50% 50%"); // new photo starts centered; user repositions
+      setPos(BIRD_PHOTO_FOCUS); // new photo starts on the upper part; user repositions
       setMode("reposition");
     } catch {
       toast.error(t("birdPhotoSheet.processFailed", "Couldn't process that photo. Try a different one."));
@@ -71,7 +72,7 @@ export function BirdPhotoSheet({
     if (!displayUrl) return;
     setEditUrl(displayUrl);
     setPendingPhoto(currentPhoto); // keep the same stored photo, only reposition
-    setPos(currentPosition ?? "50% 50%");
+    setPos(currentPosition ?? BIRD_PHOTO_FOCUS);
     setMode("reposition");
   }
 

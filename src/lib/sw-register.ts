@@ -11,6 +11,7 @@
  * makes sense for owners using the app repeatedly.
  */
 import { isNativeApp } from "./nativeApp";
+import { flushAllDrafts, formInProgress } from "./formsInProgress";
 
 const SW_URL = "/sw.js";
 
@@ -112,22 +113,35 @@ export const STARTUP_FAILED_EVENT = "kya:startup-failed";
  *  root error boundary both fire for the same failure. */
 let reloadScheduled = false;
 
+/** The page is navigating away (set by the startup guard in __root.tsx).
+ *  Safari reports the loads a navigation cancels as failures; those are not a
+ *  stale build, and reloading would replace the page the person asked for. */
+function leavingPage(): boolean {
+  try {
+    return (window as unknown as { __kyaLeaving?: () => boolean }).__kyaLeaving?.() === true;
+  } catch {
+    return false;
+  }
+}
+
 /** Recover from a code file that failed to load: one hard reset, then the
  *  error screen. */
 export function reloadForStaleChunk() {
-  if (typeof window === "undefined" || reloadScheduled) return;
+  if (typeof window === "undefined" || reloadScheduled || leavingPage()) return;
   if (!claimAutoReload()) {
     window.dispatchEvent(new Event(STARTUP_FAILED_EVENT));
     return;
   }
   reloadScheduled = true;
-  void hardResetAndReload();
+  // Keep whatever the owner was typing: drafts live in localStorage/IndexedDB,
+  // which the hard reset leaves alone.
+  void flushAllDrafts(1000).finally(() => { void hardResetAndReload(); });
 }
 
 /** The page's stylesheet didn't apply: one hard reset if the automatic
  *  attempt is unspent, otherwise leave the (working, unstyled) page alone. */
 export function recoverMissingStyles(): boolean {
-  if (typeof window === "undefined" || reloadScheduled || !claimAutoReload()) return false;
+  if (typeof window === "undefined" || reloadScheduled || leavingPage() || !claimAutoReload()) return false;
   reloadScheduled = true;
   void hardResetAndReload();
   return true;
@@ -207,9 +221,11 @@ export function registerServiceWorker() {
     return;
   }
 
-  // No reload here when a new build takes over: the new worker reloads the
-  // open pages itself, once, as it activates (src/sw.ts). It has to, because
-  // a page stuck on old HTML has no working code to run a handler like this.
+  // A new build never reloads this page on its own: see "Updates" below.
+  // (A page stuck on old HTML, with no working code, is rescued by the inline
+  // startup guard in __root.tsx instead.)
+  hadController = !!navigator.serviceWorker.controller;
+  navigator.serviceWorker.addEventListener("controllerchange", onControllerChange);
 
   // Register after load so it never competes with first paint. This runs from
   // an effect, which on a fast load is already after "load" has fired, and a
@@ -222,17 +238,193 @@ export function registerServiceWorker() {
         // for new deploys — otherwise it serves the build it was opened with
         // forever (CacheFirst assets). Check on registration, hourly, and every
         // time the app returns to the foreground (the common case on iOS: the
-        // user reopens the home-screen app). A new build's worker activates
-        // straight away (skipWaiting + clientsClaim) and reloads this page.
+        // user reopens the home-screen app). What happens when one is found is
+        // decided in onUpdateReady: never a reload mid-task.
+        swReg = reg;
+        watchForUpdates(reg);
         const check = () => { reg.update().catch(() => {}); };
         check();
         setInterval(check, 60 * 60 * 1000);
-        document.addEventListener("visibilitychange", () => {
-          if (document.visibilityState === "visible") check();
-        });
+        watchForeground(check);
       })
       .catch(() => { /* swallow */ });
   };
   if (document.readyState === "complete") register();
   else window.addEventListener("load", register, { once: true });
+}
+
+// ── Updates ─────────────────────────────────────────────────────────────────
+//
+// A new build's worker waits (src/sw.ts) until this page says it's a good
+// moment. That's either a quiet moment with no form in progress:
+//   - the app was just opened (the page itself is already the new build:
+//     app-shell navigations are network-first), so the worker takes over with
+//     no reload, or
+//   - the app came back after AWAY_MS or more in the background, so the worker
+//     takes over and the page reloads onto the new build;
+// or the owner tapping Update on the "A new version is ready" banner, which
+// shows instead whenever a form is in progress. Update saves drafts first.
+// With no form in progress and no quiet moment, nothing happens until one.
+
+/** Back after this long away counts as "returning", when an update applies. */
+const AWAY_MS = 30 * 60_000;
+/** An update found this soon after the page loaded counts as "opened fresh". */
+const FRESH_MS = 30_000;
+/** After returning from away, an update that finishes downloading within this
+ *  long still applies quietly. */
+const RETURN_WINDOW_MS = 60_000;
+
+const pageLoadedAt = typeof performance !== "undefined" ? Date.now() - performance.now() : Date.now();
+let swReg: ServiceWorkerRegistration | null = null;
+/** A newer build is waiting, or already took over and this page is older. */
+let updateReady = false;
+/** The worker in charge changed without this page asking (another tab). */
+let pageBehind = false;
+/** This page asked the waiting worker to take over. */
+let activating = false;
+/** Was a worker in charge when this page started? If not, the first
+ *  controllerchange is the very first install claiming the page: no update. */
+let hadController = false;
+let applying = false;
+/** Until when an update counts as arriving at a quiet moment, and whether
+ *  applying it then needs a reload (back from away) or not (fresh open). */
+let quietUntil = pageLoadedAt + FRESH_MS;
+let quietReload = false;
+
+const updateListeners = new Set<() => void>();
+function notifyUpdate() { updateListeners.forEach((fn) => { try { fn(); } catch { /* ignore */ } }); }
+
+/** For the banner: is a new version waiting for this page? */
+export function updateIsReady(): boolean { return updateReady; }
+export function subscribeUpdate(fn: () => void): () => void {
+  updateListeners.add(fn);
+  return () => { updateListeners.delete(fn); };
+}
+
+function watchForUpdates(reg: ServiceWorkerRegistration) {
+  // No controller = the first install on this device, not an update.
+  if (reg.waiting && navigator.serviceWorker.controller) onUpdateReady();
+  reg.addEventListener("updatefound", () => {
+    const w = reg.installing;
+    if (!w) return;
+    w.addEventListener("statechange", () => {
+      if (w.state === "installed" && navigator.serviceWorker.controller) onUpdateReady();
+    });
+  });
+}
+
+function onControllerChange() {
+  if (!hadController) { hadController = true; return; } // first install on this device
+  if (activating) return; // this page asked; applyUpdate carries on from here
+  // Another tab let the new build take over. This page still runs the old
+  // one, so it needs a reload, at the same kind of moment as any update.
+  pageBehind = true;
+  onUpdateReady();
+}
+
+function onUpdateReady() {
+  updateReady = true;
+  if (Date.now() < quietUntil && !formInProgress()) {
+    void applyUpdate(quietReload || pageBehind);
+    return;
+  }
+  notifyUpdate();
+}
+
+/** Let the waiting worker take over, then reload if this page is old. */
+async function applyUpdate(reload: boolean) {
+  if (applying) return;
+  applying = true;
+  const waiting = swReg?.waiting ?? null;
+  if (waiting) {
+    activating = true;
+    await new Promise<void>((resolve) => {
+      let settled = false;
+      const done = () => {
+        if (settled) return;
+        settled = true;
+        navigator.serviceWorker.removeEventListener("controllerchange", done);
+        resolve();
+      };
+      navigator.serviceWorker.addEventListener("controllerchange", done);
+      setTimeout(done, 4000);
+      try { waiting.postMessage({ type: "SKIP_WAITING" }); } catch { done(); }
+    });
+    activating = false;
+  }
+  if (reload) {
+    window.location.reload();
+    return;
+  }
+  updateReady = false;
+  pageBehind = false;
+  applying = false;
+  notifyUpdate();
+}
+
+/** The banner's Update: save every draft, then move onto the new build. */
+export async function updateNow(): Promise<void> {
+  await flushAllDrafts();
+  await applyUpdate(true);
+}
+
+/**
+ * Before the owner's sitter preview opens. Its frame loads the live build, and
+ * a page left open across a release is older: the frame then never started
+ * (lib/sitPreviewRecovery.ts). Check for a new build now, without waiting for
+ * the hourly or foreground check, and if there is one, move onto it first.
+ * Resolves true when the page is reloading, false to go ahead as it is. Never
+ * waits more than about timeoutMs, and never moves while a form is in progress.
+ */
+export async function catchUpBeforePreview(timeoutMs = 6_000): Promise<boolean> {
+  const reg = swReg;
+  if (!reg || formInProgress()) return false;
+  const deadline = Date.now() + timeoutMs;
+  const until = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, Math.max(0, ms)));
+  try { await Promise.race([reg.update(), until(timeoutMs)]); } catch { /* offline: go ahead */ }
+  const installing = reg.installing;
+  if (installing) {
+    await Promise.race([
+      new Promise<void>((resolve) => {
+        const settle = () => { if (installing.state !== "installing") resolve(); };
+        installing.addEventListener("statechange", settle);
+        settle();
+      }),
+      until(deadline - Date.now()),
+    ]);
+  }
+  if (!(reg.waiting && navigator.serviceWorker.controller) && !pageBehind) return false;
+  updateReady = true;
+  await updateNow();
+  return true;
+}
+
+/** Track time in the background. visibilitychange is the signal; a heartbeat
+ *  covers shells that don't fire it (timers stop while the app is suspended,
+ *  so a long gap between beats is time away too). */
+function watchForeground(check: () => void) {
+  let hiddenAt: number | null = null;
+  let lastBeat = Date.now();
+  setInterval(() => {
+    if (document.visibilityState !== "visible") return;
+    // A gap this long between beats: the app was suspended without saying so.
+    if (hiddenAt == null && Date.now() - lastBeat >= AWAY_MS) back();
+    lastBeat = Date.now();
+  }, 15_000);
+  const back = () => {
+    const now = Date.now();
+    const away = now - (hiddenAt ?? lastBeat) >= AWAY_MS;
+    hiddenAt = null;
+    lastBeat = now;
+    if (away) {
+      quietUntil = now + RETURN_WINDOW_MS;
+      quietReload = true;
+      if (updateReady && !formInProgress()) { void applyUpdate(true); return; }
+    }
+    check();
+  };
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "hidden") hiddenAt = Date.now();
+    else back();
+  });
 }

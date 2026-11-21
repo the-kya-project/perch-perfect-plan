@@ -3,12 +3,16 @@
  *
  * One system. Each account walks one ordered list of slots — welcome, the two
  * add-a-bird nudges, then the six series stages — and each run sends AT MOST
- * ONE email, three UTC calendar days after the last. A stage the account has
+ * ONE email, three UTC calendar days after the last (the first one after the
+ * welcome: three days after sign-up). A stage the account has
  * already done is skipped (and logged as skipped, with the reason) so the run
  * moves straight on to the next. The rules live in src/lib/onboardingPlan.ts;
  * this file only loads rows, sends, and logs.
  *
- *   welcome                  day 0, the hello from Brittany
+ *   welcome                  NOT sent here: the onboarding-welcome hook sends
+ *                            it about an hour after confirmation (every 15
+ *                            minutes, `onboarding-welcome-15min`). This run
+ *                            holds an account until its welcome is settled
  *   add_first_bird           no bird yet: the next email after the welcome
  *   add_first_bird_reminder  still no bird three days later. Never more than
  *                            these two nudges; skipped once a bird turns up
@@ -36,7 +40,8 @@
  * a push nudge (engagement-nudges reads this log the same way), or The Flock
  * Report.
  *
- * Auth: `Authorization: Bearer <CARE_PLAN_REMINDER_SECRET>`. JSON body options:
+ * Auth: `Authorization: Bearer <cron_hook_token>`, the Vault secret pg_cron sends
+ * (src/lib/cronAuth.ts). JSON body options:
  *   { "dryRun": true }                       → today's plan; nothing sent/logged
  *   { "dryRun": true, "simulateDays": 30 }   → the plan run forward N days,
  *                                              assuming every send succeeds and
@@ -55,7 +60,9 @@
  */
 import { withErrorTelemetry } from "@/lib/errorTelemetry";
 import { createFileRoute } from "@tanstack/react-router";
+import { realFirstName, realFullName } from "@/lib/personName";
 import { withCronTelemetry } from "@/lib/cronTelemetry";
+import { cronAuthFailure } from "@/lib/cronAuth";
 import {
   SLOTS,
   STAGE_FEATURE,
@@ -75,6 +82,8 @@ const ONBOARDING_LAUNCH = "2026-07-21T00:00:00Z";
 type Profile = RawRows["profiles"][number] & {
   email: string | null;
   display_name: string | null;
+  first_name: string | null;
+  full_name: string | null;
   locale: string | null;
   marketing_opt_in: boolean | null;
 };
@@ -101,18 +110,13 @@ export const Route = createFileRoute("/api/public/hooks/onboarding-emails")({
   server: {
     handlers: {
       POST: withCronTelemetry("onboarding-emails", withErrorTelemetry("/api/public/hooks/onboarding-emails", async ({ request }) => {
-        const secret = process.env.CARE_PLAN_REMINDER_SECRET;
-        if (!secret) {
-          return Response.json({ ok: false, error: "CARE_PLAN_REMINDER_SECRET not configured" }, { status: 503 });
-        }
-        const auth = request.headers.get("authorization") ?? "";
-        if (auth !== `Bearer ${secret}`) {
-          return new Response("Unauthorized", { status: 401 });
-        }
+        const denied = await cronAuthFailure(request, "onboarding-emails");
+        if (denied) return denied;
         let dryRun = false;
         let audit: string | null = null;
         let simulateDays = 0;
         let testSend: { userId: string; stage: Slot } | null = null;
+        let resend: { userId: string; stage: Slot } | null = null;
         try {
           const body = await request.clone().json();
           dryRun = body?.dryRun === true;
@@ -120,6 +124,9 @@ export const Route = createFileRoute("/api/public/hooks/onboarding-emails")({
           if (Number.isInteger(body?.simulateDays)) simulateDays = Math.min(Math.max(body.simulateDays, 1), 60);
           if (body?.testSend && typeof body.testSend.userId === "string" && (SLOTS as readonly string[]).includes(body.testSend.stage)) {
             testSend = { userId: body.testSend.userId, stage: body.testSend.stage as Slot };
+          }
+          if (body?.resend && typeof body.resend.userId === "string" && (SLOTS as readonly string[]).includes(body.resend.stage)) {
+            resend = { userId: body.resend.userId, stage: body.resend.stage as Slot };
           }
         } catch { /* empty body is fine */ }
 
@@ -133,8 +140,8 @@ export const Route = createFileRoute("/api/public/hooks/onboarding-emails")({
         let profiles: Profile[];
         let raw: RawRows;
         try {
-          const [p, birds, members, permissions, weights, dailyLogs, journals, invites, sits, log, pushes, letters] = await Promise.all([
-            selectAll<Profile>((a, b) => db.from("profiles").select("id, email, display_name, created_at, marketing_opt_in, locale, notify_onboarding").order("id").range(a, b)),
+          const [p, birds, members, permissions, weights, dailyLogs, journals, invites, sits, log, pushes, letters, confirmations] = await Promise.all([
+            selectAll<Profile>((a, b) => db.from("profiles").select("id, email, display_name, first_name, full_name, created_at, marketing_opt_in, locale, notify_onboarding").order("id").range(a, b)),
             selectAll<RawRows["birds"][number]>((a, b) => db.from("birds").select("id, owner_id, name, created_at, passed_at, setup_complete").order("id").range(a, b)),
             selectAll<RawRows["members"][number]>((a, b) => db.from("bird_members").select("bird_id, user_id, role").eq("role", "household").order("bird_id").order("user_id").range(a, b)),
             selectAll<RawRows["permissions"][number]>((a, b) => db.from("household_member_permissions").select("owner_id, member_user_id, capabilities").order("owner_id").order("member_user_id").range(a, b)),
@@ -148,6 +155,8 @@ export const Route = createFileRoute("/api/public/hooks/onboarding-emails")({
             // health-alert push is not marketing and never blocks an email.
             selectAll<{ user_id: string }>((a, b) => db.from("notification_log").select("user_id").eq("channel", "push").in("type", ["weight_reminder", "checkin_reminder"]).gte("sent_at", todayStart).order("id").range(a, b)),
             selectAll<{ owner_id: string }>((a, b) => db.from("monthly_letter_log").select("owner_id").gte("sent_at", todayStart).order("owner_id").range(a, b)),
+            // Who has confirmed their address, and when (auth.users, service role only).
+            selectAll<{ user_id: string; email_confirmed_at: string | null }>((a, b) => db.rpc("onboarding_confirmations").order("user_id").range(a, b)),
           ]);
           profiles = p;
           raw = {
@@ -163,6 +172,7 @@ export const Route = createFileRoute("/api/public/hooks/onboarding-emails")({
             log,
             pushedToday: pushes.map((r) => r.user_id),
             flockReportToday: letters.map((r) => r.owner_id),
+            confirmations,
           };
         } catch (e) {
           return Response.json({ ok: false, error: e instanceof Error ? e.message : String(e) }, { status: 500 });
@@ -240,7 +250,7 @@ export const Route = createFileRoute("/api/public/hooks/onboarding-emails")({
           console.error("[onboarding-emails] demo chart render failed; falling back to dots", e);
         }
         const {
-          buildWelcomeEmail, buildSeriesWeighingEmail, buildSeriesHealthCheckEmail, buildSeriesCarePlanEmail,
+          buildSeriesWeighingEmail, buildSeriesHealthCheckEmail, buildSeriesCarePlanEmail,
           buildSeriesJournalEmail, buildSeriesSharingEmail, buildSeriesVetEmail, buildAddFirstBirdEmail,
         } = await import("@/lib/flockEmails");
         const { sendTransactionalEmail, founderReplyTo } = await import("@/lib/brevoEmail.server");
@@ -253,8 +263,19 @@ export const Route = createFileRoute("/api/public/hooks/onboarding-emails")({
           const email = await emailFor(userId);
           if (!email) return { ok: false as const, skipped: "no-email" };
           const profile = profileById.get(userId);
-          const firstName = ((profile?.display_name ?? "").trim().split(/\s+/)[0] || "").trim() || undefined;
-          const locale = profile?.locale ?? undefined;
+          // The welcome has its own sender, shared with the onboarding-welcome hook.
+          if (stage === "welcome") {
+            const { sendWelcomeEmail } = await import("@/lib/onboardingWelcome.server");
+            return sendWelcomeEmail({ supabaseAdmin, appUrl, userId, to: email, profile, ctaVariant, test });
+          }
+          // A real first name or none: never the part of the address before
+          // the @ (Apple's hidden addresses made "Welcome to the flock, 2dkh5ctcgb.").
+          const firstName = profile ? realFirstName(profile, email, profile.email) : undefined;
+          const toName = profile ? realFullName([profile.full_name, profile.display_name], email, profile.email) ?? undefined : undefined;
+          // profiles.locale, else the language their auth emails used (null
+          // locales got English onboarding after Dutch confirmation emails).
+          const { lifecycleLocaleFor } = await import("@/lib/emailLocale.server");
+          const locale = await lifecycleLocaleFor(supabaseAdmin, userId, profile?.locale);
           const unsub = unsubUrl(appUrl, userId, "onboarding");
           const hasBird = ctaVariant === "standard";
           const bird = account.linkBird;
@@ -266,31 +287,28 @@ export const Route = createFileRoute("/api/public/hooks/onboarding-emails")({
           const common = { link: featureLink, hasBird, addBirdLink, locale, unsubscribeUrl: unsub };
 
           const built =
-            stage === "welcome"
-              ? buildWelcomeEmail({ firstName, link: appUrl, hasBird, addBirdLink: `${appUrl}/birds/new`, locale, unsubscribeUrl: unsub })
-              : stage === "add_first_bird" || stage === "add_first_bird_reminder"
-                ? buildAddFirstBirdEmail({ firstName, link: `${appUrl}/birds/new`, locale, unsubscribeUrl: unsub, reminder: stage === "add_first_bird_reminder" })
-                : stage === "series_weighing"
-                  ? buildSeriesWeighingEmail({ ...common, chartUrl: demoChartUrl })
-                  : stage === "series_health_check"
-                    ? buildSeriesHealthCheckEmail(common)
-                    : stage === "series_care_plan"
-                      ? buildSeriesCarePlanEmail(common)
-                      : stage === "series_journal"
-                        ? buildSeriesJournalEmail(common)
-                        : stage === "series_sharing"
-                          ? buildSeriesSharingEmail(common)
-                          : buildSeriesVetEmail(common);
+            stage === "add_first_bird" || stage === "add_first_bird_reminder"
+              ? buildAddFirstBirdEmail({ firstName, link: `${appUrl}/birds/new`, locale, unsubscribeUrl: unsub, reminder: stage === "add_first_bird_reminder" })
+              : stage === "series_weighing"
+                ? buildSeriesWeighingEmail({ ...common, chartUrl: demoChartUrl })
+                : stage === "series_health_check"
+                  ? buildSeriesHealthCheckEmail(common)
+                  : stage === "series_care_plan"
+                    ? buildSeriesCarePlanEmail(common)
+                    : stage === "series_journal"
+                      ? buildSeriesJournalEmail(common)
+                      : stage === "series_sharing"
+                        ? buildSeriesSharingEmail(common)
+                        : buildSeriesVetEmail(common);
 
           return sendTransactionalEmail({
             to: email,
-            toName: profile?.display_name ?? undefined,
+            toName,
             subject: built.subject,
             htmlContent: built.html,
             textContent: built.text,
-            // The two emails signed by Brittany that ask for a reply — the
-            // welcome and the one that closes the series.
-            ...(stage === "welcome" || stage === "series_vet" ? { replyTo: founderReplyTo() } : {}),
+            // Signed by Brittany and asks for a reply, like the welcome.
+            ...(stage === "series_vet" ? { replyTo: founderReplyTo() } : {}),
             // Gmail and Apple Mail put their own unsubscribe button beside the
             // sender when these are present.
             headers: unsubHeaders(appUrl, userId, "onboarding"),
@@ -313,6 +331,36 @@ export const Route = createFileRoute("/api/public/hooks/onboarding-emails")({
           const variant = nudge || !account.hasBird ? "no_bird" : "standard";
           const res = await sendStage(account, testSend.stage, variant, true);
           return Response.json({ ok: res.ok, test: true, stage: testSend.stage, ctaVariant: variant, result: res });
+        }
+
+        // Re-deliver ONE email the log already counts as sent but that never
+        // arrived (e.g. Apple's relay rejected our sender). The real template,
+        // tag and click tracking, unlike testSend. At most once per user and
+        // stage: resent_at is set after the send and a second call is refused.
+        if (resend) {
+          const account = accounts.find((a) => a.userId === resend!.userId);
+          if (!account) return Response.json({ ok: false, error: "no such account" }, { status: 404 });
+          const { data: row, error: rowErr } = await db
+            .from("onboarding_email_log")
+            .select("status, resent_at")
+            .eq("user_id", resend.userId)
+            .eq("stage", resend.stage)
+            .maybeSingle();
+          if (rowErr) return Response.json({ ok: false, error: rowErr.message }, { status: 500 });
+          if (row?.status !== "sent") return Response.json({ ok: false, error: "not logged as sent; the normal run will send it" }, { status: 409 });
+          if (row.resent_at) return Response.json({ ok: false, error: "already resent", resent_at: row.resent_at }, { status: 409 });
+          const nudge = resend.stage === "add_first_bird" || resend.stage === "add_first_bird_reminder";
+          const variant = nudge || !account.hasBird ? "no_bird" : "standard";
+          const res = await sendStage(account, resend.stage, variant);
+          if (!res.ok) return Response.json({ ok: false, stage: resend.stage, ctaVariant: variant, result: res }, { status: 502 });
+          const resentAt = new Date().toISOString();
+          const { error: markErr } = await db
+            .from("onboarding_email_log")
+            .update({ resent_at: resentAt })
+            .eq("user_id", resend.userId)
+            .eq("stage", resend.stage);
+          if (markErr) console.error("[onboarding-emails] resent_at update failed", resend.userId, resend.stage, markErr.message);
+          return Response.json({ ok: true, resent: true, stage: resend.stage, ctaVariant: variant, resent_at: resentAt, marked: !markErr, result: res });
         }
 
         const sent: Record<string, number> = {};

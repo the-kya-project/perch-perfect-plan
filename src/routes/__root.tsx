@@ -9,11 +9,11 @@ import {
   Scripts,
   type ErrorComponentProps,
 } from "@tanstack/react-router";
-import { useEffect, useState, type ReactNode } from "react";
+import { startTransition, useEffect, useState, type ReactNode } from "react";
 import { I18nextProvider, useTranslation } from "react-i18next";
 import i18next from "i18next";
 import { Loader2 } from "lucide-react";
-import { globalI18n } from "@/lib/i18n";
+import { globalI18n, hydrationI18n } from "@/lib/i18n";
 import { StartupSplash } from "@/components/StartupSplash";
 import { K, KyaPrimaryButton } from "@/components/kya";
 import { FrontDoorBody, FrontDoorHeader, FrontDoorPage } from "@/components/frontDoor";
@@ -25,11 +25,11 @@ import { FrontDoorBody, FrontDoorHeader, FrontDoorPage } from "@/components/fron
 // arrive with the page itself and can't go missing.
 import appCss from "../styles.css?inline";
 import { installErrorListeners, primeAccountRole, registerErrorReportingContext, reportError } from "@/lib/errorReporting";
+import { installSaveErrorRecorder } from "@/lib/saveErrorReporting";
 import { SUPPORT_EMAIL } from "@/lib/support";
-import { ERROR_TEST_ACCOUNT, errorTestMessage } from "@/lib/errorTest"; // TEMPORARY
-import { fireServerErrorTest } from "@/lib/errorTest.functions"; // TEMPORARY
 import { supabase } from "@/integrations/supabase/client";
 import { Toaster } from "@/components/ui/sonner";
+import { UpdateBanner } from "@/components/UpdateBanner";
 import { initAnalytics, identifyUser, resetUser } from "@/lib/analytics";
 import { ensureProfileLocale } from "@/lib/ensureProfileLocale";
 import { applyOwnerLocale } from "@/lib/i18n/ownerLocale";
@@ -43,6 +43,8 @@ import { checkStylesApplied } from "@/lib/stylesCheck";
 import { attachNativePushHandlers, syncNativePushToken } from "@/lib/pushNative";
 import { attachAppLinkHandler } from "@/lib/appLinkNative";
 import { smartAppBannerContent } from "@/lib/appLinks";
+import { openInAppPath } from "@/lib/openInApp";
+import { OpenInAppBar } from "@/components/OpenInAppBar";
 import { savePushToken } from "@/lib/push.functions";
 // Side-effect import: registers the beforeinstallprompt/appinstalled listeners
 // at app start so the native install prompt is captured (it fires once, early).
@@ -147,7 +149,11 @@ const COLD_LAUNCH_REDIRECT = `(function(){try{` +
   // storage) must NOT swallow the redirect — that would reintroduce the exact
   // cold-launch bug on the devices least likely to report it.
   `try{sessionStorage.setItem("kya_cold_redirect",JSON.stringify({path:window.location.pathname,had_stored:true}));}catch(e2){}` +
-  `window.location.replace("/dashboard");return;}}` +
+  // Carry the campaign params so email / TikTok attribution survives the hop
+  // (same key list as src/lib/utmCarry.ts — this runs before any module loads).
+  `var q=new URLSearchParams(window.location.search),o=new URLSearchParams();` +
+  `["utm_source","utm_medium","utm_campaign","utm_content","utm_term"].forEach(function(n){var v=q.get(n);if(v)o.set(n,v.slice(0,200));});` +
+  `var qs=o.toString();window.location.replace("/dashboard"+(qs?"?"+qs:""));return;}}` +
   `}catch(e){}})();`;
 
 // Startup safety net, inline in <head> so it works even when the app's own
@@ -161,10 +167,18 @@ const COLD_LAUNCH_REDIRECT = `(function(){try{` +
 //     it shows the screen below instead.
 //  2. The app hasn't finished starting after 10 seconds → "Something's taking
 //     too long" with a Try again button. Never an automatic reload.
+// Leaving the page doesn't count as a failure: when a navigation starts
+// (a tapped link, a redirect), Safari cancels the page's pending file loads
+// and reports each as an error. Reloading then would replace the page the
+// person asked for, so from beforeunload/pagehide until the page is shown
+// again, load errors are ignored here and in sw-register.ts
+// (window.__kyaLeaving).
 // The app sets window.__kyaReady once the first screen has loaded (see
 // RootComponent), which also removes the screen if it's showing.
 const STARTUP_GUARD = `(function(){try{` +
-  `var K="kya-auto-reload",W=300000,shown=false;` +
+  `var K="kya-auto-reload",W=300000,shown=false,leaving=false;` +
+  `addEventListener("beforeunload",function(){leaving=true});addEventListener("pagehide",function(){leaving=true});` +
+  `addEventListener("pageshow",function(){leaving=false});window.__kyaLeaving=function(){return leaving};` +
   `function nl(){try{return /^nl/i.test(navigator.language||"")}catch(e){return false}}` +
   `function reset(){var done=function(){try{var u=new URL(location.href);u.searchParams.set("_r",String(Date.now()));location.replace(u.toString())}catch(e){location.reload()}};` +
   `var p=[];try{if(navigator.serviceWorker)p.push(navigator.serviceWorker.getRegistrations().then(function(rs){return Promise.all(rs.map(function(r){return r.unregister()}))}))}catch(e){}` +
@@ -174,11 +188,11 @@ const STARTUP_GUARD = `(function(){try{` +
   `d.style.cssText="position:fixed;inset:0;z-index:2147483647;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;text-align:center;background:#1a3d2e;color:#fff;font-family:'DM Sans',system-ui,-apple-system,sans-serif;padding:calc(env(safe-area-inset-top) + 24px) 28px calc(env(safe-area-inset-bottom) + 24px)";` +
   `var h=document.createElement("h1");h.textContent=nl()?"Dit duurt te lang":"Something's taking too long";h.style.cssText="margin:0;font:700 28px/1.2 Newsreader,Georgia,serif";` +
   `var t=document.createElement("p");t.textContent=nl()?"Controleer je verbinding en probeer het opnieuw.":"Check your connection, then try again.";t.style.cssText="margin:0;max-width:30ch;font-size:15px;line-height:1.5;color:#d6e8dc";` +
-  `var b=document.createElement("button");b.type="button";b.textContent=nl()?"Opnieuw proberen":"Try again";b.style.cssText="margin-top:12px;min-height:52px;padding:0 32px;border-radius:999px;border:2px solid #12291f;background:#f2b33d;color:#1a3d2e;font:700 16px 'DM Sans',system-ui,sans-serif";` +
+  `var b=document.createElement("button");b.type="button";b.textContent=nl()?"Opnieuw proberen":"Try again";b.style.cssText="margin-top:12px;min-height:52px;padding:0 32px;border-radius:999px;border:2px solid #1a3d2e;background:#f2b33d;color:#1a3d2e;font:700 16px 'DM Sans',system-ui,sans-serif";` +
   `b.onclick=function(){b.disabled=true;reset()};d.appendChild(h);d.appendChild(t);d.appendChild(b);document.body.appendChild(d)}` +
   `window.__kyaHideStartupGuard=function(){var d=document.getElementById("kya-startup-slow");if(d)d.remove()};` +
   `setTimeout(function(){if(!window.__kyaReady){if(document.body)show();else addEventListener("DOMContentLoaded",show)}},10000);` +
-  `addEventListener("error",function(e){var el=e&&e.target;if(!el||(el.tagName!=="SCRIPT"&&el.tagName!=="LINK"))return;` +
+  `addEventListener("error",function(e){if(leaving)return;var el=e&&e.target;if(!el||(el.tagName!=="SCRIPT"&&el.tagName!=="LINK"))return;` +
   `var u=el.src||el.href||"";if(u.indexOf(location.origin+"/assets/")!==0||window.__kyaReady)return;` +
   `var at=0;try{at=Number(localStorage.getItem(K))||0}catch(x){}` +
   `if(navigator.onLine!==false&&!(Date.now()-at<W)){try{localStorage.setItem(K,String(Date.now()));reset();return}catch(x){}}` +
@@ -192,6 +206,10 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1, viewport-fit=cover" },
+      // iOS Safari otherwise rewrites text that looks like a phone number, date,
+      // email or address into links before React hydrates, so the page no longer
+      // matches the server HTML (React #418).
+      { name: "format-detection", content: "telephone=no, date=no, email=no, address=no" },
       { name: "robots", content: "noindex,nofollow" },
       // Ink (--ink) — matches the home-screen icon background for splash continuity.
       { name: "theme-color", content: "#1a3d2e" },
@@ -216,10 +234,11 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "twitter:card", content: "summary_large_image" },
     ],
     links: [
-      // Setup screens: Newsreader for headings, DM Sans for everything else.
-      { rel: "preconnect", href: "https://fonts.googleapis.com" },
-      { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
-      { rel: "stylesheet", href: "https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,700&family=Newsreader:opsz,wght@6..72,600;6..72,700&display=swap" },
+      // Newsreader for headings, DM Sans for everything else. SELF-HOSTED
+      // (public/fonts): never link fonts.googleapis.com — it sends every
+      // visitor's IP to Google (GDPR). `npm run check:no-google-fonts` fails
+      // the build if a Google Fonts link comes back.
+      { rel: "stylesheet", href: "/fonts/fonts.css" },
       // Kya & Co. favicons — multi-size set delivered by the brand spec.
       { rel: "icon", href: "/favicon.ico", sizes: "any" },
       { rel: "icon", type: "image/png", sizes: "32x32", href: "/favicon-32.png" },
@@ -251,40 +270,10 @@ function RootShell({ children }: { children: ReactNode }) {
   );
 }
 
-// TEMPORARY — error-capture verification (see src/lib/errorTest.ts).
-function ThrowOnRender({ nonce }: { nonce: string }): never {
-  const err = new Error(errorTestMessage("render"));
-  err.name = `KyaErrorTestRender_${nonce}`;
-  throw err;
-}
-
-async function runErrorTest(setRenderTest: (n: string) => void) {
-  const params = new URLSearchParams(window.location.search);
-  const kind = params.get("kya_error_test");
-  const nonce = (params.get("n") ?? "").toLowerCase();
-  if (!kind || !/^[a-z0-9]{4,12}$/.test(nonce)) return;
-  const { data } = await supabase.auth.getSession();
-  if (data.session?.user?.id !== ERROR_TEST_ACCOUNT) return;
-  const make = (k: string) => {
-    const e = new Error(errorTestMessage(k));
-    e.name = `KyaErrorTest${k[0].toUpperCase()}${k.slice(1)}_${nonce}`;
-    return e;
-  };
-  if (kind === "client") setTimeout(() => { throw make("client"); }, 0);
-  else if (kind === "unhandled") void Promise.reject(make("unhandled"));
-  else if (kind === "render") setRenderTest(nonce);
-  else if (kind === "server" || kind === "burst") {
-    const times = kind === "burst" ? 11 : 1;
-    for (let i = 0; i < times; i++) {
-      try { await fireServerErrorTest({ data: { nonce } }); } catch { /* expected */ }
-    }
-  }
-}
-
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   const router = useRouter();
-  const [renderTest, setRenderTest] = useState<string | null>(null); // TEMPORARY
+  const location = useRouterState({ select: (s) => s.location });
   // A code file failed to load and the one automatic reload is already spent:
   // show the error screen instead of reloading again (sw-register.ts).
   const [startupFailed, setStartupFailed] = useState(false);
@@ -305,13 +294,21 @@ function RootComponent() {
     if (router.state.status === "idle" && !router.state.isLoading) ready();
     return router.subscribe("onResolved", ready);
   }, [router]);
-  useEffect(() => { void runErrorTest(setRenderTest); }, []); // TEMPORARY
+  // English (hydrationI18n) for the server render and hydration, then the live
+  // instance, which follows the owner's language. See hydrationI18n in
+  // lib/i18n/i18n.ts: switching language while a route was still hydrating is
+  // what made Dutch phones hit React #418/#422 on /, /auth and /confirm-email.
+  // A transition, so React finishes hydrating every pending subtree with the
+  // English it was server-rendered in before applying the switch.
+  const [i18n, setI18n] = useState(() => hydrationI18n);
+  useEffect(() => { startTransition(() => setI18n(globalI18n)); }, []);
 
   useEffect(() => {
     // Error reporting first, so anything that throws during the rest of boot is
     // caught. Reports queue until PostHog has loaded (analytics.ts).
     registerErrorReportingContext({ router, queryClient });
     installErrorListeners();
+    installSaveErrorRecorder(); // failed saves → public.save_errors (alerting)
     captureFirstTouch(); // first-touch attribution — record source before signup
     if (window.location.hash.includes("access_token=")) {
       // Supabase's implicit auth flow lands with live tokens in the URL hash.
@@ -376,16 +373,21 @@ function RootComponent() {
   }, [router, queryClient]);
 
   return (
-    // App-wide default i18n instance, pinned to English. This establishes
-    // react-i18next's instance for EVERY surface — including owner routes that
-    // render shared components (CareSheetView, ConcernFlow, ScanForm, …) but
-    // don't otherwise import the i18n module. Without it those components would
-    // hit an uninitialized i18next and render raw keys. The sitter route nests
-    // its own <I18nextProvider> to switch its subtree to Dutch; this stays en.
-    <I18nextProvider i18n={globalI18n} defaultNS="translation">
+    // App-wide i18n instance (hydrationI18n until hydrated, then globalI18n).
+    // This establishes react-i18next's instance for EVERY surface — including
+    // owner routes that render shared components (CareSheetView, ConcernFlow,
+    // ScanForm, …) but don't otherwise import the i18n module. Without it those
+    // components would hit an uninitialized i18next and render raw keys. The
+    // sitter route nests its own <I18nextProvider> for its own language.
+    <I18nextProvider i18n={i18n} defaultNS="translation">
       <QueryClientProvider client={queryClient}>
-        {startupFailed ? <SomethingWentWrong /> : renderTest ? <ThrowOnRender nonce={renderTest} /> : <Outlet />}
+        {/* iPhone browsers on app screens: "Open in the Kya & Co. app". /auth
+            renders its own, aimed at the screen the email was for. */}
+        {!startupFailed && location.pathname !== "/auth" && <OpenInAppBar variant="bar" path={openInAppPath(location.pathname, location.searchStr)} />}
+        {startupFailed ? <SomethingWentWrong /> : <Outlet />}
         <Toaster />
+        {/* "A new version is ready": only while a form is in progress (sw-register.ts). */}
+        <UpdateBanner />
       </QueryClientProvider>
     </I18nextProvider>
   );

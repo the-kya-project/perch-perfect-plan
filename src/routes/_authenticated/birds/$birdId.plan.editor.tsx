@@ -1,4 +1,4 @@
-import { createFileRoute, useLocation, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { speciesLabel } from "@/lib/speciesLabel";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
@@ -12,8 +12,7 @@ import { ChevronDown, AlertTriangle, Eye } from "lucide-react";
 import { EmergencyInfo } from "@/components/EmergencyInfo";
 import { useBirdOwnerEmergency } from "@/lib/useOwnerEmergency";
 import { K, KyaBody, KyaCard, KyaHeading, KyaTag, KyaSecondaryButton, KyaPrimaryButton, KyaLink } from "@/components/kya";
-import { HeaderPill, TaskHeader, TaskFooter, TASK_FOOTER_SPACE } from "@/components/headers";
-import { isTaskPath } from "@/components/OwnerTabBar";
+import { TaskHeader, TaskFooter, TASK_FOOTER_SPACE } from "@/components/headers";
 import { SETUP_STEPS } from "@/components/SetupShell";
 // The editor renders the guided-setup step components directly so the two UIs
 // are identical (same fields, pickers, autosave, clip recording).
@@ -26,7 +25,13 @@ import { useCapability, useMyPermissions } from "@/lib/useCapability";
 import { BirdPhotoCrop } from "@/components/BirdPhotoCrop";
 import { formatLocalDateTime } from "@/lib/dates";
 import { LoadError } from "@/components/LoadError";
-import { useLoadState } from "@/lib/useTooLong";
+import { useLoadState, useTooLong } from "@/lib/useTooLong";
+import { BIRD_PHOTO_FOCUS } from "@/lib/birdPhotoFocus";
+import { useDuoMode } from "@/lib/duo";
+import { RailClose } from "@/components/DuoRail";
+import { DuoMainButton, DuoTwoPane, PopOutCard } from "@/components/duo/DuoBlocks";
+import { PlanProgressPane, planRowIcon } from "@/components/duo/plan/PlanProgress";
+import type { CarePlanRowKey } from "@/lib/useCarePlanStatus";
 
 
 // The care-plan editor is reached via the new overview front door (/plan).
@@ -81,6 +86,11 @@ const ORDERED_TABS: Tab[] = (() => {
   return section;
 })();
 
+// Each section tab's row on the care plan page (its Ready / To finish answer).
+const TAB_ROW: Partial<Record<Tab, CarePlanRowKey>> = {
+  food: "food", health: "health", behavior: "personality", clips: "clips", routine: "day", home: "environment", emergency: "emergency",
+};
+
 const birdSearch = z.object({
   tab: z.enum(TAB_IDS).optional(),
   scan: z.string().uuid().optional(), // deep-link from a notification to a scan
@@ -96,6 +106,7 @@ function BirdEditor() {
   const { t } = useTranslation();
   const { birdId } = Route.useParams();
   const { tab: tabParam, scan: scanParam } = Route.useSearch();
+  const duo = useDuoMode() === "sideways";
   const qc = useQueryClient();
   const navigate = useNavigate();
   // Editor access is capability-based: edit_care_plans (the five care sections)
@@ -109,9 +120,6 @@ function BirdEditor() {
   // A bird with no care plan row would leave every tab waiting; create it (as
   // the walkthrough does) for anyone allowed to edit the plan.
   useEnsureCarePlan(birdId, role === "owner" || canEdit);
-  // A task page hides the bottom nav (isTaskPath); until this route is listed
-  // there the nav still shows, so the Done footer sits just above it.
-  const navHidden = useLocation({ select: (l) => isTaskPath(l.pathname) });
   useEffect(() => {
     if (role === "owner") return;
     if (role == null || !perms) return; // still loading
@@ -119,6 +127,13 @@ function BirdEditor() {
   }, [role, perms, canEdit, canEmergency, birdId, navigate]);
   const [tab, setTab] = useState<Tab>(tabParam ?? (scanParam ? "logs" : "food"));
   useEffect(() => { if (tabParam) setTab(tabParam); else if (scanParam) setTab("logs"); }, [tabParam, scanParam]);
+  // Mirror the open tab into ?tab= (replacing the history entry), so a reload
+  // reopens the same section.
+  useEffect(() => {
+    if (tabParam === tab) return;
+    navigate({ to: "/birds/$birdId/plan/editor", params: { birdId }, search: (prev) => ({ ...prev, tab }), replace: true });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tab]);
 
   // Edge fades so the tab strip reads as scrollable.
   const tabStripRef = useRef<HTMLDivElement>(null);
@@ -179,6 +194,16 @@ function BirdEditor() {
 
   const resolvePhoto = useBirdPhotos([bird?.photo_url], 96);
 
+  // The Emergency tab needs the bird's contacts, the owner's defaults and the
+  // viewer's role before it can render safely (saving earlier would copy the
+  // owner's values onto the bird). While they load, show a skeleton inside the
+  // normal page chrome — never a blank body — and after 10 s offer a retry.
+  const emergencyLoading = contacts === undefined || defaults === undefined || role === undefined;
+  const { tooLong: emergencyTooLong, restart: restartEmergency } = useTooLong(
+    tab === "emergency" && emergencyLoading && !ownerEmergencyFailed,
+  );
+  const retryEmergency = () => { restartEmergency(); void qc.refetchQueries({ type: "active" }); };
+
   if (birdMissing || birdLoad.failed) {
     const goHome = () => navigate({ to: "/dashboard" });
     const goOverview = () => navigate({ to: "/birds/$birdId/plan", params: { birdId } });
@@ -233,17 +258,103 @@ function BirdEditor() {
   const done = () => { onPlanSaved(); goToOverview(); };
   const doneButton = <KyaPrimaryButton onClick={done}>{t("planEditor.done", "Done")}</KyaPrimaryButton>;
 
+  const sectionBody = (
+    <>
+    {/* Every section tab renders the guided-setup step component directly, so
+        the editor and the setup wizard are the exact same UI — except the
+        green per-step instruction banner, hidden here via HideStepInstruction
+        (it shows only in the guided setup). */}
+    <HideStepInstruction.Provider value={true}>
+      {/* Delete bird moved to the bird main page's "More" group (grouped with
+          Hand off). The editor's basics tab is just the basics fields now. */}
+      {tab === "basics" && <BasicsStep birdId={birdId} onBlockNext={() => {}} />}
+      {tab === "food" && <FoodWaterStep birdId={birdId} birdName={birdName} onBlockNext={() => {}} />}
+      {tab === "home" && <EnvironmentStep birdId={birdId} birdName={birdName} />}
+      {tab === "health" && <HealthBaselineStep birdId={birdId} birdName={birdName} onBlockNext={() => {}} />}
+      {tab === "routine" && <DayInLifeStep birdId={birdId} birdName={birdName} />}
+      {tab === "behavior" && <PersonalityStep birdId={birdId} birdName={birdName} />}
+      {tab === "clips" && <OwnerTipsClipsStep birdId={birdId} birdName={birdName} onBlockNext={() => {}} />}
+      {/* Wait for the owner's info as well as the bird's: saving before it
+          arrives would store a copy of the owner's values on this bird. */}
+      {tab === "emergency" && (ownerEmergencyFailed || emergencyTooLong) && (
+        <LoadError onRetry={retryEmergency} />
+      )}
+      {tab === "emergency" && !ownerEmergencyFailed && !emergencyTooLong && emergencyLoading && (
+        <div role="status" className="flex flex-col gap-3">
+          <span className="sr-only">{t("planEditor.loading", "Loading...")}</span>
+          <div className="h-28 animate-pulse rounded-[20px] bg-white" aria-hidden="true" />
+          <div className="h-48 animate-pulse rounded-[20px] bg-white" aria-hidden="true" />
+        </div>
+      )}
+      {tab === "emergency" && !ownerEmergencyFailed && !emergencyTooLong && !emergencyLoading && <EmergencyInfo birdId={birdId} birdName={birdName} contacts={contacts ?? null} defaults={defaults ?? null} ownerName={ownerName} isOwner={role === "owner"} onSaved={() => qc.invalidateQueries({ queryKey: ["contacts", birdId] })} />}
+      {tab === "sits" && <SitsPanel birdId={birdId} birdName={birdName} isOwner={role === "owner"} />}
+      {tab === "logs" && <LogsPanel birdId={birdId} initialScan={scanParam} />}
+    </HideStepInstruction.Provider>
+    </>
+  );
+
+  // iPhone Duo (two panes): the ring and the sections on the left (tapping one
+  // is the same as tapping its tab: ?tab= with replace), the open section in a
+  // card on the right, and one main button pinned under it, Next section (Done
+  // on the last). Sections autosave exactly as on the phone.
+  if (duo) {
+    const at = tabs.findIndex((tb) => tb.id === tab);
+    const nextTab = at >= 0 ? tabs[at + 1] : undefined;
+    // A new section starts at its top.
+    const openTab = (id: Tab) => { setTab(id); document.querySelector('[data-duo-pane="right"]')?.scrollTo(0, 0); };
+    return (
+      <>
+        <RailClose onClose={goToOverview} />
+        <DuoTwoPane
+          dark
+          leftLabel={t("planEditor.sectionsAria", "Care plan sections")}
+          rightLabel={tabLabel(t, tab)}
+          left={
+            <PlanProgressPane
+              birdId={birdId}
+              birdName={birdName}
+              steps={tabs.map((tb) => ({ key: tb.id, title: tb.label, row: TAB_ROW[tb.id], icon: TAB_ROW[tb.id] ? planRowIcon(TAB_ROW[tb.id]!) : undefined }))}
+              current={tab}
+              onSelect={(k) => openTab(k as Tab)}
+            />
+          }
+          right={
+            <>
+              <PopOutCard
+                eyebrow={t("planEditor.editTitleNamed", "Edit {{name}}'s care plan", { name: bird.name })}
+                title={tabLabel(t, tab)}
+                footer={<KyaLink onClick={() => navigate({ to: "/birds/$birdId/view-as-sitter", params: { birdId } })}><Eye className="size-4" aria-hidden="true" />{t("planEditor.viewAsSitter", "View as sitter")}</KyaLink>}
+              >
+                {/* The sections are built for the mist page: a mist well keeps
+                    their white cards apart from the white card around them. */}
+                <div className="flex flex-col gap-4 rounded-[20px] p-3" style={{ background: K.mist }}>{sectionBody}</div>
+              </PopOutCard>
+              <div aria-hidden="true" className="h-[104px] shrink-0" />
+              <TaskFooter>
+                {nextTab ? (
+                  <DuoMainButton onClick={() => openTab(nextTab.id)}>
+                    {t("planDuo.nextSection", "Next: {{section}}", { section: nextTab.label })}
+                  </DuoMainButton>
+                ) : (
+                  <DuoMainButton onClick={done}>{t("planEditor.done", "Done")}</DuoMainButton>
+                )}
+              </TaskFooter>
+            </>
+          }
+        />
+      </>
+    );
+  }
+
   return (
-    <div className={`setup-frame min-h-screen ${navHidden ? "" : "pb-nav"}`} style={{ background: K.mist, color: K.forest }}>
+    <div className="setup-frame min-h-screen" style={{ background: K.mist, color: K.forest }}>
       <TaskHeader
         onClose={goToOverview}
-        // Top right holds the one header action instead of a progress count.
-        progress={{ label: <HeaderPill action={{ label: t("planEditor.viewAsSitter", "View as sitter"), icon: <Eye className="size-4" />, onClick: () => navigate({ to: "/birds/$birdId/view-as-sitter", params: { birdId } }) }} /> }}
         title={
           <span className="flex items-center gap-3">
             {headerPhoto && (
               <span className="relative block size-11 shrink-0 overflow-hidden rounded-full">
-                <BirdPhotoCrop url={headerPhoto.url} original={headerPhoto.original} position={bird.photo_position ?? "50% 20%"} alt={bird.name} />
+                <BirdPhotoCrop url={headerPhoto.url} original={headerPhoto.original} position={bird.photo_position ?? BIRD_PHOTO_FOCUS} alt={bird.name} />
               </span>
             )}
             <span className="min-w-0 flex-1">{t("planEditor.editTitleNamed", "Edit {{name}}'s care plan", { name: bird.name })}</span>
@@ -281,29 +392,16 @@ function BirdEditor() {
 
       <div className={TASK_FOOTER_SPACE}>
         <KyaBody>
-          {/* Every section tab renders the guided-setup step component directly, so
-              the editor and the setup wizard are the exact same UI — except the
-              green per-step instruction banner, hidden here via HideStepInstruction
-              (it shows only in the guided setup). */}
-          <HideStepInstruction.Provider value={true}>
-            {/* Delete bird moved to the bird main page's "More" group (grouped with
-                Hand off). The editor's basics tab is just the basics fields now. */}
-            {tab === "basics" && <BasicsStep birdId={birdId} onBlockNext={() => {}} />}
-            {tab === "food" && <FoodWaterStep birdId={birdId} birdName={birdName} onBlockNext={() => {}} />}
-            {tab === "home" && <EnvironmentStep birdId={birdId} birdName={birdName} />}
-            {tab === "health" && <HealthBaselineStep birdId={birdId} birdName={birdName} onBlockNext={() => {}} />}
-            {tab === "routine" && <DayInLifeStep birdId={birdId} birdName={birdName} />}
-            {tab === "behavior" && <PersonalityStep birdId={birdId} birdName={birdName} />}
-            {tab === "clips" && <OwnerTipsClipsStep birdId={birdId} birdName={birdName} onBlockNext={() => {}} />}
-            {/* Wait for the owner's info as well as the bird's: saving before it
-                arrives would store a copy of the owner's values on this bird. */}
-            {tab === "emergency" && ownerEmergencyFailed && (
-              <LoadError onRetry={() => void qc.refetchQueries({ queryKey: ["bird-owner-emergency", birdId] })} />
-            )}
-            {tab === "emergency" && !ownerEmergencyFailed && contacts !== undefined && defaults !== undefined && role !== undefined && <EmergencyInfo birdId={birdId} birdName={birdName} contacts={contacts ?? null} defaults={defaults ?? null} ownerName={ownerName} isOwner={role === "owner"} onSaved={() => qc.invalidateQueries({ queryKey: ["contacts", birdId] })} />}
-            {tab === "sits" && <SitsPanel birdId={birdId} birdName={birdName} isOwner={role === "owner"} />}
-            {tab === "logs" && <LogsPanel birdId={birdId} initialScan={scanParam} />}
-          </HideStepInstruction.Provider>
+          {/* Check the plan as the sitter will see it — a body action, so the
+              header's top-right slot stays free. */}
+          <KyaSecondaryButton
+            className="w-full"
+            icon={<Eye className="size-4" />}
+            onClick={() => navigate({ to: "/birds/$birdId/view-as-sitter", params: { birdId } })}
+          >
+            {t("planEditor.viewAsSitter", "View as sitter")}
+          </KyaSecondaryButton>
+          {sectionBody}
         </KyaBody>
       </div>
 
@@ -313,15 +411,9 @@ function BirdEditor() {
           refactor (#163), which left onPlanSaved orphaned. Autosave has already
           persisted, so Done just refreshes derived views (via onPlanSaved) and
           returns to the overview. Everyone who reaches the editor is an editor
-          (others are redirected), so it's shown for editors only. While the
-          bottom nav shows on this route, the same white footer sits above it. */}
-      {navHidden ? (
-        <TaskFooter>{doneButton}</TaskFooter>
-      ) : (
-        <div className="fixed inset-x-0 bottom-[var(--nav-spacer)] z-30 border-t bg-white py-3" style={{ borderColor: K.line }}>
-          <div className="mx-auto max-w-md px-4">{doneButton}</div>
-        </div>
-      )}
+          (others are redirected), so it's shown for editors only. This route is
+          a task path (isTaskPath), so the bottom nav never shows here. */}
+      <TaskFooter>{doneButton}</TaskFooter>
     </div>
   );
 }
@@ -466,7 +558,7 @@ function LogsPanel({ birdId, initialScan }: { birdId: string; initialScan?: stri
 
   return (
     <>
-      <Disclaimer compact />
+      <Disclaimer />
 
       <KyaCard className="p-4">
         <KyaHeading size={19}>{t("planEditor.healthChecks", "Health checks")}</KyaHeading>

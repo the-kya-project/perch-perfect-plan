@@ -1,22 +1,34 @@
-// Community waitlist signup → The Kya Project's Brevo form.
+// Community waitlist signup (WaitlistCard: Explore, Duo Explore, and "Get
+// launch news" on /founding once it's full).
 //
-// Runs server-side (createServerFn) and replicates the hosted Brevo form's own
-// POST (multipart/form-data to its /v2/serve endpoint). Going through the form
-// means Brevo handles the list assignment, double opt-in, and category-attribute
-// mapping exactly as the public form does — no API key or list id needed here.
-// The form token is public (it's embedded in the marketing site).
+// Until Nov 2026 this replayed the hosted Brevo form's POST. Brevo was then
+// the only record, and an audit found its list empty with no way to recover
+// who had joined. Now, server-side:
+//   1. Save the person in public.waitlist_signups (service role; admins read).
+//   2. Add them to Brevo list 4 "TKP Waitlist" (BREVO_WAITLIST_LIST_ID,
+//      Production only) with their name, chapter answers and
+//      SOURCE=waitlist-app, through addContactToListReported, so a missing
+//      setting or a Brevo error raises a save-error alert.
+//   3. Write what happened to the row's brevo_status, so a backfill can find
+//      anyone Brevo missed.
+// Consent: the card says "we'll email you when the community opens", so list
+// 4 only, never the marketing list.
 //
-// Fields mirror the Brevo form: EMAIL, FIRSTNAME, LASTNAME, CHAPTER_LEAD_INTEREST
-// (1=Yes, 2=No), PRIMARY_CHAPTER (1–9 region ids). `email_address_check` is the
-// form's honeypot and must be sent empty.
+// The person sees success when either our copy or Brevo has them. Only when
+// both fail do they see "Couldn't add you just now."
 
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 
-const BREVO_WAITLIST_FORM =
-  "https://f02c1e04.sibforms.com/v2/serve/MUIFAKCPkPCAPuuR23EylSkqStad72B2X4wwnloJW_CbAW7Rdpt1H59RVK2Ec8e6TwVrU8D8Q1cHhWS8aDYLdwVFFNxaoEYzw_U0HNQVQ3aE3X5JZOhvfZ-N4dTGa_E_8p2DhYJY3kDv5nyilZPUillkKJMp1b1koWMICP7Fj0Yj5CfcMpyPQobYb-SQDrhMwB-MngLQaOmcvhJBsg==";
+export type WaitlistResult = { ok: boolean; error?: "save-failed" };
 
-export type WaitlistResult = { ok: boolean; error?: "brevo-rejected" | "network" };
+const WaitlistInput = z.object({
+  email: z.string().trim().email().max(254),
+  firstName: z.string().trim().min(1).max(80),
+  lastName: z.string().trim().min(1).max(80),
+  chapterLeadInterest: z.enum(["1", "2"]),
+  primaryChapter: z.enum(["1", "2", "3", "4", "5", "6", "7", "8", "9"]),
+});
 
 export const joinWaitlist = createServerFn({ method: "POST" })
   .inputValidator((d: {
@@ -25,35 +37,63 @@ export const joinWaitlist = createServerFn({ method: "POST" })
     lastName: string;
     chapterLeadInterest: "1" | "2";
     primaryChapter: string;
-  }) =>
-    z
-      .object({
-        email: z.string().email(),
-        firstName: z.string().trim().min(1).max(80),
-        lastName: z.string().trim().min(1).max(80),
-        chapterLeadInterest: z.enum(["1", "2"]),
-        primaryChapter: z.enum(["1", "2", "3", "4", "5", "6", "7", "8", "9"]),
-      })
-      .parse(d),
-  )
+  }) => WaitlistInput.parse(d))
   .handler(async ({ data }): Promise<WaitlistResult> => {
-    const form = new FormData();
-    form.set("EMAIL", data.email.trim());
-    form.set("FIRSTNAME", data.firstName.trim());
-    form.set("LASTNAME", data.lastName.trim());
-    form.set("CHAPTER_LEAD_INTEREST", data.chapterLeadInterest);
-    form.set("PRIMARY_CHAPTER", data.primaryChapter);
-    form.set("email_address_check", ""); // honeypot — must stay empty
-    form.set("locale", "en");
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { addContactToListReported, listAddStatus, recordServerSaveError } = await import("./serverSaveErrors.server");
+    const { classifySaveError } = await import("./saveErrors");
+    // The table postdates the generated types.
+    const db = supabaseAdmin as unknown as { from: (t: string) => any };
 
-    try {
-      const res = await fetch(BREVO_WAITLIST_FORM, { method: "POST", body: form });
-      const json = (await res.json().catch(() => null)) as { success?: boolean } | null;
-      if (res.ok && json?.success === true) return { ok: true };
-      console.error("[waitlist] Brevo form rejected", res.status, JSON.stringify(json));
-      return { ok: false, error: "brevo-rejected" };
-    } catch (err) {
-      console.error("[waitlist] network error", err);
-      return { ok: false, error: "network" };
+    const lead = Number(data.chapterLeadInterest) as 1 | 2;
+    const chapter = Number(data.primaryChapter);
+
+    // 1. Our own copy. One row per address: joining again updates it.
+    let saved = false;
+    const { error: saveErr } = await db.from("waitlist_signups").upsert(
+      {
+        email: data.email,
+        first_name: data.firstName,
+        last_name: data.lastName,
+        chapter_lead_interest: lead,
+        primary_chapter: chapter,
+        source: "waitlist-app",
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: "email_normalized" },
+    );
+    if (saveErr) {
+      console.error("[waitlist] saving our copy failed", saveErr.message);
+      const shape = classifySaveError(saveErr) ?? { category: "database" as const, sqlstate: null, target: null, operation: null };
+      await recordServerSaveError({ ...shape, target: "waitlist_signups", operation: "write" }, "/waitlist");
+    } else {
+      saved = true;
     }
+
+    // 2. Brevo list 4.
+    const result = await addContactToListReported(
+      "BREVO_WAITLIST_LIST_ID",
+      {
+        email: data.email,
+        firstName: data.firstName,
+        lastName: data.lastName,
+        source: "waitlist-app",
+        chapterLeadInterest: lead,
+        primaryChapter: chapter,
+      },
+      { route: "/waitlist" },
+    );
+
+    // 3. What Brevo did, on our copy.
+    if (saved) {
+      const { error: statusErr } = await db
+        .from("waitlist_signups")
+        .update({ brevo_status: listAddStatus(result), brevo_synced_at: result.ok ? new Date().toISOString() : null })
+        .eq("email_normalized", data.email.trim().toLowerCase());
+      if (statusErr) console.error("[waitlist] brevo_status not saved", statusErr.message);
+    }
+
+    // A preview never reaches Brevo by design: our copy is the success there.
+    if (saved || result.ok) return { ok: true };
+    return { ok: false, error: "save-failed" };
   });

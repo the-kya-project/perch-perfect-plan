@@ -16,20 +16,22 @@ import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { SetupShell, SETUP_STEPS, TOTAL_STEPS, setupStepTitle, setupStepNumber } from "@/components/SetupShell";
+import { SetupStepsPane } from "@/components/duo/plan/SetupStepsPane";
 import { encodeSetupStep, basicsDone } from "@/lib/setupProgress";
 import { getLocalUser } from "@/integrations/supabase/currentUser";
 import { mergeHome, homeDifferences, seedShared, sameGroup, followSharedPatch, clearOwnPatch, birdHasOwn, HOME_GROUPS, HOME_GROUP_COLUMNS, parseCleaning, formatCleaning, CLEANING_NEVER_DEFAULTS, type HomeRow } from "@/lib/homeDefaults";
 import { EmergencyContactsScreen, type EmergencySetupState } from "@/components/setup/EmergencyContactsScreen";
-import { Plus, X, Check, Lightbulb, GripVertical, Sparkles, AlertTriangle, Pill, ChevronDown, Play, Video, Sunrise, Sun, Sunset, Moon, Clock, Soup, DoorClosed, SprayCan, Camera } from "lucide-react";
+import { ArrowLeft, Plus, X, Check, Lightbulb, GripVertical, Sparkles, AlertTriangle, Pill, ChevronDown, Play, Video, Sunrise, Sun, Sunset, Moon, Clock, Soup, DoorClosed, SprayCan, Camera } from "lucide-react";
 import { PhotoCropper } from "@/components/PhotoCropper";
 import { AgePicker, BirdField, SpeciesPicker } from "@/components/BirdPickers";
 import { ClipRecorder, UploadProgress } from "@/components/ClipRecorder";
 import { PosterClipPlayer, clipLength } from "@/components/ClipPlayer";
 import { useOwnerClipPreview } from "@/lib/useOwnerClipPreview";
+import { resolveOwnerClipUrl } from "@/lib/clipUrl";
 import { commitClipRef } from "@/lib/clipReplace";
 import { FEED_PREFIX, HYG_REMOVE_PREFIX, HYG_WASH_FOOD_PREFIX, HYG_WASH_WATER_PREFIX, WATER_CHANGE_PREFIX, MED_TASK_PREFIX, isDerivedTask, derivedSource, feedTimeToDaypart, taskDaypart, parseTaskMinutes, DAYPARTS, type Daypart } from "@/lib/routineTasks";
 import { FoodItemsEditor } from "@/components/careEditors/FoodItemsEditor";
-import { blankFoodItem, isFoodItemComplete, foodItemHasContent, HOMEMADE_CHOP_NAME, type FoodItem } from "@/lib/foodItems";
+import { blankFoodItem, foodItemHasContent, HOMEMADE_CHOP_NAME, type FoodItem } from "@/lib/foodItems";
 import { normalizeFeedTimes, feedTimeLabel, type FeedTime } from "@/lib/feedTimes";
 import { syncFeedingTasks } from "@/lib/feedingSync";
 import { medDescriptor, washFoodDescriptor, washWaterDescriptor, removeFreshDescriptor, changeWaterDescriptor, type DerivedTask } from "@/lib/derivedTasks";
@@ -42,6 +44,7 @@ import { LoadError } from "@/components/LoadError";
 import { useConfirm } from "@/components/ConfirmSheet";
 import { useLoadState, useTooLong } from "@/lib/useTooLong";
 import { mergeEmergency } from "@/lib/emergency";
+import { useFormInProgress } from "@/lib/formsInProgress";
 
 const setupSearch = z.object({
   step: z.coerce.number().int().min(1).max(TOTAL_STEPS).optional(),
@@ -185,6 +188,15 @@ function useDebouncedAutosave(
     return () => registerFlush(null);
   }, [registerFlush]);
 
+  // Edits still waiting on the debounce hold back a quiet app update, and the
+  // update banner's Update saves them before reloading (formsInProgress.ts).
+  useFormInProgress(() => pendingRef.current, async () => {
+    if (timerRef.current) { clearTimeout(timerRef.current); timerRef.current = null; }
+    await saveRef.current();
+    pendingRef.current = false;
+    setDirtyRef.current(false);
+  });
+
   // Persist pending edits when this step unmounts by any path that didn't
   // already flush — notably leaving setup via the bottom nav. Fire-and-forget:
   // client-side navigation keeps the request alive. No-op (so no double save)
@@ -230,7 +242,9 @@ function BirdSetup() {
   const birdLoad = useLoadState([birdQ]);
   const birdMissing = birdQ.isSuccess && !bird;
 
-  const [step, setStep] = useState<number>(1);
+  // Starts at the linked step, so the URL mirror below never overwrites a
+  // ?step= link with the default before it's applied.
+  const [step, setStep] = useState<number>(() => Math.min(TOTAL_STEPS, Math.max(1, stepParam ?? 1)));
   const [blockNext, setBlockNext] = useState(false);
   const [footerNote, setFooterNote] = useState<string | null>(null);
   const [homeSubline, setHomeSubline] = useState<string | null>(null);
@@ -285,12 +299,6 @@ function BirdSetup() {
   const registerFlush = useCallback((fn: (() => Promise<void>) | null) => {
     flushRef.current = fn;
   }, []);
-  // A step can register a forward-navigation gate (currently the Food step). It
-  // returns false to BLOCK Next and surface its own validation UI.
-  const validateRef = useRef<(() => boolean) | null>(null);
-  const registerValidate = useCallback((fn: (() => boolean) | null) => {
-    validateRef.current = fn;
-  }, []);
   // Returns false if the current step's pending save failed, so callers can stay
   // put rather than navigate away and lose the owner's input. The error toast is
   // raised by the autosave hook.
@@ -319,6 +327,15 @@ function BirdSetup() {
     if (stepParam != null) return;
     setStep(1);
   }, [bird, stepParam]);
+
+  // Mirror the current step into ?step= (replacing the history entry, not
+  // adding one), so a reload or the OS reclaiming the page lands back here.
+  // The effect above then sees a ?step= that equals the step: no bounce.
+  useEffect(() => {
+    if (stepParam === step) return;
+    navigate({ to: "/birds/$birdId/setup", params: { birdId }, search: (prev) => ({ ...prev, step }), replace: true });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [step]);
 
   async function persistStep(nextStep: number, complete = false) {
     setSaving(true);
@@ -349,8 +366,6 @@ function BirdSetup() {
   }
 
   async function onNext() {
-    // Forward-navigation gate (Food step): block + show validation if incomplete.
-    if (validateRef.current && !validateRef.current()) return;
     // Food page 1 → page 2, within the same step.
     if (SETUP_STEPS[step - 1]?.key === "food" && foodPage === 1) {
       if (!(await flushPending())) return;
@@ -402,7 +417,15 @@ function BirdSetup() {
   }
 
   async function onBack() {
-    if (atStopPoint) { setAtStopPoint(false); setStep(setupStepNumber("health")); return; }
+    if (atStopPoint) {
+      // Persist too: the stop point showed after the saved step already
+      // advanced past Health, and a resume should land where the user is.
+      setAtStopPoint(false);
+      const health = setupStepNumber("health");
+      const ok = await persistStep(health);
+      if (ok) setStep(health);
+      return;
+    }
     if (SETUP_STEPS[step - 1]?.key === "food" && foodPage === 2) {
       if (!(await flushPending())) return;
       setFoodPage(1);
@@ -483,6 +506,9 @@ function BirdSetup() {
   const meta = SETUP_STEPS[step - 1];
   const isLast = step === TOTAL_STEPS;
   const onFoodPage2 = meta.key === "food" && foodPage === 2;
+  // iPhone Duo (two panes): the ring and the steps in the left half; tapping
+  // a step is the same jump as the "All steps" list. Ignored elsewhere.
+  const duoLeft = <SetupStepsPane birdId={birdId} birdName={bird.name} current={atStopPoint ? "health" : meta.key} onJumpToStep={jumpToStep} />;
 
   if (atStopPoint) {
     return (
@@ -494,8 +520,12 @@ function BirdSetup() {
         birdSpecies={bird.species}
         onExit={exitToProfile}
         onBack={onBack}
+        duoLeft={duoLeft}
         footer={
           <div className="flex items-center gap-3">
+            {/* Not a dead end: Back returns to the Health step (onBack's
+                stop-point branch), same control as every other step's footer. */}
+            <SetupTextButton onClick={onBack} icon={<ArrowLeft className="size-4" aria-hidden="true" />}>{t("setupShell.back", "Back")}</SetupTextButton>
             <SetupTextButton onClick={setUpLater}>{t("birdSetup.stop.later", "Set up later")}</SetupTextButton>
             <div className="min-w-0 flex-1">
               <SetupPrimaryButton onClick={keepGoing}>{t("birdSetup.stop.keepGoing", "Keep going")}</SetupPrimaryButton>
@@ -559,6 +589,7 @@ function BirdSetup() {
       homeSubline={homeSubline ?? undefined}
       onSkip={meta.key === "environment" || meta.key === "emergency" ? onNext : undefined}
       footerNoteWarn={meta.key === "emergency"}
+      duoLeft={duoLeft}
       footer={meta.key === "review" ? (
         <div className="flex flex-col gap-2.5">
           <SetupPrimaryButton onClick={() => finishAndGo({ to: "home" })} disabled={saving} arrow={false}>{t("birdSetup.looksGoodSave", "Looks good — save")}</SetupPrimaryButton>
@@ -577,7 +608,6 @@ function BirdSetup() {
           onJumpToStep={jumpToStep}
           onFinish={finishAndGo}
           registerFlush={registerFlush}
-          registerValidate={registerValidate}
           foodPage={foodPage}
         />
         </SetupHomeSublineContext.Provider>
@@ -618,7 +648,6 @@ function StepBody({
   onJumpToStep,
   onFinish,
   registerFlush,
-  registerValidate,
   foodPage,
 }: {
   step: number;
@@ -628,12 +657,11 @@ function StepBody({
   onJumpToStep: (target: number) => void;
   onFinish: (opts: { to: "dashboard-newsit" | "home" }) => void;
   registerFlush: (fn: (() => Promise<void>) | null) => void;
-  registerValidate: (fn: (() => boolean) | null) => void;
   foodPage: 1 | 2;
 }) {
   // Steps are looked up by key, so the order lives only in SETUP_STEPS.
   switch (SETUP_STEPS[step - 1]?.key) {
-    case "food": return <FoodWaterStep birdId={birdId} birdName={birdName} onBlockNext={onBlockNext} registerFlush={registerFlush} registerValidate={registerValidate} page={foodPage} />;
+    case "food": return <FoodWaterStep birdId={birdId} birdName={birdName} onBlockNext={onBlockNext} registerFlush={registerFlush} page={foodPage} />;
     case "health": return <HealthBaselineStep birdId={birdId} birdName={birdName} onBlockNext={onBlockNext} registerFlush={registerFlush} />;
     case "personality": return <PersonalityStep birdId={birdId} birdName={birdName} registerFlush={registerFlush} />;
     case "clips": return <OwnerTipsClipsStep birdId={birdId} birdName={birdName} onBlockNext={onBlockNext} />;
@@ -1082,7 +1110,7 @@ function TimeBlockSection({
   const chip = "inline-flex min-h-[44px] items-center gap-1.5 rounded-full border-2 border-dashed border-[#9bb5a6] bg-white px-3.5 text-[14.5px] font-[700] text-[#1a3d2e] disabled:opacity-50";
 
   return (
-    <section className="flex flex-col gap-3 rounded-[20px] border-b bg-white p-4" style={{ borderColor: S.footerLine, color: S.forest }}>
+    <section className="flex flex-col gap-3 rounded-[20px] bg-white p-4" style={{ color: S.forest }}>
       <div className="flex items-center gap-3">
         <span
           className="grid size-11 shrink-0 place-items-center rounded-full"
@@ -1261,7 +1289,6 @@ export function FoodWaterStep({
   birdName,
   onBlockNext,
   registerFlush,
-  registerValidate,
   page,
 }: {
   birdId: string;
@@ -1271,9 +1298,6 @@ export function FoodWaterStep({
   page?: 1 | 2;
   onBlockNext: (block: boolean) => void;
   registerFlush?: (fn: (() => Promise<void>) | null) => void;
-  // Wizard-only: register a gate run on "Next". Returns true to proceed; on false
-  // the step shows its validation banner/flags. The tabbed editor omits this.
-  registerValidate?: (fn: (() => boolean) | null) => void;
 }) {
   const { t } = useTranslation();
   const { confirm, sheet: confirmSheet } = useConfirm();
@@ -1388,11 +1412,6 @@ export function FoodWaterStep({
   const [copyDone, setCopyDone] = useState(false);
   useEffect(() => { if (offerCopy && copySources.length) setShowCopy(true); }, [offerCopy, copySources.length]);
 
-  // ---- Completeness + wizard validation gate ----
-  const [validationActive, setValidationActive] = useState(false);
-  const [expandSignal, setExpandSignal] = useState(0);
-  const bannerRef = useRef<HTMLDivElement | null>(null);
-
   const typeLabel = useCallback(
     (item: string) => (item === "other" ? (dietOther.trim() || t("birdSetup.opt.other", "Other")) : displayLabel(t, DIET_OPTIONS.find((o) => o.value === item)?.label ?? item)),
     [dietOther, t],
@@ -1407,43 +1426,10 @@ export function FoodWaterStep({
     premade: chopItemsState.some((i) => !i.homemade),
   };
 
-  // Incomplete items across all selected types (recomputed live). For chop, not
-  // having chosen a mode yet also counts as incomplete.
-  const incomplete = useMemo(() => {
-    const labels: string[] = [];
-    let count = 0;
-    for (const t of diet) {
-      const items = dietDetails[t] ?? [];
-      if (items.length === 0) { count += 1; labels.push(typeLabel(t)); continue; }
-      const bad = items.filter((it) => !isFoodItemComplete(it));
-      if (bad.length) { count += bad.length; labels.push(typeLabel(t)); }
-    }
-    return { labels, count };
-  }, [diet, dietDetails, typeLabel]);
-
-  // The tabbed editor navigates tabs freely — never disable Next here. The wizard
-  // gates forward navigation through registerValidate (a Next-click check) so it
-  // can show the banner + field flags instead of a silently-disabled button.
+  // Brand, amount and timing are optional: Next is never blocked here, so a new
+  // owner who doesn't know the gram amount offhand can move on and fill it in
+  // later (QA pass, Oct 2026). Items left completely blank aren't saved.
   useEffect(() => { onBlockNext(false); }, [onBlockNext]);
-
-  // Once everything is complete, drop the active validation styling.
-  useEffect(() => {
-    if (validationActive && incomplete.count === 0) setValidationActive(false);
-  }, [validationActive, incomplete.count]);
-
-  // Register the wizard's Next gate (no-op in the tabbed editor, which doesn't
-  // pass registerValidate). Re-registered each render so it sees latest state.
-  useEffect(() => {
-    if (!registerValidate) return;
-    registerValidate(() => {
-      if (incomplete.count === 0) return true;
-      setValidationActive(true);
-      setExpandSignal((n) => n + 1);
-      requestAnimationFrame(() => bannerRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }));
-      return false;
-    });
-    return () => registerValidate(null);
-  });
 
   // Persist (debounced) whenever form changes after hydration.
   useDebouncedAutosave(
@@ -1508,9 +1494,13 @@ export function FoodWaterStep({
         `Wash bowl/bottle ${waterWashLabel.toLowerCase()}`,
       ].filter(Boolean).join(" — ");
 
-      // Persist only currently-selected diet types' details.
+      // Persist only currently-selected diet types' details, minus items left
+      // completely blank (details are optional, so one can be left empty).
       const detailsToSave: Record<string, DietItem[]> = {};
-      for (const t of diet) if ((dietDetails[t] ?? []).length) detailsToSave[t] = dietDetails[t];
+      for (const t of diet) {
+        const kept = (dietDetails[t] ?? []).filter((it) => it.homemade || foodItemHasContent(it));
+        if (kept.length) detailsToSave[t] = kept;
+      }
 
       // Mirror to the legacy text field too so the sitter view stays consistent.
       const freshRemovalSummary = `Remove fresh / wet food after ${removalLabel}. Fresh food spoils fast and can grow bacteria.`;
@@ -1666,14 +1656,12 @@ export function FoodWaterStep({
       {diet.length > 0 && (
         <>
           <p className="m-0 text-[15px] leading-[1.5] text-[#3d4f45]">
-            {t("birdSetup.forEachFoodAdd", "For each food, add the brand, how much, and when it's served.")}
+            {t("birdSetup.forEachFoodAdd", "For each food, add the brand, how much, and when it's served. Skip anything you don't know yet.")}
           </p>
           <FoodItemsEditor
             types={DIET_OPTIONS.filter((o) => diet.includes(o.value)).map((o) => ({ value: o.value, label: displayLabel(t, o.label) }))}
             details={dietDetails}
             onChangeType={setItemsForType}
-            validationActive={validationActive}
-            expandSignal={expandSignal}
             otherDescription={{ value: dietOther, onChange: setDietOther }}
             chop={{
               onRemoveHomemade: removeHomemadeChop,
@@ -1684,20 +1672,6 @@ export function FoodWaterStep({
               onOtherChange: setFreshOther,
             }}
           />
-          {validationActive && incomplete.count > 0 && (
-            <div
-              ref={bannerRef}
-              className="flex scroll-mt-24 items-start gap-2 rounded-2xl border p-4"
-              style={{ borderColor: "#BA7517", backgroundColor: "#f6e7c4" }}
-            >
-              <AlertTriangle className="mt-0.5 size-5 shrink-0 text-[#854F0B]" />
-              <p className="text-sm text-[#854F0B]">
-                {incomplete.count > 1
-                  ? t("birdSetup.itemsNeedDetails", "{{n}} items need details. Add the brand, amount, and timing for: {{list}}.", { n: incomplete.count, list: incomplete.labels.join(", ") })
-                  : t("birdSetup.itemNeedsDetails", "{{n}} item needs details. Add the brand, amount, and timing for: {{list}}.", { n: incomplete.count, list: incomplete.labels.join(", ") })}
-              </p>
-            </div>
-          )}
         </>
       )}
 
@@ -2717,7 +2691,7 @@ export function HealthBaselineStep({ birdId, birdName, onBlockNext, registerFlus
           <UploadProgress label={t("clipRecorder.gettingItReady", "Getting it ready…")} />
         ) : clipPreview.url && !replacingClip ? (
           <div className="flex flex-col gap-1">
-            <PosterClipPlayer src={clipPreview.url} duration={clipPreview.duration} className="h-[180px] w-full rounded-[16px]" />
+            <PosterClipPlayer src={clipPreview.url} duration={clipPreview.duration} className="h-[180px] w-full rounded-[16px]" refreshSrc={() => resolveOwnerClipUrl(clipPath)} />
             <div className="flex gap-4">
               <SetupTextButton onClick={() => setReplacingClip(true)}>{t("birdSetup.replace", "Replace")}</SetupTextButton>
               <SetupTextButton onClick={removeClip}>{t("birdSetup.remove", "Remove")}</SetupTextButton>
@@ -2725,7 +2699,7 @@ export function HealthBaselineStep({ birdId, birdName, onBlockNext, registerFlus
           </div>
         ) : (
           <div className="flex flex-col gap-1">
-            <ClipRecorder inPage birdId={birdId} onBusy={setClipBusy} onUploading={setClipUploading} onUploaded={uploadClip} />
+            <ClipRecorder inPage birdId={birdId} draftSlot="baseline" onBusy={setClipBusy} onUploading={setClipUploading} onUploaded={uploadClip} />
             {clipPath && replacingClip && (
               <div>
                 <SetupTextButton onClick={() => setReplacingClip(false)}>{t("birdSetup.keepCurrentClip", "Keep current clip")}</SetupTextButton>
@@ -3193,6 +3167,7 @@ function ClipSlotRow({
               <>
                 <ClipRecorder
                   birdId={birdId}
+                  draftSlot={`tip:${slot.key}`}
                   onBusy={(b) => onBusy(`${slot.key}:rec`, b)}
                   onProgress={setProgress}
                   cancelRef={cancelRef}
@@ -3209,7 +3184,7 @@ function ClipSlotRow({
                 {preview.status === "processing" || !preview.url ? (
                   <UploadProgress label={t("clipRecorder.gettingItReady", "Getting it ready…")} />
                 ) : (
-                  <PosterClipPlayer src={preview.url} duration={preview.duration} label={title} className="h-[180px] w-full rounded-[16px]" />
+                  <PosterClipPlayer src={preview.url} duration={preview.duration} label={title} className="h-[180px] w-full rounded-[16px]" refreshSrc={() => resolveOwnerClipUrl(path)} />
                 )}
                 <div className="flex gap-4">
                   <SetupTextButton onClick={() => setReplacing(true)}>{t("birdSetup.replace", "Replace")}</SetupTextButton>
@@ -3339,7 +3314,7 @@ function ReviewStep({
   // The sitter's section-by-section view, from the same server function the
   // household care plan page uses (shared home answers merged in).
   const getView = useServerFn(getHouseholdCarePlanView);
-  const { data: planView, isError: planViewError } = useQuery({
+  const { data: planView, isError: planViewError, refetch: refetchPlanView } = useQuery({
     queryKey: ["review-care-plan", birdId],
     enabled: view === "plan",
     queryFn: () => getView({ data: { birdId } }),
@@ -3463,7 +3438,15 @@ function ReviewStep({
         <div className="h-64 animate-pulse rounded-[18px]" style={{ background: S.card }} />
       ) : (
         <div onClick={onPlanClick} className="cursor-pointer">
-          <CarePlanView data={planView} showEmergencyContacts={false} />
+          <CarePlanView
+            data={planView}
+            showEmergencyContacts={false}
+            refreshClipUrl={async (key) => {
+              const r = await refetchPlanView();
+              if (key === "baseline") return r.data?.baselineClipUrl ?? null;
+              return ((r.data?.watchClips ?? []) as { key: string; url: string }[]).find((x) => x.key === key)?.url ?? null;
+            }}
+          />
         </div>
       )}
 

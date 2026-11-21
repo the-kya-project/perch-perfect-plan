@@ -20,6 +20,7 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
 import { buildAuthEmail, type AuthEmailKind } from "./emailTemplates";
 import type { EmailTag } from "./emailTracking";
+import { APP_LINK_HOST } from "./appLinks";
 
 export type SendEmailHookPayload = {
   user: {
@@ -83,12 +84,38 @@ export type PlannedAuthEmail = {
 };
 
 /** The /auth/v1/verify link — what {{ .ConfirmationURL }} expanded to in the
- *  dashboard templates, so the redirect flow after clicking is unchanged. */
+ *  dashboard templates. Used only when the link isn't headed back to the app
+ *  (see appVerifyUrl). */
 export function verifyUrl(supabaseUrl: string, tokenHash: string, type: string, redirectTo: string): string {
   const base = `${supabaseUrl.replace(/\/$/, "")}/auth/v1/verify`;
   const q = new URLSearchParams({ token: tokenHash, type });
   if (redirectTo) q.set("redirect_to", redirectTo);
   return `${base}?${q.toString()}`;
+}
+
+/**
+ * Our own /verify page, when Supabase was asked to send the person back to the
+ * app (redirect_to on app.thekyaproject.com); null otherwise.
+ *
+ * Why not Supabase's link: it redirects back with a PKCE ?code= that only the
+ * browser that started the sign-up can exchange, and iOS never opens an app
+ * from another site's redirect. /verify is on our domain, so it's a Universal
+ * Link (the app opens it when installed, the browser otherwise), and it redeems
+ * the token_hash itself, which works in any browser or the app. `next` is the
+ * page redirect_to named, kept as a path so the link can't leave our site.
+ */
+export function appVerifyUrl(tokenHash: string, type: string, redirectTo: string): string | null {
+  let r: URL;
+  try {
+    r = new URL(redirectTo);
+  } catch {
+    return null;
+  }
+  if (r.protocol !== "https:" || r.hostname !== APP_LINK_HOST) return null;
+  const q = new URLSearchParams({ token_hash: tokenHash, type });
+  const next = `${r.pathname}${r.search}`;
+  if (next !== "/") q.set("next", next);
+  return `https://${APP_LINK_HOST}/verify?${q.toString()}`;
 }
 
 /**
@@ -100,7 +127,8 @@ export function verifyUrl(supabaseUrl: string, tokenHash: string, type: string, 
  */
 export function planAuthEmails(p: SendEmailHookPayload, supabaseUrl: string): PlannedAuthEmail[] {
   const d = p.email_data;
-  const link = (hash: string, type = d.email_action_type) => verifyUrl(supabaseUrl, hash, type, d.redirect_to);
+  const link = (hash: string, type = d.email_action_type) =>
+    appVerifyUrl(hash, type, d.redirect_to) ?? verifyUrl(supabaseUrl, hash, type, d.redirect_to);
 
   switch (d.email_action_type) {
     case "signup":

@@ -39,10 +39,13 @@ export function HouseholdInviteSheet({
   initialBirdIds,
   onClose,
   onSent,
+  inline = false,
 }: {
   initialBirdIds?: string[];
   onClose: () => void;
   onSent: () => void;
+  /** iPhone Duo: in the right pane instead of over the screen (KyaSheet). */
+  inline?: boolean;
 }) {
   const { t } = useTranslation();
   const qc = useQueryClient();
@@ -120,6 +123,7 @@ export function HouseholdInviteSheet({
 
   return (
     <KyaSheet
+      inline={inline}
       onClose={onClose}
       closeLabel={t("householdInvite.close", "Close")}
       title={<KyaHeading size={24}>{t("householdInvite.titleInviteSomeone", "Invite someone")}</KyaHeading>}

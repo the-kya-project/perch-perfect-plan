@@ -9,7 +9,7 @@
 // must NEVER fail a send.
 
 import { emailT, toLocale } from "./i18n/emailI18n.server";
-import type { Locale } from "./i18n/config";
+import { isLocale, pickLocale, type Locale } from "./i18n/config";
 
 /** Read profiles.locale for a user id via a service-role client. Falls back to
  *  English on missing row, null locale, or any error. */
@@ -18,6 +18,28 @@ export async function localeForUser(sb: any, userId: string | null | undefined):
   try {
     const { data } = await sb.from("profiles").select("locale").eq("id", userId).maybeSingle();
     return toLocale((data as { locale?: unknown } | null)?.locale);
+  } catch {
+    return toLocale(null);
+  }
+}
+
+/** The language for a lifecycle email (onboarding and the like): the
+ *  profile's saved locale; when that's null, the language the account's auth
+ *  emails went out in, which is user_metadata.locale from sign-up (the same
+ *  fallback authEmailLocale uses); otherwise English. Pure, for the test. */
+export function pickLifecycleLocale(profileLocale: unknown, authMetaLocale: unknown): Locale {
+  if (isLocale(profileLocale)) return profileLocale;
+  if (typeof authMetaLocale === "string") return pickLocale(authMetaLocale);
+  return toLocale(null);
+}
+
+/** pickLifecycleLocale, reading the auth user only when the profile has no
+ *  locale. Any error → English; a locale lookup must never fail a send. */
+export async function lifecycleLocaleFor(sb: any, userId: string, profileLocale: unknown): Promise<Locale> {
+  if (isLocale(profileLocale)) return profileLocale;
+  try {
+    const { data } = await sb.auth.admin.getUserById(userId);
+    return pickLifecycleLocale(profileLocale, data?.user?.user_metadata?.locale);
   } catch {
     return toLocale(null);
   }

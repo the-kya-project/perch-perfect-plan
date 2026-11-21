@@ -1,0 +1,430 @@
+[
+ {
+  "id": "00000000-0000-4000-8000-000000007110",
+  "slug": "target-training",
+  "name": "Target training",
+  "category": "foundations",
+  "tier": "free",
+  "purpose": "So your bird learns to touch the tip of a stick for a reward, a simple tool that can guide them almost anywhere.",
+  "done_when": "your bird will travel to wherever the stick points. If the stick itself is scary, start by rewarding calm with it in view, or change its look with a colorful bead on the end.",
+  "suggested_first": null,
+  "typical_length": "1–3 weeks",
+  "safety_notes": [
+   "Keep sessions short.",
+   "Stop at the first sign of stress.",
+   "Never withhold food to make a bird hungrier for training."
+  ],
+  "safeguards": [],
+  "tips": [],
+  "sort_order": 20,
+  "milestones": [
+   {
+    "position": 1,
+    "title": "Calm with the target stick nearby.",
+    "ask": "stay calm with the target stick nearby",
+    "done_line": "stayed calm with the target stick"
+   },
+   {
+    "position": 2,
+    "title": "Taps the stick tip when it's held close (with the top of the beak or tongue, not a bite).",
+    "ask": "tap the tip of the stick",
+    "done_line": "tapped the target"
+   },
+   {
+    "position": 3,
+    "title": "Takes a step or two to reach the stick.",
+    "ask": "take a step or two to reach the stick",
+    "done_line": "walked over to the target"
+   },
+   {
+    "position": 4,
+    "title": "Follows the stick across the perch, side to side.",
+    "ask": "follow the stick across the perch",
+    "done_line": "followed the target across the perch"
+   },
+   {
+    "position": 5,
+    "title": "Follows the stick up, down, or around a toy.",
+    "ask": "follow the stick up, down, or around a toy",
+    "done_line": "followed the target around a toy"
+   },
+   {
+    "position": 6,
+    "title": "Follows the stick onto a new perch or out the cage door.",
+    "ask": "follow the stick onto a new perch or out the cage door",
+    "done_line": "followed the target to a new spot"
+   }
+  ]
+ },
+ {
+  "id": "00000000-0000-4000-8000-000000007111",
+  "slug": "step-up",
+  "name": "Step up",
+  "category": "foundations",
+  "tier": "free",
+  "purpose": "So your bird steps onto your hand calmly and by choice, foot first, without biting.",
+  "done_when": "your bird steps up on cue from most places. If your bird lowers its head, opens its beak, or leans away, it's saying no, so pause and make the next ask smaller.",
+  "suggested_first": "Target training helps",
+  "typical_length": "2–6 weeks",
+  "safety_notes": [
+   "Keep sessions short.",
+   "Stop at the first sign of stress.",
+   "Never withhold food to make a bird hungrier for training."
+  ],
+  "safeguards": [],
+  "tips": [],
+  "sort_order": 30,
+  "milestones": [
+   {
+    "position": 1,
+    "title": "Stays relaxed as your hand comes near and stays still.",
+    "ask": "stay relaxed as your hand came near",
+    "done_line": "stayed relaxed as your hand came near"
+   },
+   {
+    "position": 2,
+    "title": "Touches your still, open hand with a foot.",
+    "ask": "touch your open hand with a foot",
+    "done_line": "touched your hand with a foot"
+   },
+   {
+    "position": 3,
+    "title": "Shifts weight and steps on with one foot, then steps back off.",
+    "ask": "step on with one foot",
+    "done_line": "stepped on with one foot"
+   },
+   {
+    "position": 4,
+    "title": "Steps up with both feet.",
+    "ask": "step up with both feet",
+    "done_line": "stepped up with both feet"
+   },
+   {
+    "position": 5,
+    "title": "Stays on your hand for a few seconds, then is set back down.",
+    "ask": "stay on your hand for a few seconds",
+    "done_line": "stayed on your hand"
+   },
+   {
+    "position": 6,
+    "title": "Stays calm while your hand moves up, down, and across the room.",
+    "ask": "stay calm while your hand moved around the room",
+    "done_line": "rode calmly across the room"
+   },
+   {
+    "position": 7,
+    "title": "Steps up on cue from inside the cage and from a stand.",
+    "ask": "step up on cue from the cage and from a stand",
+    "done_line": "stepped up on cue"
+   }
+  ]
+ },
+ {
+  "id": "00000000-0000-4000-8000-000000007112",
+  "slug": "wing-touch",
+  "name": "Wing touch",
+  "category": "husbandry",
+  "tier": "free",
+  "purpose": "So your bird is comfortable having wings touched and gently extended, for vet exams and health checks. The bird gives consent at every step.",
+  "done_when": "your bird leans in for wing touches and allows a short, gentle extension. Any resistance means going back a step. This one should never be rushed, and it should stay brief, since prolonged body touch can trigger hormonal behavior.",
+  "suggested_first": "Target training",
+  "typical_length": "4–8 weeks",
+  "safety_notes": [
+   "Keep sessions short.",
+   "Stop at the first sign of stress.",
+   "Never withhold food to make a bird hungrier for training."
+  ],
+  "safeguards": [],
+  "tips": [],
+  "sort_order": 50,
+  "milestones": [
+   {
+    "position": 1,
+    "title": "Approaches your closed hand on the perch for a reward.",
+    "ask": "come to your closed hand for a reward",
+    "done_line": "came to your closed hand"
+   },
+   {
+    "position": 2,
+    "title": "Comes to your hand without the target stick.",
+    "ask": "come to your hand without the stick",
+    "done_line": "came to your hand without the stick"
+   },
+   {
+    "position": 3,
+    "title": "Lets the side of a wing brush your palm.",
+    "ask": "let a wing brush your palm",
+    "done_line": "let a wing brush your palm"
+   },
+   {
+    "position": 4,
+    "title": "Allows a light touch on the side of the wing.",
+    "ask": "let you lightly touch a wing",
+    "done_line": "let you touch a wing"
+   },
+   {
+    "position": 5,
+    "title": "Allows a touch at the wing tip.",
+    "ask": "let you touch a wing tip",
+    "done_line": "let you touch a wing tip"
+   },
+   {
+    "position": 6,
+    "title": "Allows the tip of the wing to be lifted slightly.",
+    "ask": "let you lift the wing tip slightly",
+    "done_line": "let you lift a wing tip"
+   },
+   {
+    "position": 7,
+    "title": "Allows a gentle, brief wing extension on both sides.",
+    "ask": "let you gently open each wing",
+    "done_line": "let you gently open both wings"
+   }
+  ]
+ },
+ {
+  "id": "00000000-0000-4000-8000-000000007113",
+  "slug": "diet-conversion",
+  "name": "Diet conversion",
+  "category": "food",
+  "tier": "free",
+  "purpose": "So your bird moves gradually from a seed-heavy diet to pellets, chop, and fresh foods without losing weight.",
+  "done_when": "the new diet is most of what your bird eats and their weight has held steady the whole way.",
+  "suggested_first": null,
+  "typical_length": "4–12 weeks",
+  "safety_notes": [
+   "Keep sessions short.",
+   "Stop at the first sign of stress.",
+   "Never withhold food to make a bird hungrier for training."
+  ],
+  "safeguards": [
+   "Daily weigh-ins are part of every step, and the journey shows the weight trend right on its page.",
+   "The old food is never removed until the bird is reliably eating the new one.",
+   "If weight drops, the journey pauses with a clear message to call your avian vet. For Flock members, this uses the bird's own baseline alerts.",
+   "The template suggests a vet check before starting, especially for older birds or birds on an all-seed diet."
+  ],
+  "tips": [
+   "Offer the new food first thing in the morning, with the usual food alongside.",
+   "Eat it in front of them. Parrots are flock eaters and often try what they see you eat.",
+   "Change one thing at a time, and go slower than feels necessary. Some birds take months, and that's normal.",
+   "Try different forms: chopped, warmed, crumbled over a favorite food, or tucked into a foraging toy.",
+   "Watch droppings and appetite as well as weight. If your bird stops eating, put the usual food back and call your vet.",
+   "Weigh in grams at the same time every day. A few grams matter on a bird.",
+   "Some birds will refuse new food so firmly that they stop eating. If your bird isn't eating, go back to the usual food today and call your vet.",
+   "Take uneaten fresh food out after a few hours so it doesn't spoil.",
+   "Notice how your bird likes food already: warm or cool, soft or crunchy, chopped fine or in chunks. Offer the new food the same way.",
+   "If your bird picks out the old food, crumble it finely over the new food and use a little less each day.",
+   "How much to feed varies from bird to bird, even within a species. Your vet can tell you what's right for yours."
+  ],
+  "sort_order": 70,
+  "milestones": [
+   {
+    "position": 1,
+    "title": "A week of daily weigh-ins to set your bird's starting weight.",
+    "ask": "step on the scale every day this week",
+    "done_line": "has a starting weight"
+   },
+   {
+    "position": 2,
+    "title": "The new food offered beside the usual food every day.",
+    "ask": "have the new food beside the usual food every day",
+    "done_line": "has the new food on the menu"
+   },
+   {
+    "position": 3,
+    "title": "Tastes the new food, even just a nibble.",
+    "ask": "taste the new food",
+    "done_line": "tasted the new food"
+   },
+   {
+    "position": 4,
+    "title": "Eats some of the new food most days.",
+    "ask": "eat some of the new food most days",
+    "done_line": "is eating the new food most days"
+   },
+   {
+    "position": 5,
+    "title": "The new food makes up about a quarter of what's offered.",
+    "ask": "get to about a quarter new food",
+    "done_line": "is at a quarter new food"
+   },
+   {
+    "position": 6,
+    "title": "About half.",
+    "ask": "get to about half new food",
+    "done_line": "is at half new food"
+   },
+   {
+    "position": 7,
+    "title": "Most of the diet, with treats saved for training.",
+    "ask": "eat mostly the new diet",
+    "done_line": "switched to the new diet"
+   }
+  ]
+ },
+ {
+  "id": "00000000-0000-4000-8000-000000007114",
+  "slug": "wave",
+  "name": "Wave",
+  "category": "tricks",
+  "tier": "premium",
+  "purpose": "So your bird lifts a foot and waves on cue. It builds on step up, since the wave starts as the beginning of a step up.",
+  "done_when": "your bird waves to a hand signal. Stick with one foot, and only reward that foot.",
+  "suggested_first": "Step up",
+  "typical_length": "2–4 weeks",
+  "safety_notes": [
+   "Keep sessions short.",
+   "Stop at the first sign of stress.",
+   "Never withhold food to make a bird hungrier for training."
+  ],
+  "safeguards": [],
+  "tips": [],
+  "sort_order": 100,
+  "milestones": [
+   {
+    "position": 1,
+    "title": "Lifts the foot it usually steps up with when your hand comes near.",
+    "ask": "lift a foot as your hand came near",
+    "done_line": "lifted a foot"
+   },
+   {
+    "position": 2,
+    "title": "Lifts it high, then puts it back down to reach a treat off to the side.",
+    "ask": "lift the foot high",
+    "done_line": "lifted the foot high"
+   },
+   {
+    "position": 3,
+    "title": "Lifts it to the same height most times.",
+    "ask": "lift it to the same height most times",
+    "done_line": "lifted it the same way each time"
+   },
+   {
+    "position": 4,
+    "title": "Waves to a small hand signal instead of an offered hand.",
+    "ask": "wave to your hand signal",
+    "done_line": "waved to a hand signal"
+   },
+   {
+    "position": 5,
+    "title": "Waves on cue from a little distance.",
+    "ask": "wave on cue from a distance",
+    "done_line": "waved from a little way off"
+   }
+  ]
+ },
+ {
+  "id": "00000000-0000-4000-8000-000000007115",
+  "slug": "spin",
+  "name": "Spin",
+  "category": "tricks",
+  "tier": "premium",
+  "purpose": "So your bird turns a full circle on the perch. Pick one direction and stay with it until the spin is solid.",
+  "done_when": "a finger flick gets a full spin.",
+  "suggested_first": "Target training",
+  "typical_length": "2–4 weeks",
+  "safety_notes": [
+   "Keep sessions short.",
+   "Stop at the first sign of stress.",
+   "Never withhold food to make a bird hungrier for training."
+  ],
+  "safeguards": [],
+  "tips": [],
+  "sort_order": 120,
+  "milestones": [
+   {
+    "position": 1,
+    "title": "Follows the target stick a quarter turn.",
+    "ask": "follow the stick a quarter turn",
+    "done_line": "made a quarter turn"
+   },
+   {
+    "position": 2,
+    "title": "Follows it a half turn.",
+    "ask": "follow the stick a half turn",
+    "done_line": "made a half turn"
+   },
+   {
+    "position": 3,
+    "title": "Follows it all the way around and ends facing forward.",
+    "ask": "follow the stick all the way around",
+    "done_line": "spun all the way around"
+   },
+   {
+    "position": 4,
+    "title": "Spins to your finger instead of the stick.",
+    "ask": "spin to your finger",
+    "done_line": "spun to your finger"
+   },
+   {
+    "position": 5,
+    "title": "Spins to a small flick of the finger.",
+    "ask": "spin to a flick of your finger",
+    "done_line": "spun on cue"
+   }
+  ]
+ },
+ {
+  "id": "00000000-0000-4000-8000-000000007120",
+  "slug": "recall",
+  "name": "Recall",
+  "category": "foundations",
+  "tier": "free",
+  "purpose": "So your bird comes to you when you say their name, which is the most important safety skill if they ever get out.",
+  "done_when": "your bird comes the first time you call, from anywhere in the room. Use the bird's name alone as the cue, and for very clingy birds, reward them back on the perch as well as on your hand.",
+  "suggested_first": "Step up",
+  "typical_length": "4–8 weeks",
+  "safety_notes": [
+   "Keep sessions short.",
+   "Stop at the first sign of stress.",
+   "Never withhold food to make a bird hungrier for training."
+  ],
+  "safeguards": [],
+  "tips": [],
+  "sort_order": 40,
+  "milestones": [
+   {
+    "position": 1,
+    "title": "Walks a few inches across a perch to your hand.",
+    "ask": "walk across the perch to your hand",
+    "done_line": "walked over to your hand"
+   },
+   {
+    "position": 2,
+    "title": "Hops a short gap to your hand.",
+    "ask": "hop the gap to your hand",
+    "done_line": "hopped to your hand"
+   },
+   {
+    "position": 3,
+    "title": "Flies a short distance, about arm's length.",
+    "ask": "fly to you from arm's length",
+    "done_line": "flew to you"
+   },
+   {
+    "position": 4,
+    "title": "Flies across the room.",
+    "ask": "fly to you across the room",
+    "done_line": "flew across the room to you"
+   },
+   {
+    "position": 5,
+    "title": "Comes from another spot in the room, or from a different perch.",
+    "ask": "come to you from a different spot",
+    "done_line": "came from a new spot"
+   },
+   {
+    "position": 6,
+    "title": "Comes the first time you call, most of the time.",
+    "ask": "come the first time you called",
+    "done_line": "came at the first call"
+   },
+   {
+    "position": 7,
+    "title": "Comes with normal household distractions around.",
+    "ask": "come to you with the household busy",
+    "done_line": "came even with the house busy"
+   }
+  ]
+ }
+]

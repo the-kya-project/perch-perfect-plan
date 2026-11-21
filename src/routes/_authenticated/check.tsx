@@ -13,6 +13,7 @@ import { useDailyCheckToday, type BirdToday } from "@/lib/dailyCheck";
 import { noticedItems } from "@/lib/dailyCheckLabels";
 import { daysSince, staleThreshold } from "@/lib/homeData";
 import { DailyCheckCard } from "@/components/DailyCheckCard";
+import { useConfirm } from "@/components/ConfirmSheet";
 import { useCapability } from "@/lib/useCapability";
 import { BirdPhotoCrop } from "@/components/BirdPhotoCrop";
 import { TaskFooter, TaskHeader, TASK_FOOTER_SPACE } from "@/components/headers";
@@ -92,6 +93,9 @@ function FlockCheck() {
   const [savedHere, setSavedHere] = useState<Set<string>>(new Set());
   const isDone = (id: string) => savedHere.has(id) || !!today?.[id]?.check;
   const [openId, setOpenId] = useState<string | null>(null);
+  // The open bird has input that isn't saved yet (DailyCheckCard onDirtyChange).
+  const [openDirty, setOpenDirty] = useState(false);
+  const { confirm, sheet } = useConfirm();
   const started = useRef(Date.now());
   const initialised = useRef(false);
   useEffect(() => {
@@ -262,7 +266,26 @@ function FlockCheck() {
   const footerNext = upNext.find((b) => b.id !== openId) ?? null;
   // The footer is pinned to the bottom of the screen; leave room for it.
   const showFooter = total > 0 && (!!footerNext || upNext.length === 0);
-  const openBird = (id: string) => setOpenId(id);
+  // While the open bird has something typed that isn't saved, its own "Save ·
+  // next" is the main button and the footer's skip steps aside: tapping "Check
+  // Mango next →" used to drop a weight typed for Pip (QA pass, Oct 2026).
+  // Switching or collapsing birds asks before discarding.
+  const footerActive = showFooter && !openDirty;
+  const leaveOpenBird = async (then: () => void) => {
+    if (openDirty) {
+      const name = birds.find((x) => x.id === openId)?.name ?? "";
+      const discard = await confirm({
+        title: t("flockCheck.discardTitle", "Discard what you entered for {{name}}?", { name }),
+        body: t("flockCheck.discardBody", "It hasn't been saved yet."),
+        confirmLabel: t("flockCheck.discard", "Discard"),
+        cancelLabel: t("flockCheck.keepEditing", "Keep editing"),
+      });
+      if (!discard) return;
+      setOpenDirty(false);
+    }
+    then();
+  };
+  const openBird = (id: string) => void leaveOpenBird(() => setOpenId(id));
 
   const renderOpen = (b: (typeof birds)[number]) => {
     const done = isDone(b.id);
@@ -276,7 +299,7 @@ function FlockCheck() {
         className="flex scroll-mt-4 flex-col gap-3.5 rounded-[20px] p-[16px]"
         style={{ background: C.lime }}
       >
-        <button type="button" aria-expanded onClick={() => setOpenId(null)} className="flex min-h-[44px] items-center gap-3 border-0 bg-transparent p-0 text-left text-inherit">
+        <button type="button" aria-expanded onClick={() => void leaveOpenBird(() => setOpenId(null))} className="flex min-h-[44px] items-center gap-3 border-0 bg-transparent p-0 text-left text-inherit">
           <span className="relative size-[46px] shrink-0 overflow-hidden rounded-full" style={{ background: b.color }} aria-hidden="true">
             {photo ? <BirdPhotoCrop url={photo.url} original={photo.original} position={b.photo_position} alt="" eager /> : <span className="grid size-full place-items-center text-[16px] font-[600] text-white/90">{b.name.slice(0, 1).toUpperCase()}</span>}
           </span>
@@ -299,8 +322,9 @@ function FlockCheck() {
           flat
           saveLabel={!done && next ? t("flockCheck.saveNext", "Save · next: {{name}}", { name: next.name }) : undefined}
           // The footer's "Check [bird] next" is the screen's main button while
-          // there is another bird to check; on the last bird, Save is.
-          saveSecondary={showFooter}
+          // there is another bird to check and nothing typed here; otherwise Save is.
+          saveSecondary={footerActive}
+          onDirtyChange={setOpenDirty}
           onSaved={(r) => {
             const after = new Set(savedHere).add(b.id);
             setSavedHere(after);
@@ -377,7 +401,8 @@ function FlockCheck() {
           );
         })}
       </main>
-      {showFooter && (
+      {sheet}
+      {footerActive && (
         <TaskFooter>
           {footerNext ? (
             <KyaPrimaryButton onClick={() => openBird(footerNext.id)}>{t("flockCheck.checkNext", "Check {{name}} next →", { name: footerNext.name })}</KyaPrimaryButton>

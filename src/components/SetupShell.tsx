@@ -6,7 +6,9 @@ import { ArrowLeft } from "lucide-react";
 
 export { SETUP_STEPS, TOTAL_STEPS, NUMBERED_STEPS, setupStepNumber, type SetupStepKey } from "@/lib/setupSteps";
 import { SETUP_STEPS, setupStepNumber, type SetupStepKey } from "@/lib/setupSteps";
-import { SetupFrame, type SetupPill, type HomePill } from "@/components/setup/SetupFrame";
+import { SetupFrame, SETUP_PILLS, type SetupPill, type HomePill } from "@/components/setup/SetupFrame";
+import { SetupDuoFrame } from "@/components/duo/plan/SetupDuoFrame";
+import { useDuoMode } from "@/lib/duo";
 import { SetupPrimaryButton, SetupTextButton } from "@/components/setup/controls";
 
 /** Display title for a setup step (SETUP_STEPS stays the English source). */
@@ -61,6 +63,7 @@ export function SetupShell({
   eyebrow,
   footer: footerProp,
   page,
+  duoLeft,
 }: {
   step: number; // 1-indexed
   title: string;
@@ -95,8 +98,12 @@ export function SetupShell({
   eyebrow?: string | null; // replaces "Step N of 6"
   footer?: ReactNode; // replaces the standard Save & exit / Next footer
   page?: [number, number]; // sub-page of the current step, e.g. Food · 2 of 2
+  /** iPhone Duo (two panes): the left half, the ring and the steps
+   *  (SetupStepsPane). Without it the Duo keeps the one-column frame. */
+  duoLeft?: ReactNode;
 }) {
   const { t } = useTranslation();
+  const duo = useDuoMode() === "sideways" && !!duoLeft;
   const exitConfirmTitle = exitConfirmTitleProp ?? t("setupShell.exitConfirmTitle", "Leave this step?");
   const exitConfirmBody = exitConfirmBodyProp ?? t("setupShell.exitConfirmBody", "Your progress is saved — you can pick up right where you left off.");
   const exitConfirmCta = exitConfirmCtaProp ?? t("setupShell.exitConfirmCta", "Leave");
@@ -144,8 +151,32 @@ export function SetupShell({
     </>
   ));
 
+  // The Duo card's eyebrow: the same words as the frame's step count, with
+  // the sub-page ("Step 2 of 6 · 1 of 2").
+  const pillIndex = pill ? SETUP_PILLS.indexOf(pill) : -1;
+  const duoEyebrow = [
+    current?.key === "review"
+      ? t("setupShell.allStepsDone", "All 6 steps done")
+      : stepLabel ?? (pillIndex >= 0 ? t("setupShell.stepOf", "Step {{step}} of {{total}}", { step: pillIndex + 1, total: SETUP_PILLS.length }) : undefined),
+    page && page[1] > 1 ? t("planDuo.pageOf", "{{page}} of {{total}}", { page: page[0], total: page[1] }) : null,
+  ].filter(Boolean).join(" · ");
+
   return (
     <>
+      {duo ? (
+        <SetupDuoFrame
+          left={duoLeft}
+          eyebrow={duoEyebrow || undefined}
+          title={displayTitle}
+          intro={subtitle}
+          homeSubline={homePill ? homeSubline ?? t("setupShell.sharedByEveryBird", "Shared by every bird") : undefined}
+          onClose={handleExit}
+          footer={footer}
+          tinted={tinted}
+        >
+          {children}
+        </SetupDuoFrame>
+      ) : (
       <SetupFrame
         birdName={birdName}
         current={pill}
@@ -167,6 +198,7 @@ export function SetupShell({
       >
         {children}
       </SetupFrame>
+      )}
 
       {/* Unsaved-changes confirmation before closing the task */}
       {confirmExit && (

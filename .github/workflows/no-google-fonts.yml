@@ -1,0 +1,35 @@
+# Fails any pull request that loads Google Fonts.
+#
+# fonts.googleapis.com / fonts.gstatic.com send every visitor's IP address to
+# Google (a GDPR data flow for EU users). Brand fonts are self-hosted in
+# public/fonts (fonts.css). A Google Fonts link came back once by accident
+# (ba1aa6f), so this check scans the source on every PR. The iPhone hydration
+# workflow also scans the production build it makes, and `npm run build`
+# (Vercel) runs the same guard on its output.
+#
+# To block merging on it: Settings → Rules → Rulesets (or Branches) → main →
+# Require status checks to pass → add "No Google Fonts".
+name: No Google Fonts
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  no-google-fonts:
+    name: No Google Fonts
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      # Dependency-free script: no install step needed.
+      - name: Scan the source for Google Fonts links
+        run: node scripts/no-google-fonts.mjs

@@ -5,6 +5,22 @@ import type { TFunction } from "i18next";
 // into diet_details / fresh_foods and feed routine task titles (feedingSync), so
 // they stay English in data. This only changes what's shown on screen. Labels
 // shared with the guided setup reuse its `birdSetup.opt.*` keys (same text).
+/** Display label for a stored care_plans.diet_types slug ("pelleted", "seed",
+ *  "pellet_seed", "chop", "other" — also the diet_details keys). Reuses the
+ *  guided setup's birdSetup.opt.* keys so every surface shows the same words.
+ *  Unknown values fall through to foodLabel (legacy label-shaped data), then
+ *  render as saved. */
+export function dietTypeLabel(t: TFunction, key: string): string {
+  switch (key) {
+    case "pelleted": return t("birdSetup.opt.pelletedDiet", "Pelleted diet");
+    case "seed": return t("birdSetup.opt.seedMix", "Seed mix");
+    case "pellet_seed": return t("birdSetup.opt.pelletSeedBlend", "Pellet & seed blend");
+    case "chop": return t("birdSetup.opt.freshChopFormulated", "Fresh chop / formulated");
+    case "other": return t("birdSetup.opt.other", "Other");
+    default: return foodLabel(t, key);
+  }
+}
+
 export function foodLabel(t: TFunction, en: string): string {
   switch (en) {
     // Diet types

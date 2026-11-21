@@ -1,5 +1,6 @@
 import { AlertTriangle, Phone, Stethoscope } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import type { TFunction } from "i18next";
 import { K, KyaHeading } from "@/components/kya";
 
 // Body-care guidance for when a bird has passed. COPY-EXACT and medically
@@ -101,6 +102,14 @@ function Disclaimer({ children, look }: { children: React.ReactNode; look?: Guid
   return <p className="t-meta pt-1 leading-relaxed">{children}</p>;
 }
 
+/** A path's heading, as PathDetail shows it (the iPhone Duo puts it in the
+ *  card's title and renders PathDetail with `hideTitle`). */
+export function pathTitle(t: TFunction, path: PassingPath, name: string): string {
+  if (path === "necropsy") return t("passingGuidance.necropsyTitle", "Keeping {{name}} cool for the vet", { name });
+  if (path === "burial") return t("passingGuidance.burialTitle", "Keeping {{name}} safe until then", { name });
+  return t("passingGuidance.vetTitle", "Bringing {{name}} to the vet", { name });
+}
+
 /**
  * One path's detail block. `audience` controls the sitter-context framing lines
  * ("{Owner} would like…", "You've done the hard part."): the sitter sees them;
@@ -108,7 +117,7 @@ function Disclaimer({ children, look }: { children: React.ReactNode; look?: Guid
  * callouts, and notes without the third-person framing.
  */
 export function PathDetail({
-  path, name, ownerName, vet, audience, look,
+  path, name, ownerName, vet, audience, look, hideTitle = false,
 }: {
   path: PassingPath;
   name: string;
@@ -117,6 +126,8 @@ export function PathDetail({
   audience: "owner" | "sitter";
   /** Owner-app styling; leave unset in the sitter view. */
   look?: GuidanceLook;
+  /** Leave the heading out (the iPhone Duo's card shows it as its title). */
+  hideTitle?: boolean;
 }) {
   const { t } = useTranslation();
   const sitter = audience === "sitter";
@@ -130,7 +141,7 @@ export function PathDetail({
   if (path === "necropsy") {
     return (
       <div className={wrapCls}>
-        <Title look={look}>{t("passingGuidance.necropsyTitle", "Keeping {{name}} cool for the vet", { name })}</Title>
+        {!hideTitle && <Title look={look}>{pathTitle(t, "necropsy", name)}</Title>}
         {sitter && (
           <p className={bodyCls} style={bodyStyle}>
             {t("passingGuidance.necropsyIntro", "{{ownerName}} would like a necropsy to understand what happened. It's time sensitive, so it helps to act soon.", { ownerName })}
@@ -159,7 +170,7 @@ export function PathDetail({
   if (path === "burial") {
     return (
       <div className={wrapCls}>
-        <Title look={look}>{t("passingGuidance.burialTitle", "Keeping {{name}} safe until then", { name })}</Title>
+        {!hideTitle && <Title look={look}>{pathTitle(t, "burial", name)}</Title>}
         {sitter && (
           <p className={bodyCls} style={bodyStyle}>
             {t("passingGuidance.burialIntro", "{{ownerName}} would like to bury {{name}} or arrange cremation once back home. Here's how to keep them safe until then.", { ownerName, name })}
@@ -184,7 +195,7 @@ export function PathDetail({
 
   return (
     <div className={wrapCls}>
-      <Title look={look}>{t("passingGuidance.vetTitle", "Bringing {{name}} to the vet", { name })}</Title>
+      {!hideTitle && <Title look={look}>{pathTitle(t, "vet", name)}</Title>}
       {sitter && (
         <p className={bodyCls} style={bodyStyle}>
           {t("passingGuidance.vetIntro", "{{ownerName}} would like {{name}} brought to the vet, who can care for them and talk through options.", { ownerName, name })}

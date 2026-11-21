@@ -1,5 +1,6 @@
 import { Link, useLocation } from "@tanstack/react-router";
-import { Home, Calendar, Activity, Compass } from "lucide-react";
+import { Home, Calendar, Activity, Compass, Users } from "lucide-react";
+import { rememberMode, useFlockEnabled } from "@/lib/flock";
 import { useTranslation } from "react-i18next";
 import type { TFunction } from "i18next";
 
@@ -41,11 +42,14 @@ function tabForPath(pathname: string): OwnerTab | undefined {
   return undefined;
 }
 
-/** A task screen: no bottom nav, Close instead of Back. */
-export function isTaskPath(pathname: string): boolean {
+/** A task screen: no bottom nav, Close instead of Back. Some pages become a
+ *  task via a search param (identity's ?edit=1 drives its edit form), so the
+ *  caller may pass the parsed search alongside the pathname. */
+export function isTaskPath(pathname: string, search?: Record<string, unknown>): boolean {
   return pathname === "/check" || /^\/birds\/[^/]+\/scan$/.test(pathname) ||
     pathname === "/sits/new" || pathname.startsWith("/sits/edit/") ||
-    /^\/birds\/[^/]+\/plan\/editor$/.test(pathname);
+    /^\/birds\/[^/]+\/plan\/editor$/.test(pathname) ||
+    (/^\/birds\/[^/]+\/identity$/.test(pathname) && !!search?.edit);
 }
 
 // Pages opened from a tab (a bird, account, a sit…) highlight the tab the
@@ -55,7 +59,9 @@ function rememberedTab(): OwnerTab | undefined {
   try { return (sessionStorage.getItem(LAST_TAB_KEY) as OwnerTab | null) ?? undefined; } catch { return undefined; }
 }
 
-export function OwnerTabBar({ active, embedded }: { active?: OwnerTab; embedded?: boolean }) {
+/** The tabs this account sees and which one is lit: shared by the bottom bar
+ *  and the iPhone Duo side column (DuoRail), so the two never disagree. */
+export function useOwnerTabs(active?: OwnerTab) {
   const { t } = useTranslation();
   const pathname = useLocation({ select: (l) => l.pathname });
   const own = tabForPath(pathname);
@@ -68,14 +74,23 @@ export function OwnerTabBar({ active, embedded }: { active?: OwnerTab; embedded?
   // ONE nav for every authenticated account — owning a bird is derived, not a
   // signup type, so there's no owner-vs-caregiver nav split (a recurring bug
   // source). A sit you're covering shows as a section on Home, not a nav tab.
-  const TABS: TabSpec[] = [HOME_TAB, SITS_TAB, ACTIVITY_TAB, EXPLORE_TAB];
+  const tabs = [HOME_TAB, SITS_TAB, ACTIVITY_TAB, EXPLORE_TAB].map((tab) => ({ ...tab, label: tabLabel(t, tab.key, tab.label) }));
+  // The Community entry (the Flock): admins only until launch (flock_enabled() on the server).
+  // While that loads, on any error, and for everyone else, nothing is added and
+  // the bar is exactly the four tabs above.
+  const flock = useFlockEnabled() === true;
+  return { t, tabs, current, flock, flockLabel: t("ownerTabs.flock", "Community"), navAria: t("ownerTabs.navAria", "Primary") };
+}
+
+export function OwnerTabBar({ active, embedded }: { active?: OwnerTab; embedded?: boolean }) {
+  const { tabs, current, flock, flockLabel, navAria } = useOwnerTabs(active);
   return (
     <nav
-      aria-label={t("ownerTabs.navAria", "Primary")}
+      aria-label={navAria}
       className={`${embedded ? "" : "fixed inset-x-0 bottom-0 z-40 "}border-t border-[#d5dfd5] bg-white pb-[env(safe-area-inset-bottom)]`}
     >
       <div className="mx-auto flex max-w-md items-stretch justify-around">
-        {TABS.map(({ key, label, to, Icon }) => {
+        {tabs.map(({ key, label, to, Icon }) => {
           const on = key === current;
           return (
             <Link
@@ -88,10 +103,21 @@ export function OwnerTabBar({ active, embedded }: { active?: OwnerTab; embedded?
               }`}
             >
               <Icon className="size-6" strokeWidth={on ? 2.4 : 1.9} />
-              {tabLabel(t, key, label)}
+              {label}
             </Link>
           );
         })}
+        {flock && (
+          <Link
+            to="/flock"
+            onClick={() => rememberMode("flock")}
+            data-coach="owner-tab-flock"
+            className="flex flex-1 flex-col items-center gap-0.5 py-2 text-[11px] font-medium text-[#5f5e5a] transition-colors"
+          >
+            <Users className="size-6" strokeWidth={1.9} />
+            {flockLabel}
+          </Link>
+        )}
       </div>
     </nav>
   );

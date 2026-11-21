@@ -20,6 +20,8 @@ import {
   type BuiltEmail,
 } from "./emailTemplates";
 import { localeForUser, joinNamesLocalized, fallbackOwnerLabel } from "./emailLocale.server";
+import { realPersonName } from "./personName.server";
+import { realFullName } from "./personName";
 import { emailT } from "./i18n/emailI18n.server";
 
 async function getAdmin() {
@@ -53,16 +55,7 @@ function fmtRange(start: string, end: string, locale: string = "en"): string {
 }
 
 async function ownerDisplayName(sb: any, ownerId: string, locale: string = "en"): Promise<string> {
-  const { data } = await sb.from("profiles").select("display_name").eq("id", ownerId).maybeSingle();
-  const name = (data?.display_name ?? "").toString().trim();
-  if (name) return name;
-  try {
-    const { data: u } = await sb.auth.admin.getUserById(ownerId);
-    const meta = (u?.user?.user_metadata?.display_name ?? "").toString().trim();
-    return meta || u?.user?.email?.split("@")[0] || fallbackOwnerLabel(locale);
-  } catch {
-    return fallbackOwnerLabel(locale);
-  }
+  return (await realPersonName(sb, ownerId)) ?? fallbackOwnerLabel(locale);
 }
 
 // Caregiver email + display name via the service role. auth.email is the reliable
@@ -71,8 +64,8 @@ async function resolveCaregiver(sb: any, userId: string): Promise<{ email: strin
   try {
     const { data: u } = await sb.auth.admin.getUserById(userId);
     const email = (u?.user?.email ?? "").toString().trim() || null;
-    const meta = (u?.user?.user_metadata?.display_name ?? "").toString().trim();
-    const name = meta || (email ? email.split("@")[0] : "") || null;
+    // Real names only, never the part of the address before the @.
+    const name = realFullName([u?.user?.user_metadata?.display_name, u?.user?.user_metadata?.full_name], email);
     return { email, name };
   } catch {
     return { email: null, name: null };
@@ -86,7 +79,12 @@ async function birdNames(sb: any, birdIds: string[]): Promise<string[]> {
   return birdIds.map((id) => byId.get(id)).filter(Boolean) as string[];
 }
 
-async function send(built: BuiltEmail, to: string, toName: string | null, tag: EmailTag): Promise<boolean> {
+type SendOutcome = { ok: true } | { ok: false; reason: "undeliverable-address" | "send-failed"; error: string };
+
+// Why a send didn't go out, in words the owner's analytics can use. A reserved
+// test address (example.com and the like) is refused on purpose and never
+// reaches Brevo; anything else carries Brevo's own status and message.
+async function send(built: BuiltEmail, to: string, toName: string | null, tag: EmailTag): Promise<SendOutcome> {
   const { sendTransactionalEmail } = await import("./brevoEmail.server");
   const res = await sendTransactionalEmail({
     to,
@@ -96,7 +94,14 @@ async function send(built: BuiltEmail, to: string, toName: string | null, tag: E
     textContent: built.text,
     tag,
   });
-  return res.ok;
+  if (res.ok) return { ok: true };
+  if (res.skipped === "undeliverable-test-domain") {
+    return { ok: false, reason: "undeliverable-address", error: `${to.split("@").pop()} can't receive email (reserved test domain); not sent` };
+  }
+  const error = res.skipped
+    ? `not sent: ${res.skipped}${res.error ? ` (${res.error})` : ""}`
+    : `Brevo HTTP ${res.status ?? "?"}: ${res.error ?? "no response body"}`;
+  return { ok: false, reason: "send-failed", error };
 }
 
 export type NotifyResult = { ok: boolean; emailed: boolean; reason?: string; caregiverName?: string };
@@ -131,7 +136,7 @@ export const notifySitAssigned = createServerFn({ method: "POST" })
       link: `${appUrl()}/today`,
       locale,
     });
-    const ok = await send(built, email, name, "sit_assigned");
+    const ok = (await send(built, email, name, "sit_assigned")).ok;
     if (!ok) console.error("[sits] assigned email failed for sit", sit.id);
     return { ok: true, emailed: ok, reason: ok ? undefined : "send-failed", caregiverName: name ?? undefined };
   });
@@ -176,7 +181,7 @@ export const notifySitUpdated = createServerFn({ method: "POST" })
       link: `${appUrl()}/today`,
       locale,
     });
-    const ok = await send(built, email, name, "sit_updated");
+    const ok = (await send(built, email, name, "sit_updated")).ok;
     if (!ok) console.error("[sits] updated email failed for sit", sit.id);
     return { ok: true, emailed: ok, reason: ok ? undefined : "send-failed", caregiverName: name ?? undefined };
   });
@@ -222,7 +227,7 @@ export const notifySitCancelled = createServerFn({ method: "POST" })
       link: `${appUrl()}/today`,
       locale,
     });
-    const ok = await send(built, email, name, "sit_cancelled");
+    const ok = (await send(built, email, name, "sit_cancelled")).ok;
     if (!ok) console.error("[sits] cancelled email failed for caregiver", data.caregiverUserId);
     return { ok: true, emailed: ok, reason: ok ? undefined : "send-failed", caregiverName: name ?? undefined };
   });
@@ -235,7 +240,15 @@ export const notifySitCancelled = createServerFn({ method: "POST" })
 // never an auth lookup. Same best-effort, failure-visible contract.
 // ─────────────────────────────────────────────────────────────────────────────
 
-export type SitterNotifyResult = { ok: boolean; emailed: boolean; reason?: string; sitterName?: string };
+export type SitterNotifyResult = {
+  ok: boolean;
+  emailed: boolean;
+  /** Why it wasn't emailed, e.g. "undeliverable-address", "send-failed", "token-expired". */
+  reason?: string;
+  /** The underlying message (Brevo's status and text, or why the address was refused). */
+  error?: string;
+  sitterName?: string;
+};
 
 // Shared load + validity gate for the token-link path. Returns a reason (no
 // send) when the row is missing, not an external sit, revoked, expired, or has
@@ -277,9 +290,11 @@ export const notifySitterInvite = createServerFn({ method: "POST" })
       link: `${appUrl()}/sitter/${sit.invite_token}`,
       locale,
     });
-    const ok = await send(built, (sit.sitter_email as string).trim(), sit.sitter_name, "sitter_invite");
-    if (!ok) console.error("[sits] sitter invite email failed for sit", sit.id);
-    return { ok: true, emailed: ok, reason: ok ? undefined : "send-failed", sitterName: sit.sitter_name ?? undefined };
+    const res = await send(built, (sit.sitter_email as string).trim(), sit.sitter_name, "sitter_invite");
+    if (!res.ok) console.error("[sits] sitter invite email failed for sit", sit.id, res.reason, res.error);
+    return res.ok
+      ? { ok: true, emailed: true, sitterName: sit.sitter_name ?? undefined }
+      : { ok: true, emailed: false, reason: res.reason, error: res.error, sitterName: sit.sitter_name ?? undefined };
   });
 
 // ── Updated (external sit edited: dates and/or bird-set changed) ──────────────
@@ -313,9 +328,11 @@ export const notifySitterInviteUpdated = createServerFn({ method: "POST" })
       link: `${appUrl()}/sitter/${sit.invite_token}`,
       locale,
     });
-    const ok = await send(built, (sit.sitter_email as string).trim(), sit.sitter_name, "sitter_invite_updated");
-    if (!ok) console.error("[sits] sitter update email failed for sit", sit.id);
-    return { ok: true, emailed: ok, reason: ok ? undefined : "send-failed", sitterName: sit.sitter_name ?? undefined };
+    const res = await send(built, (sit.sitter_email as string).trim(), sit.sitter_name, "sitter_invite_updated");
+    if (!res.ok) console.error("[sits] sitter update email failed for sit", sit.id, res.reason, res.error);
+    return res.ok
+      ? { ok: true, emailed: true, sitterName: sit.sitter_name ?? undefined }
+      : { ok: true, emailed: false, reason: res.reason, error: res.error, sitterName: sit.sitter_name ?? undefined };
   });
 
 // ── Cancelled (external sit deleted) ─────────────────────────────────────────
@@ -357,7 +374,9 @@ export const notifySitterCancelled = createServerFn({ method: "POST" })
       dateRange: fmtRange(data.startDate, data.endDate, locale),
       locale,
     });
-    const ok = await send(built, to, data.sitterName ?? null, "sitter_invite_cancelled");
-    if (!ok) console.error("[sits] sitter cancelled email failed");
-    return { ok: true, emailed: ok, reason: ok ? undefined : "send-failed", sitterName: data.sitterName ?? undefined };
+    const res = await send(built, to, data.sitterName ?? null, "sitter_invite_cancelled");
+    if (!res.ok) console.error("[sits] sitter cancelled email failed", res.reason, res.error);
+    return res.ok
+      ? { ok: true, emailed: true, sitterName: data.sitterName ?? undefined }
+      : { ok: true, emailed: false, reason: res.reason, error: res.error, sitterName: data.sitterName ?? undefined };
   });

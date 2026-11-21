@@ -19,10 +19,11 @@ import { baseErrorTags, isSitterRoute, type ErrorUserRole } from "./errorTags";
 import { scrubExceptionProperties, scrubErrorMessage } from "./errorScrub";
 import { sanitizeAnalyticsProperties } from "./urlScrub";
 import { hashUserId } from "./userHash";
+import { POSTHOG_PROJECT_KEY } from "./deployEnv";
 
 // Public project key — the same client identifier analytics.ts ships in every
-// page. A literal on purpose: see the note in cronTelemetry.ts.
-const POSTHOG_KEY = "phc_qkMPyAbqFHDcG6FdXFBQUsiyPsbMjbCX2hNSw2bddPKh";
+// page, and only in production builds (deployEnv.ts). Previews and local runs
+// send nothing; the test hook below gets a placeholder (its fetch is stubbed).
 const POSTHOG_CAPTURE_URL = "https://us.i.posthog.com/i/v0/e/";
 const CAPTURE_TIMEOUT_MS = 2000;
 const ROLE_LOOKUP_TIMEOUT_MS = 800;
@@ -215,7 +216,12 @@ function underCap(): boolean {
 export async function captureServerException(thrown: unknown, ctx: ServerErrorContext): Promise<void> {
   try {
     const environment = serverEnvironment();
-    if (environment === "development" && !(globalThis as Record<string, unknown>)[FORCE_FLAG]) return;
+    const forced = Boolean((globalThis as Record<string, unknown>)[FORCE_FLAG]);
+    // Production only: a preview's errors are not production's, and previews
+    // must not write to the production PostHog project.
+    if (environment !== "production" && !forced) return;
+    const apiKey = POSTHOG_PROJECT_KEY ?? (forced ? "phc_forced_test" : null);
+    if (!apiKey) return;
     if (isExpectedServerError(thrown)) return;
     if (thrown && typeof thrown === "object") {
       if (reported.has(thrown)) return;
@@ -266,7 +272,7 @@ export async function captureServerException(thrown: unknown, ctx: ServerErrorCo
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          api_key: POSTHOG_KEY,
+          api_key: apiKey,
           event: "$exception",
           distinct_id: distinctId,
           properties: safe,

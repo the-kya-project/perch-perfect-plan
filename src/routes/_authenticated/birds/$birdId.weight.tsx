@@ -8,7 +8,7 @@ import { useCapability, useMyPermissions } from "@/lib/useCapability";
 import { useConfirm } from "@/components/ConfirmSheet";
 import { useActiveSitIdForBird } from "@/components/CaregiverHome";
 import { toast } from "sonner";
-import { ArrowLeft, Check, X } from "lucide-react";
+import { Check, Scale, X } from "lucide-react";
 import { track } from "@/lib/analytics";
 import { MemberContextBanner } from "@/components/MemberContextBanner";
 import { BottomSheet } from "@/components/setup/BottomSheet";
@@ -16,13 +16,21 @@ import { friendlyError } from "@/lib/errorMessage";
 import { daysAgo } from "@/lib/scanConcern";
 import { useLoggedBy } from "@/lib/useLoggedBy";
 import { weightThen } from "@/lib/weightThen";
-import { K, SERIF, KyaPage, KyaBody, KyaCard, KyaHeading, KyaLink, KyaPrimaryButton } from "@/components/kya";
+import { K, SERIF, KyaPage, KyaBody, KyaCard, KyaField, KyaHeading, KyaLabel, KyaLink, KyaPrimaryButton } from "@/components/kya";
 import { PageHeader } from "@/components/headers";
+import { RailBack, useDuoRail } from "@/components/DuoRail";
+import { useDuoMode } from "@/lib/duo";
+import { useBirdPhotos } from "@/lib/useBirdPhotos";
+import { useBirdRecord } from "@/routes/_authenticated/birds/$birdId.index";
 import { LoadError } from "@/components/LoadError";
 import { useLoadState } from "@/lib/useTooLong";
+import { peekDraft, useFormDraft } from "@/lib/drafts";
+import { DraftRestoredNote } from "@/components/DraftRestoredNote";
 import i18next from "i18next";
 import type { TFunction } from "i18next";
 import { useTranslation } from "react-i18next";
+import { BIRD_PHOTO_FOCUS } from "@/lib/birdPhotoFocus";
+import { NotEnoughWeights, WeightChart } from "@/components/WeightChart";
 
 export const Route = createFileRoute("/_authenticated/birds/$birdId/weight")({
   head: () => ({ meta: [{ title: i18next.t("birdWeight.metaTitle", "Weight — Kya & Co.") }] }),
@@ -45,6 +53,11 @@ const pad = (x: number) => String(x).padStart(2, "0");
 // "YYYY-MM-DDTHH:MM" in local time, for <input type="datetime-local"> + its max.
 const toLocalInput = (d: Date) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
 const nowLocal = () => toLocalInput(new Date());
+
+/** The weight entry's local draft (lib/drafts.ts): one per account and bird.
+ *  `entryId` is the weight being edited, or null for a new one. */
+const WEIGHT_DRAFT = "weight";
+type WeightDraft = { entryId: string | null; grams: string; when: string; meal: Meal };
 
 function windowLabel(t: TFunction, days: WindowDays): string {
   switch (days) {
@@ -75,6 +88,13 @@ function dayText(t: TFunction, iso: string, lang: string): string {
   if (d === 1) return t("birdWeight.yesterday", "Yesterday");
   return new Date(iso).toLocaleDateString(lang, { month: "short", day: "numeric" });
 }
+/** "yesterday, before meal" for the sideways header's Latest line: today and
+ *  yesterday lower-cased mid-sentence, a date as it is. */
+function latestWhen(t: TFunction, e: { measured_at: string; meal_relation: string | null }, lang: string): string {
+  const day = dayText(t, e.measured_at, lang);
+  const d = daysAgo(e.measured_at);
+  return [d <= 1 ? day.charAt(0).toLocaleLowerCase(lang) + day.slice(1) : day, mealText(t, e.meal_relation, true)].filter(Boolean).join(", ");
+}
 function grams(t: TFunction, n: number): string {
   return t("birdWeight.grams", "{{n}} g", { n: n.toLocaleString() });
 }
@@ -96,6 +116,16 @@ function WeightFacet() {
   const [editing, setEditing] = useState<Entry | null>(null);
   const [deleting, setDeleting] = useState(false);
   const { confirm, sheet: confirmSheet } = useConfirm();
+  // iPhone Duo unfolded and sideways ("Weight option A"): log a weight on the
+  // left, the chart and history on the right, the entry always open.
+  const wide = useDuoMode() === "sideways";
+  // The side column without two panes (the folded cover screen, iOS app 1.2):
+  // today's single column, under the same Option A header (no large number).
+  const coverRail = !!useDuoRail() && !wide;
+  const [savedCount, setSavedCount] = useState(0);
+  const birdRecord = useBirdRecord(birdId).data as { photo_url?: string | null; photo_position?: string | null } | null | undefined;
+  const photoOf = useBirdPhotos([wide || coverRail ? birdRecord?.photo_url : null], 160);
+  const goBird = () => navigate({ to: "/birds/$birdId", params: { birdId } });
 
   // ?log=1 deep-link → open the entry once we know the caller may log.
   useEffect(() => {
@@ -134,6 +164,20 @@ function WeightFacet() {
   });
 
   const entries = entriesQ.data;
+
+  // A weight left unfinished (the page reloaded, the app was closed): reopen
+  // its entry so LogPanel can offer the draft back. Once per visit.
+  const draftChecked = useRef(false);
+  useEffect(() => {
+    if (draftChecked.current || !canLogCare || !entries) return;
+    draftChecked.current = true;
+    void peekDraft<WeightDraft>(birdId, WEIGHT_DRAFT).then((d) => {
+      if (!d) return;
+      if (!d.data.entryId) { setLogOpen(true); return; }
+      const e = entries.find((x) => x.id === d.data.entryId);
+      if (e) { setEditing(e); setLogOpen(false); }
+    });
+  }, [canLogCare, entries, birdId]);
   // "No weights yet" only once the entries are actually known; a failed load
   // gets a retry instead.
   const load = useLoadState([entriesQ]);
@@ -189,21 +233,132 @@ function WeightFacet() {
     g.rows.push({ e, prev: all[i + 1] });
   });
 
+  const sheets = (
+    <>
+      {openEntry && (
+        <BottomSheet onClose={() => setOpenEntry(null)}>
+          <div className="flex flex-col gap-4" style={{ color: K.forest }}>
+            <div className="flex items-start gap-3">
+              <div className="min-w-0 flex-1">
+                <p className="m-0 text-[13px]" style={{ color: K.quiet }}>
+                  {[`${dayText(t, openEntry.measured_at, lang)}, ${timeText(openEntry.measured_at, lang)}`, mealText(t, openEntry.meal_relation)].filter(Boolean).join(" · ")}
+                </p>
+                {/* Side-column layout: no large weight number anywhere on this page. */}
+                <p className={`m-0 mt-1 font-[700] leading-none ${wide || coverRail ? "text-[20px]" : "text-[34px]"}`} style={{ fontFamily: SERIF }}>{grams(t, openEntry.grams)}</p>
+                <p className="m-0 mt-2 text-[14px]" style={{ color: K.quiet }}>{t("birdWeight.loggedBy", "Logged by {{who}}", { who: loggedBy(t, { by: openEntry.logged_by, source: openEntry.source, sitId: openEntry.sit_id }) })}</p>
+              </div>
+              <button type="button" onClick={() => setOpenEntry(null)} aria-label={t("birdWeight.close", "Close")} className="grid size-11 shrink-0 place-items-center rounded-full" style={{ background: K.mist }}>
+                <X className="size-5" />
+              </button>
+            </div>
+            {canLogCare && (
+              <KyaPrimaryButton onClick={() => { setEditing(openEntry); setLogOpen(false); setOpenEntry(null); }}>{t("birdWeight.edit", "Edit")}</KyaPrimaryButton>
+            )}
+            {isOwner && (
+              <div className="text-center">
+                <KyaLink color={K.red} onClick={() => deleteWeight(openEntry.id)}>{deleting ? t("birdWeight.deleting", "Deleting…") : t("birdWeight.delete", "Delete")}</KyaLink>
+              </div>
+            )}
+          </div>
+        </BottomSheet>
+      )}
+      {confirmSheet}
+    </>
+  );
+
+  const photo = photoOf(birdRecord?.photo_url)?.url;
+  if (wide) {
+    return (
+      <KyaPage>
+        <RailBack onBack={goBird} />
+        <WeightHeaderA
+          name={name}
+          photo={photo}
+          position={birdRecord?.photo_position}
+          latest={latest}
+          loaded={entries !== undefined}
+          count={all.length}
+        />
+
+        <main
+          className="relative -mt-9 grid gap-5 rounded-t-[36px] px-[26px] pb-6 pt-[22px]"
+          // The log card fills the left half: its column ends half the 20px
+          // gap before the middle of the screen (the fold), whatever the width.
+          // 26px = this sheet's left padding; the content starts after
+          // --duo-left (the left safe area, plus the column when it's there).
+          style={{ background: "#f0f4f0", gridTemplateColumns: canLogCare ? "calc(50vw - var(--duo-left) - 26px - 10px) minmax(0, 1fr)" : "minmax(0, 1fr)" }}
+        >
+          {canLogCare && (
+            <section className="self-start" data-duo-pane="left">
+              <LogPanel
+                wide
+                key={editing?.id ?? `new-${savedCount}`}
+                birdId={birdId}
+                entry={editing}
+                lastGrams={latest?.grams}
+                onClose={() => setEditing(null)}
+                onSaved={() => { setEditing(null); setSavedCount((n) => n + 1); refresh(); }}
+              />
+            </section>
+          )}
+          <section className="flex min-w-0 flex-col gap-3.5" data-duo-pane="right">
+            <MemberContextBanner birdId={birdId} />
+            {load.failed && <LoadError onRetry={load.retry} />}
+            {all.length > 0 && (
+              <>
+                <ChartCard wide entries={all} win={win} setWin={setWin} isMine={isMine} />
+                <div className="flex flex-col rounded-[26px] bg-white px-5 py-3.5">
+                  <h2 className="m-0 mb-1 text-[21px] font-[700]" style={{ fontFamily: SERIF, color: K.forest }}>{t("birdWeight.history", "History")}</h2>
+                  {visible.map((e, i) => (
+                    <button
+                      key={e.id}
+                      type="button"
+                      onClick={() => setOpenEntry(e)}
+                      className="flex min-h-[44px] w-full items-center gap-3.5 py-2 text-left text-[14px]"
+                      style={{ borderTop: i === 0 ? undefined : `1px solid ${K.line}`, color: K.forest }}
+                    >
+                      <span className="w-12 shrink-0 font-[700]">{new Date(e.measured_at).toLocaleDateString(lang, { month: "short", day: "numeric" })}</span>
+                      <span className="min-w-0 flex-1" style={{ color: "#5f6b66" }}>{[timeText(e.measured_at, lang), mealText(t, e.meal_relation)].filter(Boolean).join(" · ")}</span>
+                      <span className="shrink-0 font-[700]">{grams(t, e.grams)}</span>
+                    </button>
+                  ))}
+                  {all.length > shown && (
+                    <div style={{ borderTop: `1px solid ${K.line}` }}>
+                      <KyaLink onClick={() => setShown((n) => n + 20)}>{t("birdWeight.showOlder", "Show older weights")}</KyaLink>
+                    </div>
+                  )}
+                </div>
+              </>
+            )}
+          </section>
+        </main>
+        {sheets}
+      </KyaPage>
+    );
+  }
+
   return (
     <KyaPage>
       <div className="mx-auto max-w-md">
-        <PageHeader onBack={() => navigate({ to: "/birds/$birdId", params: { birdId } })} title={t("birdWeight.title", "{{name}}'s weight", { name })}>
-          {latest ? (
-            <div className="mt-2 flex flex-wrap items-baseline gap-x-3 gap-y-1">
-              <span className="text-[48px] font-[700] leading-none" style={{ fontFamily: SERIF }}>{grams(t, latest.grams)}</span>
-              {latestMeta && <span className="text-[14px]" style={{ color: K.paleGreen }}>{latestMeta}</span>}
-            </div>
-          ) : entries === undefined ? (
-            !load.failed && <div className="mt-3 h-[44px] w-32 animate-pulse rounded-[10px] bg-white/15" aria-hidden="true" />
-          ) : (
-            <p className="m-0 mt-2 text-[15px]" style={{ color: K.paleGreen }}>{t("birdWeight.bodyEmpty", "No weights yet. Pop {{name}} on a scale and log the first one.", { name })}</p>
-          )}
-        </PageHeader>
+        {coverRail ? (
+          <>
+            <RailBack onBack={goBird} />
+            <WeightHeaderA compact name={name} photo={photo} position={birdRecord?.photo_position} latest={latest} loaded={entries !== undefined} count={all.length} />
+          </>
+        ) : (
+          <PageHeader onBack={goBird} title={t("birdWeight.title", "{{name}}'s weight", { name })}>
+            {latest ? (
+              <div className="mt-2 flex flex-wrap items-baseline gap-x-3 gap-y-1">
+                <span className="text-[48px] font-[700] leading-none" style={{ fontFamily: SERIF }}>{grams(t, latest.grams)}</span>
+                {latestMeta && <span className="text-[14px]" style={{ color: K.paleGreen }}>{latestMeta}</span>}
+              </div>
+            ) : entries === undefined ? (
+              !load.failed && <div className="mt-3 h-[44px] w-32 animate-pulse rounded-[10px] bg-white/15" aria-hidden="true" />
+            ) : (
+              <p className="m-0 mt-2 text-[15px]" style={{ color: K.paleGreen }}>{t("birdWeight.bodyEmpty", "No weights yet. Pop {{name}} on a scale and log the first one.", { name })}</p>
+            )}
+          </PageHeader>
+        )}
 
         <KyaBody>
           <MemberContextBanner birdId={birdId} />
@@ -284,39 +439,64 @@ function WeightFacet() {
         </KyaBody>
       </div>
 
-      {openEntry && (
-        <BottomSheet onClose={() => setOpenEntry(null)}>
-          <div className="flex flex-col gap-4" style={{ color: K.forest }}>
-            <div className="flex items-start gap-3">
-              <div className="min-w-0 flex-1">
-                <p className="m-0 text-[13px]" style={{ color: K.quiet }}>
-                  {[`${dayText(t, openEntry.measured_at, lang)}, ${timeText(openEntry.measured_at, lang)}`, mealText(t, openEntry.meal_relation)].filter(Boolean).join(" · ")}
-                </p>
-                <p className="m-0 mt-1 text-[34px] font-[700] leading-none" style={{ fontFamily: SERIF }}>{grams(t, openEntry.grams)}</p>
-                <p className="m-0 mt-2 text-[14px]" style={{ color: K.quiet }}>{t("birdWeight.loggedBy", "Logged by {{who}}", { who: loggedBy(t, { by: openEntry.logged_by, source: openEntry.source, sitId: openEntry.sit_id }) })}</p>
-              </div>
-              <button type="button" onClick={() => setOpenEntry(null)} aria-label={t("birdWeight.close", "Close")} className="grid size-11 shrink-0 place-items-center rounded-full" style={{ background: K.mist }}>
-                <X className="size-5" />
-              </button>
-            </div>
-            {canLogCare && (
-              <KyaPrimaryButton onClick={() => { setEditing(openEntry); setLogOpen(false); setOpenEntry(null); }}>{t("birdWeight.edit", "Edit")}</KyaPrimaryButton>
-            )}
-            {isOwner && (
-              <div className="text-center">
-                <KyaLink color={K.red} onClick={() => deleteWeight(openEntry.id)}>{deleting ? t("birdWeight.deleting", "Deleting…") : t("birdWeight.delete", "Delete")}</KyaLink>
-              </div>
-            )}
-          </div>
-        </BottomSheet>
-      )}
-      {confirmSheet}
+      {sheets}
     </KyaPage>
   );
 }
 
-/** The chart card: range control, the chart, then lowest / highest / then. */
-function ChartCard({ entries, win, setWin, isMine }: { entries: Entry[]; win: WindowDays; setWin: (w: WindowDays) => void; isMine: (e: Entry) => boolean }) {
+/**
+ * "Weight option A" header (side-column layouts only): the bird's photo in a
+ * mint ring, "[Name]'s weight", a small Latest line and the entries pill; no
+ * large number. `compact`: the folded cover screen, where the pill wraps under
+ * the title and the forest band tucks under today's 26px body.
+ */
+function WeightHeaderA({ name, photo, position, latest, loaded, count, compact = false }: {
+  name: string;
+  photo: string | undefined;
+  position?: string | null;
+  latest: Entry | undefined;
+  loaded: boolean;
+  count: number;
+  compact?: boolean;
+}) {
+  const { t, i18n } = useTranslation();
+  const lang = i18n.language;
+  const pill = (
+    <span className="w-fit shrink-0 rounded-full px-4 py-2 text-[14px] font-[700]" style={{ background: "#10291e", color: "#cfe9b7" }}>
+      {t("birdWeight.entriesPill", "{{count}} entries", { count, defaultValue_one: "{{count}} entry" })}
+    </span>
+  );
+  return (
+    <header
+      className={`flex items-center gap-4 text-white ${compact ? "px-5 pb-[46px] pt-[calc(env(safe-area-inset-top)+20px)]" : "px-8 pb-[62px] pt-[calc(env(safe-area-inset-top)+28px)]"}`}
+      style={{ background: K.forest }}
+    >
+      {photo ? (
+        <img src={photo} alt="" className="size-14 shrink-0 rounded-full border-[3px] object-cover" style={{ borderColor: "#8fc4a8", objectPosition: position || BIRD_PHOTO_FOCUS }} />
+      ) : (
+        <span aria-hidden="true" className="grid size-14 shrink-0 place-items-center rounded-full border-[3px] text-[22px] font-[700]" style={{ borderColor: "#8fc4a8", background: K.forestDeep }}>{name.charAt(0)}</span>
+      )}
+      <div className="flex min-w-0 flex-1 flex-col gap-[3px]">
+        <h1 className={`m-0 font-[700] leading-[1.1] ${compact ? "text-[26px]" : "text-[32px]"}`} style={{ fontFamily: SERIF }}>{t("birdWeight.title", "{{name}}'s weight", { name })}</h1>
+        {latest ? (
+          <span className="text-[15px]" style={{ color: "#c9dacb" }}>
+            {t("birdWeight.latest", "Latest")} <b className="font-[700] text-white">{grams(t, latest.grams)}</b> · {latestWhen(t, latest, lang)}
+          </span>
+        ) : loaded ? (
+          <span className="text-[15px]" style={{ color: "#c9dacb" }}>{t("birdWeight.bodyEmpty", "No weights yet. Pop {{name}} on a scale and log the first one.", { name })}</span>
+        ) : null}
+        {/* Narrow: the pill sits under the title instead of beside it. */}
+        {count > 0 && compact && <div className="mt-1.5">{pill}</div>}
+      </div>
+      {count > 0 && !compact && pill}
+    </header>
+  );
+}
+
+/** The chart card: range control, the chart, then lowest / highest / then.
+ *  `wide`: iPhone Duo sideways ("Weight option A") — a white card, a filled
+ *  line with a gold dot on the latest entry, tiled lowest / highest / then. */
+function ChartCard({ entries, win, setWin, isMine, wide = false }: { entries: Entry[]; win: WindowDays; setWin: (w: WindowDays) => void; isMine: (e: Entry) => boolean; wide?: boolean }) {
   const { t, i18n } = useTranslation();
   const lang = i18n.language;
   const now = Date.now();
@@ -330,26 +510,36 @@ function ChartCard({ entries, win, setWin, isMine }: { entries: Entry[]; win: Wi
   // "1 year ago".
   const then = weightThen(entries, win, now);
 
+  const tiles = ([
+    [t("birdWeight.lowest", "Lowest"), lowest, null],
+    [t("birdWeight.highest", "Highest"), highest, null],
+    [agoLabel(t, win), then?.grams ?? null, t("birdWeight.noWeightThen", "No weight then")],
+  ] as [string, number | null, string | null][]);
+
+  if (wide) {
+    return (
+      <div className="flex flex-col gap-2.5 rounded-[26px] bg-white p-[18px]">
+        <RangeSwitch win={win} setWin={setWin} />
+        {inRange.length < 2 ? (
+          <NotEnoughWeights />
+        ) : (
+          <WeightChart wide points={inRange} start={start} end={now} isMine={isMine} lang={lang} />
+        )}
+        <div className="grid grid-cols-3 gap-2">
+          {tiles.map(([label, value, emptyText]) => (
+            <div key={label} className="flex flex-col gap-0.5 rounded-[16px] px-3 py-2.5" style={{ background: "#f0f4f0" }}>
+              <span className="text-[13px]" style={{ color: "#5f6b66" }}>{label}</span>
+              <span className={`${value != null ? "text-[17px]" : "text-[15px]"} font-[700]`} style={{ color: K.forest }}>{value != null ? grams(t, value) : emptyText ?? "—"}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <KyaCard className="p-4">
-      <div role="radiogroup" aria-label={t("birdWeight.range", "Range")} className="grid grid-cols-3 gap-1 rounded-full p-1" style={{ background: K.mist }}>
-        {WINDOWS.map((w) => {
-          const on = w === win;
-          return (
-            <button
-              key={w}
-              type="button"
-              role="radio"
-              aria-checked={on}
-              onClick={() => setWin(w)}
-              className="min-h-[44px] rounded-full text-[14px] font-[700]"
-              style={on ? { background: K.forest, color: "#fff" } : { color: K.forest }}
-            >
-              {windowLabel(t, w)}
-            </button>
-          );
-        })}
-      </div>
+      <RangeSwitch win={win} setWin={setWin} />
 
       {inRange.length === 0 ? (
         <p className="m-0 py-10 text-center text-[14px]" style={{ color: K.quiet }}>{t("birdWeight.noneInRange", "No weights in the last {{range}}.", { range: windowLabel(t, win) })}</p>
@@ -363,11 +553,7 @@ function ChartCard({ entries, win, setWin, isMine }: { entries: Entry[]; win: Wi
       </div>
 
       <div className="mt-3 grid grid-cols-3 gap-2 pt-3" style={{ borderTop: `1px solid ${K.line}` }}>
-        {([
-          [t("birdWeight.lowest", "Lowest"), lowest, null],
-          [t("birdWeight.highest", "Highest"), highest, null],
-          [agoLabel(t, win), then?.grams ?? null, t("birdWeight.noWeightThen", "No weight then")],
-        ] as [string, number | null, string | null][]).map(([label, value, emptyText]) => (
+        {tiles.map(([label, value, emptyText]) => (
           <div key={label}>
             <p className="m-0 text-[12.5px]" style={{ color: K.quiet }}>{label}</p>
             {value != null ? (
@@ -384,70 +570,81 @@ function ChartCard({ entries, win, setWin, isMine }: { entries: Entry[]; win: Wi
   );
 }
 
-/** Round gridline values around the weights: a scale fitted to the range with
- *  a little room above and below, so small changes stay small. */
-function niceScale(min: number, max: number): { lo: number; hi: number; ticks: number[] } {
-  const span = Math.max(max - min, 4);
-  const padded = span * 0.25;
-  const raw = (span + padded * 2) / 3;
-  const steps = [1, 2, 5, 10, 20, 25, 50, 100, 200, 250, 500];
-  const step = steps.find((s) => s >= raw) ?? 1000;
-  const lo = Math.floor((min - padded) / step) * step;
-  const hi = Math.ceil((max + padded) / step) * step;
-  const ticks: number[] = [];
-  for (let v = lo; v <= hi + 0.001; v += step) ticks.push(v);
-  return { lo, hi, ticks };
-}
-
-function WeightChart({ points, start, end, isMine, lang }: { points: Entry[]; start: number; end: number; isMine: (e: Entry) => boolean; lang: string }) {
+/** 30 days / 90 days / 1 year, full width. */
+function RangeSwitch({ win, setWin }: { win: WindowDays; setWin: (w: WindowDays) => void }) {
   const { t } = useTranslation();
-  const W = 320, H = 170, L = 34, R = 10, T = 10, B = 26;
-  const { lo, hi, ticks } = niceScale(Math.min(...points.map((p) => p.grams)), Math.max(...points.map((p) => p.grams)));
-  const x = (ms: number) => L + ((ms - start) / (end - start)) * (W - L - R);
-  const y = (g: number) => T + (1 - (g - lo) / (hi - lo || 1)) * (H - T - B);
-  const pts = points.map((p) => ({ p, cx: x(+new Date(p.measured_at)), cy: y(p.grams) }));
-  const mid = start + (end - start) / 2;
-  const fmt = (ms: number) => new Date(ms).toLocaleDateString(lang, { month: "short", day: "numeric" });
   return (
-    <svg viewBox={`0 0 ${W} ${H}`} className="mt-3 block w-full" role="img" aria-label={t("birdWeight.chartAria", "Weight chart")}>
-      {ticks.map((v) => (
-        <g key={v}>
-          <line x1={L} x2={W - R} y1={y(v)} y2={y(v)} stroke={K.line} strokeWidth="1" />
-          <text x={L - 6} y={y(v) + 4} textAnchor="end" fontSize="11" fill={K.quiet}>{v}</text>
-        </g>
-      ))}
-      {pts.length > 1 && (
-        <polyline points={pts.map((q) => `${q.cx},${q.cy}`).join(" ")} fill="none" stroke={K.forest} strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" />
-      )}
-      {pts.map((q, i) => {
-        const last = i === pts.length - 1;
-        const r = last ? 5.5 : 4;
-        return isMine(q.p)
-          ? <circle key={q.p.id} cx={q.cx} cy={q.cy} r={r} fill={K.forest} />
-          : <circle key={q.p.id} cx={q.cx} cy={q.cy} r={r} fill="#fff" stroke={K.moss} strokeWidth="2" />;
+    <div role="radiogroup" aria-label={t("birdWeight.rangeLabel", "Time range")} className="grid grid-cols-3 gap-1 rounded-full p-1" style={{ background: K.mist }}>
+      {WINDOWS.map((w) => {
+        const on = w === win;
+        return (
+          <button
+            key={w}
+            type="button"
+            role="radio"
+            aria-checked={on}
+            onClick={() => setWin(w)}
+            className="min-h-[44px] rounded-full text-[14px] font-[700]"
+            style={on ? { background: K.forest, color: "#fff" } : { color: K.forest }}
+          >
+            {windowLabel(t, w)}
+          </button>
+        );
       })}
-      <text x={L} y={H - 6} fontSize="11" fill={K.quiet}>{fmt(start)}</text>
-      <text x={x(mid)} y={H - 6} fontSize="11" fill={K.quiet} textAnchor="middle">{fmt(mid)}</text>
-      <text x={W - R} y={H - 6} fontSize="11" fill={K.quiet} textAnchor="end">{t("birdWeight.today", "Today")}</text>
-    </svg>
+    </div>
   );
 }
 
 /** Log a new weight, or edit one (`entry`): weight, when, and meal timing. */
-function LogPanel({ birdId, entry, lastGrams, onClose, onSaved }: { birdId: string; entry: Entry | null; lastGrams?: number; onClose: () => void; onSaved: () => void }) {
+/** `wide`: iPhone Duo sideways — the always-open lime "Log a weight" card. */
+function LogPanel({ birdId, entry, lastGrams, onClose, onSaved, wide = false }: { birdId: string; entry: Entry | null; lastGrams?: number; onClose: () => void; onSaved: () => void; wide?: boolean }) {
   // sit_id attribution: when the household member is the assigned caregiver on
   // an active sit covering this bird, every weight they log during the window
   // is tagged with that sit_id. Null otherwise (no over-tagging).
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const activeSitId = useActiveSitIdForBird(birdId);
   const role = useBirdRole(birdId);
-  const [gramsIn, setGrams] = useState<string>(entry ? String(entry.grams) : lastGrams ? String(lastGrams) : "");
-  const [when, setWhen] = useState<string>(entry ? toLocalInput(new Date(entry.measured_at)) : nowLocal());
-  const [meal, setMeal] = useState<Meal>((entry?.meal_relation as Meal) ?? null);
+  // What the panel opened with, so "nothing changed" isn't saved as a draft.
+  const [initial] = useState<WeightDraft>(() => ({
+    entryId: entry?.id ?? null,
+    grams: entry ? String(entry.grams) : lastGrams ? String(lastGrams) : "",
+    when: entry ? toLocalInput(new Date(entry.measured_at)) : nowLocal(),
+    meal: (entry?.meal_relation as Meal) ?? null,
+  }));
+  const [gramsIn, setGrams] = useState<string>(initial.grams);
+  const [when, setWhen] = useState<string>(initial.when);
+  const [meal, setMeal] = useState<Meal>(initial.meal);
   const [saving, setSaving] = useState(false);
+  const unchanged = gramsIn === initial.grams && when === initial.when && meal === initial.meal;
+  const draft = useFormDraft<WeightDraft>({
+    kind: WEIGHT_DRAFT,
+    birdId,
+    data: { entryId: initial.entryId, grams: gramsIn, when, meal },
+    empty: unchanged,
+    onRestore: ({ data }) => {
+      // The one slot belongs to another entry (or a new one): leave it be.
+      if ((data.entryId ?? null) !== initial.entryId) return false;
+      setGrams(data.grams ?? "");
+      setWhen(data.when || initial.when);
+      setMeal(data.meal ?? null);
+    },
+  });
+  function discardDraft() {
+    setGrams(initial.grams);
+    setWhen(initial.when);
+    setMeal(initial.meal);
+    draft.clear();
+  }
+  function cancel() {
+    draft.clear();
+    onClose();
+  }
   // Opened from a row further down the page: bring the form into view.
   const ref = useRef<HTMLDivElement>(null);
-  useEffect(() => { ref.current?.scrollIntoView({ behavior: "smooth", block: "start" }); }, []);
+  // Always on screen when wide, so nothing to bring into view.
+  useEffect(() => { if (!wide) ref.current?.scrollIntoView({ behavior: "smooth", block: "start" }); }, [wide]);
+  // Wide: "Logged as now, 10:44 AM · Change" until they change the time.
+  const [pickWhen, setPickWhen] = useState(false);
 
   const n = Number(gramsIn);
   const valid = gramsIn !== "" && Number.isFinite(n) && n >= MIN_G && n <= MAX_G && !!when;
@@ -476,6 +673,7 @@ function LogPanel({ birdId, entry, lastGrams, onClose, onSaved }: { birdId: stri
         toast.success(t("birdWeight.logged", "Weight logged."));
         track("weight_logged", { grams: n, has_meal_relation: !!meal, source: role === "household" ? "household" : "owner" });
       }
+      draft.clear();
       onSaved();
     } catch (e: any) {
       toast.error(friendlyError(e, t("birdWeight.saveFailed", "Couldn't save the weight.")));
@@ -484,34 +682,117 @@ function LogPanel({ birdId, entry, lastGrams, onClose, onSaved }: { birdId: stri
     }
   }
 
-  const field = "h-12 w-full rounded-full border-2 bg-white px-[18px] text-[16px] outline-none focus:border-[#1a3d2e]";
+  if (wide) {
+    const lang = i18n.language;
+    const whenText = when === initial.when && !entry
+      ? t("birdWeight.nowAt", "now, {{time}}", { time: new Date(when).toLocaleTimeString(lang, { hour: "numeric", minute: "2-digit" }) })
+      : `${dayText(t, new Date(when).toISOString(), lang)}, ${new Date(when).toLocaleTimeString(lang, { hour: "numeric", minute: "2-digit" })}`;
+    const pill = "min-h-[46px] rounded-full border-2 text-[15px] font-[700]";
+    return (
+      <section className="flex flex-col gap-3.5 rounded-[26px] p-5" style={{ background: "#cfe9b7", boxShadow: "0 8px 20px rgba(26,61,46,0.10)", color: K.forest }}>
+        <div className="flex items-center gap-3">
+          <span className="grid size-[42px] shrink-0 place-items-center rounded-[12px] text-white" style={{ background: K.forest }}><Scale className="size-[21px]" aria-hidden="true" /></span>
+          <h2 className="m-0 text-[24px] font-[700]" style={{ fontFamily: SERIF }}>{entry ? t("birdWeight.editWeight", "Edit weight") : t("birdWeight.logAWeight", "Log a weight")}</h2>
+        </div>
+        {draft.restoredAt != null && (
+          <DraftRestoredNote what="weight" savedAt={draft.restoredAt} onContinue={draft.dismiss} onDiscard={discardDraft} />
+        )}
+        <div>
+          <KyaField
+            id="weight-grams"
+            label={t("birdWeight.gramsLabel", "Weight (grams)")}
+            inputMode="decimal"
+            value={gramsIn}
+            placeholder={lastGrams ? String(lastGrams) : t("birdWeight.gramsPlaceholder", "e.g. 410")}
+            onChange={(e) => setGrams(e.target.value.replace(/[^0-9.]/g, ""))}
+            className="text-[17px] font-[700]"
+            style={{ borderColor: "#fff" }}
+          />
+          {gramsIn !== "" && (Number(gramsIn) < MIN_G || Number(gramsIn) > MAX_G) && (
+            <span className="mt-1 block px-1 text-[13px]" style={{ color: K.amberText }}>{t("birdWeight.range", "Enter a weight between {{min}} and {{max}} grams.", { min: MIN_G, max: MAX_G })}</span>
+          )}
+        </div>
+        <div className="flex flex-col gap-1.5">
+          <KyaLabel as="span">{t("birdWeight.mealLabel", "Relative to a meal (optional)")}</KyaLabel>
+          <div className="grid grid-cols-2 gap-2">
+            {(["before_meal", "after_meal"] as const).map((m) => {
+              const on = meal === m;
+              return (
+                <button
+                  key={m}
+                  type="button"
+                  aria-pressed={on}
+                  onClick={() => setMeal((cur) => (cur === m ? null : m))}
+                  className={pill}
+                  style={on ? { background: K.forest, borderColor: K.forest, color: "#fff" } : { background: "#fff", borderColor: "#fff", color: K.forest }}
+                >
+                  {m === "before_meal" ? t("birdWeight.beforeMeal", "Before meal") : t("birdWeight.afterMeal", "After meal")}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+        {pickWhen ? (
+          <KyaField
+            id="weight-when"
+            type="datetime-local"
+            label={t("birdWeight.whenLabel", "When")}
+            value={when}
+            max={nowLocal()}
+            onChange={(e) => setWhen(e.target.value)}
+            style={{ borderColor: "#fff" }}
+          />
+        ) : (
+          <div className="flex items-center justify-between gap-3 text-[14px]" style={{ color: "#2d4a3d" }}>
+            <span>{t("birdWeight.loggedAs", "Logged as")} <b className="font-[700]" style={{ color: K.forest }}>{whenText}</b></span>
+            <button type="button" onClick={() => setPickWhen(true)} className="min-h-[44px] font-[700]" style={{ color: K.forest }}>{t("birdWeight.change", "Change")}</button>
+          </div>
+        )}
+        <KyaPrimaryButton onClick={save} disabled={!valid || saving} icon={<Check className="size-[18px]" />}>
+          {saving ? t("birdWeight.saving", "Saving…") : t("birdWeight.save", "Save")}
+        </KyaPrimaryButton>
+        {entry && (
+          <div className="text-center">
+            <KyaLink color={K.quiet} onClick={cancel}>{t("birdWeight.cancel", "Cancel")}</KyaLink>
+          </div>
+        )}
+      </section>
+    );
+  }
+
   return (
     <div ref={ref} className="scroll-mt-4">
     <KyaCard className="flex flex-col gap-4 p-4">
       <KyaHeading size={21}>{entry ? t("birdWeight.editWeight", "Edit weight") : t("birdWeight.logAWeight", "Log a weight")}</KyaHeading>
+      {draft.restoredAt != null && (
+        <DraftRestoredNote what="weight" savedAt={draft.restoredAt} onContinue={draft.dismiss} onDiscard={discardDraft} />
+      )}
 
-      <label className="block">
-        <span className="mb-1.5 block text-[15px] font-[700]">{t("birdWeight.gramsLabel", "Weight (grams)")}</span>
-        <input
-          className={field}
-          style={{ borderColor: "#d6dfd5", color: K.forest }}
+      <div>
+        <KyaField
+          id="weight-grams"
+          label={t("birdWeight.gramsLabel", "Weight (grams)")}
           inputMode="decimal"
           value={gramsIn}
           placeholder={lastGrams ? String(lastGrams) : t("birdWeight.gramsPlaceholder", "e.g. 410")}
           onChange={(e) => setGrams(e.target.value.replace(/[^0-9.]/g, ""))}
         />
         {gramsIn !== "" && (Number(gramsIn) < MIN_G || Number(gramsIn) > MAX_G) && (
-          <span className="mt-1 block text-[13px]" style={{ color: K.amberText }}>{t("birdWeight.range", "Enter a weight between {{min}} and {{max}} grams.", { min: MIN_G, max: MAX_G })}</span>
+          <span className="mt-1 block px-1 text-[13px]" style={{ color: K.amberText }}>{t("birdWeight.range", "Enter a weight between {{min}} and {{max}} grams.", { min: MIN_G, max: MAX_G })}</span>
         )}
-      </label>
+      </div>
 
-      <label className="block">
-        <span className="mb-1.5 block text-[15px] font-[700]">{t("birdWeight.whenLabel", "When")}</span>
-        <input type="datetime-local" className={field} style={{ borderColor: "#d6dfd5", color: K.forest }} value={when} max={nowLocal()} onChange={(e) => setWhen(e.target.value)} />
-      </label>
+      <KyaField
+        id="weight-when"
+        type="datetime-local"
+        label={t("birdWeight.whenLabel", "When")}
+        value={when}
+        max={nowLocal()}
+        onChange={(e) => setWhen(e.target.value)}
+      />
 
-      <div>
-        <span className="mb-1.5 block text-[15px] font-[700]">{t("birdWeight.mealLabel", "Relative to a meal (optional)")}</span>
+      <div className="flex flex-col gap-1.5">
+        <KyaLabel as="span">{t("birdWeight.mealLabel", "Relative to a meal (optional)")}</KyaLabel>
         <div className="grid grid-cols-2 gap-2">
           {(["before_meal", "after_meal"] as const).map((m) => {
             const on = meal === m;
@@ -535,7 +816,7 @@ function LogPanel({ birdId, entry, lastGrams, onClose, onSaved }: { birdId: stri
         <KyaPrimaryButton onClick={save} disabled={!valid || saving} icon={<Check className="size-5" />}>
           {saving ? t("birdWeight.saving", "Saving…") : t("birdWeight.save", "Save")}
         </KyaPrimaryButton>
-        <KyaLink color={K.quiet} onClick={onClose}>{t("birdWeight.cancel", "Cancel")}</KyaLink>
+        <KyaLink color={K.quiet} onClick={cancel}>{t("birdWeight.cancel", "Cancel")}</KyaLink>
       </div>
     </KyaCard>
     </div>

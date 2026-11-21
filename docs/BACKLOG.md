@@ -3,7 +3,7 @@
 Things we know about and chose not to do yet. Each entry is written to be picked up
 cold: what the problem is, where the code lives, and what "done" looks like.
 
-Nothing here is blocking a release. Last updated 2026-09-23.
+Nothing here is blocking a release. Last updated 2026-11-06.
 
 ---
 
@@ -47,7 +47,7 @@ one web-push row, one APNs row. The server can't tell they're the same device.
 ## Native app
 
 ### Deep links: open email links in the native app
-Status: code built (feat/universal-links); waits on the setup below and a store build.
+Status: code built; waits on the setup below and the iOS 1.0.3 (build 11) store build.
 
 What's in the code (the list of paths lives in `src/lib/appLinks.ts`):
 - `/.well-known/apple-app-site-association` and `/.well-known/assetlinks.json`, served by
@@ -57,9 +57,14 @@ What's in the code (the list of paths lives in `src/lib/appLinks.ts`):
   `npm run test:app-links` fails if the manifest drifts from the list.
 - `attachAppLinkHandler` (`src/lib/appLinkNative.ts`) routes `appUrlOpen` and the cold-start
   launch URL. Signed out → the existing sign-in return path takes over.
-- Sign-in (`/auth`, `/welcome`), `/invite`, `/handoff`, anything with `?code=`, the sitter
-  view, `/r/` on app., unsubscribe and the store redirects stay in the browser. PKCE can only
-  finish a sign-in in the browser that started it.
+- Household invites (`/invite/…`) and the links in sign-in emails open the app on iOS
+  (2026-10-28). The send-email hook points confirm/reset/email-change links at our own
+  `/verify?token_hash=…`, which redeems the token with `verifyOtp` and so works in the app or
+  any browser (the old Supabase link came back with a PKCE `?code=` only the starting browser
+  could use). Not in the Android manifest yet.
+- Sign-in (`/auth`, `/welcome`), `/handoff`, anything with `?code=`, the sitter view, `/r/` on
+  app., unsubscribe and the store redirects stay in the browser. Sitter links are never
+  click-tracked, so no `/r/` link leads to one.
 - Tracked email links: iOS won't open the app on a same-domain redirect, so app-screen links
   go through `EMAIL_CLICK_ORIGIN` (https://links.thekyaproject.com). The app loads
   app.thekyaproject.com/r/<token> itself, so the click is still logged.
@@ -109,6 +114,63 @@ nowhere.
 - Needs a store rebuild, so it rides along with the deep-links work rather than shipping
   on its own.
 
+### Cover screen side column — needs native screen detection, version 1.2
+**Status:** deferred to 1.2. The iPhone Duo side column shipped for the unfolded screen
+held sideways in #433; the folded cover screen still gets the regular iPhone layout.
+
+The web app can't tell the Duo's cover screen (382×837) apart from a regular iPhone held
+upright, and a regular iPhone must never get the side column, so `src/lib/duo.ts` decides
+by available space only (landscape, room for two panes) and the cover screen doesn't
+qualify.
+
+- Fix: have the native app report which screen it's on (cover or inner display) to the web
+  layer, e.g. a class on `<html>` or a value the `useDuoMode()` hook reads, and show the side
+  column (`DuoRail`) on the cover screen when it says so.
+- Approved design: the "Proposed: Home folded (cover screen)" artboard in the Duo mockups
+  (https://claude.ai/artifact/Xhu4izWBxtHMNbpkfYt2df).
+- **Needs a new native build**, so it rides along with other 1.2 native work.
+
+### Sign in with Apple: make the native plugin handle overlapping requests
+**Status:** web side guarded in #439 (Nov 2026); the native cause is still there.
+
+In `@capgo/capacitor-social-login`, the Apple provider keeps a single `completion`
+handler, and its delegate doesn't check which request is answering. A second `login()`
+while one is open replaces the handler; iOS then cancels the first request, and that
+cancel (`ASAuthorizationError` 1001) reaches the second caller while its sheet is still
+on screen, so the sheet's real answer goes nowhere. #439 stops the web app from ever
+starting a second request (one sign-in at a time in `src/lib/nativeOAuth.ts`, a tap ref
+in `SocialSignInButtons`) and treats 1001 as a quiet cancel (`src/lib/oauthErrors.ts`).
+
+- Fix: extend `patches/@capgo+capacitor-social-login+<version>.patch` so the Apple
+  provider keeps a handler per `ASAuthorizationController` (or ignores callbacks from a
+  controller that isn't the current one), and only the current request completes.
+- Regenerate the patch with the command in CLAUDE.md (iOS native shell section).
+- Done when: two rapid `login()` calls from the native side produce one sheet and one
+  result, and a cancel only ever reaches the request it belongs to. Test on a real iPhone.
+- **Needs a new native build**, so it rides along with other native work.
+
+---
+
+## iPhone Duo: half-folded ideas (later, not now)
+
+**Status:** ideas only, nothing built. Revisit both after 1.2 is approved and the Duo
+layouts have been tried on a real iPhone Duo.
+
+### Weigh station (suggested first)
+With the Duo half-folded like a laptop, the top half shows the current bird's photo and
+last weight, and the bottom half shows a large number pad to log today's weight. Saving
+moves on to the next bird, so the whole flock can be weighed hands-free.
+
+- Uses the hinge status and fold position the native bridge already sends
+  (`data-hinge`, `--fold-x`).
+- Mostly a web change once 1.2 is installed.
+
+### Tripod mode
+The Duo stood up half-folded to film a bird hands-free.
+
+- Needs camera access, choosing the right Duo camera, and recording and saving clips.
+- **Needs native work and a new App Store build.**
+
 ---
 
 ## Security / infrastructure
@@ -135,6 +197,27 @@ was deliberately left so build 6 wouldn't need rebuilding.
 ---
 
 ## Product
+
+### iPad landscape polish
+**Status:** found reviewing #433's iPad screenshots (`npm run screens:duo`, iPad Air
+1180×820 and iPad Pro 1366×1024 sideways). iPads held sideways get the iPhone Duo side
+column and two-pane layouts (`src/lib/duo.ts`), which work but were tuned for the Duo.
+
+- **Weight log card stretches too wide.** On the weight page the "Log a weight" card fills
+  the left half (about 560–650px on iPad), so the weight field and the Before/After meal
+  buttons stretch very wide with empty space below. (`LogPanel` wide variant,
+  `$birdId.weight.tsx`.)
+- **Empty space beside the Home list.** Home's left pane is wider than the phone-width
+  column inside it (`mx-auto max-w-md` in `dashboard.tsx`), leaving a strip on each side
+  under a full-width header. The full health check's left pane does the same.
+- **Long empty middle in the side column on tall screens.** On a 1024px-tall iPad Pro, Back
+  sits at the top and the tabs at the bottom with about 500px of nothing between them
+  (`DuoRail`, `.duo-rail` in `styles.css`).
+- **Phone-sized text on large screens.** Type and controls stay at phone sizes, so both
+  panes look sparse on a 13-inch screen.
+
+Done means: the four pages in `screens:duo` look intentional at both iPad sizes, while the
+split stays on the screen's center and the Duo sizes don't change.
 
 ### Vet summary PDF export was never merged
 `main` uses `window.print()`, which is a **no-op inside both native shells** — the button

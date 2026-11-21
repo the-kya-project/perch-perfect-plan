@@ -4,9 +4,11 @@
 //
 // Everything here is a no-op while OWNER_I18N_ENABLED is false.
 //
-// Only ever called from effects / event handlers, never during render: owner
-// routes are ssr:false, and public SSR pages only switch after hydration, so a
-// language change re-renders rather than causing a hydration mismatch (#418).
+// Only ever called from effects / event handlers, never during render. That
+// alone doesn't keep public SSR pages safe: the root's effects run before each
+// route's subtree has hydrated, so a switch here used to reach a page that was
+// still hydrating (#418/#422, Oct 2026). Those pages hydrate against
+// hydrationI18n instead, and RootComponent hands over to globalI18n afterwards.
 
 import { supabase } from "@/integrations/supabase/client";
 import { globalI18n } from "./i18n";

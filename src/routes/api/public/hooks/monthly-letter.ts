@@ -22,8 +22,8 @@
  * blog feed read fails it returns null and the block is
  * dropped — see src/lib/monthlyArticle.server.ts.
  *
- * Auth: `Authorization: Bearer <CARE_PLAN_REMINDER_SECRET>`, the shared cron
- * secret. JSON body options:
+ * Auth: `Authorization: Bearer <cron_hook_token>`, the Vault secret pg_cron sends
+ * (src/lib/cronAuth.ts). JSON body options:
  *   { "dryRun": true }             → planned sends returned, nothing sent/logged
  *   { "month": 9, "year": 2026 }   → recap that month instead of last month,
  *                                     for checking a specific month by hand
@@ -32,20 +32,11 @@
  * Serverless gotcha (memory/perch-serverless-fire-and-forget): every send is
  * awaited before the response returns — nothing fire-and-forget here.
  *
- * SCHEDULING. The job definition is not a migration (see
- * 20260724200000_enable_cron_extensions.sql) — run this once against the
- * database, substituting the real secret. 13:00 UTC on the 2nd keeps it clear
- * of the daily jobs at 09:00, 14:00, 15:00 and 16:00:
- *
- *   select cron.schedule(
- *     'monthly-letter',
- *     '0 13 2 * *',
- *     $$select net.http_post(
- *         url := 'https://app.thekyaproject.com/api/public/hooks/monthly-letter',
- *         headers := '{"Content-Type":"application/json","Authorization":"Bearer <CARE_PLAN_REMINDER_SECRET>"}'::jsonb,
- *         body := '{}'::jsonb
- *       );$$
- *   );
+ * SCHEDULING. pg_cron job `monthly-letter`, 13:00 UTC on the 2nd (clear of the
+ * daily jobs at 09:00, 14:00, 15:00 and 16:00). Its command is
+ * `select private.call_cron_hook('/api/public/hooks/monthly-letter', '{}'::jsonb)`,
+ * which reads the token from the Vault when it runs; never write a token into
+ * a job (20261102150000_cron_hook_token.sql).
  *
  * Check it with `select * from cron.job;` and the runs with
  * `select * from cron.job_run_details order by start_time desc limit 5;`.
@@ -57,7 +48,9 @@
  */
 import { withErrorTelemetry } from "@/lib/errorTelemetry";
 import { createFileRoute } from "@tanstack/react-router";
+import { realFirstName, realFullName } from "@/lib/personName";
 import { withCronTelemetry } from "@/lib/cronTelemetry";
+import { cronAuthFailure } from "@/lib/cronAuth";
 import { buildFlockReportEmail, isQuietFlock, type FlockBird } from "@/lib/flockEmails";
 import { eligibleForRecap } from "@/lib/monthlyEligibility";
 import { inOnboardingSeries } from "@/lib/onboardingPlan";
@@ -90,13 +83,8 @@ export const Route = createFileRoute("/api/public/hooks/monthly-letter")({
   server: {
     handlers: {
       POST: withCronTelemetry("monthly-letter", withErrorTelemetry("/api/public/hooks/monthly-letter", async ({ request }) => {
-        const secret = process.env.CARE_PLAN_REMINDER_SECRET;
-        if (!secret) {
-          return Response.json({ ok: false, error: "CARE_PLAN_REMINDER_SECRET not configured" }, { status: 503 });
-        }
-        if ((request.headers.get("authorization") ?? "") !== `Bearer ${secret}`) {
-          return Response.json({ ok: false, error: "unauthorized" }, { status: 401 });
-        }
+        const denied = await cronAuthFailure(request, "monthly-letter");
+        if (denied) return denied;
 
         let dryRun = false;
         let monthOverride: number | undefined;
@@ -134,7 +122,7 @@ export const Route = createFileRoute("/api/public/hooks/monthly-letter")({
         // ── Who ────────────────────────────────────────────────────────────
         let profileQ = sb
           .from("profiles")
-          .select("id, email, first_name, display_name, locale, notify_monthly_letter, notify_onboarding, created_at")
+          .select("id, email, first_name, full_name, display_name, locale, notify_monthly_letter, notify_onboarding, created_at")
           .eq("notify_monthly_letter", true);
         if (onlyEmail) profileQ = profileQ.eq("email", onlyEmail);
         const { data: profiles, error: pErr } = await profileQ;
@@ -289,7 +277,8 @@ export const Route = createFileRoute("/api/public/hooks/monthly-letter")({
 
           const unsub = unsubUrl(APP_URL, p.id, "monthly");
           const built = buildFlockReportEmail({
-            firstName: p.first_name ?? p.display_name ?? undefined,
+            // Real names only, never the part of the address before the @.
+            firstName: realFirstName(p, p.email),
             birds: modelled,
             month: recapMonth,
             year: recapYear,
@@ -308,7 +297,7 @@ export const Route = createFileRoute("/api/public/hooks/monthly-letter")({
 
           const res = await sendTransactionalEmail({
             to: p.email,
-            toName: p.first_name ?? p.display_name ?? undefined,
+            toName: realFullName([p.full_name, p.display_name], p.email) ?? undefined,
             subject: built.subject,
             htmlContent: built.html,
             textContent: built.text,

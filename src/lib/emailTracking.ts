@@ -60,6 +60,11 @@ export type EmailTag =
   | "auth_invite"
   | "auth_email_change"
   | "auth_reauthentication"
+  // Gift memberships: the buyer's receipt and the recipient's gift email
+  | "gift_receipt"
+  | "gift_recipient"
+  // To Brittany: saves in the app are failing (save-error-alerts hook)
+  | "save_error_alert"
   // scripts/qa-send-emails.ts previews to the founder, kept out of real numbers
   | "qa_preview";
 
