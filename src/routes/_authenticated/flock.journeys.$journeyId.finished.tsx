@@ -10,8 +10,8 @@ import { journeyDays, possessive, skillInSentence } from "@/lib/journeys";
 
 // Journey finished (Batch 4, screen 4): "[Bird] learned [skill]", the skill is
 // on the bird's list (done by the database when the last milestone was
-// reached), and one tip for whoever starts this journey next. Badges come in
-// February; the finish is recorded (journeys.finished_at).
+// reached), and one tip for whoever starts this journey next. Badges are
+// backlog items 1.13a/b; the finish is recorded (journeys.finished_at).
 export const Route = createFileRoute("/_authenticated/flock/journeys/$journeyId/finished")({
   component: Finished,
 });

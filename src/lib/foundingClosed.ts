@@ -3,14 +3,17 @@
 // whether claims are open (founding_status()); there is no closing date
 // (20261119160000_founding_no_deadline), so the cap is the only limit.
 //
-//   full     all 50 claimed before the Flock opens (Mon, Jan 4, 2027)
+//   full     all 50 claimed, and the Flock hasn't opened
 //   fullOpen all 50 claimed, and the Flock has opened
-
-/** 00:00 Eastern on Mon, Jan 4, 2027 (EST). */
-export const FLOCK_OPENS_AT = "2027-01-04T05:00:00Z";
+//
+// There's no fixed opening date: it's flock_settings.flock_opens_at, set when
+// Brittany opens the Flock. The public /founding page can't read that setting
+// yet (a proposal in the PR that removed the fixed date), so it passes null
+// and shows "full" until it can.
 
 export type FoundingClosedCase = "full" | "fullOpen";
 
-export function foundingClosedCase(now: Date = new Date()): FoundingClosedCase {
-  return now.getTime() >= Date.parse(FLOCK_OPENS_AT) ? "fullOpen" : "full";
+export function foundingClosedCase(opensAt: string | null, now: Date = new Date()): FoundingClosedCase {
+  if (!opensAt) return "full";
+  return now.getTime() >= Date.parse(opensAt) ? "fullOpen" : "full";
 }

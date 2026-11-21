@@ -10,8 +10,8 @@
 // A claim also grants a founding entitlement (database trigger, migration
 // 20261107120000_flock_entitlement_grants): free from opening day
 // (flock_settings.flock_opens_at) until the free season ends
-// (flock_settings.free_season_ends_at, Jul 6, 2027; migration
-// 20261119150000_founding_free_season_end), stored as free_until; billing at
+// (flock_settings.free_season_ends_at, set when Brittany opens the Flock;
+// migration 20261119150000_founding_free_season_end), stored as free_until; billing at
 // the locked $15 starts from free_until in the payments step.
 // FOUNDING PRICE IS ONE-WAY: if a founding membership is cancelled, the
 // founding price does not come back. A returning member pays the regular

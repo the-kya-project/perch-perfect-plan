@@ -9,7 +9,7 @@ export type AccessDates = {
   ends_at: string | null;
 };
 
-/** "Jan 5, 2027" in UTC, so every admin sees the same day. */
+/** "Mar 9, 2026" in UTC, so every admin sees the same day. */
 export function accessDay(iso: string): string {
   return new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric", timeZone: "UTC" });
 }

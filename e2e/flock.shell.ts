@@ -1234,7 +1234,7 @@ test.describe("journeys: what a free account sees", () => {
     await expect(page.getByRole("heading", { name: "Teach Buzz to wave" })).toBeVisible();
     await expect(sheet).toContainText("Tricks like this one are only available to Flock members.");
     await expect(sheet).toContainText("The Flock is The Kya Project's community, where you'll find your local chapter, a library of guides and recordings, and every training journey, including tricks, nail trims, and stationing.");
-    await expect(sheet).toContainText("Be an early Flock member and join for free until July 2027.");
+    await expect(sheet).toContainText("Join the Flock early, while it's free for everyone.");
     await expect(sheet.getByRole("button", { name: "Join the Flock free" })).toBeVisible();
     await expect(sheet).not.toContainText("$");
     await expect(page.locator("[data-template='wave']")).toHaveAttribute("aria-label", "Wave, part of the Flock");
@@ -2139,7 +2139,7 @@ test.describe("welcome, setup, profiles and chapters (admin, phone)", () => {
     await expect(page).toHaveURL(/\/flock\/you$/);
     await expect(page.getByRole("heading", { level: 1 })).toHaveText("Brittany K.");
     await expect(page.getByText("Community is separate from care reminders")).toBeVisible();
-    await expect(page.getByText("Founding · free until Jul 6, 2027, then $15/mo for life")).toBeVisible();
+    await expect(page.getByText("Founding · free while we're getting started, then $15/mo for life")).toBeVisible();
     await page.getByRole("button", { name: /Privacy/ }).click();
     await expect(page).toHaveURL(/\/flock\/you\/privacy$/);
     const see = page.getByTestId("privacy-see");

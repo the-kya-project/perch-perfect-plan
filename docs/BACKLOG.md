@@ -1,347 +1,388 @@
-# Backlog — known, deferred, not urgent
+# Backlog: the build list
 
-Things we know about and chose not to do yet. Each entry is written to be picked up
-cold: what the problem is, where the code lives, and what "done" looks like.
+This is the **single ordered build list** for everything before the Flock opens, and the list overnight agents work from. The rules for working it unattended are in CLAUDE.md, "Working the backlog unattended".
 
-Nothing here is blocking a release. Last updated 2026-11-06.
+- **There is no opening date.** Brittany opens the Flock when the waitlist is full and everything below is done, and she'll say when. Nothing here, or in code, copy or docs, names an opening date, a code-freeze date, a free-season end or a payments date.
+- **Order is priority, then dependencies.** An agent takes the highest item marked **Overnight alone: yes** that has no open PR and whose dependencies are all merged.
+- **"Overnight alone"**:
+  - **yes**: an agent can build it to a reviewable PR without asking anything partway through. Brittany still reviews and merges every PR, and anything under "Needs Brittany" still needs her explicit approval in that PR.
+  - **no**: it needs her before work starts.
+  - **after spec**: it waits for her written spec (see "Waiting on Brittany's spec").
+- **Sizes:** S = less than one session, M = about one session (one PR), L = two to three, XL = four or more.
+- **Health features** always ship behind their own off switch, with every value in the vet-content settings file (item 1.2) marked "draft, pending vet review". Nothing that tells an owner something about their bird's health reaches real users until an avian vet approves it.
+- **Mark an item done in this file in the same PR that finishes it** (move it to "Done" at the bottom with the PR number).
 
----
-
-## Push
-
-### Foreground notifications show nothing
-**Status:** known gap, shipped this way deliberately in 1.0.1 / versionCode 4.
-
-iOS suppresses notification banners while the app is in the foreground, and Capacitor's
-push plugin does not override that. If a sitter posts a log while the owner has the app
-open, they see nothing at all.
-
-- Fix: handle `pushNotificationReceived` (the plugin fires it for foreground pushes) and
-  present it in-app — a toast or an inbox badge rather than a system banner.
-- Where: `src/lib/pushNative.ts` already attaches `pushNotificationActionPerformed`
-  (tap handling); this is the sibling event.
-- **Needs a new native build on both platforms**, so batch it with other native work.
-
-### Android push has never been tested on a real device
-Verified as far as: FCM credential exchanges for an access token, the AAB contains the
-plugin, permissions are correct. **Not** verified: a notification arriving on an Android
-phone. iOS was confirmed end to end on 2026-09-22; Android was shipped on the strength of
-the shared code path.
-
-- Fix: borrow an Android device, install from internal testing, enable push, confirm.
-- Play internal testing currently has **no tester email list** — create one first
-  (Play Console → Testing → Internal testing → Testers).
-
-### Duplicate notifications while both apps are installed
-A phone with BOTH the PWA (home screen) and the store app gets each notification twice —
-one web-push row, one APNs row. The server can't tell they're the same device.
-
-- Simplest resolution: delete the PWA once the store app is live. Applies mainly to the
-  founder's own phone.
-- Only worth code if real users hit it. A "suppress web-push rows for a user who has a
-  native token on the same platform" rule guesses at intent and could silence someone who
-  legitimately uses both a desktop PWA and a phone.
+Where these items came from, with the detail behind each: `docs/flock/opening-scope.md`.
 
 ---
 
-## Native app
+## Ready to build
 
-### Deep links: open email links in the native app
-Status: code built; waits on the setup below and the iOS 1.0.3 (build 11) store build.
+### 0.3 Translation check passes and stays passing
+- **Done means:** `npm run i18n:check` passes on main and runs in the iPhone hydration job, so the catalog can't drift again. The 85 missing English phrases (all from the Library build: 22 `flock.library.*`, 63 `flock.libraryAdmin.*`) are added, the 2 stale keys dropped, and the Dutch gaps free users see today are filled (`clipRecorder`, `gift`, `giftThanks`, `redeem`).
+- **Size:** M
+- **Depends on:** nothing
+- **Overnight alone:** yes
+- **Needs Brittany:** a read of the new Dutch lines before merge. The Flock's 846 missing Dutch keys wait for her decision on a Dutch Flock.
 
-What's in the code (the list of paths lives in `src/lib/appLinks.ts`):
-- `/.well-known/apple-app-site-association` and `/.well-known/assetlinks.json`, served by
-  the app. Host-aware: app.thekyaproject.com lists the app's screens; links.thekyaproject.com
-  lists only `/r/*`.
-- iOS Associated Domains entitlement and Android `autoVerify` intent filters for both hosts.
-  `npm run test:app-links` fails if the manifest drifts from the list.
-- `attachAppLinkHandler` (`src/lib/appLinkNative.ts`) routes `appUrlOpen` and the cold-start
-  launch URL. Signed out → the existing sign-in return path takes over.
-- Household invites (`/invite/…`) and the links in sign-in emails open the app on iOS
-  (2026-10-28). The send-email hook points confirm/reset/email-change links at our own
-  `/verify?token_hash=…`, which redeems the token with `verifyOtp` and so works in the app or
-  any browser (the old Supabase link came back with a PKCE `?code=` only the starting browser
-  could use). Not in the Android manifest yet.
-- Sign-in (`/auth`, `/welcome`), `/handoff`, anything with `?code=`, the sitter view, `/r/` on
-  app., unsubscribe and the store redirects stay in the browser. Sitter links are never
-  click-tracked, so no `/r/` link leads to one.
-- Tracked email links: iOS won't open the app on a same-domain redirect, so app-screen links
-  go through `EMAIL_CLICK_ORIGIN` (https://links.thekyaproject.com). The app loads
-  app.thekyaproject.com/r/<token> itself, so the click is still logged.
-- `server.appendUserAgent: 'KyaApp'` rides along (below).
+### 0.4 Credit /get-page sign-ups to the link that brought them
+- **Done means:** someone who scans the postcard or taps a campaign link, lands on /get and later signs up on the web is credited to that link, not "direct". Built from `origin/claude/busy-mccarthy-qntx5t` (one commit, `d974e8e`, still applies cleanly) on a new branch, with `npm run test:get-app` passing, and a note confirming /get is served from app.thekyaproject.com (the credit only carries within one site).
+- **Size:** S
+- **Depends on:** nothing
+- **Overnight alone:** yes
+- **Needs Brittany:** merge only.
 
-Still to do, in order:
-1. Play Console → App integrity → App signing: copy the **app signing** SHA-256 into Vercel
-   env `ANDROID_APP_SIGNING_SHA256` (production), then redeploy.
-2. Apple Developer → Identifiers → com.thekyaproject.app: enable **Associated Domains**,
-   regenerate the provisioning profiles.
-3. Add `links.thekyaproject.com` to the Vercel project (DNS CNAME to Vercel). Check that
-   https://links.thekyaproject.com/.well-known/assetlinks.json returns 200 JSON.
-4. New store builds (`npx cap sync android` before `./gradlew bundleRelease`, as always).
-   Android 11 and older verify all hosts or none, so step 3 must be live first.
-5. Once the builds are live, set `EMAIL_CLICK_ORIGIN=https://links.thekyaproject.com` in Vercel.
-6. Brevo's own click tracking wraps our links in its redirect, which defeats Universal Links.
-   Turn it off for transactional sends (our tracker replaces it).
-7. Test in Apple Mail and the Gmail app, app installed vs not, signed in vs out. Gmail's
-   in-app browser may still open the web; that's Gmail's choice, not ours.
+### 2.1 The startup guard listens before anything can fail
+- **Done means:** the page reset for a missing code file works on WebKit 30 times out of 30 in CI.
+  - The startup guard script is the first thing in the page's `<head>`, before the code preloads and the inlined styles.
+  - It keeps a list of the page's code files, so the error screen can tell a missing file from a real error.
+  - A test checks the order in the served HTML.
+  - Rebuilt from closed PR #431 (reference branch `fix/native-release-catchup`). The likely cause of its flaky test is in `docs/flock/opening-scope.md` B5.
+- **Size:** M
+- **Depends on:** nothing
+- **Overnight alone:** yes
+- **Needs Brittany:** merge only. It touches the app shell (`__root.tsx`), so the PR shows the free-user regression check and before-and-after screenshots.
 
-Apple Smart App Banner: live on app screens (`smartAppBannerContent`), so people who land in Safari get an "Open" bar that goes to the same screen.
+### 1.1 A contact line inside the Flock
+- **Done means:** every Flock screen has a published way to contact us, which Apple's guideline 1.2 requires for apps with member posts. For example, a "Contact us" row in Flock settings and a line in the community guidelines, using `SUPPORT_EMAIL` (`src/lib/support.ts`).
+- **Size:** S
+- **Depends on:** nothing
+- **Overnight alone:** yes
+- **Needs Brittany:** the wording (before-and-after in the PR).
 
-### `appendUserAgent: 'KyaApp'` so native requests are identifiable
-Status: set in `capacitor.config.ts` on feat/universal-links; takes effect with the same
-store build as the deep links above.
+### 1.2 Vet-content settings file and a switch for every health feature
+- **Done means:**
+  - **One labeled file** (e.g. `src/lib/healthRules.ts`) lists every health threshold, phrase list and safety wording: the diet weight rules, the vet-nudge phrases, the health-check triage rules, the weight-trend levels, the emergency guidance numbers, and the weight baseline values for D1. Each value is marked "draft, pending vet review" with its research source.
+  - **Values in the database must match the file.** Where a value lives in a database settings table (`journey_settings`, `flock_vet_signs`), a check fails if the table and the file disagree.
+  - **Every health feature has its own off switch** (off / admins / everyone), so a feature without vet approval stays hidden while everything else works.
+  - The vet review packet (`docs/flock/opening-scope.md` B7) points at this file.
+- **Size:** L
+- **Depends on:** nothing
+- **Overnight alone:** yes
+- **Needs Brittany:** approval of the health content and of any new switch table (a database change).
 
-The shell ran in remote-URL mode against app.thekyaproject.com with no user-agent marker, so
-a request from the installed app was indistinguishable from a mobile browser. That is why the
-app-launch email could not be targeted properly.
+### 2.2 A version endpoint and release rules
+- **Done means:** `/api/public/version` returns the build id, uncached, and the pure rules for "a new release is out, update now or later" live in `src/lib/releaseCheck.ts` with tests. Nothing behaves differently yet.
+- **Size:** M
+- **Depends on:** 2.1
+- **Overnight alone:** yes
+- **Needs Brittany:** merge only.
 
-- Only helps going forward; it cannot say anything about installs that already exist.
-- Complementary to `last_native_app_seen_at` on `profiles`, which is a web-deploy change
-  and does not wait for a build.
+### 2.3 Open pages notice a new release
+- **Done means:** an open app or web page checks for a new release on launch, hourly and when it comes back to the foreground, and updates safely: a quiet reload with no form in progress, otherwise the existing "A new version is ready" banner.
+- **Size:** M
+- **Depends on:** 2.2
+- **Overnight alone:** yes
+- **Needs Brittany:** merge, and a check in the iPhone Simulator with the app left open across a preview release.
 
-### "Open settings" button for the notifications-denied state
-Status: same future native build as the deep links above.
+### D3 Seasonal calendar file
+- **Done means:** a reviewed file of dated cards for the whole year (seasons and holidays, including heat, cold, fireworks, candles, holiday foods and travel), each with English and Dutch copy and a rule for which day it shows, plus a test that every date resolves and every card exists in both languages. Not vet-reviewed content: plain care reminders only, never health advice.
+- **Size:** S
+- **Depends on:** nothing
+- **Overnight alone:** yes
+- **Needs Brittany:** the card copy (before-and-after in the PR).
 
-When push is denied at the OS level, Settings says so but offers no button, because
-nothing we ship can open the app's own settings page: `@capacitor/app` has no `openUrl`
-in this version, and `@capacitor/browser` only opens web URLs, so `app-settings:` goes
-nowhere.
+### D1.1 Weight baseline rules and a replay of real history
+- **Done means:**
+  - A pure function works out each bird's own normal weight by meal state (before a meal, after a meal, or not labeled). It shows "still learning" until there are at least 7 weigh-ins over at least 14 days, and returns the alert tier: "worth watching", "keep an eye on this" or "call your vet today".
+  - It also covers the free hard weight-loss safety alert. Every number comes from the settings file (1.2), marked draft, using the most conservative research values (`docs/flock/opening-scope.md` B4).
+  - A replay script runs the function over an exported copy of real weight history and reports how often each tier would have fired, per bird.
+- **Size:** M
+- **Depends on:** 1.2
+- **Overnight alone:** yes (the export of real history is a one-time read-only query Brittany runs or approves)
+- **Needs Brittany:** health content; the replay results before D1.2.
 
-- Needs a plugin that opens the OS settings page, e.g. `capacitor-native-settings`.
-- The UI is already built for it: `NotificationsCallout` renders the button whenever
-  `canOpenSettings` is true, and `scans.settings.tsx` hardcodes that to `false` with the
-  reason written next to it. Adding the plugin is a one-line change there.
-- Needs a store rebuild, so it rides along with the deep-links work rather than shipping
-  on its own.
+### 1.3 Deleted posts stay hidden for 180 days, then are purged
+- **Done means:** deleting a post or comment hides it, and its comments, from everyone at once, the author included. A daily database job permanently deletes it and its photos 180 days later. Deleting a whole account stays immediate. Pinned in `supabase/checks/flock_posts_checks.sql` (legal draft D10).
+- **Size:** M
+- **Depends on:** nothing
+- **Overnight alone:** yes
+- **Needs Brittany:** approval of the deletion job (it deletes data) and of the change to the existing delete functions.
 
-### Cover screen side column — needs native screen detection, version 1.2
-**Status:** deferred to 1.2. The iPhone Duo side column shipped for the unfolded screen
-held sideways in #433; the folded cover screen still gets the regular iPhone layout.
+### 1.4 Removed content and closed reports are deleted after 180 days
+- **Done means:** the same daily job deletes reviewer-removed content and closed reports 180 days after they were resolved. Pinned in `supabase/checks/flock_moderation_checks.sql` (legal draft D9).
+- **Size:** S
+- **Depends on:** 1.3
+- **Overnight alone:** yes
+- **Needs Brittany:** approval of the deletion (it deletes data).
 
-The web app can't tell the Duo's cover screen (382×837) apart from a regular iPhone held
-upright, and a regular iPhone must never get the side column, so `src/lib/duo.ts` decides
-by available space only (landscape, room for two panes) and the cover screen doesn't
-qualify.
+### D2.1 Seasonal and holiday Today cards on Home
+- **Done means:** Home shows the day's card from the calendar file (D3), keyed on the owner's own local date and in their language, behind its own switch, which starts off and then goes to Brittany's account only. It never calls the Flock's Today's idea. It passes the iPhone hydration check: the date is read after the page loads.
+- **Size:** M
+- **Depends on:** D3
+- **Overnight alone:** yes
+- **Needs Brittany:** the copy; turning the switch on for everyone changes Home for free users, so that needs her approval and before-and-after screenshots.
 
-- Fix: have the native app report which screen it's on (cover or inner display) to the web
-  layer, e.g. a class on `<html>` or a value the `useDuoMode()` hook reads, and show the side
-  column (`DuoRail`) on the cover screen when it says so.
-- Approved design: the "Proposed: Home folded (cover screen)" artboard in the Duo mockups
-  (https://claude.ai/artifact/Xhu4izWBxtHMNbpkfYt2df).
-- **Needs a new native build**, so it rides along with other 1.2 native work.
-
-### Sign in with Apple: make the native plugin handle overlapping requests
-**Status:** web side guarded in #439 (Nov 2026); the native cause is still there.
-
-In `@capgo/capacitor-social-login`, the Apple provider keeps a single `completion`
-handler, and its delegate doesn't check which request is answering. A second `login()`
-while one is open replaces the handler; iOS then cancels the first request, and that
-cancel (`ASAuthorizationError` 1001) reaches the second caller while its sheet is still
-on screen, so the sheet's real answer goes nowhere. #439 stops the web app from ever
-starting a second request (one sign-in at a time in `src/lib/nativeOAuth.ts`, a tap ref
-in `SocialSignInButtons`) and treats 1001 as a quiet cancel (`src/lib/oauthErrors.ts`).
-
-- Fix: extend `patches/@capgo+capacitor-social-login+<version>.patch` so the Apple
-  provider keeps a handler per `ASAuthorizationController` (or ignores callbacks from a
-  controller that isn't the current one), and only the current request completes.
-- Regenerate the patch with the command in CLAUDE.md (iOS native shell section).
-- Done when: two rapid `login()` calls from the native side produce one sheet and one
-  result, and a cancel only ever reaches the request it belongs to. Test on a real iPhone.
-- **Needs a new native build**, so it rides along with other native work.
-
----
-
-## iPhone Duo: half-folded ideas (later, not now)
-
-**Status:** ideas only, nothing built. Revisit both after 1.2 is approved and the Duo
-layouts have been tried on a real iPhone Duo.
-
-### Weigh station (suggested first)
-With the Duo half-folded like a laptop, the top half shows the current bird's photo and
-last weight, and the bottom half shows a large number pad to log today's weight. Saving
-moves on to the next bird, so the whole flock can be weighed hands-free.
-
-- Uses the hinge status and fold position the native bridge already sends
-  (`data-hinge`, `--fold-x`).
-- Mostly a web change once 1.2 is installed.
-
-### Tripod mode
-The Duo stood up half-folded to film a bird hands-free.
-
-- Needs camera access, choosing the right Duo camera, and recording and saving clips.
-- **Needs native work and a new App Store build.**
+### D5.1 Weekly recap by push, replacing the 10- and 30-day lapse nudges
+- **Done means:** a weekly push recap (weigh-ins, health checks, journal entries, no health judgments) replaces the `checkin_reminder` branch of `src/routes/api/public/hooks/engagement-nudges.ts`. It keeps the existing toggles, cooldown and dry-run mode, and is built behind a switch that starts off. Push only, no email.
+- **Size:** M
+- **Depends on:** nothing
+- **Overnight alone:** yes (built and merged switched off)
+- **Needs Brittany:** the wording, and her approval before it's switched on, since that sends push to real users.
 
 ---
 
-## Security / infrastructure
+## Needs Brittany before work starts
 
-### CSP is still report-only
-`vite.config.ts` ships `Content-Security-Policy-Report-Only` with a `report-uri` pointing
-at `src/routes/api/public/csp-report.ts`. It was always meant to be flipped to enforcing
-once real traffic proved the policy doesn't break anything.
+### 2.4 Open pages fetch the new build's files after a release
+- **Done means:** after a release, an open page's next request reaches the new build, not the old one Vercel's Skew Protection pinned it to, so the sitter preview can't load a page whose code files are missing.
+- **Size:** M
+- **Depends on:** 2.3, and Brittany's decision on Vercel's Skew Protection setting
+- **Overnight alone:** no
+- **Needs Brittany:** the Skew Protection decision. Any change to Vercel settings is hers.
 
-- Blocked on: reading `[csp-report]` lines from Vercel runtime logs. The token available
-  in the working session 403s on runtime logs.
-- Fix: read the reports, add any legitimately-needed hosts, then rename the header to
-  `Content-Security-Policy`.
-- Do NOT flip it blind — a missing host silently breaks a third-party integration.
+### 2.5 The sitter preview never stalls after a release
+- **Done means:** the Nov 2 bug can't happen. The sitter preview catches up to a new release before it opens, and recovers a stalled frame. Checked in the iPhone Simulator with the app left open across a release (see the "Sitter preview stale-session test" memory).
+- **Size:** M
+- **Depends on:** 2.3 (and 2.4 if that's approved)
+- **Overnight alone:** no (needs a hands-on Simulator check)
+- **Needs Brittany:** the Simulator test with her, and merge.
 
-### iOS Info.plist still registers the dead `kya://` URL scheme
-The `kya://` deep-link auth flow was abandoned (it hit intermittent
-`flow_state_not_found`). The Android intent filter was removed 2026-09-17; the iOS scheme
-was deliberately left so build 6 wouldn't need rebuilding.
+### D1.2 Weight baseline on the weight page, in shadow mode
+- **Done means:** the weight page shows the range and "still learning", a small celebration when the baseline is learned, and the alert cards. Everything is behind its own switch, on for Brittany's account only. Would-be alerts for every bird are logged to a table nobody else sees, so they can be checked against what actually happened.
+- **Size:** L
+- **Depends on:** D1.1
+- **Overnight alone:** no (adds a care-app table for the shadow log)
+- **Needs Brittany:** approval of the care-app database change, and of the health wording.
 
-- Fix: remove the `CFBundleURLTypes` entry for `kya` from `ios/App/App/Info.plist` on the
-  next iOS build.
+### 1.14 Billing foundation (switched off)
+- **Done means:** the billing tables (`billing_customers`, `billing_events`, the new `entitlements` columns), the Stripe billing webhook (`/api/public/stripe/billing`, its own secret, fixture tests in `npm run test:billing`) and the card step (`/flock/membership`, $0 due, never shown in the native app) all exist behind `BILLING_ENABLED`, which stays off. Test mode only. Spec: `docs/flock/payments-plan.md` sections c and d, items 1–3.
+- **Size:** XL
+- **Depends on:** nothing
+- **Overnight alone:** no
+- **Needs Brittany:** approval to start (payments), and approval of the `entitlements` change in the PR. Nothing in the Stripe Dashboard is touched.
 
----
+### 1.15 Kya's Crew and its sponsored rescue-adopter seat (switched off)
+- **Done means:**
+  - Crew plans exist: $37 a month billed annually ($444 a year) or $45 month to month.
+  - They count as a Flock membership and record 25% giving.
+  - Each Crew member sponsors six months for a new rescue adopter, tracked in a sponsorship count, with an admin view of seats sponsored and used.
+  - No trial.
+  - Nothing is on sale until billing starts. Spec: `docs/flock/payments-plan.md` item 6d.
+- **Size:** L
+- **Depends on:** 1.14
+- **Overnight alone:** no
+- **Needs Brittany:** payments, and the `entitlements` plan change.
 
-## Product
+### 1.17 Promo codes for memberships
+- **Done means:** promotion codes work on the card step, with rules for founding vs regular prices. The Apple offer codes iPhone needs (whole months only) are listed for when the iPhone paywall is built.
+- **Size:** M
+- **Depends on:** 1.14
+- **Overnight alone:** no
+- **Needs Brittany:** payments, and the rules for which codes apply to which plans.
 
-### iPad landscape polish
-**Status:** found reviewing #433's iPad screenshots (`npm run screens:duo`, iPad Air
-1180×820 and iPad Pro 1366×1024 sideways). iPads held sideways get the iPhone Duo side
-column and two-pane layouts (`src/lib/duo.ts`), which work but were tuned for the Duo.
-
-- **Weight log card stretches too wide.** On the weight page the "Log a weight" card fills
-  the left half (about 560–650px on iPad), so the weight field and the Before/After meal
-  buttons stretch very wide with empty space below. (`LogPanel` wide variant,
-  `$birdId.weight.tsx`.)
-- **Empty space beside the Home list.** Home's left pane is wider than the phone-width
-  column inside it (`mx-auto max-w-md` in `dashboard.tsx`), leaving a strip on each side
-  under a full-width header. The full health check's left pane does the same.
-- **Long empty middle in the side column on tall screens.** On a 1024px-tall iPad Pro, Back
-  sits at the top and the tabs at the bottom with about 500px of nothing between them
-  (`DuoRail`, `.duo-rail` in `styles.css`).
-- **Phone-sized text on large screens.** Type and controls stay at phone sizes, so both
-  panes look sparse on a 13-inch screen.
-
-Done means: the four pages in `screens:duo` look intentional at both iPad sizes, while the
-split stays on the screen's center and the Duo sizes don't change.
-
-### Vet summary PDF export was never merged
-`main` uses `window.print()`, which is a **no-op inside both native shells** — the button
-does nothing for app users. A working react-pdf implementation exists on the branch
-`today-wip-backup` (commit `43fd077`) and was never merged.
-
-- Fix: port it from that branch, or hide the button in the native shell (it's already
-  hidden — see `$birdId.vet-summary.tsx` — so the current state is honest, just
-  feature-less on mobile).
-
-### Onboarding quickstart is shelved
-Finished and QA'd work parked on `origin/redesign/onboarding-quickstart`. Shelved by the
-owner as "too big". Don't resume without asking.
-
-### Each bird's normal weight range, and alerts when a weigh-in falls outside it
-**Status:** requested by the owner 2026-09-23. Wanted before weight alerts can ship.
-
-Today the "normal range" is whatever the owner types into the health step of the
-walkthrough (`birds.normal_weight`, `normal_weight_min`, `normal_weight_max`, set in
-`$birdId.setup.tsx`). It's shown on the care plan and the sitter view, but nothing checks
-new weigh-ins against it. `src/lib/weightTrend.ts` only labels trends (steady within
-±2.5% over the window, or up/down) and deliberately never shows red.
-
-What to build:
-- **Baseline.** Decide how the app establishes a bird's normal range from its own
-  weigh-ins, and when it has enough data to trust one. Starting proposal: at least 7
-  weigh-ins over at least 14 days. Prefer `before_meal` entries (`weight_entries.meal_relation`)
-  when there are enough of them, because weight swings around meals. A range the owner
-  entered by hand overrides the computed one. Show the range on the weight page, with a
-  "still learning [bird]'s normal" state until the baseline exists.
-- **Alert thresholds.** Starting proposal, to be checked with an avian vet before shipping:
-  - "worth a look": 5% or more below the baseline, or three weigh-ins in a row going down
-  - "call your vet": 10% or more below the baseline
-  - gains above the range get a gentler note
-- **Delivery: in-app only. No email.** Decided by the owner 2026-09-23, reversing the
-  earlier "push and email too". Show the alert in the app on the weight page and in the
-  bird's record. Send one alert per crossing, not one per weigh-in. When a sitter or
-  household member logs the weight, alert the owner. Wording is the same kind as the
-  flagged-scan alert: specific, calm, never a diagnosis, and always with the line
-  "This app doesn't diagnose illness… contact an avian veterinarian."
-- **Don't build an email builder for this.** No entry in `src/lib/emailTemplates.ts`,
-  no keys in `src/locales/emails.*.jsonc`, no notification-settings toggle.
-
-Open questions: species reference ranges as a starting point before a bird has its own
-baseline (nothing in the repo holds them yet), and whether a vet should review the
-thresholds before launch.
-
-One consequence of in-app-only worth revisiting: the owner sees the alert when they next
-open the app, not when the weigh-in happens. A drop noticed three days late is a different
-product from one that reaches them that morning. Push would close the gap without an email
-— but the engagement-nudge work found only one push subscriber, so that channel is thin
-until native push adoption grows. Deliberately deferred, not overlooked.
-
-### Dead session on an open screen
-Status: after the October 2 send.
-
-When the session dies while a screen is open, the dashboard empties its bird cards but
-stays put. It should send the reader to `/auth` with the current path kept, so nobody
-thinks their birds are gone.
+### 1.9 Pre-approval for more spaces (only if wanted)
+- **Done means:** posts in the spaces Brittany picks wait for review before other members see them, the way Do good posts already do.
+- **Size:** S
+- **Depends on:** her decision: Do good only (as today), or more spaces
+- **Overnight alone:** no
+- **Needs Brittany:** the decision, and approval of the change to an existing Flock function.
 
 ---
 
-## Release / store
+## Waiting on Brittany's spec
 
-### Android still shows "Kya" on the launcher
-iOS ships "Kya & Co." from 1.0.1 / build 9; Android versionCode 4 was mid-review when the
-name was fixed and was deliberately not disturbed, so it ships "Kya".
+**Agents never start these early.** Each waits for a short written spec from Brittany: what a member sees, what an admin does, and what's out of scope. Listed in the order she plans to write them.
 
-- The fix is **already committed** in `android/app/src/main/res/values/strings.xml`
-  (`app_name` and `title_activity_main`) — it rides along with the next Android build.
-- While there, bump `versionName` from `1.0` to match iOS. Play only requires `versionCode`
-  to increase, so the mismatch is cosmetic, but the two stores reading differently is
-  confusing.
+### 1.16 Rescue partner codes
+- **Done means:** a partner rescue gets a code. An adopter redeems it (on Join or a redeem page), the adoption details go to Brittany for approval, and an approved adopter gets six months in the Flock, starting when the free season ends, drawn from the Crew sponsorship count. Admin screens cover partners and codes.
+- **Size:** L
+- **Depends on:** 1.15, spec
+- **Overnight alone:** after spec
+- **Needs Brittany:** the spec. It grants access, so approval is needed in the PR.
 
-### App Store Connect rejection emails go somewhere unread
-Apple's ITMS-90062 rejection on 2026-09-22 never arrived at brittany@thekyaproject.com — a
-mailbox search found nothing from Apple since July. The rejection was only noticed by
-looking at the console.
+### 1.6 Curated chapter collections
+- **Done means:** each chapter's Resources tab lists recommended avian vets, rescues and shops as simple cards that don't look like posts (name, area, phone, link, a short note). Chapter leads and admins add and edit them.
+- **Size:** L
+- **Depends on:** spec
+- **Overnight alone:** after spec
+- **Needs Brittany:** the spec, and the opening listings (content).
 
-- Fix: App Store Connect → Users and Access → the user → notification settings, and point
-  App Review notifications at a mailbox that's actually read.
-- Worth doing before the next submission; a missed rejection can sit for days.
+### 1.8 Do good voting (and the founding vote)
+- **Done means:**
+  - Members vote on Do good items.
+  - Founders vote on the first expert Q&As and the first chapters, which the founding page promises (`founding.tsx`).
+  - Admins open, close and announce each vote.
+  - Results show only above a minimum count.
+- **Size:** L
+- **Depends on:** spec
+- **Overnight alone:** after spec
+- **Needs Brittany:** the spec and the copy.
+
+### 1.7 Instagram share cards for journeys
+- **Done means:** a member can share a milestone, a finished journey or a day-one-vs-now card, sized for posts and stories, with photo metadata removed. Never anything from a "Just me" journey outside its household. Reuses the care app's Moments card (`src/lib/momentCard.ts`).
+- **Size:** L
+- **Depends on:** spec and card design
+- **Overnight alone:** after spec
+- **Needs Brittany:** the design.
+
+### 1.13a Badges: the Flock set
+- **Done means:** badge definitions and earned badges, awarded for Flock activity and shown on profiles, alongside the existing founder and Chapter lead badges.
+- **Size:** L
+- **Depends on:** spec and badge art
+- **Overnight alone:** after spec
+- **Needs Brittany:** the spec, art and copy.
+
+### 1.13b Badges: care badges free users can earn
+- **Done means:** free users earn care badges in the care app (for example weigh-in streaks, regular health checks, a finished care plan), behind a switch that starts off.
+- **Size:** L
+- **Depends on:** 1.13a
+- **Overnight alone:** after spec
+- **Needs Brittany:** approval. It changes the free-user experience, so the PR needs before-and-after screenshots. Any health-related badge rule also goes in the vet packet.
+
+### 1.10 Challenges
+- **Done means:** admins schedule a challenge (Flock-wide or one chapter). Members enter with a post or clip, and the challenge shows on Today and Journeys, following the existing visibility and block rules.
+- **Size:** XL
+- **Depends on:** spec
+- **Overnight alone:** after spec
+- **Needs Brittany:** the spec and the first challenges (content).
+
+### 1.11 Buddy pods
+- **Done means:** members can join a pod of 3–6 (by chapter or journey), with its own check-ins. Admins form, move and dissolve pods. Blocks are respected.
+- **Size:** XL
+- **Depends on:** spec
+- **Overnight alone:** after spec
+- **Needs Brittany:** the spec.
+
+### 1.12 Flock insights
+- **Done means:** members see species-level care patterns built only from totals (a minimum count, never one bird), and free users can opt out of their care logs counting. Covered by a privacy-policy line.
+- **Size:** L
+- **Depends on:** spec, and the privacy-policy line
+- **Overnight alone:** after spec
+- **Needs Brittany:** the spec, the opt-out wording, and approval. It reads care-app data for a members-only feature.
 
 ---
 
-## Housekeeping
+## Lowest priority (after everything else)
 
-### Run `test:no-home-screen` in CI
-`npm run test:no-home-screen` renders every authenticated page inside a stubbed native
-shell and fails on any install or home-screen copy. It needs a signed-in QA account, so
-it only runs locally today.
-
-- Run it in CI once QA credentials can be stored as a CI secret.
-- It reads `QA_CREDS` (a file) or `QA_EMAIL` + `QA_PASSWORD`, and skips loudly rather
-  than passing when neither is set.
-
-
-### `appstore-screenshots/` is untracked — decide what to do with it
-36 PNGs, ~15 MB, currently untracked. Git history is permanent, so committing adds 15 MB
-to every clone forever, and these assets already live in App Store Connect and Play
-Console.
-
-- Options: commit as-is, use Git LFS, or keep them out of the repo entirely.
-- Deliberately left undecided rather than committed by default.
-
-### `_to_delete/` contains a stray 0-byte file
-`_to_delete/index.lock.stale` — almost certainly debris from an interrupted git
-operation. Delete the directory.
+### D2.2 Weather cards
+- **Done means:** Home shows a heat or cold card from Apple WeatherKit, by the owner's stored home ZIP (never device location), cached per area, behind its own switch.
+- **Size:** M
+- **Depends on:** D2.1, a WeatherKit key, a privacy-policy line
+- **Overnight alone:** no
+- **Needs Brittany:** the WeatherKit key, the privacy line and the copy.
 
 ---
 
-## i18n
+## Last: when Brittany decides to open
 
-### `npm run i18n:check` fails on `main` (catalog drift)
-**Status:** pre-existing, found 2026-10-14 while adding the error-screen strings. Left alone on purpose.
+### 1.18 The launch PR (PR C)
+- **Done means:**
+  - A "Join the Flock" screen, with a required "I'm 18 or older" confirmation and acceptance of the community guidelines, both stored.
+  - `flock_enabled()` is true for members.
+  - The one approved entry point is in place: the Community button and one dismissible Home card.
+  - The free-user regression check asserts exactly that.
+  - Merged dark, and switched on with a database setting, not a deploy.
+- **Size:** L
+- **Depends on:** everything above that's required, plus the legal pages (1.5)
+- **Overnight alone:** no
+- **Needs Brittany:** this is the launch decision.
 
-`npm run i18n:extract` on `main` rewrites `src/locales/en.jsonc` with ~205 lines of changes:
-keys used in code that never made it into the English catalog. So `i18n:check` (which runs the
-same extraction with `--fail-on-update`) fails before anyone touches i18n. Nothing enforces it in
-CI today, which is how it drifted.
+### 1.5 Legal pages
+- **Done means:** `/terms` and `/privacy` carry Brittany's approved community, billing and age text (from `docs/legal/drafts/2026-11-flock-legal-update.md`). The post-deletion wording goes live only once 1.3 has.
+- **Size:** M
+- **Depends on:** the final legal text, 1.3
+- **Overnight alone:** no
+- **Needs Brittany:** the legal text.
 
-- Fix: run `npm run i18n:extract` on a clean `main`, review the diff (expect only additions and
-  re-sorting), commit it, then run the Dutch step for the newly stale keys
-  (`npm run i18n:translate -- --check` first to see them).
-- Watch for: extraction keeps an EXISTING key's catalog value even when the code's English
-  default changed, so changed copy must be edited in `en.jsonc` by hand (or given a new key).
-- Done when `npm run i18n:check` passes on `main`; consider making it a required check.
+### 1.19 Content loading
+- **Done means:**
+  - Today's ideas are `ready` for the first two weeks after opening.
+  - The 14 journey templates are approved.
+  - The Library's opening items, the chapter collections' listings and the Start here posts are in.
+- **Size:** Brittany's time
+- **Depends on:** content approval
+- **Overnight alone:** no
+- **Needs Brittany:** all of it.
+
+### D1.3 Weight baseline alerts on for everyone
+- **Done means:** the vet-approved values are in the settings file and the switch is on for everyone.
+- **Size:** S
+- **Depends on:** D1.2, the vet's sign-off
+- **Overnight alone:** no
+- **Needs Brittany:** the vet's approval and her go-ahead.
+
+---
+
+## When Brittany says we're opening
+
+1. Brittany picks **opening day** and the **free season's end**, and sets the **payments timeline** (when cards are asked for, when billing starts, when the iPhone paywall appears). Then update `docs/flock/payments-plan.md` to match.
+2. Fill in the two settings on production (Brittany, in the Supabase SQL editor):
+   - `select public.admin_set_free_season_ends_at('<end> America/New_York');`
+   - `select public.admin_set_flock_opens_at('<opening> America/New_York');`
+
+   Unstarted founding and gift grants re-date themselves.
+3. Check that the founding page, gift pages, membership screen and emails read their dates from the settings and say the right thing.
+4. **Dry run on production** with admin accounts: join → post → journey → report → block → kill switch, on web, iPhone, iPad and Duo.
+5. **Name reviewers** for `/admin/review`.
+6. **Code freeze:** no merges for the days around opening, apart from fixes Brittany approves.
+7. Brittany drafts the opening emails in Brevo and updates the website (Webflow). Nothing is scheduled to send on its own.
+8. **Open:** merge or switch on 1.18, then check the free-user regression check and save-error alerts that morning.
+9. Health features without vet approval stay switched off. Everything else opens.
+
+---
+
+## Later (deferred, still applies)
+
+### Push
+- **Foreground notifications show nothing on iOS.**
+  - Handle `pushNotificationReceived` in `src/lib/pushNative.ts` and show it in-app (a toast or an inbox badge).
+  - Needs a native build on both platforms.
+- **Android push has never been tested on a real device.** Install from Play internal testing (create a tester list first), enable push, confirm a notification arrives.
+- **Duplicate notifications with both the PWA and the store app installed.** Simplest fix: remove the PWA. Only write code if real users hit it.
+
+### Native app
+- **Deep links for email links.** The code is built. Still to do, in order:
+  1. Android app-signing SHA-256 into `ANDROID_APP_SIGNING_SHA256`.
+  2. Associated Domains on the Apple identifier, then regenerate the profiles.
+  3. `links.thekyaproject.com` on Vercel.
+  4. New store builds.
+  5. `EMAIL_CLICK_ORIGIN`.
+  6. Turn off Brevo click tracking for transactional sends.
+  7. Test in Apple Mail and Gmail.
+
+  (Vercel, Apple and Brevo steps are Brittany's.)
+- **`appendUserAgent: 'KyaApp'`** takes effect with the same store build.
+- **"Open settings" button when push is denied.** Needs a plugin such as `capacitor-native-settings` and a store build. The UI is ready (`canOpenSettings` in `scans.settings.tsx`).
+- **Duo cover screen side column.** The native app needs to report which screen it's on (`useDuoMode()`), and it needs a native build. Approved design: the "Proposed: Home folded (cover screen)" artboard.
+- **Sign in with Apple, overlapping requests.**
+  - Extend `patches/@capgo+capacitor-social-login+<version>.patch`, so the Apple provider keeps a handler per request.
+  - Test on a real iPhone.
+  - Needs a native build.
+
+### iPhone Duo: half-folded ideas (not now)
+- **Weigh station:** with the phone half-folded, the bird's photo shows on top and a number pad on the bottom, weighing the whole flock hands-free.
+- **Tripod mode:** filming hands-free. Needs native camera work and a store build.
+
+### Security / infrastructure
+- **CSP is still report-only.** Read the `[csp-report]` lines in Vercel runtime logs, add any hosts that are really needed, then switch to enforcing. Never flip it blind.
+
+### Product
+- **iPad landscape polish:**
+  - the weight log card stretches too wide;
+  - there's empty space beside the Home list;
+  - the side column has a long empty middle on tall screens;
+  - text stays phone-sized.
+
+  Done when the `screens:duo` pages look intentional at both iPad sizes.
+- **The vet summary PDF export was never merged.** `window.print()` does nothing inside the native apps, so the button is hidden there. A working react-pdf version is commit `43fd077`, inside the deleted branch `today-wip-backup`. To bring the branch back, use its last commit in `docs/branch-cleanup-2026-11-20.md`: `git push origin 638ac057448b3ba0901ec8ee00d7a59e4ea526e3:refs/heads/today-wip-backup`.
+- **The onboarding quickstart is shelved.** Finished work is parked on `origin/redesign/onboarding-quickstart`. Don't resume it without asking.
+- **Dead session on an open screen.** When the session dies on an open screen, the dashboard empties its bird cards but stays put. Send the reader to `/auth` with the path kept.
+
+### Release / store
+- **Android still shows "Kya" on the launcher.** The fix is committed in `strings.xml` and rides along with the next Android build. Bump `versionName` to match iOS then.
+- **App Store Connect rejection emails go somewhere unread.** Point App Review notifications at a mailbox that's read (Brittany, in App Store Connect).
+
+### Housekeeping
+- **Run `test:no-home-screen` in CI** once QA credentials can be stored as a secret.
+- **`appstore-screenshots/` is untracked.** Decide: commit, Git LFS, or keep out. It's left undecided on purpose.
+- **`_to_delete/` holds one 0-byte stray file.** Delete the folder.
+
+---
+
+## Done
+
+- **0.1** #377 (diet type labels): already done on main by #378, Oct 21. #377 itself duplicates it and breaks the build. Close it (Brittany).
+- **0.2** #490's migration given its own version (`20261121150000`) and merged (Nov 21).
+- The dead `kya://` URL scheme was removed from `ios/App/App/Info.plist` (#331).
+- The weight-range item ("Each bird's normal weight range…") became D1.1–D1.3 above.
