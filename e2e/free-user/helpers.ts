@@ -52,8 +52,8 @@ export async function newContext(browser: Browser, opts: BrowserContextOptions =
 // route chunk (flock-*, flock.you.edit-*, flock.members.$userId-*, ...).
 const FLOCK_CHUNK = /\/assets\/(?!FlockHealthDuo)(Flock\w+|SpacesSheet|LibraryParts|AdminOnly|admin\.library\w*(\.[\w$-]+)*|flock\w*(\.[\w$-]+)*)-[\w-]+\.js(\?|$)/;
 // Flock-only RPCs. flock_enabled is the gate itself and is allowed.
-const FLOCK_RPC = /\/rest\/v1\/rpc\/(founding_status|admin_founding_claims|is_flock_member|admin_grant_entitlement|admin_revoke_entitlement|admin_set_flock_ui|admin_set_flock_opens_at|flock_visible_birds|flock_member_profile|flock_chapter|flock_chapter_members|flock_my_setup|flock_library_search|flock_library_resource)\b/;
-const FLOCK_TABLE = /\/rest\/v1\/(flock_settings|flock_profiles|flock_shown_birds|member_profiles|regions|entitlements|user_roles|founding_claims|library_resources)\b|\/storage\/v1\/object\/(?:sign\/|authenticated\/|public\/)?flock-library\//;
+const FLOCK_RPC = /\/rest\/v1\/rpc\/(founding_status|admin_founding_claims|is_flock_member|admin_grant_entitlement|admin_revoke_entitlement|admin_set_flock_ui|admin_set_flock_opens_at|flock_visible_birds|flock_member_profile|flock_chapter|flock_chapter_members|flock_my_setup|flock_library_search|flock_library_resource|flock_my_access|flock_agree|flock_join|admin_set_flock_members_open)\b/;
+const FLOCK_TABLE = /\/rest\/v1\/(flock_settings|flock_profiles|flock_shown_birds|member_profiles|regions|entitlements|user_roles|founding_claims|library_resources|flock_agreements)\b|\/storage\/v1\/object\/(?:sign\/|authenticated\/|public\/)?flock-library\//;
 
 export type FlockLeak = { url: string; why: string };
 

@@ -1,8 +1,9 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { Bell, CreditCard, ShieldCheck, Star, UserX } from "lucide-react";
+import { Bell, BookOpen, CreditCard, ShieldCheck, Star, UserX } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { K, KyaCard, KyaHeading, KyaIconTile, KyaRow } from "@/components/kya";
 import { FlockAvatar } from "@/components/flock/FlockPeople";
+import { FlockContactLine } from "@/components/flock/FlockGuidelines";
 import { membershipSummary } from "@/lib/flockProfile";
 import { useAvatarUrls, useIsAdmin, useMyEntitlements, useMyProfile, useMySetup, useRegions } from "@/lib/flockData";
 
@@ -70,9 +71,18 @@ function FlockYou() {
             title={t("flock.you.blocked", "Blocked members")}
             detail={t("flock.you.blockedLine", "See who you've blocked, and unblock")}
             onClick={() => void navigate({ to: "/flock/you/blocked" })}
+          />
+          <KyaRow
+            leading={<KyaIconTile tone="mist"><BookOpen className="size-5" /></KyaIconTile>}
+            title={t("flock.guidelines.title", "Community guidelines")}
+            detail={t("flock.you.guidelinesLine", "What everyone in the Flock agrees to")}
+            onClick={() => void navigate({ to: "/flock/guidelines" })}
             last
           />
         </KyaCard>
+        <div className="px-2 text-[14.5px] leading-[1.5]" style={{ color: K.ink }}>
+          <FlockContactLine />
+        </div>
       </main>
     </>
   );

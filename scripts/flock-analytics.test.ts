@@ -20,7 +20,7 @@ import { readFileSync, readdirSync, statSync } from "node:fs";
 import { join, relative } from "node:path";
 import {
   FLOCK_EVENT_PROPS, __setFlockAnalyticsDepsForTests, flockContext, flockDay, flockEventProps, isTestEmail,
-  trackFlock, trackFlockActive, trackFlockJoined, type FlockContext, type FlockEventName,
+  trackFlock, trackFlockActive, trackFlockJoined, JOIN_SOURCES, joinSource, type FlockContext, type FlockEventName,
 } from "@/lib/flockAnalytics";
 
 let passed = 0;
@@ -180,6 +180,30 @@ async function main() {
     assert.equal(r.sent[0].props.internal, true); assert.equal(r.people[0].flock_internal, true);
   });
 
+  // ---- Joining (build C) -----------------------------------------------------
+  const PENDING = { isAdmin: false, isMember: false, email: "new@gmail.com", regionSlug: "texas",
+    entitlements: [{ plan: "comp", source: "free_season", status: "active", starts_at: "2027-01-05T06:00:00Z" }], now: new Date("2026-12-20T15:00:00Z") };
+  await check("a joiner whose membership starts on opening day counts for flock_joined only", async () => {
+    assert.equal(flockContext(PENDING), null);
+    const ctx = flockContext({ ...PENDING, allowPending: true });
+    assert.ok(ctx); assert.equal(ctx!.membership, "free_season");
+    const r = sentRecorder();
+    __setFlockAnalyticsDepsForTests({ ...r.deps, loadContext: async (o?: { allowPending?: boolean }) => flockContext({ ...PENDING, allowPending: o?.allowPending }), userId: async () => "joiner-1" });
+    await trackFlock("flock_post_created", { space: "learn" });
+    await trackFlockActive(NOW);
+    assert.equal(r.sent.length, 0);
+    await trackFlockJoined("email");
+    assert.equal(r.sent.length, 1); assert.equal(r.sent[0].name, "flock_joined"); assert.equal(r.sent[0].props.source, "email");
+  });
+  await check("flock_joined's source is one of the five, else care_app", async () => {
+    assert.deepEqual([...JOIN_SOURCES], ["care_app", "email", "website", "founding", "gift"]);
+    assert.equal(joinSource("gift"), "gift"); assert.equal(joinSource("newsletter jan"), "care_app"); assert.equal(joinSource(undefined), "care_app");
+    const r = sentRecorder();
+    __setFlockAnalyticsDepsForTests({ ...r.deps, loadContext: async () => member, userId: async () => "member-9" });
+    await trackFlockJoined("https://evil.example/x");
+    assert.equal(r.sent[0].props.source, "care_app");
+  });
+
   // ---- Only Flock code loads it ---------------------------------------------
   const files: string[] = [];
   (function walk(dir: string) {
@@ -188,7 +212,7 @@ async function main() {
       if (statSync(p).isDirectory()) walk(p); else if (/\.(ts|tsx)$/.test(f)) files.push(relative(".", p));
     }
   })("src");
-  const FLOCK_FILE = /^src\/(routes\/_authenticated\/(flock|admin)\.|components\/flock\/|components\/FlockShell\.tsx$|lib\/(flockAnalytics|flockPostData|journeyData|flockIdeas|flockEvents)\.ts$)/;
+  const FLOCK_FILE = /^src\/(routes\/_authenticated\/(flock|admin)\.|components\/flock\/|components\/FlockShell\.tsx$|lib\/(flockAnalytics|flockPostData|journeyData|flockIdeas|flockEvents|flockJoin)\.ts$)/;
   await check("only Flock code imports flockAnalytics", () => {
     for (const f of files) {
       if (/@\/lib\/flockAnalytics|\.\/flockAnalytics/.test(readFileSync(f, "utf8"))) assert.ok(FLOCK_FILE.test(f), `${f} imports flockAnalytics`);

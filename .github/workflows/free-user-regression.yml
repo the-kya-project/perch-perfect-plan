@@ -134,6 +134,52 @@ jobs:
           FREE_USER_TARGET: staging
         run: npx playwright test -c e2e/free-user/playwright.config.ts --project staging
 
+      # Build C: the check above proved a free account sees nothing while the
+      # members switch is off. Now turn it on for staging (opening day set if
+      # it isn't, members open) for this run only, check what the same account
+      # sees, and put staging back as it was in the next step, whatever
+      # happens. Staging only (the guard in the first step). Until the switch
+      # exists on staging (20261122100000_flock_open_to_members.sql reaches
+      # staging when it merges to main), this says so and runs nothing.
+      - name: Turn the Flock's members switch on for staging (this run only)
+        id: switch
+        if: success()
+        shell: bash
+        run: |
+          has="$(psql "$STAGING_DB_URL" -X -At -c "select count(*) from information_schema.columns where table_schema = 'public' and table_name = 'flock_settings' and column_name = 'members_open'")"
+          if [ "$has" != "1" ]; then
+            echo "::notice::Staging doesn't have the Flock's members switch yet (it arrives when 20261122100000_flock_open_to_members.sql merges to main), so the switch-on check didn't run."
+            echo "on=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          prev="$(psql "$STAGING_DB_URL" -X -At -F '|' -c "select coalesce(flock_opens_at::text, ''), members_open from public.flock_settings where id")"
+          echo "prev_opens=${prev%%|*}" >> "$GITHUB_OUTPUT"
+          echo "prev_open=${prev##*|}" >> "$GITHUB_OUTPUT"
+          echo "Staging before: opens_at='${prev%%|*}' members_open=${prev##*|}"
+          psql "$STAGING_DB_URL" -v ON_ERROR_STOP=1 -X -q -c "update public.flock_settings set flock_opens_at = coalesce(flock_opens_at, now() - interval '1 hour'), members_open = true where id;"
+          echo "on=true" >> "$GITHUB_OUTPUT"
+
+      - name: Run the switch-on check (what a free account sees once it's on)
+        if: steps.switch.outputs.on == 'true'
+        env:
+          FREE_USER_BASE_URL: ${{ steps.preview.outputs.url }}
+          FREE_USER_EMAIL: staging-free@example.com
+          FREE_USER_TARGET: staging
+          FLOCK_SWITCH_ON: "1"
+        run: npx playwright test -c e2e/free-user/playwright.config.ts --project staging-switch-on
+
+      - name: Put staging's members switch back
+        if: always() && steps.switch.outputs.on == 'true'
+        shell: bash
+        env:
+          PREV_OPENS: ${{ steps.switch.outputs.prev_opens }}
+          PREV_OPEN: ${{ steps.switch.outputs.prev_open }}
+        run: |
+          [ "$PREV_OPEN" = "t" ] && open=true || open=false
+          psql "$STAGING_DB_URL" -v ON_ERROR_STOP=1 -X -q -v opens="$PREV_OPENS" \
+            -c "update public.flock_settings set flock_opens_at = nullif(:'opens', '')::timestamptz, members_open = $open where id;"
+          psql "$STAGING_DB_URL" -X -At -c "select 'Staging after: opens_at=' || coalesce(flock_opens_at::text, 'null') || ' members_open=' || members_open from public.flock_settings where id"
+
       # What the page showed when a step failed (Playwright's page snapshot),
       # readable in the log without downloading the report.
       - name: Show the failed page

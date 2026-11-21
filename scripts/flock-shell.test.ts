@@ -32,6 +32,8 @@ import { accessCells, accessDay } from "@/lib/flockAccess";
 import { blockActions, blockName } from "@/lib/flockBlocks";
 import { spotLabel } from "@/lib/flockFounders";
 import { foundingClosedCase } from "@/lib/foundingClosed";
+import { FLOCK_CONTACT_EMAIL, FLOCK_GUIDELINES_VERSION, contactLine, guidelineSections, guidelinesIfWrong, guidelinesIntro } from "@/lib/flockGuidelines";
+import { isJoinPath, joinErrorKind, joinRedirect, type FlockAccess } from "@/lib/flockJoin";
 import {
   birdPronoun, canStartCustom, customProblem, daysSince, clipPhase, flockSheetTitle, isNectarEater, rollingAverage, showVetReminder, youngOrUnknownAge, defaultVisibility, groupTemplates, isLocked, journeyDay, journeyDays,
   nextMilestone, possessive, progressOf, skillInSentence, startHere, trimTrailingBlanks, vetCheckLine, visibilityChoices, wantsTip,
@@ -650,6 +652,44 @@ check("founding members page: a spot shows as #n", () => {
   assert.equal(spotLabel(1), "#1");
   assert.equal(spotLabel(50), "#50");
   assert.equal(spotLabel(7.0), "#7");
+});
+
+check("join: the guidelines version matches the database's", () => {
+  const sql = readFileSync("supabase/migrations/20261122100000_flock_open_to_members.sql", "utf8");
+  const m = sql.match(/create or replace function private\.flock_guidelines_version\(\)[\s\S]*?select '([^']+)'::text/);
+  assert.ok(m, "version function in the migration");
+  assert.equal(m![1], FLOCK_GUIDELINES_VERSION);
+});
+
+check("join: the guidelines are the eight sections, the report line and the contact line, in order", () => {
+  const tt = ((k: string, d: string, o?: Record<string, string>) => d.replace("{{email}}", o?.email ?? "")) as unknown as Parameters<typeof guidelineSections>[0];
+  assert.deepEqual(guidelineSections(tt).map((x) => x.key), ["kind", "birds", "vet", "honest", "selling", "privacy", "meetups", "adults"]);
+  assert.ok(guidelinesIntro(tt).body.endsWith("By joining, you agree to them."));
+  assert.ok(guidelineSections(tt).find((x) => x.key === "adults")!.body.includes("18 and older"));
+  assert.ok(guidelinesIfWrong(tt).body.startsWith("use Report"));
+  assert.equal(contactLine(tt).body, `Email the Kya team at ${FLOCK_CONTACT_EMAIL}.`);
+  assert.equal(FLOCK_CONTACT_EMAIL, "brittany@thekyaproject.com");
+});
+
+check("join: who the /flock layout lets in", () => {
+  const base: FlockAccess = { member_now: false, has_membership: false, agreed: false, is_admin: false, guidelines_version: FLOCK_GUIDELINES_VERSION, opens_at: null, season_ends_at: null };
+  assert.equal(joinRedirect(null, "/flock"), "/dashboard", "status unreadable: fails closed");
+  assert.equal(joinRedirect(base, "/flock"), "/flock/join", "not joined: the join step");
+  assert.equal(joinRedirect(base, "/flock/join"), null);
+  assert.equal(joinRedirect(base, "/flock/guidelines"), null, "the guidelines can be read before joining");
+  assert.equal(joinRedirect(base, "/flock/library"), "/flock/join");
+  assert.equal(joinRedirect({ ...base, has_membership: true, member_now: true }, "/flock"), "/flock/join", "a founder or member who hasn't agreed yet");
+  assert.equal(joinRedirect({ ...base, agreed: true, has_membership: true }, "/flock"), "/flock/join", "joined before opening day: waits");
+  assert.equal(joinRedirect({ ...base, agreed: true, has_membership: true, member_now: true }, "/flock"), null);
+  assert.equal(joinRedirect({ ...base, is_admin: true, member_now: true }, "/flock"), null, "admins are never held at the door");
+  assert.ok(isJoinPath("/flock/join") && !isJoinPath("/flock/joiner") && !isJoinPath("/flock"));
+});
+
+check("join: database refusals map to what the screen says", () => {
+  assert.equal(joinErrorKind({ code: "22023", message: "adult_required" }), "adult_required");
+  assert.equal(joinErrorKind({ code: "55000", message: "season_over" }), "season_over");
+  assert.equal(joinErrorKind({ code: "42501", message: "the Flock isn't open to you yet" }), "closed");
+  assert.equal(joinErrorKind(new Error("offline")), "other");
 });
 
 console.log(`\n${passed} passed${process.exitCode ? ", some FAILED" : ""}`);

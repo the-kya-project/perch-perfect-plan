@@ -39,6 +39,9 @@ export default defineConfig({
   },
   projects: [
     { name: "staging", testMatch: /free-user\.spec\.ts$/ },
+    // Build C: what a free account sees once the members switch is on. The
+    // workflow turns it on for staging around this project only, then back.
+    { name: "staging-switch-on", testMatch: /switch-on\.spec\.ts$/ },
     { name: "production", testMatch: /production\.spec\.ts$/ },
   ],
 });
