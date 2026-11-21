@@ -195,7 +195,7 @@ Where these items came from, with the detail behind each: `docs/flock/opening-sc
 ### P4 Dated gift emails aren't stuck at a fixed last day
 - **Done means:** the gift page lets a buyer pick any send date in a rolling window (for example the next 90 days) instead of stopping at `GIFT_SEND_LAST_DATE = 2026-12-31`, with `gift.errDate` and `gift.sendOnHint` updated. Pinned in `npm run test:gifts`.
 - **Size:** S
-- **Depends on:** Brittany's yes (before Dec 31, 2026, when dated gifts otherwise stop)
+- **Depends on:** Brittany's yes. The current limit stops dated gifts after the end of 2026, so this one is time-sensitive.
 - **Overnight alone:** no
 - **Needs Brittany:** approval. It changes the gift checkout, and the copy is shown before-and-after.
 
