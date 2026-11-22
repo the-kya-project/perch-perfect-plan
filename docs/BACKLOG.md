@@ -22,13 +22,6 @@ Where these items came from, with the detail behind each: `docs/flock/opening-sc
 
 ## Ready to build
 
-### 2.4a Plain-language one-pager on Vercel's Skew Protection
-- **Done means:** `docs/skew-protection.md`, one page for a non-developer, explains what the setting does, the options, and the trade-offs of each for current users, so Brittany can decide 2.4. It changes no setting and makes no decision.
-- **Size:** S
-- **Depends on:** nothing
-- **Overnight alone:** yes
-- **Needs Brittany:** merge only. Reading it and deciding 2.4 are hers afterward.
-
 ### 0.3 Translation check passes and stays passing
 - **Done means:** `npm run i18n:check` passes on main and runs in the iPhone hydration job, so the catalog can't drift again. The 85 missing English phrases (all from the Library build: 22 `flock.library.*`, 63 `flock.libraryAdmin.*`) are added, the 2 stale keys dropped, and the Dutch gaps free users see today are filled (`clipRecorder`, `gift`, `giftThanks`, `redeem`).
 - **Size:** M
@@ -426,6 +419,7 @@ The launch PR itself (1.18) is already merged dark. What's left before opening i
 
 ## Done
 
+- **2.4a** `docs/skew-protection.md`: what Vercel's Skew Protection does, the four options and what each means for current users and for 2.4 and 2.5: #509.
 - **0.5** The review queue is reached from Flock settings (reviewers only, with the waiting count), and every item shows its author, space and date: #508.
 - **0.4** Sign-ups that start on the /get or /get-app desktop page are credited to the link that brought them: #505.
 - **P1** The stored free-season end is cleared, and opening day can't be set without it (`admin_set_flock_dates`): #497.
