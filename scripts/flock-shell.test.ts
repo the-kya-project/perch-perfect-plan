@@ -32,6 +32,7 @@ import { accessCells, accessDay } from "@/lib/flockAccess";
 import { blockActions, blockName } from "@/lib/flockBlocks";
 import { spotLabel } from "@/lib/flockFounders";
 import { foundingClosedCase } from "@/lib/foundingClosed";
+import { formatFlockDay, freeSeasonEndLabel, NO_FLOCK_DATES } from "@/lib/flockDates";
 import {
   birdPronoun, canStartCustom, customProblem, daysSince, clipPhase, flockSheetTitle, isNectarEater, rollingAverage, showVetReminder, youngOrUnknownAge, defaultVisibility, groupTemplates, isLocked, journeyDay, journeyDays,
   nextMilestone, possessive, progressOf, skillInSentence, startHere, trimTrailingBlanks, vetCheckLine, visibilityChoices, wantsTip,
@@ -306,6 +307,8 @@ check("founding: which full box shows (no opening day yet, then before and after
 
 check("no fixed opening or free-season date in member-facing copy or the founding page logic", () => {
   const files = ["src/locales/en.jsonc", "src/locales/emails.en.jsonc", "src/routes/founding.tsx", "src/lib/giftCopy.ts",
+    "src/lib/flockDates.ts", "src/lib/flockDates.functions.ts", "src/lib/useFlockPublicDates.ts", "src/routes/gift.index.tsx",
+    "src/routes/gift.thanks.tsx", "src/routes/redeem.tsx",
     "src/components/flock/JourneyParts.tsx", "src/lib/flockProfile.ts", "src/lib/foundingClosed.ts", "src/routes/_authenticated/admin.gifts.tsx",
     "src/routes/_authenticated/admin.founding.tsx"];
   const fixed = /January 4|Jan 4|January 5|Jan 5|July 6|Jul 6|June 7|Jun 7|until July|in January|2027-01-0[45]|2027-07-06/;
@@ -665,6 +668,47 @@ check("founding members page: a spot shows as #n", () => {
   assert.equal(spotLabel(1), "#1");
   assert.equal(spotLabel(50), "#50");
   assert.equal(spotLabel(7.0), "#7");
+});
+
+
+check("free-season end: shown only once it's set and still ahead, as Month Day, Year in Eastern time", () => {
+  // Sample dates only (nothing is stored until Brittany sets it).
+  const now = new Date("2027-03-01T12:00:00Z");
+  assert.equal(freeSeasonEndLabel(NO_FLOCK_DATES, now), null, "not set: the undated wording");
+  assert.equal(freeSeasonEndLabel({ opensAt: null, freeSeasonEndsAt: "2027-09-01T04:00:00Z" }, now), "September 1, 2027");
+  assert.equal(freeSeasonEndLabel({ opensAt: null, freeSeasonEndsAt: "2027-02-01T05:00:00Z" }, now), null, "already past: the undated wording");
+  assert.equal(freeSeasonEndLabel({ opensAt: null, freeSeasonEndsAt: "not a date" }, now), null);
+  // Midnight Eastern is still the same day (04:00 UTC in summer, 05:00 in winter).
+  assert.equal(formatFlockDay("2027-09-01T04:00:00Z"), "September 1, 2027");
+  assert.equal(formatFlockDay("2028-01-10T05:00:00Z"), "January 10, 2028");
+});
+
+check("founding page: the dated lines say 'The Flock is free for everyone until {{date}}.' and match en.jsonc", () => {
+  const en = readFileSync("src/locales/en.jsonc", "utf8");
+  const page = readFileSync("src/routes/founding.tsx", "utf8");
+  for (const k of ["founding.lockedDated", "founding.nextDated", "founding.fullBodyDated", "founding.fullOpenBodyDated"]) {
+    const m = en.match(new RegExp(`"${k.replace(".", "\\.")}": "([^"]*)"`));
+    assert.ok(m, `${k} in en.jsonc`);
+    assert.ok(m![1].includes("The Flock is free for everyone until {{date}}."), `${k} has the approved sentence`);
+    assert.ok(page.includes(`t("${k}", "${m![1]}"`), `${k}: founding.tsx fallback matches en.jsonc`);
+  }
+  // The undated lines are still there for when no date is set.
+  for (const k of ["founding.locked", "founding.next", "founding.fullBody", "founding.fullOpenBody"]) {
+    assert.ok(/while we're getting started/.test(en.match(new RegExp(`"${k.replace(".", "\\.")}": "([^"]*)"`))![1]), `${k} keeps the undated wording`);
+  }
+  // P3: the full box follows the real opening day, not a constant.
+  assert.ok(page.includes("foundingClosedCase(dates.opensAt)"), "founding page passes the stored opening day");
+});
+
+check("public dates: read on the server with the service role, never from the browser", () => {
+  const fn = readFileSync("src/lib/flockDates.functions.ts", "utf8");
+  assert.ok(fn.includes("createServerFn") && fn.includes('supabaseAdmin.rpc("flock_public_dates")'), "server function, service role");
+  const hook = readFileSync("src/lib/useFlockPublicDates.ts", "utf8");
+  assert.ok(!/supabase\.rpc|from "@\/integrations\/supabase\/client"/.test(hook), "the hook never calls the database directly");
+  // Only the public pages use it; the care app never does.
+  for (const f of ["src/routes/_authenticated/dashboard.tsx", "src/routes/_authenticated/route.tsx", "src/routes/__root.tsx"]) {
+    assert.ok(!readFileSync(f, "utf8").includes("useFlockPublicDates"), `${f} doesn't read the Flock dates`);
+  }
 });
 
 console.log(`\n${passed} passed${process.exitCode ? ", some FAILED" : ""}`);

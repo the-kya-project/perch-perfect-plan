@@ -9,7 +9,7 @@ export function giftPlanName(t: TFunction, plan: GiftPlan): string {
 }
 
 /** The start rule, in words. `freeUntil` is the free season's end to show
- *  ("July 6, 2027", from freeSeasonEndLabel), or null while there's none. */
+ *  ("Month Day, Year", from freeSeasonEndLabel), or null while there's none. */
 export function giftTiming(t: TFunction, plan: GiftPlan, freeUntil: string | null = null): string {
   if (freeUntil) {
     return plan === "flock_half_year"
