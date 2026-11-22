@@ -127,23 +127,74 @@ The Flock (community, `/flock`) is being built inside the live care app. Free us
 - **Production read-only check** (same workflow, run by hand only: Actions → Free-user regression → Run workflow → target `production`): signs in to app.thekyaproject.com with an existing non-admin account (secrets `PROD_READONLY_EMAIL`, `PROD_READONLY_PASSWORD`) and checks Home, no Community button, the gear, `/flock` → Home and the Duo side column. Every write is blocked in the browser (any non-GET to Supabase other than sign-in and an allowlist of read-only RPCs, every app server-function POST, analytics), so it cannot create, edit, delete or send anything. What it blocked is listed in the run's log.
 
 ## Working the backlog unattended
-Overnight and other unattended agents work from `docs/BACKLOG.md`, the single ordered build list. The rules:
-- **Always start from the latest `main`.** Take the highest item in `docs/BACKLOG.md` marked "Overnight alone: yes" that has no open PR and whose dependencies are all merged. Never start an item under "Waiting on Brittany's spec" or "Needs Brittany before work starts".
-- **One item per branch, and one PR per item.** A new, uniquely named branch each time (see "Conventions and gotchas"). **Never merge your own PR.**
-- **Every PR must pass all required checks, including the free-user regression check.** Its description includes a plain-language summary, the item's "done means" line, how you tested it, and a link to its preview. Flock PRs also carry the "Free-user impact" section.
-- **When something isn't covered** by the backlog, the item's spec or this file, **stop and leave a question in the PR** instead of guessing.
-- **Never do any of these without Brittany's explicit approval in the PR:**
-  - anything with payments or real money;
-  - sending email or push to real users;
-  - care-app database changes, or changing or deleting data;
-  - vet-reviewed health content;
-  - legal text;
-  - member-facing copy going live;
-  - switching on any feature flag, or the Flock, in production;
-  - anything in Stripe, RevenueCat, App Store Connect, Brevo, Webflow or Vercel settings.
+Unattended agents (the hourly runs on Brittany's Mac, and any overnight run) build from `docs/BACKLOG.md`, the single ordered build list. Each run builds **one** item and finishes. Every run leaves a note in `docs/agent-log.md`, and anything Brittany should look over goes in `docs/REVIEW_QUEUE.md`. The rules below are in the order a run meets them.
+
+**1. One run at a time (the lock)**
+- **First thing, before anything else:** look for the lock file `~/.kya-agent/lock`.
+  - **It exists and is less than 3 hours old:** another run is working. Stop at once. Don't touch the lock, the repo or GitHub. Only add the short log note described under "When a run has no PR" below.
+  - **It exists and is 3 hours old or more:** treat it as stale (a run that crashed). Replace it with your own and say so in your log entry, including the item ID the old lock named.
+  - **It doesn't exist:** carry on.
+- **Create the lock before doing any work.** It holds the start time (with time zone) and the item ID; write the ID as soon as you've picked it (`picking` until then).
+- **Delete your lock when the run ends**, every time: when it succeeds, fails, holds a PR, stops to ask, or finds nothing to do. Only ever delete a lock you created.
+
+**2. A separate copy, never the main folder**
+- Never work in the main project folder (`~/perch-perfect-plan`), and never change, stash or switch branches there: Brittany may have work in progress in it.
+- Each run makes a fresh, separate copy from the latest `main` (a `git worktree` or a clone, outside the main folder) and works only there.
+- At the end, remove that copy if it's safe to: everything is committed and pushed, and nothing in it is untracked. If it isn't safe, leave it and say where it is in the log.
+
+**3. Picking work**
+- Take the **highest** item in `docs/BACKLOG.md` marked **"Overnight alone: yes"** that has no open PR and whose dependencies (its "Depends on" line) are all merged.
+- Never start an item under **"Waiting on Brittany's spec"** or **"Needs Brittany before work starts."**
+- **One item per run, per branch and per PR.** A new, uniquely named branch each time (see "Conventions and gotchas").
+- **Before picking new work, finish your own leftovers:** an earlier agent PR logged as "waiting on checks" that now passes may be merged by this run if it meets every merge rule below. That counts as this run's item.
+
+**4. Building and testing**
+- Every PR description has a plain-language summary, the item's "done means" line, how it was tested, and a link to its preview. Flock PRs also have the "Free-user impact" section.
+- **Every required check must pass, including the Free-user regression.** If one fails, fix it in the same PR. If checks are still running when the run has to end (it must finish well inside the 3-hour lock), leave the PR open and log it as "waiting on checks".
+- **When something isn't covered** by the backlog, the item's spec or this file, leave the question in the PR under "Needs Brittany", hold the PR, and stop. Don't guess.
+
+**5. When a run may merge its own PR**
+A run may **squash-merge** its own PR (`gh pr merge --squash`) only when **all** of these are true:
+- **Every required check passes,** including the Free-user regression. Never merge around a check (no `--admin`, no skipping, no merging while one is red or still running).
+- **Current users see and experience nothing different.** The change is either:
+  - a new feature hidden behind the Flock gate (`flock_enabled()`, admins only) or behind its own off switch that is off; or
+  - internal code, tests or docs with no visible effect on the live app.
+
+  The Flock gate only counts as "hidden" **while the Flock is closed to members** (`flock_settings.members_open` is false in production; check it read-only). Once Brittany opens the Flock, Flock changes are visible to members and must be held.
+- **Any UI follows what the backlog item, its spec or Brittany's approved mockups already describe.** If you'd have to invent a significant design decision yourself (a new screen layout, flow, or navigation change), hold the PR and ask.
+- **Any database migration only adds** new tables, columns or functions for hidden features. It doesn't change or remove anything existing that current users rely on, and doesn't touch their data. Remember that **merging a migration applies it to production automatically** (see "Database migrations"); that's the only way a run's work may reach the production database.
+- **The item's own "Needs Brittany" line is met.** If it asks for her approval, a decision, a read of some copy or a hands-on check, hold the PR for it. "Merge only" doesn't stop a merge when every rule here passes.
+- **New copy and wording can merge,** but every new or changed line goes in the review queue's "Copy that merged" section, before and after.
+
+**6. Never merge: hold the PR and ask Brittany**
+- Anything current users would notice: changes to the live care app's screens, behavior, notifications or emails, or anything visible to non-admin accounts.
+- Changing or deleting existing data, existing tables, or existing functions current users depend on.
+- Anything with payments or real money, or sending email or push to real users.
+- Switching on any feature flag, the Flock or a health feature in production, or changing any production setting.
+- Health or vet content going live. (Drafts behind an off switch can merge, and go in the review queue.)
+- Legal text.
+- Anything in Stripe, RevenueCat, App Store Connect, Brevo, Webflow or Vercel settings.
+- Anything the backlog, the spec or this file doesn't cover.
+
+**How to hold a PR:** leave it open (not a draft), with a clear **"Needs Brittany"** section at the top of the description saying exactly what you need from her (a decision, an approval, a read of some copy). Add it to "Held for Brittany" in the review queue, log it, and move on. The next run can take a different item. Never merge a held PR, even in a later run, until Brittany says so in the PR.
+
+**7. Always**
+- **Production access is read-only.** Never run anything that writes to production (project `koyqdyamazuuwvqbttnj`), not even inside a transaction you plan to roll back. Reads to check something are fine. Testing writes go to staging or a PR's preview branch.
 - **Never add a fixed opening date, free-season date or deadline** to code or copy.
-- **Health features always ship behind their own off switch**, with their values in the vet-content settings file (backlog 1.2) marked "draft, pending vet review".
-- **When an item is done, mark it done in `docs/BACKLOG.md` in the same PR.**
+- **Health features always ship behind their own off switch,** with their values in the vet-content settings file (backlog 1.2) marked "draft, pending vet review".
+- **Mark the item done in `docs/BACKLOG.md` in the same PR** (move it to "Done" with the PR number).
+
+**8. The record: the log and the review queue**
+- **Both files are updated in the same PR as the work,** so merged work is always logged in `main`. A held PR updates them in that PR too.
+- **`docs/agent-log.md`**: newest entry first. One entry per run: date and time (with time zone), item ID and title, what was built in plain language, the PR link, the outcome (merged / held, and why / waiting on checks / stopped), and any problems. The format is at the top of the file.
+- **`docs/REVIEW_QUEUE.md`**: three sections:
+  - **Copy that merged**: every new or changed line of wording, before and after, with the PR link.
+  - **Decisions agents made**: judgment calls, even small ones (a name, an order, a default, how to read an unclear spec).
+  - **Held for Brittany**: each held PR and exactly what it needs.
+
+  Add new items at the top of their section. **Brittany clears items as she reviews them. Never remove or rewrite an item she hasn't cleared,** including another run's items.
+- **When a run has no PR** (it stopped because of the lock, or found nothing it's allowed to build), it can't change `main` directly. It adds its entry to the local file `~/.kya-agent/pending-log.md` instead, and doesn't otherwise touch the lock or the repo. The next run that opens a PR moves those entries into `docs/agent-log.md`, in time order, and empties the file.
+- **These two files change in almost every PR,** so they often conflict when `main` moves on. When they do, update the branch from `main` and keep **both** sides' entries; never drop one to resolve a conflict.
 
 ## Deploy
 - Pushing to `main` auto-deploys the web app to Vercel at https://app.thekyaproject.com.
