@@ -243,10 +243,15 @@ Where these items came from, with the detail behind each: `docs/flock/opening-sc
   - Admins see all pods, move a member and dissolve a pod. Pods under 2 active members for 3 weeks dissolve, and the remaining member is offered a new pod.
   - Up to 2 pods per member. Members who've blocked each other are never placed together. Reporting works as it does elsewhere in the Flock.
   - Progress from a "Just me" journey is never shown to pod members outside the household.
+  - A member who finishes stays in the pod to cheer the others on, and sees a short "You finished!" message with an option to leave.
+  - The pod stays open until every member has finished or left, or the 3-week rule above closes it.
+  - When it closes, each remaining member is asked "Keep going together?" If at least 2 say yes, it continues as a general buddy group not tied to a journey, with the same weekly in-app check-in. Anyone who says no or doesn't answer leaves quietly. A "keep going" group counts toward the 2-pod limit.
+  - A "keep going" group is still a pod, so the block, reporting, admin and 3-week rules apply. When the 3-week rule closes one, it ends without asking "Keep going together?" again.
+  - "You finished!" and "Keep going together?" aren't in the mockup. Build them from the app's existing card and sheet components, and list them in the PR and the review queue.
 - **Size:** XL
 - **Depends on:** nothing
 - **Overnight alone:** yes
-- **Needs Brittany:** one answer before merge: members finish a journey at different times, so when does a pod "end when the journey ends", and how does "keep going" work? Without it, the run holds the PR. Otherwise the normal rules apply.
+- **Needs Brittany:** merge only, under the normal rules.
 
 ---
 
