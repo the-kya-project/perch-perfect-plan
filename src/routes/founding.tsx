@@ -32,7 +32,7 @@ export const Route = createFileRoute("/founding")({
   validateSearch: search,
   head: () => ({ meta: [
     { title: i18next.t("founding.pageTitle", "Be one of the Founding 50 — The Kya Project") },
-    { name: "description", content: i18next.t("founding.metaDescription", "Be one of the first 50 members of the Flock. It's free for everyone until July 6, 2027, and founding members then keep $15 a month for life.") },
+    { name: "description", content: i18next.t("founding.metaDescription", "Be one of the first 50 members of the Flock. It's free for everyone while we're getting started, and founding members then keep $15 a month for life.") },
   ]}),
   component: FoundingPage,
 });
@@ -135,7 +135,7 @@ function FoundingPage() {
         title={step === "done" ? t("founding.doneTitle", "You're one of the Founding 50.") : t("founding.title", "Be one of the Founding 50")}
         line={step === "done"
           ? undefined
-          : t("founding.line", "The Flock is The Kya Project's community for parrot people, and it opens on Monday, January 4, 2027. Its first 50 members get our lowest price and a hand in shaping what it becomes.")}
+          : t("founding.line", "The Flock is The Kya Project's community for parrot people, and we're getting it ready now. Its first 50 members get our lowest price and a hand in shaping what it becomes.")}
       />
       <FrontDoorBody>
         {loading ? (
@@ -203,7 +203,7 @@ function Offer() {
           <span className="text-[14.5px]" style={{ color: K.quiet }}>{t("founding.regular", "Regular price $25 a month billed annually, or $30 month to month.")}</span>
         </p>
         <p className="m-0 mt-3 text-[15px] leading-[1.5]" style={{ color: K.ink }}>
-          {t("founding.locked", "The Flock is free for everyone until Tuesday, July 6, 2027. When billing starts, your founding price stays at $15 a month for life. If your membership ends, the founding price ends with it.")}
+          {t("founding.locked", "The Flock is free for everyone while we're getting started, and we'll tell you well before billing begins. When it does, your founding price stays at $15 a month for life. If your membership ends, the founding price ends with it.")}
         </p>
       </KyaCard>
       <KyaHeading size={21} className="mt-2">{t("founding.perksTitle", "What founding members get")}</KyaHeading>
@@ -241,11 +241,12 @@ function Full() {
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   // ssr: false, so reading the clock here can't cause a hydration mismatch.
-  const which = foundingClosedCase();
+  // No public read of opening day yet, so this stays "full" (see foundingClosed.ts).
+  const which = foundingClosedCase(null);
   const title = t("founding.fullTitle", "The Founding 50 is full");
   const body = which === "full"
-    ? t("founding.fullBody", "All 50 founding spots have been claimed. The Flock opens on Monday, January 4, 2027, and it's free for everyone until July 6. Leave your email and we'll let you know when it opens.")
-    : t("founding.fullOpenBody", "All 50 founding spots have been claimed. The Flock is open now, and it's free for everyone until July 6, 2027.");
+    ? t("founding.fullBody", "All 50 founding spots have been claimed. The Flock is free for everyone while we're getting started. Leave your email and we'll let you know when it opens.")
+    : t("founding.fullOpenBody", "All 50 founding spots have been claimed. The Flock is open now, and it's free for everyone while we're getting started.");
   return (
     <section className="rounded-[20px] p-5" style={{ background: K.lime, color: K.forest }}>
       <KyaHeading size={22}>{title}</KyaHeading>
@@ -386,7 +387,7 @@ function Confirmation({ spotNumber, cap }: { spotNumber: number; cap: number }) 
       <KyaCard className="p-5">
         <KyaHeading size={20}>{t("founding.nextTitle", "What happens next")}</KyaHeading>
         <p className="m-0 mt-2 text-[15px] leading-[1.5]" style={{ color: K.ink }}>
-          {t("founding.next", "The Flock opens on Monday, January 4, 2027, and we'll email you before then. It's free for everyone until Tuesday, July 6.")}
+          {t("founding.next", "We'll email you before the Flock opens. It's free for everyone while we're getting started, and we'll tell you well before billing begins.")}
         </p>
         <p className="m-0 mt-3 text-[14.5px] leading-[1.5]" style={{ color: K.quiet }}>
           {t("founding.nextPrice", "When billing starts, your price is $15 a month, locked in for life. If your membership ends, the founding price ends with it.")}

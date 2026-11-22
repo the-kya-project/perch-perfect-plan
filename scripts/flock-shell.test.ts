@@ -270,9 +270,12 @@ check("member count line", () => {
 });
 check("membership: founding before and after opening", () => {
   const f = { plan: "founding", status: "trialing", source: "founding", starts_at: null, current_period_end: null, free_until: null };
-  assert.equal(membershipSummary([f], false).line, "Founding · free until Jul 6, 2027, then $15/mo for life");
-  const open = { ...f, starts_at: "2027-01-04T05:00:00Z", free_until: "2027-07-06T04:00:00Z", current_period_end: "2027-07-06T04:00:00Z" };
-  assert.equal(membershipSummary([open], false, new Date("2027-02-01T00:00:00Z")).line, "Founding · free until Jul 6, 2027, then $15/mo for life");
+  // No dates yet: there's no fixed free-season end to name.
+  assert.equal(membershipSummary([f], false).line, "Founding · free while we're getting started, then $15/mo for life");
+  // Sample dates only (there's no real opening date yet): once the settings
+  // are filled in, the line reads the stored date.
+  const open = { ...f, starts_at: "2027-03-01T05:00:00Z", free_until: "2027-09-01T04:00:00Z", current_period_end: "2027-09-01T04:00:00Z" };
+  assert.equal(membershipSummary([open], false, new Date("2027-04-01T00:00:00Z")).line, "Founding · free until Sep 1, 2027, then $15/mo for life");
 });
 check("founding: the regular price leads with $25 a month billed annually, then $30 month to month", () => {
   const want = "Regular price $25 a month billed annually, or $30 month to month.";
@@ -294,11 +297,23 @@ check("journeys: no 'app premium' wording; the locked-journey refusal shows the 
   assert.ok(!/app premium/i.test(readFileSync("src/locales/en.jsonc", "utf8")), "en.jsonc");
 });
 
-check("founding: which full box shows (before and after opening day)", () => {
-  assert.equal(foundingClosedCase(new Date("2026-12-10T12:00:00Z")), "full");
-  assert.equal(foundingClosedCase(new Date("2027-01-04T04:59:59Z")), "full");
-  assert.equal(foundingClosedCase(new Date("2027-01-04T05:00:00Z")), "fullOpen");
-  assert.equal(foundingClosedCase(new Date("2027-03-02T12:00:00Z")), "fullOpen");
+check("founding: which full box shows (no opening day yet, then before and after a sample one)", () => {
+  assert.equal(foundingClosedCase(null, new Date("2030-01-01T00:00:00Z")), "full");
+  const sample = "2027-03-01T05:00:00Z"; // a sample, not a real opening date
+  assert.equal(foundingClosedCase(sample, new Date("2027-02-28T12:00:00Z")), "full");
+  assert.equal(foundingClosedCase(sample, new Date("2027-03-01T05:00:00Z")), "fullOpen");
+});
+
+check("no fixed opening or free-season date in member-facing copy or the founding page logic", () => {
+  const files = ["src/locales/en.jsonc", "src/locales/emails.en.jsonc", "src/routes/founding.tsx", "src/lib/giftCopy.ts",
+    "src/components/flock/JourneyParts.tsx", "src/lib/flockProfile.ts", "src/lib/foundingClosed.ts", "src/routes/_authenticated/admin.gifts.tsx",
+    "src/routes/_authenticated/admin.founding.tsx"];
+  const fixed = /January 4|Jan 4|January 5|Jan 5|July 6|Jul 6|June 7|Jun 7|until July|in January|2027-01-0[45]|2027-07-06/;
+  for (const f of files) {
+    const txt = readFileSync(f, "utf8");
+    const hit = txt.split("\n").find((l) => fixed.test(l));
+    assert.ok(!hit, `${f}: ${hit}`);
+  }
 });
 check("membership: the free season says Free until Jul 6, 2027, and never outranks a gift or a comp", () => {
   const fs = { plan: "comp", status: "active", source: "free_season", starts_at: "2027-01-04T05:00:00Z", current_period_end: "2027-07-06T04:00:00Z", free_until: null };
