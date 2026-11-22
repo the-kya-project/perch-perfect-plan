@@ -41,6 +41,16 @@ Format:
 - **Why:** The backlog item says to build from that commit; reformatting would bury the real change in a large diff.
 - **To change it:** ask for the files to be reformatted in a separate PR, or for `/get-app` to be left out.
 
+### [#504](https://github.com/the-kya-project/perch-perfect-plan/pull/504) · Backlog: Brittany's decisions
+- **Decision:** 1.15 and 1.17 moved to "Ready to build" with "Depends on: 1.14 merged", and the Skew one-pager (2.4a) sits second, right under the admin review item. 1.14 and its followers go at the end of Ready, and D1.2 right after D1.1.
+- **Why:** Runs never start anything under "Needs Brittany before work starts", so 1.15 and 1.17 had to move to start once 1.14 merges. Existing priorities otherwise keep their order.
+- **To change it:** reorder the items in `docs/BACKLOG.md`.
+
+### [#504](https://github.com/the-kya-project/perch-perfect-plan/pull/504) · D1.2 Weight baseline shadow mode
+- **Decision:** Until you answer, the shadow log covers your birds only. The item used to say "every bird", and your approval says "on for my account only".
+- **Why:** The narrower reading can't touch anyone else's data.
+- **To change it:** say that it should log every bird.
+
 ### [#499](https://github.com/the-kya-project/perch-perfect-plan/pull/499) · Setup: rules for the continuous runs
 - **Decision:** A run that opens no PR (stopped by the lock, or found nothing it's allowed to build) writes its log entry to `~/.kya-agent/pending-log.md` on the Mac, and the next run with a PR copies it into `docs/agent-log.md`.
 - **Why:** Every run must be logged, but a run with no PR has no way to change `main`, and must not touch the main project folder.

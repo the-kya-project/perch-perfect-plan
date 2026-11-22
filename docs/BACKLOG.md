@@ -20,6 +20,22 @@ Where these items came from, with the detail behind each: `docs/flock/opening-sc
 
 ## Ready to build
 
+### 0.5 Admin review for pending posts
+- **Problem:** Brittany has a Do good post pending approval, and there's no way in the app for her to find and approve it.
+- **Done means:** as an admin, she can easily reach a review screen from the app (a clear link in her admin menu or Flock settings), see every pending post and report with its author, space and date, and approve or reject each one. Rejections can include an optional note. Everything is admin-only, so current users see nothing different.
+- **First:** check whether `/admin/review` exists and works for pending Do good posts. If it works and is only missing a link, add the link. If it's missing or broken, build or fix it. Starting point (Nov 22, 2026, from reading the code, not tested): the screen exists at `src/routes/_authenticated/admin.review.tsx`, nothing in the app links to it, and Decline's note is already optional. Confirm it shows each item's space.
+- **Size:** S if only the link is missing
+- **Depends on:** nothing
+- **Overnight alone:** yes
+- **Needs Brittany:** merge only, if non-admins see nothing different (show the free-user evidence for any shared component). Hold the PR if it has to change an existing database function.
+
+### 2.4a Plain-language one-pager on Vercel's Skew Protection
+- **Done means:** `docs/skew-protection.md`, one page for a non-developer, explains what the setting does, the options, and the trade-offs of each for current users, so Brittany can decide 2.4. It changes no setting and makes no decision.
+- **Size:** S
+- **Depends on:** nothing
+- **Overnight alone:** yes
+- **Needs Brittany:** merge only. Reading it and deciding 2.4 are hers afterward.
+
 ### 0.3 Translation check passes and stays passing
 - **Done means:** `npm run i18n:check` passes on main and runs in the iPhone hydration job, so the catalog can't drift again. The 85 missing English phrases (all from the Library build: 22 `flock.library.*`, 63 `flock.libraryAdmin.*`) are added, the 2 stale keys dropped, and the Dutch gaps free users see today are filled (`clipRecorder`, `gift`, `giftThanks`, `redeem`).
 - **Size:** M
@@ -80,6 +96,14 @@ Where these items came from, with the detail behind each: `docs/flock/opening-sc
 - **Overnight alone:** yes (the export of real history is a one-time read-only query Brittany runs or approves)
 - **Needs Brittany:** health content; the replay results before D1.2.
 
+### D1.2 Weight baseline on the weight page, in shadow mode
+- **Done means:** the weight page shows the range and "still learning", a small celebration when the baseline is learned, and the alert cards. Everything is behind its own switch, on for Brittany's account only. Would-be alerts are logged to a new table nobody else sees, so they can be checked against what actually happened.
+- **Approved (Brittany, Nov 22, 2026):** the shadow-log table. It only adds a new table, on for her account only.
+- **Size:** L
+- **Depends on:** D1.1, and Brittany's read of its replay results
+- **Overnight alone:** yes (built to a held PR)
+- **Needs Brittany:** hold the PR. The health wording goes in the review queue and the vet packet. Ask in the PR whether the log covers only her birds or every bird: this item used to say every bird, and her approval says on for her account only. Until she answers, log her birds only.
+
 ### 1.3 Deleted posts stay hidden for 180 days, then are purged
 - **Done means:** deleting a post or comment hides it, and its comments, from everyone at once, the author included. A daily database job permanently deletes it and its photos 180 days later. Deleting a whole account stays immediate. Pinned in `supabase/checks/flock_posts_checks.sql` (legal draft D10).
 - **Size:** M
@@ -108,37 +132,13 @@ Where these items came from, with the detail behind each: `docs/flock/opening-sc
 - **Overnight alone:** yes (built and merged switched off)
 - **Needs Brittany:** the wording, and her approval before it's switched on, since that sends push to real users.
 
----
-
-## Needs Brittany before work starts
-
-### 2.4 Open pages fetch the new build's files after a release
-- **Done means:** after a release, an open page's next request reaches the new build, not the old one Vercel's Skew Protection pinned it to, so the sitter preview can't load a page whose code files are missing.
-- **Size:** M
-- **Depends on:** 2.3, and Brittany's decision on Vercel's Skew Protection setting
-- **Overnight alone:** no
-- **Needs Brittany:** the Skew Protection decision. Any change to Vercel settings is hers.
-
-### 2.5 The sitter preview never stalls after a release
-- **Done means:** the Nov 2 bug can't happen. The sitter preview catches up to a new release before it opens, and recovers a stalled frame. Checked in the iPhone Simulator with the app left open across a release (see the "Sitter preview stale-session test" memory).
-- **Size:** M
-- **Depends on:** 2.3 (and 2.4 if that's approved)
-- **Overnight alone:** no (needs a hands-on Simulator check)
-- **Needs Brittany:** the Simulator test with her, and merge.
-
-### D1.2 Weight baseline on the weight page, in shadow mode
-- **Done means:** the weight page shows the range and "still learning", a small celebration when the baseline is learned, and the alert cards. Everything is behind its own switch, on for Brittany's account only. Would-be alerts for every bird are logged to a table nobody else sees, so they can be checked against what actually happened.
-- **Size:** L
-- **Depends on:** D1.1
-- **Overnight alone:** no (adds a care-app table for the shadow log)
-- **Needs Brittany:** approval of the care-app database change, and of the health wording.
-
 ### 1.14 Billing foundation (switched off)
 - **Done means:** the billing tables (`billing_customers`, `billing_events`, the new `entitlements` columns), the Stripe billing webhook (`/api/public/stripe/billing`, its own secret, fixture tests in `npm run test:billing`) and the card step (`/flock/membership`, $0 due, never shown in the native app) all exist behind `BILLING_ENABLED`, which stays off. Test mode only. Spec: `docs/flock/payments-plan.md` sections c and d, items 1–3.
+- **Approved to start (Brittany, Nov 22, 2026):** test mode only, `BILLING_ENABLED` stays off, and nothing in the Stripe Dashboard is touched.
 - **Size:** XL
 - **Depends on:** nothing
-- **Overnight alone:** no
-- **Needs Brittany:** approval to start (payments), and approval of the `entitlements` change in the PR. Nothing in the Stripe Dashboard is touched.
+- **Overnight alone:** yes (built to a held PR)
+- **Needs Brittany:** hold the PR for her approval, because it's payments. That includes the `entitlements` change.
 
 ### 1.15 Kya's Crew and its sponsored rescue-adopter seat (switched off)
 - **Done means:**
@@ -147,24 +147,38 @@ Where these items came from, with the detail behind each: `docs/flock/opening-sc
   - Each Crew member sponsors six months for a new rescue adopter, tracked in a sponsorship count, with an admin view of seats sponsored and used.
   - No trial.
   - Nothing is on sale until billing starts. Spec: `docs/flock/payments-plan.md` item 6d.
+- **Approved to start (Brittany, Nov 22, 2026):** once 1.14 is merged, under the same rules: test mode only, `BILLING_ENABLED` off, nothing in the Stripe Dashboard touched.
 - **Size:** L
-- **Depends on:** 1.14
-- **Overnight alone:** no
-- **Needs Brittany:** payments, and the `entitlements` plan change.
+- **Depends on:** 1.14 merged
+- **Overnight alone:** yes (built to a held PR)
+- **Needs Brittany:** hold the PR for her approval (payments, and the `entitlements` plan change).
 
 ### 1.17 Promo codes for memberships
-- **Done means:** promotion codes work on the card step, with rules for founding vs regular prices. The Apple offer codes iPhone needs (whole months only) are listed for when the iPhone paywall is built.
+- **Done means:** promotion codes work on the card step, following the rule below. The Apple offer codes iPhone needs (whole months only) are listed for when the iPhone paywall is built.
+- **Rule (Brittany, Nov 22, 2026):** codes apply to regular Flock and Kya's Crew plans, never to the $15 founding price. A code can stack with a trial (whichever is best for the member).
+- **Approved to start (Brittany, Nov 22, 2026):** once 1.14 is merged, under the same rules: test mode only, `BILLING_ENABLED` off, nothing in the Stripe Dashboard touched.
 - **Size:** M
-- **Depends on:** 1.14
-- **Overnight alone:** no
-- **Needs Brittany:** payments, and the rules for which codes apply to which plans.
+- **Depends on:** 1.14 merged
+- **Overnight alone:** yes (built to a held PR)
+- **Needs Brittany:** hold the PR for her approval (payments). Show worked examples of a code with a trial in the PR, so she can confirm how "stack" and "whichever is best" combine.
 
-### 1.9 Pre-approval for more spaces (only if wanted)
-- **Done means:** posts in the spaces Brittany picks wait for review before other members see them, the way Do good posts already do.
-- **Size:** S
-- **Depends on:** her decision: Do good only (as today), or more spaces
+---
+
+## Needs Brittany before work starts
+
+### 2.4 Open pages fetch the new build's files after a release
+- **Done means:** after a release, an open page's next request reaches the new build, not the old one Vercel's Skew Protection pinned it to, so the sitter preview can't load a page whose code files are missing.
+- **Size:** M
+- **Depends on:** 2.3, the one-pager (2.4a), and Brittany's decision on Vercel's Skew Protection setting
 - **Overnight alone:** no
-- **Needs Brittany:** the decision, and approval of the change to an existing Flock function.
+- **Needs Brittany:** the Skew Protection decision, held until she has read 2.4a. Any change to Vercel settings is hers.
+
+### 2.5 The sitter preview never stalls after a release
+- **Done means:** the Nov 2 bug can't happen. The sitter preview catches up to a new release before it opens, and recovers a stalled frame. Checked in the iPhone Simulator with the app left open across a release (see the "Sitter preview stale-session test" memory).
+- **Size:** M
+- **Depends on:** 2.3 (and 2.4 if that's approved)
+- **Overnight alone:** no (needs a hands-on Simulator check)
+- **Needs Brittany:** the Simulator test with her, and merge.
 
 ---
 
@@ -343,6 +357,7 @@ The launch PR itself (1.18) is already merged dark. What's left before opening i
 - **CSP is still report-only.** Read the `[csp-report]` lines in Vercel runtime logs, add any hosts that are really needed, then switch to enforcing. Never flip it blind.
 
 ### Product
+- **1.9 Pre-approval for more spaces.** Decided (Brittany, Nov 22, 2026): pre-approval stays on Do good only, as it works today. No other space waits for review, and nothing here is to be built unless she reopens it.
 - **iPad landscape polish:**
   - the weight log card stretches too wide;
   - there's empty space beside the Home list;
