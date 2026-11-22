@@ -45,13 +45,6 @@ Where these items came from, with the detail behind each: `docs/flock/opening-sc
 - **Overnight alone:** yes
 - **Needs Brittany:** a read of the new Dutch lines before merge. The Flock's 846 missing Dutch keys wait for her decision on a Dutch Flock.
 
-### 0.4 Credit /get-page sign-ups to the link that brought them
-- **Done means:** someone who scans the postcard or taps a campaign link, lands on /get and later signs up on the web is credited to that link, not "direct". Built from `origin/claude/busy-mccarthy-qntx5t` (one commit, `d974e8e`, still applies cleanly) on a new branch, with `npm run test:get-app` passing, and a note confirming /get is served from app.thekyaproject.com (the credit only carries within one site).
-- **Size:** S
-- **Depends on:** nothing
-- **Overnight alone:** yes
-- **Needs Brittany:** merge only.
-
 ### 2.1 The startup guard listens before anything can fail
 - **Done means:** the page reset for a missing code file works on WebKit 30 times out of 30 in CI.
   - The startup guard script is the first thing in the page's `<head>`, before the code preloads and the inlined styles.
@@ -442,6 +435,7 @@ The launch PR itself (1.18) is already merged dark. What's left before opening i
 
 ## Done
 
+- **0.4** Sign-ups that start on the /get or /get-app desktop page are credited to the link that brought them: #505.
 - **P1** The stored free-season end is cleared, and opening day can't be set without it (`admin_set_flock_dates`): #497.
 - **P2** The founding, gift and redeem pages read opening day and the free season's end (`getFlockPublicDates`): #497.
 - **P3** The founding page's "all 50 claimed" box follows opening day: #497.

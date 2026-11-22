@@ -70,6 +70,11 @@ Format:
 - **Why:** This leaves work already queued in place, and each dependency is something the spec's feature uses.
 - **To change it:** reorder the items in `docs/BACKLOG.md`.
 
+### [#505](https://github.com/the-kya-project/perch-perfect-plan/pull/505) · 0.4 Credit /get-page sign-ups to the link that brought them
+- **Decision:** Brought over the reference commit `d974e8e` exactly as it was, including that it also covers `/get-app` (both share the same desktop page) and not `/review`. Left the two files' existing Prettier warnings alone (they're on `main` too), so the diff stays only the change.
+- **Why:** The backlog item says to build from that commit; reformatting would bury the real change in a large diff.
+- **To change it:** ask for the files to be reformatted in a separate PR, or for `/get-app` to be left out.
+
 ### [#504](https://github.com/the-kya-project/perch-perfect-plan/pull/504) · Backlog: Brittany's decisions
 - **Decision:** 1.15 and 1.17 moved to "Ready to build" with "Depends on: 1.14 merged", and the Skew one-pager (2.4a) sits second, right under the admin review item. 1.14 and its followers go at the end of Ready, and D1.2 right after D1.1.
 - **Why:** Runs never start anything under "Needs Brittany before work starts", so 1.15 and 1.17 had to move to start once 1.14 merges. Existing priorities otherwise keep their order.
