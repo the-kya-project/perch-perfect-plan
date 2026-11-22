@@ -35,6 +35,7 @@ import { foundingClosedCase } from "@/lib/foundingClosed";
 import { formatFlockDay, freeSeasonEndLabel, NO_FLOCK_DATES } from "@/lib/flockDates";
 import { FLOCK_CONTACT_EMAIL, FLOCK_GUIDELINES_VERSION, contactLine, guidelineSections, guidelinesClosing, guidelinesIntro } from "@/lib/flockGuidelines";
 import { isJoinPath, joinErrorKind, joinRedirect, type FlockAccess } from "@/lib/flockJoin";
+import { queueItemPlace, type QueueItem } from "@/lib/flockModeration";
 import {
   birdPronoun, canStartCustom, customProblem, daysSince, clipPhase, flockSheetTitle, isNectarEater, rollingAverage, showVetReminder, youngOrUnknownAge, defaultVisibility, groupTemplates, isLocked, journeyDay, journeyDays,
   nextMilestone, possessive, progressOf, skillInSentence, startHere, trimTrailingBlanks, vetCheckLine, visibilityChoices, wantsTip,
@@ -757,6 +758,27 @@ check("join: database refusals map to what the screen says", () => {
   assert.equal(joinErrorKind({ code: "55000", message: "season_over" }), "season_over");
   assert.equal(joinErrorKind({ code: "42501", message: "the Flock isn't open to you yet" }), "closed");
   assert.equal(joinErrorKind(new Error("offline")), "other");
+});
+
+check("review queue: each item names where it lives", () => {
+  const base: QueueItem = {
+    item_type: "report", subject_type: "post", subject_id: "s1", author_id: "a1", author_name: "Alex R.", author_region: "Great Lakes",
+    title: null, body: "Hi", photo_count: 0, created_at: "2026-11-22T12:00:00Z", report_count: 1, reasons: ["spam"], notes: [],
+    hidden: false, removed: false, messaged_at: null, post_id: "p1", journey_id: null,
+    event_starts_at: null, event_mode: null, event_kind: null, event_place: null,
+  };
+  const spaces = new Map([
+    ["p1", { post_id: "p1", space: "learn" as const, chapter_name: null }],
+    ["p2", { post_id: "p2", space: "chapter" as const, chapter_name: "Texas" }],
+  ]);
+  assert.deepEqual(queueItemPlace({ ...base, item_type: "good", post_id: "p9" }, undefined), { kind: "space", space: "good", chapter: null }, "Do good needs no lookup");
+  assert.deepEqual(queueItemPlace(base, spaces), { kind: "space", space: "learn", chapter: null });
+  assert.deepEqual(queueItemPlace({ ...base, subject_type: "comment", post_id: "p2" }, spaces), { kind: "space", space: "chapter", chapter: "Texas" }, "a comment: its post's space");
+  assert.equal(queueItemPlace({ ...base, post_id: "p3" }, spaces), null, "not loaded yet: nothing rather than a guess");
+  assert.equal(queueItemPlace(base, undefined), null);
+  assert.deepEqual(queueItemPlace({ ...base, subject_type: "journey_update", post_id: null, journey_id: "j1" }, spaces), { kind: "journeys" });
+  assert.deepEqual(queueItemPlace({ ...base, item_type: "event", subject_type: "event", post_id: null }, spaces), { kind: "chapter", chapter: "Great Lakes" }, "events: their chapter");
+  assert.equal(queueItemPlace({ ...base, item_type: "event", subject_type: "event", post_id: null, author_region: null }, spaces), null);
 });
 
 console.log(`\n${passed} passed${process.exitCode ? ", some FAILED" : ""}`);

@@ -281,6 +281,7 @@ async function mockFlock(context: BrowserContext, userId: string, opts: { setupD
     }
     if (fn === "flock_notifications_mark_read") { for (const n of state.notifications) n.unread = false; return json(route, null); }
     if (fn === "flock_can_review") return json(route, true);
+    if (fn === "flock_review_post_spaces") return json(route, (args.p_post_ids as string[]).map((id) => state.posts.find((p) => p.post_id === id)).filter(Boolean).map((p) => ({ post_id: p!.post_id, space: p!.space, chapter_name: p!.space === "chapter" ? "Great Lakes" : null })));
     if (fn === "flock_review_counts") return json(route, [{ good: state.queue.filter((q) => q.item_type === "good").length, reports: state.queue.filter((q) => q.item_type === "report").length, events: state.queue.filter((q) => q.item_type === "event").length }]);
     if (fn === "flock_review_queue") return json(route, state.queue.filter((q) => args.p_filter === "all" || q.item_type === ({ good: "good", reports: "report", events: "event" } as Record<string, string>)[args.p_filter]));
     if (fn === "flock_review_post" || fn === "flock_resolve_report" || fn === "flock_review_event") {
@@ -1644,11 +1645,24 @@ test.describe("reporting, the review queue and notifications (admin, phone)", ()
       { ...item, item_type: "good", subject_type: "post", subject_id: "00000000-0000-4000-8000-0000000079d2", post_id: "00000000-0000-4000-8000-0000000079d2", author_name: "Priya S.", body: "Fosters needed in Ann Arbor.", created_at: hoursAgo(5) },
       { ...item, item_type: "report", subject_type: "comment", subject_id: "00000000-0000-4000-8000-0000000079d3", post_id: POST, author_name: "Alex R.", body: "Just clip his wings, problem solved", report_count: 2, reasons: ["unsafe"], notes: ["Clipping isn't a fix."], hidden: false, created_at: hoursAgo(1) },
     );
-    await page.goto("/admin/review");
+    seedPost(state);
+    // Reached from Flock settings (reviewers only), with the waiting count.
+    await page.goto("/flock/you");
+    const entry = page.getByTestId("you-review-queue");
+    await expect(entry).toContainText("Admin · 3 waiting");
+    await entry.getByRole("button", { name: /Review queue/ }).click();
+    await expect(page).toHaveURL(/\/admin\/review$/);
     await expect(page.getByRole("heading", { level: 1, name: "Review queue" })).toBeVisible();
     await expect(page.getByTestId("queue-chips").getByRole("button")).toHaveText(["All 3", "Do good 2", "Events 0", "Reports 1"]);
     const roof = page.locator("[data-subject='00000000-0000-4000-8000-0000000079d1']");
     await expect(roof).toContainText("Help Midwest Avian Rescue replace its aviary roof");
+    // Each item names its author, space and date.
+    await expect(roof.getByTestId("queue-item-label")).toHaveText("Do good");
+    await expect(roof).toContainText("Jordan L. · Great Lakes · 3h");
+    const reported = page.locator("[data-subject='00000000-0000-4000-8000-0000000079d3']");
+    await expect(reported.getByTestId("queue-item-label")).toHaveText("Report · comment · Learn together");
+    await expect(reported).toContainText("Reported by 2 members · 1h");
+    expect(state.calls.find((c) => c.fn === "flock_review_post_spaces")!.args).toMatchObject({ p_post_ids: [POST] });
     await roof.locator("[data-act='approve']").click();
     expect(state.calls.find((c) => c.fn === "flock_review_post")!.args).toMatchObject({ p_post_id: "00000000-0000-4000-8000-0000000079d1", p_decision: "approve" });
     await expect(page.getByTestId("queue-chips").getByRole("button")).toHaveText(["All 2", "Do good 1", "Events 0", "Reports 1"]);

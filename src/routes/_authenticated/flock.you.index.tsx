@@ -1,11 +1,12 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { Bell, BookOpen, CreditCard, ShieldCheck, Star, UserX } from "lucide-react";
+import { Bell, BookOpen, ClipboardCheck, CreditCard, ShieldCheck, Star, UserX } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { K, KyaCard, KyaHeading, KyaIconTile, KyaRow } from "@/components/kya";
 import { FlockAvatar } from "@/components/flock/FlockPeople";
 import { FlockContactLine } from "@/components/flock/FlockGuidelines";
 import { membershipSummary } from "@/lib/flockProfile";
 import { useAvatarUrls, useIsAdmin, useMyEntitlements, useMyProfile, useMySetup, useRegions } from "@/lib/flockData";
+import { useCanReview, useReviewCounts } from "@/lib/flockModeration";
 
 // You: your Community profile and settings, from the header avatar.
 export const Route = createFileRoute("/_authenticated/flock/you/")({
@@ -21,6 +22,9 @@ function FlockYou() {
   const { data: ents } = useMyEntitlements();
   const { data: isAdmin } = useIsAdmin();
   const { data: urls } = useAvatarUrls([me?.photo_path]);
+  const { data: canReview } = useCanReview();
+  const { data: counts } = useReviewCounts(canReview === true);
+  const waiting = (counts?.good ?? 0) + (counts?.reports ?? 0) + (counts?.events ?? 0);
   const region = regions?.find((r) => r.slug === me?.region_slug);
   const founder = !!setup?.founding_spot;
   const membership = membershipSummary(ents ?? [], !!isAdmin);
@@ -41,6 +45,20 @@ function FlockYou() {
       </header>
       <main className="relative mx-auto -mt-[26px] flex min-h-[40vh] max-w-md flex-col gap-4 rounded-t-[26px] px-4 pb-6 pt-5 lg:max-w-2xl" style={{ background: K.mist }}>
         {/* STATS: a card for journeys, posts and badges goes here once those exist. */}
+        {/* Reviewers only (flock_can_review: admins today). */}
+        {canReview && (
+          <div data-testid="you-review-queue">
+            <KyaCard>
+              <KyaRow
+                leading={<KyaIconTile tone="mist"><ClipboardCheck className="size-5" /></KyaIconTile>}
+                title={t("flock.review.title", "Review queue")}
+                detail={t("flock.review.line", "Admin · {{count}} waiting", { count: waiting })}
+                onClick={() => void navigate({ to: "/admin/review" })}
+                last
+              />
+            </KyaCard>
+          </div>
+        )}
         <KyaCard>
           <KyaRow
             leading={<KyaIconTile tone="mist"><Bell className="size-5" /></KyaIconTile>}

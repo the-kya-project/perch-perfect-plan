@@ -5,12 +5,12 @@ import { useTranslation } from "react-i18next";
 import type { TFunction } from "i18next";
 import { K, KyaBackRow, KyaBody, KyaHeader, KyaHeading, KyaPage, KyaPrimaryButton, KyaSheet, KyaTitle } from "@/components/kya";
 import { FlockChips } from "@/components/flock/FlockChips";
-import { timeAgo } from "@/components/flock/PostParts";
+import { postSpaceLabel, timeAgo } from "@/components/flock/PostParts";
 import { reasonLabel } from "@/components/flock/ReportSheet";
 import { FLOCK_ENABLED_QUERY } from "@/lib/flock";
 import {
-  QUEUE_FILTERS, resolveReport, reviewEvent, reviewPost, useCanReview, useInvalidateModeration, useReviewCounts, useReviewQueue,
-  type QueueFilter, type QueueItem,
+  QUEUE_FILTERS, queueItemPlace, resolveReport, reviewEvent, reviewPost, useCanReview, useInvalidateModeration, useReviewCounts,
+  useReviewPostSpaces, useReviewQueue, type QueueFilter, type QueueItem, type QueuePlace,
 } from "@/lib/flockModeration";
 import { pickOptional } from "@/lib/flockNav";
 import { longWhen } from "@/lib/flockEvents";
@@ -45,6 +45,13 @@ function subjectLabel(t: TFunction, q: QueueItem): string {
   }
 }
 
+/** "Learn together", "Great Lakes chapter", "Journeys". */
+function placeLabel(t: TFunction, place: QueuePlace): string {
+  if (place.kind === "journeys") return t("flock.nav.journeys", "Journeys");
+  if (place.kind === "chapter") return t("flock.posts.chapterSpace", "{{name}} chapter", { name: place.chapter });
+  return postSpaceLabel(t, place.space, place.chapter);
+}
+
 function ReviewQueue() {
   const { t, i18n } = useTranslation();
   const navigate = useNavigate({ from: Route.fullPath });
@@ -53,6 +60,7 @@ function ReviewQueue() {
   const { data: canReview, isLoading: checking } = useCanReview();
   const { data: counts } = useReviewCounts(canReview === true);
   const { data: items, isLoading } = useReviewQueue(current, canReview === true);
+  const { data: spaces } = useReviewPostSpaces(items, canReview === true);
   const invalidate = useInvalidateModeration();
   const [decision, setDecision] = useState<Decision | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
@@ -115,12 +123,17 @@ function ReviewQueue() {
             </p>
           ) : (items ?? []).map((q) => {
             const key = `${q.subject_type}:${q.subject_id}`;
+            const place = queueItemPlace(q, spaces);
+            // A Do good post's label already names its space.
+            const where = place && q.item_type !== "good" ? placeLabel(t, place) : null;
             return (
               <article key={key} className="flex flex-col gap-2.5 rounded-[18px] bg-white p-4" style={{ color: K.forest }} data-queue-item={q.item_type} data-subject={q.subject_id}>
-                <span className="text-[12.5px] font-[700] uppercase tracking-[0.04em]" style={{ color: K.moss }}>{subjectLabel(t, q)}</span>
+                <span className="text-[12.5px] font-[700] uppercase tracking-[0.04em]" style={{ color: K.moss }} data-testid="queue-item-label">
+                  {[subjectLabel(t, q), where].filter(Boolean).join(" · ")}
+                </span>
                 <span className="text-[13px]" style={{ color: K.quiet }}>
                   {q.item_type === "report"
-                    ? t("flock.review.reportedBy", "Reported by {{count}} members", { count: q.report_count })
+                    ? [t("flock.review.reportedBy", "Reported by {{count}} members", { count: q.report_count }), timeAgo(t, q.created_at, i18n.language)].join(" · ")
                     : [q.author_name, q.author_region, timeAgo(t, q.created_at, i18n.language)].filter(Boolean).join(" · ")}
                 </span>
                 {q.title && <KyaHeading size={18} as="h2">{q.title}</KyaHeading>}
