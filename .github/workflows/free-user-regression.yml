@@ -168,6 +168,21 @@ jobs:
           FLOCK_SWITCH_ON: "1"
         run: npx playwright test -c e2e/free-user/playwright.config.ts --project staging-switch-on
 
+      - name: Check what joining saved (agreement, 18+, a free-season membership)
+        if: steps.switch.outputs.on == 'true'
+        shell: bash
+        run: |
+          row="$(psql "$STAGING_DB_URL" -X -At -F '|' -c "
+            select (a.adult_confirmed_at is not null), a.guidelines_version, a.join_source,
+                   (select count(*) from public.entitlements e where e.user_id = u.id and e.source = 'free_season' and e.plan = 'comp' and e.status = 'active'),
+                   (select p.region_slug from public.flock_profiles p where p.user_id = u.id)
+            from auth.users u join public.flock_agreements a on a.user_id = u.id
+            where u.email = 'staging-free@example.com'")"
+          echo "Joined account: adult|version|source|free-season rows|chapter = $row"
+          IFS='|' read -r adult version source rows chapter <<< "$row"
+          [ "$adult" = "t" ] && [ -n "$version" ] && [ "$source" = "care_app" ] && [ "$rows" = "1" ] && [ -n "$chapter" ] \
+            || { echo "::error::Joining didn't save an 18+ agreement and exactly one free-season membership."; exit 1; }
+
       - name: Put staging's members switch back
         if: always() && steps.switch.outputs.on == 'true'
         shell: bash

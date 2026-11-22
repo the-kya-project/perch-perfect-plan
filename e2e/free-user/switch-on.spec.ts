@@ -50,8 +50,9 @@ test("2. Community opens the join step with the Part of the Flock sheet, and no 
 
 test("3. the guidelines and the contact line; Join waits for a chapter, 18+ and agree", async () => {
   const g = page.getByTestId("flock-guidelines");
-  await expect(g).toContainText("Welcome to the Flock.");
-  await expect(g).toContainText("8. Adults only.");
+  await expect(g.getByRole("heading", { name: "Welcome to the Flock" })).toBeVisible();
+  await expect(g).toContainText("Be kind. Everyone here is learning");
+  await expect(page.getByTestId("join-adult")).toBeVisible();
   await expect(g.getByTestId("flock-contact-line")).toContainText("brittany@thekyaproject.com");
   const submit = page.getByTestId("join-submit");
   await expect(submit).toBeDisabled();

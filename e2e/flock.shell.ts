@@ -2587,8 +2587,10 @@ test.describe("joining the Flock (members switch on, phone)", () => {
 
     // The guidelines, word for word, with the contact line at the bottom.
     const g = page.getByTestId("flock-guidelines");
-    await expect(g).toContainText("Welcome to the Flock.");
-    await expect(g).toContainText("8. Adults only. The Flock is for people 18 and older.");
+    await expect(g.getByRole("heading", { name: "Welcome to the Flock" })).toBeVisible();
+    await expect(g.locator("li")).toHaveCount(6);
+    await expect(g).toContainText("The Flock isn't your vet. Members share experience, not medical advice.");
+    await expect(g).toContainText("If something feels wrong, you can report or block anyone, and the Kya team reviews every report.");
     await expect(g.getByTestId("flock-contact-line")).toContainText("Questions or a problem? Email the Kya team at brittany@thekyaproject.com.");
     await expect(g.getByRole("link", { name: "brittany@thekyaproject.com" })).toHaveAttribute("href", "mailto:brittany@thekyaproject.com");
 
@@ -2668,7 +2670,7 @@ test.describe("joining the Flock (members switch on, phone)", () => {
     await expect(page.getByTestId("flock-contact-line")).toContainText("Email the Kya team at brittany@thekyaproject.com.");
     await page.getByText("Community guidelines", { exact: true }).click();
     await expect(page).toHaveURL(/\/flock\/guidelines$/);
-    await expect(page.getByTestId("flock-guidelines")).toContainText("5. No selling.");
+    await expect(page.getByTestId("flock-guidelines")).toContainText("No selling or spam. Please don't advertise products, services, or birds for sale.");
     await expect(page.getByTestId("flock-guidelines").getByTestId("flock-contact-line")).toBeVisible();
     await context.close();
   });

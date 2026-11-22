@@ -1,4 +1,5 @@
-// The Flock's community guidelines: the one place their words live. The join
+// The Flock's community guidelines (Brittany's final text, Nov 22, 2026):
+// the one place their words live. The join
 // step shows them in full, and so does the Community guidelines page in Flock
 // settings (/flock/guidelines). Flock code only.
 //
@@ -17,37 +18,31 @@ export type GuidelineSection = { key: string; title: string; body: string };
 
 export function guidelinesIntro(t: TFunction): { title: string; body: string } {
   return {
-    title: t("flock.guidelines.introTitle", "Welcome to the Flock."),
-    body: t("flock.guidelines.intro", "This is a place for people who love parrots to learn together, cheer each other on, and do some good for birds everywhere. These guidelines keep it kind, useful and safe. By joining, you agree to them."),
+    title: t("flock.guidelines.introTitle", "Welcome to the Flock"),
+    body: t("flock.guidelines.intro", "We're a community of people who love parrots and want to give them good lives. These are the few things we ask of everyone here."),
   };
 }
 
 export function guidelineSections(t: TFunction): GuidelineSection[] {
   return [
-    { key: "kind", title: t("flock.guidelines.kindTitle", "1. Be kind."),
-      body: t("flock.guidelines.kind", "Everyone here is learning, including the people who've had birds for decades. Disagree with ideas, never with people. No insults, harassment, pile-ons, or comments about someone's looks, background or beliefs.") },
-    { key: "birds", title: t("flock.guidelines.birdsTitle", "2. Put the birds first."),
-      body: t("flock.guidelines.birds", "Share what has worked for you and your bird, and say so when you're not sure. Never suggest anything that could hurt a bird, including withholding food to \"motivate\" training, punishment, or unsafe products. If a bird might be sick or hurt, the answer is always \"call your avian vet,\" not a fix from the comments.") },
-    { key: "vet", title: t("flock.guidelines.vetTitle", "3. We're not a vet."),
-      body: t("flock.guidelines.vet", "Nothing in the Flock replaces an avian vet. Members can share experience, but no one here can diagnose a bird. In an emergency, call your vet or an emergency vet first.") },
-    { key: "honest", title: t("flock.guidelines.honestTitle", "4. Keep it honest."),
-      body: t("flock.guidelines.honest", "Share your own experience, photos and clips. Don't pass off someone else's work as yours, and don't post things you know aren't true.") },
-    { key: "selling", title: t("flock.guidelines.sellingTitle", "5. No selling."),
-      body: t("flock.guidelines.selling", "The Flock isn't a marketplace. Please don't sell or rehome birds here, and don't advertise products or services. Sharing a rescue that needs help, a fundraiser, or something that genuinely helped your bird is welcome.") },
-    { key: "privacy", title: t("flock.guidelines.privacyTitle", "6. Respect privacy."),
-      body: t("flock.guidelines.privacy", "Don't share anyone's address, phone number or other personal details, and don't post photos of other people or their birds without asking. What members share in the Flock stays in the Flock.") },
-    { key: "meetups", title: t("flock.guidelines.meetupsTitle", "7. Meet up safely."),
-      body: t("flock.guidelines.meetups", "Chapter meetups happen in public places. Leave birds at home unless the host says they're welcome, and never go somewhere that doesn't feel right.") },
-    { key: "adults", title: t("flock.guidelines.adultsTitle", "8. Adults only."),
-      body: t("flock.guidelines.adults", "The Flock is for people 18 and older.") },
+    { key: "kind", title: t("flock.guidelines.kindTitle", "Be kind."),
+      body: t("flock.guidelines.kind", "Everyone here is learning, including the people who've had birds for decades. Disagree with ideas, never with people, and assume the best of each other.") },
+    { key: "birds", title: t("flock.guidelines.birdsTitle", "Put the birds first."),
+      body: t("flock.guidelines.birds", "Share what keeps parrots safe and healthy. Posts that encourage harmful care, or the sale of wild-caught birds, will be removed.") },
+    { key: "vet", title: t("flock.guidelines.vetTitle", "The Flock isn't your vet."),
+      body: t("flock.guidelines.vet", "Members share experience, not medical advice. If your bird seems unwell, please call an avian vet before posting.") },
+    { key: "selling", title: t("flock.guidelines.sellingTitle", "No selling or spam."),
+      body: t("flock.guidelines.selling", "Please don't advertise products, services, or birds for sale. Sharing a rescue that needs help is always welcome.") },
+    { key: "yours", title: t("flock.guidelines.yoursTitle", "Share only what's yours."),
+      body: t("flock.guidelines.yours", "Post your own photos, videos, and stories, and don't share anything another member told you privately.") },
+    { key: "meetups", title: t("flock.guidelines.meetupsTitle", "Meet up safely."),
+      body: t("flock.guidelines.meetups", "Chapter events happen in public places, and you're never obligated to share where you live.") },
   ];
 }
 
-export function guidelinesIfWrong(t: TFunction): { title: string; body: string } {
-  return {
-    title: t("flock.guidelines.wrongTitle", "If something's wrong:"),
-    body: t("flock.guidelines.wrong", "use Report on a post, comment or update, and the Kya team will take a look. Reports are private. You can also block anyone, and neither of you will see the other in the Flock. When someone breaks these guidelines, we may remove their posts, and if it keeps happening, remove them from the Flock."),
-  };
+/** The closing paragraph. */
+export function guidelinesClosing(t: TFunction): string {
+  return t("flock.guidelines.closing", "If something feels wrong, you can report or block anyone, and the Kya team reviews every report. Members who break these guidelines may have posts removed or lose access to the Flock.");
 }
 
 /** The contact line, used at the bottom of the guidelines and in settings. */

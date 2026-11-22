@@ -32,7 +32,7 @@ import { accessCells, accessDay } from "@/lib/flockAccess";
 import { blockActions, blockName } from "@/lib/flockBlocks";
 import { spotLabel } from "@/lib/flockFounders";
 import { foundingClosedCase } from "@/lib/foundingClosed";
-import { FLOCK_CONTACT_EMAIL, FLOCK_GUIDELINES_VERSION, contactLine, guidelineSections, guidelinesIfWrong, guidelinesIntro } from "@/lib/flockGuidelines";
+import { FLOCK_CONTACT_EMAIL, FLOCK_GUIDELINES_VERSION, contactLine, guidelineSections, guidelinesClosing, guidelinesIntro } from "@/lib/flockGuidelines";
 import { isJoinPath, joinErrorKind, joinRedirect, type FlockAccess } from "@/lib/flockJoin";
 import {
   birdPronoun, canStartCustom, customProblem, daysSince, clipPhase, flockSheetTitle, isNectarEater, rollingAverage, showVetReminder, youngOrUnknownAge, defaultVisibility, groupTemplates, isLocked, journeyDay, journeyDays,
@@ -661,12 +661,20 @@ check("join: the guidelines version matches the database's", () => {
   assert.equal(m![1], FLOCK_GUIDELINES_VERSION);
 });
 
-check("join: the guidelines are the eight sections, the report line and the contact line, in order", () => {
+check("join: the guidelines are Brittany's six points, the closing line and the contact line, in order", () => {
   const tt = ((k: string, d: string, o?: Record<string, string>) => d.replace("{{email}}", o?.email ?? "")) as unknown as Parameters<typeof guidelineSections>[0];
-  assert.deepEqual(guidelineSections(tt).map((x) => x.key), ["kind", "birds", "vet", "honest", "selling", "privacy", "meetups", "adults"]);
-  assert.ok(guidelinesIntro(tt).body.endsWith("By joining, you agree to them."));
-  assert.ok(guidelineSections(tt).find((x) => x.key === "adults")!.body.includes("18 and older"));
-  assert.ok(guidelinesIfWrong(tt).body.startsWith("use Report"));
+  assert.deepEqual(guidelineSections(tt).map((x) => x.key), ["kind", "birds", "vet", "selling", "yours", "meetups"]);
+  assert.equal(guidelinesIntro(tt).title, "Welcome to the Flock");
+  assert.equal(guidelinesIntro(tt).body, "We're a community of people who love parrots and want to give them good lives. These are the few things we ask of everyone here.");
+  assert.deepEqual(guidelineSections(tt).map((x) => `${x.title} ${x.body}`), [
+    "Be kind. Everyone here is learning, including the people who've had birds for decades. Disagree with ideas, never with people, and assume the best of each other.",
+    "Put the birds first. Share what keeps parrots safe and healthy. Posts that encourage harmful care, or the sale of wild-caught birds, will be removed.",
+    "The Flock isn't your vet. Members share experience, not medical advice. If your bird seems unwell, please call an avian vet before posting.",
+    "No selling or spam. Please don't advertise products, services, or birds for sale. Sharing a rescue that needs help is always welcome.",
+    "Share only what's yours. Post your own photos, videos, and stories, and don't share anything another member told you privately.",
+    "Meet up safely. Chapter events happen in public places, and you're never obligated to share where you live.",
+  ]);
+  assert.equal(guidelinesClosing(tt), "If something feels wrong, you can report or block anyone, and the Kya team reviews every report. Members who break these guidelines may have posts removed or lose access to the Flock.");
   assert.equal(contactLine(tt).body, `Email the Kya team at ${FLOCK_CONTACT_EMAIL}.`);
   assert.equal(FLOCK_CONTACT_EMAIL, "brittany@thekyaproject.com");
 });
