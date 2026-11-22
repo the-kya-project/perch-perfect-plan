@@ -267,9 +267,9 @@ begin
     if denied and ok then passed := passed + 1; else failed := array_append(failed, 'admin hides a finisher tip'); end if;
   end;
 
-  -- 13) Tip 1 has the new wording.
-  if exists (select 1 from public.journey_tips where body = 'Try a short session before breakfast, when treats tend to feel extra special. Breakfast comes right after, as always.')
-     and not exists (select 1 from public.journey_tips where body like '%a little hungry%') then
+  -- 13) Tip 1 never ties training to hunger or meals (20261121180000_safety_content_fixes).
+  if exists (select 1 from public.journey_tips where body = 'Keep training separate from meals. Your bird should eat as usual, and a tiny piece of a favorite treat you save just for training will keep them interested.')
+     and not exists (select 1 from public.journey_tips where body ilike '%hungry%' or body ilike '%before breakfast%') then
     passed := passed + 1; else failed := array_append(failed, 'tip 1 reworded'); end if;
 
   raise exception 'JOURNEYS BROWSE CHECKS: % passed, % failed%', passed, coalesce(array_length(failed, 1), 0),

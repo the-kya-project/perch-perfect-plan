@@ -300,7 +300,10 @@ begin
      and (select count(*) from public.journey_template_milestones m join public.journey_templates t on t.id = m.template_id where t.slug = 'spin') = 5
      and (select count(*) from public.journey_template_milestones m join public.journey_templates t on t.id = m.template_id where t.slug = 'step-up') = 7
      and (select array_length(safeguards, 1) from public.journey_templates where slug = 'diet-conversion') = 4
-     and bool_and(array_length(safety_notes, 1) = 3)
+     -- Every template keeps the three shared reminders first; nail trims adds
+     -- its own safety guidance after them (20261121180000_safety_content_fixes).
+     and bool_and(safety_notes[1:3] = array['Keep sessions short.', 'Stop at the first sign of stress.', 'Never withhold food to make a bird hungrier for training.']::text[])
+     and bool_and(array_length(safety_notes, 1) = case when slug = 'nail-trims' then 10 else 3 end)
     into ok from public.journey_templates;
   if ok then passed := passed + 1; else failed := array_append(failed, 'seed matches the doc'); end if;
 

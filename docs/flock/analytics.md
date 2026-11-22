@@ -59,4 +59,4 @@ PostHog → Dashboards → **Flock stickiness** (`https://us.posthog.com/project
 | Most-used features | how many different members did each thing in the last 30 days |
 | Joins per week | `flock_joined` per week, split by `source` (empty until build C) |
 
-Check it monthly, and once more by Tue, Jun 1, before the Jun 7 card emails.
+Check it monthly, and once more before the card emails go out (about a month before the free season ends).
