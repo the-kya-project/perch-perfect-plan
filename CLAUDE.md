@@ -147,14 +147,18 @@ Unattended agents (the hourly runs on Brittany's Mac, and any overnight run) bui
 - Never start an item under **"Waiting on Brittany's spec"** or **"Needs Brittany before work starts."**
 - **One item per run, per branch and per PR.** A new, uniquely named branch each time (see "Conventions and gotchas").
 - **Before picking new work, finish your own leftovers:** an earlier agent PR logged as "waiting on checks" that now passes may be merged by this run if it meets every merge rule below. That counts as this run's item.
+- **Clear abandoned drafts before picking.** An open draft PR titled "In progress: …" that was opened more than 3 hours ago is abandoned, because no run lasts longer than the 3-hour lock. Close it with a short note saying why, and say so in your log entry; its item may then be picked again. Never close any other draft or any PR that's ready for review. If the close is refused, leave the draft open, add the note as a PR comment, log it for Brittany, and don't pick that item. A draft less than 3 hours old counts as an open PR, so leave its item alone.
+- **Make the work visible as soon as it's picked.** Create the branch, make one empty commit (`git commit --allow-empty`, because GitHub won't open a PR with no commits), push it, and open a **draft** PR titled "In progress: <item ID> <item title>" with a one-line description of the plan. Do this before building anything.
 
 **4. Building and testing**
+- **When the work is done, update that same draft PR:** give it its real title and full description, mark it ready for review (`gh pr ready`), then follow the merge-or-hold rules below. Never open a second PR for the item.
 - Every PR description has a plain-language summary, the item's "done means" line, how it was tested, and a link to its preview. Flock PRs also have the "Free-user impact" section.
-- **Every required check must pass, including the Free-user regression.** If one fails, fix it in the same PR. If checks are still running when the run has to end (it must finish well inside the 3-hour lock), leave the PR open and log it as "waiting on checks".
+- **Every required check must pass, including the Free-user regression.** If one fails, fix it in the same PR. If checks are still running when the run has to end (it must finish well inside the 3-hour lock), mark the finished PR ready, leave it open and log it as "waiting on checks".
 - **When something isn't covered** by the backlog, the item's spec or this file, leave the question in the PR under "Needs Brittany", hold the PR, and stop. Don't guess.
+- **If a run stops early or fails before the work is done,** it leaves the draft open with a short note in the PR saying what happened, and logs it as "Stopped". Because a draft may later be closed, that log entry goes in `~/.kya-agent/pending-log.md`, not only on the draft's branch.
 
 **5. When a run may merge its own PR**
-A run may **squash-merge** its own PR (`gh pr merge --squash`) only when **all** of these are true:
+A run may **squash-merge** its own PR (`gh pr merge --squash`) only when it's been marked ready for review (never merge a draft) and **all** of these are true:
 - **Every required check passes,** including the Free-user regression. Never merge around a check (no `--admin`, no skipping, no merging while one is red or still running).
 - **Current users see and experience nothing different.** The change is either:
   - a new feature hidden behind the Flock gate (`flock_enabled()`, admins only) or behind its own off switch that is off; or
@@ -193,7 +197,7 @@ A run may **squash-merge** its own PR (`gh pr merge --squash`) only when **all**
   - **Held for Brittany**: each held PR and exactly what it needs.
 
   Add new items at the top of their section. **Brittany clears items as she reviews them. Never remove or rewrite an item she hasn't cleared,** including another run's items.
-- **When a run has no PR** (it stopped because of the lock, or found nothing it's allowed to build), it can't change `main` directly. It adds its entry to the local file `~/.kya-agent/pending-log.md` instead, and doesn't otherwise touch the lock or the repo. The next run that opens a PR moves those entries into `docs/agent-log.md`, in time order, and empties the file.
+- **When a run has no PR, or only an unfinished draft** (it stopped because of the lock, found nothing it's allowed to build, or stopped early), it can't change `main` directly. It adds its entry to the local file `~/.kya-agent/pending-log.md` instead, and doesn't otherwise touch the lock or the repo. The next run that opens a PR moves those entries into `docs/agent-log.md`, in time order, and empties the file.
 - **These two files change in almost every PR,** so they often conflict when `main` moves on. When they do, update the branch from `main` and keep **both** sides' entries; never drop one to resolve a conflict.
 
 ## Deploy
