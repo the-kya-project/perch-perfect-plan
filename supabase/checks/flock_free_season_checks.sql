@@ -89,6 +89,11 @@ begin
   create or replace function public.flock_enabled()
   returns boolean language sql stable security invoker set search_path = ''
   as $f$ select auth.uid() is not null and private.flock_ui_on(); $f$;
+  -- Since build C, joining needs the guidelines and 18+ agreement first
+  -- (flock_open_checks.sql covers that step); everyone here has agreed.
+  insert into public.flock_agreements (user_id, adult_confirmed_at, guidelines_version)
+  select u, now(), private.flock_guidelines_version() from unnest(array[adm, fre, cmp, fdr, cld, gft, j1]) as u
+  on conflict (user_id) do nothing;
 
   -- Opening day ahead (Dec), so nothing has started yet.
   update public.flock_settings set flock_opens_at = now() + interval '10 days' where id;

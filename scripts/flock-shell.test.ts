@@ -33,6 +33,8 @@ import { blockActions, blockName } from "@/lib/flockBlocks";
 import { spotLabel } from "@/lib/flockFounders";
 import { foundingClosedCase } from "@/lib/foundingClosed";
 import { formatFlockDay, freeSeasonEndLabel, NO_FLOCK_DATES } from "@/lib/flockDates";
+import { FLOCK_CONTACT_EMAIL, FLOCK_GUIDELINES_VERSION, contactLine, guidelineSections, guidelinesClosing, guidelinesIntro } from "@/lib/flockGuidelines";
+import { isJoinPath, joinErrorKind, joinRedirect, type FlockAccess } from "@/lib/flockJoin";
 import {
   birdPronoun, canStartCustom, customProblem, daysSince, clipPhase, flockSheetTitle, isNectarEater, rollingAverage, showVetReminder, youngOrUnknownAge, defaultVisibility, groupTemplates, isLocked, journeyDay, journeyDays,
   nextMilestone, possessive, progressOf, skillInSentence, startHere, trimTrailingBlanks, vetCheckLine, visibilityChoices, wantsTip,
@@ -709,6 +711,52 @@ check("public dates: read on the server with the service role, never from the br
   for (const f of ["src/routes/_authenticated/dashboard.tsx", "src/routes/_authenticated/route.tsx", "src/routes/__root.tsx"]) {
     assert.ok(!readFileSync(f, "utf8").includes("useFlockPublicDates"), `${f} doesn't read the Flock dates`);
   }
+});
+
+check("join: the guidelines version matches the database's", () => {
+  const sql = readFileSync("supabase/migrations/20261122100000_flock_open_to_members.sql", "utf8");
+  const m = sql.match(/create or replace function private\.flock_guidelines_version\(\)[\s\S]*?select '([^']+)'::text/);
+  assert.ok(m, "version function in the migration");
+  assert.equal(m![1], FLOCK_GUIDELINES_VERSION);
+});
+
+check("join: the guidelines are Brittany's six points, the closing line and the contact line, in order", () => {
+  const tt = ((k: string, d: string, o?: Record<string, string>) => d.replace("{{email}}", o?.email ?? "")) as unknown as Parameters<typeof guidelineSections>[0];
+  assert.deepEqual(guidelineSections(tt).map((x) => x.key), ["kind", "birds", "vet", "selling", "yours", "meetups"]);
+  assert.equal(guidelinesIntro(tt).title, "Welcome to the Flock");
+  assert.equal(guidelinesIntro(tt).body, "We're a community of people who love parrots and want to give them good lives. These are the few things we ask of everyone here.");
+  assert.deepEqual(guidelineSections(tt).map((x) => `${x.title} ${x.body}`), [
+    "Be kind. Everyone here is learning, including the people who've had birds for decades. Disagree with ideas, never with people, and assume the best of each other.",
+    "Put the birds first. Share what keeps parrots safe and healthy. Posts that encourage harmful care, or the sale of wild-caught birds, will be removed.",
+    "The Flock isn't your vet. Members share experience, not medical advice. If your bird seems unwell, please call an avian vet before posting.",
+    "No selling or spam. Please don't advertise products, services, or birds for sale. Sharing a rescue that needs help is always welcome.",
+    "Share only what's yours. Post your own photos, videos, and stories, and don't share anything another member told you privately.",
+    "Meet up safely. Chapter events happen in public places, and you're never obligated to share where you live.",
+  ]);
+  assert.equal(guidelinesClosing(tt), "If something feels wrong, you can report or block anyone, and the Kya team reviews every report. Members who break these guidelines may have posts removed or lose access to the Flock.");
+  assert.equal(contactLine(tt).body, `Email the Kya team at ${FLOCK_CONTACT_EMAIL}.`);
+  assert.equal(FLOCK_CONTACT_EMAIL, "brittany@thekyaproject.com");
+});
+
+check("join: who the /flock layout lets in", () => {
+  const base: FlockAccess = { member_now: false, has_membership: false, agreed: false, is_admin: false, guidelines_version: FLOCK_GUIDELINES_VERSION, opens_at: null, season_ends_at: null };
+  assert.equal(joinRedirect(null, "/flock"), "/dashboard", "status unreadable: fails closed");
+  assert.equal(joinRedirect(base, "/flock"), "/flock/join", "not joined: the join step");
+  assert.equal(joinRedirect(base, "/flock/join"), null);
+  assert.equal(joinRedirect(base, "/flock/guidelines"), null, "the guidelines can be read before joining");
+  assert.equal(joinRedirect(base, "/flock/library"), "/flock/join");
+  assert.equal(joinRedirect({ ...base, has_membership: true, member_now: true }, "/flock"), "/flock/join", "a founder or member who hasn't agreed yet");
+  assert.equal(joinRedirect({ ...base, agreed: true, has_membership: true }, "/flock"), "/flock/join", "joined before opening day: waits");
+  assert.equal(joinRedirect({ ...base, agreed: true, has_membership: true, member_now: true }, "/flock"), null);
+  assert.equal(joinRedirect({ ...base, is_admin: true, member_now: true }, "/flock"), null, "admins are never held at the door");
+  assert.ok(isJoinPath("/flock/join") && !isJoinPath("/flock/joiner") && !isJoinPath("/flock"));
+});
+
+check("join: database refusals map to what the screen says", () => {
+  assert.equal(joinErrorKind({ code: "22023", message: "adult_required" }), "adult_required");
+  assert.equal(joinErrorKind({ code: "55000", message: "season_over" }), "season_over");
+  assert.equal(joinErrorKind({ code: "42501", message: "the Flock isn't open to you yet" }), "closed");
+  assert.equal(joinErrorKind(new Error("offline")), "other");
 });
 
 console.log(`\n${passed} passed${process.exitCode ? ", some FAILED" : ""}`);

@@ -227,7 +227,7 @@ Every PR follows the Flock safety rules: database changes are additive only (any
 
 - **A. Founding terms and deadline:** done (#478, #480, #481, #486).
 - **B. Free-season grant:** done (#483).
-- **C. Opening the Flock to members (the launch PR):** backlog 1.18, last, when Brittany decides to open. A "Join the Flock" screen with a required "I'm 18 or older" confirmation, `flock_enabled()` true for members, the one approved entry point (decision h1), and an updated free-user regression check. Merged dark and switched on with a setting.
+- **C. Opening the Flock to members (the launch PR):** backlog 1.18; **built (#493), merged dark**, switched on at opening when Brittany decides (`select public.admin_set_flock_members_open(true);` once opening day is set; CLAUDE.md, "Opening to members"). A "Join the Flock" screen with a required "I'm 18 or older" confirmation, `flock_enabled()` true for members, the one approved entry point (decision h1), and an updated free-user regression check. Merged dark and switched on with a setting.
 - **D. Member blocking (Apple 1.2):** built (#489); the contact line is backlog 1.1.
 - **E. Stickiness events:** done (#488).
 - **F. Gift time starts at the free season's end when redeemed during it:** done (#487).

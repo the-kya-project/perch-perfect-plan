@@ -124,6 +124,9 @@ begin
   create or replace function public.flock_enabled()
   returns boolean language sql stable security invoker set search_path = ''
   as $f$ select auth.uid() is not null and private.flock_ui_on(); $f$;
+  -- Joining needs the guidelines and 18+ agreement first (build C).
+  insert into public.flock_agreements (user_id, adult_confirmed_at, guidelines_version)
+  values (gb, now(), private.flock_guidelines_version()) on conflict (user_id) do nothing;
   perform set_config('request.jwt.claims', json_build_object('sub', gb, 'role', 'authenticated')::text, true);
   set local role authenticated;
   select * into r from public.flock_join();

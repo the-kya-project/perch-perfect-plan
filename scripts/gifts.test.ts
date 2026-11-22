@@ -13,7 +13,7 @@
  */
 import assert from "node:assert/strict";
 import Stripe from "stripe";
-import { giftToday, isAllowedSendDate, formatGiftDate, formatCents, GIFT_CODE_PATTERN, GIFT_PLANS, isGiftPlan, applyGiftRefund, giftKeptCents, giftGivingCents, giftGrantsMembership } from "@/lib/gifts";
+import { giftToday, giftLastSendDate, GIFT_SEND_WINDOW_DAYS, isAllowedSendDate, formatGiftDate, formatCents, GIFT_CODE_PATTERN, GIFT_PLANS, isGiftPlan, applyGiftRefund, giftKeptCents, giftGivingCents, giftGrantsMembership } from "@/lib/gifts";
 import { buildGiftReceiptEmail, buildGiftRecipientEmail, type GiftRow } from "@/lib/giftEmails.server";
 import { giftGivingNote, giftPlanName, giftPriceParts, giftRedeemed, giftRefundNote, giftTiming } from "@/lib/giftCopy";
 import { readFileSync } from "node:fs";
@@ -62,13 +62,44 @@ await check("today is judged in Indianapolis", () => {
   assert.equal(giftToday(new Date("2026-12-02T03:00:00Z")), "2026-12-01");
   assert.equal(giftToday(new Date("2026-12-02T06:00:00Z")), "2026-12-02");
 });
-await check("send dates: today through Dec 31, 2026 only", () => {
-  const now = new Date("2026-11-27T15:00:00Z");
-  assert.equal(isAllowedSendDate("2026-11-27", now), true);
-  assert.equal(isAllowedSendDate("2026-12-31", now), true);
-  assert.equal(isAllowedSendDate("2026-11-26", now), false);
-  assert.equal(isAllowedSendDate("2027-01-01", now), false);
-  assert.equal(isAllowedSendDate("12/25/2026", now), false);
+await check("send dates: a rolling window from today through 90 days ahead", () => {
+  assert.equal(GIFT_SEND_WINDOW_DAYS, 90);
+  const now = new Date("2026-11-27T15:00:00Z"); // Nov 27 in Indianapolis
+  assert.equal(giftLastSendDate(now), "2027-02-25"); // Nov 27 + 90 days
+  assert.equal(isAllowedSendDate("2026-11-27", now), true, "today");
+  assert.equal(isAllowedSendDate("2026-12-31", now), true, "the old fixed last day is just a normal day now");
+  assert.equal(isAllowedSendDate("2027-01-01", now), true, "past the old Dec 31 limit");
+  assert.equal(isAllowedSendDate("2027-02-25", now), true, "just inside: day 90");
+  assert.equal(isAllowedSendDate("2027-02-26", now), false, "just outside: day 91");
+  assert.equal(isAllowedSendDate("2026-11-26", now), false, "yesterday");
+  assert.equal(isAllowedSendDate("12/25/2026", now), false, "wrong format");
+  assert.equal(isAllowedSendDate("2026-12-32", now), false, "not a real day");
+  assert.equal(isAllowedSendDate("2027-02-30", now), false, "not a real day");
+});
+await check("send dates: the window rolls forward and is judged in Indianapolis, across a year end and daylight saving", () => {
+  // 03:00 UTC on Dec 2 is still Dec 1 in Indianapolis, so the window starts Dec 1.
+  const late = new Date("2026-12-02T03:00:00Z");
+  assert.equal(giftLastSendDate(late), "2027-03-01");
+  assert.equal(isAllowedSendDate("2026-12-01", late), true);
+  assert.equal(isAllowedSendDate("2027-03-02", late), false);
+  // Across the spring clock change (Mar 14, 2027) the count stays 90 calendar days.
+  assert.equal(giftLastSendDate(new Date("2027-02-01T17:00:00Z")), "2027-05-02");
+});
+await check("send dates: the server checks the date itself, and says when the date is the problem", () => {
+  const server = readFileSync("src/lib/gifts.functions.ts", "utf8");
+  assert.ok(/if \(!d\.sendOn \|\| !isAllowedSendDate\(d\.sendOn\)\)/.test(server), "createGiftCheckout validates sendOn with isAllowedSendDate on the server");
+  assert.ok(server.includes('reason: onlyDate ? "invalid_date" : "invalid"'), "a bad date alone returns invalid_date");
+  const page = readFileSync("src/routes/gift.index.tsx", "utf8");
+  assert.ok(page.includes('res.reason === "invalid_date"'), "the page shows the server's date refusal on the date field");
+  assert.ok(!/December 31|GIFT_SEND_LAST_DATE/.test(page + readFileSync("src/lib/gifts.ts", "utf8")), "no fixed last day left");
+});
+await check("send-date copy: complete sentences, no fixed date", () => {
+  const en = readFileSync("src/locales/en.jsonc", "utf8");
+  assert.ok(en.includes('"gift.errDate": "That date is a little too far out. You can pick any day from today through {{last}}."'));
+  assert.ok(en.includes('"gift.sendOnHint": "You can pick any day from today up to {{days}} days ahead. The email arrives that morning, Eastern time."'));
+  const page = readFileSync("src/routes/gift.index.tsx", "utf8");
+  assert.ok(page.includes('"That date is a little too far out. You can pick any day from today through {{last}}."'), "page fallback matches en.jsonc");
+  assert.ok(page.includes('"You can pick any day from today up to {{days}} days ahead. The email arrives that morning, Eastern time."'), "page fallback matches en.jsonc");
 });
 await check("dates and money format without timezone drift", () => {
   assert.equal(formatGiftDate("2026-12-24"), "Dec 24, 2026");

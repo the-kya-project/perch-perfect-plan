@@ -74,6 +74,9 @@ export type ContextInputs = {
   regionSlug: string | null;
   entitlements: { plan: string; source: string; status: string; starts_at: string | null }[];
   now?: Date;
+  /** flock_joined only: someone who joined before opening day has a
+   *  membership that hasn't started yet, and still counts for that event. */
+  allowPending?: boolean;
 };
 
 /** Test accounts: staging's made-up addresses, reserved test domains, and
@@ -93,7 +96,8 @@ const GOOD = new Set(["active", "trialing", "past_due"]);
 /** Who this person is to the Flock, or null when they're not in it (and so
  *  must send nothing). Pure: scripts/flock-analytics.test.ts pins it. */
 export function flockContext(i: ContextInputs): FlockContext | null {
-  if (!i.isMember && !i.isAdmin) return null;
+  const pending = !!i.allowPending && i.entitlements.some((e) => GOOD.has(e.status));
+  if (!i.isMember && !i.isAdmin && !pending) return null;
   const t = (i.now ?? new Date()).getTime();
   const live = i.entitlements.filter((e) => GOOD.has(e.status) && (!e.starts_at || new Date(e.starts_at).getTime() <= t));
   const has = (pred: (e: ContextInputs["entitlements"][number]) => boolean) => live.some(pred) || i.entitlements.some((e) => GOOD.has(e.status) && pred(e));
@@ -104,7 +108,8 @@ export function flockContext(i: ContextInputs): FlockContext | null {
   const paid = live.some((e) => ["stripe", "apple", "google"].includes(e.source));
   // The one label a breakdown shows: what they're most identified by.
   const membership: Membership = founder ? "founding" : paid ? "paid" : gift ? "gift" : lead ? "chapter_lead"
-    : freeSeason ? "free_season" : i.isMember ? "comp" : "admin";
+    : freeSeason || (pending && i.entitlements.some((e) => e.source === "free_season")) ? "free_season"
+    : i.isMember || pending ? "comp" : "admin";
   return {
     chapter: i.regionSlug || "none",
     membership,
@@ -147,11 +152,11 @@ let personSetFor: string | null = null;
 let activeSentFor: string | null = null;
 const TTL = 5 * 60_000;
 
-async function readContext(): Promise<FlockContext | null> {
+async function readContext(opts: { allowPending?: boolean } = {}): Promise<FlockContext | null> {
   const { data: auth } = await supabase.auth.getUser();
   const user = auth?.user;
   if (!user) { cached = null; return null; }
-  if (cached && cached.userId === user.id && Date.now() - cached.at < TTL) return cached.ctx;
+  if (!opts.allowPending && cached && cached.userId === user.id && Date.now() - cached.at < TTL) return cached.ctx;
   const sb = supabase as any;
   const [admin, member, ents, profile] = await Promise.all([
     supabase.rpc("is_admin"),
@@ -167,8 +172,9 @@ async function readContext(): Promise<FlockContext | null> {
     email: user.email ?? null,
     regionSlug: profile?.data?.region_slug ?? null,
     entitlements: ents.error ? [] : (ents.data ?? []),
+    allowPending: opts.allowPending,
   });
-  cached = { userId: user.id, at: Date.now(), ctx };
+  if (!opts.allowPending) cached = { userId: user.id, at: Date.now(), ctx };
   return ctx;
 }
 
@@ -201,7 +207,11 @@ export function resetFlockAnalytics(): void {
 
 /** Send one Flock event. Never throws and never blocks the caller. */
 export function trackFlock(name: FlockEventName, props?: FlockEventProps): Promise<void> {
-  return context().then((ctx) => {
+  return sendWith(context(), name, props);
+}
+
+function sendWith(load: Promise<FlockContext | null>, name: FlockEventName, props?: FlockEventProps): Promise<void> {
+  return load.then((ctx) => {
     const out = flockEventProps(ctx, name, props);
     if (!out || !ctx) return;
     const key = JSON.stringify(ctx);
@@ -226,7 +236,15 @@ export function trackFlock(name: FlockEventName, props?: FlockEventProps): Promi
  *  `source`: where they came from (care_app, email, website, founding, gift). */
 export function trackFlockJoined(source: string): Promise<void> {
   resetFlockAnalytics();
-  return trackFlock("flock_joined", { source });
+  const load = deps.loadContext({ allowPending: true }).catch(() => null);
+  return sendWith(load, "flock_joined", { source: joinSource(source) });
+}
+
+/** Where someone came from to join; anything else is the care app. */
+export const JOIN_SOURCES = ["care_app", "email", "website", "founding", "gift"] as const;
+export type JoinSource = (typeof JOIN_SOURCES)[number];
+export function joinSource(v: unknown): JoinSource {
+  return (JOIN_SOURCES as readonly unknown[]).includes(v) ? (v as JoinSource) : "care_app";
 }
 
 /** The Flock's day, Eastern (the same day private.flock_today() uses). */

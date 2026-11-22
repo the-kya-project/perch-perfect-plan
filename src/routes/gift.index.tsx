@@ -8,7 +8,7 @@ import { useTranslation } from "react-i18next";
 import i18next from "i18next";
 import { track } from "@/lib/analytics";
 import { createGiftCheckout, getGiftOptions, type GiftOption } from "@/lib/gifts.functions";
-import { formatCents, giftToday, GIFT_MESSAGE_MAX, GIFT_NAME_MAX, GIFT_PLANS, GIFT_SEND_LAST_DATE, type GiftPlan } from "@/lib/gifts";
+import { formatCents, formatGiftDate, giftLastSendDate, giftToday, isAllowedSendDate, GIFT_MESSAGE_MAX, GIFT_NAME_MAX, GIFT_PLANS, GIFT_SEND_WINDOW_DAYS, type GiftPlan } from "@/lib/gifts";
 import { K, KyaCard, KyaHeading } from "@/components/kya";
 import { freeSeasonEndLabel } from "@/lib/flockDates";
 import { useFlockPublicDates } from "@/lib/useFlockPublicDates";
@@ -43,6 +43,8 @@ function GiftPage() {
 
   const today = giftToday();
   const freeUntil = freeSeasonEndLabel(useFlockPublicDates());
+  const lastSend = giftLastSendDate();
+  const dateError = () => t("gift.errDate", "That date is a little too far out. You can pick any day from today through {{last}}.", { last: formatGiftDate(lastSend) });
   const [plan, setPlan] = useState<GiftPlan>("flock_half_year");
   const [recipientName, setRecipientName] = useState("");
   const [message, setMessage] = useState("");
@@ -67,7 +69,7 @@ function GiftPage() {
     if (message.length > GIFT_MESSAGE_MAX) e.message = t("gift.errMessage", "Keep the message to {{max}} characters.", { max: GIFT_MESSAGE_MAX });
     if (delivery === "email") {
       if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(recipientEmail.trim())) e.recipientEmail = t("gift.errEmail", "Add the email address to send the gift to.");
-      if (!sendOn || sendOn < today || sendOn > GIFT_SEND_LAST_DATE) e.sendOn = t("gift.errDate", "Pick a date from today through December 31, 2026.");
+      if (!sendOn || !isAllowedSendDate(sendOn)) e.sendOn = dateError();
     }
     return e;
   }
@@ -98,6 +100,13 @@ function GiftPage() {
       if (res.ok) {
         window.location.assign(res.url);
         return; // keep the button disabled while the browser leaves
+      }
+      if (res.reason === "invalid_date") {
+        // The server judged the date (its own clock): show it on the field.
+        setErrors({ sendOn: dateError() });
+        setSubmitting(false);
+        document.getElementById("gift-sendOn")?.focus();
+        return;
       }
       setSubmitError(res.reason === "unavailable"
         ? t("gift.errUnavailable", "Gift memberships aren't available just yet. Please check back soon.")
@@ -245,14 +254,14 @@ function GiftPage() {
                     id="gift-sendOn"
                     label={t("gift.sendOn", "Send it on")}
                     error={errors.sendOn}
-                    hint={t("gift.sendOnHint", "Any day from today through December 31. It arrives in the morning, Eastern time.")}
+                    hint={t("gift.sendOnHint", "You can pick any day from today up to {{days}} days ahead. The email arrives that morning, Eastern time.", { days: GIFT_SEND_WINDOW_DAYS })}
                   >
                     <input
                       id="gift-sendOn"
                       type="date"
                       value={sendOn}
                       min={today}
-                      max={GIFT_SEND_LAST_DATE}
+                      max={lastSend}
                       onChange={(e) => setSendOn(e.target.value)}
                       aria-invalid={errors.sendOn ? true : undefined}
                       aria-describedby={errors.sendOn ? "gift-sendOn-hint gift-sendOn-error" : "gift-sendOn-hint"}
