@@ -147,7 +147,7 @@ Unattended agents (the hourly runs on Brittany's Mac, and any overnight run) bui
 - Never start an item under **"Waiting on Brittany's spec"** or **"Needs Brittany before work starts."**
 - **One item per run, per branch and per PR.** A new, uniquely named branch each time (see "Conventions and gotchas").
 - **Before picking new work, finish your own leftovers:** an earlier agent PR logged as "waiting on checks" that now passes may be merged by this run if it meets every merge rule below. That counts as this run's item.
-- **Clear abandoned drafts before picking.** An open draft PR titled "In progress: …" that was opened more than 3 hours ago is abandoned, because no run lasts longer than the 3-hour lock. Close it with a short note saying why, and say so in your log entry; its item may then be picked again. Never close any other draft or any PR that's ready for review. If the close is refused, leave the draft open, add the note as a PR comment, log it for Brittany, and don't pick that item. A draft less than 3 hours old counts as an open PR, so leave its item alone.
+- **Clear abandoned drafts before picking.** An agent's own open draft PR titled "In progress: …" is abandoned when it was opened more than 3 hours ago and its latest commit is also more than 3 hours old, because no run lasts longer than the 3-hour lock. Close it as described in "How a run may close a PR" (below); its item may then be picked again. A draft that doesn't meet both counts as an open PR, so leave its item alone.
 - **Make the work visible as soon as it's picked.** Create the branch, make one empty commit (`git commit --allow-empty`, because GitHub won't open a PR with no commits), push it, and open a **draft** PR titled "In progress: <item ID> <item title>" with a one-line description of the plan. Do this before building anything.
 
 **4. Building and testing**
@@ -181,6 +181,12 @@ A run may **squash-merge** its own PR (`gh pr merge --squash`) only when it's be
 - Anything the backlog, the spec or this file doesn't cover.
 
 **How to hold a PR:** leave it open (not a draft), with a clear **"Needs Brittany"** section at the top of the description saying exactly what you need from her (a decision, an approval, a read of some copy). Add it to "Held for Brittany" in the review queue, log it, and move on. The next run can take a different item. Never merge a held PR, even in a later run, until Brittany says so in the PR.
+
+**How a run may close a PR:** only in these two cases. A run never closes any other PR.
+- **An abandoned draft:** an agent's own "In progress" draft, opened more than 3 hours ago, with no commit in the last 3 hours.
+- **A replaced PR:** a newer PR for the same item fully replaces it. If any of its work isn't in the newer PR, it hasn't been replaced, so leave it open.
+
+Every close leaves a short comment saying why (`gh pr close <number> --comment "..."`, linking the newer PR if there is one) and is logged in `docs/agent-log.md` (through `~/.kya-agent/pending-log.md` when the run has no PR of its own). If the close is refused, leave the PR open, add the note as a comment, log it for Brittany, and don't pick that item.
 
 **7. Always**
 - **Production access is read-only.** Never run anything that writes to production (project `koyqdyamazuuwvqbttnj`), not even inside a transaction you plan to roll back. Reads to check something are fine, and only through `~/.kya-agent/bin/prod-read` (the read-only `kya_agent_readonly` role); never use any other production connection, key or tool. Testing writes go to staging or a PR's preview branch.
