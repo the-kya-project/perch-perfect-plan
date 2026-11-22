@@ -36,6 +36,31 @@ Format:
 - **To change it:** <what would need to change>
 ```
 
+### [#506](https://github.com/the-kya-project/perch-perfect-plan/pull/506) · 1.11 Buddy pods
+- **Decision:** Progress from a "Just me" journey is never shown in a pod. The PR is held until Brittany says when a pod ends, since members finish a journey at different times.
+- **Why:** The spec shows journey progress on the pod page, but its first rules say nothing from a "Just me" journey reaches anyone outside the household. It doesn't say what "ends when the journey ends" means for a group.
+- **To change it:** answer the question, or change the item in `docs/BACKLOG.md`.
+
+### [#506](https://github.com/the-kya-project/perch-perfect-plan/pull/506) · 1.13a Badges
+- **Decision:** A badge earned only through "Just me" journeys shows on the member's own Badges screen and not to other members.
+- **Why:** A public badge would reveal activity from a private journey.
+- **To change it:** change the item in `docs/BACKLOG.md` if these badges should be public.
+
+### [#506](https://github.com/the-kya-project/perch-perfect-plan/pull/506) · 1.10 Challenges
+- **Decision:** Diet conversion can't be used as a challenge's journey template.
+- **Why:** The spec says challenges never involve food restriction, weight goals or anything health-related.
+- **To change it:** change the item in `docs/BACKLOG.md`.
+
+### [#506](https://github.com/the-kya-project/perch-perfect-plan/pull/506) · 1.12 Flock insights
+- **Decision:** The mockup's "Share my profile with my chapter" switch stays out, and the diet conversion duration is marked as a question for Brittany.
+- **Why:** The switch isn't in the spec, and a typical diet conversion length could read as health guidance, which the spec rules out.
+- **To change it:** say so when approving 1.12.
+
+### [#506](https://github.com/the-kya-project/perch-perfect-plan/pull/506) · 1.6, 1.8, 1.7, 1.13a, 1.10, 1.11 order
+- **Decision:** The six items go after the existing Ready items, in the requested order. 1.6 depends on 0.5, 1.13a on 1.6 and 1.8, and 1.10 on 1.13a. 1.6 keeps the app's tab order (Resources before Members), which differs from its mockup.
+- **Why:** This leaves work already queued in place, and each dependency is something the spec's feature uses.
+- **To change it:** reorder the items in `docs/BACKLOG.md`.
+
 ### [#504](https://github.com/the-kya-project/perch-perfect-plan/pull/504) · Backlog: Brittany's decisions
 - **Decision:** 1.15 and 1.17 moved to "Ready to build" with "Depends on: 1.14 merged", and the Skew one-pager (2.4a) sits second, right under the admin review item. 1.14 and its followers go at the end of Ready, and D1.2 right after D1.1.
 - **Why:** Runs never start anything under "Needs Brittany before work starts", so 1.15 and 1.17 had to move to start once 1.14 merges. Existing priorities otherwise keep their order.
