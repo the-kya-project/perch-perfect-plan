@@ -274,7 +274,7 @@ Every PR follows the Flock safety rules: database changes are additive only (any
 
 | # | Decision | Decided |
 |---|---|---|
-| 1 | How non-members find the Flock in the care app | **One entry point only:** a "Community" button where admins see it today, plus a single dismissible Home card in the first two weeks after opening. Everything else in the care app stays identical. |
+| 1 | How non-members find the Flock in the care app | **One entry point only:** a "Community" button where admins see it today. No Home invite card (Brittany, Nov 19, 2026: a promotional card for free users feels too salesy). Everything else in the care app stays identical. |
 | 2 | One end date for the free season | **Yes, one stored date for everyone** (`flock_settings.free_season_ends_at`), set when Brittany opens. |
 | 3 | Who can join | **Anyone with a Kya & Co. account, on any platform.** |
 | 4 | Released founding spots | **Not refilled.** Show the real count. |

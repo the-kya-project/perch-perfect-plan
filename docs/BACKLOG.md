@@ -43,13 +43,6 @@ Where these items came from, with the detail behind each: `docs/flock/opening-sc
 - **Overnight alone:** yes
 - **Needs Brittany:** merge only. It touches the app shell (`__root.tsx`), so the PR shows the free-user regression check and before-and-after screenshots.
 
-### 1.1 A contact line inside the Flock
-- **Done means:** every Flock screen has a published way to contact us, which Apple's guideline 1.2 requires for apps with member posts. For example, a "Contact us" row in Flock settings and a line in the community guidelines, using `SUPPORT_EMAIL` (`src/lib/support.ts`).
-- **Size:** S
-- **Depends on:** nothing
-- **Overnight alone:** yes
-- **Needs Brittany:** the wording (before-and-after in the PR).
-
 ### 1.2 Vet-content settings file and a switch for every health feature
 - **Done means:**
   - **One labeled file** (e.g. `src/lib/healthRules.ts`) lists every health threshold, phrase list and safety wording: the diet weight rules, the vet-nudge phrases, the health-check triage rules, the weight-trend levels, the emergency guidance numbers, and the weight baseline values for D1. Each value is marked "draft, pending vet review" with its research source.
@@ -294,17 +287,15 @@ Where these items came from, with the detail behind each: `docs/flock/opening-sc
 
 ## Last: when Brittany decides to open
 
-### 1.18 The launch PR (PR C)
-- **Done means:**
-  - A "Join the Flock" screen, with a required "I'm 18 or older" confirmation and acceptance of the community guidelines, both stored.
-  - `flock_enabled()` is true for members.
-  - The one approved entry point is in place: the Community button and one dismissible Home card.
-  - The free-user regression check asserts exactly that.
-  - Merged dark, and switched on with a database setting, not a deploy.
-- **Size:** L
-- **Depends on:** everything above that's required, plus the legal pages (1.5)
+The launch PR itself (1.18) is already merged dark. What's left before opening is the items below, then switching it on.
+
+### 1.18 The launch PR (PR C): built, merged dark, switched on at opening
+- **Status:** built and merged dark in #493. The switch (`flock_settings.members_open`) is off and opening day isn't set, so only admins can open the Flock. Nothing more to build or merge for it: at opening it's switched on with SQL (step 8 below), after opening day is set and 1.5 is live.
+- **What #493 did:** the "Join the Flock" screen with a required "I'm 18 or older" confirmation and the community guidelines, both stored (`flock_agreements`); `flock_enabled()` true for members once the switch is on; the Community button as the entry point; the free-user regression check asserting nothing changes while it's off, plus a switch-on part that checks what a free account sees and that joining gives exactly one free-season membership.
+- **The Community button is the only entry point.** No promotional Community invite card on Home or anywhere else for free users: Brittany decided this on Nov 19, 2026, because it feels too salesy. Don't add one back.
+- **Size:** L (done)
 - **Overnight alone:** no
-- **Needs Brittany:** this is the launch decision.
+- **Needs Brittany:** switching it on is the launch decision.
 
 ### 1.5 Legal pages
 - **Done means:** `/terms` and `/privacy` carry Brittany's approved community, billing and age text (from `docs/legal/drafts/2026-11-flock-legal-update.md`). The post-deletion wording goes live only once 1.3 has.
@@ -345,7 +336,7 @@ Where these items came from, with the detail behind each: `docs/flock/opening-sc
 5. **Name reviewers** for `/admin/review`.
 6. **Code freeze:** no merges for the days around opening, apart from fixes Brittany approves.
 7. Brittany drafts the opening emails in Brevo and updates the website (Webflow). Nothing is scheduled to send on its own.
-8. **Open:** merge or switch on 1.18, then check the free-user regression check and save-error alerts that morning.
+8. **Open:** switch on 1.18 with `select public.admin_set_flock_members_open(true);` (opening day from step 2 must be set first; `false` turns it off again and members keep their memberships). Then check the free-user regression check and save-error alerts that morning.
 9. Health features without vet approval stay switched off. Everything else opens.
 
 ---
@@ -412,5 +403,7 @@ Where these items came from, with the detail behind each: `docs/flock/opening-sc
 
 - **0.1** #377 (diet type labels): already done on main by #378, Oct 21. #377 itself duplicates it and breaks the build. Close it (Brittany).
 - **0.2** #490's migration given its own version (`20261121150000`) and merged (Nov 21).
+- **1.1** #493: the contact line ("Questions or a problem? Email the Kya team at brittany@thekyaproject.com.") in Flock settings and at the bottom of the community guidelines.
+- **1.18** #493: built and merged dark; switched on at opening (see 1.18 above).
 - The dead `kya://` URL scheme was removed from `ios/App/App/Info.plist` (#331).
 - The weight-range item ("Each bird's normal weight range…") became D1.1–D1.3 above.
