@@ -46,11 +46,6 @@ Format:
 - **To change it:** <what would need to change>
 ```
 
-### [#509](https://github.com/the-kya-project/perch-perfect-plan/pull/509) · 2.4a Plain-language one-pager on Vercel's Skew Protection
-- **Decision:** The page lists four options (leave it; leave it and have the app drop its own pin when it updates, which is what 2.4 was written for; a shorter time limit; turn it off) and doesn't recommend one, since the item says it makes no decision. It says option D only makes sense after 2.1 and 2.3 are merged.
-- **Why:** these are the choices the setting and the reference branch's work offer. The current setting couldn't be checked without Vercel access, so the page relies on the Nov 2 notes.
-- **To change it:** edit `docs/skew-protection.md`. Check the setting's current time limit in Vercel and correct the page if it's off.
-
 ### [#508](https://github.com/the-kya-project/perch-perfect-plan/pull/508) · 0.5 Admin review for pending posts
 - **Decision:** The way in is a "Review queue" row in its own card at the top of Flock settings, shown to anyone `flock_can_review()` lets in (admins today, and chapter leads, who see Events only). It isn't in the care app's settings or any shared menu.
 - **Why:** the item allowed "admin menu or Flock settings". There's no admin menu, and Flock settings keeps it inside Flock-only code, so free users can't be affected.

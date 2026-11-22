@@ -58,6 +58,15 @@ Where these items came from, with the detail behind each: `docs/flock/opening-sc
 - **Overnight alone:** yes
 - **Needs Brittany:** merge, and a check in the iPhone Simulator with the app left open across a preview release.
 
+### 2.4 Open pages fetch the new build's files after a release
+- **Done means:** after a release, an open page's next request reaches the new build, not the old one Vercel's Skew Protection pinned it to, so the sitter preview can't load a page whose code files are missing. When an update is ready, the app clears its own pin through a small unpin address (`/api/public/unpin`) and reloads onto the new release.
+- **Decision (Brittany, Nov 22, 2026):** option B in [`docs/skew-protection.md`](skew-protection.md). Skew Protection stays on, with no Vercel setting change.
+- **Reference:** branch `fix/native-release-catchup` (`src/routes/api/public/unpin.ts`).
+- **Size:** M
+- **Depends on:** 2.3
+- **Overnight alone:** yes
+- **Needs Brittany:** merge. It changes how open pages update for current users, so a run holds the PR for her. Any change to Vercel settings is hers.
+
 ### D3 Seasonal calendar file
 - **Done means:** a reviewed file of dated cards for the whole year (seasons and holidays, including heat, cold, fireworks, candles, holiday foods and travel), each with English and Dutch copy and a rule for which day it shows, plus a test that every date resolves and every card exists in both languages. Not vet-reviewed content: plain care reminders only, never health advice.
 - **Size:** S
@@ -226,13 +235,6 @@ Where these items came from, with the detail behind each: `docs/flock/opening-sc
 ---
 
 ## Needs Brittany before work starts
-
-### 2.4 Open pages fetch the new build's files after a release
-- **Done means:** after a release, an open page's next request reaches the new build, not the old one Vercel's Skew Protection pinned it to, so the sitter preview can't load a page whose code files are missing.
-- **Size:** M
-- **Depends on:** 2.3, the one-pager (2.4a), and Brittany's decision on Vercel's Skew Protection setting
-- **Overnight alone:** no
-- **Needs Brittany:** the Skew Protection decision, held until she has read 2.4a. Any change to Vercel settings is hers.
 
 ### 2.5 The sitter preview never stalls after a release
 - **Done means:** the Nov 2 bug can't happen. The sitter preview catches up to a new release before it opens, and recovers a stalled frame. Checked in the iPhone Simulator with the app left open across a release (see the "Sitter preview stale-session test" memory).
