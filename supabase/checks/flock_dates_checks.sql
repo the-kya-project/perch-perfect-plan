@@ -60,6 +60,16 @@ begin
   perform public.admin_set_flock_dates(null, null);
   reset role;
   ok := ok and (select flock_opens_at is null and free_season_ends_at is null from public.flock_settings where id);
+  -- Opening day alone works once there's an end (and moves; the end stays).
+  set local role authenticated;
+  perform public.admin_set_free_season_ends_at(e);
+  perform public.admin_set_flock_opens_at(o);
+  perform public.admin_set_flock_opens_at(o + interval '1 day');
+  reset role;
+  ok := ok and (select flock_opens_at = o + interval '1 day' and free_season_ends_at = e from public.flock_settings where id);
+  set local role authenticated;
+  perform public.admin_set_flock_dates(null, null);
+  reset role;
   -- The end alone can be set and cleared while opening day isn't set.
   set local role authenticated;
   perform public.admin_set_free_season_ends_at(e);

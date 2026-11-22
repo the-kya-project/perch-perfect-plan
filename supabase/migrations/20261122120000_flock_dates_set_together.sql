@@ -59,8 +59,10 @@ begin
   if p_opens_at is not null and v_end <= p_opens_at then
     raise exception 'the free season must end after opening day' using errcode = '22023';
   end if;
-  insert into public.flock_settings (id, flock_opens_at, updated_at, updated_by)
-  values (true, p_opens_at, now(), auth.uid())
+  -- The proposed row carries the stored end: Postgres checks the
+  -- opening-needs-an-end rule on it before ON CONFLICT turns it into an update.
+  insert into public.flock_settings (id, flock_opens_at, free_season_ends_at, updated_at, updated_by)
+  values (true, p_opens_at, v_end, now(), auth.uid())
   on conflict (id) do update
     set flock_opens_at = excluded.flock_opens_at, updated_at = excluded.updated_at, updated_by = excluded.updated_by
   returning * into v_row;
