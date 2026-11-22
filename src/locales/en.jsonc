@@ -2764,7 +2764,7 @@
   "gift.deliverySelf": "Send it to me to print or forward",
   "gift.deliveryTitle": "How should it arrive?",
   "gift.errCheckout": "We couldn't start checkout just now. Please try again.",
-  "gift.errDate": "That date is outside the window. Pick a day from today through {{last}}, which is {{days}} days ahead.",
+  "gift.errDate": "That date is a little too far out. You can pick any day from today through {{last}}.",
   "gift.errEmail": "Add the email address to send the gift to.",
   "gift.errInvalid": "Something in the form needs another look. Check the details and try again.",
   "gift.errMessage": "Keep the message to {{max}} characters.",

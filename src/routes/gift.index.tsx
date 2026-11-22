@@ -41,7 +41,7 @@ function GiftPage() {
 
   const today = giftToday();
   const lastSend = giftLastSendDate();
-  const dateError = () => t("gift.errDate", "That date is outside the window. Pick a day from today through {{last}}, which is {{days}} days ahead.", { last: formatGiftDate(lastSend), days: GIFT_SEND_WINDOW_DAYS });
+  const dateError = () => t("gift.errDate", "That date is a little too far out. You can pick any day from today through {{last}}.", { last: formatGiftDate(lastSend) });
   const [plan, setPlan] = useState<GiftPlan>("flock_half_year");
   const [recipientName, setRecipientName] = useState("");
   const [message, setMessage] = useState("");

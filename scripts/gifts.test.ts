@@ -95,10 +95,10 @@ await check("send dates: the server checks the date itself, and says when the da
 });
 await check("send-date copy: complete sentences, no fixed date", () => {
   const en = readFileSync("src/locales/en.jsonc", "utf8");
-  assert.ok(en.includes('"gift.errDate": "That date is outside the window. Pick a day from today through {{last}}, which is {{days}} days ahead."'));
+  assert.ok(en.includes('"gift.errDate": "That date is a little too far out. You can pick any day from today through {{last}}."'));
   assert.ok(en.includes('"gift.sendOnHint": "You can pick any day from today up to {{days}} days ahead. The email arrives that morning, Eastern time."'));
   const page = readFileSync("src/routes/gift.index.tsx", "utf8");
-  assert.ok(page.includes('"That date is outside the window. Pick a day from today through {{last}}, which is {{days}} days ahead."'), "page fallback matches en.jsonc");
+  assert.ok(page.includes('"That date is a little too far out. You can pick any day from today through {{last}}."'), "page fallback matches en.jsonc");
   assert.ok(page.includes('"You can pick any day from today up to {{days}} days ahead. The email arrives that morning, Eastern time."'), "page fallback matches en.jsonc");
 });
 await check("dates and money format without timezone drift", () => {
