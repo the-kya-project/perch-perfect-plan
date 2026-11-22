@@ -22,6 +22,6 @@ Copy this, fill it in, and put it at the top of "Runs", above the latest entry.
 
 ### 2026-11-22 · Setup: rules for the continuous runs
 - **Built:** New rules for the hourly agent runs: one run at a time (a lock file on the Mac), each run in its own copy of the project, when a run may merge its own work and when it must hold it for Brittany, and these two record files (this log and the review queue).
-- **PR:** opened by Brittany's request in a supervised session (link in the PR list: "Agents: rules for continuous hourly runs").
+- **PR:** [#499](https://github.com/the-kya-project/perch-perfect-plan/pull/499) (opened in a supervised session at Brittany's request)
 - **Outcome:** Held: it changes the rules themselves, so Brittany reviews and merges it.
 - **Problems:** none.
