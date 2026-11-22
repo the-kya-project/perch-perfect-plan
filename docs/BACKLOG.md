@@ -29,13 +29,6 @@ Where these items came from, with the detail behind each: `docs/flock/opening-sc
 - **Overnight alone:** yes
 - **Needs Brittany:** merge only. Reading it and deciding 2.4 are hers afterward.
 
-### 0.3 Translation check passes and stays passing
-- **Done means:** `npm run i18n:check` passes on main and runs in the iPhone hydration job, so the catalog can't drift again. The 85 missing English phrases (all from the Library build: 22 `flock.library.*`, 63 `flock.libraryAdmin.*`) are added, the 2 stale keys dropped, and the Dutch gaps free users see today are filled (`clipRecorder`, `gift`, `giftThanks`, `redeem`).
-- **Size:** M
-- **Depends on:** nothing
-- **Overnight alone:** yes
-- **Needs Brittany:** a read of the new Dutch lines before merge. The Flock's 846 missing Dutch keys wait for her decision on a Dutch Flock.
-
 ### 2.1 The startup guard listens before anything can fail
 - **Done means:** the page reset for a missing code file works on WebKit 30 times out of 30 in CI.
   - The startup guard script is the first thing in the page's `<head>`, before the code preloads and the inlined styles.
@@ -428,6 +421,7 @@ The launch PR itself (1.18) is already merged dark. What's left before opening i
 
 - **0.5** The review queue is reached from Flock settings (reviewers only, with the waiting count), and every item shows its author, space and date: #508.
 - **0.4** Sign-ups that start on the /get or /get-app desktop page are credited to the link that brought them: #505.
+- **0.3** The translation check passes and runs in the iPhone hydration job; the 85 Library phrases are in the English catalog, the 2 stale keys are gone, and the Dutch gaps on the clip recorder, gift, gift thank-you and redeem pages are filled: #500 (Brittany approved the Dutch, Nov 22, 2026). The Flock's missing Dutch keys still wait for her decision on a Dutch Flock.
 - **P1** The stored free-season end is cleared, and opening day can't be set without it (`admin_set_flock_dates`): #497.
 - **P2** The founding, gift and redeem pages read opening day and the free season's end (`getFlockPublicDates`): #497.
 - **P3** The founding page's "all 50 claimed" box follows opening day: #497.

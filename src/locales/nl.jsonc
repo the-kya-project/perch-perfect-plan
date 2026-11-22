@@ -2479,10 +2479,14 @@
   "clipRecorder.checking": "Video controleren…",
   // Making sure the clip is under 60 seconds.
   "clipRecorder.checkingHint": "We controleren of de clip korter is dan 60 seconden.",
+  // Making sure the clip is under {{limit}}.
+  "clipRecorder.checkingHintLimit": "We controleren of de clip korter is dan {{limit}}.",
   // Please choose a video file, such as a .mov or .mp4.
   "clipRecorder.chooseVideo": "Kies een videobestand, zoals een .mov of .mp4.",
   // That clip is {{duration}} long. Please keep clips under 60 seconds.
   "clipRecorder.clipTooLong": "Die clip duurt {{duration}}. Houd clips korter dan 60 seconden.",
+  // That clip is {{duration}} long. Please keep clips under {{limit}}.
+  "clipRecorder.clipTooLongLimit": "Die clip duurt {{duration}}. Houd clips korter dan {{limit}}.",
   // This video couldn't be processed. Please try a different clip.
   "clipRecorder.couldntProcess": "Deze video kon niet worden verwerkt. Probeer een andere clip.",
   // Finalizing…
@@ -2495,6 +2499,10 @@
   "clipRecorder.keepThisClip": "Deze clip houden",
   // Live preview
   "clipRecorder.livePreview": "Live voorbeeld",
+  // {{count}} minute
+  "clipRecorder.minutes_one": "{{count}} minuut",
+  // {{count}} minutes
+  "clipRecorder.minutes_other": "{{count}} minuten",
   // No camera was found. Check that another app isn't using it.
   "clipRecorder.noCamera": "Geen camera gevonden. Controleer of een andere app hem niet gebruikt.",
   // Video uploads aren't set up yet — please try again later.
@@ -2523,6 +2531,10 @@
   "clipRecorder.reRecord": "Opnieuw opnemen",
   // We saved your unuploaded clip from {{when}}.
   "clipRecorder.savedClip": "We hebben je niet-geüploade clip van {{when}} bewaard.",
+  // {{count}} second
+  "clipRecorder.seconds_one": "{{count}} seconde",
+  // {{count}} seconds
+  "clipRecorder.seconds_other": "{{count}} seconden",
   // Video service error — {{detail}}
   "clipRecorder.serviceError": "Fout bij de videodienst — {{detail}}",
   // Start recording
@@ -3889,6 +3901,118 @@
   "fullCheck.weightFailed": "De check is opgeslagen, maar het gewicht niet. Voeg het toe via de gewichtspagina.",
   // Weigh {{name}} too?
   "fullCheck.weighTitle": "{{name}} ook wegen?",
+  // Checkout was canceled, and nothing was charged. Your choices are below if you'd like to try again.
+  "gift.canceled": "Het afrekenen is geannuleerd en er is niets afgeschreven. Je keuzes staan hieronder als je het opnieuw wilt proberen.",
+  // Payment is handled by Stripe. Have a promo code? You can enter it on the next page.
+  "gift.checkoutNote": "De betaling loopt via Stripe. Heb je een kortingscode? Die kun je op de volgende pagina invullen.",
+  // Choose a gift
+  "gift.chooseTitle": "Kies een cadeau",
+  // Continue to payment · {{price}}
+  "gift.continue": "Verder naar betalen · {{price}}",
+  // Opening secure checkout…
+  "gift.continuing": "Beveiligd afrekenen openen…",
+  // Email it to them on a date I choose
+  "gift.deliveryEmail": "Mail het naar hen op een datum die ik kies",
+  // Send it to me to print or forward
+  "gift.deliverySelf": "Stuur het naar mij om te printen of door te sturen",
+  // How should it arrive?
+  "gift.deliveryTitle": "Hoe moet het aankomen?",
+  // We couldn't start checkout just now. Please try again.
+  "gift.errCheckout": "We konden het afrekenen nu niet starten. Probeer het opnieuw.",
+  // That date is a little too far out. You can pick any day from today through {{last}}.
+  "gift.errDate": "Die datum ligt iets te ver weg. Je kunt elke dag kiezen van vandaag tot en met {{last}}.",
+  // Add the email address to send the gift to.
+  "gift.errEmail": "Vul het e-mailadres in waar het cadeau naartoe moet.",
+  // Something in the form needs another look. Check the details and try again.
+  "gift.errInvalid": "Er klopt iets niet in het formulier. Controleer de gegevens en probeer het opnieuw.",
+  // Keep the message to {{max}} characters.
+  "gift.errMessage": "Houd het bericht op maximaal {{max}} tekens.",
+  // Add the name of the person you're giving this to.
+  "gift.errName": "Vul de naam in van degene aan wie je dit geeft.",
+  // Gift memberships aren't available just yet. Please check back soon.
+  "gift.errUnavailable": "Cadeaulidmaatschappen zijn nog niet beschikbaar. Kom binnenkort nog eens kijken.",
+  // 20% of every gift goes to rescue and conservation partners, and 40% on double-giving days.
+  "gift.givingNote": "20% van elk cadeau gaat naar partners in opvang en natuurbescherming, en op dubbele geefdagen 40%.",
+  // A year with The Kya Project for the parrot person in your life. Pick a gift, add a note, and choose when it arrives.
+  "gift.line": "Een jaar met The Kya Project voor de papegaaienliefhebber in je leven. Kies een cadeau, voeg een bericht toe en kies wanneer het aankomt.",
+  // Loading
+  "gift.loading": "Laden",
+  // Personal message
+  "gift.message": "Persoonlijk bericht",
+  // {{n}} of {{max}} characters
+  "gift.messageCount": "{{n}} van {{max}} tekens",
+  // Give six months or a year in the Flock to the parrot person in your life.
+  "gift.metaDescription": "Geef de papegaaienliefhebber in je leven zes maanden of een jaar in de Flock.",
+  // Optional
+  "gift.optional": "Optioneel",
+  // Give a gift membership — The Kya Project
+  "gift.pageTitle": "Geef een cadeaulidmaatschap — The Kya Project",
+  // The Kya Project's community for parrot people: expert Q&As, local chapters, and every training journey.
+  "gift.planFlockBlurb": "De community van The Kya Project voor papegaaienliefhebbers: vragen aan experts, lokale afdelingen en elk trainingstraject.",
+  // The Flock, six months
+  "gift.planFlockHalfName": "De Flock, zes maanden",
+  // The Flock, one year
+  "gift.planFlockName": "De Flock, een jaar",
+  // That's {{monthly}} a month, paid once.
+  "gift.pricePerMonth": "Dat is {{monthly}} per maand, in één keer betaald.",
+  // Their email
+  "gift.recipientEmail": "Hun e-mailadres",
+  // Who's it for?
+  "gift.recipientName": "Voor wie is het?",
+  // Their name
+  "gift.recipientNamePlaceholder": "Hun naam",
+  // If the gift hasn't been redeemed yet, you can get a full refund within 30 days of buying it.
+  "gift.refundNote": "Is het cadeau nog niet ingewisseld, dan krijg je binnen 30 dagen na aankoop je geld volledig terug.",
+  // Send it on
+  "gift.sendOn": "Versturen op",
+  // You can pick any day from today up to {{days}} days ahead. The email arrives that morning, Eastern time.
+  "gift.sendOnHint": "Je kunt elke dag kiezen van vandaag tot {{days}} dagen vooruit. De e-mail komt die ochtend aan, Amerikaanse oostkusttijd.",
+  // A gift membership starts the day it's redeemed and runs for a year. If it's redeemed while the Flock is still free for everyone, it starts when the free season ends, so none of it goes unused. Gifts never expire.
+  "gift.timingFlock": "Een cadeaulidmaatschap begint op de dag dat het wordt ingewisseld en loopt een jaar. Wordt het ingewisseld terwijl de Flock nog gratis is voor iedereen, dan begint het als de gratis periode afloopt, zodat er niets verloren gaat. Cadeaus verlopen nooit.",
+  // A gift membership starts the day it's redeemed and runs for a year. The Flock is free for everyone until {{date}}. A gift redeemed before then starts on that day, so none of it goes unused. Gifts never expire.
+  "gift.timingFlockDated": "Een cadeaulidmaatschap begint op de dag dat het wordt ingewisseld en loopt een jaar. De Flock is gratis voor iedereen tot {{date}}. Een cadeau dat eerder wordt ingewisseld, begint op die dag, zodat er niets verloren gaat. Cadeaus verlopen nooit.",
+  // A gift membership starts the day it's redeemed and runs for six months. If it's redeemed while the Flock is still free for everyone, it starts when the free season ends, so none of it goes unused. Gifts never expire.
+  "gift.timingFlockHalf": "Een cadeaulidmaatschap begint op de dag dat het wordt ingewisseld en loopt zes maanden. Wordt het ingewisseld terwijl de Flock nog gratis is voor iedereen, dan begint het als de gratis periode afloopt, zodat er niets verloren gaat. Cadeaus verlopen nooit.",
+  // A gift membership starts the day it's redeemed and runs for six months. The Flock is free for everyone until {{date}}. A gift redeemed before then starts on that day, so none of it goes unused. Gifts never expire.
+  "gift.timingFlockHalfDated": "Een cadeaulidmaatschap begint op de dag dat het wordt ingewisseld en loopt zes maanden. De Flock is gratis voor iedereen tot {{date}}. Een cadeau dat eerder wordt ingewisseld, begint op die dag, zodat er niets verloren gaat. Cadeaus verlopen nooit.",
+  // Give a gift membership
+  "gift.title": "Geef een cadeaulidmaatschap",
+  // Gifts are almost ready
+  "gift.unavailableTitle": "Cadeaus zijn bijna klaar",
+  // Give another gift
+  "giftThanks.another": "Geef nog een cadeau",
+  // A gift for
+  "giftThanks.cardFor": "Een cadeau voor",
+  // Your gift card
+  "giftThanks.cardHeading": "Je cadeaukaart",
+  // Gift code
+  "giftThanks.codeLabel": "Cadeaucode",
+  // Finishing up your gift…
+  "giftThanks.finishing": "Je cadeau wordt afgerond…",
+  // {{percent}}% of this gift goes to parrot rescue and conservation. Thank you for that, too.
+  "giftThanks.giving": "{{percent}}% van dit cadeau gaat naar de opvang en bescherming van papegaaien. Ook daarvoor bedankt.",
+  // Where some of it goes
+  "giftThanks.givingTitle": "Waar een deel naartoe gaat",
+  // Redeem it at app.thekyaproject.com/redeem: sign in or create a free account, then enter the code.
+  "giftThanks.howTo": "Wissel het in op app.thekyaproject.com/redeem: log in of maak een gratis account aan en vul dan de code in.",
+  // We'll email it to {{email}} on {{date}}. Your receipt, with the code, is on its way to you now.
+  "giftThanks.lineEmail": "We mailen het op {{date}} naar {{email}}. Je betaalbewijs, met de code, is nu naar je onderweg.",
+  // Print the card below or forward the code. Your receipt, with the code, is on its way to you now.
+  "giftThanks.lineSelf": "Print de kaart hieronder of stuur de code door. Je betaalbewijs, met de code, is nu naar je onderweg.",
+  // We couldn't find this gift. If you just paid, check your email for the receipt, or reply to it and we'll help.
+  "giftThanks.notFound": "We konden dit cadeau niet vinden. Heb je net betaald? Kijk dan in je e-mail voor het betaalbewijs, of beantwoord die e-mail en we helpen je verder.",
+  // Your gift — The Kya Project
+  "giftThanks.pageTitle": "Je cadeau — The Kya Project",
+  // Print the gift card
+  "giftThanks.print": "Print de cadeaukaart",
+  // This gift was refunded, so its code no longer works.
+  "giftThanks.refunded": "Dit cadeau is terugbetaald, dus de code werkt niet meer.",
+  // Your payment went through, and we're still finishing up. Your receipt with the gift code will arrive by email shortly.
+  "giftThanks.slow": "Je betaling is gelukt en we zijn nog bezig met afronden. Je betaalbewijs met de cadeaucode komt zo per e-mail.",
+  // Thank you. Your gift is ready.
+  "giftThanks.title": "Bedankt. Je cadeau is klaar.",
+  // Thank you for your gift
+  "giftThanks.titlePending": "Bedankt voor je cadeau",
   // Accepting…
   "handoff.accepting": "Accepteren…",
   // {{bird}} is already home with you
@@ -5435,6 +5559,52 @@
   "pullToRefresh.updated": "Bijgewerkt",
   // Browser did not return a usable subscription.
   "pushSetup.noSubscription": "De browser gaf geen bruikbaar abonnement terug.",
+  // Gift code
+  "redeem.codeLabel": "Cadeaucode",
+  // Create a free account
+  "redeem.createAccount": "Maak een gratis account aan",
+  // Your gift is saved. A year in the Flock starts the day it's redeemed and runs for a year. While the Flock is still free for everyone, a gift redeemed then starts when the free season ends, so none of it goes unused.
+  "redeem.doneFlock": "Je cadeau is opgeslagen. Een jaar in de Flock begint op de dag dat het wordt ingewisseld en loopt een jaar. Zolang de Flock nog gratis is voor iedereen, begint een cadeau dat dan wordt ingewisseld pas als de gratis periode afloopt, zodat er niets verloren gaat.",
+  // Your gift is saved. A year in the Flock starts the day it's redeemed and runs for a year. The Flock is free for everyone until {{date}}. A gift redeemed before then starts on that day, so none of it goes unused.
+  "redeem.doneFlockDated": "Je cadeau is opgeslagen. Een jaar in de Flock begint op de dag dat het wordt ingewisseld en loopt een jaar. De Flock is gratis voor iedereen tot {{date}}. Een cadeau dat eerder wordt ingewisseld, begint op die dag, zodat er niets verloren gaat.",
+  // Your gift is saved. Six months in the Flock start the day they're redeemed and run for six months. While the Flock is still free for everyone, a gift redeemed then starts when the free season ends, so none of it goes unused.
+  "redeem.doneFlockHalf": "Je cadeau is opgeslagen. Zes maanden in de Flock beginnen op de dag dat ze worden ingewisseld en lopen zes maanden. Zolang de Flock nog gratis is voor iedereen, begint een cadeau dat dan wordt ingewisseld pas als de gratis periode afloopt, zodat er niets verloren gaat.",
+  // Your gift is saved. Six months in the Flock start the day they're redeemed and run for six months. The Flock is free for everyone until {{date}}. A gift redeemed before then starts on that day, so none of it goes unused.
+  "redeem.doneFlockHalfDated": "Je cadeau is opgeslagen. Zes maanden in de Flock beginnen op de dag dat ze worden ingewisseld en lopen zes maanden. De Flock is gratis voor iedereen tot {{date}}. Een cadeau dat eerder wordt ingewisseld, begint op die dag, zodat er niets verloren gaat.",
+  // We'll email you before it starts. There's nothing else you need to do.
+  "redeem.doneNext": "We mailen je voordat het begint. Verder hoef je niets te doen.",
+  // Your gift is saved.
+  "redeem.doneTitle": "Je cadeau is opgeslagen.",
+  // Enter the gift code from your card or email.
+  "redeem.enterCode": "Vul de cadeaucode van je kaart of e-mail in.",
+  // We couldn't redeem that just now. Please try again.
+  "redeem.error": "We konden dat nu niet inwisselen. Probeer het opnieuw.",
+  // That code didn't work. Check it against your card or email and try again.
+  "redeem.invalid": "Die code werkte niet. Vergelijk hem met je kaart of e-mail en probeer het opnieuw.",
+  // Someone gave you a year with The Kya Project. Enter your code to save it to your account.
+  "redeem.line": "Iemand heeft je een jaar met The Kya Project gegeven. Vul je code in om het op je account op te slaan.",
+  // Loading
+  "redeem.loading": "Laden",
+  // Redeem a gift — The Kya Project
+  "redeem.pageTitle": "Een cadeau inwisselen — The Kya Project",
+  // That's a lot of tries in a short time. Please wait an hour, then try again.
+  "redeem.rateLimited": "Dat zijn veel pogingen in korte tijd. Wacht een uur en probeer het dan opnieuw.",
+  // Redeeming…
+  "redeem.redeeming": "Inwisselen…",
+  // I have an account
+  "redeem.signIn": "Ik heb een account",
+  // Your gift is saved to your Kya & Co. account. Creating one is free and takes a minute, and you'll come straight back here.
+  "redeem.signInBody": "Je cadeau wordt opgeslagen op je Kya & Co.-account. Een account aanmaken is gratis en duurt een minuut, en daarna kom je meteen hier terug.",
+  // Sign in to redeem
+  "redeem.signInTitle": "Log in om in te wisselen",
+  // Redeem my gift
+  "redeem.submit": "Mijn cadeau inwisselen",
+  // Redeem a gift
+  "redeem.title": "Een cadeau inwisselen",
+  // Go to Kya & Co.
+  "redeem.toApp": "Naar Kya & Co.",
+  // Your dates: {{start}} to {{end}}.
+  "redeem.yourDates": "Je data: {{start}} tot {{end}}.",
   // always
   "remembering.always": "altijd",
   // Remembering {{name}}
