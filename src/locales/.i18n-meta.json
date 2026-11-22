@@ -3648,11 +3648,17 @@
     "clipRecorder.checkingHint": {
       "stamp": "9944a1f2afd9a3ff"
     },
+    "clipRecorder.checkingHintLimit": {
+      "stamp": "36f162073385c829"
+    },
     "clipRecorder.chooseVideo": {
       "stamp": "dc59ad8e8857e395"
     },
     "clipRecorder.clipTooLong": {
       "stamp": "284ce998db89146e"
+    },
+    "clipRecorder.clipTooLongLimit": {
+      "stamp": "05c2f18a7ccd1b5e"
     },
     "clipRecorder.couldntProcess": {
       "stamp": "8c5fe87b723b706f"
@@ -3671,6 +3677,12 @@
     },
     "clipRecorder.livePreview": {
       "stamp": "0bf27f3d713262a4"
+    },
+    "clipRecorder.minutes_one": {
+      "stamp": "5bd963ffdfc6507a"
+    },
+    "clipRecorder.minutes_other": {
+      "stamp": "2f8602c7f5dfec38"
     },
     "clipRecorder.noCamera": {
       "stamp": "cde2df20e0b3bd97"
@@ -3713,6 +3725,12 @@
     },
     "clipRecorder.savedClip": {
       "stamp": "254e31b90ab58fd7"
+    },
+    "clipRecorder.seconds_one": {
+      "stamp": "c99f03e85e33d6b5"
+    },
+    "clipRecorder.seconds_other": {
+      "stamp": "affffa5b2614ddb8"
     },
     "clipRecorder.serviceError": {
       "stamp": "9ce09b9881f13a17"
@@ -5756,6 +5774,174 @@
     },
     "fullCheck.weighTitle": {
       "stamp": "458cdff43be73c31"
+    },
+    "gift.canceled": {
+      "stamp": "a330e0355053c333"
+    },
+    "gift.checkoutNote": {
+      "stamp": "bcac7b7fe94faca0"
+    },
+    "gift.chooseTitle": {
+      "stamp": "e600e7ef59c3d3fe"
+    },
+    "gift.continue": {
+      "stamp": "f96aa23f84835aea"
+    },
+    "gift.continuing": {
+      "stamp": "57b756759912b1fb"
+    },
+    "gift.deliveryEmail": {
+      "stamp": "5b6e345c5a522acc"
+    },
+    "gift.deliverySelf": {
+      "stamp": "0a9ba282fd3aee0a"
+    },
+    "gift.deliveryTitle": {
+      "stamp": "b329ba12e5a4fc1d"
+    },
+    "gift.errCheckout": {
+      "stamp": "09331762153f91a6"
+    },
+    "gift.errDate": {
+      "stamp": "67d9477f1f6418bc"
+    },
+    "gift.errEmail": {
+      "stamp": "9643a9ada21f8552"
+    },
+    "gift.errInvalid": {
+      "stamp": "707cf9226b30f145"
+    },
+    "gift.errMessage": {
+      "stamp": "ca1214c5bdc15703"
+    },
+    "gift.errName": {
+      "stamp": "303723a19b96bc89"
+    },
+    "gift.errUnavailable": {
+      "stamp": "0113593a6e9cb198"
+    },
+    "gift.givingNote": {
+      "stamp": "deb56366fbede55a"
+    },
+    "gift.line": {
+      "stamp": "70493316c4b9a45b"
+    },
+    "gift.loading": {
+      "stamp": "9038593a5fbeca26"
+    },
+    "gift.message": {
+      "stamp": "9ff9c758c2772e98"
+    },
+    "gift.messageCount": {
+      "stamp": "5433be6cecd3580c"
+    },
+    "gift.metaDescription": {
+      "stamp": "c8538da122ad8727"
+    },
+    "gift.optional": {
+      "stamp": "e301f0fddfd8d6a1"
+    },
+    "gift.pageTitle": {
+      "stamp": "316adb3cbbf4ac46"
+    },
+    "gift.planFlockBlurb": {
+      "stamp": "9235fbf2ffa894f3"
+    },
+    "gift.planFlockHalfName": {
+      "stamp": "718f66cd702bc08f"
+    },
+    "gift.planFlockName": {
+      "stamp": "b33d1f2504396a77"
+    },
+    "gift.pricePerMonth": {
+      "stamp": "10a275e2fe406d5c"
+    },
+    "gift.recipientEmail": {
+      "stamp": "f3bd17f2ebd2fa19"
+    },
+    "gift.recipientName": {
+      "stamp": "680b47ea7ecfb0da"
+    },
+    "gift.recipientNamePlaceholder": {
+      "stamp": "e8f6f4aebe6216be"
+    },
+    "gift.refundNote": {
+      "stamp": "82f7ffeb838830ef"
+    },
+    "gift.sendOn": {
+      "stamp": "7a53424d76ff8923"
+    },
+    "gift.sendOnHint": {
+      "stamp": "998ae424f13facd2"
+    },
+    "gift.timingFlock": {
+      "stamp": "3ba1e4ea62ad4b18"
+    },
+    "gift.timingFlockDated": {
+      "stamp": "c16ffab457e5ddf0"
+    },
+    "gift.timingFlockHalf": {
+      "stamp": "a693e4ba984eeb4c"
+    },
+    "gift.timingFlockHalfDated": {
+      "stamp": "2e12fd1ff8ab2143"
+    },
+    "gift.title": {
+      "stamp": "3d719da5a193e6ea"
+    },
+    "gift.unavailableTitle": {
+      "stamp": "55eb6602d4ed5c93"
+    },
+    "giftThanks.another": {
+      "stamp": "ee4f23c18bcf5215"
+    },
+    "giftThanks.cardFor": {
+      "stamp": "c478b24f79b0ffa5"
+    },
+    "giftThanks.cardHeading": {
+      "stamp": "86ef8fe8b1a6e5a8"
+    },
+    "giftThanks.codeLabel": {
+      "stamp": "d6d693d380139c78"
+    },
+    "giftThanks.finishing": {
+      "stamp": "12bbe71f91820bca"
+    },
+    "giftThanks.giving": {
+      "stamp": "b119eb9eb44052ae"
+    },
+    "giftThanks.givingTitle": {
+      "stamp": "ab3edd9e181f716e"
+    },
+    "giftThanks.howTo": {
+      "stamp": "b8e662079e9a174a"
+    },
+    "giftThanks.lineEmail": {
+      "stamp": "80c6db3fb091bf5e"
+    },
+    "giftThanks.lineSelf": {
+      "stamp": "bbfd4ef9cb3604ad"
+    },
+    "giftThanks.notFound": {
+      "stamp": "04696a74a29a4b68"
+    },
+    "giftThanks.pageTitle": {
+      "stamp": "14d07b18071eb0a9"
+    },
+    "giftThanks.print": {
+      "stamp": "8eea47daedcb6baa"
+    },
+    "giftThanks.refunded": {
+      "stamp": "220dfc188c412226"
+    },
+    "giftThanks.slow": {
+      "stamp": "a9fec6d50607aa48"
+    },
+    "giftThanks.title": {
+      "stamp": "7adcaf815d4fdfc5"
+    },
+    "giftThanks.titlePending": {
+      "stamp": "fbe3ee5d857b523a"
     },
     "handoff.accepting": {
       "stamp": "3337ed9d23ba2758"
@@ -8075,6 +8261,75 @@
     },
     "pushSetup.noSubscription": {
       "stamp": "354e835a4bb002bb"
+    },
+    "redeem.codeLabel": {
+      "stamp": "d6d693d380139c78"
+    },
+    "redeem.createAccount": {
+      "stamp": "d375990de5cae942"
+    },
+    "redeem.doneFlock": {
+      "stamp": "d9d97ab10ee09563"
+    },
+    "redeem.doneFlockDated": {
+      "stamp": "c05d411309be4cad"
+    },
+    "redeem.doneFlockHalf": {
+      "stamp": "d9c072b5fd5da1cf"
+    },
+    "redeem.doneFlockHalfDated": {
+      "stamp": "b6a4af5e8bfc4727"
+    },
+    "redeem.doneNext": {
+      "stamp": "0c4e2363766ce8e6"
+    },
+    "redeem.doneTitle": {
+      "stamp": "05dbb30ef8d7b20d"
+    },
+    "redeem.enterCode": {
+      "stamp": "b9cda5e7c73a778d"
+    },
+    "redeem.error": {
+      "stamp": "131968e7fd914da2"
+    },
+    "redeem.invalid": {
+      "stamp": "8afbf9b7bdd60407"
+    },
+    "redeem.line": {
+      "stamp": "1d6d5918af22fbed"
+    },
+    "redeem.loading": {
+      "stamp": "9038593a5fbeca26"
+    },
+    "redeem.pageTitle": {
+      "stamp": "b3f63ce9feb646b6"
+    },
+    "redeem.rateLimited": {
+      "stamp": "5b188395da6f14fa"
+    },
+    "redeem.redeeming": {
+      "stamp": "b33427e814275755"
+    },
+    "redeem.signIn": {
+      "stamp": "e6cd51861cae31e3"
+    },
+    "redeem.signInBody": {
+      "stamp": "c57b9044d30dc1b1"
+    },
+    "redeem.signInTitle": {
+      "stamp": "9638c529bd5ebef0"
+    },
+    "redeem.submit": {
+      "stamp": "734b193c80db1243"
+    },
+    "redeem.title": {
+      "stamp": "dd2f77ddbdb0b4aa"
+    },
+    "redeem.toApp": {
+      "stamp": "4f27904dee72234b"
+    },
+    "redeem.yourDates": {
+      "stamp": "504f0d2eab70be3d"
     },
     "remembering.always": {
       "stamp": "d693af8aa18abf48"

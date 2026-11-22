@@ -110,6 +110,21 @@ Format:
 - **Why:** The narrower reading can't touch anyone else's data.
 - **To change it:** say that it should log every bird.
 
+### [#500](https://github.com/the-kya-project/perch-perfect-plan/pull/500) · 0.3 Translation check passes and stays passing
+- **Decision:** In Dutch, "the Flock" stays "de Flock" (the product's name). The glossary's "flock" → "je vogels" is kept for "your flock" meaning your birds.
+- **Why:** "Een jaar in je vogels" would make no sense; the Flock is a name, like Kya & Co.
+- **To change it:** pick a Dutch name for the Flock and add it to `src/locales/glossary.nl.json`.
+
+### [#500](https://github.com/the-kya-project/perch-perfect-plan/pull/500) · 0.3 Translation check passes and stays passing
+- **Decision:** "Eastern time" in the gift send-date hint became "Amerikaanse oostkusttijd" (US East Coast time).
+- **Why:** A Dutch buyer would otherwise read the time as their own.
+- **To change it:** edit `gift.sendOnHint` in `src/locales/nl.jsonc`.
+
+### [#500](https://github.com/the-kya-project/perch-perfect-plan/pull/500) · 0.3 Translation check passes and stays passing
+- **Decision:** The translation check runs right after install in the iPhone hydration job, before the browsers download.
+- **Why:** It takes seconds, so a drifted catalog fails fast instead of after the long browser tests.
+- **To change it:** move the "Translation catalog matches the code" step in `.github/workflows/hydration.yml`.
+
 ### [#499](https://github.com/the-kya-project/perch-perfect-plan/pull/499) · Setup: rules for the continuous runs
 - **Decision:** A run that opens no PR (stopped by the lock, or found nothing it's allowed to build) writes its log entry to `~/.kya-agent/pending-log.md` on the Mac, and the next run with a PR copies it into `docs/agent-log.md`.
 - **Why:** Every run must be logged, but a run with no PR has no way to change `main`, and must not touch the main project folder.
@@ -146,6 +161,9 @@ Format:
 ### Reminder · the hourly runs' GitHub token expires Feb 20, 2027
 - **Needs:** a new token before **Feb 20, 2027**. That's 90 days from Nov 22, 2026; GitHub → Settings → Developer settings → Fine-grained tokens shows the exact date. When it expires, runs can still build and test but can't push or open PRs, and each run's note in `~/.kya-agent/job.log` says so.
 - **To replace it:** make a new fine-grained token for `the-kya-project/perch-perfect-plan` only, with the same permissions as the old one (Contents and Pull requests: read and write; Actions, Commit statuses and Checks: read). Then run the save command again in Terminal (it asks you to paste the token and doesn't show it). It overwrites `~/.config/kya-agent/github-token`, readable only by you. Delete the old token on GitHub after that. Clear this item and add a new one with the new date.
+
+### [#500](https://github.com/the-kya-project/perch-perfect-plan/pull/500) · 0.3 Translation check passes and stays passing
+- **Needs:** your read of the 85 new Dutch lines (gift, gift thank-you, redeem and clip-recorder screens; each sits under its English in `src/locales/nl.jsonc`), then merge. Dutch readers of those screens would see Dutch instead of English.
 
 ### [#499](https://github.com/the-kya-project/perch-perfect-plan/pull/499) · Setup: rules for the continuous runs
 - **Needs:** your review and merge. It changes the rules the hourly runs follow, so it doesn't merge itself.
