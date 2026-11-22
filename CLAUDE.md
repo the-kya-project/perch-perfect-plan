@@ -179,7 +179,7 @@ A run may **squash-merge** its own PR (`gh pr merge --squash`) only when **all**
 **How to hold a PR:** leave it open (not a draft), with a clear **"Needs Brittany"** section at the top of the description saying exactly what you need from her (a decision, an approval, a read of some copy). Add it to "Held for Brittany" in the review queue, log it, and move on. The next run can take a different item. Never merge a held PR, even in a later run, until Brittany says so in the PR.
 
 **7. Always**
-- **Production access is read-only.** Never run anything that writes to production (project `koyqdyamazuuwvqbttnj`), not even inside a transaction you plan to roll back. Reads to check something are fine. Testing writes go to staging or a PR's preview branch.
+- **Production access is read-only.** Never run anything that writes to production (project `koyqdyamazuuwvqbttnj`), not even inside a transaction you plan to roll back. Reads to check something are fine, and only through `~/.kya-agent/bin/prod-read` (the read-only `kya_agent_readonly` role); never use any other production connection, key or tool. Testing writes go to staging or a PR's preview branch.
 - **Never add a fixed opening date, free-season date or deadline** to code or copy.
 - **Health features always ship behind their own off switch,** with their values in the vet-content settings file (backlog 1.2) marked "draft, pending vet review".
 - **Mark the item done in `docs/BACKLOG.md` in the same PR** (move it to "Done" with the PR number).
