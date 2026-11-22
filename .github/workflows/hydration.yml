@@ -45,6 +45,12 @@ jobs:
           npm ci --ignore-scripts --no-audit --no-fund
           npx patch-package
 
+      # The English catalog (src/locales/en.jsonc) must match the t() calls in
+      # the code, so a new screen can't ship with phrases missing from it.
+      # Fix a failure with `npm run i18n:extract` and commit the catalog.
+      - name: Translation catalog matches the code
+        run: npm run i18n:check
+
       - name: Install browsers (WebKit and Chromium)
         run: npx playwright install --with-deps webkit chromium
 
