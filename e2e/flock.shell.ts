@@ -58,6 +58,9 @@ type FlockState = {
   /** Build H: the founding members page, and this account's own choice (null = no founding spot). */
   founders: { display_name: string; photo_path: string | null; chapter_name: string | null; spot_number: number }[];
   foundersShow: boolean | null;
+  /** Build C: where this account stands (flock_my_access), and its join calls. */
+  access: { member_now: boolean; has_membership: boolean; agreed: boolean; is_admin: boolean; guidelines_version: string; opens_at: string | null; season_ends_at: string | null };
+  joinResult: string;
 };
 
 async function mockFlock(context: BrowserContext, userId: string, opts: { setupDone: boolean; region?: string }): Promise<FlockState> {
@@ -81,6 +84,8 @@ async function mockFlock(context: BrowserContext, userId: string, opts: { setupD
     blocks: [],
     founders: [],
     foundersShow: false,
+    access: { member_now: true, has_membership: true, agreed: true, is_admin: true, guidelines_version: "2026-12", opens_at: null, season_ends_at: "2027-07-06T04:00:00Z" },
+    joinResult: "joined",
   };
   const blocked = (id: string) => state.blocks.some((b) => b.user_id === id);
   const neighbours: Record<string, { user_id: string; display_name: string }[]> = {
@@ -138,6 +143,22 @@ async function mockFlock(context: BrowserContext, userId: string, opts: { setupD
   await context.route(`${MOCK}/rest/v1/rpc/flock_*`, async (route) => {
     const fn = new URL(route.request().url()).pathname.split("/").pop();
     const args = (route.request().postDataJSON() ?? {}) as Record<string, any>;
+    if (fn === "flock_my_access") return json(route, [state.access]);
+    if (fn === "flock_agree") {
+      state.calls.push({ fn, args });
+      if (args.p_adult !== true) return json(route, { code: "22023", message: "adult_required" }, 400);
+      if (args.p_guidelines_version !== state.access.guidelines_version) return json(route, { code: "22023", message: "guidelines_outdated" }, 400);
+      state.access = { ...state.access, agreed: true };
+      state.profile = { ...(state.profile ?? { user_id: userId, bio: null, photo_path: null, setup_completed_at: null }), display_name: args.p_display_name, region_slug: args.p_region };
+      return json(route, state.access.guidelines_version);
+    }
+    if (fn === "flock_join") {
+      state.calls.push({ fn, args });
+      if (!state.access.agreed) return json(route, { code: "42501", message: "agree_first" }, 403);
+      const started = !state.access.opens_at || new Date(state.access.opens_at) <= new Date();
+      state.access = { ...state.access, has_membership: true, member_now: state.access.member_now || started };
+      return json(route, [{ result: state.joinResult, starts_at: state.access.opens_at, ends_at: state.access.season_ends_at }]);
+    }
     if (fn === "flock_my_setup") return json(route, [{ suggested_region: "great-lakes", founding_spot: 7, setup_completed_at: state.profile?.setup_completed_at ?? null }]);
     if (fn === "flock_chapter") {
       const r = REGIONS.find((x) => x.slug === args.p_region_slug);
@@ -272,13 +293,15 @@ async function mockFlock(context: BrowserContext, userId: string, opts: { setupD
   return state;
 }
 
-async function open(browser: Browser, baseURL: string, opts: { admin: boolean; size?: "phone" | "duo"; setupDone?: boolean; region?: string; storagePhotos?: boolean; journeys?: JourneyMockOpts }): Promise<{ context: BrowserContext; page: Page; flockChunks: string[]; state: FlockState; journeys: JourneyState }> {
+async function open(browser: Browser, baseURL: string, opts: { admin: boolean; membersOpen?: boolean; size?: "phone" | "duo"; setupDone?: boolean; region?: string; storagePhotos?: boolean; journeys?: JourneyMockOpts }): Promise<{ context: BrowserContext; page: Page; flockChunks: string[]; state: FlockState; journeys: JourneyState }> {
   const context = await browser.newContext({
     ...(opts.size === "duo" ? DUO : IPHONE),
     locale: "en-US", serviceWorkers: "block", baseURL,
   });
   const fx = duoFixture(baseURL, Date.now());
-  fx.rpc.flock_enabled = opts.admin;
+  // membersOpen: opening day set and the members switch on (build C), so the
+  // door is open to a signed-in non-admin too.
+  fx.rpc.flock_enabled = opts.admin || !!opts.membersOpen;
   fx.rpc.is_admin = opts.admin;
   if (opts.storagePhotos) storagePhotoPaths(fx);
   await mockDuo(context, fx);
@@ -2539,6 +2562,116 @@ test.describe("the library (admin, phone)", () => {
     await page.getByRole("button", { name: "Publish" }).click();
     await expect(page.getByTestId("editor-notice")).toHaveText("Published. Members can find it in the Library.");
     expect(lib.writes.at(-1)!.body).toMatchObject({ status: "published", external_url: "https://youtube.com/watch?v=abc" });
+    await context.close();
+  });
+});
+
+test.describe("joining the Flock (members switch on, phone)", () => {
+  const NOT_JOINED = { member_now: false, has_membership: false, agreed: false, is_admin: false, guidelines_version: "2026-12", opens_at: null, season_ends_at: "2027-07-06T04:00:00Z" };
+
+  test("a free account: Community opens the Part of the Flock sheet, then chapter, guidelines, 18+ and agree; Join calls flock_agree then flock_join", async ({ browser, baseURL }) => {
+    const { context, page, state } = await open(browser, baseURL!, { admin: false, membersOpen: true, setupDone: false });
+    state.access = { ...NOT_JOINED };
+    await page.goto("/dashboard");
+    const community = page.locator('[data-coach="owner-tab-flock"]').first();
+    await expect(community).toBeVisible();
+    await community.click();
+    await expect(page).toHaveURL(/\/flock\/join/);
+    const sheet = page.getByTestId("join-flock-sheet");
+    await expect(sheet).toBeVisible();
+    await expect(page.getByText("Part of the Flock", { exact: true })).toBeVisible();
+    // No prices anywhere on the join step.
+    expect(await page.locator("body").innerText()).not.toMatch(/\$\s?\d/);
+    await sheet.getByRole("button", { name: "Join the Flock free" }).click();
+    await expect(sheet).toHaveCount(0);
+
+    // The guidelines, word for word, with the contact line at the bottom.
+    const g = page.getByTestId("flock-guidelines");
+    await expect(g.getByRole("heading", { name: "Welcome to the Flock" })).toBeVisible();
+    await expect(g.locator("li")).toHaveCount(6);
+    await expect(g).toContainText("The Flock isn't your vet. Members share experience, not medical advice.");
+    await expect(g).toContainText("If something feels wrong, you can report or block anyone, and the Kya team reviews every report.");
+    await expect(g.getByTestId("flock-contact-line")).toContainText("Questions or a problem? Email the Kya team at brittany@thekyaproject.com.");
+    await expect(g.getByRole("link", { name: "brittany@thekyaproject.com" })).toHaveAttribute("href", "mailto:brittany@thekyaproject.com");
+
+    const submit = page.getByTestId("join-submit");
+    await expect(submit).toBeDisabled();
+    await page.getByRole("button", { name: "Choose" }).click();
+    await page.getByRole("dialog").getByText("Texas").click();
+    await expect(page.getByTestId("join-region")).toContainText("Texas");
+    await expect(submit).toBeDisabled();
+    await page.getByTestId("join-agree").check();
+    await expect(submit).toBeDisabled(); // 18+ still unchecked
+    await page.getByTestId("join-adult").check();
+    await expect(submit).toBeEnabled();
+    await submit.click();
+
+    await expect(page).toHaveURL(/\/flock\/welcome/);
+    const agree = state.calls.find((c) => c.fn === "flock_agree")!;
+    expect(agree.args).toMatchObject({ p_region: "texas", p_adult: true, p_guidelines_version: "2026-12", p_source: "care_app" });
+    expect(state.calls.map((c) => c.fn)).toEqual(["flock_agree", "flock_join"]);
+    await context.close();
+  });
+
+  test("a non-member opening any Flock page goes to the join step; ?source= is passed on", async ({ browser, baseURL }) => {
+    const { context, page, state } = await open(browser, baseURL!, { admin: false, membersOpen: true, setupDone: false });
+    state.access = { ...NOT_JOINED };
+    await page.goto("/flock/library");
+    await expect(page).toHaveURL(/\/flock\/join/);
+    await page.goto("/flock/join?source=email");
+    await page.getByTestId("join-flock-sheet").getByRole("button", { name: "Join the Flock free" }).click();
+    await page.getByRole("button", { name: "Choose" }).click();
+    await page.getByRole("dialog").getByText("Great Lakes").click();
+    await page.getByTestId("join-adult").check();
+    await page.getByTestId("join-agree").check();
+    await page.getByTestId("join-submit").click();
+    await expect(page).toHaveURL(/\/flock\/welcome/);
+    expect(state.calls.find((c) => c.fn === "flock_agree")!.args.p_source).toBe("email");
+    await context.close();
+  });
+
+  test("a founder who hasn't agreed: the same guidelines and 18+ step, no intro sheet, no second membership", async ({ browser, baseURL }) => {
+    const { context, page, state } = await open(browser, baseURL!, { admin: false, membersOpen: true, setupDone: true });
+    state.access = { ...NOT_JOINED, member_now: true, has_membership: true };
+    state.joinResult = "founder";
+    await page.goto("/flock?source=founding");
+    await expect(page).toHaveURL(/\/flock\/join/);
+    await expect(page.getByTestId("join-flock-sheet")).toHaveCount(0);
+    await expect(page.getByRole("heading", { name: "Before you go in" })).toBeVisible();
+    await page.getByRole("button", { name: "Choose" }).click();
+    await page.getByRole("dialog").getByText("Great Lakes").click();
+    await page.getByTestId("join-adult").check();
+    await page.getByTestId("join-agree").check();
+    await page.getByTestId("join-submit").click();
+    await expect(page).toHaveURL(/\/flock$/);
+    expect(state.calls.find((c) => c.fn === "flock_agree")!.args.p_source).toBe("founding");
+    await context.close();
+  });
+
+  test("joining before opening day: You're in, with the date it opens", async ({ browser, baseURL }) => {
+    const { context, page, state } = await open(browser, baseURL!, { admin: false, membersOpen: true, setupDone: false });
+    state.access = { ...NOT_JOINED, opens_at: "2027-01-05T06:00:00Z" };
+    await page.goto("/flock/join?source=gift");
+    await page.getByTestId("join-flock-sheet").getByRole("button", { name: "Join the Flock free" }).click();
+    await page.getByRole("button", { name: "Choose" }).click();
+    await page.getByRole("dialog").getByText("Texas").click();
+    await page.getByTestId("join-adult").check();
+    await page.getByTestId("join-agree").check();
+    await page.getByTestId("join-submit").click();
+    await expect(page.getByTestId("flock-join-waiting")).toContainText("The Flock opens on January 5, 2027.");
+    await page.goto("/flock");
+    await expect(page.getByTestId("flock-join-waiting")).toBeVisible();
+    await context.close();
+  });
+
+  test("members find the guidelines and the contact line again in Flock settings", async ({ browser, baseURL }) => {
+    const { context, page } = await open(browser, baseURL!, { admin: true });
+    await page.goto("/flock/you");
+    await expect(page.getByTestId("flock-contact-line")).toContainText("Email the Kya team at brittany@thekyaproject.com.");
+    await page.getByText("Community guidelines", { exact: true }).click();
+    await expect(page).toHaveURL(/\/flock\/guidelines$/);
+    await expect(page.getByTestId("flock-guidelines")).toContainText("No selling or spam. Please don't advertise products, services, or birds for sale.");
+    await expect(page.getByTestId("flock-guidelines").getByTestId("flock-contact-line")).toBeVisible();
     await context.close();
   });
 });
