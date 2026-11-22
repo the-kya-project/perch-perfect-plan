@@ -11,8 +11,8 @@ export function giftPlanName(t: TFunction, plan: GiftPlan): string {
 /** The start rule, in words (no fixed dates: they depend on redemption). */
 export function giftTiming(t: TFunction, plan: GiftPlan): string {
   return plan === "flock_half_year"
-    ? t("gift.timingFlockHalf", "Six months in the Flock start the day the gift is redeemed and run for six months. While the Flock is still free for everyone, a gift redeemed then starts when the free season ends, so none of it goes unused. Gifts never expire.")
-    : t("gift.timingFlock", "A year in the Flock starts the day the gift is redeemed and runs for a year. While the Flock is still free for everyone, a gift redeemed then starts when the free season ends, so none of it goes unused. Gifts never expire.");
+    ? t("gift.timingFlockHalf", "A gift membership starts the day it's redeemed and runs for six months. If it's redeemed while the Flock is still free for everyone, it starts when the free season ends, so none of it goes unused. Gifts never expire.")
+    : t("gift.timingFlock", "A gift membership starts the day it's redeemed and runs for a year. If it's redeemed while the Flock is still free for everyone, it starts when the free season ends, so none of it goes unused. Gifts never expire.");
 }
 
 /** What /redeem says once the code is saved. */

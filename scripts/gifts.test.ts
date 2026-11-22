@@ -142,8 +142,10 @@ const fakeT = ((_k: string, def: string, o?: Record<string, string>) =>
 await check("gift copy: the start rule in words, no fixed end dates, never expires", () => {
   const year = giftTiming(fakeT, "flock_year"), half = giftTiming(fakeT, "flock_half_year");
   const rule = "While the Flock is still free for everyone, a gift redeemed then starts when the free season ends, so none of it goes unused.";
-  assert.ok(year.includes("A year in the Flock starts the day the gift is redeemed and runs for a year.") && year.includes(rule) && year.includes("Gifts never expire"));
-  assert.ok(half.includes("Six months in the Flock start the day the gift is redeemed and run for six months.") && half.includes(rule) && half.includes("Gifts never expire"));
+  // The gift page and gift emails (approved Nov 22): one sentence for the length, one for the start rule.
+  const pageRule = "If it's redeemed while the Flock is still free for everyone, it starts when the free season ends, so none of it goes unused.";
+  assert.ok(year.includes("A gift membership starts the day it's redeemed and runs for a year.") && year.includes(pageRule) && year.includes("Gifts never expire"));
+  assert.ok(half.includes("A gift membership starts the day it's redeemed and runs for six months.") && half.includes(pageRule) && half.includes("Gifts never expire"));
   assert.ok(giftRedeemed(fakeT, "flock_year").includes("runs for a year") && giftRedeemed(fakeT, "flock_year").includes(rule));
   assert.ok(giftRedeemed(fakeT, "flock_half_year").includes("run for six months") && giftRedeemed(fakeT, "flock_half_year").includes(rule));
   for (const txt of [year, half, giftRedeemed(fakeT, "flock_year"), giftRedeemed(fakeT, "flock_half_year")]) {
@@ -178,7 +180,7 @@ await check("gift copy: no 'opens in January' or six free months anywhere (app, 
 await check("emails: each says which gift it is and the start rule, with no fixed end date; the receipt has the 30-day refund", () => {
   for (const [plan, gift, length] of [
     ["flock_year", "A year in the Flock", "runs for a year"],
-    ["flock_half_year", "Six months in the Flock", "run for six months"],
+    ["flock_half_year", "Six months in the Flock", "runs for six months"],
   ] as const) {
     const receipt = buildGiftReceiptEmail({ ...base, plan }).text, recipient = buildGiftRecipientEmail({ ...base, plan }).text;
     for (const txt of [receipt, recipient]) {
