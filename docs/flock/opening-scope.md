@@ -58,8 +58,8 @@ Status: **scoping only.** Written Nov 21, 2026 from `main` at `d8ec1f8`, read-on
 |---|---|---|---|
 | A. Founding terms and deadline | **Done** | #478, #480, #481, #486; `founding_deadline_checks.sql` | The claimant email draft (Brittany) and Webflow copy. |
 | B. Free-season grant | **Done** | #483, `20261120120000_flock_free_season_join.sql` | Nothing; `flock_join()` exists but nothing calls it until C. |
-| **C. Opening the Flock to members** | **Not started** | — | The whole launch PR: Join screen, **"I'm 18 or older"** confirmation (nothing in the code yet), guidelines acceptance stored, `flock_enabled()` true for members, the one approved entry point (Community button + one dismissible Home card), and the free-user regression check updated (it still asserts no Community button at all, `e2e/free-user/free-user.spec.ts:34-45`). |
-| **D. Member blocking (Apple 1.2)** | **Partly done** | #489, `20261121100000_flock_member_blocking.sql` (live), `BlockSheet.tsx`, `flock.you.blocked.tsx`, `flock_blocking_checks.sql` | **No published contact line inside the Flock.** Apple 1.2 requires one. The only "contact us" (`HelpSheet`, `src/lib/support.ts:3`) is mounted in `OwnerHeader`, which the Flock shell doesn't use; Flock settings (`flock.you.index.tsx:44-74`) has none. Yesterday's inventory called blocking "done": the blocking itself is, the contact line isn't. |
+| **C. Opening the Flock to members** | **Built, merged dark** | #493, `20261122100000_flock_open_to_members.sql`, `flock_open_checks.sql`, `e2e/free-user/switch-on.spec.ts` | Switched on at opening with `admin_set_flock_members_open(true)`. The dismissible Home card wasn't part of #493 (backlog 1.18a). |
+| **D. Member blocking (Apple 1.2)** | **Done** | #489, `20261121100000_flock_member_blocking.sql` (live), `BlockSheet.tsx`, `flock.you.blocked.tsx`, `flock_blocking_checks.sql` | The contact line inside the Flock came with #493 (Flock settings and the community guidelines). |
 | E. Stickiness events | **Done** | #488, `src/lib/flockAnalytics.ts` | `flock_joined` fires once C exists. |
 | F. Gift years and six-month gifts | **Done** | #487 | Nothing. |
 | **G. Legal pages** | **Not started** | `src/routes/terms.tsx` has five care-app paragraphs; `/privacy` dated 15 Oct 2026 | Wire in Brittany's approved text. The privacy policy's post-deletion wording can't go live until 6b/6c below. |
@@ -245,7 +245,7 @@ Costs are **estimates**, projected from today's 62 accounts. "Session" = one foc
 | 1.15 | Kya's Crew + sponsored seat | Crew plans exist (dark), count as membership, record 25% giving and track sponsored adopter seats | L | 1.14 | No | Yes: payments, entitlements change |
 | 1.16 | Rescue partner codes | Partners get codes; an adopter redeems one and, once approved, gets six months starting when the free season ends | L | 1.15, spec | After spec | Yes: grants access |
 | 1.17 | Membership promo codes | Codes work on the card step with founding/regular rules (Apple offer codes listed for May) | M | 1.14 | No | Yes: payments |
-| 1.18 | **C. The launch PR** | Members can join (18+, guidelines accepted), the one entry point is in place, the free-user check asserts exactly that; it merges dark and is switched on with SQL on opening day | L | 1.1, 1.5 | No | **Yes: the launch decision** |
+| 1.18 | **C. The launch PR** | Members can join (18+, guidelines accepted), the one entry point is in place, the free-user check asserts exactly that; it merges dark and is switched on with SQL on opening day | L | 1.1, 1.5 (switching on) | No | **Yes: the launch decision** (built and merged dark, #493) |
 | 1.19 | Today's ideas and content loading | Ideas `ready` for the first two weeks after opening, templates approved, library and Start here items in | — (her time) | Content approval | n/a | Yes |
 
 ### Track 2: care-app fixes (required)
