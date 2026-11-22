@@ -19,7 +19,17 @@ Format:
   - After: "<new wording>"
 ```
 
-_Nothing yet._
+### [#508](https://github.com/the-kya-project/perch-perfect-plan/pull/508) · 0.5 Admin review for pending posts
+No new strings: every line reuses existing wording, in new places (admins only).
+- **Where:** Flock settings (You), a new row for reviewers
+  - Before: new
+  - After: "Review queue" / "Admin · {count} waiting"
+- **Where:** Review queue, an item's label
+  - Before: "Report · comment"
+  - After: "Report · comment · Learn together" (the post's space, "{name} chapter", or "Journeys"; events add their chapter)
+- **Where:** Review queue, a report's detail line
+  - Before: "Reported by 2 members"
+  - After: "Reported by 2 members · 1h"
 
 ---
 
@@ -35,6 +45,16 @@ Format:
 - **Why:** <the reason, in plain language>
 - **To change it:** <what would need to change>
 ```
+
+### [#508](https://github.com/the-kya-project/perch-perfect-plan/pull/508) · 0.5 Admin review for pending posts
+- **Decision:** The way in is a "Review queue" row in its own card at the top of Flock settings, shown to anyone `flock_can_review()` lets in (admins today, and chapter leads, who see Events only). It isn't in the care app's settings or any shared menu.
+- **Why:** the item allowed "admin menu or Flock settings". There's no admin menu, and Flock settings keeps it inside Flock-only code, so free users can't be affected.
+- **To change it:** move the row in `src/routes/_authenticated/flock.you.index.tsx`.
+
+### [#508](https://github.com/the-kya-project/perch-perfect-plan/pull/508) · 0.5 Admin review for pending posts
+- **Decision:** The space for reports comes from a new function (`flock_review_post_spaces`) rather than changing `flock_review_queue`. A report shows its date as the latest report's time.
+- **Why:** the item says to hold the PR if an existing database function has to change. A new function only adds, so the PR could merge.
+- **To change it:** fold the space into `flock_review_queue` in a later migration (that changes an existing function, so it needs Brittany's approval).
 
 ### [#507](https://github.com/the-kya-project/perch-perfect-plan/pull/507) · 1.11 Buddy pods
 - **Decision:** A "keep going" group is still a pod, so the block, reporting, admin and 3-week rules apply. When the 3-week rule closes one, it ends without asking "Keep going together?" again. "You finished!" and "Keep going together?" aren't in the mockup, so they're built from the app's existing card and sheet components and listed in the PR.

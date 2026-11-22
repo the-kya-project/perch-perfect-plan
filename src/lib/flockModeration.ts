@@ -3,6 +3,7 @@
 // (20261108110000_flock_moderation.sql). Flock code only.
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import type { PostSpace } from "@/lib/flockPosts";
 
 const sb = supabase as any;
 
@@ -38,6 +39,7 @@ export const moderationKeys = {
   queue: (f: string) => ["flock", "review", "queue", f] as const,
   counts: ["flock", "review", "counts"] as const,
   canReview: ["flock", "review", "can"] as const,
+  spaces: ["flock", "review", "spaces"] as const,
 };
 
 export function useNotifications(filter: NotificationFilter) {
@@ -109,6 +111,40 @@ export function useReviewQueue(filter: QueueFilter, enabled: boolean) {
       asArray<QueueItem>(must(await sb.rpc("flock_review_queue", { p_filter: filter })))
         .map((q) => ({ ...q, reasons: asArray<ReportReason>(q.reasons), notes: asArray<string>(q.notes) })),
   });
+}
+
+export type ReviewPostSpace = { post_id: string; space: PostSpace; chapter_name: string | null };
+
+/** The space of each post in the queue (a reported post, or the post a
+ *  reported comment is on): flock_review_post_spaces, reviewers only. */
+export function useReviewPostSpaces(items: QueueItem[] | undefined, enabled: boolean) {
+  const ids = [...new Set((items ?? []).map((q) => (q.item_type === "report" ? q.post_id : null)).filter((id): id is string => !!id))].sort();
+  return useQuery({
+    queryKey: [...moderationKeys.spaces, ids] as const,
+    enabled: enabled && ids.length > 0,
+    staleTime: 60_000,
+    queryFn: async (): Promise<Map<string, ReviewPostSpace>> =>
+      new Map(asArray<ReviewPostSpace>(must(await sb.rpc("flock_review_post_spaces", { p_post_ids: ids }))).map((s) => [s.post_id, s])),
+  });
+}
+
+/** Where a queue item lives: a post space (with its chapter's name), a
+ *  chapter (events), Journeys (journey updates and comments on them), or
+ *  null while a reported post's space is still loading. */
+export type QueuePlace =
+  | { kind: "space"; space: PostSpace; chapter: string | null }
+  | { kind: "chapter"; chapter: string }
+  | { kind: "journeys" };
+
+export function queueItemPlace(q: QueueItem, spaces: Map<string, ReviewPostSpace> | undefined): QueuePlace | null {
+  if (q.item_type === "good") return { kind: "space", space: "good", chapter: null };
+  if (q.item_type === "event") return q.author_region ? { kind: "chapter", chapter: q.author_region } : null;
+  if (q.post_id) {
+    const s = spaces?.get(q.post_id);
+    return s ? { kind: "space", space: s.space, chapter: s.chapter_name } : null;
+  }
+  if (q.journey_id) return { kind: "journeys" };
+  return null;
 }
 
 export function useReviewCounts(enabled: boolean) {
