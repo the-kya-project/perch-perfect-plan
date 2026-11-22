@@ -7,9 +7,8 @@
 //   fullOpen all 50 claimed, and the Flock has opened
 //
 // There's no fixed opening date: it's flock_settings.flock_opens_at, set when
-// Brittany opens the Flock. The public /founding page can't read that setting
-// yet (a proposal in the PR that removed the fixed date), so it passes null
-// and shows "full" until it can.
+// Brittany opens the Flock. /founding reads it through getFlockPublicDates and
+// passes null until it's set (or still loading), which shows "full".
 
 export type FoundingClosedCase = "full" | "fullOpen";
 

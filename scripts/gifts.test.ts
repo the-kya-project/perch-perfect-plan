@@ -311,4 +311,28 @@ await check("launch rule: a refunded gift with a redeemer recorded does NOT gran
   assert.equal(giftGrantsMembership(refundedAfterRedeeming), false);
 });
 
+
+await check("gift copy with a free-season end set: 'The Flock is free for everyone until <date>.', the start rule, never expires", () => {
+  const date = "September 1, 2027"; // a sample, not a real date
+  const sentence = `The Flock is free for everyone until ${date}.`;
+  for (const [plan, length] of [["flock_year", "runs for a year"], ["flock_half_year", "runs for six months"]] as const) {
+    const timing = giftTiming(fakeT, plan, date);
+    assert.ok(timing.includes("A gift membership starts the day it's redeemed and " + length + ".") && timing.includes(sentence)
+      && timing.includes("A gift redeemed before then starts on that day, so none of it goes unused.") && timing.includes("Gifts never expire."), `${plan} timing`);
+    const done = giftRedeemed(fakeT, plan, date);
+    assert.ok(done.startsWith("Your gift is saved.") && done.includes(sentence) && done.includes("so none of it goes unused."), `${plan} redeemed`);
+    // No date: the approved undated wording.
+    assert.ok(giftTiming(fakeT, plan, null).includes("If it's redeemed while the Flock is still free for everyone, it starts when the free season ends"), `${plan} undated`);
+    assert.equal(giftTiming(fakeT, plan), giftTiming(fakeT, plan, null));
+  }
+  const en = readFileSync("src/locales/en.jsonc", "utf8");
+  for (const [k, plan, f] of [["gift.timingFlockDated", "flock_year", giftTiming], ["gift.timingFlockHalfDated", "flock_half_year", giftTiming],
+    ["redeem.doneFlockDated", "flock_year", giftRedeemed], ["redeem.doneFlockHalfDated", "flock_half_year", giftRedeemed]] as const) {
+    assert.ok(en.includes(`"${k}": "${f(fakeT, plan, "{{date}}")}"`), `en.jsonc ${k} matches the fallback`);
+  }
+  for (const page of ["src/routes/gift.index.tsx", "src/routes/gift.thanks.tsx", "src/routes/redeem.tsx"]) {
+    assert.ok(readFileSync(page, "utf8").includes("freeSeasonEndLabel(useFlockPublicDates())"), `${page} reads the free-season end`);
+  }
+});
+
 console.log(`\n${passed} passed`);

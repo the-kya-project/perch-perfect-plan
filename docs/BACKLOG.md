@@ -164,34 +164,6 @@ Where these items came from, with the detail behind each: `docs/flock/opening-sc
 - **Overnight alone:** no
 - **Needs Brittany:** payments, and the rules for which codes apply to which plans.
 
-### P1 The stored free-season end is cleared until Brittany sets it
-- **Done means:** `flock_settings.free_season_ends_at` can be empty before opening, is cleared, and loses its Nov 19 column default. `admin_set_flock_opens_at` refuses to open while the free season's end is empty, so the two are always set together. Pinned in `supabase/checks/flock_free_season_checks.sql`.
-- **Size:** S
-- **Depends on:** Brittany's yes
-- **Overnight alone:** no
-- **Needs Brittany:** approval. It changes a production setting and an existing Flock function.
-
-### P2 Public pages can read opening day and the free season's end
-- **Done means:** a small read-only function returns only those two settings, so the founding, gift and redeem pages can say "free until {date}" once they're set, and "while we're getting started" before then. Copy changes are shown before-and-after.
-- **Size:** M
-- **Depends on:** P1, Brittany's yes
-- **Overnight alone:** no
-- **Needs Brittany:** approval of the new database function and of the copy.
-
-### P3 The founding page's "all 50 claimed" message follows opening day
-- **Done means:** `foundingClosedCase` gets opening day from P2 instead of always showing the before-opening message.
-- **Size:** S
-- **Depends on:** P2
-- **Overnight alone:** yes, once P2 is merged
-- **Needs Brittany:** merge only.
-
-### P4 Dated gift emails aren't stuck at a fixed last day
-- **Done means:** the gift page lets a buyer pick any send date in a rolling window (for example the next 90 days) instead of stopping at `GIFT_SEND_LAST_DATE = 2026-12-31`, with `gift.errDate` and `gift.sendOnHint` updated. Pinned in `npm run test:gifts`.
-- **Size:** S
-- **Depends on:** Brittany's yes. The current limit stops dated gifts after the end of 2026, so this one is time-sensitive.
-- **Overnight alone:** no
-- **Needs Brittany:** approval. It changes the gift checkout, and the copy is shown before-and-after.
-
 ### 1.9 Pre-approval for more spaces (only if wanted)
 - **Done means:** posts in the spaces Brittany picks wait for review before other members see them, the way Do good posts already do.
 - **Size:** S
@@ -326,12 +298,11 @@ The launch PR itself (1.18) is already merged dark. What's left before opening i
 ## When Brittany says we're opening
 
 1. Brittany picks **opening day** and the **free season's end**, and sets the **payments timeline** (when cards are asked for, when billing starts, when the iPhone paywall appears). Then update `docs/flock/payments-plan.md` to match.
-2. Fill in the two settings on production (Brittany, in the Supabase SQL editor):
-   - `select public.admin_set_free_season_ends_at('<end> America/New_York');`
-   - `select public.admin_set_flock_opens_at('<opening> America/New_York');`
+2. Fill in both settings on production in one step (Brittany, in the Supabase SQL editor):
+   - `select public.admin_set_flock_dates('<opening> America/New_York', '<end> America/New_York');`
 
-   Unstarted founding and gift grants re-date themselves.
-3. Check that the founding page, gift pages, membership screen and emails read their dates from the settings and say the right thing.
+   The database refuses an opening day without an end, so the two always go in together. Unstarted founding and gift grants re-date themselves.
+3. Check that the founding, gift and redeem pages now say "The Flock is free for everyone until {date}.", that the membership screen shows the end date, and that the founding page's "all 50 claimed" box follows opening day. Emails don't read the settings: check their wording by hand.
 4. **Dry run on production** with admin accounts: join → post → journey → report → block → kill switch, on web, iPhone, iPad and Duo.
 5. **Name reviewers** for `/admin/review`.
 6. **Code freeze:** no merges for the days around opening, apart from fixes Brittany approves.
@@ -401,6 +372,10 @@ The launch PR itself (1.18) is already merged dark. What's left before opening i
 
 ## Done
 
+- **P1** The stored free-season end is cleared, and opening day can't be set without it (`admin_set_flock_dates`): #497.
+- **P2** The founding, gift and redeem pages read opening day and the free season's end (`getFlockPublicDates`): #497.
+- **P3** The founding page's "all 50 claimed" box follows opening day: #497.
+- **P4** Gift emails can be scheduled any day from today through 90 days ahead: #496.
 - **0.1** #377 (diet type labels): already done on main by #378, Oct 21. #377 itself duplicates it and breaks the build. Close it (Brittany).
 - **0.2** #490's migration given its own version (`20261121150000`) and merged (Nov 21).
 - **1.1** #493: the contact line ("Questions or a problem? Email the Kya team at brittany@thekyaproject.com.") in Flock settings and at the bottom of the community guidelines.

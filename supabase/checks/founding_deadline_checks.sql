@@ -75,6 +75,10 @@ begin
     order by s limit 1;
     fdr := fs;
   end if;
+  -- There's no stored free-season end since 20261122120000; give it a sample
+  -- one (the checks below were written around Jul 6, 2027, a sample date here).
+  update public.flock_settings set flock_opens_at = null,
+    free_season_ends_at = timestamp '2027-07-06 00:00:00' at time zone 'America/New_York' where id;
   season := private.free_season_ends_at();
   -- Opening day is set as the server would (service role), not as the claimant.
   perform set_config('request.jwt.claims', json_build_object('role', 'service_role')::text, true);

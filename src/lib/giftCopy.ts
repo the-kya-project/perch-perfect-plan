@@ -8,15 +8,26 @@ export function giftPlanName(t: TFunction, plan: GiftPlan): string {
     : t("gift.planFlockName", "The Flock, one year");
 }
 
-/** The start rule, in words (no fixed dates: they depend on redemption). */
-export function giftTiming(t: TFunction, plan: GiftPlan): string {
+/** The start rule, in words. `freeUntil` is the free season's end to show
+ *  ("Month Day, Year", from freeSeasonEndLabel), or null while there's none. */
+export function giftTiming(t: TFunction, plan: GiftPlan, freeUntil: string | null = null): string {
+  if (freeUntil) {
+    return plan === "flock_half_year"
+      ? t("gift.timingFlockHalfDated", "A gift membership starts the day it's redeemed and runs for six months. The Flock is free for everyone until {{date}}. A gift redeemed before then starts on that day, so none of it goes unused. Gifts never expire.", { date: freeUntil })
+      : t("gift.timingFlockDated", "A gift membership starts the day it's redeemed and runs for a year. The Flock is free for everyone until {{date}}. A gift redeemed before then starts on that day, so none of it goes unused. Gifts never expire.", { date: freeUntil });
+  }
   return plan === "flock_half_year"
     ? t("gift.timingFlockHalf", "A gift membership starts the day it's redeemed and runs for six months. If it's redeemed while the Flock is still free for everyone, it starts when the free season ends, so none of it goes unused. Gifts never expire.")
     : t("gift.timingFlock", "A gift membership starts the day it's redeemed and runs for a year. If it's redeemed while the Flock is still free for everyone, it starts when the free season ends, so none of it goes unused. Gifts never expire.");
 }
 
-/** What /redeem says once the code is saved. */
-export function giftRedeemed(t: TFunction, plan: GiftPlan): string {
+/** What /redeem says once the code is saved. `freeUntil` as for giftTiming. */
+export function giftRedeemed(t: TFunction, plan: GiftPlan, freeUntil: string | null = null): string {
+  if (freeUntil) {
+    return plan === "flock_half_year"
+      ? t("redeem.doneFlockHalfDated", "Your gift is saved. Six months in the Flock start the day they're redeemed and run for six months. The Flock is free for everyone until {{date}}. A gift redeemed before then starts on that day, so none of it goes unused.", { date: freeUntil })
+      : t("redeem.doneFlockDated", "Your gift is saved. A year in the Flock starts the day it's redeemed and runs for a year. The Flock is free for everyone until {{date}}. A gift redeemed before then starts on that day, so none of it goes unused.", { date: freeUntil });
+  }
   return plan === "flock_half_year"
     ? t("redeem.doneFlockHalf", "Your gift is saved. Six months in the Flock start the day they're redeemed and run for six months. While the Flock is still free for everyone, a gift redeemed then starts when the free season ends, so none of it goes unused.")
     : t("redeem.doneFlock", "Your gift is saved. A year in the Flock starts the day it's redeemed and runs for a year. While the Flock is still free for everyone, a gift redeemed then starts when the free season ends, so none of it goes unused.");

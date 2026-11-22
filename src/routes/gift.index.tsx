@@ -10,6 +10,8 @@ import { track } from "@/lib/analytics";
 import { createGiftCheckout, getGiftOptions, type GiftOption } from "@/lib/gifts.functions";
 import { formatCents, formatGiftDate, giftLastSendDate, giftToday, isAllowedSendDate, GIFT_MESSAGE_MAX, GIFT_NAME_MAX, GIFT_PLANS, GIFT_SEND_WINDOW_DAYS, type GiftPlan } from "@/lib/gifts";
 import { K, KyaCard, KyaHeading } from "@/components/kya";
+import { freeSeasonEndLabel } from "@/lib/flockDates";
+import { useFlockPublicDates } from "@/lib/useFlockPublicDates";
 import { giftGivingNote, giftPlanName, giftPriceParts, giftRefundNote, giftTiming, planBlurb } from "@/lib/giftCopy";
 import { FrontDoorBody, FrontDoorError, FrontDoorHeader, FrontDoorPage, LegalLinks } from "@/components/frontDoor";
 
@@ -40,6 +42,7 @@ function GiftPage() {
   const { data: opts, isLoading } = useQuery({ queryKey: ["gift-options"], queryFn: () => optionsFn(), staleTime: 10 * 60_000 });
 
   const today = giftToday();
+  const freeUntil = freeSeasonEndLabel(useFlockPublicDates());
   const lastSend = giftLastSendDate();
   const dateError = () => t("gift.errDate", "That date is a little too far out. You can pick any day from today through {{last}}.", { last: formatGiftDate(lastSend) });
   const [plan, setPlan] = useState<GiftPlan>("flock_half_year");
@@ -271,7 +274,7 @@ function GiftPage() {
             </fieldset>
 
             <section className="rounded-[20px] p-5" style={{ background: K.lime, color: K.forest }}>
-              <p className="m-0 text-[15px] leading-[1.5]">{giftTiming(t, plan)}</p>
+              <p className="m-0 text-[15px] leading-[1.5]">{giftTiming(t, plan, freeUntil)}</p>
               <p className="m-0 mt-2 text-[15px] leading-[1.5]">{giftRefundNote(t)}</p>
               <p className="m-0 mt-2 text-[15px] leading-[1.5]">{giftGivingNote(t)}</p>
             </section>

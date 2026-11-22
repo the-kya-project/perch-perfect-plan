@@ -36,7 +36,8 @@ begin
   values ('flock_year', 'b@checks.invalid', 'G1', 30000, 'cs_fs1_' || tag, private.new_gift_code()) returning id into g1;
   update public.gift_purchases set status = 'redeemed', redeemed_by = gft, redeemed_at = now() where id = g1;
 
-  -- Start like production today: no opening day, the stored Jul 6, 2027 end, UI on.
+  -- Start with no opening day, a sample free-season end (Jul 6, 2027; nothing
+  -- is stored on production until Brittany sets it), UI on.
   update public.flock_settings set flock_opens_at = null, ui_enabled = true,
     free_season_ends_at = timestamp '2027-07-06 00:00:00' at time zone 'America/New_York' where id;
   season_end := (select free_season_ends_at from public.flock_settings where id);

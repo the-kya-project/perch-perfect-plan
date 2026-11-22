@@ -2016,6 +2016,13 @@ export type Database = {
         }
       }
       flock_enabled: { Args: never; Returns: boolean }
+      flock_public_dates: {
+        Args: never
+        Returns: {
+          free_season_ends_at: string | null
+          opens_at: string | null
+        }[]
+      }
       founding_status: {
         Args: never
         Returns: {

@@ -34,8 +34,10 @@ begin
   from unnest(array[adm, fdr, r1, r2, r3, r5, cmp, cld, rev]) as u;
   insert into public.user_roles (user_id, role) values (adm, 'admin');
 
-  -- A fresh start: the Flock has no opening day.
-  update public.flock_settings set flock_opens_at = null where id;
+  -- A fresh start: the Flock has no opening day. There's no stored free-season
+  -- end since 20261122120000, so these checks give it a sample one first
+  -- (opening day can't be set without it).
+  update public.flock_settings set flock_opens_at = null, free_season_ends_at = now() + interval '1 year' where id;
 
   -- Gifts (paid), each redeemed below.
   insert into public.gift_purchases (plan, buyer_email, recipient_name, amount_paid_cents, stripe_checkout_session_id, gift_code)

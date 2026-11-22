@@ -9,6 +9,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { getReadySession } from "@/lib/authReady";
 import { track } from "@/lib/analytics";
 import { isGiftPlan, type GiftPlan } from "@/lib/gifts";
+import { freeSeasonEndLabel } from "@/lib/flockDates";
+import { useFlockPublicDates } from "@/lib/useFlockPublicDates";
 import { giftPlanName, giftRedeemed } from "@/lib/giftCopy";
 import { K, SERIF, KyaCard, KyaHeading, KyaPrimaryButton, KyaSecondaryButton } from "@/components/kya";
 import { FrontDoorBody, FrontDoorHeader, FrontDoorPage, LegalLinks } from "@/components/frontDoor";
@@ -31,6 +33,7 @@ export const Route = createFileRoute("/redeem")({
 
 function RedeemPage() {
   const { t } = useTranslation();
+  const freeUntil = freeSeasonEndLabel(useFlockPublicDates());
   const navigate = useNavigate();
   const { code: codeParam } = Route.useSearch();
   const [code, setCode] = useState(codeParam ?? "");
@@ -100,7 +103,7 @@ function RedeemPage() {
             <section className="rounded-[20px] p-5" style={{ background: K.lime, color: K.forest }}>
               <p className="m-0 text-[13px] font-[700] uppercase tracking-[0.06em]">{giftPlanName(t, redeemed)}</p>
               <h2 ref={doneRef} tabIndex={-1} className="m-0 mt-1 text-[22px] font-[700] leading-[1.2] outline-none" style={{ fontFamily: SERIF }}>
-                {giftRedeemed(t, redeemed)}
+                {giftRedeemed(t, redeemed, freeUntil)}
               </h2>
               {dates && (
                 <p className="m-0 mt-2 text-[15px] font-[700]">
