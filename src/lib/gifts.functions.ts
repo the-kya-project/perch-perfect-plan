@@ -59,13 +59,18 @@ const checkoutInput = z
     }
   });
 
-export type CheckoutResult = { ok: true; url: string } | { ok: false; reason: "unavailable" | "invalid" | "error" };
+export type CheckoutResult = { ok: true; url: string } | { ok: false; reason: "unavailable" | "invalid" | "invalid_date" | "error" };
 
 export const createGiftCheckout = createServerFn({ method: "POST" })
   .inputValidator((d: z.input<typeof checkoutInput>) => d)
   .handler(async ({ data }): Promise<CheckoutResult> => {
     const parsed = checkoutInput.safeParse(data);
-    if (!parsed.success) return { ok: false, reason: "invalid" };
+    if (!parsed.success) {
+      // A send date outside the window gets its own reason, so the page can
+      // show the date message under the date field.
+      const onlyDate = parsed.error.issues.every((i) => i.path[0] === "sendOn");
+      return { ok: false, reason: onlyDate ? "invalid_date" : "invalid" };
+    }
     const d = parsed.data;
 
     const { getStripe, giftPriceId, StripeNotConfigured } = await import("./stripe.server");

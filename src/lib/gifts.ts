@@ -19,8 +19,9 @@ export function isGiftPlan(v: unknown): v is GiftPlan {
   return typeof v === "string" && (GIFT_PLANS as readonly string[]).includes(v);
 }
 
-/** Dated gift emails can be scheduled through this day (inclusive). */
-export const GIFT_SEND_LAST_DATE = "2026-12-31";
+/** A dated gift email can be scheduled for any day from today through this
+ *  many days ahead (a rolling window, judged in Indianapolis time). */
+export const GIFT_SEND_WINDOW_DAYS = 90;
 
 /** Gift dates and the giving rate are judged in Indianapolis time, like the
  *  Founding 50 deadline. */
@@ -35,11 +36,24 @@ export function giftToday(now: Date = new Date()): string {
   return new Intl.DateTimeFormat("en-CA", { timeZone: GIFT_TIME_ZONE, year: "numeric", month: "2-digit", day: "2-digit" }).format(now);
 }
 
-/** A date the buyer may pick for the recipient's email: today through the
- *  last send date. Plain string comparison works on YYYY-MM-DD. */
+/** The last day a gift email can be scheduled for: today (in Indianapolis)
+ *  plus GIFT_SEND_WINDOW_DAYS, as YYYY-MM-DD. Counted on the calendar date at
+ *  noon UTC, so daylight saving never shifts it a day. */
+export function giftLastSendDate(now: Date = new Date()): string {
+  const d = new Date(`${giftToday(now)}T12:00:00Z`);
+  d.setUTCDate(d.getUTCDate() + GIFT_SEND_WINDOW_DAYS);
+  return d.toISOString().slice(0, 10);
+}
+
+/** A date the buyer may pick for the recipient's email: a real calendar day
+ *  from today through giftLastSendDate(). The page and the server (the gift
+ *  checkout) both use this, so the server is the one that decides. Plain
+ *  string comparison works on YYYY-MM-DD. */
 export function isAllowedSendDate(date: string, now: Date = new Date()): boolean {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return false;
-  return date >= giftToday(now) && date <= GIFT_SEND_LAST_DATE;
+  const real = new Date(`${date}T12:00:00Z`);
+  if (Number.isNaN(real.getTime()) || real.toISOString().slice(0, 10) !== date) return false;
+  return date >= giftToday(now) && date <= giftLastSendDate(now);
 }
 
 /** "Dec 24, 2026" for a YYYY-MM-DD date, without shifting it a day through UTC. */
