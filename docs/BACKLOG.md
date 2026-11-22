@@ -22,13 +22,6 @@ Where these items came from, with the detail behind each: `docs/flock/opening-sc
 
 ## Ready to build
 
-### 2.4a Plain-language one-pager on Vercel's Skew Protection
-- **Done means:** `docs/skew-protection.md`, one page for a non-developer, explains what the setting does, the options, and the trade-offs of each for current users, so Brittany can decide 2.4. It changes no setting and makes no decision.
-- **Size:** S
-- **Depends on:** nothing
-- **Overnight alone:** yes
-- **Needs Brittany:** merge only. Reading it and deciding 2.4 are hers afterward.
-
 ### 2.1 The startup guard listens before anything can fail
 - **Done means:** the page reset for a missing code file works on WebKit 30 times out of 30 in CI.
   - The startup guard script is the first thing in the page's `<head>`, before the code preloads and the inlined styles.
@@ -419,6 +412,7 @@ The launch PR itself (1.18) is already merged dark. What's left before opening i
 
 ## Done
 
+- **2.4a** `docs/skew-protection.md`: what Vercel's Skew Protection does, the four options and what each means for current users and for 2.4 and 2.5: #509.
 - **0.5** The review queue is reached from Flock settings (reviewers only, with the waiting count), and every item shows its author, space and date: #508.
 - **0.4** Sign-ups that start on the /get or /get-app desktop page are credited to the link that brought them: #505.
 - **0.3** The translation check passes and runs in the iPhone hydration job; the 85 Library phrases are in the English catalog, the 2 stale keys are gone, and the Dutch gaps on the clip recorder, gift, gift thank-you and redeem pages are filled: #500 (Brittany approved the Dutch, Nov 22, 2026). The Flock's missing Dutch keys still wait for her decision on a Dutch Flock.

@@ -20,6 +20,12 @@ Copy this, fill it in, and put it at the top of "Runs", above the latest entry.
 
 ## Runs
 
+### 2026-11-22 17:07 EST · 2.4a Plain-language one-pager on Vercel's Skew Protection
+- **Built:** A one-page explainer, `docs/skew-protection.md`, on the Vercel setting that keeps an open page on the copy of the app it started with. It covers how that played into the Nov 2 sitter-preview stall, four options and what current users would notice with each, so Brittany can decide 2.4. No setting or code changed.
+- **PR:** [#509](https://github.com/the-kya-project/perch-perfect-plan/pull/509)
+- **Outcome:** Merged if every check passes (docs only, nothing users see). Otherwise waiting on checks.
+- **Problems:** This run has no Vercel access, so the page says the setting was on as of Nov 2 (from the reference branch's notes) and doesn't give today's time limit. PR #500 (0.3) was held for Brittany's read of the Dutch when this run picked, so it took the next item. #500 merged while this run was working, so the branch was updated from `main` with both sides' entries kept. No pending-log entries to move.
+
 ### 2026-11-22 15:38 EST · 0.5 Admin review for pending posts
 - **Built:** The review screen already worked but nothing linked to it. Flock settings now has a "Review queue" row (reviewers only, with how many items are waiting). Each item in the queue now says which space it's in, and reports show when they came in. One new database function looks up a queued post's space, for reviewers only. Nothing existing was changed.
 - **PR:** [#508](https://github.com/the-kya-project/perch-perfect-plan/pull/508)
