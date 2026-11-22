@@ -49,17 +49,23 @@ begin
   if ok then passed := passed + 1; else failed := array_append(failed, 'half-set openings refused by the setters'); end if;
 
   -- 5) Both together are stored, and both can be cleared again before opening.
+  --    (The admin calls run as the admin; the reads run as the owner, since app
+  --    users, admins included, have no read grant on flock_settings.)
   perform public.admin_set_flock_dates(o, e);
+  reset role;
   ok := (select flock_opens_at = o and free_season_ends_at = e from public.flock_settings where id);
+  set local role authenticated;
   st := null; begin perform public.admin_set_free_season_ends_at(null); exception when others then st := sqlstate; end;
   ok := ok and st = '22004';  -- can't clear the end while opening day is set
   perform public.admin_set_flock_dates(null, null);
+  reset role;
   ok := ok and (select flock_opens_at is null and free_season_ends_at is null from public.flock_settings where id);
   -- The end alone can be set and cleared while opening day isn't set.
+  set local role authenticated;
   perform public.admin_set_free_season_ends_at(e);
   perform public.admin_set_free_season_ends_at(null);
-  ok := ok and (select free_season_ends_at is null from public.flock_settings where id);
   reset role;
+  ok := ok and (select free_season_ends_at is null from public.flock_settings where id);
   if ok then passed := passed + 1; else failed := array_append(failed, 'set together, clear together'); end if;
 
   -- 6) Non-admins can't set the dates.
