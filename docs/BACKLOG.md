@@ -22,15 +22,6 @@ Where these items came from, with the detail behind each: `docs/flock/opening-sc
 
 ## Ready to build
 
-### 0.5 Admin review for pending posts
-- **Problem:** Brittany has a Do good post pending approval, and there's no way in the app for her to find and approve it.
-- **Done means:** as an admin, she can easily reach a review screen from the app (a clear link in her admin menu or Flock settings), see every pending post and report with its author, space and date, and approve or reject each one. Rejections can include an optional note. Everything is admin-only, so current users see nothing different.
-- **First:** check whether `/admin/review` exists and works for pending Do good posts. If it works and is only missing a link, add the link. If it's missing or broken, build or fix it. Starting point (Nov 22, 2026, from reading the code, not tested): the screen exists at `src/routes/_authenticated/admin.review.tsx`, nothing in the app links to it, and Decline's note is already optional. Confirm it shows each item's space.
-- **Size:** S if only the link is missing
-- **Depends on:** nothing
-- **Overnight alone:** yes
-- **Needs Brittany:** merge only, if non-admins see nothing different (show the free-user evidence for any shared component). Hold the PR if it has to change an existing database function.
-
 ### 2.4a Plain-language one-pager on Vercel's Skew Protection
 - **Done means:** `docs/skew-protection.md`, one page for a non-developer, explains what the setting does, the options, and the trade-offs of each for current users, so Brittany can decide 2.4. It changes no setting and makes no decision.
 - **Size:** S
@@ -435,6 +426,7 @@ The launch PR itself (1.18) is already merged dark. What's left before opening i
 
 ## Done
 
+- **0.5** The review queue is reached from Flock settings (reviewers only, with the waiting count), and every item shows its author, space and date: #508.
 - **0.4** Sign-ups that start on the /get or /get-app desktop page are credited to the link that brought them: #505.
 - **P1** The stored free-season end is cleared, and opening day can't be set without it (`admin_set_flock_dates`): #497.
 - **P2** The founding, gift and redeem pages read opening day and the free season's end (`getFlockPublicDates`): #497.
