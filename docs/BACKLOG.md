@@ -20,13 +20,6 @@ Where these items came from, with the detail behind each: `docs/flock/opening-sc
 
 ## Ready to build
 
-### 0.3 Translation check passes and stays passing
-- **Done means:** `npm run i18n:check` passes on main and runs in the iPhone hydration job, so the catalog can't drift again. The 85 missing English phrases (all from the Library build: 22 `flock.library.*`, 63 `flock.libraryAdmin.*`) are added, the 2 stale keys dropped, and the Dutch gaps free users see today are filled (`clipRecorder`, `gift`, `giftThanks`, `redeem`).
-- **Size:** M
-- **Depends on:** nothing
-- **Overnight alone:** yes
-- **Needs Brittany:** a read of the new Dutch lines before merge. The Flock's 846 missing Dutch keys wait for her decision on a Dutch Flock.
-
 ### 0.4 Credit /get-page sign-ups to the link that brought them
 - **Done means:** someone who scans the postcard or taps a campaign link, lands on /get and later signs up on the web is credited to that link, not "direct". Built from `origin/claude/busy-mccarthy-qntx5t` (one commit, `d974e8e`, still applies cleanly) on a new branch, with `npm run test:get-app` passing, and a note confirming /get is served from app.thekyaproject.com (the credit only carries within one site).
 - **Size:** S
@@ -374,6 +367,7 @@ The launch PR itself (1.18) is already merged dark. What's left before opening i
 
 ## Done
 
+- **0.3** The translation check passes and runs in the iPhone hydration job; the 85 Library phrases are in the English catalog, the 2 stale keys are gone, and the Dutch gaps on the clip recorder, gift, gift thank-you and redeem pages are filled: #500 (held for Brittany's read of the Dutch). The Flock's missing Dutch keys still wait for her decision on a Dutch Flock.
 - **P1** The stored free-season end is cleared, and opening day can't be set without it (`admin_set_flock_dates`): #497.
 - **P2** The founding, gift and redeem pages read opening day and the free season's end (`getFlockPublicDates`): #497.
 - **P3** The founding page's "all 50 claimed" box follows opening day: #497.
