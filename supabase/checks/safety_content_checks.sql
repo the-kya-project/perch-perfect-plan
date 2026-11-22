@@ -19,10 +19,10 @@ begin
      and (select review_status from public.journey_templates where slug = 'nail-trims') = 'draft' then
     passed := passed + 1; else failed := array_append(failed, 'nail trims safety guidance, still draft'); end if;
 
-  -- 2) No guide card claims a review that hasn't happened.
-  if not exists (select 1 from public.guide_cards where reviewed_by = 'The Kya Project · Parrot Care Bible')
-     and not exists (select 1 from public.guide_cards where reviewed_by ilike '%vet%' and reviewed_by not ilike '%in progress%')
-     and not exists (select 1 from public.guide_cards where reviewed_at is not null and reviewed_by ilike '%in progress%') then
+  -- 2) No guide card claims a review: every card names its author only, undated.
+  if exists (select 1 from public.guide_cards)
+     and not exists (select 1 from public.guide_cards where reviewed_by is distinct from 'Written by The Kya Project')
+     and not exists (select 1 from public.guide_cards where reviewed_at is not null) then
     passed := passed + 1; else failed := array_append(failed, 'guide cards: honest review label'); end if;
 
   -- 3) No journey tip mentions hunger or training before a meal.

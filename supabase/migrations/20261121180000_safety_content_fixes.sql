@@ -26,7 +26,8 @@
 --    Bible' with a review date, which reads as reviewed when no vet has
 --    reviewed them. The app never shows these two columns (the sitter guide
 --    says "General guidance, not vet-reviewed"), but the stored label is
---    made honest anyway, and the date is cleared until a review happens.
+--    made honest anyway: it names the author only, with no date and no
+--    mention of a review (Brittany's wording, Nov 22).
 --
 -- 3) Hard-day journey tip: the live tip ("Try a short session before
 --    breakfast, when treats tend to feel extra special…") still leans on the
@@ -58,7 +59,7 @@ update public.journey_templates
 
 -- 2) Parrots 101 label
 update public.guide_cards
-   set reviewed_by = 'Written by The Kya Project · vet review in progress',
+   set reviewed_by = 'Written by The Kya Project',
        reviewed_at = null
  where reviewed_by = 'The Kya Project · Parrot Care Bible';
 
