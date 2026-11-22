@@ -36,12 +36,12 @@ Format:
 - **To change it:** <what would need to change>
 ```
 
-### [#PR_NUMBER](https://github.com/the-kya-project/perch-perfect-plan/pull/PR_NUMBER) · Backlog: Brittany's decisions
+### [#504](https://github.com/the-kya-project/perch-perfect-plan/pull/504) · Backlog: Brittany's decisions
 - **Decision:** 1.15 and 1.17 moved to "Ready to build" with "Depends on: 1.14 merged", and the Skew one-pager (2.4a) sits second, right under the admin review item. 1.14 and its followers go at the end of Ready, and D1.2 right after D1.1.
 - **Why:** Runs never start anything under "Needs Brittany before work starts", so 1.15 and 1.17 had to move to start once 1.14 merges. Existing priorities otherwise keep their order.
 - **To change it:** reorder the items in `docs/BACKLOG.md`.
 
-### [#PR_NUMBER](https://github.com/the-kya-project/perch-perfect-plan/pull/PR_NUMBER) · D1.2 Weight baseline shadow mode
+### [#504](https://github.com/the-kya-project/perch-perfect-plan/pull/504) · D1.2 Weight baseline shadow mode
 - **Decision:** Until you answer, the shadow log covers your birds only. The item used to say "every bird", and your approval says "on for my account only".
 - **Why:** The narrower reading can't touch anyone else's data.
 - **To change it:** say that it should log every bird.

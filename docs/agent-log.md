@@ -22,7 +22,7 @@ Copy this, fill it in, and put it at the top of "Runs", above the latest entry.
 
 ### 2026-11-22 13:55 EST · Backlog: Brittany's decisions and the admin review item
 - **Built:** Recorded Brittany's decisions in the backlog. Billing (1.14), Kya's Crew (1.15), promo codes (1.17) and the weight shadow log (D1.2) are now cleared to build, each to a PR held for her. Pre-approval (1.9) moved to Later. Added the admin review item (0.5) at the top and a Skew Protection one-pager (2.4a). Nothing was built.
-- **PR:** [#PR_NUMBER](https://github.com/the-kya-project/perch-perfect-plan/pull/PR_NUMBER) (supervised session at Brittany's request)
+- **PR:** [#504](https://github.com/the-kya-project/perch-perfect-plan/pull/504) (supervised session at Brittany's request)
 - **Outcome:** Merged once every check passed, as she asked for this docs-only PR.
 - **Problems:** none.
 
