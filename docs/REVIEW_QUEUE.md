@@ -36,6 +36,11 @@ Format:
 - **To change it:** <what would need to change>
 ```
 
+### [#505](https://github.com/the-kya-project/perch-perfect-plan/pull/505) · 0.4 Credit /get-page sign-ups to the link that brought them
+- **Decision:** Brought over the reference commit `d974e8e` exactly as it was, including that it also covers `/get-app` (both share the same desktop page) and not `/review`. Left the two files' existing Prettier warnings alone (they're on `main` too), so the diff stays only the change.
+- **Why:** The backlog item says to build from that commit; reformatting would bury the real change in a large diff.
+- **To change it:** ask for the files to be reformatted in a separate PR, or for `/get-app` to be left out.
+
 ### [#499](https://github.com/the-kya-project/perch-perfect-plan/pull/499) · Setup: rules for the continuous runs
 - **Decision:** A run that opens no PR (stopped by the lock, or found nothing it's allowed to build) writes its log entry to `~/.kya-agent/pending-log.md` on the Mac, and the next run with a PR copies it into `docs/agent-log.md`.
 - **Why:** Every run must be logged, but a run with no PR has no way to change `main`, and must not touch the main project folder.
