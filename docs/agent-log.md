@@ -20,7 +20,7 @@ Copy this, fill it in, and put it at the top of "Runs", above the latest entry.
 
 ## Runs
 
-### 2026-11-22 14:30 EST · 1.11 Buddy pods: how a pod ends
+### 2026-11-22 14:25 EST · 1.11 Buddy pods: how a pod ends
 - **Built:** Added Brittany's answer on how a pod ends to the spec and unblocked 1.11. Removed her question from the review queue and recorded her agreement with the three stricter calls. Nothing was built.
 - **PR:** [#507](https://github.com/the-kya-project/perch-perfect-plan/pull/507) (supervised session at Brittany's request)
 - **Outcome:** Squash-merged by this session once every check passed, as she asked.
