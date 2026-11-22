@@ -199,8 +199,7 @@ Why this split:
 The checklist is at the end of `docs/BACKLOG.md` ("When Brittany says we're opening"): set opening day and the free season's end, set the payments timeline, dry run, name reviewers, code freeze, opening emails and website, then open. The SQL:
 
 ```sql
-select public.admin_set_free_season_ends_at('<end> America/New_York');
-select public.admin_set_flock_opens_at('<opening> America/New_York');
+select public.admin_set_flock_dates('<opening> America/New_York', '<end> America/New_York');
 ```
 
 ### Before payments go live (once the timeline is set)
