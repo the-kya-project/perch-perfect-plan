@@ -8,6 +8,8 @@ import { useTranslation } from "react-i18next";
 import i18next from "i18next";
 import { getGiftBySession, type GiftForThanks } from "@/lib/gifts.functions";
 import { formatGiftDate } from "@/lib/gifts";
+import { freeSeasonEndLabel } from "@/lib/flockDates";
+import { useFlockPublicDates } from "@/lib/useFlockPublicDates";
 import { giftPlanName, giftTiming } from "@/lib/giftCopy";
 import { K, SERIF, KyaCard, KyaHeading, KyaPrimaryButton } from "@/components/kya";
 import { FrontDoorBody, FrontDoorError, FrontDoorHeader, FrontDoorPage } from "@/components/frontDoor";
@@ -34,6 +36,7 @@ const POLL_LIMIT_MS = 60_000;
 
 function GiftThanks() {
   const { t } = useTranslation();
+  const freeUntil = freeSeasonEndLabel(useFlockPublicDates());
   const { session_id } = Route.useSearch();
   const giftFn = useServerFn(getGiftBySession);
   const started = useRef(Date.now());
@@ -92,7 +95,7 @@ function GiftThanks() {
               recipientName={ready.recipientName}
               message={ready.message}
               code={ready.giftCode}
-              timing={giftTiming(t, ready.plan)}
+              timing={giftTiming(t, ready.plan, freeUntil)}
             />
             <div className="print:hidden flex flex-col gap-3">
               <KyaPrimaryButton onClick={() => window.print()} icon={<Printer className="size-5" aria-hidden="true" />}>

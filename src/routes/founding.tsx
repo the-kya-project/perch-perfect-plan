@@ -14,6 +14,8 @@ import { K, SERIF, KyaCard, KyaHeading, KyaPrimaryButton, KyaSecondaryButton } f
 import { CheckListCard, FrontDoorBody, FrontDoorError, FrontDoorHeader, FrontDoorPage, LegalLinks } from "@/components/frontDoor";
 import { WaitlistModal } from "@/components/WaitlistCard";
 import { foundingClosedCase } from "@/lib/foundingClosed";
+import { freeSeasonEndLabel } from "@/lib/flockDates";
+import { useFlockPublicDates } from "@/lib/useFlockPublicDates";
 
 // The Founding 50: public offer page for the first Flock members. Anyone can
 // view it; claiming needs an account. The Flock itself stays hidden behind
@@ -194,6 +196,7 @@ function FoundingPage() {
 
 function Offer() {
   const { t } = useTranslation();
+  const freeUntil = freeSeasonEndLabel(useFlockPublicDates());
   return (
     <>
       <KyaCard className="p-5">
@@ -203,7 +206,9 @@ function Offer() {
           <span className="text-[14.5px]" style={{ color: K.quiet }}>{t("founding.regular", "Regular price $25 a month billed annually, or $30 month to month.")}</span>
         </p>
         <p className="m-0 mt-3 text-[15px] leading-[1.5]" style={{ color: K.ink }}>
-          {t("founding.locked", "The Flock is free for everyone while we're getting started, and we'll tell you well before billing begins. When it does, your founding price stays at $15 a month for life. If your membership ends, the founding price ends with it.")}
+          {freeUntil
+            ? t("founding.lockedDated", "The Flock is free for everyone until {{date}}. After that, your founding price stays at $15 a month for life. If your membership ends, the founding price ends with it.", { date: freeUntil })
+            : t("founding.locked", "The Flock is free for everyone while we're getting started, and we'll tell you well before billing begins. When it does, your founding price stays at $15 a month for life. If your membership ends, the founding price ends with it.")}
         </p>
       </KyaCard>
       <KyaHeading size={21} className="mt-2">{t("founding.perksTitle", "What founding members get")}</KyaHeading>
@@ -241,12 +246,19 @@ function Full() {
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   // ssr: false, so reading the clock here can't cause a hydration mismatch.
-  // No public read of opening day yet, so this stays "full" (see foundingClosed.ts).
-  const which = foundingClosedCase(null);
+  // Opening day comes from flock_settings (getFlockPublicDates): before it's
+  // set, or before it arrives, this is the "not open yet" box.
+  const dates = useFlockPublicDates();
+  const which = foundingClosedCase(dates.opensAt);
+  const freeUntil = freeSeasonEndLabel(dates);
   const title = t("founding.fullTitle", "The Founding 50 is full");
   const body = which === "full"
-    ? t("founding.fullBody", "All 50 founding spots have been claimed. The Flock is free for everyone while we're getting started. Leave your email and we'll let you know when it opens.")
-    : t("founding.fullOpenBody", "All 50 founding spots have been claimed. The Flock is open now, and it's free for everyone while we're getting started.");
+    ? (freeUntil
+      ? t("founding.fullBodyDated", "All 50 founding spots have been claimed. The Flock is free for everyone until {{date}}. Leave your email and we'll let you know when it opens.", { date: freeUntil })
+      : t("founding.fullBody", "All 50 founding spots have been claimed. The Flock is free for everyone while we're getting started. Leave your email and we'll let you know when it opens."))
+    : (freeUntil
+      ? t("founding.fullOpenBodyDated", "All 50 founding spots have been claimed, and the Flock is open now. The Flock is free for everyone until {{date}}.", { date: freeUntil })
+      : t("founding.fullOpenBody", "All 50 founding spots have been claimed. The Flock is open now, and it's free for everyone while we're getting started."));
   return (
     <section className="rounded-[20px] p-5" style={{ background: K.lime, color: K.forest }}>
       <KyaHeading size={22}>{title}</KyaHeading>
@@ -373,6 +385,7 @@ function RegionStep({ source, onBack, onClaimed, onRefused }: {
 
 function Confirmation({ spotNumber, cap }: { spotNumber: number; cap: number }) {
   const { t } = useTranslation();
+  const freeUntil = freeSeasonEndLabel(useFlockPublicDates());
   const navigate = useNavigate();
   const ref = useRef<HTMLParagraphElement>(null);
   useEffect(() => { ref.current?.focus(); }, []);
@@ -387,7 +400,9 @@ function Confirmation({ spotNumber, cap }: { spotNumber: number; cap: number }) 
       <KyaCard className="p-5">
         <KyaHeading size={20}>{t("founding.nextTitle", "What happens next")}</KyaHeading>
         <p className="m-0 mt-2 text-[15px] leading-[1.5]" style={{ color: K.ink }}>
-          {t("founding.next", "We'll email you before the Flock opens. It's free for everyone while we're getting started, and we'll tell you well before billing begins.")}
+          {freeUntil
+            ? t("founding.nextDated", "We'll email you before the Flock opens. The Flock is free for everyone until {{date}}.", { date: freeUntil })
+            : t("founding.next", "We'll email you before the Flock opens. It's free for everyone while we're getting started, and we'll tell you well before billing begins.")}
         </p>
         <p className="m-0 mt-3 text-[14.5px] leading-[1.5]" style={{ color: K.quiet }}>
           {t("founding.nextPrice", "When billing starts, your price is $15 a month, locked in for life. If your membership ends, the founding price ends with it.")}
