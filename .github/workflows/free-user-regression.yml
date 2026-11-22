@@ -191,8 +191,9 @@ jobs:
           PREV_OPEN: ${{ steps.switch.outputs.prev_open }}
         run: |
           [ "$PREV_OPEN" = "t" ] && open=true || open=false
-          psql "$STAGING_DB_URL" -v ON_ERROR_STOP=1 -X -q -v opens="$PREV_OPENS" \
-            -c "update public.flock_settings set flock_opens_at = nullif(:'opens', '')::timestamptz, members_open = $open where id;"
+          # Through stdin: psql fills in :'opens' there, never inside -c.
+          echo "update public.flock_settings set flock_opens_at = nullif(:'opens', '')::timestamptz, members_open = $open where id;" \
+            | psql "$STAGING_DB_URL" -v ON_ERROR_STOP=1 -X -q -v opens="$PREV_OPENS"
           psql "$STAGING_DB_URL" -X -At -c "select 'Staging after: opens_at=' || coalesce(flock_opens_at::text, 'null') || ' members_open=' || members_open from public.flock_settings where id"
 
       # What the page showed when a step failed (Playwright's page snapshot),
