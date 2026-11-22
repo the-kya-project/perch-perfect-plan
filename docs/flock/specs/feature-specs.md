@@ -209,7 +209,13 @@ A buddy pod is a small group of 3 to 6 members working on the same journey, who 
 - A member can be in up to 2 pods at once.
 - Members who have blocked each other are never placed in the same pod.
 - Pod posts are private to the pod, and reporting works the same as anywhere in the Flock.
-- Pods end when the journey ends, with an option to stay together in a "keep going" pod.
+- A "keep going" group counts toward the 2-pods-at-once limit.
+
+**When a pod ends (decided Nov 22)**
+
+- When a member finishes the journey, they stay in the pod to cheer the others on. They see a short "You finished!" message with an option to leave the pod.
+- The pod stays open until every member has finished or left, or until the existing rule closes it (fewer than 2 active members for 3 weeks).
+- When the pod closes, each remaining member is asked "Keep going together?" If at least 2 say yes, the pod continues as a general buddy group that isn't tied to a journey, with the same weekly in-app check-in. Members who say no or don't answer leave quietly.
 
 **Out of scope**
 
