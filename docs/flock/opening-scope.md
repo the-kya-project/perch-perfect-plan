@@ -58,7 +58,7 @@ Status: **scoping only.** Written Nov 21, 2026 from `main` at `d8ec1f8`, read-on
 |---|---|---|---|
 | A. Founding terms and deadline | **Done** | #478, #480, #481, #486; `founding_deadline_checks.sql` | The claimant email draft (Brittany) and Webflow copy. |
 | B. Free-season grant | **Done** | #483, `20261120120000_flock_free_season_join.sql` | Nothing; `flock_join()` exists but nothing calls it until C. |
-| **C. Opening the Flock to members** | **Built, merged dark** | #493, `20261122100000_flock_open_to_members.sql`, `flock_open_checks.sql`, `e2e/free-user/switch-on.spec.ts` | Switched on at opening with `admin_set_flock_members_open(true)`. The dismissible Home card wasn't part of #493 (backlog 1.18a). |
+| **C. Opening the Flock to members** | **Built, merged dark** | #493, `20261122100000_flock_open_to_members.sql`, `flock_open_checks.sql`, `e2e/free-user/switch-on.spec.ts` | Switched on at opening with `admin_set_flock_members_open(true)`. The Community button is the only entry point: no Home invite card (Brittany, Nov 19, 2026). |
 | **D. Member blocking (Apple 1.2)** | **Done** | #489, `20261121100000_flock_member_blocking.sql` (live), `BlockSheet.tsx`, `flock.you.blocked.tsx`, `flock_blocking_checks.sql` | The contact line inside the Flock came with #493 (Flock settings and the community guidelines). |
 | E. Stickiness events | **Done** | #488, `src/lib/flockAnalytics.ts` | `flock_joined` fires once C exists. |
 | F. Gift years and six-month gifts | **Done** | #487 | Nothing. |

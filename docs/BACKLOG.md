@@ -292,17 +292,10 @@ The launch PR itself (1.18) is already merged dark. What's left before opening i
 ### 1.18 The launch PR (PR C): built, merged dark, switched on at opening
 - **Status:** built and merged dark in #493. The switch (`flock_settings.members_open`) is off and opening day isn't set, so only admins can open the Flock. Nothing more to build or merge for it: at opening it's switched on with SQL (step 8 below), after opening day is set and 1.5 is live.
 - **What #493 did:** the "Join the Flock" screen with a required "I'm 18 or older" confirmation and the community guidelines, both stored (`flock_agreements`); `flock_enabled()` true for members once the switch is on; the Community button as the entry point; the free-user regression check asserting nothing changes while it's off, plus a switch-on part that checks what a free account sees and that joining gives exactly one free-season membership.
-- **Not in #493:** the dismissible Home card (1.18a).
+- **The Community button is the only entry point.** No promotional Community invite card on Home or anywhere else for free users: Brittany decided this on Nov 19, 2026, because it feels too salesy. Don't add one back.
 - **Size:** L (done)
 - **Overnight alone:** no
 - **Needs Brittany:** switching it on is the launch decision.
-
-### 1.18a The dismissible Home card for the Flock
-- **Done means:** one dismissible card on Home invites people who aren't members to join the Flock, opening the join step (`/flock/join?source=care_app`). It shows only when `flock_enabled()` is true and the person hasn't joined, so nothing changes for free users while the members switch is off; once dismissed it stays dismissed. The free-user regression check's switch-on part asserts it, and the off-state steps still assert it's absent.
-- **Size:** S
-- **Depends on:** 1.18 (merged)
-- **Overnight alone:** yes
-- **Needs Brittany:** the card's wording (before-and-after in the PR).
 
 ### 1.5 Legal pages
 - **Done means:** `/terms` and `/privacy` carry Brittany's approved community, billing and age text (from `docs/legal/drafts/2026-11-flock-legal-update.md`). The post-deletion wording goes live only once 1.3 has.
