@@ -212,7 +212,7 @@ Costs are **estimates**, projected from today's 62 accounts. "Session" = one foc
 
 ## B6. Every unfinished item as PRs
 
-**"Needs Brittany"** is always yes for anything involving payments or real money, email or push to real users, care-app database changes, vet-reviewed content, legal text, or copy she approves. **"Overnight alone"** means an agent can build it to a reviewable PR without a decision partway through (Brittany still reviews and merges). Sizes: S = under one session, M = one, L = two to three, XL = four or more.
+**"Needs Brittany"** is always yes for anything involving payments or real money, email or push to real users, care-app database changes, vet-reviewed content, legal text, or copy she approves. **"Overnight alone"** means an agent can build it to a reviewable PR without a decision partway through (the agent merges it itself only when CLAUDE.md's merge rules all pass; otherwise it holds it for Brittany). Sizes: S = under one session, M = one, L = two to three, XL = four or more.
 
 ### Track 0: housekeeping (now)
 
