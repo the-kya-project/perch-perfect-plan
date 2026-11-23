@@ -1,5 +1,6 @@
 /**
- * The 180-day purge of deleted Flock posts and comments (backlog 1.3).
+ * The 180-day purge of deleted Flock posts and comments (backlog 1.3), and of
+ * removed content and closed reports (backlog 1.4).
  *
  *   npm run test:flock-purge
  *
@@ -115,6 +116,47 @@ await check("works through many batches and says when more are waiting", async (
   const r2 = await runFlockPurge(capped.deps, { batch: 10, maxBatches: 2 });
   assert.equal(r2.purged, 20);
   assert.equal(r2.more, true);
+});
+
+await check("removed content is moved into the purge first, so the same run removes it (1.4)", async () => {
+  const f = fake([], [photo(1, 1)]);
+  const order: string[] = [];
+  f.deps.expire = async (dry) => {
+    order.push(`expire:${dry}`);
+    // What flock_moderation_purge does: the removed post becomes a due item.
+    f.rows.set("removed-post", { item_id: "removed-post", paths: [photo(1, 1)] });
+    return { posts: 1, comments: 2, reports: 4 };
+  };
+  const due = f.deps.due;
+  f.deps.due = async (limit) => { order.push("due"); return due(limit); };
+  const r = await runFlockPurge(f.deps);
+  assert.deepEqual(order.slice(0, 2), ["expire:false", "due"]);
+  assert.deepEqual(r.removed, { posts: 1, comments: 2, reports: 4 });
+  assert.equal(r.purged, 1);
+  assert.equal(f.bucket.size, 0);
+});
+
+await check("a dry run only counts removed content and old reports", async () => {
+  const f = fake([], []);
+  let asked: boolean | null = null;
+  f.deps.expire = async (dry) => { asked = dry; return { posts: 3, comments: 0, reports: 1 }; };
+  const r = await runFlockPurge(f.deps, { dryRun: true });
+  assert.equal(asked, true);
+  assert.deepEqual(r.removed, { posts: 3, comments: 0, reports: 1 });
+  assert.deepEqual(f.calls, []);
+});
+
+await check("a failing expire stops the run before anything is deleted", async () => {
+  const f = fake([{ item_id: "a", paths: [photo(1, 1)] }], [photo(1, 1)]);
+  f.deps.expire = async () => { throw new Error("flock_moderation_purge: boom"); };
+  await assert.rejects(runFlockPurge(f.deps), /boom/);
+  assert.deepEqual(f.calls, []);
+  assert.equal(f.rows.size, 1);
+});
+
+await check("without expire, nothing about removed content is reported", async () => {
+  const r = await runFlockPurge(fake([], []).deps);
+  assert.deepEqual(r.removed, { posts: 0, comments: 0, reports: 0 });
 });
 
 await check("held photos count as referenced for the storage-orphans sweep", () => {

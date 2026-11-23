@@ -630,6 +630,11 @@ Format:
 - **To change it:** <what would need to change>
 ```
 
+### [#534](https://github.com/the-kya-project/perch-perfect-plan/pull/534) · 1.4 Removed content and closed reports are deleted after 180 days
+- **Decision:** What counts: posts and comments a reviewer removed ("Remove it" in the review queue), timed from the removal (`flock_moderation.updated_at`), and reports closed as kept or removed, timed from `resolved_at`. Removed content goes through 1.3's hold, already due, so the same daily run deletes its photos with 1.3's rules (a photo still used elsewhere is kept, and a failed delete waits a day). The comments under a removed post, and the replies under a removed comment, go with it. Left out: removed journey updates (asked in Held), Do good posts a reviewer declined (a review result, not a removal; they stay visible to their author only), content still waiting for review, and open reports.
+- **Why:** D9 says "content removed by reviewers, and reports, are kept for 180 days, then deleted"; the item says "closed reports" and "180 days after they were resolved". Reusing 1.3's hold means a single path deletes Flock photos.
+- **To change it:** `private.flock_moderation_purge` in `20261123193000_flock_removed_purge.sql` (a new migration); the hold is `private.flock_removed_hold()`.
+
 ### [#521](https://github.com/the-kya-project/perch-perfect-plan/pull/521) · D1.1 Weight baseline rules
 - **Decision:** How the normal is worked out. It's the median (not the average) of the bird's weigh-ins of the same kind (before a meal, after a meal, not labeled) from the last 90 days, **leaving out the last 7 days**, and the range is the 10th to 90th percentile of those. "Still learning" counts only those weigh-ins, so a bird that's weighed regularly gets its normal about three weeks after its first weigh-in, not two.
 - **Why:** the median ignores one odd reading (a dish left on the scale); leaving out the last week keeps a drop that's happening now from pulling the normal down with it, which would hide a slow decline.
@@ -937,6 +942,12 @@ Format:
 ### <PR link> · <item ID> <item title>
 - **Needs:** <the decision, approval or read, in one or two lines>
 ```
+
+### [#534](https://github.com/the-kya-project/perch-perfect-plan/pull/534) · 1.4 Removed content and closed reports are deleted after 180 days
+- **Needs:** (1) your approval of the deletion: once merged, the daily purge deletes posts and comments a reviewer removed 180+ days ago, with their photos and the comments under them, and reports closed 180+ days ago. Production has none of either today (checked read-only: 0 removed, 0 reports), so nothing would be deleted yet. (2) Your call on removed journey updates: they still show to the bird's household, so this PR leaves them (and their clips) alone. Say whether they should be deleted after 180 days too, which takes them out of the household's journey and needs the clip deleted from Cloudflare.
+
+### [#521](https://github.com/the-kya-project/perch-perfect-plan/pull/521) · D1.1 Weight baseline · conflicts with `main` in `package.json`
+- **Needs:** "Update branch" (or a merge of `main`). It conflicts with `main` in `package.json` as well as the record files, so the 14:05 EST run left it as it is. Runs only resolve conflicts in the three record files.
 
 ### [#521](https://github.com/the-kya-project/perch-perfect-plan/pull/521) · D1.1 Weight baseline rules and a replay of real history
 - **Needs:** (1) your read of the health rules: every number is new and draft, in `WEIGHT_BASELINE_RULES`, with the choices listed under "Decisions agents made"; (2) the replay of real history, which you run: the export query is `docs/reports/weight-history-export.sql` (read-only, no names), then `npm run weight-baseline:replay -- <the file>` (the hourly job can't run it); your read of the results is what D1.2 waits on; (3) whether the owner's typed normal weight should override the learned one; (4) optionally, `npm run test:weight-baseline` in a CI workflow (the runs' token can't push workflow changes). Then your merge.

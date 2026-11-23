@@ -17,7 +17,7 @@ declare
   hh  uuid := gen_random_uuid();  -- household on m1's birds
   b1  uuid := gen_random_uuid();
   p_learn uuid; p_good uuid; p_good2 uuid; p_good3 uuid; p_chap uuid; p_tx uuid; c1 uuid; c2 uuid;
-  jc uuid; jp uuid; u2 uuid;
+  jc uuid; jp uuid; u2 uuid; c_on_removed uuid; c_reply uuid; n_old int;
   passed int := 0; failed text[] := '{}';
   ok boolean; n int; denied boolean; r record;
 begin
@@ -304,6 +304,92 @@ begin
   ok := ok and denied;
   reset role;
   if ok then passed := passed + 1; else failed := array_append(failed, 'chapter reviewers see their chapter only'); end if;
+
+  -- 12) Removed content and closed reports are deleted 180 days after they
+  --     were resolved (backlog 1.4, legal draft D9), by the daily purge:
+  --     flock_moderation_purge moves removed posts and comments (with the
+  --     comments under them) into the 1.3 hold, already due, and deletes old
+  --     closed reports. Service role only; nothing goes early; a dry run
+  --     changes nothing; removed journey updates, content waiting for review
+  --     and recent closed reports stay; running it again does nothing.
+  -- State so far: p_learn removed (3 closed reports), c1 and p_chap hidden
+  -- (1 open report each), u2 hidden (1 open report).
+  insert into public.flock_comments (subject_type, subject_id, author_id, body, photo_path)
+  values ('post', p_learn, m2, 'Under the removed post.', m2::text || '/' || gen_random_uuid()::text || '.jpg')
+  returning id into c_on_removed;
+  insert into public.flock_comments (subject_type, subject_id, parent_id, reply_to_user, author_id, body)
+  values ('post', p_good, c1, m1, m3, 'A reply under the comment that gets removed.')
+  returning id into c_reply;
+  perform set_config('request.jwt.claims', json_build_object('sub', ad, 'role', 'authenticated')::text, true);
+  set local role authenticated;
+  perform public.flock_resolve_report('comment', c1, 'remove', null);
+  perform public.flock_resolve_report('journey_update', u2, 'remove', null);
+  perform public.flock_resolve_report('post', p_chap, 'keep', null);
+  reset role;
+
+  ok := true;
+  for n in 1..2 loop
+    perform set_config('request.jwt.claims', json_build_object('sub', (array[m2, ad])[n], 'role', 'authenticated')::text, true);
+    set local role authenticated;
+    denied := false; begin perform * from public.flock_moderation_purge(true); exception when insufficient_privilege then denied := true; end; ok := ok and denied;
+    reset role;
+  end loop;
+  -- Resolved just now: nothing is due.
+  set local role service_role;
+  select * into r from public.flock_moderation_purge(false);
+  reset role;
+  ok := ok and r.posts = 0 and r.comments = 0 and r.reports = 0
+    and exists (select 1 from public.flock_posts where id = p_learn)
+    and exists (select 1 from public.flock_comments where id = c1)
+    and (select count(*) from public.flock_reports where subject_id in (p_learn, c1, u2, p_chap) and resolved_at is not null) = 6;
+  if ok then passed := passed + 1; else failed := array_append(failed, 'removed-content purge: service role only, nothing early'); end if;
+
+  -- 181 days later for p_learn, c1 and u2 (p_chap's kept report stays recent).
+  update public.flock_moderation set updated_at = now() - interval '181 days' where subject_id in (p_learn, c1, u2);
+  update public.flock_reports set resolved_at = now() - interval '181 days' where subject_id in (p_learn, c1, u2);
+  select count(*) into n_old from public.flock_reports where subject_id in (p_learn, c1, u2);
+  set local role service_role;
+  select * into r from public.flock_moderation_purge(true);
+  reset role;
+  ok := r.posts = 1 and r.comments = 1 and r.reports = n_old and n_old = 5
+    and exists (select 1 from public.flock_posts where id = p_learn)
+    and exists (select 1 from public.flock_moderation where subject_id = p_learn)
+    and (select count(*) from public.flock_reports where subject_id in (p_learn, c1, u2)) = 5
+    and not exists (select 1 from public.flock_deleted_items where original_id in (p_learn, c1));
+  if ok then passed := passed + 1; else failed := array_append(failed, 'removed-content purge: a dry run only counts'); end if;
+
+  set local role service_role;
+  select * into r from public.flock_moderation_purge(false);
+  reset role;
+  ok := r.posts = 1 and r.comments = 1 and r.reports = 5
+    -- Gone from the live tables, with the comments under them.
+    and not exists (select 1 from public.flock_posts where id = p_learn)
+    and not exists (select 1 from public.flock_comments where id in (c1, c_on_removed, c_reply))
+    -- Held exactly as a delete holds them, already due.
+    and exists (select 1 from public.flock_deleted_items d where d.kind = 'post' and d.original_id = p_learn and d.author_id = m1
+                  and d.held_with is null and d.row_data->>'status' = 'removed' and d.purge_after <= now())
+    and exists (select 1 from public.flock_deleted_items d where d.original_id = c_on_removed and d.author_id = m2
+                  and d.held_with = (select h.id from public.flock_deleted_items h where h.original_id = p_learn)
+                  and cardinality(d.photo_paths) = 1)
+    and exists (select 1 from public.flock_deleted_items d where d.kind = 'comment' and d.original_id = c1 and d.held_with is null and d.purge_after <= now())
+    and exists (select 1 from public.flock_deleted_items d where d.original_id = c_reply
+                  and d.held_with = (select h.id from public.flock_deleted_items h where h.original_id = c1))
+    -- Their moderation rows and old closed reports are gone.
+    and not exists (select 1 from public.flock_moderation where subject_id in (p_learn, c1))
+    and not exists (select 1 from public.flock_reports where subject_id in (p_learn, c1, u2))
+    -- Left as they are: the removed journey update, p_chap's recent closed report.
+    and exists (select 1 from public.journey_updates where id = u2)
+    and exists (select 1 from public.flock_moderation where subject_type = 'journey_update' and subject_id = u2 and state = 'removed')
+    and (select count(*) from public.flock_reports where subject_id = p_chap and resolved_at is not null) = 1
+    and exists (select 1 from public.flock_posts where id = p_chap);
+  -- The same run's purge picks them up, and a second run does nothing.
+  set local role service_role;
+  ok := ok and (select count(*) from public.flock_purge_due(500) d join public.flock_deleted_items i on i.id = d.item_id
+                where i.original_id in (p_learn, c_on_removed, c1, c_reply)) = 4;
+  select * into r from public.flock_moderation_purge(false);
+  reset role;
+  ok := ok and r.posts = 0 and r.comments = 0 and r.reports = 0;
+  if ok then passed := passed + 1; else failed := array_append(failed, 'removed-content purge after 180 days'); end if;
 
   raise exception 'FLOCK MODERATION CHECKS: % passed, % failed%', passed, coalesce(array_length(failed, 1), 0),
     case when array_length(failed, 1) > 0 then ': ' || array_to_string(failed, ', ') else '' end;
