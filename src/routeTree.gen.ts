@@ -50,6 +50,7 @@ import { Route as SitterTokenRouteRouteImport } from './routes/sitter/$token/rou
 import { Route as AuthenticatedAccountIndexRouteImport } from './routes/_authenticated/account.index'
 import { Route as AuthenticatedAccountEmergencyRouteImport } from './routes/_authenticated/account.emergency'
 import { Route as AuthenticatedAccountSecurityRouteImport } from './routes/_authenticated/account.security'
+import { Route as AuthenticatedAdminCrewRouteImport } from './routes/_authenticated/admin.crew'
 import { Route as AuthenticatedAdminFoundingRouteImport } from './routes/_authenticated/admin.founding'
 import { Route as AuthenticatedAdminGiftsRouteImport } from './routes/_authenticated/admin.gifts'
 import { Route as AuthenticatedAdminIdeasRouteImport } from './routes/_authenticated/admin.ideas'
@@ -370,6 +371,11 @@ const AuthenticatedAccountSecurityRoute =
     path: '/security',
     getParentRoute: () => AuthenticatedAccountRoute,
   } as any)
+const AuthenticatedAdminCrewRoute = AuthenticatedAdminCrewRouteImport.update({
+  id: '/admin/crew',
+  path: '/admin/crew',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedAdminFoundingRoute =
   AuthenticatedAdminFoundingRouteImport.update({
     id: '/admin/founding',
@@ -1027,6 +1033,7 @@ export interface FileRoutesByFullPath {
   '/gift/': typeof GiftIndexRoute
   '/account/emergency': typeof AuthenticatedAccountEmergencyRoute
   '/account/security': typeof AuthenticatedAccountSecurityRoute
+  '/admin/crew': typeof AuthenticatedAdminCrewRoute
   '/admin/founding': typeof AuthenticatedAdminFoundingRoute
   '/admin/gifts': typeof AuthenticatedAdminGiftsRoute
   '/admin/ideas': typeof AuthenticatedAdminIdeasRoute
@@ -1171,6 +1178,7 @@ export interface FileRoutesByTo {
   '/gift': typeof GiftIndexRoute
   '/account/emergency': typeof AuthenticatedAccountEmergencyRoute
   '/account/security': typeof AuthenticatedAccountSecurityRoute
+  '/admin/crew': typeof AuthenticatedAdminCrewRoute
   '/admin/founding': typeof AuthenticatedAdminFoundingRoute
   '/admin/gifts': typeof AuthenticatedAdminGiftsRoute
   '/admin/ideas': typeof AuthenticatedAdminIdeasRoute
@@ -1320,6 +1328,7 @@ export interface FileRoutesById {
   '/gift/': typeof GiftIndexRoute
   '/_authenticated/account/emergency': typeof AuthenticatedAccountEmergencyRoute
   '/_authenticated/account/security': typeof AuthenticatedAccountSecurityRoute
+  '/_authenticated/admin/crew': typeof AuthenticatedAdminCrewRoute
   '/_authenticated/admin/founding': typeof AuthenticatedAdminFoundingRoute
   '/_authenticated/admin/gifts': typeof AuthenticatedAdminGiftsRoute
   '/_authenticated/admin/ideas': typeof AuthenticatedAdminIdeasRoute
@@ -1471,6 +1480,7 @@ export interface FileRouteTypes {
     | '/gift/'
     | '/account/emergency'
     | '/account/security'
+    | '/admin/crew'
     | '/admin/founding'
     | '/admin/gifts'
     | '/admin/ideas'
@@ -1615,6 +1625,7 @@ export interface FileRouteTypes {
     | '/gift'
     | '/account/emergency'
     | '/account/security'
+    | '/admin/crew'
     | '/admin/founding'
     | '/admin/gifts'
     | '/admin/ideas'
@@ -1763,6 +1774,7 @@ export interface FileRouteTypes {
     | '/gift/'
     | '/_authenticated/account/emergency'
     | '/_authenticated/account/security'
+    | '/_authenticated/admin/crew'
     | '/_authenticated/admin/founding'
     | '/_authenticated/admin/gifts'
     | '/_authenticated/admin/ideas'
@@ -2206,6 +2218,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/account/security'
       preLoaderRoute: typeof AuthenticatedAccountSecurityRouteImport
       parentRoute: typeof AuthenticatedAccountRoute
+    }
+    '/_authenticated/admin/crew': {
+      id: '/_authenticated/admin/crew'
+      path: '/admin/crew'
+      fullPath: '/admin/crew'
+      preLoaderRoute: typeof AuthenticatedAdminCrewRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/admin/founding': {
       id: '/_authenticated/admin/founding'
@@ -3195,6 +3214,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedTodayRoute: typeof AuthenticatedTodayRoute
   AuthenticatedUpdatesRoute: typeof AuthenticatedUpdatesRoute
   AuthenticatedWelcomeRoute: typeof AuthenticatedWelcomeRoute
+  AuthenticatedAdminCrewRoute: typeof AuthenticatedAdminCrewRoute
   AuthenticatedAdminFoundingRoute: typeof AuthenticatedAdminFoundingRoute
   AuthenticatedAdminGiftsRoute: typeof AuthenticatedAdminGiftsRoute
   AuthenticatedAdminIdeasRoute: typeof AuthenticatedAdminIdeasRoute
@@ -3229,6 +3249,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedTodayRoute: AuthenticatedTodayRoute,
   AuthenticatedUpdatesRoute: AuthenticatedUpdatesRoute,
   AuthenticatedWelcomeRoute: AuthenticatedWelcomeRoute,
+  AuthenticatedAdminCrewRoute: AuthenticatedAdminCrewRoute,
   AuthenticatedAdminFoundingRoute: AuthenticatedAdminFoundingRoute,
   AuthenticatedAdminGiftsRoute: AuthenticatedAdminGiftsRoute,
   AuthenticatedAdminIdeasRoute: AuthenticatedAdminIdeasRoute,

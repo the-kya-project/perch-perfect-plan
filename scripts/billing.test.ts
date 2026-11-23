@@ -3,7 +3,8 @@
  * (Stripe's own library, a throwaway secret), plan and status mapping, the
  * first-charge rule, the card step's states, and the webhook handler run on
  * fixture events with a fake Stripe and database: idempotency, event order,
- * accounts, and what it ignores.
+ * accounts, and what it ignores. Kya's Crew (backlog 1.15): its plans, 25%
+ * giving and no trial.
  *
  *   npm run test:billing
  *
@@ -16,8 +17,9 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import Stripe from "stripe";
 import {
-  billingEnabled, cardStep, checkoutPlan, entitlementStatus, firstCharge, liveSubscription, MIN_TRIAL_LEAD_MS,
-  planForPrice, subscriptionRow, type BillingPrices, type BillingState, type SubscriptionLike, type SubscriptionRow,
+  BILLING_CHOICES, billingEnabled, cardStep, CHECKOUT_CHOICES, checkoutPlan, entitlementStatus, firstCharge, givingRate, isCrewPlan,
+  liveSubscription, MIN_TRIAL_LEAD_MS, planForPrice, planGetsTrial, subscriptionRow,
+  type BillingPrices, type BillingState, type SubscriptionLike, type SubscriptionRow,
 } from "@/lib/billing";
 import { handleBillingEvent, subscriptionIdOf, type BillingDeps, type BillingEventLike } from "@/lib/billingWebhook";
 
@@ -327,6 +329,57 @@ await check("unrelated events are acknowledged without a read or a claim", async
   assert.equal(r.handled, "ignored");
   assert.equal(f.retrieved, 0);
   assert.equal(f.events.size, 0);
+});
+
+// ── Kya's Crew (backlog 1.15) ──────────────────────────────────────────────
+const CREW_PRICES: BillingPrices = { ...PRICES, crew_monthly: "price_crew_monthly", crew_annual: "price_crew_yearly" };
+await check("Crew prices map to the two Crew plans; unset ones match nothing", () => {
+  assert.equal(planForPrice("price_crew_monthly", CREW_PRICES), "crew_monthly");
+  assert.equal(planForPrice("price_crew_yearly", CREW_PRICES), "crew_annual");
+  assert.equal(planForPrice("price_crew_monthly", PRICES), null);
+  assert.equal(planForPrice("price_monthly", CREW_PRICES), "monthly", "the regular plans still map");
+});
+await check("Crew gives 25%, every other membership 20%", () => {
+  assert.equal(givingRate("crew_monthly"), 0.25);
+  assert.equal(givingRate("crew_annual"), 0.25);
+  for (const p of ["founding", "monthly", "annual"] as const) assert.equal(givingRate(p), 0.2);
+});
+await check("Crew is its own plan at checkout, founders included; founders' claims stay as they are", () => {
+  assert.equal(checkoutPlan("crew_monthly", false), "crew_monthly");
+  assert.equal(checkoutPlan("crew_annual", false), "crew_annual");
+  assert.equal(checkoutPlan("crew_annual", true), "crew_annual");
+  assert.equal(checkoutPlan("monthly", true), "founding", "the founding rule is unchanged");
+});
+await check("no trial for Crew or founders; the card step's choices are unchanged", () => {
+  assert.equal(planGetsTrial("crew_monthly"), false);
+  assert.equal(planGetsTrial("crew_annual"), false);
+  assert.equal(planGetsTrial("founding"), false);
+  assert.equal(planGetsTrial("monthly"), true);
+  assert.equal(planGetsTrial("annual"), true);
+  assert.deepEqual([...BILLING_CHOICES], ["monthly", "annual"], "the card step offers no Crew tile yet");
+  assert.deepEqual([...CHECKOUT_CHOICES], ["monthly", "annual", "crew_monthly", "crew_annual"]);
+  assert.ok(isCrewPlan("crew_monthly") && !isCrewPlan("monthly") && !isCrewPlan(null));
+});
+await check("checkout accepts the Crew choices; the Crew price env vars are read", () => {
+  const fns = readFileSync("src/lib/billing.functions.ts", "utf8");
+  assert.match(fns, /z\.enum\(CHECKOUT_CHOICES\)/);
+  const srv = readFileSync("src/lib/stripe.server.ts", "utf8");
+  assert.match(srv, /STRIPE_PRICE_CREW_MONTHLY\) prices\.crew_monthly/);
+  assert.match(srv, /STRIPE_PRICE_CREW_YEARLY\) prices\.crew_annual/);
+});
+await check("a paid Crew subscription is recorded as Crew", async () => {
+  const f = fakeDeps({ sub_c: sub({ id: "sub_c", status: "active", trial_end: null, price: "price_crew_yearly" }) });
+  f.deps.prices = CREW_PRICES;
+  const r = await handleBillingEvent(ev("evt_c", "invoice.paid", { id: "in_c", parent: { subscription_details: { subscription: "sub_c" } } }), f.deps);
+  assert.deepEqual(r, { handled: "recorded", subscription: "sub_c", plan: "crew_annual", status: "active" });
+  assert.equal(f.rows[0].row.plan, "crew_annual");
+});
+await check("the migration widens the plan check, records giving and adds one seat per Crew subscription", () => {
+  const sql = readFileSync("supabase/migrations/20261123203000_kyas_crew.sql", "utf8");
+  assert.match(sql, /'crew_monthly', 'crew_annual'\)\);/);
+  assert.match(sql, /when p_plan in \('crew_monthly', 'crew_annual'\) then 0\.25 else 0\.20/);
+  assert.match(sql, /on conflict \(subscription_ref\) do nothing/);
+  assert.match(sql, /p_status = 'active'/);
 });
 
 // ── Native app and free-season rows ────────────────────────────────────────

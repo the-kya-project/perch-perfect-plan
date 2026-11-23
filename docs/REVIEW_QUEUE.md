@@ -19,6 +19,24 @@ Format:
   - After: "<new wording>"
 ```
 
+### [#535](https://github.com/the-kya-project/perch-perfect-plan/pull/535) · 1.15 Kya's Crew (held, not merged)
+All new, on the admin-only `/admin/crew` page (English only, like the other admin pages).
+- **Where:** page title and heading
+  - Before: new
+  - After: "Kya's Crew seats — Kya & Co." / "Kya's Crew seats"
+- **Where:** the line under the heading
+  - Before: new
+  - After: "{n} Crew members · {n} sponsored · {n} used · {n} available"
+- **Where:** the rules line
+  - Before: new
+  - After: "Kya's Crew is $37 a month billed annually ($444 a year) or $45 month to month, with everything in a Flock membership and 25% to rescue and conservation partners. Each Crew membership sponsors six months in the Flock for a new rescue adopter, once its first payment goes through. A seat stays sponsored when the membership ends."
+- **Where:** the warning when seats run out
+  - Before: new
+  - After: "More seats have been used than Crew members have sponsored ({n} over). Rescue adopters still get in."
+- **Where:** the Seats card and table
+  - Before: new
+  - After: "Seats", "Sponsored", "Used", "Available", "Crew members now"; columns "Sponsored", "Seat", "Crew plan", "Sponsor still in the Crew"; "{n} months", "Monthly", "Yearly", "Yes", "No"; empty: "No seats sponsored yet."; error: "Couldn't load Crew seats: {message}"
+
 ### [#529](https://github.com/the-kya-project/perch-perfect-plan/pull/529) · 1.8 Do good voting (shared donation)
 Every voting line as merged, all new to the live app. Nobody but admins sees them while the Flock is closed. The member wording follows Brittany's approved mockups. The founders-only lines and "See your vote" are agent wording the mockups don't cover.
 - **Where:** `flock.votes.adminCounts_one`
@@ -630,6 +648,36 @@ Format:
 - **To change it:** <what would need to change>
 ```
 
+### [#535](https://github.com/the-kya-project/perch-perfect-plan/pull/535) · 1.15 Kya's Crew (switched off)
+- **Decision:** "No trial" means Crew never gets the 14-day trial planned for after the free season (6f, not built). During the free season a Crew card goes on at $0 until the season's end, like every membership; after it, Crew is charged the day the card goes on.
+- **Why:** the Flock is "free for everyone" until the season's end, and Crew "includes everything in a Flock membership". The $0 period is the free season, not a trial. Asked in the PR in case you meant Crew to be charged at once.
+- **To change it:** in `startBillingCheckout` (`src/lib/billing.functions.ts`), drop `trial_end` for `isCrewPlan(plan)`; `planGetsTrial` in `src/lib/billing.ts` is where 6f's trial must skip Crew.
+
+### [#535](https://github.com/the-kya-project/perch-perfect-plan/pull/535) · 1.15 Kya's Crew (switched off)
+- **Decision:** One six-month seat per Crew subscription, added the first time it's recorded as active (its first payment went through), never a second for the same subscription. Renewals add none. A seat stays when the membership ends or the account is deleted. A regular member who switches the same subscription to Crew sponsors a seat at that point.
+- **Why:** the spec says "each Crew member sponsors six months"; once per membership is the narrowest reading, and a seat is only counted once it's paid for. Asked in the PR whether a yearly renewal should add another.
+- **To change it:** the `crew_sponsorships` insert at the end of `billing_record_stripe_subscription` (a new migration).
+
+### [#535](https://github.com/the-kya-project/perch-perfect-plan/pull/535) · 1.15 Kya's Crew (switched off)
+- **Decision:** A founder who picks Crew gets Crew, not the founding price, and their founding claim is left as it is (not released or forfeited).
+- **Why:** Crew is its own plan above the Flock's price. Forfeiting a founding spot is only for a founding membership that ends.
+- **To change it:** `checkoutPlan` in `src/lib/billing.ts`.
+
+### [#535](https://github.com/the-kya-project/perch-perfect-plan/pull/535) · 1.15 Kya's Crew (switched off)
+- **Decision:** Giving is recorded as a rate on each Stripe row (`entitlements.giving_rate`, 0.25 for Crew and 0.20 for the other plans, like `gift_purchases.giving_rate`), not as amounts. Rows billing doesn't write keep it empty.
+- **Why:** nothing records what members pay yet. The rate is what the spec asks to record, and amounts can be added when invoices are stored.
+- **To change it:** `private.membership_giving_rate` (a new migration) and `givingRate` in `src/lib/billing.ts` together.
+
+### [#535](https://github.com/the-kya-project/perch-perfect-plan/pull/535) · 1.15 Kya's Crew (switched off)
+- **Decision:** The admin view is a new page, `/admin/crew` (admins only, English, like `/admin/gifts`): seats sponsored, used and available, Crew members now, a red line when more seats are used than sponsored, and each seat's date, Crew plan and whether the sponsor is still in the Crew. No names or emails. Nothing links to it yet. Seats given are a separate table, `crew_seat_uses`, which only 1.16 will write.
+- **Why:** the item asks for "an admin view of seats sponsored and used" and 1.16 for a warning below zero. There's no mockup, so it follows the existing admin list pages.
+- **To change it:** `src/routes/_authenticated/admin.crew.tsx`.
+
+### [#535](https://github.com/the-kya-project/perch-perfect-plan/pull/535) · 1.15 Kya's Crew (switched off)
+- **Decision:** No Crew products for the App Store yet, and no Crew tile on the card step. Checkout accepts `crew_monthly` and `crew_annual`; nothing in the app sends them.
+- **Why:** iPhone purchases come with the launch build (RevenueCat), and the card step has no Crew design. #533 is redesigning that screen.
+- **To change it:** add Crew to the card step once there's a design (`CHECKOUT_CHOICES` is ready).
+
 ### [#531](https://github.com/the-kya-project/perch-perfect-plan/pull/531) · 2.4 Open pages fetch the new build's files after a release
 - **Decision:** The pin is dropped before **every** update reload: the version check's (cache-busted address) and the service worker's (a plain reload, as before). The startup guard's reset after a missing code file, and the error screen's hard reset, are left as they are. The unpin waits at most 3 seconds; if it fails or times out (offline, or a page whose pinned build is older than this PR and has no `/api/public/unpin`), the page reloads anyway, exactly as it does today. The address is POST only, so a link or prefetch can never unpin anyone.
 - **Why:** the item says "when an update is ready, the app clears its own pin and reloads", which covers both kinds of update. The resets aren't updates, and they already reload with the worker and caches cleared. The 3-second limit is the reference branch's.
@@ -917,6 +965,12 @@ Format:
 ### <PR link> · <item ID> <item title>
 - **Needs:** <the decision, approval or read, in one or two lines>
 ```
+
+### [#535](https://github.com/the-kya-project/perch-perfect-plan/pull/535) · 1.15 Kya's Crew and its sponsored rescue-adopter seat (switched off)
+- **Needs:** (1) your approval of the `entitlements` plan check change (adds `crew_monthly`, `crew_annual`) and the new `giving_rate` column; it's a payments change, so it's held either way. (2) Three answers, in the PR: should a Crew member who joins during the free season pay right away instead of $0 until its end; does a Crew membership sponsor one seat in total or one per year it renews; and where members pick Crew (no mockup shows it, so no card step offers it yet). (3) The two Crew prices in Stripe test mode and `STRIPE_PRICE_CREW_MONTHLY` / `STRIPE_PRICE_CREW_YEARLY`, when you're ready; nothing in Stripe was touched.
+
+### [#521](https://github.com/the-kya-project/perch-perfect-plan/pull/521) · D1.1 Weight baseline · conflicts with `main` in `package.json`
+- **Needs:** "Update branch" (or a merge of `main`). It conflicts with `main` in `package.json` as well as the three record files, so runs leave it as it is (they only resolve conflicts in the record files). Noted again by the 15:31 EST run, because the 14:05 EST note is only on #534's branch.
 
 ### [#531](https://github.com/the-kya-project/perch-perfect-plan/pull/531) · 2.4 Open pages fetch the new build's files after a release
 - **Needs:** your merge. It changes how every open page moves onto a new release (a short POST to `/api/public/unpin` before the reload), so a run can't merge it. No Vercel setting changes. The hands-on proof is 2.5's Simulator check (leave the app open across a release, then open the sitter preview).
