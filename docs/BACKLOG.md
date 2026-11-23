@@ -22,21 +22,12 @@ Where these items came from, with the detail behind each: `docs/flock/opening-sc
 
 ## Ready to build
 
-### D1.1 Weight baseline rules and a replay of real history
-- **Done means:**
-  - A pure function works out each bird's own normal weight by meal state (before a meal, after a meal, or not labeled). It shows "still learning" until there are at least 7 weigh-ins over at least 14 days, and returns the alert tier: "worth watching", "keep an eye on this" or "call your vet today".
-  - It also covers the free hard weight-loss safety alert. Every number comes from the settings file (1.2), marked draft, using the most conservative research values (`docs/flock/opening-scope.md` B4).
-  - A replay script runs the function over an exported copy of real weight history and reports how often each tier would have fired, per bird.
-- **Size:** M
-- **Depends on:** 1.2
-- **Overnight alone:** yes (the export of real history is a one-time read-only query Brittany runs or approves)
-- **Needs Brittany:** health content; the replay results before D1.2.
 
 ### D1.2 Weight baseline on the weight page, in shadow mode
 - **Done means:** the weight page shows the range and "still learning", a small celebration when the baseline is learned, and the alert cards. Everything is behind its own switch, on for Brittany's account only. Would-be alerts are logged to a new table nobody else sees, so they can be checked against what actually happened.
 - **Approved (Brittany, Nov 22, 2026):** the shadow-log table. It only adds a new table, on for her account only.
 - **Size:** L
-- **Depends on:** D1.1, and Brittany's read of its replay results
+- **Depends on:** D1.1 (#521), and Brittany's read of its replay results
 - **Overnight alone:** yes (built to a held PR)
 - **Needs Brittany:** hold the PR. The health wording goes in the review queue and the vet packet. Ask in the PR whether the log covers only her birds or every bird: this item used to say every bird, and her approval says on for her account only. Until she answers, log her birds only.
 
@@ -321,6 +312,7 @@ The launch PR itself (1.18) is already merged dark. What's left before opening i
 - **1.3** Deleting a post or comment moves it, with the comments under it, into `flock_deleted_items`, so it's hidden from everyone at once, the author included. The daily job `flock-deleted-purge-daily` (`/api/public/hooks/flock-purge`) deletes it and its photos for good 180 days later. Deleting an account removes its held items at once. Pinned in `supabase/checks/flock_posts_checks.sql` and `npm run test:flock-purge`. Approved and merged by Brittany (Nov 23, 2026): #522.
 - **D2.1** Home shows the day's card from the seasonal calendar (D3) under the Today list: the reader's own date, read after the page loads; their language; US or Dutch holidays from the account's home time zone. Behind its own switch, `today_cards` in `public.care_features` (off / admins / everyone). Redesigned Nov 23 with illustrations, tints, labels, an end date and a per-account "Got it" (`public.today_card_dismissals`). Pinned by `npm run test:today-card`, `supabase/checks/care_features_checks.sql` and `supabase/checks/today_card_dismissals_checks.sql`. Approved and merged by Brittany: #523. Switched on for everyone on Nov 23, 2026: for admins at 12:08 PM Eastern, where Brittany checked the card on her own account, then for everyone at 12:09 PM Eastern. Brittany decided to skip the before-and-after Home screenshots this item called for before going to everyone.
 - **2.3** Every open production page (not a frame) asks `/api/public/version` which build is live, on launch, hourly and on each return to the foreground (including the native app's `resume`), through a hidden frame so Skew Protection's pin can't hide a release; a newer build reloads quietly at a safe moment or waits behind "A new version is ready", once per build: #520 (approved and merged by Brittany, Nov 23, 2026).
+- **D1.1** `computeWeightBaseline` (`src/lib/weightBaseline.ts`): each bird's normal by meal state (the median of the last 90 days' weigh-ins of that kind, leaving out the last week; range 10th–90th percentile), "still learning" until 7 weigh-ins over 14 days, the three tiers and the free hard weight-loss alert (which also works while still learning), never on one weigh-in (a re-weigh must agree) and never under 2 g. Every number is in `WEIGHT_BASELINE_RULES`, draft. The replay (`npm run weight-baseline:replay -- <export>`, export query `docs/reports/weight-history-export.sql`) counts how often each tier would have fired per bird. Pinned by `npm run test:weight-baseline`. Nothing in the app calls it yet (D1.2). Held for Brittany (health content, and the replay of real history, which she runs): #521.
 - **1.6** Chapter collections: the Resources tab lists Avian vets, Rescues, and Shops and services as directory cards (tappable phone and website, the "community picks, not endorsements" line, an invitation in empty groups); members suggest a place, which shows to nobody but the chapter's lead and admins until approved in `/admin/review` → Places; leads (own chapter) and admins (any chapter) add, edit, reorder and remove listings at `/flock/places`, with when each was last updated. Behind the Flock gate; nothing seeded (the starter listings are Brittany's content): #528.
 - **2.2** `/api/public/version` returns `{ "build": "<commit>" }` with `no-store`; `src/lib/releaseCheck.ts` holds the pure rules (which pages check, when, what counts as a newer build, update now or later behind the banner, one reload per build), pinned by `npm run test:release-check`. Nothing calls them yet (2.3): #519.
 - **D3** `src/lib/seasonalCalendar.ts`: 22 dated cards covering every day of the year (7 seasons, 15 holidays and moments, including heat, cold, fireworks, candles, holiday foods and travel; some US-only or Netherlands-only), each with a rule for its days and an English and Dutch title and body in `src/locales/seasonal.*.jsonc`; `npm run test:seasonal-calendar` checks every rule resolves in every year through 2075, every day has a card, and every card exists in both languages. Approved and merged by Brittany: #516.
