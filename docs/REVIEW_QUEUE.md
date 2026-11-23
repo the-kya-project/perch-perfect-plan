@@ -137,6 +137,21 @@ Format:
 - **To change it:** <what would need to change>
 ```
 
+### [#523](https://github.com/the-kya-project/perch-perfect-plan/pull/523) · D2.1 Seasonal and holiday Today cards on Home
+- **Decision:** The switch is a new table, `public.care_features` (`today_cards`, off / admins / everyone, starting off), built the same way as the health switches, rather than a row in `health_features`. "Brittany's account only" is `admins`: production has exactly one admin account (checked read-only, a count).
+- **Why:** the calendar file says the cards are plain care reminders, never health advice, so they don't belong with the switches waiting on the avian vet. A per-account list would be new machinery for one person; `admins` already means you.
+- **To change it:** move the row into `health_features` (and `HEALTH_FEATURES`) instead, or add another account to the admins.
+
+### [#523](https://github.com/the-kya-project/perch-perfect-plan/pull/523) · D2.1 Seasonal and holiday Today cards on Home
+- **Decision:** The country (for the US-only and Netherlands-only cards) comes from the account's home time zone (Account → Time zone), or the phone's time zone when the account has none yet. A US time zone gets the US cards, Amsterdam gets the Dutch ones, and anywhere else (Canada, Belgium, the UK…) gets only the cards for everyone. The app's language isn't used. The day is the phone's own date, read after the page loads.
+- **Why:** an English speaker in Amsterdam still hears King's Day fireworks, and a Dutch speaker in Ohio still has Thanksgiving. The home time zone is the one country-like thing the app already stores.
+- **To change it:** `seasonalRegionForTimeZone` in `src/lib/todayCard.ts`; `npm run test:today-card` pins it.
+
+### [#523](https://github.com/the-kya-project/perch-perfect-plan/pull/523) · D2.1 Seasonal and holiday Today cards on Home
+- **Decision:** The card sits right under Home's Today list (above the birds), as a white card with a small icon for its topic (sun, snowflake, sparkles, flame, plate, car, wind, house, party popper, clock), the card's title and its body. No label, no button, no way to dismiss it. It isn't shown during the onboarding tour's demo Home, and it doesn't appear on a Home with no birds yet.
+- **Why:** the backlog asks for "the day's card" with no layout; this is the plainest card the Home design system already has. Dismissing wasn't asked for, so it's a question in the PR instead of a guess.
+- **To change it:** `src/components/SeasonalTodayCard.tsx` and its one line in `src/routes/_authenticated/dashboard.tsx`.
+
 ### [#519](https://github.com/the-kya-project/perch-perfect-plan/pull/519) · 2.2 A version endpoint and release rules
 - **Decision:** Ported the endpoint and rules from the reference branch `fix/native-release-catchup`, with three changes: (1) "update now or later" is its own rule, `releaseUpdateAction`, the same rule a service-worker update follows today (a quiet moment with no form in progress → now; otherwise the banner); (2) a new `parseVersionResponse` reads the endpoint's answer and ignores anything else (an error page, a proxy); (3) the branch's `staleCodeAction` (what a missing code file does) was left out, since 2.1 already handles missing files on `main` and it isn't part of 2.2. The numbers are the branch's: check hourly, at most once a minute on return to the foreground, give up after 8 seconds, never reload for the same build twice within 10 minutes.
 - **Why:** the backlog asks for the pure rules for "a new release is out, update now or later", with nothing behaving differently yet. Nothing calls them until 2.3.
@@ -295,6 +310,9 @@ Format:
 ### <PR link> · <item ID> <item title>
 - **Needs:** <the decision, approval or read, in one or two lines>
 ```
+
+### [#523](https://github.com/the-kya-project/perch-perfect-plan/pull/523) · D2.1 Seasonal and holiday Today cards on Home
+- **Needs:** (1) a look at the card on Home (the design below is the run's own: there's no mockup for it), and whether a card that stays the same for weeks, like Summer heat from June through August, should get a way to hide it; (2) merge, which applies the new `care_features` table to production with the switch **off**; (3) then, to try it on your account only: `select public.admin_set_care_feature('today_cards', 'admins');` (you're the only admin). Turning it on for everyone (`'everyone'`) changes Home for free users and needs before-and-after screenshots first. The card words themselves are the D3 cards you approved in #516; nothing new.
 
 ### Reminder · the hourly runs' GitHub token expires Feb 20, 2027
 - **Needs:** a new token before **Feb 20, 2027**. That's 90 days from Nov 22, 2026; GitHub → Settings → Developer settings → Fine-grained tokens shows the exact date. When it expires, runs can still build and test but can't push or open PRs, and each run's note in `~/.kya-agent/job.log` says so.

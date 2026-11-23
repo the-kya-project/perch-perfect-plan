@@ -20,6 +20,12 @@ Copy this, fill it in, and put it at the top of "Runs", above the latest entry.
 
 ## Runs
 
+### 2026-11-23 04:12 EST · D2.1 Seasonal and holiday Today cards on Home
+- **Built:** Home can now show the day's card from the seasonal calendar (the 22 cards approved in #516), in the reader's language, right under the Today list. It uses the phone's own date, read after the page has loaded. A US home time zone gets the US holidays and Amsterdam gets the Dutch ones. It sits behind a new switch, `today_cards`, which starts **off**, so nobody sees a change. Brittany can turn it on for her account only with one line of SQL (she's the only admin). A new test (`npm run test:today-card`, 17 checks) and a database check pin the date, the country, both languages, the read-after-load rule, and the switch starting off.
+- **PR:** [#523](https://github.com/the-kya-project/perch-perfect-plan/pull/523)
+- **Outcome:** Held: the item's own "Needs Brittany" line asks for her read of the copy, and the card's look is the run's own (no mockup). She's also asked whether a card that stays the same for weeks should be hideable. The merge adds a table to production with the switch off.
+- **Problems:** At the start, the three open agent PRs (#520 2.3, #521 D1.1, #522 1.3) were all held, mergeable and passing, so none needed updating or merging. 2.4, D1.2 and 1.4 wait on them, so D2.1 was the highest item this run could take. The new test isn't in CI yet: that needs a workflow change, which the run's token can't push. The database check runs in CI on its own (every `*_checks.sql` is picked up). Staging won't have the switch until this merges, so the preview fails closed and shows no card. No lock at start. No pending-log entries to move.
+
 ### 2026-11-22 22:24 EST · 2.2 A version endpoint and release rules
 - **Built:** A small public address, `/api/public/version`, that answers with which copy of the app is live, and is never cached, so an open app can later ask "has a new release gone out?". Also the rules for what to do when one has: which pages ask, how often (on launch, hourly, and when the app comes back to the front, at most once a minute), what counts as a new release, whether to update now or wait behind the "A new version is ready" banner (a form in progress always waits), and never reloading twice for the same release. A test pins all of it. Nothing in the app calls these yet (that's 2.3), so nobody sees a change.
 - **PR:** [#519](https://github.com/the-kya-project/perch-perfect-plan/pull/519)

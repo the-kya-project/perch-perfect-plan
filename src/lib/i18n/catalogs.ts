@@ -9,6 +9,8 @@ import enRaw from "@/locales/en.jsonc?raw";
 import nlRaw from "@/locales/nl.jsonc?raw";
 import routineEnRaw from "@/locales/routine.en.jsonc?raw";
 import routineNlRaw from "@/locales/routine.nl.jsonc?raw";
+import seasonalEnRaw from "@/locales/seasonal.en.jsonc?raw";
+import seasonalNlRaw from "@/locales/seasonal.nl.jsonc?raw";
 import { parseJsonc } from "./jsonc";
 
 export const catalogs = {
@@ -24,7 +26,15 @@ export const routineCatalogs = {
   nl: parseJsonc(routineNlRaw),
 } as const;
 
+// The "seasonal" namespace holds Home's seasonal and holiday Today cards
+// (src/lib/seasonalCalendar.ts), keyed by card id, so they stay out of the
+// parser-managed catalog too.
+export const seasonalCatalogs = {
+  en: parseJsonc(seasonalEnRaw),
+  nl: parseJsonc(seasonalNlRaw),
+} as const;
+
 export const resources = {
-  en: { translation: catalogs.en, routine: routineCatalogs.en },
-  nl: { translation: catalogs.nl, routine: routineCatalogs.nl },
+  en: { translation: catalogs.en, routine: routineCatalogs.en, seasonal: seasonalCatalogs.en },
+  nl: { translation: catalogs.nl, routine: routineCatalogs.nl, seasonal: seasonalCatalogs.nl },
 } as const;
