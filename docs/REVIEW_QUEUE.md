@@ -957,7 +957,7 @@ Format:
 ```
 
 ### [#543](https://github.com/the-kya-project/perch-perfect-plan/pull/543) · 1.17 Promo codes for memberships
-- **Needs:** (1) your approval (payments); (2) a look at the worked examples in the PR and in `docs/flock/payments-plan.md` section d, to confirm that's what "stack" and "whichever is best" mean; (3) two test-mode checkouts during a test free season, one with a "20% off for 3 months" code and one with a "once" code, to see whether Stripe's months count from the card being added (trial included) or from the first charge, since that decides which kinds of code to make for the free season; (4) your OK that the webhook takes a discount off a founding subscription on its own.
+- **Needs:** (1) your approval (payments); (2) a look at the worked examples in the PR and in `docs/flock/payments-plan.md` section d, to confirm that's what "stack" and "whichever is best" mean; (3) two test-mode checkouts during a test free season, one with a "20% off for 3 months" code and one with a "once" code, to see whether Stripe's months count from the card being added (trial included) or from the first charge, since that decides which kinds of code to make for the free season; (4) your OK that the webhook takes a discount off a founding subscription on its own. If iPhone hydration is red, it's the flaky confirmation-link test #541 fixes; re-run it, or update the branch once #541 merges.
 
 ### Reminder · the hourly runs' GitHub token expires Feb 20, 2027
 - **Needs:** a new token before **Feb 20, 2027**. That's 90 days from Nov 22, 2026; GitHub → Settings → Developer settings → Fine-grained tokens shows the exact date. When it expires, runs can still build and test but can't push or open PRs, and each run's note in `~/.kya-agent/job.log` says so.
