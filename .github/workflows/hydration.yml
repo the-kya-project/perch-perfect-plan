@@ -97,6 +97,7 @@ jobs:
           npm run test:sit-preview-recovery
           npm run test:sit-time-zone
           npm run test:supabase-env
+          npm run test:today-card
           npm run test:together-since
           npm run test:url-scrub
           npm run test:utm-carry
