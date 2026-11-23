@@ -63,6 +63,7 @@ import { Route as AuthenticatedFlockGuidelinesRouteImport } from './routes/_auth
 import { Route as AuthenticatedFlockIdeaRouteImport } from './routes/_authenticated/flock.idea'
 import { Route as AuthenticatedFlockJoinRouteImport } from './routes/_authenticated/flock.join'
 import { Route as AuthenticatedFlockLearnRouteImport } from './routes/_authenticated/flock.learn'
+import { Route as AuthenticatedFlockPlacesRouteImport } from './routes/_authenticated/flock.places'
 import { Route as AuthenticatedFlockSetupRouteImport } from './routes/_authenticated/flock.setup'
 import { Route as AuthenticatedFlockSpacesRouteImport } from './routes/_authenticated/flock.spaces'
 import { Route as AuthenticatedFlockWelcomeRouteImport } from './routes/_authenticated/flock.welcome'
@@ -434,6 +435,12 @@ const AuthenticatedFlockLearnRoute = AuthenticatedFlockLearnRouteImport.update({
   path: '/learn',
   getParentRoute: () => AuthenticatedFlockRoute,
 } as any)
+const AuthenticatedFlockPlacesRoute =
+  AuthenticatedFlockPlacesRouteImport.update({
+    id: '/places',
+    path: '/places',
+    getParentRoute: () => AuthenticatedFlockRoute,
+  } as any)
 const AuthenticatedFlockSetupRoute = AuthenticatedFlockSetupRouteImport.update({
   id: '/setup',
   path: '/setup',
@@ -992,6 +999,7 @@ export interface FileRoutesByFullPath {
   '/flock/idea': typeof AuthenticatedFlockIdeaRoute
   '/flock/join': typeof AuthenticatedFlockJoinRoute
   '/flock/learn': typeof AuthenticatedFlockLearnRoute
+  '/flock/places': typeof AuthenticatedFlockPlacesRoute
   '/flock/setup': typeof AuthenticatedFlockSetupRoute
   '/flock/spaces': typeof AuthenticatedFlockSpacesRoute
   '/flock/welcome': typeof AuthenticatedFlockWelcomeRoute
@@ -1128,6 +1136,7 @@ export interface FileRoutesByTo {
   '/flock/idea': typeof AuthenticatedFlockIdeaRoute
   '/flock/join': typeof AuthenticatedFlockJoinRoute
   '/flock/learn': typeof AuthenticatedFlockLearnRoute
+  '/flock/places': typeof AuthenticatedFlockPlacesRoute
   '/flock/setup': typeof AuthenticatedFlockSetupRoute
   '/flock/spaces': typeof AuthenticatedFlockSpacesRoute
   '/flock/welcome': typeof AuthenticatedFlockWelcomeRoute
@@ -1271,6 +1280,7 @@ export interface FileRoutesById {
   '/_authenticated/flock/idea': typeof AuthenticatedFlockIdeaRoute
   '/_authenticated/flock/join': typeof AuthenticatedFlockJoinRoute
   '/_authenticated/flock/learn': typeof AuthenticatedFlockLearnRoute
+  '/_authenticated/flock/places': typeof AuthenticatedFlockPlacesRoute
   '/_authenticated/flock/setup': typeof AuthenticatedFlockSetupRoute
   '/_authenticated/flock/spaces': typeof AuthenticatedFlockSpacesRoute
   '/_authenticated/flock/welcome': typeof AuthenticatedFlockWelcomeRoute
@@ -1415,6 +1425,7 @@ export interface FileRouteTypes {
     | '/flock/idea'
     | '/flock/join'
     | '/flock/learn'
+    | '/flock/places'
     | '/flock/setup'
     | '/flock/spaces'
     | '/flock/welcome'
@@ -1551,6 +1562,7 @@ export interface FileRouteTypes {
     | '/flock/idea'
     | '/flock/join'
     | '/flock/learn'
+    | '/flock/places'
     | '/flock/setup'
     | '/flock/spaces'
     | '/flock/welcome'
@@ -1693,6 +1705,7 @@ export interface FileRouteTypes {
     | '/_authenticated/flock/idea'
     | '/_authenticated/flock/join'
     | '/_authenticated/flock/learn'
+    | '/_authenticated/flock/places'
     | '/_authenticated/flock/setup'
     | '/_authenticated/flock/spaces'
     | '/_authenticated/flock/welcome'
@@ -2204,6 +2217,13 @@ declare module '@tanstack/react-router' {
       path: '/learn'
       fullPath: '/flock/learn'
       preLoaderRoute: typeof AuthenticatedFlockLearnRouteImport
+      parentRoute: typeof AuthenticatedFlockRoute
+    }
+    '/_authenticated/flock/places': {
+      id: '/_authenticated/flock/places'
+      path: '/places'
+      fullPath: '/flock/places'
+      preLoaderRoute: typeof AuthenticatedFlockPlacesRouteImport
       parentRoute: typeof AuthenticatedFlockRoute
     }
     '/_authenticated/flock/setup': {
@@ -2840,6 +2860,7 @@ interface AuthenticatedFlockRouteChildren {
   AuthenticatedFlockIdeaRoute: typeof AuthenticatedFlockIdeaRoute
   AuthenticatedFlockJoinRoute: typeof AuthenticatedFlockJoinRoute
   AuthenticatedFlockLearnRoute: typeof AuthenticatedFlockLearnRoute
+  AuthenticatedFlockPlacesRoute: typeof AuthenticatedFlockPlacesRoute
   AuthenticatedFlockSetupRoute: typeof AuthenticatedFlockSetupRoute
   AuthenticatedFlockSpacesRoute: typeof AuthenticatedFlockSpacesRoute
   AuthenticatedFlockWelcomeRoute: typeof AuthenticatedFlockWelcomeRoute
@@ -2881,6 +2902,7 @@ const AuthenticatedFlockRouteChildren: AuthenticatedFlockRouteChildren = {
   AuthenticatedFlockIdeaRoute: AuthenticatedFlockIdeaRoute,
   AuthenticatedFlockJoinRoute: AuthenticatedFlockJoinRoute,
   AuthenticatedFlockLearnRoute: AuthenticatedFlockLearnRoute,
+  AuthenticatedFlockPlacesRoute: AuthenticatedFlockPlacesRoute,
   AuthenticatedFlockSetupRoute: AuthenticatedFlockSetupRoute,
   AuthenticatedFlockSpacesRoute: AuthenticatedFlockSpacesRoute,
   AuthenticatedFlockWelcomeRoute: AuthenticatedFlockWelcomeRoute,

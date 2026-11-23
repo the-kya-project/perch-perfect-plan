@@ -19,6 +19,30 @@ Format:
   - After: "<new wording>"
 ```
 
+### [#528](https://github.com/the-kya-project/perch-perfect-plan/pull/528) · 1.6 Curated chapter collections
+All new, behind the Flock gate (admins only today). Where the mockup has wording, it's used as is.
+- **Where:** Chapter → Resources (replaces the empty state)
+  - Before: "No resources yet" / "Avian vets, rescues, and shops your chapter recommends will be collected here."
+  - After: "Places members in your chapter recommend. These are community picks, not endorsements." Group headings "Avian vets", "Rescues", "Shops and services". Card links "Call", "Website". An empty group: "Know a good one nearby? Suggest it, and your chapter lead will add it." The button "Suggest a place". After sending: "Thanks! Your suggestion will show once your chapter lead has looked it over."
+- **Where:** Chapter → Resources, for the chapter's lead and admins
+  - Before: new
+  - After: "{count} suggestions waiting" (one: "1 suggestion waiting"), "Manage listings"
+- **Where:** Suggest a place sheet
+  - Before: new
+  - After: "Suggest a place"; kinds "Avian vet", "Rescue", "Shop or service"; fields "Name", "City or area", "Why do you recommend it?"; "Your chapter lead will look it over before it shows."; "Send suggestion". Errors: "You have a few suggestions waiting already. Try again once they've been looked at." / "We couldn't send that. Try again."
+- **Where:** Managing listings (`/flock/places`)
+  - Before: new
+  - After: title "Resources", line "{chapter} · you lead this chapter" (a lead) or the chapter's name (an admin); "Chapter" (admins' chapter picker); the waiting card "{count} suggestions waiting" / "Review them before they show to members." / "Review"; "Updated {day}"; "None listed yet."; "Edit"; "Add a listing". Not a manager: "For chapter leads" / "Chapter leads and admins look after a chapter's listings. You can suggest a place from your chapter's Resources tab."
+- **Where:** Add or edit a listing sheet
+  - Before: new
+  - After: "Add a listing" / "Edit listing"; fields "Name", "City or area", "Phone (optional)", "Website (optional)", "Why members recommend it"; "Use a web address, like example.com."; "Add listing" / "Save changes"; "Remove listing"; the confirm "Remove this listing?" / "{name} comes off your chapter's Resources for everyone."; error "We couldn't save that. Check the details and try again."
+- **Where:** Review queue (`/admin/review`)
+  - Before: new
+  - After: chip "Places {count}"; item label "Place suggestion · {kind} · {chapter} chapter"; link "See the chapter's listings"
+- **Where:** Screen reader labels
+  - Before: new
+  - After: "Call {name}, {phone}", "{name}'s website", "Kind of place", "Move {name} up", "Move {name} down"
+
 ### [#516](https://github.com/the-kya-project/perch-perfect-plan/pull/516) · D3 Seasonal calendar file
 Approved and merged by Brittany (Nov 22, 2026). All 22 cards are new, as merged; nobody sees them until D2.1 shows the card on Home. Source files: `src/locales/seasonal.en.jsonc` and `seasonal.nl.jsonc`.
 - **Where:** Home's Today card, `winterDryAir`
@@ -156,6 +180,31 @@ Format:
 - **Decision:** Left out for now: the owner's typed normal weight (`birds.normal_weight` / min / max) doesn't override the learned one, and gains above the range get no note. The replay counts a tier as "fired" when a weigh-in reaches it and the one before didn't (reaching "call your vet today" from nothing counts once for each of the three tiers), and labels birds "Bird 1", "Bird 2"… by number of weigh-ins.
 - **Why:** both were in the old weight-range spec but not in D1.1's "done means"; a typed value can be years old (a bird that has grown), so it's a decision for Brittany. "One alert per crossing" is the old spec's rule for sending alerts.
 - **To change it:** say so on #521 or in D1.2; `computeWeightBaseline` would take the typed range as an extra input.
+
+### [#528](https://github.com/the-kya-project/perch-perfect-plan/pull/528) · 1.6 Curated chapter collections
+- **Decision:** Place suggestions have their own functions (`flock_place_suggestions`, `flock_place_review`) and their own "Places" chip in `/admin/review`, rather than a rewrite of `flock_review_queue` and `flock_review_counts`. The queue's and Flock settings' "waiting" totals add them in.
+- **Why:** It keeps the migration purely additive: no existing function changes.
+- **To change it:** fold places into `flock_review_queue` in a later migration if one combined list is wanted.
+
+### [#528](https://github.com/the-kya-project/perch-perfect-plan/pull/528) · 1.6 Curated chapter collections
+- **Decision:** A suggestion is approved or declined, with no "Ask for changes". Approving lists it as sent, at the end of its group, and the lead can then add a phone or website with Edit. Declining deletes it. The member isn't notified either way.
+- **Why:** The spec says "approve or decline", and the mockup's suggest form has no phone or website fields. A notification would have meant changing the existing Flock notification functions and checks.
+- **To change it:** say if members should hear back. That's a "place" notification kind plus a change to `flock_notifications_list`.
+
+### [#528](https://github.com/the-kya-project/perch-perfect-plan/pull/528) · 1.6 Curated chapter collections
+- **Decision:** The suggest form has kind, name, city or area, and "Why do you recommend it?", as in the mockup. Only the name is required. Leads and admins add phone and website. Each member can have at most 10 suggestions waiting at once.
+- **Why:** The spec lists name, type and note, and the mockup adds city or area. The cap stops one account flooding a lead's queue. There's no hourly limit like the one on posts.
+- **To change it:** the cap is `private.flock_place_suggest_limit()`.
+
+### [#528](https://github.com/the-kya-project/perch-perfect-plan/pull/528) · 1.6 Curated chapter collections
+- **Decision:** Managing listings is its own screen, `/flock/places` (the mockup's screen 3). The Resources tab links to it through a small lime "Manage listings" card, shown only to the chapter's lead and admins. Admins get a "Chapter" dropdown there to pick any chapter, since their own chapter page shows only their own. Reordering uses up and down arrows within a group. Remove sits inside Edit and asks before removing.
+- **Why:** The mockup shows the lead's screen but not how to get to it, how an admin reaches another chapter, or how reordering works. These are the smallest additions that cover the spec.
+- **To change it:** tell us the entry point or reorder control you'd like.
+
+### [#528](https://github.com/the-kya-project/perch-perfect-plan/pull/528) · 1.6 Curated chapter collections
+- **Decision:** Small differences from the mockup: the tab order stays Posts, Events, Resources, Members (the backlog says so); each card's square tile carries an icon (stethoscope, heart-handshake, shop); and every group always shows, with an empty one inviting a suggestion.
+- **Why:** The spec asks for an empty group to invite a suggestion, and the tiles were blank in the mockup.
+- **To change it:** say which you'd prefer.
 
 ### [#519](https://github.com/the-kya-project/perch-perfect-plan/pull/519) · 2.2 A version endpoint and release rules
 - **Decision:** Ported the endpoint and rules from the reference branch `fix/native-release-catchup`, with three changes: (1) "update now or later" is its own rule, `releaseUpdateAction`, the same rule a service-worker update follows today (a quiet moment with no form in progress → now; otherwise the banner); (2) a new `parseVersionResponse` reads the endpoint's answer and ignores anything else (an error page, a proxy); (3) the branch's `staleCodeAction` (what a missing code file does) was left out, since 2.1 already handles missing files on `main` and it isn't part of 2.2. The numbers are the branch's: check hourly, at most once a minute on return to the foreground, give up after 8 seconds, never reload for the same build twice within 10 minutes.
@@ -318,6 +367,12 @@ Format:
 
 ### [#521](https://github.com/the-kya-project/perch-perfect-plan/pull/521) · D1.1 Weight baseline rules and a replay of real history
 - **Needs:** (1) your read of the health rules: every number is new and draft, in `WEIGHT_BASELINE_RULES`, with the choices listed under "Decisions agents made"; (2) the replay of real history, which you run: the export query is `docs/reports/weight-history-export.sql` (read-only, no names), then `npm run weight-baseline:replay -- <the file>` (the hourly job can't run it); your read of the results is what D1.2 waits on; (3) whether the owner's typed normal weight should override the learned one; (4) optionally, `npm run test:weight-baseline` in a CI workflow (the runs' token can't push workflow changes). Then your merge.
+
+### [#528](https://github.com/the-kya-project/perch-perfect-plan/pull/528) · 1.6 Curated chapter collections · needs a re-run of "iPhone hydration"
+- **Needs:** a re-run of the "iPhone hydration" check (Actions → the failed run → Re-run failed jobs). Runs aren't allowed to re-run checks. The two failures weren't from this PR.
+  - First run: the browser install took 16 minutes and the job ran out of time, just as every Community shell test, the new one included, had passed.
+  - Second run: one WebKit Dutch test of the email-confirmation page (`[webkit-nl] confirmation link waits for a tap`) failed on the dashboard's sitter-activity fetches. That's care-app code this PR doesn't touch, and the same test passed on the first run.
+- Nothing else is needed from you: no decision is waiting. Once it's green, the next run may merge it under the normal rules (hidden behind the Flock gate, additive migration). Or merge it yourself.
 
 ### Reminder · the hourly runs' GitHub token expires Feb 20, 2027
 - **Needs:** a new token before **Feb 20, 2027**. That's 90 days from Nov 22, 2026; GitHub → Settings → Developer settings → Fine-grained tokens shows the exact date. When it expires, runs can still build and test but can't push or open PRs, and each run's note in `~/.kya-agent/job.log` says so.
