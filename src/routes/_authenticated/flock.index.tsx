@@ -1,5 +1,10 @@
 import { useState } from "react";
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { Settings2 } from "lucide-react";
+import { K } from "@/components/kya";
+import { VoteCard } from "@/components/flock/VoteParts";
+import { useIsAdmin } from "@/lib/flockData";
+import { useCurrentVotes, votesFor } from "@/lib/flockVotes";
 import { JourneyMilestoneCard } from "@/components/flock/JourneyToday";
 import { ComposePrompt, LoadMore, PostMenus, usePostMedia } from "@/components/flock/PostFeed";
 import { PostCard } from "@/components/flock/PostParts";
@@ -67,6 +72,10 @@ function FlockToday() {
   // Diet conversion: "Weigh [Bird] today" after a couple of days without a weigh-in.
   const { data: weighReminders } = useWeighReminders();
   const { data: ideaPhotos } = useIdeaPhotos(idea?.idea_id, !!idea?.has_photo);
+  // Votes (1.8): open ones on Today; Do good also shows recent results.
+  const { data: votes } = useCurrentVotes();
+  const { data: isAdmin } = useIsAdmin();
+  const shownVotes = filter === "everything" ? votesFor(votes ?? [], "today") : filter === "good" ? votesFor(votes ?? [], "good") : [];
   // Followed journeys and their milestones belong to Everything.
   const showJourneys = filter === "everything";
   const items = mergeFeed(posts, showJourneys ? cards ?? [] : [], !!feed.hasNextPage);
@@ -82,6 +91,13 @@ function FlockToday() {
           value={filter}
           onChange={(v) => void navigate({ search: { space: !v || v === "everything" ? undefined : v }, replace: true })}
         />
+        {filter === "good" && isAdmin && (
+          <Link to="/admin/votes" data-testid="manage-votes"
+            className="inline-flex min-h-[44px] items-center gap-2 self-end rounded-full bg-white px-4 text-[14px] font-[700]" style={{ color: K.forest, border: `1.5px solid ${K.line}` }}>
+            <Settings2 className="size-4" aria-hidden="true" />{t("flock.votes.manageAll", "Manage votes")}
+          </Link>
+        )}
+        {shownVotes.map((v) => <VoteCard key={v.vote_id} vote={v} />)}
         {(weighReminders ?? []).map((w) => <WeighTodayCard key={w.journey_id} birdId={w.bird_id} birdName={w.bird_name} />)}
         {idea && <TodaysIdeaCard idea={idea} photo={ideaPhotos?.find((p) => p.kind === "idea")?.url ?? null} />}
         <ComposePrompt space={space} />

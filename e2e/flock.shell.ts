@@ -62,6 +62,8 @@ type FlockState = {
   places: Record<string, any>[];
   placeSuggestions: Record<string, any>[];
   placeManage: boolean;
+  /** Backlog 1.8: votes, as flock_votes_current / flock_vote return them. */
+  votes: Record<string, any>[];
   /** Build C: where this account stands (flock_my_access), and its join calls. */
   access: { member_now: boolean; has_membership: boolean; agreed: boolean; is_admin: boolean; guidelines_version: string; opens_at: string | null; season_ends_at: string | null };
   joinResult: string;
@@ -91,6 +93,7 @@ async function mockFlock(context: BrowserContext, userId: string, opts: { setupD
     places: [],
     placeSuggestions: [],
     placeManage: false,
+    votes: [],
     access: { member_now: true, has_membership: true, agreed: true, is_admin: true, guidelines_version: "2026-12", opens_at: null, season_ends_at: "2027-07-06T04:00:00Z" },
     joinResult: "joined",
   };
@@ -145,6 +148,10 @@ async function mockFlock(context: BrowserContext, userId: string, opts: { setupD
     if (fn === "admin_ideas_schedule") return json(route, state.schedule);
     if (fn === "admin_ideas_unscheduled") return json(route, []);
     if (fn === "admin_save_idea") return json(route, "00000000-0000-4000-8000-0000000082aa");
+    if (fn === "admin_votes") {
+      return json(route, state.votes.map((v) => ({ vote_id: v.vote_id, question: v.question, audience: v.audience, state: v.state, closes_at: v.closes_at,
+        voters: v.voters, choice_count: v.choices.length, updated_at: v.closes_at })));
+    }
     return json(route, null);
   });
   await context.route(`${MOCK}/rest/v1/rpc/flock_*`, async (route) => {
@@ -299,6 +306,15 @@ async function mockFlock(context: BrowserContext, userId: string, opts: { setupD
     }
     if (fn === "flock_place_save") return json(route, "00000000-0000-4000-8000-0000000085aa");
     if (fn === "flock_place_move" || fn === "flock_place_remove") return json(route, null);
+    if (fn === "flock_votes_current") return json(route, state.votes.filter((v) => v.state !== "draft"));
+    if (fn === "flock_vote") return json(route, state.votes.filter((v) => v.vote_id === args.p_id));
+    if (fn === "flock_vote_cast") {
+      state.calls.push({ fn, args });
+      const v = state.votes.find((x) => x.vote_id === args.p_vote_id);
+      if (v?.my_choice) return route.fulfill({ status: 400, contentType: "application/json", body: JSON.stringify({ code: "P0001", message: "already_voted" }) });
+      if (v) { v.voters += 1; v.my_choice = args.p_choice_id; }
+      return json(route, null);
+    }
     if (fn === "flock_todays_idea") return json(route, state.idea ? [state.idea] : []);
     if (fn === "flock_idea_try") { if (state.idea) { state.idea.my_outcome = args.p_outcome; state.idea.my_bird_id = args.p_bird_id; } return json(route, null); }
     if (fn === "flock_report") return json(route, null);
@@ -1317,6 +1333,7 @@ test("everyone else: every /flock URL sends them Home and no Community code load
       "/flock/chapter?tab=resources", "/flock/places", "/flock/places?region=texas",
       "/flock/library/00000000-0000-4000-8000-0000000090a1", "/flock/library?type=guides&subject=foraging&q=cups", "/admin/library", "/admin/library/new",
       "/admin/library/00000000-0000-4000-8000-0000000090a1",
+      "/flock/votes/00000000-0000-4000-8000-0000000095a1", "/admin/votes", "/admin/votes/new", "/admin/votes/00000000-0000-4000-8000-0000000095a1",
       "/flock/events/00000000-0000-4000-8000-0000000083a1"]) {
       await page.goto(path);
       await expect(page, `${size} ${path}`).toHaveURL(/\/dashboard/);
@@ -2037,6 +2054,102 @@ test.describe("chapter members and leads (admin, phone)", () => {
     await expect(page.getByRole("dialog")).toContainText("They stop reviewing and editing Great Lakes events right away");
     await page.getByTestId("confirm-delete").click();
     expect(state.calls.filter((c) => c.fn === "admin_set_chapter_lead").at(-1)!.args).toEqual({ p_user_id: PRIYA, p_on: false });
+    await context.close();
+  });
+});
+
+test.describe("do good voting (admin, phone)", () => {
+  const OPEN = "00000000-0000-4000-8000-0000000095a1";
+  const CLOSED = "00000000-0000-4000-8000-0000000095a2";
+  const choice = (id: string, name: string, extra: Record<string, unknown> = {}) =>
+    ({ choice_id: id, name, blurb: null, photo_path: null, percent: null, share: null, from_votes: null, votes: null, top: false, ...extra });
+  const SHARED = "00000000-0000-4000-8000-0000000095a3";
+  const votes = () => [
+    { vote_id: OPEN, question: "Where should this quarter's donation go?", description: "20% of every membership goes to rescue and conservation partners.",
+      audience: "members", state: "open", closes_at: new Date(Date.now() + 9 * 86_400_000).toISOString(), voters: 31, my_choice: null, announcement: null,
+      choices: [choice("00000000-0000-4000-8000-0000000096a1", "The Macaw Society", { blurb: "Protects wild macaw nests in Tambopata, Peru.", votes: 16 }),
+        choice("00000000-0000-4000-8000-0000000096a2", "Birds and Beaks Rescue", { votes: 10 }), choice("00000000-0000-4000-8000-0000000096a3", "Armonía", { votes: 5 })] },
+    { vote_id: SHARED, question: "Where should last quarter's donation go?", description: null, audience: "members", state: "closed", closes_at: new Date(Date.now() - 86_400_000).toISOString(),
+      voters: 64, my_choice: null, announcement: "Thank you for voting. The donation goes out this month.",
+      choices: [choice("00000000-0000-4000-8000-0000000096c1", "Partner rescue A", { percent: 33, share: 33, from_votes: 23, votes: 21 }),
+        choice("00000000-0000-4000-8000-0000000096c2", "Conservation project B", { percent: 48, share: 44, from_votes: 34, votes: 31 }),
+        choice("00000000-0000-4000-8000-0000000096c3", "Partner rescue C", { percent: 19, share: 23, from_votes: 13, votes: 12 })] },
+    { vote_id: CLOSED, question: "Which expert Q&A first?", description: null, audience: "founders", state: "closed", closes_at: new Date(Date.now() - 2 * 86_400_000).toISOString(),
+      voters: 2, my_choice: null, announcement: "Thank you for voting. The vet Q&A comes first.",
+      choices: [choice("00000000-0000-4000-8000-0000000096b1", "Avian vet Q&A", { percent: 100, votes: 2, top: true }), choice("00000000-0000-4000-8000-0000000096b2", "Behaviorist Q&A", { percent: 0, votes: 0 })] },
+  ];
+
+  test("an open vote on Today and Do good, one final vote, and shared results after it closes", async ({ browser, baseURL }) => {
+    const { context, page, state } = await open(browser, baseURL!, { admin: true });
+    state.votes = votes();
+    // Today: open votes only.
+    await page.goto("/flock");
+    await expect(page.getByTestId("vote-card")).toHaveCount(1);
+    const card = page.locator(`[data-vote='${OPEN}']`);
+    await expect(card).toContainText(/^Vote open · closes /);
+    await expect(card.getByTestId("vote-count")).toHaveText("31 members have voted");
+    await expect(page.getByTestId("manage-votes")).toHaveCount(0);
+    // Do good: the open vote first, then the closed ones, pointing to results.
+    await page.goto("/flock?space=good");
+    await expect(page.getByTestId("vote-card")).toHaveCount(3);
+    await expect(page.getByTestId("vote-card").first()).toHaveAttribute("data-vote", OPEN);
+    await expect(page.locator(`[data-vote='${SHARED}']`).getByTestId("vote-outcome")).toHaveText("Every partner gets at least 10%. Your votes decided the rest.");
+    const closed = page.locator(`[data-vote='${CLOSED}']`);
+    await expect(closed.getByTestId("vote-outcome")).toHaveText("Founders chose Avian vet Q&A.");
+    await expect(closed.getByTestId("vote-founders")).toHaveText("Founders");
+    await expect(page.getByTestId("manage-votes")).toBeVisible();
+
+    // Choosing: the note, nothing picked yet, then one choice and the final line.
+    await card.getByTestId("vote-now").click();
+    await expect(page).toHaveURL(new RegExp(`/flock/votes/${OPEN}`));
+    await expect(page.getByTestId("vote-note")).toHaveText("Every partner gets at least 10%. Your vote decides how the rest is shared. You can vote once.");
+    await expect(page.getByRole("button", { name: "Pick one to vote" })).toBeDisabled();
+    await expect(page.getByTestId("vote-results-card")).toHaveCount(0);
+    await page.getByRole("radio", { name: /Armonía/ }).click();
+    await expect(page.getByTestId("vote-final")).toHaveText("Your vote is final once you tap the button.");
+    await page.getByRole("button", { name: "Vote for Armonía" }).click();
+
+    // After voting: the thank-you with the partner, and no way to change it.
+    await expect(page.getByRole("heading", { name: "Thanks for voting" })).toBeVisible();
+    await expect(page.getByTestId("vote-saved")).toContainText("Armonía");
+    await expect(page.getByTestId("vote-count")).toHaveText("32 members have voted so far.");
+    await expect(page.getByText("Every partner gets at least 10%, and the votes share out the rest.")).toBeVisible();
+    await expect(page.getByRole("radio")).toHaveCount(0);
+    await expect(page.getByTestId("vote-page").getByText(/change/i)).toHaveCount(0);
+    expect(state.calls.find((c) => c.fn === "flock_vote_cast")?.args).toEqual({ p_vote_id: OPEN, p_choice_id: "00000000-0000-4000-8000-0000000096a3" });
+    // Admins see the counts while it's open.
+    await expect(page.getByTestId("vote-admin-counts")).toContainText("Counts (admins only) · 32 votes");
+    await page.getByTestId("vote-back-good").click();
+    await expect(page.locator(`[data-vote='${OPEN}']`).getByTestId("vote-now")).toHaveText("See your vote");
+
+    // A closed donation vote: the ring, partners by share, the two-part line and the note.
+    await page.goto(`/flock/votes/${SHARED}`);
+    await expect(page.getByTestId("vote-page")).toHaveAttribute("data-state", "closed");
+    await expect(page.getByRole("heading", { name: "How this quarter's donation is handled" })).toBeVisible();
+    await expect(page.getByTestId("vote-ring").getByRole("img")).toHaveAttribute("aria-label", "Donation shares: Conservation project B 44%, Partner rescue A 33%, Partner rescue C 23%");
+    await expect(page.getByTestId("vote-share")).toHaveText(["44%", "33%", "23%"]);
+    const top = page.locator("[data-result='00000000-0000-4000-8000-0000000096c2']");
+    await expect(top).toContainText("48% of the votes");
+    await expect(top).toContainText("10% guaranteed + 34% from votes");
+    await expect(page.getByTestId("vote-announcement")).toContainText("A note from Brittany");
+    await expect(page.getByRole("radio")).toHaveCount(0);
+
+    // A founders-only vote with two voters: results show, with no donation wording.
+    await page.goto(`/flock/votes/${CLOSED}`);
+    await expect(page.getByTestId("vote-top")).toHaveText("Avian vet Q&A");
+    await expect(page.locator("[data-result='00000000-0000-4000-8000-0000000096b2']")).toContainText("0%");
+    await expect(page.getByTestId("vote-announcement")).toContainText("Thank you for voting. The vet Q&A comes first.");
+    await expect(page.getByTestId("vote-page").getByText(/guaranteed|donation/i)).toHaveCount(0);
+
+    // The admin's closed view: the shares to use.
+    await page.goto(`/admin/votes/${SHARED}`);
+    await expect(page.getByTestId("vote-admin-shares")).toContainText("Use these shares when you send the donation.");
+    await expect(page.getByTestId("vote-admin-counts")).toContainText("Counts (admins only) · 64 votes");
+
+    // The admin list.
+    await page.goto("/admin/votes");
+    await expect(page.getByTestId("admin-votes-list").locator("[data-vote]")).toHaveCount(3);
+    await expect(page.locator(`[data-vote='${OPEN}'] [data-testid='vote-status']`)).toHaveText("Open");
     await context.close();
   });
 });

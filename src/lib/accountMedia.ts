@@ -20,6 +20,9 @@
 //                                             an admin uploaded (they stay with the idea).
 //   flock-library       covers/, files/       never touched: library resources belong
 //                                             to the Flock, not to whoever wrote them.
+//   flock-votes         choices/              never touched: vote choice photos are
+//                                             admin content (your ballots go with
+//                                             your account, by foreign key).
 //   Cloudflare Stream   (clip_assets)         every clip registered to a bird you own,
 //                                             plus clips you posted to journeys on
 //                                             other people's birds, unless a row that

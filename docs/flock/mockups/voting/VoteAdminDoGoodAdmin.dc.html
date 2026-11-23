@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Do good as an admin sees it</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&amp;family=Newsreader:opsz,wght@6..72,700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#2d6a4f}a:hover{color:#1a3d2e}
+.post{background:#ffffff;border-radius:18px;padding:16px;display:flex;flex-direction:column;gap:10px}
+.ph{height:10px;border-radius:999px;background:#e3ebe2}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; display: flex; flex-direction: column; background: #1a3d2e; font-family: 'DM Sans', sans-serif; color: #1a3d2e; overflow: hidden">
+  <header style="padding: 18px 20px 46px; color: #ffffff; display: flex; flex-direction: column; gap: 10px">
+    <h1 style="margin: 0; font-family: 'Newsreader', Georgia, serif; font-weight: 700; font-size: 30px; line-height: 1.15">Today</h1>
+    <button type="button" style="align-self: flex-start; min-height: 40px; padding: 0 14px; border: 0; border-radius: 999px; background: #12291f; color: #ffffff; font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 700; display: inline-flex; align-items: center; gap: 8px">Do good<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button>
+    <p style="margin: 0; font-size: 14px; line-height: 1.45; color: #d6e8dc">Rescue, conservation, and ways to help parrots beyond your own home.</p>
+  </header>
+  <main style="flex-grow: 1; margin-top: -26px; border-radius: 26px 26px 0 0; background: #f1f5f0; padding: 20px 16px 24px; display: flex; flex-direction: column; gap: 14px">
+    <a href="List.dc.html" style="align-self: flex-end; display: inline-flex; min-height: 44px; align-items: center; gap: 8px; padding: 0 16px; border-radius: 999px; background: #ffffff; border: 2px solid #1a3d2e; color: #1a3d2e; font-size: 14px; font-weight: 700; text-decoration: none"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12M20 18h0"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/></svg>Manage votes</a>
+    <section style="background: #cdeab0; border-radius: 18px; padding: 14px 16px; display: flex; flex-direction: column; gap: 8px">
+      <span style="font-size: 11.5px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: #2d6a4f">Vote open · closes [date]</span>
+      <span style="font-size: 17px; font-weight: 700; line-height: 1.25">Where should this quarter's donation go?</span>
+      <span style="font-size: 12.5px; color: #3d4f45">31 members have voted</span>
+      <span style="display: inline-flex; min-height: 44px; align-items: center; justify-content: center; border-radius: 999px; background: #f2b33d; border: 2px solid #1a3d2e; color: #1a3d2e; font-size: 14px; font-weight: 700">Vote now</span>
+    </section>
+    <div class="post" aria-label="A member's post (placeholder)"><div style="display: flex; gap: 10px; align-items: center"><span style="width: 36px; height: 36px; border-radius: 999px; background: #9bcab8"></span><span class="ph" style="width: 40%"></span></div><span class="ph" style="width: 92%"></span><span class="ph" style="width: 70%"></span></div>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+renderVals() {
+return {};
+}
+}
+</script>
+</body>
+</html>
