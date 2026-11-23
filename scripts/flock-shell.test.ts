@@ -37,6 +37,7 @@ import { FLOCK_CONTACT_EMAIL, FLOCK_GUIDELINES_VERSION, contactLine, guidelineSe
 import { isJoinPath, joinErrorKind, joinRedirect, type FlockAccess } from "@/lib/flockJoin";
 import { QUEUE_FILTERS, queueItemPlace, type QueueItem } from "@/lib/flockModeration";
 import { PLACE_KINDS, PLACE_LIMITS, groupPlaces, telHref, updatedDay, websiteHref, type Place } from "@/lib/flockPlaces";
+import { VOTE_LIMITS, cleanVote, emptyVoteDraft, openProblems, toLocalInput, voteDay, votesFor, winnerNames, type Vote } from "@/lib/flockVotes";
 import {
   birdPronoun, canStartCustom, customProblem, daysSince, clipPhase, flockSheetTitle, isNectarEater, rollingAverage, showVetReminder, youngOrUnknownAge, defaultVisibility, groupTemplates, isLocked, journeyDay, journeyDays,
   nextMilestone, possessive, progressOf, skillInSentence, startHere, trimTrailingBlanks, vetCheckLine, visibilityChoices, wantsTip,
@@ -817,6 +818,62 @@ check("chapter resources: when a listing was last updated", () => {
   const now = new Date("2026-11-23T12:00:00");
   assert.equal(updatedDay("2026-11-22T15:00:00", "en-US", now), "Nov 22");
   assert.equal(updatedDay("2025-10-30T15:00:00", "en-US", now), "Oct 30, 2025");
+});
+
+check("votes: rows are cleaned, and only the server's results are shown", () => {
+  const v = cleanVote({
+    vote_id: "v1", question: "Where should this quarter's donation go?", audience: "nonsense", state: "weird", closes_at: "2026-12-15T20:00:00Z",
+    voters: "31", my_choice: null, too_few: "yes",
+    choices: [{ choice_id: "a", name: "The Macaw Society", percent: 52, votes: null, winner: true }, { choice_id: "b", name: "Armonía", percent: "15", winner: "true" }, "junk"],
+  });
+  assert.equal(v.audience, "members");
+  assert.equal(v.state, "closed", "an unknown state never shows as open");
+  assert.equal(v.voters, 31);
+  assert.equal(v.too_few, false);
+  assert.equal(v.choices.length, 3);
+  assert.equal(v.choices[1].percent, null, "a percent only when the server sends a number");
+  assert.equal(v.choices[1].winner, false);
+  assert.deepEqual(winnerNames(v), ["The Macaw Society"]);
+  assert.deepEqual(cleanVote({ choices: "x" }).choices, []);
+});
+
+check("votes: Today shows open votes; Do good also shows recent results", () => {
+  const mk = (id: string, state: Vote["state"]) => cleanVote({ vote_id: id, state, choices: [] });
+  const all = [mk("open", "open"), mk("closed", "closed"), mk("draft", "draft")];
+  assert.deepEqual(votesFor(all, "today").map((v) => v.vote_id), ["open"]);
+  assert.deepEqual(votesFor(all, "good").map((v) => v.vote_id), ["open", "closed"]);
+  // A tie shows every winner.
+  assert.deepEqual(winnerNames({ choices: [{ name: "A", winner: true }, { name: "B", winner: true }, { name: "C", winner: false }] as Vote["choices"] }), ["A", "B"]);
+});
+
+check("votes: what a draft needs before it opens", () => {
+  const now = new Date("2026-11-23T12:00:00");
+  const ch = (name: string) => ({ key: name || "k", name, blurb: "", photo_path: null });
+  const ok = { question: "Which chapter first?", choices: [ch("Great Lakes"), ch("Texas")], closes_at: "2026-12-01T20:00" };
+  assert.deepEqual(openProblems(ok, now), []);
+  assert.deepEqual(openProblems({ ...ok, question: "  " }, now), ["question"]);
+  assert.deepEqual(openProblems({ ...ok, choices: [ch("Only")] }, now), ["choices"]);
+  assert.deepEqual(openProblems({ ...ok, choices: Array.from({ length: 9 }, (_, i) => ch(`C${i}`)) }, now), ["choices"]);
+  assert.deepEqual(openProblems({ ...ok, choices: [ch("A"), ch(" ")] }, now), ["choiceName"]);
+  assert.deepEqual(openProblems({ ...ok, closes_at: "2026-11-20T20:00" }, now), ["closes"]);
+  assert.deepEqual(openProblems({ ...ok, closes_at: "" }, now), ["closes"]);
+  // A new draft has two empty choices and a close date two weeks out, at 8 PM.
+  const d = emptyVoteDraft(now);
+  assert.equal(d.choices.length, 2);
+  assert.equal(d.closes_at, "2026-12-07T20:00");
+  assert.notEqual(d.choices[0].key, d.choices[1].key);
+  assert.equal(toLocalInput("not a date"), "");
+  assert.equal(voteDay("2026-12-15T20:00:00", "en-US", now), "Dec 15");
+  assert.equal(voteDay("2027-01-05T20:00:00", "en-US", now), "Jan 5, 2027");
+  // The same limits as the tables' checks (20261123160000_flock_votes.sql).
+  const sql = readFileSync("supabase/migrations/20261123160000_flock_votes.sql", "utf8");
+  assert.ok(sql.includes(`length(btrim(question)) between 1 and ${VOTE_LIMITS.question}`));
+  assert.ok(sql.includes(`length(description) <= ${VOTE_LIMITS.description}`));
+  assert.ok(sql.includes(`length(btrim(name)) between 1 and ${VOTE_LIMITS.choiceName}`));
+  assert.ok(sql.includes(`length(blurb) <= ${VOTE_LIMITS.choiceBlurb}`));
+  assert.ok(sql.includes(`length(announcement) <= ${VOTE_LIMITS.announcement}`));
+  assert.ok(sql.includes(`jsonb_array_length(v_choices) > ${VOTE_LIMITS.maxChoices}`));
+  assert.ok(sql.includes(`n < ${VOTE_LIMITS.minChoices} or n > ${VOTE_LIMITS.maxChoices}`));
 });
 
 console.log(`\n${passed} passed${process.exitCode ? ", some FAILED" : ""}`);

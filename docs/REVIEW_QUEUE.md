@@ -161,6 +161,26 @@ Format:
 - **To change it:** <what would need to change>
 ```
 
+### [#529](https://github.com/the-kya-project/perch-perfect-plan/pull/529) · 1.8 Do good voting
+- **Decision:** Where votes show. Today shows open votes only (the spec's "on Today while it's open"). Do good shows open votes first, then a closed vote's result card ("The Flock chose …" or "Too few votes to share.") for 14 days after it closes. After that the vote is still readable from its link. A tie names every choice at the top as the winner.
+- **Why:** the spec says everyone sees the results after closing but not where, or for how long, and doesn't cover a tie.
+- **To change it:** `private.flock_vote_results_days()` in the migration; `votesFor` and `winnerNames` in `src/lib/flockVotes.ts`.
+
+### [#529](https://github.com/the-kya-project/perch-perfect-plan/pull/529) · 1.8 Do good voting
+- **Decision:** Once a vote is open, its question, description, audience and choices are locked. Only the close date (Extend, later only) and the announcement can change. Close early is final, and only drafts can be deleted. The announcement shows to members only after the vote closes.
+- **Why:** a member's ballot points at a choice, so rewriting choices after people have voted would change what they voted for.
+- **To change it:** `admin_vote_save` refuses non-drafts; allowing text-only edits while open would be a small change there.
+
+### [#529](https://github.com/the-kya-project/perch-perfect-plan/pull/529) · 1.8 Do good voting
+- **Decision:** The open vote card leaves out the mockup's row of voter avatars and shows only "31 members have voted" (or "You voted · …"). Percentages are each choice's share rounded to a whole number, so they may add up to 99 or 101.
+- **Why:** faces of who voted aren't in the spec, which says members see "that they voted and how many have voted". Leaving them out keeps votes as private as possible.
+- **To change it:** say if you'd like the avatars. That needs a new function returning a few voters' photos.
+
+### [#529](https://github.com/the-kya-project/perch-perfect-plan/pull/529) · 1.8 Do good voting
+- **Decision:** Deleting an account deletes that person's ballots, so a closed vote's results then count one fewer. "Founding member" means having a founding claim. The "fewer than 10" and "14 days" numbers are fixed in two small database functions, not admin settings.
+- **Why:** ballots belong to the person (like every other row of theirs). The spec gives 10 as a rule, not a setting.
+- **To change it:** `private.flock_vote_min_results()` and `private.flock_vote_results_days()`.
+
 ### [#528](https://github.com/the-kya-project/perch-perfect-plan/pull/528) · 1.6 Curated chapter collections
 - **Decision:** Place suggestions have their own functions (`flock_place_suggestions`, `flock_place_review`) and their own "Places" chip in `/admin/review`, rather than a rewrite of `flock_review_queue` and `flock_review_counts`. The queue's and Flock settings' "waiting" totals add them in.
 - **Why:** It keeps the migration purely additive: no existing function changes.
@@ -345,11 +365,15 @@ Format:
 - **Needs:** <the decision, approval or read, in one or two lines>
 ```
 
+### [#529](https://github.com/the-kya-project/perch-perfect-plan/pull/529) · 1.8 Do good voting (and the founding vote)
+- **Needs:** your look at the two admin screens, `/admin/votes` (the list) and `/admin/votes/<id>` (write a draft, open it, close early, extend, the announcement). They aren't in SpecVoting, and the specs say a screen that isn't mocked up is held for you. They follow the Library's admin screens. The member screens follow the mockup, apart from the voter avatars (see "Decisions agents made"). Say "merge" on the PR if they're fine, or what to change. It's behind the Flock gate, and the migration only adds tables, functions and a bucket.
+
 ### [#528](https://github.com/the-kya-project/perch-perfect-plan/pull/528) · 1.6 Curated chapter collections · needs a re-run of "iPhone hydration"
 - **Needs:** a re-run of the "iPhone hydration" check (Actions → the failed run → Re-run failed jobs). Runs aren't allowed to re-run checks. The two failures weren't from this PR.
   - First run: the browser install took 16 minutes and the job ran out of time, just as every Community shell test, the new one included, had passed.
   - Second run: one WebKit Dutch test of the email-confirmation page (`[webkit-nl] confirmation link waits for a tap`) failed on the dashboard's sitter-activity fetches. That's care-app code this PR doesn't touch, and the same test passed on the first run.
 - Nothing else is needed from you: no decision is waiting. Once it's green, the next run may merge it under the normal rules (hidden behind the Flock gate, additive migration). Or merge it yourself.
+- **Update (Nov 23, 10:45 EST run):** no longer needed. #528 went green and the 08:34 run merged it at 09:44 EST. `public.flock_places` is in production (checked read-only). Clear this item when you've seen it.
 
 ### Reminder · the hourly runs' GitHub token expires Feb 20, 2027
 - **Needs:** a new token before **Feb 20, 2027**. That's 90 days from Nov 22, 2026; GitHub → Settings → Developer settings → Fine-grained tokens shows the exact date. When it expires, runs can still build and test but can't push or open PRs, and each run's note in `~/.kya-agent/job.log` says so.
