@@ -56,13 +56,6 @@ Where these items came from, with the detail behind each: `docs/flock/opening-sc
 - **Overnight alone:** yes
 - **Needs Brittany:** merge. It changes how open pages update for current users, so a run holds the PR for her. Any change to Vercel settings is hers.
 
-### D3 Seasonal calendar file
-- **Done means:** a reviewed file of dated cards for the whole year (seasons and holidays, including heat, cold, fireworks, candles, holiday foods and travel), each with English and Dutch copy and a rule for which day it shows, plus a test that every date resolves and every card exists in both languages. Not vet-reviewed content: plain care reminders only, never health advice.
-- **Size:** S
-- **Depends on:** nothing
-- **Overnight alone:** yes
-- **Needs Brittany:** the card copy (before-and-after in the PR).
-
 ### D1.1 Weight baseline rules and a replay of real history
 - **Done means:**
   - A pure function works out each bird's own normal weight by meal state (before a meal, after a meal, or not labeled). It shows "still learning" until there are at least 7 weigh-ins over at least 14 days, and returns the alert tier: "worth watching", "keep an eye on this" or "call your vet today".
@@ -403,6 +396,7 @@ The launch PR itself (1.18) is already merged dark. What's left before opening i
 
 ## Done
 
+- **D3** `src/lib/seasonalCalendar.ts`: 22 dated cards covering every day of the year (7 seasons, 15 holidays and moments, including heat, cold, fireworks, candles, holiday foods and travel; some US-only or Netherlands-only), each with a rule for its days and an English and Dutch title and body in `src/locales/seasonal.*.jsonc`; `npm run test:seasonal-calendar` checks every rule resolves in every year through 2075, every day has a card, and every card exists in both languages. Held for Brittany's read of the copy: #516.
 - **1.2** `src/lib/healthRules.ts` lists every health threshold and phrase list, each "draft, pending vet review" with its source, plus the language keys for each area's wording; `npm run test:health-rules` checks the code against it and `supabase/checks/health_rules_checks.sql` checks the database; every health feature has its own switch in `public.health_features` (the live ones start at everyone and aren't wired to it yet); the vet packet (opening-scope B7) points at the file: #515.
 - **2.4a** `docs/skew-protection.md`: what Vercel's Skew Protection does, the four options and what each means for current users and for 2.4 and 2.5: #509.
 - **0.5** The review queue is reached from Flock settings (reviewers only, with the waiting count), and every item shows its author, space and date: #508.

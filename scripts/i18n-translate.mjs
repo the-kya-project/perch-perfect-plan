@@ -68,6 +68,13 @@ const CATALOGS = [
     meta: join(LOCALES, ".i18n-meta.routine.json"),
     headerName: "Dutch routine catalog",
   },
+  {
+    label: "seasonal",
+    en: join(LOCALES, "seasonal.en.jsonc"),
+    nl: join(LOCALES, "seasonal.nl.jsonc"),
+    meta: join(LOCALES, ".i18n-meta.seasonal.json"),
+    headerName: "Dutch seasonal catalog",
+  },
 ];
 
 const CHECK_ONLY = process.argv.includes("--check");

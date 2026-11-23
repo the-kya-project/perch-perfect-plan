@@ -20,6 +20,12 @@ Copy this, fill it in, and put it at the top of "Runs", above the latest entry.
 
 ## Runs
 
+### 2026-11-22 21:45 EST · D3 Seasonal calendar file
+- **Built:** The list of dated cards for Home's future "Today" card: 22 cards that between them cover every day of the year. Seven season cards (dry winter air, drafts, bird-safe spring cleaning, open windows, summer heat, shorter days, heating season) and fifteen for holidays and moments (fireworks at New Year and the Fourth of July, Valentine's, Easter, King's Day, Halloween, Thanksgiving, Sinterklaas, the clock changes, December decorations, candles, travel and holiday meals). Each card has a rule for the days it shows, including holidays that move (Easter, Thanksgiving, the clock changes, King's Day), and a short title and body in English and Dutch. Some cards are US-only or Netherlands-only. A test checks every rule lands on real dates every year through 2075, every day has a card, the moving holidays land on the right days, and every card has its words in both languages. Nothing in the app reads the file yet, so nobody sees a change.
+- **PR:** [#516](https://github.com/the-kya-project/perch-perfect-plan/pull/516)
+- **Outcome:** Held: needs Brittany's read of the card copy (the item's own "Needs Brittany" line).
+- **Problems:** none. 2.1 still has its open PR (#514, held), and 2.2–2.4 wait on it, so D3 was the highest item this run could take. The Dutch was written by hand and stamped, since the translate step isn't allowed in the job. The new test isn't in CI yet: adding it means a workflow change, which the run's token can't push. No pending-log entries to move.
+
 ### 2026-11-22 20:20 EST · 1.2 Vet-content settings file and a switch for every health feature
 - **Built:** One file, `src/lib/healthRules.ts`, now lists every health number and phrase list the app uses: the Diet conversion's weight rules, the 127 vet-nudge phrases, the health check's red and yellow rules, the care app's weight levels, the keep-warm range and poison lines, and the starting values for the weight baseline (D1). Each one is marked "draft, pending vet review" with where it came from and where it's used. A test fails if the app's code drifts from the file, and a database check fails if the database does. A new table gives each health feature its own off / admins / everyone switch. The live ones start at "everyone" and nothing reads them yet, so nobody sees a change. The vet packet now points at the file.
 - **PR:** [#515](https://github.com/the-kya-project/perch-perfect-plan/pull/515)
