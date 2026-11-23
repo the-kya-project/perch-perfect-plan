@@ -24,12 +24,25 @@ Where these items came from, with the detail behind each: `docs/flock/opening-sc
 
 
 ### D1.2 Weight baseline on the weight page, in shadow mode
-- **Done means:** the weight page shows the range and "still learning", a small celebration when the baseline is learned, and the alert cards. Everything is behind its own switch, on for Brittany's account only. Would-be alerts are logged to a new table nobody else sees, so they can be checked against what actually happened.
-- **Approved (Brittany, Nov 22, 2026):** the shadow-log table. It only adds a new table, on for her account only.
+- **Done means:** the weight page shows the range and "still learning", a small celebration when the baseline is learned, and the alert cards, following the decisions below. Everything is behind its own switch, and the screens are on for Brittany's account only. Would-be alerts for **every bird** are logged to a new table nobody else sees, so they can be checked against what actually happened. No other owner sees, or is sent, anything, and a logging failure never blocks a weigh-in.
+- **Approved (Brittany, Nov 22, 2026):** the shadow-log table. It only adds a new table.
+- **Replay read (Brittany, Nov 23, 2026):** she ran the D1.1 replay on real history and read the results. The export and report stay outside the repo.
+- **Decisions (Brittany, Nov 23, 2026).** Every number and line below is draft, pending vet review:
+  - **Shadow log:** covers every bird. This replaces "her birds only".
+  - **Typed normal weight:** never replaces the learned one.
+  - **Personal range:** each alert is measured against the bird's own usual wobble (1.4826 × the median absolute difference from its normal, as a percent of the normal), with limits. Worth watching = 2 wobbles, kept between 2% and 3.5%. Keep an eye on this = 3 wobbles, between 3.5% and 5%. The top level and the hard loss alert = 4 wobbles, between 5% and 10%. While a bird is still learning, the fixed draft values apply.
+  - **Timing:** a re-weigh counts within 10 days (`confirmDays`), and "Keep an eye on this" looks back 14 days (`keepAnEyeDays`).
+  - **Ideal weight:** owners can enter an optional ideal weight range for a bird, separate from the existing "Healthy range" field and not shown to sitters. The entry field is the only place it appears. It must never feel like a weight-loss or weight-gain app: no goal, target or progress language, no chart line, and no alert, note or celebration that mentions it or says a bird is moving toward or away from it. Behind the scenes it decides which alerts to show: when a weigh-in is at or above the low end of the ideal range, "Worth watching", "Keep an eye on this" and their "Weigh again" prompts stay quiet. Below the low end they work as usual. The top-level alert and the sudden-drop alert, with their "Weigh again" prompts, are never quieted by it. The shadow log records each would-be alert with and without the ideal range, so the effect can be checked.
+  - **Sudden drop:** a separate alert that ignores the usual and ideal weights, so it still fires when a bird lands at or above either. It compares a weigh-in with the median of up to the last 3 weigh-ins of the same kind from the past 7 days. The level is 10%, or 7% for birds under 100 g, and at least 2 g. One low reading asks for a re-weigh, and a second low reading of the same kind within 3 days confirms it.
+  - **Wording:** weight alerts are observational and never tell the owner to go to or call the vet. "Call your vet today" is not used as a label or in copy for these alerts. Draft lines:
+    - Top level: "We've noticed [Bird]'s weight has shifted. [Bird] is about [X]% below usual. Have you noticed any changes in eating or energy? It can help to notice whether [Bird] is eating less, quieter than usual, or fluffed up."
+    - Sudden drop, first reading: "[Bird]'s weight is about [X]% lower than the last few days. Weigh [Bird] again to check the reading."
+    - Sudden drop, confirmed: "A second weigh-in shows the same change: [Bird] is about [X]% lighter than a few days ago. This is a big change in a short time. Remember, birds are excellent at hiding illness. Take note of how [Bird] is eating and acting today."
+- **For the vet review:** the personal-range multiples and limits, the 3.5% "Worth watching" ceiling, the 10% and 7% sudden-drop levels with the 100 g cutoff and 7-day comparison, which alerts the ideal range may quiet, and whether the observational wording is enough for a confirmed sudden loss.
 - **Size:** L
-- **Depends on:** D1.1 (#521), and Brittany's read of its replay results
+- **Depends on:** D1.1 (#521). Brittany's read of its replay is done.
 - **Overnight alone:** yes (built to a held PR)
-- **Needs Brittany:** hold the PR. The health wording goes in the review queue and the vet packet. Ask in the PR whether the log covers only her birds or every bird: this item used to say every bird, and her approval says on for her account only. Until she answers, log her birds only.
+- **Needs Brittany:** hold the PR. The health wording goes in the review queue and the vet packet.
 
 
 ### 1.15 Kya's Crew and its sponsored rescue-adopter seat (switched off)

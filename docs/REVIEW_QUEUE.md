@@ -612,6 +612,12 @@ No new strings: every line reuses existing wording, in new places (admins only).
 
 ## Decisions agents made
 
+### D1.2 Weight baseline shadow mode · Brittany's decisions after the replay, Nov 23, 2026
+- **Decision (Brittany's):** She read the D1.1 replay. The shadow log covers every bird, the typed normal weight never replaces the learned one, and alerts use each bird's own range with limits. A separate sudden-drop alert (10%, or 7% under 100 g) always applies. Owners can enter an optional ideal weight range, which quietly decides whether the two lower alerts show and is never presented as a goal. Weight alerts stay observational and never tell an owner to go to or call the vet. The full rules and draft lines are under D1.2 in `docs/BACKLOG.md`.
+- **Why:** a fixed percent treats birds with very different natural swings alike, the draft timing missed sustained drops in owners who weigh every few days, a learned "usual" can be heavier than a bird's healthiest weight, and a big overnight loss from a high weight wouldn't have alerted at all. Kya & Co. is a health app, so the ideal weight informs alerts without turning into a weight-loss or weight-gain goal.
+- **For the vet review:** the personal-range multiples and limits, the 3.5% "Worth watching" ceiling, the sudden-drop levels with the 100 g cutoff and 7-day comparison, which alerts the ideal range may quiet, and whether observational wording is enough for a confirmed sudden loss.
+- **To change it:** the D1.2 entry in `docs/BACKLOG.md` before it's built, then `WEIGHT_BASELINE_RULES` in `src/lib/healthRules.ts`.
+
 ### [#529](https://github.com/the-kya-project/perch-perfect-plan/pull/529) · 1.8 Do good voting: approved mockups
 - **Decision (Brittany's):** Founders-only votes keep plain results: each choice's percentage and the top choice, with no donation or 10% wording. All-member votes share the donation. This replaces the earlier #529 notes below about a winner, changing a vote and the 10-vote minimum.
 - **Decision:** Rounding uses largest remainder, so shares always total exactly 100%. Leftover points go to the largest remainder, then more votes, then the earlier choice. With no votes and three choices, that's 34 / 33 / 33.
