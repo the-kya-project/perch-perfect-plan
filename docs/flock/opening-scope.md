@@ -277,7 +277,7 @@ Costs are **estimates**, projected from today's 62 accounts. "Session" = one foc
 
 ## B7. The vet review packet
 
-There is **no single settings file** today: values are spread across database settings tables, code constants and the language files. PR 1.2 gathers them. The packet should contain:
+**The settings file is [`src/lib/healthRules.ts`](../../src/lib/healthRules.ts)** (PR 1.2, #515). It lists every threshold and phrase list below, each marked "draft, pending vet review" with its source and where the app uses it, plus the language-file keys for each area's wording. `npm run test:health-rules` checks the app's code against it, and `supabase/checks/health_rules_checks.sql` checks the database (`journey_settings`, `flock_vet_signs`, the nectar-eater block). Each health feature has its own switch in `public.health_features` (`src/lib/healthFeatures.ts`). Start the packet from that file; areas 2–4 and 9–13 below are wording and content, which still live where listed. The packet should contain:
 
 1. **Diet conversion weight rules** (`journey_settings`; `20261107220000_journeys_updates.sql:26-27`, `20261108160000_diet_weight_rules.sql:38-47`):
    - pause at 5% below the starting weight;
