@@ -20,6 +20,12 @@ Copy this, fill it in, and put it at the top of "Runs", above the latest entry.
 
 ## Runs
 
+### 2026-11-23 14:20 EST · 1.8 Do good voting: Brittany's approved mockups
+- **Built:** Changed the vote from "one winner" to a shared donation: every choice gets 10%, the votes share out the rest, and the shares always total 100%. A vote is now final, enforced in the database. The vote, thank-you and results screens match the approved mockups, which are saved in `docs/flock/mockups/voting/`. Admin choices now take a logo or photo, and a closed vote shows the shares to send. Founders-only votes keep plain results, as Brittany chose.
+- **PR:** [#529](https://github.com/the-kya-project/perch-perfect-plan/pull/529)
+- **Outcome:** Merges once every required check passes, as Brittany asked in this session.
+- **Problems:** The staging account blocker had already cleared (no `@thekyaproject.com` account on staging). A transparent PNG logo would have turned black when saved as a JPEG, so logos are now flattened onto white.
+
 ### 2026-11-23 13:15 EST · Record: #525 approved and merged by Brittany
 - **Built:** Brittany approved 1.14's database change, its 16 lines of wording and the review-queue decisions. Changed the founding line as she asked, merged `main` (both sides kept), and added `npm run test:billing` to the iPhone hydration job.
 - **Migration:** renamed to `20261123180000_billing_foundation.sql`, because two later migrations reached production while this PR was open and a file older than them is refused by a plain `supabase db push`. It had not been applied anywhere.

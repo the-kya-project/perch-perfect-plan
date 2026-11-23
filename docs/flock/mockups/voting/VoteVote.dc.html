@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>The vote, nothing picked yet</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&amp;family=Newsreader:opsz,wght@6..72,700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#2d6a4f}a:hover{color:#1a3d2e}
+.choice{display:flex;width:100%;align-items:center;gap:14px;padding:12px;border-radius:18px;background:#ffffff;border:2px solid #dbe3da;text-align:left;font-family:'DM Sans',sans-serif;color:#1a3d2e}
+.logo{width:68px;height:68px;flex-shrink:0;border-radius:16px;display:grid;place-items:center;font-family:'Newsreader',Georgia,serif;font-size:26px;font-weight:700}
+.radio{width:24px;height:24px;flex-shrink:0;border-radius:999px;border:2px solid #1a3d2e;background:#ffffff;box-sizing:border-box;display:grid;place-items:center}
+</style>
+</helmet>
+<div style="width: 390px; height: 980px; box-sizing: border-box; display: flex; flex-direction: column; background: #1a3d2e; font-family: 'DM Sans', sans-serif; color: #1a3d2e; overflow: hidden">
+  <header style="padding: 14px 20px 46px; color: #ffffff; display: flex; flex-direction: column; gap: 12px">
+    <a href="Main.dc.html" aria-label="Back" style="width: 44px; height: 44px; border-radius: 999px; background: #12291f; color: #ffffff; display: grid; place-items: center"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg></a>
+    <p style="margin: 0; font-size: 12px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: #cdeab0">Do good vote · closes [date]</p>
+    <h1 style="margin: 0; font-family: 'Newsreader', Georgia, serif; font-weight: 700; font-size: 30px; line-height: 1.1">Where should this quarter's donation go?</h1>
+  </header>
+  <main style="flex-grow: 1; margin-top: -26px; border-radius: 26px 26px 0 0; background: #f1f5f0; padding: 20px 16px 24px; display: flex; flex-direction: column; gap: 12px">
+    <section style="display: flex; gap: 12px; align-items: flex-start; background: #f2b33d; border: 2px solid #1a3d2e; border-radius: 18px; padding: 14px 16px">
+      <span style="width: 34px; height: 34px; flex-shrink: 0; border-radius: 999px; background: #1a3d2e; color: #f2b33d; display: grid; place-items: center"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.8 5.6a5 5 0 0 0-7.1 0L12 7.3l-1.7-1.7a5 5 0 0 0-7.1 7.1L12 21.5l8.8-8.8a5 5 0 0 0 0-7.1z"/></svg></span>
+      <span style="font-size: 14px; line-height: 1.45">Every partner gets at least <strong>10%</strong>. Your vote decides how the rest is shared. You can vote once.</span>
+    </section>
+    <span style="padding: 0 4px; font-size: 14px; line-height: 1.45; color: #3d4f45">[Your short description of the vote]</span>
+    <div role="radiogroup" aria-label="Choices" style="display: flex; flex-direction: column; gap: 10px">
+      <button type="button" role="radio" aria-checked="false" class="choice"><span class="logo" role="img" aria-label="[Partner rescue A] logo" style="background: #2d6a4f; color: #ffffff">A</span><span style="flex-grow: 1; display: flex; flex-direction: column; gap: 4px"><span style="font-size: 16px; font-weight: 700">[Partner rescue A]</span><span style="font-size: 13px; line-height: 1.4; color: #3d4f45">[A sentence or two about this partner]</span></span><span class="radio"></span></button>
+      <button type="button" role="radio" aria-checked="false" class="choice"><span class="logo" role="img" aria-label="[Conservation project B] logo" style="background: #f2b33d; color: #1a3d2e">B</span><span style="flex-grow: 1; display: flex; flex-direction: column; gap: 4px"><span style="font-size: 16px; font-weight: 700">[Conservation project B]</span><span style="font-size: 13px; line-height: 1.4; color: #3d4f45">[A sentence or two about this partner]</span></span><span class="radio"></span></button>
+      <button type="button" role="radio" aria-checked="false" class="choice"><span class="logo" role="img" aria-label="[Partner rescue C] logo" style="background: #9bcab8; color: #1a3d2e">C</span><span style="flex-grow: 1; display: flex; flex-direction: column; gap: 4px"><span style="font-size: 16px; font-weight: 700">[Partner rescue C]</span><span style="font-size: 13px; line-height: 1.4; color: #3d4f45">[A sentence or two about this partner]</span></span><span class="radio"></span></button>
+    </div>
+    <span style="text-align: center; font-size: 13px; color: #5f5e5a">31 members have voted</span>
+    <button type="button" disabled style="width: 100%; min-height: 52px; border-radius: 999px; border: 2px solid #1a3d2e; background: #f2b33d; color: #1a3d2e; opacity: 0.45; font-family: 'DM Sans', sans-serif; font-size: 16px; font-weight: 700">Pick one to vote</button>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":980}}'>
+class Component extends DCLogic {
+renderVals() {
+return {};
+}
+}
+</script>
+</body>
+</html>

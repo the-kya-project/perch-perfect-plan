@@ -14,12 +14,13 @@ export class AvatarError extends Error {}
 
 /** Redraw a photo as a new JPEG, at most `maxEdge` px on the long edge and
  *  `maxBytes` in size. Pixels only: EXIF (GPS included) never survives. */
-export async function reencodeJpeg(file: File, maxEdge: number, maxBytes: number): Promise<Blob> {
-  return (await reencodeJpegSized(file, maxEdge, maxBytes)).blob;
+export async function reencodeJpeg(file: File, maxEdge: number, maxBytes: number, background?: string): Promise<Blob> {
+  return (await reencodeJpegSized(file, maxEdge, maxBytes, background)).blob;
 }
 
-/** reencodeJpeg, also returning the new JPEG's width and height. */
-export async function reencodeJpegSized(file: File, maxEdge: number, maxBytes: number): Promise<{ blob: Blob; width: number; height: number }> {
+/** reencodeJpeg, also returning the new JPEG's width and height. `background`
+ *  fills behind a transparent image (a logo), which JPEG would turn black. */
+export async function reencodeJpegSized(file: File, maxEdge: number, maxBytes: number, background?: string): Promise<{ blob: Blob; width: number; height: number }> {
   let bitmap: ImageBitmap;
   try {
     bitmap = await createImageBitmap(file, { imageOrientation: "from-image" } as ImageBitmapOptions);
@@ -32,6 +33,7 @@ export async function reencodeJpegSized(file: File, maxEdge: number, maxBytes: n
   canvas.height = Math.max(1, Math.round(bitmap.height * scale));
   const ctx = canvas.getContext("2d");
   if (!ctx) { bitmap.close?.(); throw new AvatarError("We couldn't read that photo. Try a JPEG or PNG."); }
+  if (background) { ctx.fillStyle = background; ctx.fillRect(0, 0, canvas.width, canvas.height); }
   ctx.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
   bitmap.close?.();
   for (const q of [0.85, 0.75, 0.6, 0.45]) {

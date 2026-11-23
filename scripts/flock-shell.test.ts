@@ -37,7 +37,7 @@ import { FLOCK_CONTACT_EMAIL, FLOCK_GUIDELINES_VERSION, contactLine, guidelineSe
 import { isJoinPath, joinErrorKind, joinRedirect, type FlockAccess } from "@/lib/flockJoin";
 import { QUEUE_FILTERS, queueItemPlace, type QueueItem } from "@/lib/flockModeration";
 import { PLACE_KINDS, PLACE_LIMITS, groupPlaces, telHref, updatedDay, websiteHref, type Place } from "@/lib/flockPlaces";
-import { VOTE_LIMITS, cleanVote, emptyVoteDraft, openProblems, toLocalInput, voteDay, votesFor, winnerNames, type Vote } from "@/lib/flockVotes";
+import { VOTE_GUARANTEED_PCT, VOTE_LIMITS, choiceColor, cleanVote, emptyVoteDraft, isDonationVote, openProblems, rankedChoices, toLocalInput, topNames, voteDay, votesFor, type Vote } from "@/lib/flockVotes";
 import {
   birdPronoun, canStartCustom, customProblem, daysSince, clipPhase, flockSheetTitle, isNectarEater, rollingAverage, showVetReminder, youngOrUnknownAge, defaultVisibility, groupTemplates, isLocked, journeyDay, journeyDays,
   nextMilestone, possessive, progressOf, skillInSentence, startHere, trimTrailingBlanks, vetCheckLine, visibilityChoices, wantsTip,
@@ -823,17 +823,18 @@ check("chapter resources: when a listing was last updated", () => {
 check("votes: rows are cleaned, and only the server's results are shown", () => {
   const v = cleanVote({
     vote_id: "v1", question: "Where should this quarter's donation go?", audience: "nonsense", state: "weird", closes_at: "2026-12-15T20:00:00Z",
-    voters: "31", my_choice: null, too_few: "yes",
-    choices: [{ choice_id: "a", name: "The Macaw Society", percent: 52, votes: null, winner: true }, { choice_id: "b", name: "Armonía", percent: "15", winner: "true" }, "junk"],
+    voters: "31", my_choice: null,
+    choices: [{ choice_id: "a", name: "The Macaw Society", percent: 52, share: 46, from_votes: 36, votes: null, top: true }, { choice_id: "b", name: "Armonía", percent: "15", share: "20", top: "true" }, "junk"],
   });
   assert.equal(v.audience, "members");
   assert.equal(v.state, "closed", "an unknown state never shows as open");
   assert.equal(v.voters, 31);
-  assert.equal(v.too_few, false);
   assert.equal(v.choices.length, 3);
   assert.equal(v.choices[1].percent, null, "a percent only when the server sends a number");
-  assert.equal(v.choices[1].winner, false);
-  assert.deepEqual(winnerNames(v), ["The Macaw Society"]);
+  assert.equal(v.choices[1].share, null, "a share only when the server sends a number");
+  assert.equal(v.choices[1].top, false);
+  assert.equal(v.choices[0].from_votes, 36);
+  assert.deepEqual(topNames(v), ["The Macaw Society"]);
   assert.deepEqual(cleanVote({ choices: "x" }).choices, []);
 });
 
@@ -842,8 +843,27 @@ check("votes: Today shows open votes; Do good also shows recent results", () => 
   const all = [mk("open", "open"), mk("closed", "closed"), mk("draft", "draft")];
   assert.deepEqual(votesFor(all, "today").map((v) => v.vote_id), ["open"]);
   assert.deepEqual(votesFor(all, "good").map((v) => v.vote_id), ["open", "closed"]);
-  // A tie shows every winner.
-  assert.deepEqual(winnerNames({ choices: [{ name: "A", winner: true }, { name: "B", winner: true }, { name: "C", winner: false }] as Vote["choices"] }), ["A", "B"]);
+  // A founders-only tie names every top choice.
+  assert.deepEqual(topNames({ choices: [{ name: "A", top: true }, { name: "B", top: true }, { name: "C", top: false }] as Vote["choices"] }), ["A", "B"]);
+});
+
+check("votes: results are ordered by share, and each choice keeps its color", () => {
+  const ranked = rankedChoices({ choices: [
+    { choice_id: "a", share: 33, percent: 33 }, { choice_id: "b", share: 44, percent: 48 }, { choice_id: "c", share: 23, percent: 19 },
+  ] as Vote["choices"] });
+  assert.deepEqual(ranked.map((c) => c.choice_id), ["b", "a", "c"]);
+  assert.deepEqual(ranked.map((c) => c.index), [1, 0, 2]);
+  // Founders-only votes have no share, so they order by percent.
+  assert.deepEqual(rankedChoices({ choices: [{ choice_id: "x", share: null, percent: 40 }, { choice_id: "y", share: null, percent: 60 }] as Vote["choices"] }).map((c) => c.choice_id), ["y", "x"]);
+  // Equal choices stay in the vote's order.
+  assert.deepEqual(rankedChoices({ choices: [{ choice_id: "p", share: 50, percent: 50 }, { choice_id: "q", share: 50, percent: 50 }] as Vote["choices"] }).map((c) => c.choice_id), ["p", "q"]);
+  assert.equal(new Set(Array.from({ length: 8 }, (_, i) => choiceColor(i).solid)).size, 8, "eight choices, eight colors");
+  assert.equal(isDonationVote({ audience: "members" }), true);
+  assert.equal(isDonationVote({ audience: "founders" }), false);
+  const sql = readFileSync("supabase/migrations/20261123183000_flock_votes.sql", "utf8");
+  assert.ok(sql.includes(`returns integer language sql immutable set search_path = '' as $$ select ${VOTE_GUARANTEED_PCT}; $$;`), "the guarantee matches the database");
+  assert.ok(!sql.includes("flock_vote_min_results"), "no minimum-votes rule");
+  assert.ok(!sql.includes("too_few"), "no too-few state");
 });
 
 check("votes: what a draft needs before it opens", () => {

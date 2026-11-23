@@ -4,7 +4,7 @@
 -- care app.
 --
 -- A vote (flock_votes) is a question, a short description, two to eight
--- choices (flock_vote_choices: a name, a sentence or two, an optional photo),
+-- choices (flock_vote_choices: a name, a sentence or two, a logo or photo),
 -- an audience (every member, or founding members only) and a close date.
 -- Admins write it as a draft, open it, close it early or extend it, and add
 -- an announcement that shows with the results.
@@ -14,10 +14,18 @@
 --   * An open or closed vote: Flock members (and admins); a founders-only
 --     vote only to founding members (a founding_claims row) and admins.
 --   * Before it closes: the question, the choices, how many have voted and
---     the caller's own choice. Never who's winning.
---   * After it closes: percentages, the winner and the announcement, unless
---     fewer than flock_vote_min_results() (10) people voted, when it says
---     "too few votes to share" and only admins see the counts.
+--     the caller's own choice. Never how the votes are going.
+--   * After it closes, always, however few voted: each choice's share of the
+--     votes and the announcement.
+--       - An all-members vote shares the quarter's donation. Every choice
+--         gets a guaranteed 10%; the rest (100% minus 10% per choice) is
+--         split by share of the votes, in whole percents that always total
+--         exactly 100. If nobody voted, it's split evenly. No single winner.
+--       - A founders-only vote (the first expert Q&As and chapters) involves
+--         no donation: it shows the percentages and the top choice (every
+--         choice tied at the top).
+--   * One vote each, final. A ballot can't be changed (a trigger refuses any
+--     update, for every role).
 --   * Admins see the counts per choice at any time.
 --   * Nobody, admins included, can see how a specific member voted: ballots
 --     are readable by no app user, and no function returns anyone's ballot
@@ -58,14 +66,14 @@ create table if not exists public.flock_vote_choices (
 );
 create index if not exists flock_vote_choices_vote_idx on public.flock_vote_choices (vote_id, position);
 
--- One ballot per member per vote; changing your vote updates it. The choice
--- must belong to the same vote (the composite key).
+-- One ballot per member per vote, and it's final: flock_vote_ballots_final
+-- refuses any update. The choice must belong to the same vote (the composite
+-- key).
 create table if not exists public.flock_vote_ballots (
   vote_id     uuid not null references public.flock_votes(id) on delete cascade,
   user_id     uuid not null references auth.users(id) on delete cascade,
   choice_id   uuid not null,
   created_at  timestamptz not null default now(),
-  updated_at  timestamptz not null default now(),
   primary key (vote_id, user_id),
   foreign key (vote_id, choice_id) references public.flock_vote_choices (vote_id, id) on delete cascade
 );
@@ -80,7 +88,7 @@ revoke all on public.flock_vote_choices from anon, authenticated;
 revoke all on public.flock_vote_ballots from anon, authenticated;
 grant select, insert, update, delete on public.flock_votes to service_role;
 grant select, insert, update, delete on public.flock_vote_choices to service_role;
-grant select, insert, update, delete on public.flock_vote_ballots to service_role;
+grant select, insert, delete on public.flock_vote_ballots to service_role;
 drop policy if exists "flock_votes no direct access" on public.flock_votes;
 drop policy if exists "flock_vote_choices no direct access" on public.flock_vote_choices;
 drop policy if exists "flock_vote_ballots no direct access" on public.flock_vote_ballots;
@@ -88,12 +96,82 @@ create policy "flock_votes no direct access" on public.flock_votes for select to
 create policy "flock_vote_choices no direct access" on public.flock_vote_choices for select to authenticated using (false);
 create policy "flock_vote_ballots no direct access" on public.flock_vote_ballots for select to authenticated using (false);
 
+-- One vote, final: no role can change a ballot once it's cast. Deleting an
+-- account still removes its ballots (a delete, not an update).
+create or replace function private.flock_vote_ballot_final()
+returns trigger
+language plpgsql
+set search_path = ''
+as $$
+begin
+  raise exception 'already_voted' using errcode = 'P0001';
+end;
+$$;
+revoke all on function private.flock_vote_ballot_final() from public, anon, authenticated;
+drop trigger if exists flock_vote_ballots_final on public.flock_vote_ballots;
+create trigger flock_vote_ballots_final
+  before update on public.flock_vote_ballots
+  for each row execute function private.flock_vote_ballot_final();
+
 
 -- 2) Rules -----------------------------------------------------------------------------
 
--- Fewer voters than this when a vote closes: "too few votes to share".
-create or replace function private.flock_vote_min_results()
+-- What every choice in a donation vote is guaranteed, in percent.
+create or replace function private.flock_vote_guaranteed_pct()
 returns integer language sql immutable set search_path = '' as $$ select 10; $$;
+
+-- Split p_pool whole points by weight so they total exactly p_pool (largest
+-- remainder: everyone rounds down, then the biggest remainders get one more;
+-- ties go to more votes, then the earlier choice). All zero weights: zeros.
+create or replace function private.flock_split_whole(p_weights integer[], p_pool integer)
+returns integer[]
+language sql
+immutable
+set search_path = ''
+as $$
+  with t as (
+    select coalesce(sum(x), 0)::integer as total from unnest(p_weights) as x
+  ), w as (
+    select u.ord, u.weight, (p_pool * u.weight) / t.total as base, (p_pool * u.weight) % t.total as rem
+    from unnest(p_weights) with ordinality as u(weight, ord) cross join t
+    where t.total > 0
+  ), r as (
+    select w.ord, w.base,
+           row_number() over (order by w.rem desc, w.weight desc, w.ord) as rn,
+           p_pool - sum(w.base) over () as left_over
+    from w
+  )
+  select coalesce(
+    (select array_agg((r.base + case when r.rn <= r.left_over then 1 else 0 end)::integer order by r.ord) from r),
+    array_fill(0, array[coalesce(cardinality(p_weights), 0)])
+  );
+$$;
+
+-- Each choice's share of the votes, in whole percents totalling 100 (all
+-- zeros when nobody voted).
+create or replace function private.flock_vote_percents(p_counts integer[])
+returns integer[]
+language sql
+immutable
+set search_path = ''
+as $$ select private.flock_split_whole(p_counts, 100); $$;
+
+-- Each choice's share of the donation: the guaranteed 10% plus its part of
+-- the rest by votes. Always totals exactly 100. Nobody voted: an even split.
+create or replace function private.flock_vote_shares(p_counts integer[])
+returns integer[]
+language sql
+immutable
+set search_path = ''
+as $$
+  select coalesce(array_agg((u.part + private.flock_vote_guaranteed_pct())::integer order by u.ord), '{}'::integer[])
+  from unnest(private.flock_split_whole(
+    case when coalesce((select sum(x) from unnest(p_counts) as x), 0) = 0
+         then array_fill(1, array[coalesce(cardinality(p_counts), 0)])
+         else p_counts end,
+    100 - private.flock_vote_guaranteed_pct() * coalesce(cardinality(p_counts), 0)
+  )) with ordinality as u(part, ord);
+$$;
 
 -- How long a closed vote's results stay on Do good.
 create or replace function private.flock_vote_results_days()
@@ -146,13 +224,19 @@ begin
 end;
 $$;
 
-revoke all on function private.flock_vote_min_results() from public, anon;
+revoke all on function private.flock_vote_guaranteed_pct() from public, anon;
+revoke all on function private.flock_split_whole(integer[], integer) from public, anon;
+revoke all on function private.flock_vote_percents(integer[]) from public, anon;
+revoke all on function private.flock_vote_shares(integer[]) from public, anon;
 revoke all on function private.flock_vote_results_days() from public, anon;
 revoke all on function private.flock_vote_state(text, timestamptz) from public, anon;
 revoke all on function private.flock_is_founder(uuid) from public, anon;
 revoke all on function private.flock_vote_audience_ok(text) from public, anon;
 revoke all on function private.assert_flock_admin() from public, anon;
-grant execute on function private.flock_vote_min_results() to authenticated, service_role;
+grant execute on function private.flock_vote_guaranteed_pct() to authenticated, service_role;
+grant execute on function private.flock_split_whole(integer[], integer) to authenticated, service_role;
+grant execute on function private.flock_vote_percents(integer[]) to authenticated, service_role;
+grant execute on function private.flock_vote_shares(integer[]) to authenticated, service_role;
 grant execute on function private.flock_vote_results_days() to authenticated, service_role;
 grant execute on function private.flock_vote_state(text, timestamptz) to authenticated, service_role;
 grant execute on function private.flock_is_founder(uuid) to authenticated, service_role;
@@ -165,13 +249,15 @@ grant execute on function private.assert_flock_admin() to authenticated, service
 -- One vote (p_id) or the current ones (p_id null: open votes, and votes that
 -- closed within flock_vote_results_days(), newest closing first after the
 -- open ones). Each row carries its choices as JSON, in order:
---   {choice_id, name, blurb, photo_path, percent, votes, winner}
--- percent and winner only once closed with enough voters; votes (the count)
--- only for admins. my_choice is the caller's own ballot, never anyone else's.
+--   {choice_id, name, blurb, photo_path, percent, share, from_votes, votes, top}
+-- percent (of the votes) once closed; share and from_votes (the donation) once
+-- closed on an all-members vote; top once closed on a founders-only vote;
+-- votes (the count) only for admins. my_choice is the caller's own ballot,
+-- never anyone else's.
 create or replace function private.flock_vote_rows(p_id uuid)
 returns table (
   vote_id uuid, question text, description text, audience text, state text, closes_at timestamptz,
-  voters integer, my_choice uuid, announcement text, too_few boolean, choices jsonb
+  voters integer, my_choice uuid, announcement text, choices jsonb
 )
 language plpgsql
 stable
@@ -200,26 +286,35 @@ begin
     ),
     c as (
       select ch.vote_id, ch.id, ch.position, ch.name, ch.blurb, ch.photo_path,
-             (select count(*)::integer from public.flock_vote_ballots b where b.vote_id = ch.vote_id and b.choice_id = ch.id) as k
+             (select count(*)::integer from public.flock_vote_ballots b where b.vote_id = ch.vote_id and b.choice_id = ch.id) as k,
+             (row_number() over (partition by ch.vote_id order by ch.position, ch.id))::integer as i
       from public.flock_vote_choices ch
       where ch.vote_id in (select v.id from v)
+    ),
+    s as (
+      select c.vote_id as vid, array_agg(c.k order by c.i) as ks from c group by c.vote_id
     )
     select v.id, v.question, v.description, v.audience, v.st, v.closes_at, v.n,
            (select b.choice_id from public.flock_vote_ballots b where b.vote_id = v.id and b.user_id = auth.uid()),
            case when v.st = 'closed' or v_admin then v.announcement end,
-           v.st = 'closed' and v.n < private.flock_vote_min_results(),
            coalesce((
              select jsonb_agg(jsonb_build_object(
                       'choice_id', c.id, 'name', c.name, 'blurb', c.blurb, 'photo_path', c.photo_path,
-                      'percent', case when v.st = 'closed' and v.n >= private.flock_vote_min_results()
-                                      then round(100.0 * c.k / v.n)::integer end,
+                      'percent', case when v.st = 'closed' then p.percents[c.i] end,
+                      'share', case when v.st = 'closed' and v.audience = 'members' then p.shares[c.i] end,
+                      'from_votes', case when v.st = 'closed' and v.audience = 'members'
+                                         then p.shares[c.i] - private.flock_vote_guaranteed_pct() end,
                       'votes', case when v_admin then c.k end,
-                      'winner', v.st = 'closed' and v.n >= private.flock_vote_min_results() and c.k > 0
-                                and c.k = (select max(c2.k) from c c2 where c2.vote_id = v.id)
-                    ) order by c.position, c.id)
+                      'top', v.st = 'closed' and v.audience = 'founders' and c.k > 0
+                             and c.k = (select max(c2.k) from c c2 where c2.vote_id = v.id)
+                    ) order by c.i)
              from c where c.vote_id = v.id
            ), '[]'::jsonb)
     from v
+    left join lateral (
+      select private.flock_vote_percents(s.ks) as percents, private.flock_vote_shares(s.ks) as shares
+      from s where s.vid = v.id
+    ) p on true
     order by (v.st = 'open') desc, case when v.st = 'open' then v.closes_at end asc, v.closes_at desc, v.id;
 end;
 $$;
@@ -254,7 +349,8 @@ grant execute on function private.admin_votes() to authenticated, service_role;
 
 -- 4) Voting ----------------------------------------------------------------------------
 
--- Pick one choice, or change your pick, while the vote is open.
+-- Cast your one vote while the vote is open. It's final: a second call, even
+-- for the same choice, raises already_voted.
 create or replace function private.flock_vote_cast(p_vote_id uuid, p_choice_id uuid)
 returns void
 language plpgsql
@@ -278,7 +374,10 @@ begin
   end if;
   insert into public.flock_vote_ballots (vote_id, user_id, choice_id)
   values (x.id, auth.uid(), p_choice_id)
-  on conflict (vote_id, user_id) do update set choice_id = excluded.choice_id, updated_at = now();
+  on conflict (vote_id, user_id) do nothing;
+  if not found then
+    raise exception 'already_voted' using errcode = 'P0001';
+  end if;
 end;
 $$;
 
@@ -494,8 +593,9 @@ grant execute on function private.admin_vote_announce(uuid, text) to authenticat
 grant execute on function private.admin_vote_delete(uuid) to authenticated, service_role;
 
 
--- 6) Choice photos: private 'flock-votes' bucket ------------------------------------------
--- choices/<uuid>.jpg, re-encoded to JPEG in the browser (no EXIF/GPS), 2 MB.
+-- 6) Choice logos and photos: private 'flock-votes' bucket --------------------------------
+-- choices/<uuid>.jpg, re-encoded to JPEG in the browser (no EXIF/GPS; a
+-- transparent logo is flattened onto white), 2 MB.
 -- Admins do everything; anyone else reads only the photos of a vote they may
 -- see (never a draft's). Admin content, so account deletion never touches it.
 
@@ -547,14 +647,14 @@ create policy "flock-votes admins delete" on storage.objects for delete to authe
 create or replace function public.flock_votes_current()
 returns table (
   vote_id uuid, question text, description text, audience text, state text, closes_at timestamptz,
-  voters integer, my_choice uuid, announcement text, too_few boolean, choices jsonb
+  voters integer, my_choice uuid, announcement text, choices jsonb
 ) language sql stable security invoker set search_path = ''
 as $$ select * from private.flock_vote_rows(null); $$;
 
 create or replace function public.flock_vote(p_id uuid)
 returns table (
   vote_id uuid, question text, description text, audience text, state text, closes_at timestamptz,
-  voters integer, my_choice uuid, announcement text, too_few boolean, choices jsonb
+  voters integer, my_choice uuid, announcement text, choices jsonb
 ) language sql stable security invoker set search_path = ''
 as $$ select * from private.flock_vote_rows(p_id) where p_id is not null; $$;
 

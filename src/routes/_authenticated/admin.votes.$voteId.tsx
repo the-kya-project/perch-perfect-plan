@@ -4,7 +4,7 @@ import { ArrowDown, ArrowUp, Camera, Loader2, Plus, Trash2 } from "lucide-react"
 import { useTranslation } from "react-i18next";
 import { K, KyaBackRow, KyaBody, KyaField, KyaHeader, KyaPage, KyaPrimaryButton, KyaSecondaryButton, KyaTitle } from "@/components/kya";
 import { AdminOnly } from "@/components/flock/AdminOnly";
-import { AdminCounts, ChoicePhoto, VoteResults, voteStateLabel } from "@/components/flock/VoteParts";
+import { AdminCounts, AdminVoteOutcome, ChoicePhoto, voteStateLabel } from "@/components/flock/VoteParts";
 import { FLOCK_ENABLED_QUERY } from "@/lib/flock";
 import { useIsAdmin } from "@/lib/flockData";
 import { useFormInProgress } from "@/lib/formsInProgress";
@@ -15,8 +15,8 @@ import {
 } from "@/lib/flockVotes";
 
 // One vote, for admins (backlog 1.8). A draft: question, description,
-// audience, close date and two to eight choices (name, a sentence or two, a
-// photo), then Save draft, Open vote or Delete. Once open: the counts, Close
+// audience, close date and two to eight choices (name, a sentence or two, the
+// partner's logo or a photo), then Save draft, Open vote or Delete. Once open: the counts, Close
 // early, Extend, and the announcement. Once closed: the results and the
 // announcement. "new" makes a new draft. Behind the Flock gate, then admins.
 export const Route = createFileRoute("/_authenticated/admin/votes/$voteId")({
@@ -199,14 +199,14 @@ function DraftEditor({ initial }: { initial: VoteDraft }) {
           hint={t("flock.votesAdmin.closesHint", "Your local time. You can close it early or extend it once it's open.")}
           onChange={(e) => set({ closes_at: e.target.value })} data-testid="vote-closes" />
 
-        <Group label={t("flock.votesAdmin.choicesLabel", "Choices")} hint={t("flock.votesAdmin.choicesHint", "Two to eight. Each has a name, a sentence or two, and a photo if you have one.")}>
+        <Group label={t("flock.votesAdmin.choicesLabel", "Choices")} hint={t("flock.votesAdmin.choicesHint", "Two to eight. Each has a name, a sentence or two, and the partner's logo or a photo. Every choice gets at least 10% of the donation, and the votes share out the rest.")}>
           <input ref={fileRef} type="file" accept="image/*" className="hidden" data-testid="choice-photo-input"
             onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ""; void pick(f); }} />
           <div className="flex flex-col gap-2.5">
             {d.choices.map((c, i) => (
               <div key={c.key} className="flex flex-col gap-2 rounded-[16px] bg-white p-3" data-choice-edit={i}>
                 <div className="flex items-center gap-2">
-                  <ChoicePhoto name={c.name || String(i + 1)} photo={c.photo_path ? urls?.[c.photo_path] : undefined} size={48} />
+                  <ChoicePhoto name={c.name || String(i + 1)} photo={c.photo_path ? urls?.[c.photo_path] : undefined} index={i} size={48} />
                   <input value={c.name} maxLength={VOTE_LIMITS.choiceName} onChange={(e) => setChoice(c.key, { name: e.target.value })}
                     aria-label={t("flock.votesAdmin.choiceName", "Choice {{n}} name", { n: i + 1 })} placeholder={t("flock.votesAdmin.choiceNamePlaceholder", "Name")}
                     className="min-h-[44px] min-w-0 flex-1 rounded-[12px] border-[1.5px] px-3 text-[16px] outline-none" style={{ borderColor: "#d5dfd5", color: K.forest }} data-testid="choice-name" />
@@ -216,11 +216,11 @@ function DraftEditor({ initial }: { initial: VoteDraft }) {
                   className="w-full resize-none rounded-[12px] border-[1.5px] p-3 text-[15px] outline-none" style={{ borderColor: "#d5dfd5", color: K.forest }} data-testid="choice-blurb" />
                 <div className="flex flex-wrap items-center gap-1">
                   <MiniButton onClick={() => { setPhotoFor(c.key); fileRef.current?.click(); }} disabled={busy !== null} testId="choice-photo">
-                    <Camera className="size-4" aria-hidden="true" />{busy === "photo" && photoFor === c.key ? t("flock.libraryAdmin.uploading", "Uploading…") : c.photo_path ? t("flock.votesAdmin.replacePhoto", "Replace photo") : t("flock.votesAdmin.addPhoto", "Add photo")}
+                    <Camera className="size-4" aria-hidden="true" />{busy === "photo" && photoFor === c.key ? t("flock.libraryAdmin.uploading", "Uploading…") : c.photo_path ? t("flock.votesAdmin.replaceLogo", "Replace logo") : t("flock.votesAdmin.addLogo", "Add logo or photo")}
                   </MiniButton>
                   {c.photo_path && (
                     <MiniButton onClick={() => { void removeVotePhotos(unsavedPhotos([c.photo_path])); setChoice(c.key, { photo_path: null }); }} disabled={busy !== null} testId="choice-photo-remove">
-                      {t("flock.votesAdmin.removePhoto", "Remove photo")}
+                      {t("flock.votesAdmin.removeLogo", "Remove")}
                     </MiniButton>
                   )}
                   <span className="flex-1" />
@@ -309,7 +309,7 @@ function LiveVote({ vote }: { vote: Vote }) {
         {" · "}
         <Link to="/flock/votes/$voteId" params={{ voteId: vote.vote_id }} className="font-[700]" style={{ color: K.moss }}>{t("flock.votesAdmin.memberView", "See what members see")}</Link>
       </p>
-      {open ? <AdminCounts vote={vote} /> : <VoteResults vote={vote} admin />}
+      {open ? <AdminCounts vote={vote} /> : <AdminVoteOutcome vote={vote} />}
 
       {open && (
         <div className="flex flex-col gap-2.5 rounded-[20px] bg-white p-4" data-testid="vote-extend">

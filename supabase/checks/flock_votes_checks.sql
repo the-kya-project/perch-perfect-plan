@@ -2,10 +2,11 @@
 --
 -- Self-contained and leaves nothing behind: an admin; a founding member (fd);
 -- twelve Flock members (m[1..12]); a free user. Checks who sees drafts, open
--- and founders-only votes, voting and changing a vote, that nobody sees who's
--- winning before it closes, the "too few votes" rule, results and the
--- announcement after closing, the admin's open / close early / extend /
--- delete, and that no app user can read anyone's ballot, then rolls back.
+-- and founders-only votes, that a vote is final, that nobody sees how it's
+-- going before it closes, the shared donation (10% each, the rest by votes,
+-- always 100), plain results on founders-only votes, the announcement after
+-- closing, the admin's open / close early / extend / delete, and that no app
+-- user can read anyone's ballot, then rolls back.
 --   "FLOCK VOTES CHECKS: n passed, 0 failed"           → all good
 --   "FLOCK VOTES CHECKS: n passed, k failed: <names>"  → which ones broke
 -- Run by .github/workflows/db-checks.yml on every PR (scripts/db-checks.sh).
@@ -19,7 +20,7 @@ declare
   c1 uuid[]; c2 uuid[]; cf uuid[];
   r record;
   passed int := 0; failed text[] := '{}';
-  ok boolean; denied boolean; msg text; i int;
+  ok boolean; denied boolean; msg text; i int; a int[];
 begin
   insert into auth.users (instance_id, id, aud, role, email, raw_app_meta_data, raw_user_meta_data, created_at, updated_at)
   select '00000000-0000-0000-0000-000000000000', x, 'authenticated', 'authenticated', x::text || '@checks.invalid', '{}', '{}', now(), now()
@@ -103,9 +104,9 @@ begin
   perform set_config('request.jwt.claims', json_build_object('sub', m[1], 'role', 'authenticated')::text, true);
   set local role authenticated;
   select * into r from public.flock_vote(v1);
-  ok := r.state = 'open' and r.voters = 0 and r.my_choice is null and r.announcement is null and not r.too_few
+  ok := r.state = 'open' and r.voters = 0 and r.my_choice is null and r.announcement is null
     and (select array_agg(e->>'name' order by o) from jsonb_array_elements(r.choices) with ordinality as x(e, o)) = array['The Macaw Society', 'Birds and Beaks Rescue', 'Armonía']
-    and not exists (select 1 from jsonb_array_elements(r.choices) e where e->>'percent' is not null or e->>'votes' is not null or (e->>'winner')::boolean);
+    and not exists (select 1 from jsonb_array_elements(r.choices) e where e->>'percent' is not null or e->>'share' is not null or e->>'from_votes' is not null or e->>'votes' is not null or (e->>'top')::boolean);
   ok := ok and (select array_agg(vote_id) from public.flock_votes_current()) = array[v1]
     and (select count(*) from public.flock_vote(vf)) = 0;
   denied := false; begin perform public.flock_vote_cast(vf, cf[1]); exception when no_data_found then denied := true; end; ok := ok and denied;
@@ -118,8 +119,10 @@ begin
   reset role;
   if ok then passed := passed + 1; else failed := array_append(failed, 'members see open votes without results; founders-only for founders'); end if;
 
-  -- 4) One ballot per member, which they can change; a choice from another
-  --    vote is refused; my_choice is only ever the caller's own.
+  -- 4) One ballot per member, and it's final: a second vote is refused, for
+  --    another choice or the same one, and even the service role can't update
+  --    it. A choice from another vote is refused; my_choice is only ever the
+  --    caller's own.
   for i in 1..5 loop
     perform set_config('request.jwt.claims', json_build_object('sub', m[i], 'role', 'authenticated')::text, true);
     set local role authenticated;
@@ -128,33 +131,44 @@ begin
   end loop;
   perform set_config('request.jwt.claims', json_build_object('sub', m[5], 'role', 'authenticated')::text, true);
   set local role authenticated;
-  perform public.flock_vote_cast(v1, c1[2]);
-  ok := (select voters = 5 and my_choice = c1[2] from public.flock_vote(v1));
+  msg := null;
+  begin perform public.flock_vote_cast(v1, c1[2]); exception when raise_exception then get stacked diagnostics msg = message_text; end;
+  ok := msg = 'already_voted';
+  msg := null;
+  begin perform public.flock_vote_cast(v1, c1[1]); exception when raise_exception then get stacked diagnostics msg = message_text; end;
+  ok := ok and msg = 'already_voted';
+  ok := ok and (select voters = 5 and my_choice = c1[1] from public.flock_vote(v1));
   denied := false; begin perform public.flock_vote_cast(v1, cf[1]); exception when invalid_parameter_value then denied := true; end; ok := ok and denied;
   reset role;
+  set local role service_role;
+  denied := false; begin update public.flock_vote_ballots set choice_id = c1[2] where vote_id = v1 and user_id = m[5]; exception when raise_exception or insufficient_privilege then denied := true; end; ok := ok and denied;
+  reset role;
+  msg := null;
+  begin update public.flock_vote_ballots set choice_id = c1[2] where vote_id = v1 and user_id = m[5]; exception when raise_exception then get stacked diagnostics msg = message_text; end;
+  ok := ok and msg = 'already_voted';
   perform set_config('request.jwt.claims', json_build_object('sub', m[6], 'role', 'authenticated')::text, true);
   set local role authenticated;
   ok := ok and (select voters = 5 and my_choice is null from public.flock_vote(v1));
   reset role;
   ok := ok and (select count(*) from public.flock_vote_ballots where vote_id = v1) = 5
-    and (select count(*) from public.flock_vote_ballots where vote_id = v1 and user_id = m[5] and choice_id = c1[2]) = 1;
-  if ok then passed := passed + 1; else failed := array_append(failed, 'one ballot each, changeable, own choice only'); end if;
+    and (select count(*) from public.flock_vote_ballots where vote_id = v1 and user_id = m[5] and choice_id = c1[1]) = 1;
+  if ok then passed := passed + 1; else failed := array_append(failed, 'one ballot each, final, own choice only'); end if;
 
   -- 5) Admins see the counts at any time; nobody, admins included, can read
   --    the ballots themselves.
   perform set_config('request.jwt.claims', json_build_object('sub', ad, 'role', 'authenticated')::text, true);
   set local role authenticated;
   select * into r from public.flock_vote(v1);
-  ok := (select array_agg((e->>'votes')::int order by o) from jsonb_array_elements(r.choices) with ordinality as x(e, o)) = array[4, 1, 0]
-    and not exists (select 1 from jsonb_array_elements(r.choices) e where e->>'percent' is not null)
+  ok := (select array_agg((e->>'votes')::int order by o) from jsonb_array_elements(r.choices) with ordinality as x(e, o)) = array[5, 0, 0]
+    and not exists (select 1 from jsonb_array_elements(r.choices) e where e->>'percent' is not null or e->>'share' is not null)
     and (select voters from public.admin_votes() where vote_id = v1) = 5;
   denied := false; begin perform 1 from public.flock_vote_ballots; exception when insufficient_privilege then denied := true; end; ok := ok and denied;
   reset role;
   if ok then passed := passed + 1; else failed := array_append(failed, 'admins see counts; ballots are private'); end if;
 
-  -- 6) Closing early with fewer than 10 voters: "too few votes to share";
-  --    members get no percentages or winner, admins still see the counts;
-  --    voting after it closes is refused; the announcement shows only now.
+  -- 6) Closing early with only a few voters still shows results: 5, 0, 0
+  --    votes share 80 / 10 / 10. Counts stay with admins; voting after it
+  --    closes is refused; the announcement shows only now.
   perform set_config('request.jwt.claims', json_build_object('sub', ad, 'role', 'authenticated')::text, true);
   set local role authenticated;
   perform public.admin_vote_announce(v1, 'Thank you for voting.');
@@ -167,22 +181,27 @@ begin
   set local role authenticated;
   perform public.admin_vote_close(v1);
   denied := false; begin perform public.admin_vote_close(v1); exception when invalid_parameter_value then denied := true; end; ok := ok and denied;
-  ok := ok and (select too_few and (choices->0->>'votes')::int = 4 from public.flock_vote(v1));
+  ok := ok and (select (choices->0->>'votes')::int = 5 from public.flock_vote(v1));
   reset role;
   perform set_config('request.jwt.claims', json_build_object('sub', m[1], 'role', 'authenticated')::text, true);
   set local role authenticated;
   select * into r from public.flock_vote(v1);
-  ok := ok and r.state = 'closed' and r.too_few and r.announcement = 'Thank you for voting.'
-    and not exists (select 1 from jsonb_array_elements(r.choices) e where e->>'percent' is not null or e->>'votes' is not null or (e->>'winner')::boolean)
+  ok := ok and r.state = 'closed' and r.announcement = 'Thank you for voting.'
+    and (select array_agg((e->>'share')::int order by o) from jsonb_array_elements(r.choices) with ordinality as x(e, o)) = array[80, 10, 10]
+    and (select array_agg((e->>'from_votes')::int order by o) from jsonb_array_elements(r.choices) with ordinality as x(e, o)) = array[70, 0, 0]
+    and (select array_agg((e->>'percent')::int order by o) from jsonb_array_elements(r.choices) with ordinality as x(e, o)) = array[100, 0, 0]
+    and not exists (select 1 from jsonb_array_elements(r.choices) e where e->>'votes' is not null or (e->>'top')::boolean)
     and exists (select 1 from public.flock_votes_current() where vote_id = v1 and state = 'closed');
   msg := null;
   begin perform public.flock_vote_cast(v1, c1[3]); exception when raise_exception then get stacked diagnostics msg = message_text; end;
   ok := ok and msg = 'vote_closed';
   reset role;
-  if ok then passed := passed + 1; else failed := array_append(failed, 'under 10 voters: too few to share'); end if;
+  if ok then passed := passed + 1; else failed := array_append(failed, 'a few voters still get results, shared 10% each plus votes'); end if;
 
-  -- 7) With 10 or more voters, closing (here by the date passing) shows
-  --    percentages and the winner to everyone, but counts only to admins.
+  -- 7) Closing by the date passing: 7 and 4 votes of 11 share 80 points as
+  --    51 + 29, so 61 / 39. Counts only to admins. The rounding always totals
+  --    100; nobody voting splits evenly. A founders-only vote has no donation
+  --    fields, and names its top choice.
   perform set_config('request.jwt.claims', json_build_object('sub', ad, 'role', 'authenticated')::text, true);
   set local role authenticated;
   v2 := public.admin_vote_save(null, 'Which chapter first?', null, 'members', now() + interval '1 day', '[{"name": "Great Lakes"}, {"name": "Texas"}]'::jsonb);
@@ -204,12 +223,35 @@ begin
   perform set_config('request.jwt.claims', json_build_object('sub', m[12], 'role', 'authenticated')::text, true);
   set local role authenticated;
   select * into r from public.flock_vote(v2);
-  ok := ok and r.state = 'closed' and not r.too_few and r.voters = 11
+  ok := ok and r.state = 'closed' and r.voters = 11
     and (select array_agg((e->>'percent')::int order by o) from jsonb_array_elements(r.choices) with ordinality as x(e, o)) = array[64, 36]
-    and (select array_agg((e->>'winner')::boolean order by o) from jsonb_array_elements(r.choices) with ordinality as x(e, o)) = array[true, false]
-    and not exists (select 1 from jsonb_array_elements(r.choices) e where e->>'votes' is not null);
+    and (select array_agg((e->>'share')::int order by o) from jsonb_array_elements(r.choices) with ordinality as x(e, o)) = array[61, 39]
+    and not exists (select 1 from jsonb_array_elements(r.choices) e where e->>'votes' is not null or (e->>'top')::boolean);
   reset role;
-  if ok then passed := passed + 1; else failed := array_append(failed, '10+ voters: percentages and the winner after closing'); end if;
+  ok := ok and private.flock_vote_shares(array[31, 21, 12]) = array[44, 33, 23]
+    and private.flock_vote_shares(array[0, 0, 0]) = array[34, 33, 33]
+    and private.flock_vote_shares(array[1, 1]) = array[50, 50]
+    and private.flock_vote_shares(array[1, 0]) = array[90, 10]
+    and private.flock_vote_percents(array[0, 0]) = array[0, 0]
+    and private.flock_vote_percents(array[1, 1, 1]) = array[34, 33, 33];
+  -- Every split from 2 to 8 choices totals exactly 100, and nobody gets under 10.
+  for i in 2..8 loop
+    for msg in select generate_series(0, 40) loop
+      a := array(select (msg::int * g * 7 + g * g) % 23 from generate_series(1, i) g);
+      ok := ok and (select sum(x) = 100 and min(x) >= 10 from unnest(private.flock_vote_shares(a)) x)
+        and cardinality(private.flock_vote_shares(a)) = i;
+    end loop;
+  end loop;
+  -- The founders-only vote: percentages and the top choice, no donation.
+  update public.flock_votes set closes_at = now() - interval '1 minute' where id = vf;
+  perform set_config('request.jwt.claims', json_build_object('sub', fd, 'role', 'authenticated')::text, true);
+  set local role authenticated;
+  select * into r from public.flock_vote(vf);
+  ok := ok and (select array_agg((e->>'percent')::int order by o) from jsonb_array_elements(r.choices) with ordinality as x(e, o)) = array[0, 100]
+    and (select array_agg((e->>'top')::boolean order by o) from jsonb_array_elements(r.choices) with ordinality as x(e, o)) = array[false, true]
+    and not exists (select 1 from jsonb_array_elements(r.choices) e where e->>'share' is not null or e->>'from_votes' is not null);
+  reset role;
+  if ok then passed := passed + 1; else failed := array_append(failed, 'shares total 100; even with no votes; founders votes stay plain'); end if;
 
   -- 8) Closed votes leave Do good after flock_vote_results_days(); the vote
   --    itself stays readable by its link.

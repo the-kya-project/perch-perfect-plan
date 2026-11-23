@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Admin view after a vote closes</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&amp;family=Newsreader:opsz,wght@6..72,700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#2d6a4f}a:hover{color:#1a3d2e}
+.lab{display:block;font-size:13.5px;font-weight:700;margin-bottom:6px;color:#1a3d2e}
+.fld{box-sizing:border-box;width:100%;min-height:48px;padding:0 14px;border:2px solid #dbe3da;border-radius:14px;background:#ffffff;font-family:'DM Sans',sans-serif;font-size:15px;color:#1a3d2e}
+.hint{margin:6px 2px 0;font-size:13px;line-height:1.45;color:#5f5e5a}
+.rrow{display:flex;flex-direction:column;gap:6px}
+.rlab{display:flex;justify-content:space-between;gap:12px;font-size:14px}
+.track{height:10px;border-radius:999px;background:#dbe3da;overflow:hidden}
+.cnt{display:flex;justify-content:space-between;gap:12px;font-size:13.5px}
+</style>
+</helmet>
+<div style="width: 390px; height: 1180px; box-sizing: border-box; display: flex; flex-direction: column; background: #1a3d2e; font-family: 'DM Sans', sans-serif; color: #1a3d2e; overflow: hidden">
+  <header style="padding: 14px 20px 46px; color: #ffffff; display: flex; flex-direction: column; gap: 12px">
+    <a href="List.dc.html" aria-label="Back" style="width: 44px; height: 44px; border-radius: 999px; background: #12291f; color: #ffffff; display: grid; place-items: center"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg></a>
+    <h1 style="margin: 0; font-family: 'Newsreader', Georgia, serif; font-weight: 700; font-size: 26px; line-height: 1.15">Where should this quarter's donation go?</h1>
+    <p style="margin: 0; font-size: 14px; color: #d6e8dc">Closed [date] · 64 votes</p>
+  </header>
+  <main style="flex-grow: 1; margin-top: -26px; border-radius: 26px 26px 0 0; background: #f1f5f0; padding: 20px 16px 28px; display: flex; flex-direction: column; gap: 18px">
+    <p role="status" style="margin: 0; padding: 12px 14px; border-radius: 14px; background: #cdeab0; font-size: 14px; line-height: 1.4">Closed. Members now see the results.</p>
+    <section style="background: #ffffff; border-radius: 18px; padding: 16px; display: flex; flex-direction: column; gap: 12px">
+      <span style="font-size: 11.5px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: #2d6a4f">How the donation is shared</span>
+      <span style="font-size: 14px; line-height: 1.45; color: #3d4f45">10% guaranteed to each partner, the rest by votes. Use these shares when you send the donation.</span>
+      <div class="rrow"><div class="rlab" style="font-weight: 700"><span>[Conservation project B]</span><span>44%</span></div><div class="track" style="display: flex"><div style="width: 10%; height: 100%; background: #f6e7c4"></div><div style="width: 34%; height: 100%; background: #f2b33d"></div></div></div>
+      <div class="rrow"><div class="rlab" style="font-weight: 700"><span>[Partner rescue A]</span><span>33%</span></div><div class="track" style="display: flex"><div style="width: 10%; height: 100%; background: #b9d3c4"></div><div style="width: 23%; height: 100%; background: #2d6a4f"></div></div></div>
+      <div class="rrow"><div class="rlab" style="font-weight: 700"><span>[Partner rescue C]</span><span>23%</span></div><div class="track" style="display: flex"><div style="width: 10%; height: 100%; background: #dbeae3"></div><div style="width: 13%; height: 100%; background: #9bcab8"></div></div></div>
+      <div style="margin-top: 4px; padding: 12px; border-radius: 14px; background: #f1f5f0; display: flex; flex-direction: column; gap: 6px">
+        <span style="font-size: 13.5px; font-weight: 700">Counts (admins only) · 64 votes</span>
+        <div class="cnt"><span>[Conservation project B]</span><span>31</span></div>
+        <div class="cnt"><span>[Partner rescue A]</span><span>21</span></div>
+        <div class="cnt"><span>[Partner rescue C]</span><span>12</span></div>
+      </div>
+    </section>
+    <section style="display: flex; flex-direction: column; gap: 8px">
+      <label class="lab" for="cl-note" style="margin-bottom: 0">Announcement</label>
+      <textarea id="cl-note" class="fld" style="min-height: 120px; padding: 12px 14px; resize: none">[Your announcement: thanks for voting, what happens next, and when the donation goes out]</textarea>
+      <p class="hint" style="margin-top: 0">Shows with the results as "A note from Brittany" once the vote closes.</p>
+      <button type="button" style="min-height: 52px; border-radius: 999px; border: 2px solid #1a3d2e; background: #f2b33d; color: #1a3d2e; font-family: 'DM Sans', sans-serif; font-size: 16px; font-weight: 700">Save announcement</button>
+    </section>
+    <a href="../Results.dc.html" style="align-self: center; display: inline-flex; min-height: 44px; align-items: center; font-size: 15px; font-weight: 700; color: #2d6a4f">See what members see</a>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":1180}}'>
+class Component extends DCLogic {
+renderVals() {
+return {};
+}
+}
+</script>
+</body>
+</html>

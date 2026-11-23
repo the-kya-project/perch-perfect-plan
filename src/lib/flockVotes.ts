@@ -17,21 +17,30 @@ export type VoteState = "draft" | "open" | "closed";
 export type VoteAudience = "members" | "founders";
 export type VoteChoice = {
   choice_id: string; name: string; blurb: string | null; photo_path: string | null;
-  /** Once closed with enough voters. */
+  /** Share of the votes, once closed. */
   percent: number | null;
+  /** Share of the donation (all-members votes, once closed). Totals 100. */
+  share: number | null;
+  /** The part of `share` that came from votes, above the guaranteed 10%. */
+  from_votes: number | null;
   /** Admins only. */
   votes: number | null;
-  winner: boolean;
+  /** Founders-only votes, once closed: tied for the most votes. */
+  top: boolean;
 };
 export type Vote = {
   vote_id: string; question: string; description: string | null; audience: VoteAudience; state: VoteState; closes_at: string;
-  voters: number; my_choice: string | null; announcement: string | null; too_few: boolean; choices: VoteChoice[];
+  voters: number; my_choice: string | null; announcement: string | null; choices: VoteChoice[];
 };
 export type AdminVoteRow = {
   vote_id: string; question: string; audience: VoteAudience; state: VoteState; closes_at: string; voters: number; choice_count: number; updated_at: string;
 };
 export type ChoiceDraft = { key: string; name: string; blurb: string; photo_path: string | null };
 export type VoteDraft = { id: string | null; question: string; description: string; audience: VoteAudience; closes_at: string; choices: ChoiceDraft[] };
+
+/** What every choice in a donation vote is guaranteed
+ *  (private.flock_vote_guaranteed_pct). The server does the sums. */
+export const VOTE_GUARANTEED_PCT = 10;
 
 /** The same limits as the tables' checks. */
 export const VOTE_LIMITS = { question: 200, description: 600, choiceName: 120, choiceBlurb: 300, announcement: 1000, minChoices: 2, maxChoices: 8 } as const;
@@ -58,13 +67,14 @@ export function cleanVote(row: any): Vote {
     voters: Number.isFinite(Number(row?.voters)) ? Number(row.voters) : 0,
     my_choice: row?.my_choice ? String(row.my_choice) : null,
     announcement: row?.announcement ? String(row.announcement) : null,
-    too_few: row?.too_few === true,
     choices: asArray<any>(row?.choices).map((c) => ({
       choice_id: String(c?.choice_id ?? ""), name: String(c?.name ?? ""), blurb: c?.blurb ? String(c.blurb) : null,
       photo_path: c?.photo_path ? String(c.photo_path) : null,
       percent: typeof c?.percent === "number" ? c.percent : null,
+      share: typeof c?.share === "number" ? c.share : null,
+      from_votes: typeof c?.from_votes === "number" ? c.from_votes : null,
       votes: typeof c?.votes === "number" ? c.votes : null,
-      winner: c?.winner === true,
+      top: c?.top === true,
     })),
   };
 }
@@ -156,10 +166,11 @@ export async function removeVotePhotos(paths: (string | null | undefined)[]): Pr
 
 export class VotePhotoError extends Error {}
 
-/** A choice photo, redrawn as a new JPEG (no EXIF/GPS), at most 1200px and 2 MB. */
+/** A choice's logo or photo, redrawn as a new JPEG (no EXIF/GPS), at most
+ *  1200px and 2 MB. A transparent logo goes onto white, not JPEG's black. */
 export async function uploadChoicePhoto(file: File): Promise<string> {
   let blob: Blob;
-  try { blob = await reencodeJpeg(file, 1200, 2 * 1024 * 1024); }
+  try { blob = await reencodeJpeg(file, 1200, 2 * 1024 * 1024, "#ffffff"); }
   catch (e) { throw new VotePhotoError(e instanceof AvatarError ? e.message : "We couldn't read that photo. Try a JPEG or PNG."); }
   const path = `choices/${crypto.randomUUID()}.jpg`;
   const { error } = await supabase.storage.from(BUCKET).upload(path, blob, { contentType: "image/jpeg", upsert: false });
@@ -175,9 +186,42 @@ export function votesFor(votes: Vote[], where: "today" | "good"): Vote[] {
   return votes.filter((v) => v.state === "open" || (where === "good" && v.state === "closed"));
 }
 
-/** The winning choices' names (more than one on a tie), or none. */
-export function winnerNames(v: Pick<Vote, "choices">): string[] {
-  return v.choices.filter((c) => c.winner).map((c) => c.name);
+/** A founders-only vote's top choices (more than one on a tie), or none. */
+export function topNames(v: Pick<Vote, "choices">): string[] {
+  return v.choices.filter((c) => c.top).map((c) => c.name);
+}
+
+/** All-members votes share the donation; founders-only votes (Q&As, chapters)
+ *  involve no donation and show plain results. */
+export function isDonationVote(v: Pick<Vote, "audience">): boolean {
+  return v.audience === "members";
+}
+
+export type RankedChoice = VoteChoice & { index: number };
+
+/** Choices for the results, largest first (by share, or by percent on a
+ *  founders-only vote). `index` is the choice's place in the vote, which keeps
+ *  its color. Equal choices stay in the vote's order. */
+export function rankedChoices(v: Pick<Vote, "choices">): RankedChoice[] {
+  return v.choices
+    .map((c, index) => ({ ...c, index }))
+    .sort((a, b) => (b.share ?? 0) - (a.share ?? 0) || (b.percent ?? 0) - (a.percent ?? 0) || a.index - b.index);
+}
+
+const CHOICE_COLORS = [
+  { solid: "#2d6a4f", pale: "#b9d3c4", text: "#ffffff" },
+  { solid: "#f2b33d", pale: "#f6e7c4", text: "#1a3d2e" },
+  { solid: "#9bcab8", pale: "#dbeae3", text: "#1a3d2e" },
+  { solid: "#c8693f", pale: "#f1d6c8", text: "#ffffff" },
+  { solid: "#4f7396", pale: "#cfdbe7", text: "#ffffff" },
+  { solid: "#7f659f", pale: "#ddd4e8", text: "#ffffff" },
+  { solid: "#b94f70", pale: "#f0d0da", text: "#ffffff" },
+  { solid: "#69762f", pale: "#dde2c3", text: "#ffffff" },
+] as const;
+
+/** A choice's color, by its place in the vote (up to eight choices). */
+export function choiceColor(index: number) {
+  return CHOICE_COLORS[((index % CHOICE_COLORS.length) + CHOICE_COLORS.length) % CHOICE_COLORS.length];
 }
 
 /** "Dec 15" this year, "Dec 15, 2027" another year. */

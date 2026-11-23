@@ -19,6 +19,372 @@ Format:
   - After: "<new wording>"
 ```
 
+### [#529](https://github.com/the-kya-project/perch-perfect-plan/pull/529) · 1.8 Do good voting (shared donation)
+Every voting line as merged, all new to the live app. Nobody but admins sees them while the Flock is closed. The member wording follows Brittany's approved mockups. The founders-only lines and "See your vote" are agent wording the mockups don't cover.
+- **Where:** `flock.votes.adminCounts_one`
+  - Before: new
+  - After: "Counts (admins only) · {{count}} vote"
+- **Where:** `flock.votes.adminCounts_other`
+  - Before: new
+  - After: "Counts (admins only) · {{count}} votes"
+- **Where:** `flock.votes.backToGood`
+  - Before: new
+  - After: "Back to Do good"
+- **Where:** `flock.votes.closedError`
+  - Before: new
+  - After: "This vote has closed, so it can't take new votes."
+- **Where:** `flock.votes.closedEyebrow_one`
+  - Before: new
+  - After: "Do good vote · closed {{day}} · {{count}} vote"
+- **Where:** `flock.votes.closedEyebrow_other`
+  - Before: new
+  - After: "Do good vote · closed {{day}} · {{count}} votes"
+- **Where:** `flock.votes.closedTag`
+  - Before: new
+  - After: "Vote closed"
+- **Where:** `flock.votes.draftLine`
+  - Before: new
+  - After: "Draft · only admins can see it"
+- **Where:** `flock.votes.error`
+  - Before: new
+  - After: "Your vote didn't save. Try again."
+- **Where:** `flock.votes.finalNote`
+  - Before: new
+  - After: "Your vote is final once you tap the button."
+- **Where:** `flock.votes.founders`
+  - Before: new
+  - After: "Founders"
+- **Where:** `flock.votes.foundersChose`
+  - Before: new
+  - After: "Founders chose {{names}}."
+- **Where:** `flock.votes.foundersChoseTag`
+  - Before: new
+  - After: "Founders chose"
+- **Where:** `flock.votes.foundersClosedEyebrow_one`
+  - Before: new
+  - After: "Founders vote · closed {{day}} · {{count}} vote"
+- **Where:** `flock.votes.foundersClosedEyebrow_other`
+  - Before: new
+  - After: "Founders vote · closed {{day}} · {{count}} votes"
+- **Where:** `flock.votes.foundersOpenEyebrow`
+  - Before: new
+  - After: "Founders vote · closes {{day}}"
+- **Where:** `flock.votes.howItWorks`
+  - Before: new
+  - After: "Every partner gets at least 10%. Your vote decides how the rest is shared. You can vote once."
+- **Where:** `flock.votes.howItWorksFounders`
+  - Before: new
+  - After: "You can vote once. Results show when the vote closes."
+- **Where:** `flock.votes.manage`
+  - Before: new
+  - After: "Manage this vote"
+- **Where:** `flock.votes.manageAll`
+  - Before: new
+  - After: "Manage votes"
+- **Where:** `flock.votes.missing`
+  - Before: new
+  - After: "It may have been removed, or it's only for founding members."
+- **Where:** `flock.votes.missingTitle`
+  - Before: new
+  - After: "This vote isn't here"
+- **Where:** `flock.votes.noResult`
+  - Before: new
+  - After: "No votes were cast."
+- **Where:** `flock.votes.note`
+  - Before: new
+  - After: "A note from Brittany"
+- **Where:** `flock.votes.noteFrom`
+  - Before: new
+  - After: "The Kya Project"
+- **Where:** `flock.votes.ofVotes`
+  - Before: new
+  - After: "{{percent}}% of the votes"
+- **Where:** `flock.votes.openEyebrow`
+  - Before: new
+  - After: "Do good vote · closes {{day}}"
+- **Where:** `flock.votes.openTag`
+  - Before: new
+  - After: "Vote open · closes {{day}}"
+- **Where:** `flock.votes.partners`
+  - Before: new
+  - After: "partners"
+- **Where:** `flock.votes.pickOne`
+  - Before: new
+  - After: "Pick one to vote"
+- **Where:** `flock.votes.resultsTitle`
+  - Before: new
+  - After: "How this quarter's donation is <em>handled</em>"
+- **Where:** `flock.votes.resultsWhen`
+  - Before: new
+  - After: "Results show when the vote closes on {{day}}."
+- **Where:** `flock.votes.ringLabel`
+  - Before: new
+  - After: "Donation shares: {{shares}}"
+- **Where:** `flock.votes.seeResults`
+  - Before: new
+  - After: "See the results"
+- **Where:** `flock.votes.seeYourVote`
+  - Before: new
+  - After: "See your vote"
+- **Where:** `flock.votes.sharedEvenly`
+  - Before: new
+  - After: "No votes were cast, so the donation is shared evenly."
+- **Where:** `flock.votes.sharedOutcome`
+  - Before: new
+  - After: "Every partner gets at least 10%. Your votes decided the rest."
+- **Where:** `flock.votes.shareSplit`
+  - Before: new
+  - After: "{{guaranteed}}% guaranteed + {{fromVotes}}% from votes"
+- **Where:** `flock.votes.tenPercentLine`
+  - Before: new
+  - After: "Every partner gets at least 10%, and the votes share out the rest."
+- **Where:** `flock.votes.thanks`
+  - Before: new
+  - After: "Thanks for voting"
+- **Where:** `flock.votes.thanksLine`
+  - Before: new
+  - After: "You've helped decide where this quarter's donation goes."
+- **Where:** `flock.votes.thanksLineFounders`
+  - Before: new
+  - After: "You've helped decide what the Flock does first."
+- **Where:** `flock.votes.title`
+  - Before: new
+  - After: "Vote"
+- **Where:** `flock.votes.voted_one`
+  - Before: new
+  - After: "{{count}} member has voted"
+- **Where:** `flock.votes.voted_other`
+  - Before: new
+  - After: "{{count}} members have voted"
+- **Where:** `flock.votes.votedSoFar_one`
+  - Before: new
+  - After: "{{count}} member has voted so far."
+- **Where:** `flock.votes.votedSoFar_other`
+  - Before: new
+  - After: "{{count}} members have voted so far."
+- **Where:** `flock.votes.voteFor`
+  - Before: new
+  - After: "Vote for {{name}}"
+- **Where:** `flock.votes.voteNow`
+  - Before: new
+  - After: "Vote now"
+- **Where:** `flock.votes.yourVote`
+  - Before: new
+  - After: "Your vote"
+- **Where:** `flock.votes.youVoted_one`
+  - Before: new
+  - After: "You voted · {{count}} member has voted"
+- **Where:** `flock.votes.youVoted_other`
+  - Before: new
+  - After: "You voted · {{count}} members have voted"
+- **Where:** `flock.votesAdmin.addChoice`
+  - Before: new
+  - After: "Add a choice"
+- **Where:** `flock.votesAdmin.addLogo`
+  - Before: new
+  - After: "Add logo or photo"
+- **Where:** `flock.votesAdmin.allMembers`
+  - Before: new
+  - After: "All members"
+- **Where:** `flock.votesAdmin.audienceLabel`
+  - Before: new
+  - After: "Who votes"
+- **Where:** `flock.votesAdmin.cantOpen`
+  - Before: new
+  - After: "Add {{what}} before opening."
+- **Where:** `flock.votesAdmin.checkError`
+  - Before: new
+  - After: "Something in the form isn't allowed. Check the question, the choices and the date, then try again."
+- **Where:** `flock.votesAdmin.choiceBlurb`
+  - Before: new
+  - After: "Choice {{n}} description"
+- **Where:** `flock.votesAdmin.choiceBlurbPlaceholder`
+  - Before: new
+  - After: "A sentence or two"
+- **Where:** `flock.votesAdmin.choiceCount_one`
+  - Before: new
+  - After: "{{count}} choice"
+- **Where:** `flock.votesAdmin.choiceCount_other`
+  - Before: new
+  - After: "{{count}} choices"
+- **Where:** `flock.votesAdmin.choiceName`
+  - Before: new
+  - After: "Choice {{n}} name"
+- **Where:** `flock.votesAdmin.choiceNamePlaceholder`
+  - Before: new
+  - After: "Name"
+- **Where:** `flock.votesAdmin.choicesHint`
+  - Before: new
+  - After: "Two to eight. Each has a name, a sentence or two, and the partner's logo or a photo. Every choice gets at least 10% of the donation, and the votes share out the rest."
+- **Where:** `flock.votesAdmin.choicesLabel`
+  - Before: new
+  - After: "Choices"
+- **Where:** `flock.votesAdmin.closeConfirm`
+  - Before: new
+  - After: "Close this vote now?"
+- **Where:** `flock.votesAdmin.closeConfirmLine`
+  - Before: new
+  - After: "Voting stops now and everyone sees the results. This can't be undone."
+- **Where:** `flock.votesAdmin.closed`
+  - Before: new
+  - After: "Closed"
+- **Where:** `flock.votesAdmin.closedLine_one`
+  - Before: new
+  - After: "Closed {{day}} · {{count}} vote"
+- **Where:** `flock.votesAdmin.closedLine_other`
+  - Before: new
+  - After: "Closed {{day}} · {{count}} votes"
+- **Where:** `flock.votesAdmin.closedNow`
+  - Before: new
+  - After: "Closed. Members now see the results."
+- **Where:** `flock.votesAdmin.closedOn`
+  - Before: new
+  - After: "Closed {{day}}"
+- **Where:** `flock.votesAdmin.closeEarly`
+  - Before: new
+  - After: "Close early"
+- **Where:** `flock.votesAdmin.closesHint`
+  - Before: new
+  - After: "Your local time. You can close it early or extend it once it's open."
+- **Where:** `flock.votesAdmin.closesLabel`
+  - Before: new
+  - After: "Closes"
+- **Where:** `flock.votesAdmin.closesOn`
+  - Before: new
+  - After: "Closes {{day}}"
+- **Where:** `flock.votesAdmin.closeYes`
+  - Before: new
+  - After: "Close now"
+- **Where:** `flock.votesAdmin.delete`
+  - Before: new
+  - After: "Delete draft"
+- **Where:** `flock.votesAdmin.deleteConfirm`
+  - Before: new
+  - After: "Delete this draft?"
+- **Where:** `flock.votesAdmin.deleteConfirmLine`
+  - Before: new
+  - After: "Delete it for good, with its photos? This can't be undone."
+- **Where:** `flock.votesAdmin.descriptionLabel`
+  - Before: new
+  - After: "Short description (optional)"
+- **Where:** `flock.votesAdmin.draft`
+  - Before: new
+  - After: "Draft"
+- **Where:** `flock.votesAdmin.draftLine`
+  - Before: new
+  - After: "A draft. Only admins can see it."
+- **Where:** `flock.votesAdmin.edit`
+  - Before: new
+  - After: "Edit vote"
+- **Where:** `flock.votesAdmin.empty`
+  - Before: new
+  - After: "No votes yet. Tap New vote to write one. It stays a draft, visible only to admins, until you open it."
+- **Where:** `flock.votesAdmin.extend`
+  - Before: new
+  - After: "Extend the vote"
+- **Where:** `flock.votesAdmin.extended`
+  - Before: new
+  - After: "Extended. Members see the new close date."
+- **Where:** `flock.votesAdmin.extendError`
+  - Before: new
+  - After: "Pick a later close date than the current one."
+- **Where:** `flock.votesAdmin.extendLabel`
+  - Before: new
+  - After: "Extend to"
+- **Where:** `flock.votesAdmin.foundersOnly`
+  - Before: new
+  - After: "Founders only"
+- **Where:** `flock.votesAdmin.keepOpen`
+  - Before: new
+  - After: "Keep it open"
+- **Where:** `flock.votesAdmin.line`
+  - Before: new
+  - After: "Admin · drafts stay hidden until you open them"
+- **Where:** `flock.votesAdmin.loadError`
+  - Before: new
+  - After: "We couldn't load the votes. Try again."
+- **Where:** `flock.votesAdmin.memberView`
+  - Before: new
+  - After: "See what members see"
+- **Where:** `flock.votesAdmin.missing`
+  - Before: new
+  - After: "Vote not found"
+- **Where:** `flock.votesAdmin.missingLine`
+  - Before: new
+  - After: "It may have been deleted."
+- **Where:** `flock.votesAdmin.moveDown`
+  - Before: new
+  - After: "Move choice {{n}} down"
+- **Where:** `flock.votesAdmin.moveUp`
+  - Before: new
+  - After: "Move choice {{n}} up"
+- **Where:** `flock.votesAdmin.needQuestion`
+  - Before: new
+  - After: "Add the question first."
+- **Where:** `flock.votesAdmin.new`
+  - Before: new
+  - After: "New vote"
+- **Where:** `flock.votesAdmin.noteHint`
+  - Before: new
+  - After: "Shows with the results as \"A note from Brittany\" once the vote closes."
+- **Where:** `flock.votesAdmin.noteLabel`
+  - Before: new
+  - After: "Announcement"
+- **Where:** `flock.votesAdmin.noteSaved`
+  - Before: new
+  - After: "Announcement saved."
+- **Where:** `flock.votesAdmin.open`
+  - Before: new
+  - After: "Open"
+- **Where:** `flock.votesAdmin.openLine_one`
+  - Before: new
+  - After: "Open · closes {{day}} · {{count}} vote"
+- **Where:** `flock.votesAdmin.openLine_other`
+  - Before: new
+  - After: "Open · closes {{day}} · {{count}} votes"
+- **Where:** `flock.votesAdmin.openVote`
+  - Before: new
+  - After: "Open the vote"
+- **Where:** `flock.votesAdmin.questionLabel`
+  - Before: new
+  - After: "Question"
+- **Where:** `flock.votesAdmin.questionPlaceholder`
+  - Before: new
+  - After: "Where should this quarter's donation go?"
+- **Where:** `flock.votesAdmin.removeChoice`
+  - Before: new
+  - After: "Remove choice {{n}}"
+- **Where:** `flock.votesAdmin.removeLogo`
+  - Before: new
+  - After: "Remove"
+- **Where:** `flock.votesAdmin.replaceLogo`
+  - Before: new
+  - After: "Replace logo"
+- **Where:** `flock.votesAdmin.savedDraft`
+  - Before: new
+  - After: "Draft saved. Only admins can see it."
+- **Where:** `flock.votesAdmin.saveNote`
+  - Before: new
+  - After: "Save announcement"
+- **Where:** `flock.votesAdmin.sharesHint`
+  - Before: new
+  - After: "10% guaranteed to each partner, the rest by votes. Use these shares when you send the donation."
+- **Where:** `flock.votesAdmin.sharesTitle`
+  - Before: new
+  - After: "How the donation is shared"
+- **Where:** `flock.votesAdmin.title`
+  - Before: new
+  - After: "Votes"
+- **Where:** `flock.votesAdmin.toOpen`
+  - Before: new
+  - After: "To open it, add {{what}}."
+- **Where:** `flock.votesAdmin.voteCount_one`
+  - Before: new
+  - After: "{{count}} vote"
+- **Where:** `flock.votesAdmin.voteCount_other`
+  - Before: new
+  - After: "{{count}} votes"
+
 ### [#525](https://github.com/the-kya-project/perch-perfect-plan/pull/525) · 1.14 Billing foundation (switched off)
 Approved and merged by Brittany (Nov 23, 2026). All 16 lines are new, as merged; nobody sees them while `BILLING_ENABLED` is off. Brittany changed the founding line before merge. `{{price}}` shows the Stripe price ($15).
 - **Where:** Membership's card step, `flock.billing.addCard`
@@ -246,6 +612,13 @@ No new strings: every line reuses existing wording, in new places (admins only).
 
 ## Decisions agents made
 
+### [#529](https://github.com/the-kya-project/perch-perfect-plan/pull/529) · 1.8 Do good voting: approved mockups
+- **Decision (Brittany's):** Founders-only votes keep plain results: each choice's percentage and the top choice, with no donation or 10% wording. All-member votes share the donation. This replaces the earlier #529 notes below about a winner, changing a vote and the 10-vote minimum.
+- **Decision:** Rounding uses largest remainder, so shares always total exactly 100%. Leftover points go to the largest remainder, then more votes, then the earlier choice. With no votes and three choices, that's 34 / 33 / 33.
+- **Decision:** A member who has voted sees "See your vote" on the open card, which opens the thank-you screen. The mockups don't show this card state.
+- **Decision:** Logos show whole on a white tile and are never cropped. A transparent logo is flattened onto white, because JPEG would turn it black.
+- **Worth knowing:** With results showing at any size, a very small vote can reveal how someone voted. If two people vote and the result is 100% / 0%, each can work out the other's choice. Ballots themselves stay private.
+- **To change it:** `private.flock_vote_guaranteed_pct()`, `private.flock_vote_shares()` and `isDonationVote` in `src/lib/flockVotes.ts`.
 Judgment calls a run made on its own, even small ones: a name, an order, a default, how an unclear spec was read.
 
 Format:
@@ -529,6 +902,8 @@ Format:
 
 ## Held for Brittany
 
+### [#529](https://github.com/the-kya-project/perch-perfect-plan/pull/529) · 1.8 Do good voting: no longer held
+- **Status:** Brittany approved the mockups and asked for this to merge once every required check passes (Nov 23, 2026). The earlier #529 item below can be cleared.
 PRs waiting on Brittany, and exactly what each one needs.
 
 Format:
