@@ -5,10 +5,10 @@
  * declare app-bound domains), so nothing told an open app that a release had
  * gone out. It kept running the old build, whose code files the release had
  * removed from the server, and the next screen it hadn't loaded yet failed
- * (Nov 2, 2026: the sitter preview and its Close button). Open pages will ask
- * this endpoint instead (lib/releaseCheck.ts holds the rules; backlog 2.3
- * wires them in) and move onto the new build at the same safe moments as a
- * service-worker update.
+ * (Nov 2, 2026: the sitter preview and its Close button). Open pages ask
+ * this endpoint instead (lib/releaseCheck.ts holds the rules, startReleaseCheck
+ * in lib/sw-register.ts asks) and move onto the new build at the same safe
+ * moments as a service-worker update.
  *
  * Public on purpose: the commit is already in every page's error tags and
  * reveals nothing about anyone. The service worker never handles /api/, so
