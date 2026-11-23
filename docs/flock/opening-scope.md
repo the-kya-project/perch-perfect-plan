@@ -313,10 +313,10 @@ Costs are **estimates**, projected from today's 62 accounts. "Session" = one foc
    - scale training;
    - wing touch;
    - carrier comfort;
-   - **nail trims, which has no safeguards and nothing about the quick or bleeding.**
-3. **Tips after a hard day** (`journey_tips`, `20261107220000_journeys_updates.sql:134-139`). **Flag:** one tip says birds "care a lot more about treats when they're a little hungry", which sits close to the rule never to suggest withholding food.
+   - nail trims, whose safety notes on the quick and bleeding were added Nov 21 (`20261121180000_safety_content_fixes.sql`). The five-minute bleeding line comes from first-aid handouts.
+3. **Tips after a hard day** (`journey_tips`, `20261107220000_journeys_updates.sql:134-139`). The tip that leaned on a bird being hungry was rewritten on Nov 21 (`20261121180000_safety_content_fixes.sql`).
 4. **Parrots 101 guide cards** (`guide_cards`, 59 rows, `20260615135444_…sql`):
-   - every row is stamped `reviewed_by = 'The Kya Project · Parrot Care Bible'`, so it **looks reviewed but no vet reviewed it**;
+   - no vet has reviewed these. The stored label now names the author only (`20261121180000_safety_content_fixes.sql`);
    - the toxic foods card (:48), metals and poisons (:61), temperature (:62).
 5. **Food lists:**
     - the walkthrough's pre-filled "Never feed" list (`birds/$birdId.setup.tsx:1248-1258`);
