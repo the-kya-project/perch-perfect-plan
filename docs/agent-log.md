@@ -20,6 +20,12 @@ Copy this, fill it in, and put it at the top of "Runs", above the latest entry.
 
 ## Runs
 
+### 2026-11-22 22:24 EST · 2.2 A version endpoint and release rules
+- **Built:** A small public address, `/api/public/version`, that answers with which copy of the app is live, and is never cached, so an open app can later ask "has a new release gone out?". Also the rules for what to do when one has: which pages ask, how often (on launch, hourly, and when the app comes back to the front, at most once a minute), what counts as a new release, whether to update now or wait behind the "A new version is ready" banner (a form in progress always waits), and never reloading twice for the same release. A test pins all of it. Nothing in the app calls these yet (that's 2.3), so nobody sees a change.
+- **PR:** [#519](https://github.com/the-kya-project/perch-perfect-plan/pull/519)
+- **Outcome:** Merged if every check passes (internal code, nothing users see). Otherwise waiting on checks.
+- **Problems:** The new test (`npm run test:release-check`, 11 checks, all passing locally) isn't in CI yet: adding it means a workflow change, which the run's token can't push. The first `gh pr create` failed with a certificate error and worked on retry. PR #518 (Brittany's record update) merged while this run was working, so the branch was updated from `main` with both sides' entries kept, and the backlog's Done lines for 2.1 and D3 now say Brittany merged them. No lock at start. No pending-log entries to move.
+
 ### 2026-11-23 · Record: #514, #515 and #516 approved and merged by Brittany
 - **Built:** Marked the three held PRs as approved and merged by Brittany in this log and in the review queue. Moved them out of "Held for Brittany". Kept #515's switch decisions and #516's decisions where they were, and added #516's 22 cards (English and Dutch) to "Copy that merged". Nothing in the app changed.
 - **PR:** [#518](https://github.com/the-kya-project/perch-perfect-plan/pull/518) (supervised session at Brittany's request)
