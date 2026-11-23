@@ -57,6 +57,14 @@ Where these items came from, with the detail behind each: `docs/flock/opening-sc
 - **Needs Brittany:** approval of the deletion (it deletes data).
 
 
+### 1.14a Card step and checkout design (switched off)
+- **Done means:** the billing screens match the approved mockups in [`docs/flock/mockups/billing/`](flock/mockups/billing/): the card step during and after the free season (member and founder), branded Stripe Checkout with the "You won't be charged until" line, the confirming screen, "You're all set" for members and founders, Membership with plan, first charge date and the card's last four digits, and the past-due alert that opens the Customer Portal. Behind `BILLING_ENABLED` (off), web only, never in the iPhone or Android app. Giving is only ever shown as "20%".
+- **Approved mockups (Brittany, Nov 23, 2026):** nine `.dc.html` files. Bracketed values in them are placeholders.
+- **Size:** L
+- **Depends on:** 1.14 (merged, #525)
+- **Overnight alone:** no (built by Brittany's request to a held PR)
+- **Needs Brittany:** held at [#PRNUM](https://github.com/the-kya-project/perch-perfect-plan/pull/PRNUM); what it needs is in the review queue.
+
 ### 1.15 Kya's Crew and its sponsored rescue-adopter seat (switched off)
 - **Done means:**
   - Crew plans exist: $37 a month billed annually ($444 a year) or $45 month to month.

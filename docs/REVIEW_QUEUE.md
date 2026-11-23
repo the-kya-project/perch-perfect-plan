@@ -19,6 +19,258 @@ Format:
   - After: "<new wording>"
 ```
 
+### [#PRNUM](https://github.com/the-kya-project/perch-perfect-plan/pull/PRNUM) · 1.14a Card step and checkout design
+Held for Brittany. Nobody sees these while `BILLING_ENABLED` is off. English only: Dutch waits for her go-ahead.
+- **Where:** billing screens, `flock.billing.accessUntil`
+  - Before: new
+  - After: "Access until"
+- **Where:** billing screens, `flock.billing.addMyCard`
+  - Before: new
+  - After: "Add my card · $0 today"
+- **Where:** billing screens, `flock.billing.allSet`
+  - Before: new
+  - After: "You're <em>all set</em>"
+- **Where:** billing screens, `flock.billing.backToFlock`
+  - Before: new
+  - After: "Back to the Flock"
+- **Where:** billing screens, `flock.billing.billedMonthly`
+  - Before: new
+  - After: "Billed monthly"
+- **Where:** billing screens, `flock.billing.cardEnding`
+  - Before: new
+  - After: "Ending in {{last4}}"
+- **Where:** billing screens, `flock.billing.cardLabel`
+  - Before: new
+  - After: "Card"
+- **Where:** billing screens, `flock.billing.chargeMonthly`
+  - Before: new
+  - After: "Your first charge of {{price}}, then monthly. Cancel before this date and you won't be charged."
+- **Where:** billing screens, `flock.billing.chargeYearly`
+  - Before: new
+  - After: "Your first charge of {{price}}, then once a year. Cancel before this date and you won't be charged."
+- **Where:** billing screens, `flock.billing.checkoutNote`
+  - Before: new
+  - After: "You won't be charged until {{date}}. Cancel anytime before then from Membership and billing."
+- **Where:** billing screens, `flock.billing.chooseFounder`
+  - Before: new
+  - After: "You help choose where it goes, <strong>through Do good votes</strong>, including the founders-only ones."
+- **Where:** billing screens, `flock.billing.chooseMember`
+  - Before: new
+  - After: "You help choose where it goes, <strong>through Do good votes</strong> with the rest of the Flock."
+- **Where:** billing screens, `flock.billing.confirmingLine`
+  - Before: new
+  - After: "This can take a minute. You can stay right here, and we'll move on as soon as it's done."
+- **Where:** billing screens, `flock.billing.confirmingSlow`
+  - Before: new
+  - After: "This is taking longer than usual. Your card is safe with Stripe, so there's no need to add it again. Check Membership and billing in a few minutes."
+- **Where:** billing screens, `flock.billing.confirmingTitle`
+  - Before: new
+  - After: "Confirming your card"
+- **Where:** billing screens, `flock.billing.firstCharge`
+  - Before: new
+  - After: "First charge"
+- **Where:** billing screens, `flock.billing.flockMember`
+  - Before: new
+  - After: "Flock member"
+- **Where:** billing screens, `flock.billing.founding50`
+  - Before: new
+  - After: "Founding 50"
+- **Where:** billing screens, `flock.billing.foundingLabel`
+  - Before: new
+  - After: "Founding price"
+- **Where:** billing screens, `flock.billing.foundingLocked`
+  - Before: new
+  - After: "Locked in for as long as you stay a member."
+- **Where:** billing screens, `flock.billing.foundingOthers`
+  - Before: new
+  - After: "Everyone else pays {{price}}."
+- **Where:** billing screens, `flock.billing.foundingRelease`
+  - Before: new
+  - After: "Without a card on file by {{date}}, your founding spot is released and can't be claimed again."
+- **Where:** billing screens, `flock.billing.foundingSpot`
+  - Before: new
+  - After: "Founding 50 · Spot #{{spot}}"
+- **Where:** billing screens, `flock.billing.freeUntil`
+  - Before: new
+  - After: "Free until"
+- **Where:** billing screens, `flock.billing.givesBack`
+  - Before: new
+  - After: "Every membership gives back"
+- **Where:** billing screens, `flock.billing.givesBackLine`
+  - Before: new
+  - After: "of what you pay goes to parrot rescue and conservation partners"
+- **Where:** billing screens, `flock.billing.givesBackNote`
+  - Before: new
+  - After: "<strong>Your membership gives back.</strong> 20% goes to parrot rescue and conservation partners."
+- **Where:** billing screens, `flock.billing.heroAfterLine`
+  - Before: new
+  - After: "Join the Flock, and help parrots in rescues and in the wild."
+- **Where:** billing screens, `flock.billing.heroFounder`
+  - Before: new
+  - After: "You helped <em>start this</em>. Keep your {{price}}."
+- **Where:** billing screens, `flock.billing.heroFounderLine`
+  - Before: new
+  - After: "Add a card by {{date}} to hold your founding spot and price. You won't pay anything until then."
+- **Where:** billing screens, `flock.billing.heroMember`
+  - Before: new
+  - After: "Your membership <em>does good</em> for parrots"
+- **Where:** billing screens, `flock.billing.heroSeasonLine`
+  - Before: new
+  - After: "Add a card now to stay in the Flock after the free season. You won't pay anything until {{date}}."
+- **Where:** billing screens, `flock.billing.howItWorks`
+  - Before: new
+  - After: "How it works"
+- **Where:** billing screens, `flock.billing.includes`
+  - Before: new
+  - After: "What your membership includes"
+- **Where:** billing screens, `flock.billing.joinFlock`
+  - Before: new
+  - After: "Join the Flock"
+- **Where:** billing screens, `flock.billing.keepSpot`
+  - Before: new
+  - After: "Keep my founding spot · $0 today"
+- **Where:** billing screens, `flock.billing.keeps`
+  - Before: new
+  - After: "What your membership keeps"
+- **Where:** billing screens, `flock.billing.manageLine`
+  - Before: new
+  - After: "Change your card or plan, or cancel, any time."
+- **Where:** billing screens, `flock.billing.monthlyLabel`
+  - Before: new
+  - After: "Monthly"
+- **Where:** billing screens, `flock.billing.monthsFree_one`
+  - Before: new
+  - After: "{{count}} month free"
+- **Where:** billing screens, `flock.billing.monthsFree_other`
+  - Before: new
+  - After: "{{count}} months free"
+- **Where:** billing screens, `flock.billing.nextCharge`
+  - Before: new
+  - After: "Next charge"
+- **Where:** billing screens, `flock.billing.pastDueLine`
+  - Before: new
+  - After: "It happens, often with an expired card. Update your card by {{date}} to keep your place in the Flock."
+- **Where:** billing screens, `flock.billing.pastDueNoDate`
+  - Before: new
+  - After: "It happens, often with an expired card. Update your card to keep your place in the Flock."
+- **Where:** billing screens, `flock.billing.pastDueTitle`
+  - Before: new
+  - After: "Your last payment didn't go through"
+- **Where:** billing screens, `flock.billing.perMonth`
+  - Before: new
+  - After: "/mo"
+- **Where:** billing screens, `flock.billing.perkBadge`
+  - Before: new
+  - After: "Your founder badge and your place among the Founding 50"
+- **Where:** billing screens, `flock.billing.perkChapter`
+  - Before: new
+  - After: "Your chapter, with avian vets, rescues and shops other members recommend"
+- **Where:** billing screens, `flock.billing.perkFounderAll`
+  - Before: new
+  - After: "Your chapter, journeys and the full Library"
+- **Where:** billing screens, `flock.billing.perkFounderVote`
+  - Before: new
+  - After: "A vote in Do good, including founders-only votes"
+- **Where:** billing screens, `flock.billing.perkJourneys`
+  - Before: new
+  - After: "Step-by-step journeys for training and care"
+- **Where:** billing screens, `flock.billing.perkLibrary`
+  - Before: new
+  - After: "The full Library"
+- **Where:** billing screens, `flock.billing.perkVote`
+  - Before: new
+  - After: "A vote in Do good, on where the Flock's giving goes"
+- **Where:** billing screens, `flock.billing.pickHow`
+  - Before: new
+  - After: "Pick how you pay"
+- **Where:** billing screens, `flock.billing.planFounding`
+  - Before: new
+  - After: "Founding member"
+- **Where:** billing screens, `flock.billing.planLabel`
+  - Before: new
+  - After: "Plan"
+- **Where:** billing screens, `flock.billing.renewsMonthly`
+  - Before: new
+  - After: "Renews every month. Cancel anytime in Manage billing."
+- **Where:** billing screens, `flock.billing.renewsYearly`
+  - Before: new
+  - After: "Renews once a year. Cancel anytime in Manage billing."
+- **Where:** billing screens, `flock.billing.seasonSet`
+  - Before: new
+  - After: "Free season · you're all set for after"
+- **Where:** billing screens, `flock.billing.secure`
+  - Before: new
+  - After: "Secure checkout with Stripe"
+- **Where:** billing screens, `flock.billing.secureCancel`
+  - Before: new
+  - After: "Secure checkout with Stripe · Cancel anytime"
+- **Where:** billing screens, `flock.billing.seeMembership`
+  - Before: new
+  - After: "See membership and billing"
+- **Where:** billing screens, `flock.billing.spotSafe`
+  - Before: new
+  - After: "Your spot is <em>safe</em>"
+- **Where:** billing screens, `flock.billing.staysFree`
+  - Before: new
+  - After: "Everything in the Flock stays free, just like now."
+- **Where:** billing screens, `flock.billing.thanks`
+  - Before: new
+  - After: "<strong>Thank you.</strong> 20% of your membership will go to parrot rescue and conservation partners."
+- **Where:** billing screens, `flock.billing.today`
+  - Before: new
+  - After: "Today"
+- **Where:** billing screens, `flock.billing.todayFounder`
+  - Before: new
+  - After: "Add your card. Your founding spot is safe. $0 due today."
+- **Where:** billing screens, `flock.billing.todayLine`
+  - Before: new
+  - After: "Add your card. $0 due today."
+- **Where:** billing screens, `flock.billing.until`
+  - Before: new
+  - After: "Until {{date}}"
+- **Where:** billing screens, `flock.billing.updateCard`
+  - Before: new
+  - After: "Update my card"
+- **Where:** billing screens, `flock.billing.welcomeFounderLine`
+  - Before: new
+  - After: "Your founding price is locked in. Thank you for helping start the Flock."
+- **Where:** billing screens, `flock.billing.welcomeLine`
+  - Before: new
+  - After: "Your place in the Flock is saved for after the free season. Nothing changes until then."
+- **Where:** billing screens, `flock.billing.yearlyLabel`
+  - Before: new
+  - After: "Yearly"
+- **Where:** billing screens, `flock.billing.yearlyTotal`
+  - Before: new
+  - After: "{{price}} once a year"
+- **Where:** billing screens, `flock.billing.addCard`
+  - Before: "Add a card"
+  - After: removed, replaced by the mockup's wording
+- **Where:** billing screens, `flock.billing.chargedToday`
+  - Before: "You'll be charged today."
+  - After: removed, replaced by the mockup's wording
+- **Where:** billing screens, `flock.billing.choose`
+  - Before: "Choose a plan"
+  - After: removed, replaced by the mockup's wording
+- **Where:** billing screens, `flock.billing.confirming`
+  - Before: "We're confirming your card. This can take a minute."
+  - After: removed, replaced by the mockup's wording
+- **Where:** billing screens, `flock.billing.firstChargeOn`
+  - Before: "First charge on {{date}}."
+  - After: removed, replaced by the mockup's wording
+- **Where:** billing screens, `flock.billing.monthly`
+  - Before: "Monthly: {{price}} a month"
+  - After: removed, replaced by the mockup's wording
+- **Where:** billing screens, `flock.billing.pastDue`
+  - Before: "Your last payment didn't go through. Update your card to keep your membership."
+  - After: removed, replaced by the mockup's wording
+- **Where:** billing screens, `flock.billing.yearly`
+  - Before: "Yearly: {{price}} a year"
+  - After: removed, replaced by the mockup's wording
+- **Where:** billing screens, `flock.billing.zeroToday`
+  - Before: "$0 today. Your first charge is on {{date}}."
+  - After: removed, replaced by the mockup's wording
+
 ### [#525](https://github.com/the-kya-project/perch-perfect-plan/pull/525) · 1.14 Billing foundation (switched off)
 Approved and merged by Brittany (Nov 23, 2026). All 16 lines are new, as merged; nobody sees them while `BILLING_ENABLED` is off. Brittany changed the founding line before merge. `{{price}}` shows the Stripe price ($15).
 - **Where:** Membership's card step, `flock.billing.addCard`
@@ -256,6 +508,24 @@ Format:
 - **Why:** <the reason, in plain language>
 - **To change it:** <what would need to change>
 ```
+
+### [#PRNUM](https://github.com/the-kya-project/perch-perfect-plan/pull/PRNUM) · 1.14a Card step and checkout design
+- **Decision:** Differences from the approved mockups:
+  - **Tab bar:** the Flock's tab bar (phones) and side column (desktop) stay on these screens. The mockups don't show them.
+  - **Desktop:** the content is capped at 560 px and centered on the forest background. The mockups are phone-only.
+  - **Founding line:** the visible card uses the mockup's "Locked in for as long as you stay a member." Your `flock.billing.founding` sentence is what screen readers hear on that card.
+  - **Founder after the free season:** no mockup. A founder whose price is still open sees the founding price card, not plan tiles, because Checkout will charge the founding price.
+  - **Membership states the mockup doesn't show:** a paid member sees "Next charge"; a cancelled one sees "Your membership won't renew." and "Access until". The all-set screen shows only during the free season.
+  - **Slow confirmation:** after two minutes the confirming screen says it's taking longer than usual, not to add the card again, and offers Back to the Flock.
+  - **Missing values:** no Card row if Stripe can't return the digits, no tile for a price that isn't set, and the "2 months free" badge only while the two prices really work out to it.
+  - **Checkout:** Stripe draws the page, so its layout differs from `BillingCheckout`. See "What Stripe won't let us change" in the PR.
+- **Why:** the backlog's mockup rule asks for every difference to be listed.
+- **To change it:** `src/components/flock/BillingScreens.tsx`.
+
+### [#PRNUM](https://github.com/the-kya-project/perch-perfect-plan/pull/PRNUM) · 1.14a Card step and checkout design
+- **Decision:** Billing dates use Eastern time everywhere, Checkout's sentence included. Checkout is set to English, and uses Inter because Stripe doesn't offer DM Sans.
+- **Why:** one day on every screen, and the custom sentence has no Dutch yet.
+- **To change it:** `billingDay` and `checkoutDesign` in `src/lib/billing.ts`.
 
 ### [#525](https://github.com/the-kya-project/perch-perfect-plan/pull/525) · 1.14 Billing foundation (switched off) · approved and merged by Brittany, Nov 23, 2026
 - **Decision:** Test mode is enforced in code: billing refuses any Stripe key that isn't a test key (`getBillingStripe` in `src/lib/stripe.server.ts`), in every deployment, production included. Gifts keep using the live key as before.
@@ -517,6 +787,9 @@ Format:
 ### <PR link> · <item ID> <item title>
 - **Needs:** <the decision, approval or read, in one or two lines>
 ```
+
+### [#PRNUM](https://github.com/the-kya-project/perch-perfect-plan/pull/PRNUM) · 1.14a Card step and checkout design
+- **Needs:** (1) your read of the screens and wording; (2) a decision on cards added in the last two days of the free season, which are charged at once because Stripe Checkout needs a trial to run at least 48 hours; (3) the founder release job built before billing opens, because the founder screen promises it and it doesn't exist yet; (4) a saved test-mode Customer Portal setup in Stripe, then one real test checkout, which hasn't been run; (5) your go-ahead on Dutch.
 
 ### Reminder · the hourly runs' GitHub token expires Feb 20, 2027
 - **Needs:** a new token before **Feb 20, 2027**. That's 90 days from Nov 22, 2026; GitHub → Settings → Developer settings → Fine-grained tokens shows the exact date. When it expires, runs can still build and test but can't push or open PRs, and each run's note in `~/.kya-agent/job.log` says so.

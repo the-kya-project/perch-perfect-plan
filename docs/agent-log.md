@@ -20,6 +20,13 @@ Copy this, fill it in, and put it at the top of "Runs", above the latest entry.
 
 ## Runs
 
+### 2026-11-23 13:50 EST · 1.14a Card step and checkout design
+- **Built:** the nine approved billing mockups on Membership, Checkout branding through each session's settings, and the card's last four digits read from Stripe without storing them. Behind `BILLING_ENABLED` (off), web only.
+- **PR:** https://github.com/the-kya-project/perch-perfect-plan/pull/PRNUM
+- **Tested:** `npm run test:billing`, types, translations, and every screen rendered at phone and desktop width with made-up billing data.
+- **Not tested:** a real Stripe Checkout or Customer Portal page. Billing is off and this run has no Stripe test key.
+- **Outcome:** held for Brittany.
+
 ### 2026-11-23 13:15 EST · Record: #525 approved and merged by Brittany
 - **Built:** Brittany approved 1.14's database change, its 16 lines of wording and the review-queue decisions. Changed the founding line as she asked, merged `main` (both sides kept), and added `npm run test:billing` to the iPhone hydration job.
 - **Migration:** renamed to `20261123180000_billing_foundation.sql`, because two later migrations reached production while this PR was open and a file older than them is refused by a plain `supabase db push`. It had not been applied anywhere.
