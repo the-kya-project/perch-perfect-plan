@@ -345,6 +345,12 @@ Format:
 - **Needs:** <the decision, approval or read, in one or two lines>
 ```
 
+### [#528](https://github.com/the-kya-project/perch-perfect-plan/pull/528) · 1.6 Curated chapter collections · needs a re-run of "iPhone hydration"
+- **Needs:** a re-run of the "iPhone hydration" check (Actions → the failed run → Re-run failed jobs). Runs aren't allowed to re-run checks. The two failures weren't from this PR.
+  - First run: the browser install took 16 minutes and the job ran out of time, just as every Community shell test, the new one included, had passed.
+  - Second run: one WebKit Dutch test of the email-confirmation page (`[webkit-nl] confirmation link waits for a tap`) failed on the dashboard's sitter-activity fetches. That's care-app code this PR doesn't touch, and the same test passed on the first run.
+- Nothing else is needed from you: no decision is waiting. Once it's green, the next run may merge it under the normal rules (hidden behind the Flock gate, additive migration). Or merge it yourself.
+
 ### Reminder · the hourly runs' GitHub token expires Feb 20, 2027
 - **Needs:** a new token before **Feb 20, 2027**. That's 90 days from Nov 22, 2026; GitHub → Settings → Developer settings → Fine-grained tokens shows the exact date. When it expires, runs can still build and test but can't push or open PRs, and each run's note in `~/.kya-agent/job.log` says so.
 - **To replace it:** make a new fine-grained token for `the-kya-project/perch-perfect-plan` only, with the same permissions as the old one (Contents and Pull requests: read and write; Actions, Commit statuses and Checks: read). Then run the save command again in Terminal (it asks you to paste the token and doesn't show it). It overwrites `~/.config/kya-agent/github-token`, readable only by you. Delete the old token on GitHub after that. Clear this item and add a new one with the new date.
