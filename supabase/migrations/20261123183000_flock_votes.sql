@@ -88,7 +88,8 @@ revoke all on public.flock_vote_choices from anon, authenticated;
 revoke all on public.flock_vote_ballots from anon, authenticated;
 grant select, insert, update, delete on public.flock_votes to service_role;
 grant select, insert, update, delete on public.flock_vote_choices to service_role;
-grant select, insert, delete on public.flock_vote_ballots to service_role;
+-- The standard service-role grant; flock_vote_ballots_final still refuses any update.
+grant select, insert, update, delete on public.flock_vote_ballots to service_role;
 drop policy if exists "flock_votes no direct access" on public.flock_votes;
 drop policy if exists "flock_vote_choices no direct access" on public.flock_vote_choices;
 drop policy if exists "flock_vote_ballots no direct access" on public.flock_vote_ballots;

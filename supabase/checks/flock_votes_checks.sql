@@ -141,7 +141,7 @@ begin
   denied := false; begin perform public.flock_vote_cast(v1, cf[1]); exception when invalid_parameter_value then denied := true; end; ok := ok and denied;
   reset role;
   set local role service_role;
-  denied := false; begin update public.flock_vote_ballots set choice_id = c1[2] where vote_id = v1 and user_id = m[5]; exception when raise_exception or insufficient_privilege then denied := true; end; ok := ok and denied;
+  denied := false; begin update public.flock_vote_ballots set choice_id = c1[2] where vote_id = v1 and user_id = m[5]; exception when raise_exception then denied := true; end; ok := ok and denied;
   reset role;
   msg := null;
   begin update public.flock_vote_ballots set choice_id = c1[2] where vote_id = v1 and user_id = m[5]; exception when raise_exception then get stacked diagnostics msg = message_text; end;
