@@ -22,15 +22,6 @@ Where these items came from, with the detail behind each: `docs/flock/opening-sc
 
 ## Ready to build
 
-### 2.4 Open pages fetch the new build's files after a release
-- **Done means:** after a release, an open page's next request reaches the new build, not the old one Vercel's Skew Protection pinned it to, so the sitter preview can't load a page whose code files are missing. When an update is ready, the app clears its own pin through a small unpin address (`/api/public/unpin`) and reloads onto the new release.
-- **Decision (Brittany, Nov 22, 2026):** option B in [`docs/skew-protection.md`](skew-protection.md). Skew Protection stays on, with no Vercel setting change.
-- **Reference:** branch `fix/native-release-catchup` (`src/routes/api/public/unpin.ts`).
-- **Size:** M
-- **Depends on:** 2.3
-- **Overnight alone:** yes
-- **Needs Brittany:** merge. It changes how open pages update for current users, so a run holds the PR for her. Any change to Vercel settings is hers.
-
 ### D1.1 Weight baseline rules and a replay of real history
 - **Done means:**
   - A pure function works out each bird's own normal weight by meal state (before a meal, after a meal, or not labeled). It shows "still learning" until there are at least 7 weigh-ins over at least 14 days, and returns the alert tier: "worth watching", "keep an eye on this" or "call your vet today".
@@ -332,6 +323,7 @@ The launch PR itself (1.18) is already merged dark. What's left before opening i
 
 ## Done
 
+- **2.4** Every update reload (the version check's and the service worker's alike) first expires Vercel's Skew Protection pin (`__vdpl`) with a POST to the new `/api/public/unpin`, waiting at most 3 seconds, then reloads, so the reloaded page gets the new build's files; Skew Protection stays on and no Vercel setting changed (option B). Pinned by `npm run test:release-check`: #531 (held for Brittany's merge; 2.5's Simulator check covers it hands-on).
 - **1.14** Billing foundation, switched off (`BILLING_ENABLED` must be exactly `true`) and Stripe test mode only, enforced in code: `billing_customers`, `billing_events`, `entitlements.product_id` / `will_renew` / `cancel_at_period_end`, `founding_claims.released_at` / `forfeited_at`, and the service-role functions the webhook writes through (`20261123180000_billing_foundation.sql`, `supabase/checks/billing_checks.sql`); the webhook `/api/public/stripe/billing` (`STRIPE_BILLING_WEBHOOK_SECRET`, re-reads each subscription, idempotent on the event id); the card step on Membership (`/flock/you/membership`, $0 until the free season's end, founders get $15, never in the native app); `npm run test:billing`. Held for Brittany (payments): #525. Approved and merged by Brittany (Nov 23, 2026), PR #525.
 - **1.8** Do good voting and the founding vote: an open vote is a card on Today and at the top of Do good (founders-only ones only for founders, with a Founders pill). Members vote once, and it's final (enforced in the database), seeing only how many have voted. The vote shares the donation: every choice gets a guaranteed 10%, the rest is split by share of the votes, always totalling 100%, evenly if no one votes, and results always show. Founders-only votes (Q&As, chapters) have no donation and show plain percentages and the top choice. Admins write drafts (question, description, 2–8 choices with a logo or photo, audience, close date), open, close early, extend, announce and see counts at any time at `/admin/votes`; nobody can see how a member voted. Matches Brittany's approved mockups in `docs/flock/mockups/voting/`. Behind the Flock gate; nothing seeded (the first votes are Brittany's content): #529.
 - **1.3** Deleting a post or comment moves it, with the comments under it, into `flock_deleted_items`, so it's hidden from everyone at once, the author included. The daily job `flock-deleted-purge-daily` (`/api/public/hooks/flock-purge`) deletes it and its photos for good 180 days later. Deleting an account removes its held items at once. Pinned in `supabase/checks/flock_posts_checks.sql` and `npm run test:flock-purge`. Approved and merged by Brittany (Nov 23, 2026): #522.
