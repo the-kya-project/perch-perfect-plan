@@ -251,7 +251,7 @@ Flock insights show members what's typical across the community, built from ever
 
 ## Rescue partner codes (1.16)
 
-Partner rescues get a code they hand to new adopters, and each adopter gets six months in the Flock, paid for by Kya's Crew sponsorships. Depends on 1.15 (Kya's Crew). Mockup: `SpecRescueCodes.dc.html`.
+Partner rescues get a code they hand to new adopters, and each adopter gets six months in the Flock, free. Depends on 1.15 (Kya's Crew). Mockup: `SpecRescueCodes.dc.html`.
 
 **What a rescue gets**
 
@@ -269,12 +269,11 @@ Partner rescues get a code they hand to new adopters, and each adopter gets six 
 
 - Add and edit partner rescues and their codes, and pause a code anytime.
 - Approve or decline each redemption from the review screen.
-- See how many sponsored seats are available, used, and waiting, drawn from the Kya's Crew sponsorship count.
 
 **Rules**
 
 - One redemption per adopter account.
-- If no sponsored seats are available, the adopter still gets in, and the seat counts against future sponsorships. Admins see a warning when the count goes negative.
+- Rescue adopters always get in free. Sponsored seats aren't counted (Brittany, Nov 23, 2026), so leave out the mockup's "Sponsored seats" card.
 - A rescue code can't be combined with a founding spot.
 - No payment is ever collected through a rescue code.
 

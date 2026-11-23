@@ -19,24 +19,6 @@ Format:
   - After: "<new wording>"
 ```
 
-### [#535](https://github.com/the-kya-project/perch-perfect-plan/pull/535) · 1.15 Kya's Crew (held, not merged)
-All new, on the admin-only `/admin/crew` page (English only, like the other admin pages).
-- **Where:** page title and heading
-  - Before: new
-  - After: "Kya's Crew seats — Kya & Co." / "Kya's Crew seats"
-- **Where:** the line under the heading
-  - Before: new
-  - After: "{n} Crew members · {n} sponsored · {n} used · {n} available"
-- **Where:** the rules line
-  - Before: new
-  - After: "Kya's Crew is $37 a month billed annually ($444 a year) or $45 month to month, with everything in a Flock membership and 25% to rescue and conservation partners. Each Crew membership sponsors six months in the Flock for a new rescue adopter, once its first payment goes through. A seat stays sponsored when the membership ends."
-- **Where:** the warning when seats run out
-  - Before: new
-  - After: "More seats have been used than Crew members have sponsored ({n} over). Rescue adopters still get in."
-- **Where:** the Seats card and table
-  - Before: new
-  - After: "Seats", "Sponsored", "Used", "Available", "Crew members now"; columns "Sponsored", "Seat", "Crew plan", "Sponsor still in the Crew"; "{n} months", "Monthly", "Yearly", "Yes", "No"; empty: "No seats sponsored yet."; error: "Couldn't load Crew seats: {message}"
-
 ### [#529](https://github.com/the-kya-project/perch-perfect-plan/pull/529) · 1.8 Do good voting (shared donation)
 Every voting line as merged, all new to the live app. Nobody but admins sees them while the Flock is closed. The member wording follows Brittany's approved mockups. The founders-only lines and "See your vote" are agent wording the mockups don't cover.
 - **Where:** `flock.votes.adminCounts_one`
@@ -658,7 +640,7 @@ Format:
 - **Decision:** One six-month seat per Crew subscription, added the first time it's recorded as active (its first payment went through), never a second for the same subscription. Renewals add none. A seat stays when the membership ends or the account is deleted. A regular member who switches the same subscription to Crew sponsors a seat at that point.
 - **Why:** the spec says "each Crew member sponsors six months"; once per membership is the narrowest reading, and a seat is only counted once it's paid for. Asked in the PR whether a yearly renewal should add another.
 - **Brittany's answer (Nov 23, 2026):** a renewal does not sponsor another seat. The one-seat-per-new-Crew-member count is a number for marketing only. Rescue adopters always get in free, and the count never blocks one.
-- **To change it:** the `crew_sponsorships` insert at the end of `billing_record_stripe_subscription` (a new migration).
+- **Brittany's decision (Nov 23, 2026):** seats aren't tracked at all. The sponsorship tables were removed from this PR before it merged.
 
 ### [#535](https://github.com/the-kya-project/perch-perfect-plan/pull/535) · 1.15 Kya's Crew (switched off)
 - **Decision:** A founder who picks Crew gets Crew, not the founding price, and their founding claim is left as it is (not released or forfeited).
@@ -673,7 +655,7 @@ Format:
 ### [#535](https://github.com/the-kya-project/perch-perfect-plan/pull/535) · 1.15 Kya's Crew (switched off)
 - **Decision:** The admin view is a new page, `/admin/crew` (admins only, English, like `/admin/gifts`): seats sponsored, used and available, Crew members now, a red line when more seats are used than sponsored, and each seat's date, Crew plan and whether the sponsor is still in the Crew. No names or emails. Nothing links to it yet. Seats given are a separate table, `crew_seat_uses`, which only 1.16 will write.
 - **Why:** the item asks for "an admin view of seats sponsored and used" and 1.16 for a warning below zero. There's no mockup, so it follows the existing admin list pages.
-- **To change it:** `src/routes/_authenticated/admin.crew.tsx`.
+- **Brittany's decision (Nov 23, 2026):** not needed. `/admin/crew` was removed from this PR before it merged.
 
 ### [#535](https://github.com/the-kya-project/perch-perfect-plan/pull/535) · 1.15 Kya's Crew (switched off)
 - **Decision:** No Crew products for the App Store yet, and no Crew tile on the card step. Checkout accepts `crew_monthly` and `crew_annual`; nothing in the app sends them.
@@ -993,7 +975,7 @@ Format:
 ```
 
 ### [#535](https://github.com/the-kya-project/perch-perfect-plan/pull/535) · 1.15 Kya's Crew and its sponsored rescue-adopter seat (switched off)
-- **Needs:** (1) your approval of the database change: the `entitlements` plan check adds `crew_monthly` and `crew_annual`, plus the new `giving_rate` column, two new tables and the replaced billing function. Merging applies it to production. (2) One small question: if someone leaves the Crew and later rejoins, should that count as another seat? Today it does, because seats are counted per subscription. (3) Your merge. Your three questions are answered (Nov 23, 2026). The Crew option on the payment screen is now 1.15a and doesn't hold this PR. The Stripe test prices can wait until you want to try Crew checkout.
+- **Needs:** (1) your approval of the database change: the `entitlements` plan check adds `crew_monthly` and `crew_annual`, plus the new `giving_rate` column and the replaced billing function. Merging applies it to production. (2) Your merge. Your Crew questions are answered (Nov 23, 2026), and seat counting is out. The Crew option on the payment screen is 1.15a and doesn't hold this PR. The Stripe test prices can wait until you want to try Crew checkout.
 
 ### Reminder · the hourly runs' GitHub token expires Feb 20, 2027
 - **Needs:** a new token before **Feb 20, 2027**. That's 90 days from Nov 22, 2026; GitHub → Settings → Developer settings → Fine-grained tokens shows the exact date. When it expires, runs can still build and test but can't push or open PRs, and each run's note in `~/.kya-agent/job.log` says so.

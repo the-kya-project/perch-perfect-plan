@@ -374,12 +374,11 @@ await check("a paid Crew subscription is recorded as Crew", async () => {
   assert.deepEqual(r, { handled: "recorded", subscription: "sub_c", plan: "crew_annual", status: "active" });
   assert.equal(f.rows[0].row.plan, "crew_annual");
 });
-await check("the migration widens the plan check, records giving and adds one seat per Crew subscription", () => {
+await check("the migration widens the plan check, records giving and tracks no seats", () => {
   const sql = readFileSync("supabase/migrations/20261123203000_kyas_crew.sql", "utf8");
   assert.match(sql, /'crew_monthly', 'crew_annual'\)\);/);
   assert.match(sql, /when p_plan in \('crew_monthly', 'crew_annual'\) then 0\.25 else 0\.20/);
-  assert.match(sql, /on conflict \(subscription_ref\) do nothing/);
-  assert.match(sql, /p_status = 'active'/);
+  assert.doesNotMatch(sql, /crew_sponsorships|crew_seat_uses/);
 });
 
 // ── Native app and free-season rows ────────────────────────────────────────
