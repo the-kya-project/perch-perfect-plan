@@ -365,6 +365,12 @@ Format:
 - **Needs:** <the decision, approval or read, in one or two lines>
 ```
 
+### Free-user regression can't run: staging has a @thekyaproject.com account (Nov 23, from about 11:15 EST)
+- **Needs:** remove the `@thekyaproject.com` account from **staging** (`upygspynanvuxthgnaph`, not production), then re-run the failed "Free-user regression" checks. Since about 11:15 EST every run stops at its first step, "Rebuild the staging free account". That step is `supabase/staging/free-user.sql`, which refuses to touch a database holding a `@thekyaproject.com` account because that looks like production: "Refusing: a @thekyaproject.com account exists, so this looks like production." Runs can't change staging accounts.
+  - It may have been made by signing in to a preview during the 2.3 Simulator check. It started with #520's runs from its 11:13 and 11:15 EST commits.
+  - Until it's gone, no PR can pass this required check. That includes #529 and the record updates this run pushed to #520, #521, #523 and #525.
+- **Also:** the "Free-user regression" runs for **#523** and **#525** show *cancelled*, not failed. All runs of that check share one queue on staging, and GitHub drops a waiting run when a newer one joins the queue. They need "Re-run jobs" once staging is fixed. Runs aren't allowed to re-run checks.
+
 ### [#529](https://github.com/the-kya-project/perch-perfect-plan/pull/529) · 1.8 Do good voting (and the founding vote)
 - **Needs:** your look at the two admin screens, `/admin/votes` (the list) and `/admin/votes/<id>` (write a draft, open it, close early, extend, the announcement). They aren't in SpecVoting, and the specs say a screen that isn't mocked up is held for you. They follow the Library's admin screens. The member screens follow the mockup, apart from the voter avatars (see "Decisions agents made"). Say "merge" on the PR if they're fine, or what to change. It's behind the Flock gate, and the migration only adds tables, functions and a bucket.
 
