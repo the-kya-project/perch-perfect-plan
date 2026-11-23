@@ -35,7 +35,8 @@ import { foundingClosedCase } from "@/lib/foundingClosed";
 import { formatFlockDay, freeSeasonEndLabel, NO_FLOCK_DATES } from "@/lib/flockDates";
 import { FLOCK_CONTACT_EMAIL, FLOCK_GUIDELINES_VERSION, contactLine, guidelineSections, guidelinesClosing, guidelinesIntro } from "@/lib/flockGuidelines";
 import { isJoinPath, joinErrorKind, joinRedirect, type FlockAccess } from "@/lib/flockJoin";
-import { queueItemPlace, type QueueItem } from "@/lib/flockModeration";
+import { QUEUE_FILTERS, queueItemPlace, type QueueItem } from "@/lib/flockModeration";
+import { PLACE_KINDS, PLACE_LIMITS, groupPlaces, telHref, updatedDay, websiteHref, type Place } from "@/lib/flockPlaces";
 import {
   birdPronoun, canStartCustom, customProblem, daysSince, clipPhase, flockSheetTitle, isNectarEater, rollingAverage, showVetReminder, youngOrUnknownAge, defaultVisibility, groupTemplates, isLocked, journeyDay, journeyDays,
   nextMilestone, possessive, progressOf, skillInSentence, startHere, trimTrailingBlanks, vetCheckLine, visibilityChoices, wantsTip,
@@ -779,6 +780,43 @@ check("review queue: each item names where it lives", () => {
   assert.deepEqual(queueItemPlace({ ...base, subject_type: "journey_update", post_id: null, journey_id: "j1" }, spaces), { kind: "journeys" });
   assert.deepEqual(queueItemPlace({ ...base, item_type: "event", subject_type: "event", post_id: null }, spaces), { kind: "chapter", chapter: "Great Lakes" }, "events: their chapter");
   assert.equal(queueItemPlace({ ...base, item_type: "event", subject_type: "event", post_id: null, author_region: null }, spaces), null);
+});
+
+check("chapter resources: three groups in order, each in the managers' order", () => {
+  assert.deepEqual(PLACE_KINDS, ["vet", "rescue", "shop"], "Avian vets, Rescues, Shops and services");
+  const p = (id: string, kind: Place["kind"], position: number): Place => ({
+    place_id: id, region_slug: "great-lakes", kind, name: id, area: null, phone: null, website: null, note: null, position, updated_at: "2026-11-22T12:00:00Z",
+  });
+  const groups = groupPlaces([p("shop1", "shop", 1), p("vet2", "vet", 2), p("vet1", "vet", 1)]);
+  assert.deepEqual(groups.map((g) => g.kind), ["vet", "rescue", "shop"]);
+  assert.deepEqual(groups.map((g) => g.places.map((x) => x.place_id)), [["vet1", "vet2"], [], ["shop1"]], "an empty group is still there, to invite a suggestion");
+  assert.ok(QUEUE_FILTERS.includes("places"), "the review queue has a Places filter");
+});
+
+check("chapter resources: phone and website links are safe and tappable", () => {
+  assert.equal(telHref("(260) 555-0100"), "tel:2605550100");
+  assert.equal(telHref("+31 20 555 0100"), "tel:+31205550100");
+  assert.equal(telHref("  "), null);
+  assert.equal(telHref(null), null);
+  assert.equal(telHref("n/a"), null);
+  assert.equal(websiteHref("lakeshorebirds.example.com"), "https://lakeshorebirds.example.com/");
+  assert.equal(websiteHref("http://northside.example.com/vets"), "http://northside.example.com/vets");
+  assert.equal(websiteHref("HTTPS://Example.com"), "https://example.com/");
+  assert.equal(websiteHref("javascript:alert(1)"), null, "never a script link");
+  assert.equal(websiteHref("mailto:vet@example.com"), null);
+  assert.equal(websiteHref(""), null);
+  assert.equal(websiteHref("not a url at all"), null);
+  // The same limits as the table's checks (20261123140000_flock_chapter_places.sql).
+  const sql = readFileSync("supabase/migrations/20261123140000_flock_chapter_places.sql", "utf8");
+  for (const [field, max] of Object.entries(PLACE_LIMITS)) {
+    assert.ok(new RegExp(`\\b${field}\\b[^\\n]*length\\(${field === "name" ? "btrim\\(name\\)\\) between 1 and" : field + "\\) <="} ${max}\\b`).test(sql), `${field} limit ${max} matches the table`);
+  }
+});
+
+check("chapter resources: when a listing was last updated", () => {
+  const now = new Date("2026-11-23T12:00:00");
+  assert.equal(updatedDay("2026-11-22T15:00:00", "en-US", now), "Nov 22");
+  assert.equal(updatedDay("2025-10-30T15:00:00", "en-US", now), "Oct 30, 2025");
 });
 
 console.log(`\n${passed} passed${process.exitCode ? ", some FAILED" : ""}`);

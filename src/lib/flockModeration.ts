@@ -80,8 +80,8 @@ export function notificationTarget(n: FlockNotification):
 
 // ---- The review queue ---------------------------------------------------------------------
 
-export type QueueFilter = "all" | "good" | "events" | "reports";
-export const QUEUE_FILTERS: QueueFilter[] = ["all", "good", "events", "reports"];
+export type QueueFilter = "all" | "good" | "events" | "places" | "reports";
+export const QUEUE_FILTERS: QueueFilter[] = ["all", "good", "events", "places", "reports"];
 export type QueueItem = {
   item_type: "good" | "report" | "event"; subject_type: ReportSubject | "event"; subject_id: string; author_id: string; author_name: string | null;
   author_region: string | null; title: string | null; body: string | null; photo_count: number; created_at: string;

@@ -77,13 +77,6 @@ Where these items came from, with the detail behind each: `docs/flock/opening-sc
 - **Overnight alone:** yes
 - **Needs Brittany:** the copy; turning the switch on for everyone changes Home for free users, so that needs her approval and before-and-after screenshots.
 
-### D5.1 Weekly recap by push, replacing the 10- and 30-day lapse nudges
-- **Done means:** a weekly push recap (weigh-ins, health checks, journal entries, no health judgments) replaces the `checkin_reminder` branch of `src/routes/api/public/hooks/engagement-nudges.ts`. It keeps the existing toggles, cooldown and dry-run mode, and is built behind a switch that starts off. Push only, no email.
-- **Size:** M
-- **Depends on:** nothing
-- **Overnight alone:** yes (built and merged switched off)
-- **Needs Brittany:** the wording, and her approval before it's switched on, since that sends push to real users.
-
 ### 1.15 Kya's Crew and its sponsored rescue-adopter seat (switched off)
 - **Done means:**
   - Crew plans exist: $37 a month billed annually ($444 a year) or $45 month to month.
@@ -105,18 +98,6 @@ Where these items came from, with the detail behind each: `docs/flock/opening-sc
 - **Depends on:** 1.14 merged
 - **Overnight alone:** yes (built to a held PR)
 - **Needs Brittany:** hold the PR for her approval (payments). Show worked examples of a code with a trial in the PR, so she can confirm how "stack" and "whichever is best" combine.
-
-### 1.6 Curated chapter collections
-- **Spec:** [Chapter collections](flock/specs/feature-specs.md#chapter-collections-16) · **Mockup:** [`SpecCollections.dc.html`](flock/mockups/SpecCollections.dc.html)
-- **Done means:**
-  - A chapter's Resources tab lists Avian vets, Rescues, and Shops and services, in that order, as directory cards (name, city or area, phone, website, a short note) with no comments, reactions, author or ratings. Phone and website are tappable. A small line says these are community picks, not endorsements, and an empty group invites a suggestion.
-  - Members send a place with "Suggest a place". It stays invisible until a chapter lead or admin approves it on the existing review screen.
-  - Leads (own chapter) and admins (every chapter) add, edit, reorder and remove listings and see when each was last updated. A listing belongs to one chapter.
-  - Keep the app's existing chapter tab order (Posts, Events, Resources, Members); the mockup shows the last two swapped.
-- **Size:** L
-- **Depends on:** 0.5
-- **Overnight alone:** yes
-- **Needs Brittany:** merge only, under the normal rules. The starter listings are her content, before opening.
 
 ### 1.8 Do good voting (and the founding vote)
 - **Spec:** [Do good voting and the founding vote](flock/specs/feature-specs.md#do-good-voting-and-the-founding-vote-18) · **Mockup:** [`SpecVoting.dc.html`](flock/mockups/SpecVoting.dc.html)
@@ -368,9 +349,16 @@ The launch PR itself (1.18) is already merged dark. What's left before opening i
 
 ---
 
+## Dropped (do not build)
+
+- **D5.1 Weekly recap by push** (dropped by Brittany, Nov 23, 2026; PR #524 closed without merging). Push notifications are only for things the owner needs to act on, and a recap only reports what happened. The existing 10- and 30-day check-in nudges stay exactly as they are.
+
+---
+
 ## Done
 
 - **1.14** Billing foundation, switched off (`BILLING_ENABLED` must be exactly `true`) and Stripe test mode only, enforced in code: `billing_customers`, `billing_events`, `entitlements.product_id` / `will_renew` / `cancel_at_period_end`, `founding_claims.released_at` / `forfeited_at`, and the service-role functions the webhook writes through (`20261123120000_billing_foundation.sql`, `supabase/checks/billing_checks.sql`); the webhook `/api/public/stripe/billing` (`STRIPE_BILLING_WEBHOOK_SECRET`, re-reads each subscription, idempotent on the event id); the card step on Membership (`/flock/you/membership`, $0 until the free season's end, founders get $15, never in the native app); `npm run test:billing`. Held for Brittany (payments): #525.
+- **1.6** Chapter collections: the Resources tab lists Avian vets, Rescues, and Shops and services as directory cards (tappable phone and website, the "community picks, not endorsements" line, an invitation in empty groups); members suggest a place, which shows to nobody but the chapter's lead and admins until approved in `/admin/review` → Places; leads (own chapter) and admins (any chapter) add, edit, reorder and remove listings at `/flock/places`, with when each was last updated. Behind the Flock gate; nothing seeded (the starter listings are Brittany's content): #528.
 - **2.2** `/api/public/version` returns `{ "build": "<commit>" }` with `no-store`; `src/lib/releaseCheck.ts` holds the pure rules (which pages check, when, what counts as a newer build, update now or later behind the banner, one reload per build), pinned by `npm run test:release-check`. Nothing calls them yet (2.3): #519.
 - **D3** `src/lib/seasonalCalendar.ts`: 22 dated cards covering every day of the year (7 seasons, 15 holidays and moments, including heat, cold, fireworks, candles, holiday foods and travel; some US-only or Netherlands-only), each with a rule for its days and an English and Dutch title and body in `src/locales/seasonal.*.jsonc`; `npm run test:seasonal-calendar` checks every rule resolves in every year through 2075, every day has a card, and every card exists in both languages. Approved and merged by Brittany: #516.
 - **1.2** `src/lib/healthRules.ts` lists every health threshold and phrase list, each "draft, pending vet review" with its source, plus the language keys for each area's wording; `npm run test:health-rules` checks the code against it and `supabase/checks/health_rules_checks.sql` checks the database; every health feature has its own switch in `public.health_features` (the live ones start at everyone and aren't wired to it yet); the vet packet (opening-scope B7) points at the file: #515.

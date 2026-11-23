@@ -14,9 +14,12 @@ import {
 } from "@/lib/flockModeration";
 import { pickOptional } from "@/lib/flockNav";
 import { longWhen } from "@/lib/flockEvents";
+import { reviewPlace, usePlaceSuggestions, type PlaceSuggestion } from "@/lib/flockPlaces";
+import { placeKindLabel } from "@/components/flock/PlaceParts";
 
-// The review queue (Batch 8, screen 4): Do good posts waiting to go live, and
-// reported content. Behind the Flock gate like every Community screen (anyone
+// The review queue (Batch 8, screen 4): Do good posts waiting to go live,
+// event and place suggestions (place suggestions come from their own
+// function, flock_place_suggestions, backlog 1.6), and reported content. Behind the Flock gate like every Community screen (anyone
 // the gate turns away is sent Home before anything here loads), then
 // flock_can_review(): admins today; chapter leads later through
 // flock_reviewers, which the database already honours.
@@ -59,7 +62,8 @@ function ReviewQueue() {
   const current: QueueFilter = filter ?? "all";
   const { data: canReview, isLoading: checking } = useCanReview();
   const { data: counts } = useReviewCounts(canReview === true);
-  const { data: items, isLoading } = useReviewQueue(current, canReview === true);
+  const { data: items, isLoading } = useReviewQueue(current, canReview === true && current !== "places");
+  const { data: placeItems } = usePlaceSuggestions(canReview === true);
   const { data: spaces } = useReviewPostSpaces(items, canReview === true);
   const invalidate = useInvalidateModeration();
   const [decision, setDecision] = useState<Decision | null>(null);
@@ -91,7 +95,10 @@ function ReviewQueue() {
   const good = counts?.good ?? 0;
   const reports = counts?.reports ?? 0;
   const events = counts?.events ?? 0;
-  const total = good + reports + events;
+  const places = placeItems?.length ?? 0;
+  const total = good + reports + events + places;
+  const shownPlaces = current === "all" || current === "places" ? placeItems ?? [] : [];
+  const shownItems = current === "places" ? [] : items ?? [];
   const act = async (key: string, fn: () => Promise<void>) => {
     setBusy(key); setError(null);
     try { await fn(); await invalidate(); setDecision(null); }
@@ -114,14 +121,20 @@ function ReviewQueue() {
               { value: "all" as const, label: t("flock.review.all", "All {{count}}", { count: total }) },
               { value: "good" as const, label: t("flock.review.good", "Do good {{count}}", { count: good }) },
               { value: "events" as const, label: t("flock.review.events", "Events {{count}}", { count: events }) },
+              { value: "places" as const, label: t("flock.review.places", "Places {{count}}", { count: places }) },
               { value: "reports" as const, label: t("flock.review.reports", "Reports {{count}}", { count: reports }) },
             ]} />
           {error && <p role="alert" className="m-0 text-[15px]" style={{ color: K.red }}>{error}</p>}
-          {isLoading ? null : (items ?? []).length === 0 ? (
+          {shownPlaces.map((p) => (
+            <PlaceSuggestionCard key={p.place_id} p={p} busy={!!busy}
+              onApprove={() => void act(`place:${p.place_id}`, () => reviewPlace(p.place_id, "approve"))}
+              onDecline={() => void act(`place:${p.place_id}`, () => reviewPlace(p.place_id, "decline"))} />
+          ))}
+          {isLoading && current !== "places" ? null : shownItems.length === 0 ? (shownPlaces.length > 0 ? null : (
             <p className="m-0 rounded-[18px] bg-white p-5 text-center text-[15px]" style={{ color: K.quiet }} data-testid="queue-empty">
               {t("flock.review.empty", "Nothing waiting. Nice.")}
             </p>
-          ) : (items ?? []).map((q) => {
+          )) : shownItems.map((q) => {
             const key = `${q.subject_type}:${q.subject_id}`;
             const place = queueItemPlace(q, spaces);
             // A Do good post's label already names its space.
@@ -200,6 +213,34 @@ function ReviewQueue() {
           }} />
       )}
     </KyaPage>
+  );
+}
+
+/** A member's suggested place (backlog 1.6): approve lists it at the end of
+ *  its group; decline deletes it. No "ask for changes": a lead can fix the
+ *  details once it's listed. */
+function PlaceSuggestionCard({ p, busy, onApprove, onDecline }: { p: PlaceSuggestion; busy: boolean; onApprove: () => void; onDecline: () => void }) {
+  const { t, i18n } = useTranslation();
+  const btn = "min-h-[44px] flex-1 rounded-full px-3 text-[14px] font-[700] disabled:opacity-50";
+  return (
+    <article className="flex flex-col gap-2.5 rounded-[18px] bg-white p-4" style={{ color: K.forest }} data-queue-item="place" data-subject={p.place_id}>
+      <span className="text-[12.5px] font-[700] uppercase tracking-[0.04em]" style={{ color: K.moss }} data-testid="queue-item-label">
+        {[t("flock.review.place", "Place suggestion"), placeKindLabel(t, p.kind), p.region_name ? t("flock.posts.chapterSpace", "{{name}} chapter", { name: p.region_name }) : null].filter(Boolean).join(" · ")}
+      </span>
+      <span className="text-[13px]" style={{ color: K.quiet }}>
+        {[p.suggested_by_name, timeAgo(t, p.created_at, i18n.language)].filter(Boolean).join(" · ")}
+      </span>
+      <KyaHeading size={18} as="h2">{p.name}</KyaHeading>
+      {p.area && <span className="text-[14px] font-[700]" style={{ color: K.ink }}>{p.area}</span>}
+      {p.note && <p className="m-0 line-clamp-6 whitespace-pre-wrap text-[15px] leading-[1.45]">{p.note}</p>}
+      <Link to="/flock/places" search={{ region: p.region_slug }} className="self-start text-[14px] font-[700] underline underline-offset-4" style={{ color: K.moss }}>
+        {t("flock.review.placeListings", "See the chapter's listings")}
+      </Link>
+      <div className="flex gap-2">
+        <button type="button" className={btn} style={{ background: K.forest, color: "#fff" }} disabled={busy} data-act="approve" onClick={onApprove}>{t("flock.review.approve", "Approve")}</button>
+        <button type="button" className={btn} style={{ background: K.mist, color: K.red }} disabled={busy} data-act="decline" onClick={onDecline}>{t("flock.review.decline", "Decline")}</button>
+      </div>
+    </article>
   );
 }
 

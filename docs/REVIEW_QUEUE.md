@@ -19,6 +19,30 @@ Format:
   - After: "<new wording>"
 ```
 
+### [#528](https://github.com/the-kya-project/perch-perfect-plan/pull/528) · 1.6 Curated chapter collections
+All new, behind the Flock gate (admins only today). Where the mockup has wording, it's used as is.
+- **Where:** Chapter → Resources (replaces the empty state)
+  - Before: "No resources yet" / "Avian vets, rescues, and shops your chapter recommends will be collected here."
+  - After: "Places members in your chapter recommend. These are community picks, not endorsements." Group headings "Avian vets", "Rescues", "Shops and services". Card links "Call", "Website". An empty group: "Know a good one nearby? Suggest it, and your chapter lead will add it." The button "Suggest a place". After sending: "Thanks! Your suggestion will show once your chapter lead has looked it over."
+- **Where:** Chapter → Resources, for the chapter's lead and admins
+  - Before: new
+  - After: "{count} suggestions waiting" (one: "1 suggestion waiting"), "Manage listings"
+- **Where:** Suggest a place sheet
+  - Before: new
+  - After: "Suggest a place"; kinds "Avian vet", "Rescue", "Shop or service"; fields "Name", "City or area", "Why do you recommend it?"; "Your chapter lead will look it over before it shows."; "Send suggestion". Errors: "You have a few suggestions waiting already. Try again once they've been looked at." / "We couldn't send that. Try again."
+- **Where:** Managing listings (`/flock/places`)
+  - Before: new
+  - After: title "Resources", line "{chapter} · you lead this chapter" (a lead) or the chapter's name (an admin); "Chapter" (admins' chapter picker); the waiting card "{count} suggestions waiting" / "Review them before they show to members." / "Review"; "Updated {day}"; "None listed yet."; "Edit"; "Add a listing". Not a manager: "For chapter leads" / "Chapter leads and admins look after a chapter's listings. You can suggest a place from your chapter's Resources tab."
+- **Where:** Add or edit a listing sheet
+  - Before: new
+  - After: "Add a listing" / "Edit listing"; fields "Name", "City or area", "Phone (optional)", "Website (optional)", "Why members recommend it"; "Use a web address, like example.com."; "Add listing" / "Save changes"; "Remove listing"; the confirm "Remove this listing?" / "{name} comes off your chapter's Resources for everyone."; error "We couldn't save that. Check the details and try again."
+- **Where:** Review queue (`/admin/review`)
+  - Before: new
+  - After: chip "Places {count}"; item label "Place suggestion · {kind} · {chapter} chapter"; link "See the chapter's listings"
+- **Where:** Screen reader labels
+  - Before: new
+  - After: "Call {name}, {phone}", "{name}'s website", "Kind of place", "Move {name} up", "Move {name} down"
+
 ### [#516](https://github.com/the-kya-project/perch-perfect-plan/pull/516) · D3 Seasonal calendar file
 Approved and merged by Brittany (Nov 22, 2026). All 22 cards are new, as merged; nobody sees them until D2.1 shows the card on Home. Source files: `src/locales/seasonal.en.jsonc` and `seasonal.nl.jsonc`.
 - **Where:** Home's Today card, `winterDryAir`
@@ -161,6 +185,31 @@ Format:
 - **Decision:** Left out of this PR: refunds of memberships (the plan says "a full refund ends access now"), cancelling a Stripe subscription when an account is deleted, the end-of-season job that releases founders, the admin lists, and the 14-day trial. Stripe's statuses are mapped as follows: `unpaid` → past_due (access runs out with the period), `paused` and `incomplete_expired` → canceled, `incomplete` → no row.
 - **Why:** 1.14 covers the payments build's items 1–3 (schema, webhook, card step); the rest are later items. Refunds need a choice: the webhook re-reads the subscription, so marking a refunded row as ended would be undone by the next event. The simplest fix is to cancel the subscription in Stripe when refunding, and the webhook then ends access. Account deletion is a care-app flow current users rely on, so it was left alone.
 - **To change it:** say which you'd like for refunds, and it becomes its own item.
+
+### [#528](https://github.com/the-kya-project/perch-perfect-plan/pull/528) · 1.6 Curated chapter collections
+- **Decision:** Place suggestions have their own functions (`flock_place_suggestions`, `flock_place_review`) and their own "Places" chip in `/admin/review`, rather than a rewrite of `flock_review_queue` and `flock_review_counts`. The queue's and Flock settings' "waiting" totals add them in.
+- **Why:** It keeps the migration purely additive: no existing function changes.
+- **To change it:** fold places into `flock_review_queue` in a later migration if one combined list is wanted.
+
+### [#528](https://github.com/the-kya-project/perch-perfect-plan/pull/528) · 1.6 Curated chapter collections
+- **Decision:** A suggestion is approved or declined, with no "Ask for changes". Approving lists it as sent, at the end of its group, and the lead can then add a phone or website with Edit. Declining deletes it. The member isn't notified either way.
+- **Why:** The spec says "approve or decline", and the mockup's suggest form has no phone or website fields. A notification would have meant changing the existing Flock notification functions and checks.
+- **To change it:** say if members should hear back. That's a "place" notification kind plus a change to `flock_notifications_list`.
+
+### [#528](https://github.com/the-kya-project/perch-perfect-plan/pull/528) · 1.6 Curated chapter collections
+- **Decision:** The suggest form has kind, name, city or area, and "Why do you recommend it?", as in the mockup. Only the name is required. Leads and admins add phone and website. Each member can have at most 10 suggestions waiting at once.
+- **Why:** The spec lists name, type and note, and the mockup adds city or area. The cap stops one account flooding a lead's queue. There's no hourly limit like the one on posts.
+- **To change it:** the cap is `private.flock_place_suggest_limit()`.
+
+### [#528](https://github.com/the-kya-project/perch-perfect-plan/pull/528) · 1.6 Curated chapter collections
+- **Decision:** Managing listings is its own screen, `/flock/places` (the mockup's screen 3). The Resources tab links to it through a small lime "Manage listings" card, shown only to the chapter's lead and admins. Admins get a "Chapter" dropdown there to pick any chapter, since their own chapter page shows only their own. Reordering uses up and down arrows within a group. Remove sits inside Edit and asks before removing.
+- **Why:** The mockup shows the lead's screen but not how to get to it, how an admin reaches another chapter, or how reordering works. These are the smallest additions that cover the spec.
+- **To change it:** tell us the entry point or reorder control you'd like.
+
+### [#528](https://github.com/the-kya-project/perch-perfect-plan/pull/528) · 1.6 Curated chapter collections
+- **Decision:** Small differences from the mockup: the tab order stays Posts, Events, Resources, Members (the backlog says so); each card's square tile carries an icon (stethoscope, heart-handshake, shop); and every group always shows, with an empty one inviting a suggestion.
+- **Why:** The spec asks for an empty group to invite a suggestion, and the tiles were blank in the mockup.
+- **To change it:** say which you'd prefer.
 
 ### [#519](https://github.com/the-kya-project/perch-perfect-plan/pull/519) · 2.2 A version endpoint and release rules
 - **Decision:** Ported the endpoint and rules from the reference branch `fix/native-release-catchup`, with three changes: (1) "update now or later" is its own rule, `releaseUpdateAction`, the same rule a service-worker update follows today (a quiet moment with no form in progress → now; otherwise the banner); (2) a new `parseVersionResponse` reads the endpoint's answer and ignores anything else (an error page, a proxy); (3) the branch's `staleCodeAction` (what a missing code file does) was left out, since 2.1 already handles missing files on `main` and it isn't part of 2.2. The numbers are the branch's: check hourly, at most once a minute on return to the foreground, give up after 8 seconds, never reload for the same build twice within 10 minutes.
@@ -323,6 +372,12 @@ Format:
 
 ### [#525](https://github.com/the-kya-project/perch-perfect-plan/pull/525) · 1.14 Billing foundation (switched off)
 - **Needs:** your approval, because it's payments (the item's own rule). Specifically: (1) the database change, which merging applies to production: two new tables, three new `entitlements` columns (including the change to `entitlements` the backlog asks you to approve), two new `founding_claims` columns, and four service-role functions; (2) the 16 new lines of card-step wording, listed in the PR; (3) the decisions below (test mode enforced in code, `BILLING_ENABLED=true` as the only "on" value, nothing shown in the iPhone/Android app, refunds left for later). Also optional: one workflow line to run `npm run test:billing` in CI, which the runs' token can't add. Every required check passes. "Supabase Preview" reported *skipping* although the PR has a migration, so check why before merging.
+
+### [#528](https://github.com/the-kya-project/perch-perfect-plan/pull/528) · 1.6 Curated chapter collections · needs a re-run of "iPhone hydration"
+- **Needs:** a re-run of the "iPhone hydration" check (Actions → the failed run → Re-run failed jobs). Runs aren't allowed to re-run checks. The two failures weren't from this PR.
+  - First run: the browser install took 16 minutes and the job ran out of time, just as every Community shell test, the new one included, had passed.
+  - Second run: one WebKit Dutch test of the email-confirmation page (`[webkit-nl] confirmation link waits for a tap`) failed on the dashboard's sitter-activity fetches. That's care-app code this PR doesn't touch, and the same test passed on the first run.
+- Nothing else is needed from you: no decision is waiting. Once it's green, the next run may merge it under the normal rules (hidden behind the Flock gate, additive migration). Or merge it yourself.
 
 ### Reminder · the hourly runs' GitHub token expires Feb 20, 2027
 - **Needs:** a new token before **Feb 20, 2027**. That's 90 days from Nov 22, 2026; GitHub → Settings → Developer settings → Fine-grained tokens shows the exact date. When it expires, runs can still build and test but can't push or open PRs, and each run's note in `~/.kya-agent/job.log` says so.
