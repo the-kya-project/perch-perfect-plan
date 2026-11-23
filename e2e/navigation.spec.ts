@@ -1,4 +1,4 @@
-// The startup safety net (STARTUP_GUARD in src/routes/__root.tsx) reloads the
+// The startup safety net (STARTUP_GUARD in src/lib/startupGuard.ts) reloads the
 // page once if one of the app's own files fails to load before it starts.
 // When a navigation begins, Safari cancels the page's pending loads and
 // reports each as an error; the guard used to read that as a broken file and

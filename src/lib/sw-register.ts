@@ -154,6 +154,21 @@ export function isStaleChunkError(error: unknown): boolean {
   return /failed to fetch dynamically imported module|error loading dynamically imported module|importing a module script failed|failed to load module script|unable to preload/i.test(msg);
 }
 
+/** Did one of this page's code files fail to load? The startup guard in
+ *  __root.tsx keeps the list (window.__kyaCode) from the page's first byte,
+ *  so this sees failures that happened before the app's code ran, including
+ *  ones React reports only as a generic error (#520). A load cancelled by
+ *  leaving the page isn't on it. */
+export function pageCodeFailed(): boolean {
+  if (typeof window === "undefined") return false;
+  try {
+    const list = (window as unknown as { __kyaCode?: { failed?: string[] } }).__kyaCode;
+    return (list?.failed?.length ?? 0) > 0;
+  } catch {
+    return false;
+  }
+}
+
 export function installChunkErrorRecovery() {
   if (typeof window === "undefined") return;
   window.addEventListener("vite:preloadError", (e) => {

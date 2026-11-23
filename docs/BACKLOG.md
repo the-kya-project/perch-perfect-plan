@@ -22,17 +22,6 @@ Where these items came from, with the detail behind each: `docs/flock/opening-sc
 
 ## Ready to build
 
-### 2.1 The startup guard listens before anything can fail
-- **Done means:** the page reset for a missing code file works on WebKit 30 times out of 30 in CI.
-  - The startup guard script is the first thing in the page's `<head>`, before the code preloads and the inlined styles.
-  - It keeps a list of the page's code files, so the error screen can tell a missing file from a real error.
-  - A test checks the order in the served HTML.
-  - Rebuilt from closed PR #431 (reference branch `fix/native-release-catchup`). The likely cause of its flaky test is in `docs/flock/opening-scope.md` B5.
-- **Size:** M
-- **Depends on:** nothing
-- **Overnight alone:** yes
-- **Needs Brittany:** merge only. It touches the app shell (`__root.tsx`), so the PR shows the free-user regression check and before-and-after screenshots.
-
 ### 1.2 Vet-content settings file and a switch for every health feature
 - **Done means:**
   - **One labeled file** (e.g. `src/lib/healthRules.ts`) lists every health threshold, phrase list and safety wording: the diet weight rules, the vet-nudge phrases, the health-check triage rules, the weight-trend levels, the emergency guidance numbers, and the weight baseline values for D1. Each value is marked "draft, pending vet review" with its research source.
@@ -414,6 +403,7 @@ The launch PR itself (1.18) is already merged dark. What's left before opening i
 
 ## Done
 
+- **2.1** The startup guard is the first script in every app page's `<head>` (added by the server entry, right after the charset) and keeps a list of the page's code files for the error screen. The missing-file reset runs 30 times on WebKit in CI: #514 (held for Brittany's merge and screenshots).
 - **2.4a** `docs/skew-protection.md`: what Vercel's Skew Protection does, the four options and what each means for current users and for 2.4 and 2.5: #509.
 - **0.5** The review queue is reached from Flock settings (reviewers only, with the waiting count), and every item shows its author, space and date: #508.
 - **0.4** Sign-ups that start on the /get or /get-app desktop page are credited to the link that brought them: #505.

@@ -36,7 +36,7 @@ import { applyOwnerLocale } from "@/lib/i18n/ownerLocale";
 import {
   registerServiceWorker, installChunkErrorRecovery, hardResetAndReload,
   isStaleChunkError, staleChunkRecoveryExhausted, reloadForStaleChunk,
-  markAppHealthySoon, STARTUP_FAILED_EVENT,
+  markAppHealthySoon, STARTUP_FAILED_EVENT, pageCodeFailed,
 } from "@/lib/sw-register";
 import { captureFirstTouch } from "@/lib/attribution";
 import { checkStylesApplied } from "@/lib/stylesCheck";
@@ -83,7 +83,10 @@ function ErrorComponent({ error }: ErrorComponentProps) {
   // (belt-and-braces with the vite:preloadError listener). It gets ONE
   // automatic attempt (see reloadForStaleChunk); if the page that comes back
   // still can't load, this shows the error screen and never reloads again.
-  const recovering = isStaleChunkError(error) && !staleChunkRecoveryExhausted();
+  // React can report a missing file as a generic error (#520), so the startup
+  // guard's list of the page's code files decides too: if one of them failed
+  // to load, it's the same recovery, not a real error.
+  const recovering = (isStaleChunkError(error) || pageCodeFailed()) && !staleChunkRecoveryExhausted();
   useEffect(() => {
     if (recovering) reloadForStaleChunk();
     else reportError(error, { mechanism: "react_error_boundary", boundary: "root" });
@@ -156,52 +159,13 @@ const COLD_LAUNCH_REDIRECT = `(function(){try{` +
   `var qs=o.toString();window.location.replace("/dashboard"+(qs?"?"+qs:""));return;}}` +
   `}catch(e){}})();`;
 
-// Startup safety net, inline in <head> so it works even when the app's own
-// code never loads (a page whose scripts 404 can't run anything from the
-// bundle, which is why the bundle-side recovery in sw-register.ts didn't help
-// the 2026-10-21 stuck installs). Two jobs, no dependencies:
-//  1. A code or style file of this page fails to load → ONE automatic hard
-//     reset (unregister the worker, clear caches, reload). The attempt is
-//     shared with sw-register.ts through the same "kya-auto-reload" record,
-//     so the two together still reload at most once; after that, or offline,
-//     it shows the screen below instead.
-//  2. The app hasn't finished starting after 10 seconds → "Something's taking
-//     too long" with a Try again button. Never an automatic reload.
-// Leaving the page doesn't count as a failure: when a navigation starts
-// (a tapped link, a redirect), Safari cancels the page's pending file loads
-// and reports each as an error. Reloading then would replace the page the
-// person asked for, so from beforeunload/pagehide until the page is shown
-// again, load errors are ignored here and in sw-register.ts
-// (window.__kyaLeaving).
-// The app sets window.__kyaReady once the first screen has loaded (see
-// RootComponent), which also removes the screen if it's showing.
-const STARTUP_GUARD = `(function(){try{` +
-  `var K="kya-auto-reload",W=300000,shown=false,leaving=false;` +
-  `addEventListener("beforeunload",function(){leaving=true});addEventListener("pagehide",function(){leaving=true});` +
-  `addEventListener("pageshow",function(){leaving=false});window.__kyaLeaving=function(){return leaving};` +
-  `function nl(){try{return /^nl/i.test(navigator.language||"")}catch(e){return false}}` +
-  `function reset(){var done=function(){try{var u=new URL(location.href);u.searchParams.set("_r",String(Date.now()));location.replace(u.toString())}catch(e){location.reload()}};` +
-  `var p=[];try{if(navigator.serviceWorker)p.push(navigator.serviceWorker.getRegistrations().then(function(rs){return Promise.all(rs.map(function(r){return r.unregister()}))}))}catch(e){}` +
-  `try{if(window.caches)p.push(caches.keys().then(function(ks){return Promise.all(ks.map(function(k){return caches.delete(k)}))}))}catch(e){}` +
-  `Promise.all(p).then(done,done);setTimeout(done,3000)}` +
-  `function show(){if(shown||window.__kyaReady||!document.body)return;shown=true;var d=document.createElement("div");d.id="kya-startup-slow";d.setAttribute("role","alert");` +
-  `d.style.cssText="position:fixed;inset:0;z-index:2147483647;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;text-align:center;background:#1a3d2e;color:#fff;font-family:'DM Sans',system-ui,-apple-system,sans-serif;padding:calc(env(safe-area-inset-top) + 24px) 28px calc(env(safe-area-inset-bottom) + 24px)";` +
-  `var h=document.createElement("h1");h.textContent=nl()?"Dit duurt te lang":"Something's taking too long";h.style.cssText="margin:0;font:700 28px/1.2 Newsreader,Georgia,serif";` +
-  `var t=document.createElement("p");t.textContent=nl()?"Controleer je verbinding en probeer het opnieuw.":"Check your connection, then try again.";t.style.cssText="margin:0;max-width:30ch;font-size:15px;line-height:1.5;color:#d6e8dc";` +
-  `var b=document.createElement("button");b.type="button";b.textContent=nl()?"Opnieuw proberen":"Try again";b.style.cssText="margin-top:12px;min-height:52px;padding:0 32px;border-radius:999px;border:2px solid #1a3d2e;background:#f2b33d;color:#1a3d2e;font:700 16px 'DM Sans',system-ui,sans-serif";` +
-  `b.onclick=function(){b.disabled=true;reset()};d.appendChild(h);d.appendChild(t);d.appendChild(b);document.body.appendChild(d)}` +
-  `window.__kyaHideStartupGuard=function(){var d=document.getElementById("kya-startup-slow");if(d)d.remove()};` +
-  `setTimeout(function(){if(!window.__kyaReady){if(document.body)show();else addEventListener("DOMContentLoaded",show)}},10000);` +
-  `addEventListener("error",function(e){if(leaving)return;var el=e&&e.target;if(!el||(el.tagName!=="SCRIPT"&&el.tagName!=="LINK"))return;` +
-  `var u=el.src||el.href||"";if(u.indexOf(location.origin+"/assets/")!==0||window.__kyaReady)return;` +
-  `var at=0;try{at=Number(localStorage.getItem(K))||0}catch(x){}` +
-  `if(navigator.onLine!==false&&!(Date.now()-at<W)){try{localStorage.setItem(K,String(Date.now()));reset();return}catch(x){}}` +
-  `if(document.body)show();else addEventListener("DOMContentLoaded",show)},true);` +
-  `}catch(e){}})();`;
+// The startup safety net (STARTUP_GUARD) isn't rendered here: it has to come
+// before everything below in <head>, which React can't do, so the server
+// entry adds it to the page's HTML. See src/lib/startupGuard.ts.
 
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
   head: () => ({
-    scripts: [{ children: STARTUP_GUARD }, { children: COLD_LAUNCH_REDIRECT }],
+    scripts: [{ children: COLD_LAUNCH_REDIRECT }],
     styles: [{ children: appCss }],
     meta: [
       { charSet: "utf-8" },

@@ -4,6 +4,7 @@ import { consumeLastCapturedError } from "./lib/error-capture";
 import { renderErrorPage } from "./lib/error-page";
 import { captureServerException } from "./lib/errorTelemetry";
 import { routeShapeFromPath } from "./lib/errorTags";
+import { withStartupGuard } from "./lib/startupGuard";
 
 type ServerEntry = {
   fetch: (request: Request, env: unknown, ctx: unknown) => Promise<Response> | Response;
@@ -86,7 +87,10 @@ export default {
     try {
       const handler = await getServerEntry();
       const response = await handler.fetch(request, env, ctx);
-      return await normalizeCatastrophicSsrResponse(response, request);
+      const normalized = await normalizeCatastrophicSsrResponse(response, request);
+      // The app's pages get the startup safety net as the first script in
+      // <head>, ahead of everything React puts there (src/lib/startupGuard.ts).
+      return normalized === response ? withStartupGuard(response) : normalized;
     } catch (error) {
       console.error(error);
       await reportEntryError(error, request);

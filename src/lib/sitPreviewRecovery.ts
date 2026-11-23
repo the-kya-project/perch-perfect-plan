@@ -8,7 +8,7 @@
  * "Something's taking too long" until the owner closed and reopened the app.
  * The preview now moves onto a waiting build before it opens, and if the frame
  * still hasn't started shortly before the frame's own 10-second check
- * (STARTUP_GUARD in __root.tsx) would give up, it steps in once.
+ * (STARTUP_GUARD in startupGuard.ts) would give up, it steps in once.
  *
  * Pinned by `npm run test:sit-preview-recovery`.
  */
