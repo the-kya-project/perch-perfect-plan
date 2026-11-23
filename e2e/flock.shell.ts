@@ -58,6 +58,10 @@ type FlockState = {
   /** Build H: the founding members page, and this account's own choice (null = no founding spot). */
   founders: { display_name: string; photo_path: string | null; chapter_name: string | null; spot_number: number }[];
   foundersShow: boolean | null;
+  /** Backlog 1.6: the chapter's listings, suggestions waiting, and whether this account manages the chapter. */
+  places: Record<string, any>[];
+  placeSuggestions: Record<string, any>[];
+  placeManage: boolean;
   /** Build C: where this account stands (flock_my_access), and its join calls. */
   access: { member_now: boolean; has_membership: boolean; agreed: boolean; is_admin: boolean; guidelines_version: string; opens_at: string | null; season_ends_at: string | null };
   joinResult: string;
@@ -84,6 +88,9 @@ async function mockFlock(context: BrowserContext, userId: string, opts: { setupD
     blocks: [],
     founders: [],
     foundersShow: false,
+    places: [],
+    placeSuggestions: [],
+    placeManage: false,
     access: { member_now: true, has_membership: true, agreed: true, is_admin: true, guidelines_version: "2026-12", opens_at: null, season_ends_at: "2027-07-06T04:00:00Z" },
     joinResult: "joined",
   };
@@ -272,6 +279,26 @@ async function mockFlock(context: BrowserContext, userId: string, opts: { setupD
     }
     if (fn === "flock_event_suggest" || fn === "flock_event_save") return json(route, "00000000-0000-4000-8000-0000000083ff");
     if (fn === "flock_event_cancel") return json(route, null);
+    if (fn === "flock_chapter_places") return json(route, state.places);
+    if (fn === "flock_place_rules") {
+      return json(route, [{ region_slug: args.p_region ?? "great-lakes", region_name: args.p_region === "texas" ? "Texas" : "Great Lakes", can_manage: state.placeManage,
+        pending: state.placeManage ? state.placeSuggestions.length : 0, is_lead: false }]);
+    }
+    if (fn === "flock_place_suggestions") return json(route, state.placeManage ? state.placeSuggestions : []);
+    if (fn === "flock_place_suggest") {
+      const pending = state.placeSuggestions.length;
+      state.placeSuggestions.push({ place_id: `00000000-0000-4000-8000-0000000084${String(pending + 1).padStart(2, "0")}`, region_slug: "great-lakes", region_name: "Great Lakes",
+        kind: args.p_kind, name: args.p_name, area: args.p_area, note: args.p_note, suggested_by_name: "Brittany K.", created_at: ago(0) });
+      return json(route, state.placeSuggestions[pending].place_id);
+    }
+    if (fn === "flock_place_review") {
+      const sug = state.placeSuggestions.find((x) => x.place_id === args.p_id);
+      state.placeSuggestions = state.placeSuggestions.filter((x) => x.place_id !== args.p_id);
+      if (sug && args.p_decision === "approve") state.places.push({ ...sug, phone: null, website: null, position: 99, updated_at: ago(0) });
+      return json(route, null);
+    }
+    if (fn === "flock_place_save") return json(route, "00000000-0000-4000-8000-0000000085aa");
+    if (fn === "flock_place_move" || fn === "flock_place_remove") return json(route, null);
     if (fn === "flock_todays_idea") return json(route, state.idea ? [state.idea] : []);
     if (fn === "flock_idea_try") { if (state.idea) { state.idea.my_outcome = args.p_outcome; state.idea.my_bird_id = args.p_bird_id; } return json(route, null); }
     if (fn === "flock_report") return json(route, null);
@@ -1287,6 +1314,7 @@ test("everyone else: every /flock URL sends them Home and no Community code load
     context.on("request", (r) => { if (/\/rest\/v1\/library_resources\b|\/storage\/v1\/object\/(?:sign\/)?flock-library\//.test(r.url())) calls.push(r.url()); });
     for (const path of ["/flock", "/flock/journeys", "/flock/journeys/start", "/flock/journeys/setup?bird=x&template=step-up", "/flock/journeys/known?bird=x", "/flock/journeys/00000000-0000-4000-8000-0000000074a1/post", "/flock/journeys/00000000-0000-4000-8000-0000000074a1/milestone/1", "/flock/journeys/00000000-0000-4000-8000-0000000074a1/story", "/flock/journeys/00000000-0000-4000-8000-0000000074a1/compare", "/flock/chapter", "/flock/library", "/flock/spaces", "/flock/learn", "/flock?space=good",
       "/flock/post/new", "/flock/post/00000000-0000-4000-8000-0000000079a1", "/flock/you/notifications", "/admin/review", "/flock/idea", "/admin/ideas", "/flock/chapter?tab=events", "/flock/events/new",
+      "/flock/chapter?tab=resources", "/flock/places", "/flock/places?region=texas",
       "/flock/library/00000000-0000-4000-8000-0000000090a1", "/flock/library?type=guides&subject=foraging&q=cups", "/admin/library", "/admin/library/new",
       "/admin/library/00000000-0000-4000-8000-0000000090a1",
       "/flock/events/00000000-0000-4000-8000-0000000083a1"]) {
@@ -1653,7 +1681,7 @@ test.describe("reporting, the review queue and notifications (admin, phone)", ()
     await entry.getByRole("button", { name: /Review queue/ }).click();
     await expect(page).toHaveURL(/\/admin\/review$/);
     await expect(page.getByRole("heading", { level: 1, name: "Review queue" })).toBeVisible();
-    await expect(page.getByTestId("queue-chips").getByRole("button")).toHaveText(["All 3", "Do good 2", "Events 0", "Reports 1"]);
+    await expect(page.getByTestId("queue-chips").getByRole("button")).toHaveText(["All 3", "Do good 2", "Events 0", "Places 0", "Reports 1"]);
     const roof = page.locator("[data-subject='00000000-0000-4000-8000-0000000079d1']");
     await expect(roof).toContainText("Help Midwest Avian Rescue replace its aviary roof");
     // Each item names its author, space and date.
@@ -1665,7 +1693,7 @@ test.describe("reporting, the review queue and notifications (admin, phone)", ()
     expect(state.calls.find((c) => c.fn === "flock_review_post_spaces")!.args).toMatchObject({ p_post_ids: [POST] });
     await roof.locator("[data-act='approve']").click();
     expect(state.calls.find((c) => c.fn === "flock_review_post")!.args).toMatchObject({ p_post_id: "00000000-0000-4000-8000-0000000079d1", p_decision: "approve" });
-    await expect(page.getByTestId("queue-chips").getByRole("button")).toHaveText(["All 2", "Do good 1", "Events 0", "Reports 1"]);
+    await expect(page.getByTestId("queue-chips").getByRole("button")).toHaveText(["All 2", "Do good 1", "Events 0", "Places 0", "Reports 1"]);
 
     await page.locator("[data-subject='00000000-0000-4000-8000-0000000079d2'] [data-act='changes']").click();
     const send = page.getByRole("button", { name: "Send to the author" });
@@ -1876,7 +1904,7 @@ test.describe("chapter events (admin, phone)", () => {
       { ...item, item_type: "event", subject_type: "event", subject_id: "00000000-0000-4000-8000-0000000083b2", author_name: "Sam T.", title: "Picnic", body: null, event_mode: "in_person", event_place: "Fort Wayne park", event_starts_at: new Date(Date.now() + 9 * 86_400_000).toISOString() },
     );
     await page.goto("/admin/review");
-    await expect(page.getByTestId("queue-chips").getByRole("button")).toHaveText(["All 2", "Do good 0", "Events 2", "Reports 0"]);
+    await expect(page.getByTestId("queue-chips").getByRole("button")).toHaveText(["All 2", "Do good 0", "Events 2", "Places 0", "Reports 0"]);
     const photo = page.locator("[data-subject='00000000-0000-4000-8000-0000000083b1']");
     await expect(photo).toContainText("Event suggestion");
     await expect(photo.getByTestId("queue-event-when")).toContainText("Online");
@@ -1926,6 +1954,69 @@ test.describe("chapter members and leads (admin, phone)", () => {
     await page.getByTestId("members-search").fill("macaw");
     await expect(rows).toHaveCount(2);
     await expect(page.getByTestId("members-footer")).toHaveText("Only first names and birds show here. Members choose what else to share.");
+    await context.close();
+  });
+
+  test("the Resources tab: directory cards in three groups, Suggest a place, and the review", async ({ browser, baseURL }) => {
+    const { context, page, state } = await open(browser, baseURL!, { admin: true });
+    state.places = [
+      { place_id: "00000000-0000-4000-8000-0000000086a1", region_slug: "great-lakes", kind: "vet", name: "Lakeshore Bird & Exotic Clinic", area: "Fort Wayne, IN",
+        phone: "(260) 555-0100", website: "https://lakeshorebirds.example.com", note: "Sees macaws and greys. Open Saturdays.", position: 1, updated_at: "2026-11-22T15:00:00Z" },
+      { place_id: "00000000-0000-4000-8000-0000000086a2", region_slug: "great-lakes", kind: "rescue", name: "Birds and Beaks", area: "Indiana",
+        phone: null, website: null, note: "Adoptions, fostering, and great advice.", position: 1, updated_at: "2026-11-02T15:00:00Z" },
+    ];
+    await page.goto("/flock/chapter?tab=resources");
+    await expect(page.getByTestId("places-disclaimer")).toHaveText("Places members in your chapter recommend. These are community picks, not endorsements.");
+    await expect(page.locator("[data-place-group] h2")).toHaveText(["Avian vets", "Rescues", "Shops and services"]);
+    const vet = page.locator("[data-place='00000000-0000-4000-8000-0000000086a1']");
+    await expect(vet).toContainText("Fort Wayne, IN");
+    await expect(vet.getByTestId("place-call")).toHaveAttribute("href", "tel:2605550100");
+    await expect(vet.getByTestId("place-website")).toHaveAttribute("href", "https://lakeshorebirds.example.com/");
+    // A directory, not a post: nothing to react to, comment on or open.
+    await expect(vet.getByRole("button")).toHaveCount(0);
+    await expect(page.locator("[data-place='00000000-0000-4000-8000-0000000086a2'] [data-testid='place-call']")).toHaveCount(0);
+    await expect(page.locator("[data-place-group='shop'] [data-testid='place-group-empty']")).toBeVisible();
+    await expect(page.getByTestId("places-manage")).toHaveCount(0);
+
+    await page.getByTestId("suggest-place").click();
+    const sheet = page.getByTestId("suggest-place-sheet");
+    await sheet.locator("[data-kind='shop']").click();
+    await sheet.getByTestId("place-name").fill("Feather & Perch");
+    await sheet.getByTestId("place-area").fill("Ann Arbor, MI");
+    await sheet.getByTestId("place-note").fill("Great toys and they know their birds.");
+    await sheet.getByRole("button", { name: "Send suggestion" }).click();
+    await expect(page.getByTestId("place-sent")).toBeVisible();
+    expect(state.calls.find((c) => c.fn === "flock_place_suggest")?.args).toMatchObject({ p_kind: "shop", p_name: "Feather & Perch", p_area: "Ann Arbor, MI" });
+    // Not shown until it's approved.
+    await expect(page.locator("[data-place-group='shop'] [data-place]")).toHaveCount(0);
+
+    // The chapter's managers see it waiting and approve it in the review queue.
+    state.placeManage = true;
+    await page.goto("/admin/review?filter=places");
+    await expect(page.getByTestId("queue-chips").getByRole("button")).toHaveText(["All 1", "Do good 0", "Events 0", "Places 1", "Reports 0"]);
+    const item = page.locator("[data-queue-item='place']");
+    await expect(item.getByTestId("queue-item-label")).toHaveText("Place suggestion · Shop or service · Great Lakes chapter");
+    await expect(item).toContainText("Feather & Perch");
+    await item.locator("[data-act='approve']").click();
+    await expect(page.getByTestId("queue-empty")).toBeVisible();
+    expect(state.calls.find((c) => c.fn === "flock_place_review")?.args).toMatchObject({ p_decision: "approve" });
+
+    await page.goto("/flock/chapter?tab=resources");
+    await expect(page.locator("[data-place-group='shop'] [data-place]")).toContainText("Feather & Perch");
+    await page.getByTestId("places-manage-link").click();
+    await expect(page).toHaveURL(/\/flock\/places/);
+    const rows = page.getByTestId("manage-places").locator("[data-manage-place]");
+    await expect(rows).toHaveCount(3);
+    await expect(rows.first().getByTestId("place-updated")).toHaveText(/^Updated Nov 22/);
+    await expect(rows.first().locator("[data-act='up']")).toBeDisabled();
+    await rows.first().locator("[data-act='edit']").click();
+    const form = page.getByTestId("place-form");
+    await form.getByTestId("place-website-input").fill("mailto:vet@example.com");
+    await expect(form.getByRole("button", { name: "Save changes" })).toBeDisabled();
+    await form.getByTestId("place-website-input").fill("lakeshorebirds.example.com");
+    await form.getByRole("button", { name: "Save changes" }).click();
+    await expect(form).toHaveCount(0);
+    expect(state.calls.find((c) => c.fn === "flock_place_save")?.args).toMatchObject({ p_region: "great-lakes", p_kind: "vet", p_website: "lakeshorebirds.example.com" });
     await context.close();
   });
 
