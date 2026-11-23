@@ -75,6 +75,7 @@ jobs:
           npm run test:email-clicks
           npm run test:email-tracking
           npm run test:emergency-merge
+          npm run test:flock-purge
           npm run test:get-app
           npm run test:gifts
           npm run test:health-rules
