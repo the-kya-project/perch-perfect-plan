@@ -7,8 +7,10 @@
 //   2. sign those paths with the service role for one hour, resized to `width`
 //      (Supabase image transforms), with the full-size original as a fallback.
 // Deleting a post or comment goes through here too: the database deletes it as
-// the caller (author only) and hands back its photo paths, which the service
-// role removes, including other members' photos in replies under it.
+// the caller (author only). Since backlog 1.3 it holds the post or comment for
+// 180 days and hands back no photo paths, so nothing is removed here; the
+// daily /api/public/hooks/flock-purge removes the photos when the hold ends.
+// Any paths it does hand back are still removed by the service role.
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";

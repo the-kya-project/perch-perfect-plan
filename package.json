@@ -76,7 +76,8 @@
     "test:cron-auth": "npx --yes vite-node scripts/cron-auth.test.ts",
     "test:native-app-tags": "npx --yes vite-node scripts/native-app-tags.test.ts",
     "test:seasonal-calendar": "npx --yes vite-node scripts/seasonal-calendar.test.ts",
-    "test:release-check": "npx --yes vite-node scripts/release-check.test.ts"
+    "test:release-check": "npx --yes vite-node scripts/release-check.test.ts",
+    "test:flock-purge": "npx --yes vite-node scripts/flock-purge.test.ts"
   },
   "dependencies": {
     "@capacitor/android": "^8.5.3",
