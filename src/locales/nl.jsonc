@@ -2871,6 +2871,16 @@
   "dashboard.thingCountOther": "{{n}} dingen",
   // Today
   "dashboard.today": "Vandaag",
+  // Couldn't hide this card. Try again.
+  "dashboard.todayCardDismissFailed": "Deze kaart verbergen is niet gelukt. Probeer het opnieuw.",
+  // Got it
+  "dashboard.todayCardGotIt": "Begrepen",
+  // Holiday helper
+  "dashboard.todayCardHolidayHelper": "Feestdagenhulp",
+  // Seasonal tip
+  "dashboard.todayCardSeasonalTip": "Seizoenstip",
+  // Through {{date}}
+  "dashboard.todayCardThrough": "T/m {{date}}",
   // {{count}} day ago
   "dashboard.weighedDaysAgo_one": "{{count}} dag geleden",
   // {{count}} days ago

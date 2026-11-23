@@ -38,8 +38,9 @@ const commonInit = {
   resources,
   fallbackLng: DEFAULT_LOCALE,
   supportedLngs: SUPPORTED_LOCALES as unknown as string[],
-  // "translation" is the app catalog; "routine" renders derived routine tasks.
-  ns: ["translation", "routine"],
+  // "translation" is the app catalog; "routine" renders derived routine tasks;
+  // "seasonal" is Home's seasonal and holiday Today cards.
+  ns: ["translation", "routine", "seasonal"],
   defaultNS: "translation",
   // Flat, literal keys like "sitter.today.dueNow" — not nested lookups. Turning
   // off the separators keeps the catalogs a plain key→value map that a
