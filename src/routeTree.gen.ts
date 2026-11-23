@@ -131,6 +131,7 @@ import { Route as AuthenticatedSitsEditSitIdRouteImport } from './routes/_authen
 import { Route as ApiPublicHooksBereavementNoteRouteImport } from './routes/api/public/hooks/bereavement-note'
 import { Route as ApiPublicHooksCarePlanRemindersRouteImport } from './routes/api/public/hooks/care-plan-reminders'
 import { Route as ApiPublicHooksEngagementNudgesRouteImport } from './routes/api/public/hooks/engagement-nudges'
+import { Route as ApiPublicHooksFlockPurgeRouteImport } from './routes/api/public/hooks/flock-purge'
 import { Route as ApiPublicHooksGiftEmailsRouteImport } from './routes/api/public/hooks/gift-emails'
 import { Route as ApiPublicHooksMonthlyLetterRouteImport } from './routes/api/public/hooks/monthly-letter'
 import { Route as ApiPublicHooksOnboardingEmailsRouteImport } from './routes/api/public/hooks/onboarding-emails'
@@ -831,6 +832,12 @@ const ApiPublicHooksEngagementNudgesRoute =
     path: '/api/public/hooks/engagement-nudges',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicHooksFlockPurgeRoute =
+  ApiPublicHooksFlockPurgeRouteImport.update({
+    id: '/api/public/hooks/flock-purge',
+    path: '/api/public/hooks/flock-purge',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicHooksGiftEmailsRoute =
   ApiPublicHooksGiftEmailsRouteImport.update({
     id: '/api/public/hooks/gift-emails',
@@ -1083,6 +1090,7 @@ export interface FileRoutesByFullPath {
   '/api/public/hooks/bereavement-note': typeof ApiPublicHooksBereavementNoteRoute
   '/api/public/hooks/care-plan-reminders': typeof ApiPublicHooksCarePlanRemindersRoute
   '/api/public/hooks/engagement-nudges': typeof ApiPublicHooksEngagementNudgesRoute
+  '/api/public/hooks/flock-purge': typeof ApiPublicHooksFlockPurgeRoute
   '/api/public/hooks/gift-emails': typeof ApiPublicHooksGiftEmailsRoute
   '/api/public/hooks/monthly-letter': typeof ApiPublicHooksMonthlyLetterRoute
   '/api/public/hooks/onboarding-emails': typeof ApiPublicHooksOnboardingEmailsRoute
@@ -1222,6 +1230,7 @@ export interface FileRoutesByTo {
   '/api/public/hooks/bereavement-note': typeof ApiPublicHooksBereavementNoteRoute
   '/api/public/hooks/care-plan-reminders': typeof ApiPublicHooksCarePlanRemindersRoute
   '/api/public/hooks/engagement-nudges': typeof ApiPublicHooksEngagementNudgesRoute
+  '/api/public/hooks/flock-purge': typeof ApiPublicHooksFlockPurgeRoute
   '/api/public/hooks/gift-emails': typeof ApiPublicHooksGiftEmailsRoute
   '/api/public/hooks/monthly-letter': typeof ApiPublicHooksMonthlyLetterRoute
   '/api/public/hooks/onboarding-emails': typeof ApiPublicHooksOnboardingEmailsRoute
@@ -1370,6 +1379,7 @@ export interface FileRoutesById {
   '/api/public/hooks/bereavement-note': typeof ApiPublicHooksBereavementNoteRoute
   '/api/public/hooks/care-plan-reminders': typeof ApiPublicHooksCarePlanRemindersRoute
   '/api/public/hooks/engagement-nudges': typeof ApiPublicHooksEngagementNudgesRoute
+  '/api/public/hooks/flock-purge': typeof ApiPublicHooksFlockPurgeRoute
   '/api/public/hooks/gift-emails': typeof ApiPublicHooksGiftEmailsRoute
   '/api/public/hooks/monthly-letter': typeof ApiPublicHooksMonthlyLetterRoute
   '/api/public/hooks/onboarding-emails': typeof ApiPublicHooksOnboardingEmailsRoute
@@ -1518,6 +1528,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/bereavement-note'
     | '/api/public/hooks/care-plan-reminders'
     | '/api/public/hooks/engagement-nudges'
+    | '/api/public/hooks/flock-purge'
     | '/api/public/hooks/gift-emails'
     | '/api/public/hooks/monthly-letter'
     | '/api/public/hooks/onboarding-emails'
@@ -1657,6 +1668,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/bereavement-note'
     | '/api/public/hooks/care-plan-reminders'
     | '/api/public/hooks/engagement-nudges'
+    | '/api/public/hooks/flock-purge'
     | '/api/public/hooks/gift-emails'
     | '/api/public/hooks/monthly-letter'
     | '/api/public/hooks/onboarding-emails'
@@ -1804,6 +1816,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/bereavement-note'
     | '/api/public/hooks/care-plan-reminders'
     | '/api/public/hooks/engagement-nudges'
+    | '/api/public/hooks/flock-purge'
     | '/api/public/hooks/gift-emails'
     | '/api/public/hooks/monthly-letter'
     | '/api/public/hooks/onboarding-emails'
@@ -1866,6 +1879,7 @@ export interface RootRouteChildren {
   ApiPublicHooksBereavementNoteRoute: typeof ApiPublicHooksBereavementNoteRoute
   ApiPublicHooksCarePlanRemindersRoute: typeof ApiPublicHooksCarePlanRemindersRoute
   ApiPublicHooksEngagementNudgesRoute: typeof ApiPublicHooksEngagementNudgesRoute
+  ApiPublicHooksFlockPurgeRoute: typeof ApiPublicHooksFlockPurgeRoute
   ApiPublicHooksGiftEmailsRoute: typeof ApiPublicHooksGiftEmailsRoute
   ApiPublicHooksMonthlyLetterRoute: typeof ApiPublicHooksMonthlyLetterRoute
   ApiPublicHooksOnboardingEmailsRoute: typeof ApiPublicHooksOnboardingEmailsRoute
@@ -2734,6 +2748,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksEngagementNudgesRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/flock-purge': {
+      id: '/api/public/hooks/flock-purge'
+      path: '/api/public/hooks/flock-purge'
+      fullPath: '/api/public/hooks/flock-purge'
+      preLoaderRoute: typeof ApiPublicHooksFlockPurgeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/hooks/gift-emails': {
       id: '/api/public/hooks/gift-emails'
       path: '/api/public/hooks/gift-emails'
@@ -3246,6 +3267,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicHooksBereavementNoteRoute: ApiPublicHooksBereavementNoteRoute,
   ApiPublicHooksCarePlanRemindersRoute: ApiPublicHooksCarePlanRemindersRoute,
   ApiPublicHooksEngagementNudgesRoute: ApiPublicHooksEngagementNudgesRoute,
+  ApiPublicHooksFlockPurgeRoute: ApiPublicHooksFlockPurgeRoute,
   ApiPublicHooksGiftEmailsRoute: ApiPublicHooksGiftEmailsRoute,
   ApiPublicHooksMonthlyLetterRoute: ApiPublicHooksMonthlyLetterRoute,
   ApiPublicHooksOnboardingEmailsRoute: ApiPublicHooksOnboardingEmailsRoute,

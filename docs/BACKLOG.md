@@ -22,13 +22,6 @@ Where these items came from, with the detail behind each: `docs/flock/opening-sc
 
 ## Ready to build
 
-### 2.3 Open pages notice a new release
-- **Done means:** an open app or web page checks for a new release on launch, hourly and when it comes back to the foreground, and updates safely: a quiet reload with no form in progress, otherwise the existing "A new version is ready" banner.
-- **Size:** M
-- **Depends on:** 2.2
-- **Overnight alone:** yes
-- **Needs Brittany:** merge, and a check in the iPhone Simulator with the app left open across a preview release.
-
 ### 2.4 Open pages fetch the new build's files after a release
 - **Done means:** after a release, an open page's next request reaches the new build, not the old one Vercel's Skew Protection pinned it to, so the sitter preview can't load a page whose code files are missing. When an update is ready, the app clears its own pin through a small unpin address (`/api/public/unpin`) and reloads onto the new release.
 - **Decision (Brittany, Nov 22, 2026):** option B in [`docs/skew-protection.md`](skew-protection.md). Skew Protection stays on, with no Vercel setting change.
@@ -56,26 +49,12 @@ Where these items came from, with the detail behind each: `docs/flock/opening-sc
 - **Overnight alone:** yes (built to a held PR)
 - **Needs Brittany:** hold the PR. The health wording goes in the review queue and the vet packet. Ask in the PR whether the log covers only her birds or every bird: this item used to say every bird, and her approval says on for her account only. Until she answers, log her birds only.
 
-### 1.3 Deleted posts stay hidden for 180 days, then are purged
-- **Done means:** deleting a post or comment hides it, and its comments, from everyone at once, the author included. A daily database job permanently deletes it and its photos 180 days later. Deleting a whole account stays immediate. Pinned in `supabase/checks/flock_posts_checks.sql` (legal draft D10).
-- **Size:** M
-- **Depends on:** nothing
-- **Overnight alone:** yes
-- **Needs Brittany:** approval of the deletion job (it deletes data) and of the change to the existing delete functions.
-
 ### 1.4 Removed content and closed reports are deleted after 180 days
 - **Done means:** the same daily job deletes reviewer-removed content and closed reports 180 days after they were resolved. Pinned in `supabase/checks/flock_moderation_checks.sql` (legal draft D9).
 - **Size:** S
 - **Depends on:** 1.3
 - **Overnight alone:** yes
 - **Needs Brittany:** approval of the deletion (it deletes data).
-
-### D2.1 Seasonal and holiday Today cards on Home
-- **Done means:** Home shows the day's card from the calendar file (D3), keyed on the owner's own local date and in their language, behind its own switch, which starts off and then goes to Brittany's account only. It never calls the Flock's Today's idea. It passes the iPhone hydration check: the date is read after the page loads.
-- **Size:** M
-- **Depends on:** D3
-- **Overnight alone:** yes
-- **Needs Brittany:** the copy; turning the switch on for everyone changes Home for free users, so that needs her approval and before-and-after screenshots.
 
 ### 1.14 Billing foundation (switched off)
 - **Done means:** the billing tables (`billing_customers`, `billing_events`, the new `entitlements` columns), the Stripe billing webhook (`/api/public/stripe/billing`, its own secret, fixture tests in `npm run test:billing`) and the card step (`/flock/membership`, $0 due, never shown in the native app) all exist behind `BILLING_ENABLED`, which stays off. Test mode only. Spec: `docs/flock/payments-plan.md` sections c and d, items 1–3.
@@ -353,6 +332,9 @@ The launch PR itself (1.18) is already merged dark. What's left before opening i
 ## Done
 
 - **1.8** Do good voting and the founding vote: an open vote is a card on Today and at the top of Do good (founders-only ones only for founders, with a Founders pill); members pick one choice and can change it until it closes, seeing only how many have voted; after closing, percentages, the winner and Brittany's note, or "Too few votes to share." under 10 voters; admins write drafts (question, description, 2–8 choices with photos, audience, close date), open, close early, extend, announce and see counts at any time at `/admin/votes`; nobody can see how a member voted. Behind the Flock gate; nothing seeded (the first votes are Brittany's content): #529 (held for Brittany: the admin screens aren't in the mockup).
+- **1.3** Deleting a post or comment moves it, with the comments under it, into `flock_deleted_items`, so it's hidden from everyone at once, the author included. The daily job `flock-deleted-purge-daily` (`/api/public/hooks/flock-purge`) deletes it and its photos for good 180 days later. Deleting an account removes its held items at once. Pinned in `supabase/checks/flock_posts_checks.sql` and `npm run test:flock-purge`. Approved and merged by Brittany (Nov 23, 2026): #522.
+- **D2.1** Home shows the day's card from the seasonal calendar (D3) under the Today list: the reader's own date, read after the page loads; their language; US or Dutch holidays from the account's home time zone. Behind its own switch, `today_cards` in the new `public.care_features` (off / admins / everyone), which starts **off**; `select public.admin_set_care_feature('today_cards', 'admins');` turns it on for Brittany's account only. Redesigned Nov 23 with illustrations, tints, labels, an end date and a per-account "Got it" (`public.today_card_dismissals`). Pinned by `npm run test:today-card`, `supabase/checks/care_features_checks.sql` and `supabase/checks/today_card_dismissals_checks.sql`. Held for Brittany: #523.
+- **2.3** Every open production page (not a frame) asks `/api/public/version` which build is live, on launch, hourly and on each return to the foreground (including the native app's `resume`), through a hidden frame so Skew Protection's pin can't hide a release; a newer build reloads quietly at a safe moment or waits behind "A new version is ready", once per build: #520 (held for Brittany's merge and the Simulator check).
 - **1.6** Chapter collections: the Resources tab lists Avian vets, Rescues, and Shops and services as directory cards (tappable phone and website, the "community picks, not endorsements" line, an invitation in empty groups); members suggest a place, which shows to nobody but the chapter's lead and admins until approved in `/admin/review` → Places; leads (own chapter) and admins (any chapter) add, edit, reorder and remove listings at `/flock/places`, with when each was last updated. Behind the Flock gate; nothing seeded (the starter listings are Brittany's content): #528.
 - **2.2** `/api/public/version` returns `{ "build": "<commit>" }` with `no-store`; `src/lib/releaseCheck.ts` holds the pure rules (which pages check, when, what counts as a newer build, update now or later behind the banner, one reload per build), pinned by `npm run test:release-check`. Nothing calls them yet (2.3): #519.
 - **D3** `src/lib/seasonalCalendar.ts`: 22 dated cards covering every day of the year (7 seasons, 15 holidays and moments, including heat, cold, fireworks, candles, holiday foods and travel; some US-only or Netherlands-only), each with a rule for its days and an English and Dutch title and body in `src/locales/seasonal.*.jsonc`; `npm run test:seasonal-calendar` checks every rule resolves in every year through 2075, every day has a card, and every card exists in both languages. Approved and merged by Brittany: #516.

@@ -4236,6 +4236,21 @@
     "dashboard.today": {
       "stamp": "65e7700b50124553"
     },
+    "dashboard.todayCardDismissFailed": {
+      "stamp": "92991019aaf61461"
+    },
+    "dashboard.todayCardGotIt": {
+      "stamp": "dea25a84086025ca"
+    },
+    "dashboard.todayCardHolidayHelper": {
+      "stamp": "c4dec32d46522bec"
+    },
+    "dashboard.todayCardSeasonalTip": {
+      "stamp": "b563ff7be1121468"
+    },
+    "dashboard.todayCardThrough": {
+      "stamp": "53ad766a42e40f29"
+    },
     "dashboard.weighedDaysAgo_one": {
       "stamp": "0e0ad5355508d189"
     },

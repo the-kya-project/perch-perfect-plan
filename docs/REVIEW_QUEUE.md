@@ -19,6 +19,51 @@ Format:
   - After: "<new wording>"
 ```
 
+### [#523](https://github.com/the-kya-project/perch-perfect-plan/pull/523) · D2.1 Seasonal and holiday Today cards on Home
+
+Not merged yet: held for Brittany. English is her approved wording (Nov 23, 2026).
+
+**New labels (English / Dutch):** Seasonal tip / Seizoenstip · Holiday helper / Feestdagenhulp · Got it / Begrepen · Through {{date}} / T/m {{date}} · Couldn't hide this card. Try again. / Deze kaart verbergen is niet gelukt. Probeer het opnieuw. (the last one is the error if saving "Got it" fails, added by this change).
+
+- `seasonal.winterDrafts.body`
+  - Before: Check the cage isn't near a drafty window, an outside door or a heating vent. A cover at night helps hold in warmth.
+  - After: Check the cage isn't near a drafty window, an outside door, or a heating vent. A cover at night helps hold in warmth.
+  - Dutch before: Zet de kooi niet bij een tochtig raam, een buitendeur of een verwarmingsrooster. Een kooideken 's nachts houdt de warmte vast.
+  - Dutch after: Controleer of de kooi niet bij een tochtig raam, een buitendeur of een verwarmingsrooster staat. Een kooideken 's nachts houdt de warmte vast.
+- `seasonal.springCleaning.body`
+  - Before: Strong cleaners, sprays and fresh paint give off fumes. Move your bird to another room with fresh air while you clean, and choose bird-safe products.
+  - After: Strong cleaners, sprays, and fresh paint give off fumes. Move your bird to another room with fresh air while you clean, and choose bird-safe products.
+  - Dutch: unchanged (same meaning; Dutch doesn't use the Oxford comma)
+- `seasonal.summerTravel.body`
+  - Before: Going away? Share the care plan with your sitter before you leave, and put your avian vet's number where they'll see it.
+  - After: Going away? Share the care plan with your pet sitter before you leave, and put your avian vet's number where they'll see it.
+  - Dutch: unchanged (same meaning; Dutch doesn't use the Oxford comma)
+- `seasonal.thanksgiving.body`
+  - Before: Keep your bird well away from the kitchen: overheated non-stick pans and the oven's self-clean setting give off fumes that are dangerous to birds.
+  - After: Keep your bird well away from the kitchen. Overheated non-stick pans and the oven's self-clean setting give off fumes that are dangerous to birds.
+  - Dutch before: Houd je vogel ver uit de keuken: oververhitte pannen met antiaanbaklaag en de zelfreinigingsstand van de oven geven dampen af die gevaarlijk zijn voor vogels.
+  - Dutch after: Houd je vogel ver uit de keuken. Oververhitte pannen met antiaanbaklaag en de zelfreinigingsstand van de oven geven dampen af die gevaarlijk zijn voor vogels.
+- `seasonal.sinterklaas.body`
+  - Before: Keep chocolate letters, pepernoten and other sweets out of your bird's reach, and pick up wrapping paper and ribbon.
+  - After: Keep chocolate letters, pepernoten, and other sweets out of your bird's reach, and pick up wrapping paper and ribbon.
+  - Dutch: unchanged (same meaning; Dutch doesn't use the Oxford comma)
+- `seasonal.holidayDecorations.body`
+  - Before: Tinsel, glass ornaments and string lights are tempting to chew. Keep them out of reach, and stay close whenever your bird is near the tree.
+  - After: Tinsel, glass ornaments, and string lights are tempting to chew. Keep them out of reach, and stay close whenever your bird is near the tree.
+  - Dutch: unchanged (same meaning; Dutch doesn't use the Oxford comma)
+- `seasonal.holidayCandles.body`
+  - Before: Keep lit candles, scented sprays and plug-in air fresheners out of the room your bird is in, and never leave a flame unattended.
+  - After: Keep lit candles, scented sprays, and plug-in air fresheners out of the room your bird is in, and never leave a flame unattended.
+  - Dutch: unchanged (same meaning; Dutch doesn't use the Oxford comma)
+- `seasonal.holidayTravel.body`
+  - Before: If you're traveling, share the care plan with your sitter before you go. If your bird is coming along, pack familiar food and toys.
+  - After: If you're traveling, share the care plan with your pet sitter before you go. If your bird is coming along, pack familiar food and toys.
+  - Dutch: unchanged (same meaning; Dutch doesn't use the Oxford comma)
+- `seasonal.holidayMeals.body`
+  - Before: Keep chocolate, avocado, alcohol and salty or fatty foods away from your bird, and ask guests not to share from their plates.
+  - After: Keep chocolate, avocado, alcohol, and salty or fatty foods away from your bird, and ask guests not to share from their plates.
+  - Dutch: unchanged (same meaning; Dutch doesn't use the Oxford comma)
+
 ### [#528](https://github.com/the-kya-project/perch-perfect-plan/pull/528) · 1.6 Curated chapter collections
 All new, behind the Flock gate (admins only today). Where the mockup has wording, it's used as is.
 - **Where:** Chapter → Resources (replaces the empty state)
@@ -181,6 +226,40 @@ Format:
 - **Why:** ballots belong to the person (like every other row of theirs). The spec gives 10 as a rule, not a setting.
 - **To change it:** `private.flock_vote_min_results()` and `private.flock_vote_results_days()`.
 
+### [#523](https://github.com/the-kya-project/perch-perfect-plan/pull/523) · D2.1 Seasonal and holiday Today cards on Home
+
+- **Decision:** A card's end date is the last day of its unbroken run for that reader, so a season card interrupted by a holiday shows the day before the holiday (US, Nov 23: "Through Nov 23"), and "Got it" hides it through that day. It can come back after the holiday, because a different card has come up in between.
+- **Why:** the brief says "until a different card comes up" and an end date "for that reader". Saving the end date with the dismissal also means a card returns normally next year.
+
+### [#523](https://github.com/the-kya-project/perch-perfect-plan/pull/523) · D2.1 Seasonal and holiday Today cards on Home
+
+- **Decision:** "Pet sitter" stays "oppas" in Dutch, and "Holiday helper" is "Feestdagenhulp".
+- **Why:** the locked glossary makes "sitter" "oppas" everywhere in the app. "Feestdagenhulp" is the closest short label for the pill.
+
+### [#523](https://github.com/the-kya-project/perch-perfect-plan/pull/523) · D2.1 Seasonal and holiday Today cards on Home
+- **Decision:** The switch is a new table, `public.care_features` (`today_cards`, off / admins / everyone, starting off), built the same way as the health switches, rather than a row in `health_features`. "Brittany's account only" is `admins`: production has exactly one admin account (checked read-only, a count).
+- **Why:** the calendar file says the cards are plain care reminders, never health advice, so they don't belong with the switches waiting on the avian vet. A per-account list would be new machinery for one person; `admins` already means you.
+- **To change it:** move the row into `health_features` (and `HEALTH_FEATURES`) instead, or add another account to the admins.
+
+### [#523](https://github.com/the-kya-project/perch-perfect-plan/pull/523) · D2.1 Seasonal and holiday Today cards on Home
+- **Decision:** The country (for the US-only and Netherlands-only cards) comes from the account's home time zone (Account → Time zone), or the phone's time zone when the account has none yet. A US time zone gets the US cards, Amsterdam gets the Dutch ones, and anywhere else (Canada, Belgium, the UK…) gets only the cards for everyone. The app's language isn't used. The day is the phone's own date, read after the page loads.
+- **Why:** an English speaker in Amsterdam still hears King's Day fireworks, and a Dutch speaker in Ohio still has Thanksgiving. The home time zone is the one country-like thing the app already stores.
+- **To change it:** `seasonalRegionForTimeZone` in `src/lib/todayCard.ts`; `npm run test:today-card` pins it.
+
+### [#523](https://github.com/the-kya-project/perch-perfect-plan/pull/523) · D2.1 Seasonal and holiday Today cards on Home
+- **Decision:** The card sits right under Home's Today list (above the birds), as a white card with a small icon for its topic (sun, snowflake, sparkles, flame, plate, car, wind, house, party popper, clock), the card's title and its body. No label, no button, no way to dismiss it. It isn't shown during the onboarding tour's demo Home, and it doesn't appear on a Home with no birds yet.
+- **Why:** the backlog asks for "the day's card" with no layout; this is the plainest card the Home design system already has. Dismissing wasn't asked for, so it's a question in the PR instead of a guess.
+- **To change it:** `src/components/SeasonalTodayCard.tsx` and its one line in `src/routes/_authenticated/dashboard.tsx`.
+### [#520](https://github.com/the-kya-project/perch-perfect-plan/pull/520) · 2.3 Open pages notice a new release
+- **Decision:** The open page reads `/api/public/version` through a hidden, zero-size frame instead of an ordinary request, as the reference branch `fix/native-release-catchup` does. Vercel's Skew Protection answers an open page's ordinary requests from the copy it started with, so they would only ever see the old build; page loads, frames included, aren't pinned (checked on that branch, Nov 2, 2026).
+- **Why:** without it the check would never see a release while Skew Protection is on, which is the setting Brittany chose to keep (2.4, option B).
+- **To change it:** `readLiveBuild` in `src/lib/sw-register.ts`. If Skew Protection were ever turned off, a plain uncached request would do.
+
+### [#520](https://github.com/the-kya-project/perch-perfect-plan/pull/520) · 2.3 Open pages notice a new release
+- **Decision:** A reload the version check asks for goes to the same address with `?_r=<time>` added (the cache-busted reload the startup guard already uses), so the iPhone's web view can't answer it from its own cache. A service-worker update still reloads exactly as before. Dropping Vercel's pin before that reload is left to 2.4, and the sitter preview's own catch-up (with no worker) to 2.5. The background watcher also listens for the native app's `pause` and `resume`, which the iOS web view doesn't always report as a visibility change.
+- **Why:** keeps 2.3 to its "done means" line and leaves the service-worker path that web users already have unchanged.
+- **To change it:** `reloadFresh` and `applyUpdate` in `src/lib/sw-register.ts`.
+
 ### [#528](https://github.com/the-kya-project/perch-perfect-plan/pull/528) · 1.6 Curated chapter collections
 - **Decision:** Place suggestions have their own functions (`flock_place_suggestions`, `flock_place_review`) and their own "Places" chip in `/admin/review`, rather than a rewrite of `flock_review_queue` and `flock_review_counts`. The queue's and Flock settings' "waiting" totals add them in.
 - **Why:** It keeps the migration purely additive: no existing function changes.
@@ -205,6 +284,23 @@ Format:
 - **Decision:** Small differences from the mockup: the tab order stays Posts, Events, Resources, Members (the backlog says so); each card's square tile carries an icon (stethoscope, heart-handshake, shop); and every group always shows, with an empty one inviting a suggestion.
 - **Why:** The spec asks for an empty group to invite a suggestion, and the tiles were blank in the mockup.
 - **To change it:** say which you'd prefer.
+
+### [#522](https://github.com/the-kya-project/perch-perfect-plan/pull/522) · 1.3 Deleted posts stay hidden for 180 days, then are purged
+- **Decision:** a deleted post or comment is moved into a new holding table (`flock_deleted_items`, readable only by the server), rather than marked "deleted" in place. The post and comment tables, and every rule about who sees what, are unchanged.
+- **Why:** "hidden from everyone at once, the author included" is then true everywhere automatically. Marking in place would have meant rewriting about fifteen visibility functions, which already carry the blocking and moderation rules.
+- **To change it:** to let an author restore a deleted post, a function would copy the held row back.
+- **Decision:** reactions on a deleted post or comment are deleted at once, as today. Only the post, its comments and their photos are held.
+- **Why:** D10 names the post and its comments. Reactions aren't content anyone wrote.
+- **To change it:** hold them in the same table with a new `kind`.
+- **Decision:** the delete confirmations keep their wording ("This can't be undone."). For the member that's still true: nothing in the app brings a deleted post back. The 180 days will be explained in the privacy policy (1.5).
+- **Why:** the backlog item asks for no copy change.
+- **To change it:** `flock.posts.deleteLine`, `deleteCommentLine` and `deleteReplyLine` in `src/locales/en.jsonc`.
+- **Decision:** the daily job (`flock-deleted-purge-daily`, 04:23 UTC) calls a new hook, `/api/public/hooks/flock-purge`, instead of being SQL only. The migration schedules it on production only.
+- **Why:** SQL can't remove the photo files. Only the Storage API can. Staging and preview branches would otherwise call production's hook.
+- **To change it:** the `cron.schedule` block at the end of `20261123074500_flock_deleted_hold.sql`.
+- **Decision:** when someone deletes their account, their held items go at once. Another member's reply held under their post stays held on its own until its own 180 days are up.
+- **Why:** D10 says deleting an account stays immediate, and the reply is the other member's content.
+- **To change it:** `held_with` would need `on delete cascade` instead of `set null`.
 
 ### [#519](https://github.com/the-kya-project/perch-perfect-plan/pull/519) · 2.2 A version endpoint and release rules
 - **Decision:** Ported the endpoint and rules from the reference branch `fix/native-release-catchup`, with three changes: (1) "update now or later" is its own rule, `releaseUpdateAction`, the same rule a service-worker update follows today (a quiet moment with no form in progress → now; otherwise the banner); (2) a new `parseVersionResponse` reads the endpoint's answer and ignores anything else (an error page, a proxy); (3) the branch's `staleCodeAction` (what a missing code file does) was left out, since 2.1 already handles missing files on `main` and it isn't part of 2.2. The numbers are the branch's: check hourly, at most once a minute on return to the foreground, give up after 8 seconds, never reload for the same build twice within 10 minutes.
@@ -373,6 +469,11 @@ Format:
 
 ### [#529](https://github.com/the-kya-project/perch-perfect-plan/pull/529) · 1.8 Do good voting (and the founding vote)
 - **Needs:** your look at the two admin screens, `/admin/votes` (the list) and `/admin/votes/<id>` (write a draft, open it, close early, extend, the announcement). They aren't in SpecVoting, and the specs say a screen that isn't mocked up is held for you. They follow the Library's admin screens. The member screens follow the mockup, apart from the voter avatars (see "Decisions agents made"). Say "merge" on the PR if they're fine, or what to change. It's behind the Flock gate, and the migration only adds tables, functions and a bucket.
+
+### [#523](https://github.com/the-kya-project/perch-perfect-plan/pull/523) · D2.1 Seasonal and holiday Today cards on Home
+- **Needs:** (1) a look at the card on Home (the design below is the run's own: there's no mockup for it), and whether a card that stays the same for weeks, like Summer heat from June through August, should get a way to hide it; (2) merge, which applies the new `care_features` table to production with the switch **off**; (3) then, to try it on your account only: `select public.admin_set_care_feature('today_cards', 'admins');` (you're the only admin). Turning it on for everyone (`'everyone'`) changes Home for free users and needs before-and-after screenshots first. The card words themselves are the D3 cards you approved in #516; nothing new.
+### [#520](https://github.com/the-kya-project/perch-perfect-plan/pull/520) · 2.3 Open pages notice a new release
+- **Needs:** your merge, and the check in the iPhone Simulator: leave the app open across a preview release and see it move onto the new one (quietly when you come back after 30+ minutes or reopen, or behind "A new version is ready" while a form is open). It changes how open pages update for everyone, so a run can't merge it. Also one line for CI if you want it: add `npm run test:release-check` to the iPhone hydration job (a workflow change the runs' token can't push).
 
 ### [#528](https://github.com/the-kya-project/perch-perfect-plan/pull/528) · 1.6 Curated chapter collections · needs a re-run of "iPhone hydration"
 - **Needs:** a re-run of the "iPhone hydration" check (Actions → the failed run → Re-run failed jobs). Runs aren't allowed to re-run checks. The two failures weren't from this PR.

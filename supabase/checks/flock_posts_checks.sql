@@ -251,15 +251,93 @@ begin
   reset role;
   if ok then passed := passed + 1; else failed := array_append(failed, 'rate limits'); end if;
 
-  -- 11) Deleting a post takes its comments, replies and reactions with it and
-  --     hands back every photo path to remove.
+  -- 11) Deleting a post (backlog 1.3, legal draft D10) hides it, its comments,
+  --     replies and reactions from everyone at once, its author included; the
+  --     post and its comments are held for 180 days with their photos, which
+  --     stay in the bucket. Nothing is handed back to remove now.
   perform set_config('request.jwt.claims', json_build_object('sub', m1, 'role', 'authenticated')::text, true);
   set local role authenticated;
-  ok := (select array_agg(path order by path) from public.flock_post_delete(p_learn)) = (select array_agg(x order by x) from unnest(array[ph1, ph2]) x);
+  ok := not exists (select 1 from public.flock_post_delete(p_learn));
+  ok := ok and not exists (select 1 from public.flock_feed('everything', null, 50) where post_id = p_learn)
+           and not exists (select 1 from public.flock_post(p_learn));
+  denied := false; begin perform * from public.flock_comments_for('post', p_learn); exception when no_data_found then denied := true; end; ok := ok and denied;
   reset role;
-  ok := ok and not exists (select 1 from public.flock_comments where subject_type = 'post' and subject_id = p_learn)
+  perform set_config('request.jwt.claims', json_build_object('sub', m2, 'role', 'authenticated')::text, true);
+  set local role authenticated;
+  ok := ok and not exists (select 1 from public.flock_feed('everything', null, 50) where post_id = p_learn)
+           and not exists (select 1 from public.flock_media_refs(array[p_learn], array[c1]));
+  denied := false; begin perform 1 from public.flock_deleted_items; exception when insufficient_privilege then denied := true; end; ok := ok and denied;
+  reset role;
+  ok := ok and not exists (select 1 from public.flock_posts where id = p_learn)
+           and not exists (select 1 from public.flock_comments where subject_type = 'post' and subject_id = p_learn)
            and not exists (select 1 from public.flock_reactions where (subject_type = 'post' and subject_id = p_learn) or (subject_type = 'comment' and subject_id in (c1, c2, c3)));
-  if ok then passed := passed + 1; else failed := array_append(failed, 'delete cleans up'); end if;
+  if ok then passed := passed + 1; else failed := array_append(failed, 'a deleted post is hidden from everyone at once'); end if;
+
+  ok := exists (select 1 from public.flock_deleted_items d where d.kind = 'post' and d.original_id = p_learn and d.author_id = m1
+                  and d.photo_paths = array[ph1] and d.held_with is null and d.row_data->>'body' = 'Built one for Kiwi!'
+                  and d.purge_after between now() + interval '179 days' and now() + interval '181 days')
+    and (select count(*) from public.flock_deleted_items d
+         where d.kind = 'comment' and d.original_id in (c1, c2, c3)
+           and d.held_with = (select h.id from public.flock_deleted_items h where h.original_id = p_learn)) = 3
+    and exists (select 1 from public.flock_deleted_items d where d.original_id = c1 and d.author_id = m2 and d.photo_paths = array[ph2])
+    and (select count(*) from storage.objects where bucket_id = 'flock-posts' and name in (ph1, ph2)) = 2;
+  if ok then passed := passed + 1; else failed := array_append(failed, 'a deleted post and its comments are held for 180 days'); end if;
+
+  -- 11b) Deleting a comment holds it and its replies the same way.
+  perform set_config('request.jwt.claims', json_build_object('sub', m2, 'role', 'authenticated')::text, true);
+  set local role authenticated;
+  c1 := public.flock_comment_create('post', p_chap, null, 'Count me in.', null, false);
+  reset role;
+  perform set_config('request.jwt.claims', json_build_object('sub', m1, 'role', 'authenticated')::text, true);
+  set local role authenticated;
+  c2 := public.flock_comment_create('post', p_chap, c1, 'Great, see you there.', null, false);
+  reset role;
+  perform set_config('request.jwt.claims', json_build_object('sub', m2, 'role', 'authenticated')::text, true);
+  set local role authenticated;
+  -- Separate statements: a read in the same statement as the delete would
+  -- still see the comment through that statement's snapshot.
+  ok := not exists (select 1 from public.flock_comment_delete(c1));
+  ok := ok and not exists (select 1 from public.flock_comments_for('post', p_chap) where comment_id in (c1, c2));
+  reset role;
+  perform set_config('request.jwt.claims', json_build_object('sub', m1, 'role', 'authenticated')::text, true);
+  set local role authenticated;
+  ok := ok and not exists (select 1 from public.flock_comments_for('post', p_chap) where comment_id in (c1, c2));
+  reset role;
+  ok := ok and not exists (select 1 from public.flock_comments where id in (c1, c2))
+    and exists (select 1 from public.flock_deleted_items d where d.original_id = c1 and d.kind = 'comment' and d.held_with is null)
+    and exists (select 1 from public.flock_deleted_items d where d.original_id = c2 and d.author_id = m1
+                  and d.held_with = (select h.id from public.flock_deleted_items h where h.original_id = c1));
+  if ok then passed := passed + 1; else failed := array_append(failed, 'a deleted comment and its replies are held'); end if;
+
+  -- 11c) The purge: only the service role; only items whose 180 days are over;
+  --      a photo a live row still uses is never handed out; purging deletes the
+  --      item for good; deleting an account removes its held items at once.
+  perform set_config('request.jwt.claims', json_build_object('sub', m3, 'role', 'authenticated')::text, true);
+  set local role authenticated;
+  ok := true;
+  denied := false; begin perform * from public.flock_purge_due(100); exception when insufficient_privilege then denied := true; end; ok := ok and denied;
+  denied := false; begin perform public.flock_purge_done(array[gen_random_uuid()]); exception when insufficient_privilege then denied := true; end; ok := ok and denied;
+  reset role;
+  set local role service_role;
+  ok := ok and not exists (select 1 from public.flock_purge_due(500) d join public.flock_deleted_items i on i.id = d.item_id where i.original_id in (p_learn, c1, c2));
+  ok := ok and public.flock_purge_done((select array_agg(id) from public.flock_deleted_items where original_id in (p_learn, c1, c2))) = 0;
+  reset role;
+  update public.flock_deleted_items set purge_after = now() - interval '1 minute' where original_id = p_learn or held_with = (select h.id from public.flock_deleted_items h where h.original_id = p_learn);
+  -- A live comment somewhere else uses the held post's photo: it's kept.
+  perform set_config('request.jwt.claims', json_build_object('sub', m1, 'role', 'authenticated')::text, true);
+  set local role authenticated;
+  perform public.flock_comment_create('post', p_chap, null, 'Same photo, new comment.', ph1, false);
+  reset role;
+  set local role service_role;
+  ok := ok and (select paths from public.flock_purge_due(500) d join public.flock_deleted_items i on i.id = d.item_id where i.original_id = p_learn) = '{}'::text[]
+           and (select paths from public.flock_purge_due(500) d join public.flock_deleted_items i on i.id = d.item_id where i.photo_paths = array[ph2]) = array[ph2]
+           -- The post and its 5 comments (c1–c3, and two from the rate-limit check).
+           and (select count(*) from public.flock_purge_due(500)) = 6;
+  ok := ok and public.flock_purge_done((select array_agg(item_id) from public.flock_purge_due(500))) = 6;
+  reset role;
+  ok := ok and not exists (select 1 from public.flock_deleted_items where original_id = p_learn or photo_paths = array[ph2])
+           and (select count(*) from public.flock_deleted_items where original_id in (c1, c2)) = 2;
+  if ok then passed := passed + 1; else failed := array_append(failed, 'the purge after 180 days'); end if;
 
   -- 12) The vet nudge's phrases reach members; only admins change them or the limits.
   perform set_config('request.jwt.claims', json_build_object('sub', m2, 'role', 'authenticated')::text, true);
@@ -284,6 +362,14 @@ begin
   if not exists (select 1 from pg_trigger t join pg_class c on c.oid = t.tgrelid join pg_namespace s on s.oid = c.relnamespace
                  where s.nspname = 'public' and c.relname in ('birds', 'bird_members', 'weight_entries', 'profiles') and t.tgname like 'flock%') then
     passed := passed + 1; else failed := array_append(failed, 'no care-table triggers'); end if;
+
+  -- 14) Deleting a whole account stays immediate (D10): its held items go at
+  --     once, with no 180-day hold; someone else's reply held under them stays
+  --     held on its own until its own 180 days are up.
+  delete from auth.users where id = m2;
+  ok := not exists (select 1 from public.flock_deleted_items where author_id = m2)
+    and exists (select 1 from public.flock_deleted_items where original_id = c2 and author_id = m1 and held_with is null);
+  if ok then passed := passed + 1; else failed := array_append(failed, 'account deletion skips the hold'); end if;
 
   raise exception 'FLOCK POSTS CHECKS: % passed, % failed%', passed, coalesce(array_length(failed, 1), 0),
     case when array_length(failed, 1) > 0 then ': ' || array_to_string(failed, ', ') else '' end;
