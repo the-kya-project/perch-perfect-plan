@@ -20,6 +20,12 @@ Copy this, fill it in, and put it at the top of "Runs", above the latest entry.
 
 ## Runs
 
+### 2026-11-22 22:24 EST · 2.2 A version endpoint and release rules
+- **Built:** A small public address, `/api/public/version`, that answers with which copy of the app is live, and is never cached, so an open app can later ask "has a new release gone out?". Also the rules for what to do when one has: which pages ask, how often (on launch, hourly, and when the app comes back to the front, at most once a minute), what counts as a new release, whether to update now or wait behind the "A new version is ready" banner (a form in progress always waits), and never reloading twice for the same release. A test pins all of it. Nothing in the app calls these yet (that's 2.3), so nobody sees a change.
+- **PR:** [#519](https://github.com/the-kya-project/perch-perfect-plan/pull/519)
+- **Outcome:** Merged if every check passes (internal code, nothing users see). Otherwise waiting on checks.
+- **Problems:** The new test (`npm run test:release-check`, 11 checks, all passing locally) isn't in CI yet: adding it means a workflow change, which the run's token can't push. The first `gh pr create` failed with a certificate error and worked on retry. Open PR #518 (Brittany's record update) is mergeable and needed nothing. No lock at start. No pending-log entries to move.
+
 ### 2026-11-22 21:45 EST · D3 Seasonal calendar file
 - **Built:** The list of dated cards for Home's future "Today" card: 22 cards that between them cover every day of the year. Seven season cards (dry winter air, drafts, bird-safe spring cleaning, open windows, summer heat, shorter days, heating season) and fifteen for holidays and moments (fireworks at New Year and the Fourth of July, Valentine's, Easter, King's Day, Halloween, Thanksgiving, Sinterklaas, the clock changes, December decorations, candles, travel and holiday meals). Each card has a rule for the days it shows, including holidays that move (Easter, Thanksgiving, the clock changes, King's Day), and a short title and body in English and Dutch. Some cards are US-only or Netherlands-only. A test checks every rule lands on real dates every year through 2075, every day has a card, the moving holidays land on the right days, and every card has its words in both languages. Nothing in the app reads the file yet, so nobody sees a change.
 - **PR:** [#516](https://github.com/the-kya-project/perch-perfect-plan/pull/516)
