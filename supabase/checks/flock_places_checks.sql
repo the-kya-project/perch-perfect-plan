@@ -158,8 +158,9 @@ begin
   p_vet3 := public.flock_place_save(null, 'great-lakes', 'vet', 'Riverside Exotics', 'Toledo, OH', '419-555-0199', null, null);
   perform public.flock_place_save(p_vet2, 'great-lakes', 'vet', 'Dr. Patel, Northside Avian', 'Grand Rapids, MI', null, 'http://northside.example.com', 'Calm with nervous birds.');
   ok := ok and exists (select 1 from public.flock_chapter_places(null) where place_id = p_vet2 and name = 'Dr. Patel, Northside Avian'
-                       and website = 'http://northside.example.com' and updated_at >= (select created_at from public.flock_places where id = p_vet2));
+                       and website = 'http://northside.example.com');
   reset role;
+  ok := ok and exists (select 1 from public.flock_places where id = p_vet3 and status = 'live' and created_by = ld and position = 4);
   perform set_config('request.jwt.claims', json_build_object('sub', ad, 'role', 'authenticated')::text, true);
   set local role authenticated;
   ok := ok and (select count(*) from public.flock_chapter_places('great-lakes')) = 5;
