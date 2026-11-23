@@ -206,6 +206,11 @@ Format:
 - **To change it:** <what would need to change>
 ```
 
+### [#531](https://github.com/the-kya-project/perch-perfect-plan/pull/531) · 2.4 Open pages fetch the new build's files after a release
+- **Decision:** The pin is dropped before **every** update reload: the version check's (cache-busted address) and the service worker's (a plain reload, as before). The startup guard's reset after a missing code file, and the error screen's hard reset, are left as they are. The unpin waits at most 3 seconds; if it fails or times out (offline, or a page whose pinned build is older than this PR and has no `/api/public/unpin`), the page reloads anyway, exactly as it does today. The address is POST only, so a link or prefetch can never unpin anyone.
+- **Why:** the item says "when an update is ready, the app clears its own pin and reloads", which covers both kinds of update. The resets aren't updates, and they already reload with the worker and caches cleared. The 3-second limit is the reference branch's.
+- **To change it:** `unpinBuild` and `applyUpdate` in `src/lib/sw-register.ts`; `UNPIN_TIMEOUT_MS` in `src/lib/releaseCheck.ts`.
+
 ### [#523](https://github.com/the-kya-project/perch-perfect-plan/pull/523) · D2.1 Seasonal and holiday Today cards on Home
 
 - **Decision:** A card's end date is the last day of its unbroken run for that reader, so a season card interrupted by a holiday shows the day before the holiday (US, Nov 23: "Through Nov 23"), and "Got it" hides it through that day. It can come back after the holiday, because a different card has come up in between.
@@ -440,6 +445,12 @@ Format:
 ### <PR link> · <item ID> <item title>
 - **Needs:** <the decision, approval or read, in one or two lines>
 ```
+
+### [#531](https://github.com/the-kya-project/perch-perfect-plan/pull/531) · 2.4 Open pages fetch the new build's files after a release
+- **Needs:** your merge. It changes how every open page moves onto a new release (a short POST to `/api/public/unpin` before the reload), so a run can't merge it. No Vercel setting changes. The hands-on proof is 2.5's Simulator check (leave the app open across a release, then open the sitter preview).
+
+### [#521](https://github.com/the-kya-project/perch-perfect-plan/pull/521) and [#525](https://github.com/the-kya-project/perch-perfect-plan/pull/525) · conflict with `main` in `package.json`
+- **Needs:** "Update branch" on each (or a merge of `main`). Both conflict with `main` in `package.json` as well as the record files: each adds test scripts on the same lines where `main` added `test:flock-purge` and `test:today-card`. The fix is to keep all of the lines (add a comma). Runs only resolve conflicts in the three record files, so the 12:36 EST run left both branches as they were. #525's latest "Free-user regression" run also shows *cancelled* (a newer run took its place in the shared staging queue); the update will run it again.
 
 ### [#523](https://github.com/the-kya-project/perch-perfect-plan/pull/523) · D2.1 Seasonal and holiday Today cards on Home
 - **Needs:** (1) a look at the card on Home (the design below is the run's own: there's no mockup for it), and whether a card that stays the same for weeks, like Summer heat from June through August, should get a way to hide it; (2) merge, which applies the new `care_features` table to production with the switch **off**; (3) then, to try it on your account only: `select public.admin_set_care_feature('today_cards', 'admins');` (you're the only admin). Turning it on for everyone (`'everyone'`) changes Home for free users and needs before-and-after screenshots first. The card words themselves are the D3 cards you approved in #516; nothing new.

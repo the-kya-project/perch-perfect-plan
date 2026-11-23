@@ -20,6 +20,12 @@ Copy this, fill it in, and put it at the top of "Runs", above the latest entry.
 
 ## Runs
 
+### 2026-11-23 12:36 EST · 2.4 Open pages fetch the new build's files after a release
+- **Built:** When the app moves onto a new release, it now first tells the server "forget which copy of the app I was tied to" (a quick call to a new address, `/api/public/unpin`), and then reloads. Vercel's Skew Protection ties each open page to the copy it opened with, and on Nov 2 the iPhone app kept that tie even through a reload, so the reloaded page still asked for the old copy's files and the sitter preview stalled. Clearing the tie first means the reload lands on the new copy. It applies to both kinds of update (the version check from 2.3 and the web service worker's). The call never holds a reload up for more than 3 seconds, and if it fails the page reloads just as it does today. Skew Protection stays on; no Vercel setting changed. A test pins the address, the cookie and the order.
+- **PR:** [#531](https://github.com/the-kya-project/perch-perfect-plan/pull/531)
+- **Outcome:** Held: the item asks for Brittany's merge, since it changes how every open page updates. 2.5's Simulator check is the hands-on proof.
+- **Problems:** At the start, every open agent PR conflicted with `main`. #529 (1.8) conflicted only in the three record files, so this run merged `main` into it in a separate copy, kept both sides' entries and pushed (the merge carried `main`'s `hydration.yml` change and GitHub accepted it). #521 (D1.1) and #525 (1.14) also conflict in `package.json`, so they were left as they are and noted in the review queue. #530 is a docs PR on a `docs/` branch, not an agent PR, so it was left alone. The browser tests and a Simulator can't run here; `test:release-check` (22, 5 new), `test:drafts`, `test:preview-services`, the type check, lint and the production build pass locally. The first two `gh pr create` attempts failed with a certificate error; it worked with the body in a file. Shell loops were refused, so commands ran one at a time. No lock at start. No pending-log entries to move.
+
 ### 2026-11-23 11:45 EST · D2.1 Today card redesign (requested by Brittany)
 - **Built:** Rebuilt the card to Brittany's approved design: her 22 illustrations, six color tints, a Seasonal tip or Holiday helper label, an end date, and "Got it", which is saved per account in a new table. Applied her nine copy changes in English and Dutch, and added the card's test to the automatic checks.
 - **PR:** [#523](https://github.com/the-kya-project/perch-perfect-plan/pull/523)
