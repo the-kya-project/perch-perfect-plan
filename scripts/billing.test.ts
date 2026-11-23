@@ -18,6 +18,11 @@ import Stripe from "stripe";
 import {
   billingEnabled, cardStep, checkoutPlan, entitlementStatus, firstCharge, liveSubscription, MIN_TRIAL_LEAD_MS,
   planForPrice, subscriptionRow, type BillingPrices, type BillingState, type SubscriptionLike, type SubscriptionRow,
+  billingDay,
+  billingScreen,
+  checkoutDesign,
+  monthsFree,
+  yearlyPerMonthCents,
 } from "@/lib/billing";
 import { handleBillingEvent, subscriptionIdOf, type BillingDeps, type BillingEventLike } from "@/lib/billingWebhook";
 
@@ -200,7 +205,7 @@ await check("a live subscription blocks a second checkout; an ended one doesn't"
 
 // ── The card step ──────────────────────────────────────────────────────────
 const on = (over: Partial<Extract<BillingState, { enabled: true }>> = {}): BillingState => ({
-  enabled: true, seasonEndsAt: SEASON_END, foundingPriceOpen: false, prices: { monthly: 3000, annual: 30000, founding: 1500 }, subscription: null, ...over,
+  enabled: true, seasonEndsAt: SEASON_END, foundingPriceOpen: false, foundingSpot: null, prices: { monthly: 3000, annual: 30000, founding: 1500 }, subscription: null, ...over,
 });
 await check("billing off, still loading, or the native app: hidden (Membership looks as before)", () => {
   assert.deepEqual(cardStep({ enabled: false }, false, NOW), { kind: "hidden" });
@@ -341,6 +346,45 @@ await check("billing code never reads or writes free-season rows", () => {
   }
   const fns = readFileSync("src/lib/billing.functions.ts", "utf8");
   assert.match(fns, /\.eq\("source", "stripe"\)/);
+});
+
+// ── The card step and checkout design (1.14a) ─────────────────────────────
+await check("1.14a: each state gets its mockup's screen", () => {
+  const choose = (founding: boolean, chargedToday: boolean) => ({ kind: "choose" as const, founding, chargedToday, firstChargeOn: SEASON_END });
+  const onFile = (status: "trialing" | "active" | "past_due", willRenew = true) => ({ kind: "on_file" as const, plan: "annual" as const, status, willRenew, firstChargeOn: status === "trialing" ? SEASON_END : null });
+  assert.equal(billingScreen(choose(false, false), false), "season_member");
+  assert.equal(billingScreen(choose(true, false), false), "season_founder");
+  assert.equal(billingScreen(choose(false, true), false), "after_season");
+  assert.equal(billingScreen(choose(true, true), false), "after_season");
+  assert.equal(billingScreen(choose(false, false), true), "confirming");
+  assert.equal(billingScreen(onFile("trialing"), true), "welcome");
+  assert.equal(billingScreen(onFile("trialing"), false), "membership");
+  assert.equal(billingScreen(onFile("trialing", false), true), "membership", "a cancelled trial is never told it's all set");
+  assert.equal(billingScreen(onFile("active"), true), "membership", "the welcome is about the free season");
+  assert.equal(billingScreen(onFile("past_due"), true), "past_due");
+});
+await check("1.14a: plan tiles show the per-month price, and the badge is only ever true", () => {
+  assert.equal(yearlyPerMonthCents(30000), 2500);
+  assert.equal(monthsFree(30000, 3000), 2);
+  assert.equal(monthsFree(32000, 3000), null);
+  assert.equal(monthsFree(36000, 3000), null);
+});
+await check("1.14a: dates are the Flock's Eastern day, in the app and at Checkout", () => {
+  assert.equal(billingDay("2027-03-02T04:59:00Z"), "Mar 1, 2027");
+  const d = checkoutDesign(Date.parse("2027-03-02T04:59:00Z") / 1000);
+  assert.equal(d.custom_text?.submit.message, "You won't be charged until Mar 1, 2027. Cancel anytime before then from Membership and billing.");
+  assert.equal(d.branding_settings.background_color, "#1a3d2e");
+  assert.equal(checkoutDesign(null).custom_text, undefined, "no promise of a free period when the card is charged today");
+});
+await check("1.14a: giving is only ever a percentage", () => {
+  const src = readFileSync("src/components/flock/BillingScreens.tsx", "utf8");
+  assert.doesNotMatch(src, /\$\{?\d[^"]*(goes to|give|partners)/i);
+  assert.match(src, /20%/);
+});
+await check("1.14a: the card's digits are read from Stripe and never stored", () => {
+  const fns = readFileSync("src/lib/billing.functions.ts", "utf8");
+  assert.doesNotMatch(fns, /upsert\([^)]*last4/);
+  assert.doesNotMatch(readFileSync("src/lib/billingWebhook.ts", "utf8"), /last4/);
 });
 
 console.log(`\n${passed} passed${process.exitCode ? ", some FAILED" : ""}`);

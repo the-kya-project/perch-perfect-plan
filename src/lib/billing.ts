@@ -177,7 +177,10 @@ export type BillingState =
       seasonEndsAt: string | null;
       foundingPriceOpen: boolean;
       prices: Partial<Record<PaidPlan, number>>;
-      subscription: { plan: PaidPlan; status: EntitlementStatus; current_period_end: string | null; will_renew: boolean | null } | null;
+      /** The founder's spot number, for the Founding 50 line. */
+      foundingSpot: number | null;
+      /** card_last4 is read from Stripe when the page loads and is never stored. */
+      subscription: { plan: PaidPlan; status: EntitlementStatus; current_period_end: string | null; will_renew: boolean | null; card_last4: string | null } | null;
     };
 
 /** Never in the native app (payments-plan section b: the app's paywall is
@@ -192,4 +195,68 @@ export function cardStep(state: BillingState | undefined, native: boolean, now: 
   const fc = firstCharge(state.seasonEndsAt, now);
   if (!fc.ok) return { kind: "not_ready" };
   return { kind: "choose", founding: state.foundingPriceOpen, firstChargeOn: fc.firstChargeOn, chargedToday: fc.trialEnd === null };
+}
+
+// ── The card step and checkout design (backlog 1.14a) ───────────────────────
+
+/** How long the confirming screen waits for the webhook before saying so. */
+export const CONFIRM_WAIT_MS = 2 * 60 * 1000;
+
+/** Billing dates, on the Flock's calendar (Eastern), so the app and Checkout
+ *  always name the same day. */
+export function billingDay(iso: string): string {
+  return new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric", timeZone: "America/New_York" });
+}
+
+/** The yearly plan's price per month, for the big number on its tile. */
+export function yearlyPerMonthCents(annualCents: number): number {
+  return Math.round(annualCents / 12);
+}
+
+/** Whole months the yearly plan saves. Null unless it's exact, so the
+ *  "2 months free" badge can't outlive a price change. */
+export function monthsFree(annualCents: number, monthlyCents: number): number | null {
+  if (monthlyCents <= 0) return null;
+  const months = (monthlyCents * 12 - annualCents) / monthlyCents;
+  return Number.isInteger(months) && months > 0 ? months : null;
+}
+
+export type BillingScreen = "season_member" | "season_founder" | "after_season" | "confirming" | "welcome" | "membership" | "past_due";
+
+/** Which billing screen shows. `returned` means just back from Checkout. */
+export function billingScreen(step: Exclude<CardStep, { kind: "hidden" | "not_ready" }>, returned: boolean): BillingScreen {
+  if (step.kind === "choose") {
+    if (returned) return "confirming";
+    if (step.chargedToday) return "after_season";
+    return step.founding ? "season_founder" : "season_member";
+  }
+  if (step.status === "past_due") return "past_due";
+  // "You're all set" is about the free season, so it needs a first charge ahead.
+  return returned && step.status === "trialing" && step.firstChargeOn && step.willRenew ? "welcome" : "membership";
+}
+
+/** The line above Checkout's button. Stripe needs it as text, so it's English
+ *  until the Dutch is approved; the key keeps it in en.jsonc. */
+export function checkoutNote(date: string): string {
+  const t = (_key: string, text: string, v: { date: string }) => text.replace("{{date}}", v.date);
+  return t("flock.billing.checkoutNote", "You won't be charged until {{date}}. Cancel anytime before then from Membership and billing.", { date });
+}
+
+/** Per-session branding, so nothing is changed in the Stripe Dashboard. The
+ *  logo is a fixed production URL because Stripe can't fetch a protected
+ *  preview. DM Sans isn't one of Stripe's fonts; Inter is the closest. */
+export function checkoutDesign(trialEnd: number | null) {
+  return {
+    locale: "en" as const,
+    branding_settings: {
+      display_name: "Kya & Co.",
+      background_color: "#1a3d2e",
+      button_color: "#1a3d2e",
+      border_style: "rounded" as const,
+      font_family: "inter" as const,
+      logo: { type: "url" as const, url: "https://app.thekyaproject.com/brand/lockups/horizontal-cream.png" },
+      icon: { type: "url" as const, url: "https://app.thekyaproject.com/icon-rounded-512.png" },
+    },
+    ...(trialEnd ? { custom_text: { submit: { message: checkoutNote(billingDay(new Date(trialEnd * 1000).toISOString())) } } } : {}),
+  };
 }

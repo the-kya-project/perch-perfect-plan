@@ -10,7 +10,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { BILLING_CHOICES, billingEnabled, checkoutPlan, firstCharge, liveSubscription, type BillingState, type PaidPlan } from "./billing";
+import { BILLING_CHOICES, billingEnabled, checkoutDesign, checkoutPlan, firstCharge, liveSubscription, type BillingState, type PaidPlan } from "./billing";
 
 type Ctx = { supabase: any; userId: string; claims: { email?: string } };
 
@@ -49,12 +49,37 @@ async function seasonEnd(): Promise<string | null> {
   return row?.free_season_ends_at ?? null;
 }
 
+async function foundingSpot(userId: string): Promise<number | null> {
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { data, error } = await (supabaseAdmin as any).from("founding_claims").select("spot_number").eq("user_id", userId).maybeSingle();
+  if (error) return null;
+  return (data?.spot_number as number | undefined) ?? null;
+}
+
+/** The last four digits of the card on the member's newest subscription, read
+ *  from Stripe each time and never stored. A failure only hides the Card row. */
+async function cardLast4(userId: string): Promise<string | null> {
+  try {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data } = await (supabaseAdmin as any).from("billing_customers").select("stripe_customer_id").eq("user_id", userId).maybeSingle();
+    if (!data?.stripe_customer_id) return null;
+    const { getBillingStripe } = await import("./stripe.server");
+    const subs = await getBillingStripe().subscriptions.list({ customer: data.stripe_customer_id, status: "all", limit: 5, expand: ["data.default_payment_method"] });
+    const sub = subs.data.find((s) => s.status !== "canceled" && s.status !== "incomplete_expired");
+    const method = sub?.default_payment_method;
+    return method && typeof method !== "string" ? method.card?.last4 ?? null : null;
+  } catch (err) {
+    console.error("[billing] card read failed", err instanceof Error ? err.message : err);
+    return null;
+  }
+}
+
 export const getBillingState = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }): Promise<BillingState> => {
     if (!(await allowed(context as Ctx))) return { enabled: false };
     const userId = (context as Ctx).userId;
-    const [rows, founding, end] = await Promise.all([stripeRows(userId), foundingPriceOpen(userId), seasonEnd()]);
+    const [rows, founding, end, spot] = await Promise.all([stripeRows(userId), foundingPriceOpen(userId), seasonEnd(), foundingSpot(userId)]);
 
     // Prices come from Stripe, never hard-coded. A missing one is left out.
     const { getBillingStripe, billingPrices } = await import("./stripe.server");
@@ -68,12 +93,14 @@ export const getBillingState = createServerFn({ method: "GET" })
       }),
     );
     const live = liveSubscription(rows);
+    const last4 = live ? await cardLast4(userId) : null;
     return {
       enabled: true,
       seasonEndsAt: end,
       foundingPriceOpen: founding,
+      foundingSpot: spot,
       prices,
-      subscription: live ? { plan: live.plan, status: live.status, current_period_end: live.current_period_end, will_renew: live.will_renew } : null,
+      subscription: live ? { plan: live.plan, status: live.status, current_period_end: live.current_period_end, will_renew: live.will_renew, card_last4: last4 } : null,
     };
   });
 
@@ -121,6 +148,7 @@ export const startBillingCheckout = createServerFn({ method: "POST" })
       const { getRequest } = await import("@tanstack/react-start/server");
       const origin = new URL(getRequest().url).origin;
       const session = await getBillingStripe().checkout.sessions.create({
+        ...checkoutDesign(fc.trialEnd),
         mode: "subscription",
         customer,
         client_reference_id: ctx.userId,
