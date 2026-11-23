@@ -66,6 +66,7 @@
     "test:gifts": "npx --yes vite-node scripts/gifts.test.ts",
     "test:bereavement-note": "npx --yes vite-node scripts/bereavement-note.test.ts",
     "test:poison-control": "npx --yes vite-node scripts/poison-control.test.ts",
+    "test:health-rules": "npx --yes vite-node scripts/health-rules.test.ts",
     "test:cron-telemetry": "npx --yes vite-node scripts/cron-telemetry.test.ts",
     "test:account-deletion": "npx --yes vite-node scripts/account-deletion.test.ts",
     "test:account-files": "npx --yes vite-node scripts/account-files.test.ts",

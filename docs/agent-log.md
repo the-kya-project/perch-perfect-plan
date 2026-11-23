@@ -20,6 +20,12 @@ Copy this, fill it in, and put it at the top of "Runs", above the latest entry.
 
 ## Runs
 
+### 2026-11-22 20:20 EST · 1.2 Vet-content settings file and a switch for every health feature
+- **Built:** One file, `src/lib/healthRules.ts`, now lists every health number and phrase list the app uses: the Diet conversion's weight rules, the 127 vet-nudge phrases, the health check's red and yellow rules, the care app's weight levels, the keep-warm range and poison lines, and the starting values for the weight baseline (D1). Each one is marked "draft, pending vet review" with where it came from and where it's used. A test fails if the app's code drifts from the file, and a database check fails if the database does. A new table gives each health feature its own off / admins / everyone switch. The live ones start at "everyone" and nothing reads them yet, so nobody sees a change. The vet packet now points at the file.
+- **PR:** [#515](https://github.com/the-kya-project/perch-perfect-plan/pull/515)
+- **Outcome:** Held: needs Brittany's approval of the switch table (a database change) and the health content, her call on wiring the live features to their switches, and one workflow line to run the new test in CI.
+- **Problems:** This run opened its draft PR after building instead of before, so the draft step was late. Production's `journey_settings` and `flock_vet_signs` match the file (checked read-only: yes). PR #514 (2.1, held for Brittany) has a red "iPhone hydration" check on its latest commit. This run couldn't read why: `gh run download` and `gh api` are refused, and the log was too large to show. 2.1 still has that open PR, so this run took 1.2. No pending-log entries to move.
+
 ### 2026-11-22 17:07 EST · 2.4a Plain-language one-pager on Vercel's Skew Protection
 - **Built:** A one-page explainer, `docs/skew-protection.md`, on the Vercel setting that keeps an open page on the copy of the app it started with. It covers how that played into the Nov 2 sitter-preview stall, four options and what current users would notice with each, so Brittany can decide 2.4. No setting or code changed.
 - **PR:** [#509](https://github.com/the-kya-project/perch-perfect-plan/pull/509)
