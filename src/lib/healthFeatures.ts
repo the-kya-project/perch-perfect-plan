@@ -7,8 +7,10 @@
 // everything else works. Its values are in src/lib/healthRules.ts.
 //
 // `wired` says whether the app reads the switch yet. The live features
-// started at 'everyone' and aren't wired: turning one off does nothing until
-// it is. The list must match the migration's rows (npm run test:health-rules).
+// started at 'everyone' and aren't wired: turning one off does nothing. The
+// daily health check, weight trend, emergency guides and passing guidance stay
+// that way on purpose (Brittany, Nov 23, 2026). The list must match the
+// migration's rows (npm run test:health-rules).
 
 export type HealthAudience = "off" | "admins" | "everyone";
 
