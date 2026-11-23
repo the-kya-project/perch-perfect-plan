@@ -46,6 +46,16 @@ Format:
 - **To change it:** <what would need to change>
 ```
 
+### [#515](https://github.com/the-kya-project/perch-perfect-plan/pull/515) · 1.2 Vet-content settings file and a switch for every health feature
+- **Decision:** Seven switches: `daily_health_check`, `care_weight_trend`, `emergency_guides`, `passing_guidance`, `diet_conversion`, `vet_nudge` (all start at `everyone`, so nothing changes) and `weight_baseline` (starts `off`, for D1). None is read by the app yet. "Everyone" means every signed-in person, and the server for sit links; signed-out visitors can't call the switch directly.
+- **Why:** wiring a live feature to a switch means deciding what users see when it's off, which the backlog doesn't say. Starting at everyone keeps the merge invisible.
+- **To change it:** add or rename rows in a new migration and in `src/lib/healthFeatures.ts`; wiring a feature is its own PR.
+
+### [#515](https://github.com/the-kya-project/perch-perfect-plan/pull/515) · 1.2 Vet-content settings file and a switch for every health feature
+- **Decision:** Most sources say "Kya & Co. starting value; no published source", because that's what they are. Only the baseline's 10% "call your vet today" level and the poison lines cite outside sources. Wording isn't copied into the file: it lists the language keys for each area, and a test checks those keys exist. The app's code keeps its own copies of the numbers, and the test fails if they drift from the file, so this PR doesn't touch the live triage or weight code.
+- **Why:** the backlog asked for a research source per value, and making one up would mislead the vet. Leaving the live code alone keeps the PR from changing anything users see.
+- **To change it:** add sources as the vet review supplies them; make the code import from the file in a later PR if you'd prefer one copy.
+
 ### [#514](https://github.com/the-kya-project/perch-perfect-plan/pull/514) · 2.1 The startup guard listens before anything can fail
 - **Decision:** The guard is added to each page's HTML by the server entry (`src/server.ts`, `withStartupGuard` in `src/lib/startupGuard.ts`), not rendered by React. It goes right after `<meta charset>`, not before it.
 - **Why:** React 19 moves every `<meta>`, `<link>` (including the code preloads and the font stylesheet) and `<title>` above any script in `<head>`, so a React-rendered guard can't come first. The charset has to stay in the page's first 1024 bytes. Only the app's own pages get the guard (a `<head>` that loads `/assets/` code). The unsubscribe, bereavement-review and error pages don't, because there it would show "Something's taking too long".
@@ -167,6 +177,9 @@ Format:
 ### <PR link> · <item ID> <item title>
 - **Needs:** <the decision, approval or read, in one or two lines>
 ```
+
+### [#515](https://github.com/the-kya-project/perch-perfect-plan/pull/515) · 1.2 Vet-content settings file and a switch for every health feature
+- **Needs:** your approval of the new switch table (`20261122203000_health_features.sql`, additive only, applies to production on merge) and of the health content as listed (all draft; nothing changes for users). Two decisions: whether to wire the live features (daily health check, weight trend, emergency guides, passing guidance) to their switches, and what a switched-off one should look like; and one line in `.github/workflows/hydration.yml` to run `npm run test:health-rules` in CI (the run's token can't push workflow changes).
 
 ### [#514](https://github.com/the-kya-project/perch-perfect-plan/pull/514) · 2.1 The startup guard listens before anything can fail
 - **Needs:** your merge, after a look at the before-and-after screenshots the item asks for. This run couldn't take them: the sandbox can't open a browser. Every app page's HTML now passes through a new step in `src/server.ts`, so this goes to every visitor. Nobody should see anything different. A missing code file now resets every time instead of sometimes, and the error screen reloads once, instead of showing "Something went wrong", when one of the page's code files failed. Free-user regression and iPhone hydration results are on the PR.

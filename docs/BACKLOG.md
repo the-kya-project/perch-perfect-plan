@@ -22,17 +22,6 @@ Where these items came from, with the detail behind each: `docs/flock/opening-sc
 
 ## Ready to build
 
-### 1.2 Vet-content settings file and a switch for every health feature
-- **Done means:**
-  - **One labeled file** (e.g. `src/lib/healthRules.ts`) lists every health threshold, phrase list and safety wording: the diet weight rules, the vet-nudge phrases, the health-check triage rules, the weight-trend levels, the emergency guidance numbers, and the weight baseline values for D1. Each value is marked "draft, pending vet review" with its research source.
-  - **Values in the database must match the file.** Where a value lives in a database settings table (`journey_settings`, `flock_vet_signs`), a check fails if the table and the file disagree.
-  - **Every health feature has its own off switch** (off / admins / everyone), so a feature without vet approval stays hidden while everything else works.
-  - The vet review packet (`docs/flock/opening-scope.md` B7) points at this file.
-- **Size:** L
-- **Depends on:** nothing
-- **Overnight alone:** yes
-- **Needs Brittany:** approval of the health content and of any new switch table (a database change).
-
 ### 2.2 A version endpoint and release rules
 - **Done means:** `/api/public/version` returns the build id, uncached, and the pure rules for "a new release is out, update now or later" live in `src/lib/releaseCheck.ts` with tests. Nothing behaves differently yet.
 - **Size:** M
@@ -403,6 +392,7 @@ The launch PR itself (1.18) is already merged dark. What's left before opening i
 
 ## Done
 
+- **1.2** `src/lib/healthRules.ts` lists every health threshold and phrase list, each "draft, pending vet review" with its source, plus the language keys for each area's wording; `npm run test:health-rules` checks the code against it and `supabase/checks/health_rules_checks.sql` checks the database; every health feature has its own switch in `public.health_features` (the live ones start at everyone and aren't wired to it yet); the vet packet (opening-scope B7) points at the file: #515.
 - **2.1** The startup guard is the first script in every app page's `<head>` (added by the server entry, right after the charset) and keeps a list of the page's code files for the error screen. The missing-file reset runs 30 times on WebKit in CI: #514 (held for Brittany's merge and screenshots).
 - **2.4a** `docs/skew-protection.md`: what Vercel's Skew Protection does, the four options and what each means for current users and for 2.4 and 2.5: #509.
 - **0.5** The review queue is reached from Flock settings (reviewers only, with the waiting count), and every item shows its author, space and date: #508.
