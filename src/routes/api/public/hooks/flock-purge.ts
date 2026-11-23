@@ -4,7 +4,9 @@
  * A deleted Flock post or comment is hidden at once and kept for 180 days in
  * flock_deleted_items (backlog 1.3, legal draft D10). This deletes, for good,
  * the ones whose 180 days are over: their photos first (through the Storage
- * API), then the items. The rules are in src/lib/flockPurge.ts.
+ * API), then the items. Before that, posts and comments a reviewer removed
+ * 180+ days ago join them, and reports closed 180+ days ago are deleted
+ * (backlog 1.4, legal draft D9). The rules are in src/lib/flockPurge.ts.
  *
  * Auth: `Authorization: Bearer <cron_hook_token>`, the Vault secret pg_cron sends
  * (src/lib/cronAuth.ts). JSON body: { "dryRun": true } → counts only, nothing deleted.
@@ -37,6 +39,12 @@ export const Route = createFileRoute("/api/public/hooks/flock-purge")({
           const sb = supabaseAdmin as any;
           const result = await runFlockPurge(
             {
+              expire: async (dry) => {
+                const { data, error } = await sb.rpc("flock_moderation_purge", { p_dry_run: dry });
+                if (error) throw new Error(`flock_moderation_purge: ${error.message}`);
+                const row = (Array.isArray(data) ? data[0] : data) ?? {};
+                return { posts: Number(row.posts ?? 0), comments: Number(row.comments ?? 0), reports: Number(row.reports ?? 0) };
+              },
               due: async (limit) => {
                 const { data, error } = await sb.rpc("flock_purge_due", { p_limit: limit });
                 if (error) throw new Error(`flock_purge_due: ${error.message}`);

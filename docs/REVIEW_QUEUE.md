@@ -1000,6 +1000,11 @@ Format:
 - **Why:** one day on every screen, and the custom sentence has no Dutch yet.
 - **To change it:** `billingDay` and `checkoutDesign` in `src/lib/billing.ts`.
 
+### [#534](https://github.com/the-kya-project/perch-perfect-plan/pull/534) · 1.4 Removed content and closed reports are deleted after 180 days
+- **Decision:** What counts: posts and comments a reviewer removed ("Remove it" in the review queue), timed from the removal (`flock_moderation.updated_at`), and reports closed as kept or removed, timed from `resolved_at`. Removed content goes through 1.3's hold, already due, so the same daily run deletes its photos with 1.3's rules (a photo still used elsewhere is kept, and a failed delete waits a day). The comments under a removed post, and the replies under a removed comment, go with it. Left out: removed journey updates (asked in Held), Do good posts a reviewer declined (a review result, not a removal; they stay visible to their author only), content still waiting for review, and open reports.
+- **Why:** D9 says "content removed by reviewers, and reports, are kept for 180 days, then deleted"; the item says "closed reports" and "180 days after they were resolved". Reusing 1.3's hold means a single path deletes Flock photos.
+- **To change it:** `private.flock_moderation_purge` in `20261123193000_flock_removed_purge.sql` (a new migration); the hold is `private.flock_removed_hold()`.
+
 ### [#521](https://github.com/the-kya-project/perch-perfect-plan/pull/521) · D1.1 Weight baseline rules
 - **Decision:** How the normal is worked out. It's the median (not the average) of the bird's weigh-ins of the same kind (before a meal, after a meal, not labeled) from the last 90 days, **leaving out the last 7 days**, and the range is the 10th to 90th percentile of those. "Still learning" counts only those weigh-ins, so a bird that's weighed regularly gets its normal about three weeks after its first weigh-in, not two.
 - **Why:** the median ignores one odd reading (a dish left on the scale); leaving out the last week keeps a drop that's happening now from pulling the normal down with it, which would hide a slow decline.
@@ -1297,8 +1302,6 @@ Format:
 
 ## Held for Brittany
 
-### [#529](https://github.com/the-kya-project/perch-perfect-plan/pull/529) · 1.8 Do good voting: no longer held
-- **Status:** Brittany approved the mockups and asked for this to merge once every required check passes (Nov 23, 2026). The earlier #529 item below can be cleared.
 PRs waiting on Brittany, and exactly what each one needs.
 
 Format:
@@ -1310,15 +1313,6 @@ Format:
 
 ### [#533](https://github.com/the-kya-project/perch-perfect-plan/pull/533) · 1.14a Card step and checkout design
 - **Needs:** (1) your read of the screens and wording; (2) the founder release job built before billing opens, because the founder screen promises it and it doesn't exist yet; (3) a saved test-mode Customer Portal setup in Stripe, then two real test checkouts, one normal and one inside the season's last 49 hours, neither of which has been run; (4) your go-ahead on Dutch.
-
-### [#521](https://github.com/the-kya-project/perch-perfect-plan/pull/521) · D1.1 Weight baseline rules and a replay of real history
-- **Needs:** (1) your read of the health rules: every number is new and draft, in `WEIGHT_BASELINE_RULES`, with the choices listed under "Decisions agents made"; (2) the replay of real history, which you run: the export query is `docs/reports/weight-history-export.sql` (read-only, no names), then `npm run weight-baseline:replay -- <the file>` (the hourly job can't run it); your read of the results is what D1.2 waits on; (3) whether the owner's typed normal weight should override the learned one; (4) optionally, `npm run test:weight-baseline` in a CI workflow (the runs' token can't push workflow changes). Then your merge.
-
-### [#531](https://github.com/the-kya-project/perch-perfect-plan/pull/531) · 2.4 Open pages fetch the new build's files after a release
-- **Needs:** your merge. It changes how every open page moves onto a new release (a short POST to `/api/public/unpin` before the reload), so a run can't merge it. No Vercel setting changes. The hands-on proof is 2.5's Simulator check (leave the app open across a release, then open the sitter preview).
-
-### [#529](https://github.com/the-kya-project/perch-perfect-plan/pull/529) · 1.8 Do good voting (and the founding vote)
-- **Needs:** your look at the two admin screens, `/admin/votes` (the list) and `/admin/votes/<id>` (write a draft, open it, close early, extend, the announcement). They aren't in SpecVoting, and the specs say a screen that isn't mocked up is held for you. They follow the Library's admin screens. The member screens follow the mockup, apart from the voter avatars (see "Decisions agents made"). Say "merge" on the PR if they're fine, or what to change. It's behind the Flock gate, and the migration only adds tables, functions and a bucket.
 
 ### Reminder · the hourly runs' GitHub token expires Feb 20, 2027
 - **Needs:** a new token before **Feb 20, 2027**. That's 90 days from Nov 22, 2026; GitHub → Settings → Developer settings → Fine-grained tokens shows the exact date. When it expires, runs can still build and test but can't push or open PRs, and each run's note in `~/.kya-agent/job.log` says so.
