@@ -197,6 +197,7 @@ Every close leaves a short comment saying why (`gh pr close <number> --comment "
 - **Production access is read-only.** Never run anything that writes to production (project `koyqdyamazuuwvqbttnj`), not even inside a transaction you plan to roll back. Reads to check something are fine, and only through `~/.kya-agent/bin/prod-read` (the read-only `kya_agent_readonly` role); never use any other production connection, key or tool. Testing writes go to staging or a PR's preview branch.
 - **Never add a fixed opening date, free-season date or deadline** to code or copy.
 - **Health features always ship behind their own off switch,** with their values in the vet-content settings file (backlog 1.2) marked "draft, pending vet review".
+- **Push notifications are only for things the owner needs to act on** (a reminder to log, a sitter concern, a safety alert). Never send a push that only reports or summarizes. Informational content belongs in the app or in email.
 - **Mark the item done in `docs/BACKLOG.md` in the same PR** (move it to "Done" with the PR number).
 
 **8. The record: the log and the review queue**

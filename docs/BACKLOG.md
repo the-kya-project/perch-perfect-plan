@@ -77,13 +77,6 @@ Where these items came from, with the detail behind each: `docs/flock/opening-sc
 - **Overnight alone:** yes
 - **Needs Brittany:** the copy; turning the switch on for everyone changes Home for free users, so that needs her approval and before-and-after screenshots.
 
-### D5.1 Weekly recap by push, replacing the 10- and 30-day lapse nudges
-- **Done means:** a weekly push recap (weigh-ins, health checks, journal entries, no health judgments) replaces the `checkin_reminder` branch of `src/routes/api/public/hooks/engagement-nudges.ts`. It keeps the existing toggles, cooldown and dry-run mode, and is built behind a switch that starts off. Push only, no email.
-- **Size:** M
-- **Depends on:** nothing
-- **Overnight alone:** yes (built and merged switched off)
-- **Needs Brittany:** the wording, and her approval before it's switched on, since that sends push to real users.
-
 ### 1.14 Billing foundation (switched off)
 - **Done means:** the billing tables (`billing_customers`, `billing_events`, the new `entitlements` columns), the Stripe billing webhook (`/api/public/stripe/billing`, its own secret, fixture tests in `npm run test:billing`) and the card step (`/flock/membership`, $0 due, never shown in the native app) all exist behind `BILLING_ENABLED`, which stays off. Test mode only. Spec: `docs/flock/payments-plan.md` sections c and d, items 1–3.
 - **Approved to start (Brittany, Nov 22, 2026):** test mode only, `BILLING_ENABLED` stays off, and nothing in the Stripe Dashboard is touched.
@@ -373,6 +366,12 @@ The launch PR itself (1.18) is already merged dark. What's left before opening i
 - **Run `test:no-home-screen` in CI** once QA credentials can be stored as a secret.
 - **`appstore-screenshots/` is untracked.** Decide: commit, Git LFS, or keep out. It's left undecided on purpose.
 - **`_to_delete/` holds one 0-byte stray file.** Delete the folder.
+
+---
+
+## Dropped (do not build)
+
+- **D5.1 Weekly recap by push** (dropped by Brittany, Nov 23, 2026; PR #524 closed without merging). Push notifications are only for things the owner needs to act on, and a recap only reports what happened. The existing 10- and 30-day check-in nudges stay exactly as they are.
 
 ---
 
