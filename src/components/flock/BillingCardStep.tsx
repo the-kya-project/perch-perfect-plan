@@ -99,7 +99,7 @@ export function BillingCardStep({ returned, fallback }: { returned: boolean; fal
       )}
       {step.founding ? (
         <p className="m-0 mt-1 text-[15px] leading-[1.5]" data-testid="billing-founding" style={{ color: K.ink }}>
-          {t("flock.billing.founding", "Founding price: {{price}} a month, locked for life.", { price: price("founding") })}
+          {t("flock.billing.founding", "Founding price: {{price}} a month, locked in for as long as you stay a member.", { price: price("founding") })}
         </p>
       ) : (
         <fieldset className="m-0 mt-3 border-0 p-0">

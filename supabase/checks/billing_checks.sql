@@ -1,4 +1,4 @@
--- Verification for 20261123120000_billing_foundation (backlog 1.14).
+-- Verification for 20261123180000_billing_foundation (backlog 1.14).
 --
 -- Self-contained and leaves nothing behind: it creates a founder and a regular
 -- member, runs Stripe subscriptions through the webhook's functions the way the

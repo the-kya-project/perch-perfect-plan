@@ -13,9 +13,10 @@
  * failure so it can gate a merge.
  */
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import {
   CHECK_EVERY_MS, MIN_GAP_MS, RELOAD_FOR_BUILD_WINDOW_MS,
-  checkDue, isNewerBuild, mayReloadFor, parseBuildReload, parseVersionResponse,
+  buildFromPageText, checkDue, isNewerBuild, mayReloadFor, parseBuildReload, parseVersionResponse,
   releaseUpdateAction, shouldCheckVersion,
 } from "@/lib/releaseCheck";
 import { WEB_BUILD } from "@/lib/errorTags";
@@ -103,6 +104,44 @@ await check("a damaged reload record reads as none", () => {
   assert.equal(parseBuildReload("{oops"), null);
   assert.equal(parseBuildReload('{"build":1,"at":"x"}'), null);
   assert.deepEqual(parseBuildReload('{"build":"a1b2c3d","at":5}'), { build: "a1b2c3d", at: 5 });
+});
+
+await check("reads the build from the version page's text, with or without a viewer around it", () => {
+  assert.equal(buildFromPageText('{"build":"a1b2c3d"}'), "a1b2c3d");
+  assert.equal(buildFromPageText('Pretty-print\n{ "build" : "A1B2C3D4" }'), "A1B2C3D4");
+  assert.equal(buildFromPageText(`{"build":"${WEB_BUILD}"}`), WEB_BUILD === "local" ? null : WEB_BUILD);
+});
+await check("anything else on the version page reads as no answer", () => {
+  assert.equal(buildFromPageText(undefined), null);
+  assert.equal(buildFromPageText(""), null);
+  assert.equal(buildFromPageText("<h1>502 Bad Gateway</h1>"), null);
+  assert.equal(buildFromPageText('{"build":"local"}'), null);
+  assert.equal(buildFromPageText('{"build":"<script>"}'), null);
+});
+
+// The wiring (sw-register.ts needs a browser, so it's read as text here).
+const swSource = readFileSync(new URL("../src/lib/sw-register.ts", import.meta.url), "utf8");
+const rootSource = readFileSync(new URL("../src/routes/__root.tsx", import.meta.url), "utf8");
+await check("the app starts the version check at boot, next to the worker", () => {
+  assert.match(rootSource, /registerServiceWorker\(\);[\s\S]{0,200}startReleaseCheck\(\);/);
+});
+await check("the check asks on launch, hourly and on each return to the foreground", () => {
+  const start = swSource.slice(swSource.indexOf("export function startReleaseCheck"));
+  assert.match(start, /shouldCheckVersion\(/);
+  assert.match(start, /void checkVersion\(false\);\s*window\.setInterval\(\(\) => \{ void checkVersion\(false\); \}, CHECK_EVERY_MS\);/);
+  assert.match(start, /onForeground\(\(\) => \{ void checkVersion\(true\); \}\)/);
+  assert.match(swSource, /addEventListener\("resume", \(\) => \{ back\(\); \}\)/);
+});
+await check("the live build is read through a page load, never a pinned fetch", () => {
+  const read = swSource.slice(swSource.indexOf("function readLiveBuild"), swSource.indexOf("async function checkVersion"));
+  assert.match(read, /createElement\("iframe"\)/);
+  assert.match(read, /\/api\/public\/version\?t=/);
+  assert.doesNotMatch(read, /fetch\(/);
+});
+await check("a newer build goes through the same update decision as a worker update", () => {
+  assert.match(swSource, /pageBehind = true;\s*onUpdateReady\(\);/);
+  assert.match(swSource, /releaseUpdateAction\(\{ quietMoment: Date\.now\(\) < quietUntil, formInProgress: formInProgress\(\) \}\) === "now"/);
+  assert.match(swSource, /if \(liveBuild\) \{ noteBuildReload\(\); reloadFresh\(\); \}/);
 });
 
 console.log(`\n${passed} passed${process.exitCode ? ", some FAILED" : ""}`);

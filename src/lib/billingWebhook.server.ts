@@ -1,7 +1,7 @@
 /**
  * The real Stripe and database behind handleBillingEvent (billingWebhook.ts).
  * Every write goes through the service-role functions from
- * 20261123120000_billing_foundation.sql; a database error throws, so the route
+ * 20261123180000_billing_foundation.sql; a database error throws, so the route
  * returns 500 and Stripe retries.
  */
 import type { SubscriptionLike } from "./billing";
