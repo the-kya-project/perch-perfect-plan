@@ -1,0 +1,136 @@
+{
+  "keys": {
+    "seasonal.winterDryAir.title": {
+      "stamp": "e8f42852fdf503c7"
+    },
+    "seasonal.winterDryAir.body": {
+      "stamp": "2d5a30545de001c1"
+    },
+    "seasonal.winterDrafts.title": {
+      "stamp": "e1031ec50d85f50a"
+    },
+    "seasonal.winterDrafts.body": {
+      "stamp": "4e64adc149f4b37a"
+    },
+    "seasonal.springCleaning.title": {
+      "stamp": "a391b11ca048387d"
+    },
+    "seasonal.springCleaning.body": {
+      "stamp": "cd39a0f2d72aea23"
+    },
+    "seasonal.springWindows.title": {
+      "stamp": "c5fba10d629ebccf"
+    },
+    "seasonal.springWindows.body": {
+      "stamp": "9adff4b36fa32926"
+    },
+    "seasonal.summerHeat.title": {
+      "stamp": "aa72d2f6d0ec6764"
+    },
+    "seasonal.summerHeat.body": {
+      "stamp": "68e8e3e65847f1ad"
+    },
+    "seasonal.autumnRoutine.title": {
+      "stamp": "91d15a8a4227eca0"
+    },
+    "seasonal.autumnRoutine.body": {
+      "stamp": "9fa4d2ee85cc8439"
+    },
+    "seasonal.autumnHeating.title": {
+      "stamp": "e545c2c957285340"
+    },
+    "seasonal.autumnHeating.body": {
+      "stamp": "cfebcfc5328a8cf8"
+    },
+    "seasonal.valentines.title": {
+      "stamp": "b410342576c5eec9"
+    },
+    "seasonal.valentines.body": {
+      "stamp": "335d8afd5ce3e90b"
+    },
+    "seasonal.clocksForward.title": {
+      "stamp": "ce10514b7c9409db"
+    },
+    "seasonal.clocksForward.body": {
+      "stamp": "89d5cd63008377b9"
+    },
+    "seasonal.easter.title": {
+      "stamp": "087fb43184e8173a"
+    },
+    "seasonal.easter.body": {
+      "stamp": "7c36e0cc777963b3"
+    },
+    "seasonal.kingsDay.title": {
+      "stamp": "d7218bb05379ef42"
+    },
+    "seasonal.kingsDay.body": {
+      "stamp": "437f35ae1457ecb8"
+    },
+    "seasonal.summerTravel.title": {
+      "stamp": "a88f92e2c35d3d8b"
+    },
+    "seasonal.summerTravel.body": {
+      "stamp": "99c6b8e644cc322c"
+    },
+    "seasonal.julyFourth.title": {
+      "stamp": "e1f320067fbb62b9"
+    },
+    "seasonal.julyFourth.body": {
+      "stamp": "261e24ba1084d6a9"
+    },
+    "seasonal.clocksBack.title": {
+      "stamp": "c19b718efc6e3018"
+    },
+    "seasonal.clocksBack.body": {
+      "stamp": "89d5cd63008377b9"
+    },
+    "seasonal.halloween.title": {
+      "stamp": "46573a8061a9738d"
+    },
+    "seasonal.halloween.body": {
+      "stamp": "1e681cfb7b661844"
+    },
+    "seasonal.thanksgiving.title": {
+      "stamp": "9a0dfef7ac747259"
+    },
+    "seasonal.thanksgiving.body": {
+      "stamp": "82a5d876db598629"
+    },
+    "seasonal.sinterklaas.title": {
+      "stamp": "d2fa9803e22c1099"
+    },
+    "seasonal.sinterklaas.body": {
+      "stamp": "e46f72bde8296d3a"
+    },
+    "seasonal.holidayDecorations.title": {
+      "stamp": "b2b70fc69b923a20"
+    },
+    "seasonal.holidayDecorations.body": {
+      "stamp": "2e77ca9a6f4fdd89"
+    },
+    "seasonal.holidayCandles.title": {
+      "stamp": "c1fad46fb1c9720b"
+    },
+    "seasonal.holidayCandles.body": {
+      "stamp": "aef14645e60944c7"
+    },
+    "seasonal.holidayTravel.title": {
+      "stamp": "beca26945884f258"
+    },
+    "seasonal.holidayTravel.body": {
+      "stamp": "233c4c20a4669a27"
+    },
+    "seasonal.holidayMeals.title": {
+      "stamp": "7a01500cb59bf178"
+    },
+    "seasonal.holidayMeals.body": {
+      "stamp": "3a17825c26da6c59"
+    },
+    "seasonal.newYearFireworks.title": {
+      "stamp": "98517b6c02ee5fe3"
+    },
+    "seasonal.newYearFireworks.body": {
+      "stamp": "d23d9d05d2b4fec2"
+    }
+  }
+}

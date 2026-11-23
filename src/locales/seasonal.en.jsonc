@@ -1,0 +1,53 @@
+{
+  // Client "seasonal" namespace — English source for the seasonal and holiday
+  // Today cards (src/lib/seasonalCalendar.ts, backlog D3). One title and one
+  // body per card: seasonal.<card id>.title / .body. Plain care reminders only,
+  // never health advice. Dutch lives in seasonal.nl.jsonc. Not managed by
+  // i18next-parser (no t() call names these keys literally).
+
+  "seasonal.winterDryAir.title": "Dry winter air",
+  "seasonal.winterDryAir.body": "Heating dries out the air indoors. A regular shower or misting, and a humidifier in the room, help keep your bird comfortable.",
+  "seasonal.winterDrafts.title": "Keep out the cold",
+  "seasonal.winterDrafts.body": "Check the cage isn't near a drafty window, an outside door or a heating vent. A cover at night helps hold in warmth.",
+  "seasonal.springCleaning.title": "Bird-safe spring cleaning",
+  "seasonal.springCleaning.body": "Strong cleaners, sprays and fresh paint give off fumes. Move your bird to another room with fresh air while you clean, and choose bird-safe products.",
+  "seasonal.springWindows.title": "Windows and doors",
+  "seasonal.springWindows.body": "Warmer days mean open windows and doors. Put a screen in every open window, and know where your bird is before anyone opens a door.",
+  "seasonal.summerHeat.title": "Summer heat",
+  "seasonal.summerHeat.body": "Keep the cage out of direct sun and away from hot windows. Change the water more often, and offer a cool shower on hot days.",
+  "seasonal.autumnRoutine.title": "Shorter days",
+  "seasonal.autumnRoutine.body": "As the evenings draw in, keep bedtime and wake-up at the same time each day so your bird gets a steady night's sleep.",
+  "seasonal.autumnHeating.title": "Heating season",
+  "seasonal.autumnHeating.body": "The first run of the heating can give off dust and smells. Air the room before your bird is in it, and keep space heaters well away from the cage.",
+
+  "seasonal.valentines.title": "Flowers and chocolates",
+  "seasonal.valentines.body": "Keep bouquets and chocolates out of your bird's reach. Many cut flowers, and all chocolate, aren't safe for birds.",
+  "seasonal.clocksForward.title": "The clocks go forward this weekend",
+  "seasonal.clocksForward.body": "Shift mealtimes and bedtime by a few minutes a day, so your bird's routine moves gently with the clocks.",
+  "seasonal.easter.title": "Easter treats",
+  "seasonal.easter.body": "Keep chocolate eggs out of reach, and pick up foil wrappers and plastic basket grass, which birds love to chew.",
+  "seasonal.kingsDay.title": "King's Day",
+  "seasonal.kingsDay.body": "Street parties and music can go on all day. Keep the windows near your bird closed, and give your bird a quiet spot to retreat to.",
+  "seasonal.summerTravel.title": "Summer trips",
+  "seasonal.summerTravel.body": "Going away? Share the care plan with your sitter before you leave, and put your avian vet's number where they'll see it.",
+  "seasonal.julyFourth.title": "Fourth of July fireworks",
+  "seasonal.julyFourth.body": "Fireworks can go on for days around the Fourth. Close the curtains, keep the windows shut, and leave some music on to soften the bangs.",
+  "seasonal.clocksBack.title": "The clocks go back this weekend",
+  "seasonal.clocksBack.body": "Shift mealtimes and bedtime by a few minutes a day, so your bird's routine moves gently with the clocks.",
+  "seasonal.halloween.title": "Halloween",
+  "seasonal.halloween.body": "With the doorbell ringing, keep your bird away from the front door. Use battery lights in pumpkins instead of candles.",
+  "seasonal.thanksgiving.title": "Cooking for a crowd",
+  "seasonal.thanksgiving.body": "Keep your bird well away from the kitchen: overheated non-stick pans and the oven's self-clean setting give off fumes that are dangerous to birds.",
+  "seasonal.sinterklaas.title": "Sinterklaas treats",
+  "seasonal.sinterklaas.body": "Keep chocolate letters, pepernoten and other sweets out of your bird's reach, and pick up wrapping paper and ribbon.",
+  "seasonal.holidayDecorations.title": "Decorating safely",
+  "seasonal.holidayDecorations.body": "Tinsel, glass ornaments and string lights are tempting to chew. Keep them out of reach, and stay close whenever your bird is near the tree.",
+  "seasonal.holidayCandles.title": "Candles and scents",
+  "seasonal.holidayCandles.body": "Keep lit candles, scented sprays and plug-in air fresheners out of the room your bird is in, and never leave a flame unattended.",
+  "seasonal.holidayTravel.title": "Holiday travel",
+  "seasonal.holidayTravel.body": "If you're traveling, share the care plan with your sitter before you go. If your bird is coming along, pack familiar food and toys.",
+  "seasonal.holidayMeals.title": "Holiday meals",
+  "seasonal.holidayMeals.body": "Keep chocolate, avocado, alcohol and salty or fatty foods away from your bird, and ask guests not to share from their plates.",
+  "seasonal.newYearFireworks.title": "New Year's fireworks",
+  "seasonal.newYearFireworks.body": "Fireworks can startle birds. Close the curtains, leave a soft light and some music on, and keep your bird in the quietest room."
+}
