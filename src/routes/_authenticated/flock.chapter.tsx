@@ -8,7 +8,7 @@ import { FlockEmpty, FlockSubTabs } from "@/components/flock/FlockChips";
 import { ComposePrompt, LoadMore, PostList } from "@/components/flock/PostFeed";
 import { EventCard } from "@/components/flock/EventParts";
 import { useChapterEvents, useEventRules } from "@/lib/flockEvents";
-import { CalendarPlus, MoreHorizontal, Search } from "lucide-react";
+import { CalendarPlus, ClipboardCheck, MoreHorizontal, Search, Settings2 } from "lucide-react";
 import { FlockChips } from "@/components/flock/FlockChips";
 import { FlockAvatar, FounderBadge } from "@/components/flock/FlockPeople";
 import { useAvatarUrls, useMyId } from "@/lib/flockData";
@@ -17,6 +17,8 @@ import { BlockSheet } from "@/components/flock/BlockSheet";
 import { blockActions } from "@/lib/flockBlocks";
 import { birdsLine, filterRoster, topGroups, useChapterRoster, type SpeciesGroup } from "@/lib/flockMembers";
 import { useFlockFeed } from "@/lib/flockPostData";
+import { groupPlaces, useChapterPlaces, usePlaceRules } from "@/lib/flockPlaces";
+import { PlaceCard, placeGroupLabel, SuggestPlaceSheet } from "@/components/flock/PlaceParts";
 import { RegionSheet } from "@/components/flock/FlockPeople";
 import { K } from "@/components/kya";
 import { memberCountLine } from "@/lib/flockProfile";
@@ -50,10 +52,8 @@ function emptyCopy(t: TFunction, tab: ChapterTab): { title: string; line: string
       title: t("flock.chapter.empty.eventsTitle", "No events yet"),
       line: t("flock.chapter.empty.events", "Local meetups and online get-togethers for your chapter will be listed here."),
     };
-    case "resources": return {
-      title: t("flock.chapter.empty.resourcesTitle", "No resources yet"),
-      line: t("flock.chapter.empty.resources", "Avian vets, rescues, and shops your chapter recommends will be collected here."),
-    };
+    // Resources always shows its three groups, each with its own empty line.
+    case "resources": return { title: "", line: "" };
     case "members": return {
       title: t("flock.members.emptyTitle", "No members here yet"),
       line: t("flock.members.empty", "When members join your chapter, you'll find them here."),
@@ -136,7 +136,7 @@ function FlockChapter() {
               ) : current === "events" ? (
                 <ChapterEvents empty={<FlockEmpty icon={<MapPin className="size-6" />} title={empty.title}>{empty.line}</FlockEmpty>} />
               ) : (
-                <FlockEmpty icon={<MapPin className="size-6" />} title={empty.title}>{empty.line}</FlockEmpty>
+                <ChapterResources />
               )}
             </div>
           </>
@@ -200,6 +200,63 @@ function ChapterEvents({ empty }: { empty: React.ReactNode }) {
         {rules?.can_manage ? t("flock.events.new", "New event") : t("flock.events.suggest", "Suggest an event")}
       </Link>
     </>
+  );
+}
+
+/** Resources (backlog 1.6, SpecCollections screen 1): the chapter's Avian
+ *  vets, Rescues, and Shops and services as directory cards, the "community
+ *  picks" line, and Suggest a place. The chapter's lead and admins also get a
+ *  way into managing the listings and the suggestions waiting. */
+function ChapterResources() {
+  const { t } = useTranslation();
+  const { data: places, isLoading } = useChapterPlaces();
+  const { data: rules } = usePlaceRules();
+  const [suggesting, setSuggesting] = useState(false);
+  const [sent, setSent] = useState(false);
+  const groups = groupPlaces(places ?? []);
+  return (
+    <div className="flex flex-col gap-3" data-testid="chapter-resources">
+      <p className="m-0 text-[13.5px] leading-[1.45]" style={{ color: K.quiet }} data-testid="places-disclaimer">
+        {t("flock.places.disclaimer", "Places members in your chapter recommend. These are community picks, not endorsements.")}
+      </p>
+      {rules?.can_manage && (
+        <div className="flex flex-col gap-2 rounded-[18px] p-4" style={{ background: K.lime, color: K.forest }} data-testid="places-manage">
+          {rules.pending > 0 && (
+            <Link to="/admin/review" search={{ filter: "places" }} className="flex min-h-[44px] items-center gap-2.5 text-[15px] font-[700]" data-testid="places-pending">
+              <ClipboardCheck className="size-5 shrink-0" aria-hidden="true" />
+              {t("flock.places.waiting", "{{count}} suggestions waiting", { count: rules.pending })}
+            </Link>
+          )}
+          <Link to="/flock/places" className="flex min-h-[44px] items-center gap-2.5 text-[15px] font-[700]" data-testid="places-manage-link">
+            <Settings2 className="size-5 shrink-0" aria-hidden="true" />
+            {t("flock.places.manage", "Manage listings")}
+          </Link>
+        </div>
+      )}
+      {!isLoading && groups.map((g) => (
+        <section key={g.kind} className="flex flex-col gap-2" data-place-group={g.kind}>
+          <h2 className="m-0 mt-1 text-[12.5px] font-[700] uppercase tracking-[0.06em]" style={{ color: K.moss }}>{placeGroupLabel(t, g.kind)}</h2>
+          {g.places.length > 0
+            ? g.places.map((p) => <PlaceCard key={p.place_id} place={p} />)
+            : (
+              <p className="m-0 rounded-[18px] bg-white px-4 py-3 text-[14px] leading-[1.45]" style={{ color: K.quiet }} data-testid="place-group-empty">
+                {t("flock.places.groupEmpty", "Know a good one nearby? Suggest it, and your chapter lead will add it.")}
+              </p>
+            )}
+        </section>
+      ))}
+      {sent && (
+        <p role="status" className="m-0 rounded-[18px] bg-white px-4 py-3 text-[14px] font-[700]" style={{ color: K.moss }} data-testid="place-sent">
+          {t("flock.places.sent", "Thanks! Your suggestion will show once your chapter lead has looked it over.")}
+        </p>
+      )}
+      <button type="button" onClick={() => setSuggesting(true)} data-testid="suggest-place"
+        className="inline-flex min-h-[52px] w-full items-center justify-center rounded-[16px] border-[1.5px] border-dashed px-6 text-[15px] font-[700]"
+        style={{ borderColor: K.moss, color: K.moss }}>
+        {t("flock.places.suggest", "Suggest a place")}
+      </button>
+      {suggesting && <SuggestPlaceSheet onClose={() => setSuggesting(false)} onSent={() => { setSuggesting(false); setSent(true); }} />}
+    </div>
   );
 }
 
