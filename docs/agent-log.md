@@ -22,7 +22,7 @@ Copy this, fill it in, and put it at the top of "Runs", above the latest entry.
 
 ### 2026-11-23 · Record: #514, #515 and #516 approved and merged by Brittany
 - **Built:** Marked the three held PRs as approved and merged by Brittany in this log and in the review queue. Moved them out of "Held for Brittany". Kept #515's switch decisions and #516's decisions where they were, and added #516's 22 cards (English and Dutch) to "Copy that merged". Nothing in the app changed.
-- **PR:** see this entry's PR (supervised session at Brittany's request)
+- **PR:** [#518](https://github.com/the-kya-project/perch-perfect-plan/pull/518) (supervised session at Brittany's request)
 - **Outcome:** Squash-merged by this session once every check passed, as she asked.
 - **Problems:** none. `docs/BACKLOG.md` still calls #514 and #516 held in its Done lines; left alone because this PR was asked to touch only these two files.
 
