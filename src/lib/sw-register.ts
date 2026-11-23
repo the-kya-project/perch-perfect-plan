@@ -12,6 +12,11 @@
  */
 import { isNativeApp } from "./nativeApp";
 import { flushAllDrafts, formInProgress } from "./formsInProgress";
+import { WEB_BUILD } from "./errorTags";
+import {
+  CHECK_EVERY_MS, CHECK_TIMEOUT_MS, buildFromPageText, checkDue, isNewerBuild, mayReloadFor,
+  parseBuildReload, releaseUpdateAction, shouldCheckVersion, type BuildReload,
+} from "./releaseCheck";
 
 const SW_URL = "/sw.js";
 
@@ -260,7 +265,7 @@ export function registerServiceWorker() {
         const check = () => { reg.update().catch(() => {}); };
         check();
         setInterval(check, 60 * 60 * 1000);
-        watchForeground(check);
+        onForeground(check);
       })
       .catch(() => { /* swallow */ });
   };
@@ -339,7 +344,7 @@ function onControllerChange() {
 
 function onUpdateReady() {
   updateReady = true;
-  if (Date.now() < quietUntil && !formInProgress()) {
+  if (releaseUpdateAction({ quietMoment: Date.now() < quietUntil, formInProgress: formInProgress() }) === "now") {
     void applyUpdate(quietReload || pageBehind);
     return;
   }
@@ -368,13 +373,29 @@ async function applyUpdate(reload: boolean) {
     activating = false;
   }
   if (reload) {
-    window.location.reload();
+    // Found by the version check: record it (one reload per build) and load
+    // a fresh address. A worker update reloads as it always has.
+    if (liveBuild) { noteBuildReload(); reloadFresh(); }
+    else window.location.reload();
     return;
   }
   updateReady = false;
   pageBehind = false;
   applying = false;
   notifyUpdate();
+}
+
+/** Reload onto the live build with a cache-busted address, which the iOS web
+ *  view can't answer from its own cache (it served the old page to a plain
+ *  reload on Nov 2, 2026). Dropping Vercel's pin first is backlog 2.4. */
+function reloadFresh() {
+  try {
+    const u = new URL(window.location.href);
+    u.searchParams.set("_r", String(Date.now()));
+    window.location.replace(u.toString());
+  } catch {
+    window.location.reload();
+  }
 }
 
 /** The banner's Update: save every draft, then move onto the new build. */
@@ -414,6 +435,110 @@ export async function catchUpBeforePreview(timeoutMs = 6_000): Promise<boolean> 
   return true;
 }
 
+// ── Version check ────────────────────────────────────────────────────────────
+// lib/releaseCheck.ts explains why. A newer live build is handled exactly like
+// a waiting worker (onUpdateReady), with pageBehind set so applying it reloads.
+
+let lastVersionCheckAt = 0;
+let versionCheckInFlight: Promise<boolean> | null = null;
+/** The newer build the last check found, to record a reload against. */
+let liveBuild: string | null = null;
+const BUILD_RELOAD_KEY = "kya-build-reload";
+
+function readBuildReload(): BuildReload | null {
+  try { return parseBuildReload(localStorage.getItem(BUILD_RELOAD_KEY)); } catch { return null; }
+}
+
+/** Remember that this page is reloading onto `liveBuild`. */
+function noteBuildReload() {
+  if (!liveBuild) return;
+  try { localStorage.setItem(BUILD_RELOAD_KEY, JSON.stringify({ build: liveBuild, at: Date.now() })); } catch { /* ignore */ }
+}
+
+/** Is a newer build live? False on any doubt (offline, timeout, an odd
+ *  answer): not knowing is not "behind". Also false when this page already
+ *  reloaded for that build a moment ago and still isn't on it (mayReloadFor):
+ *  one try per build, never a loop. */
+function liveBuildIsNewer(timeoutMs = CHECK_TIMEOUT_MS): Promise<boolean> {
+  if (versionCheckInFlight) return versionCheckInFlight;
+  lastVersionCheckAt = Date.now();
+  versionCheckInFlight = (async () => {
+    try {
+      const live = await readLiveBuild(timeoutMs);
+      if (!live || !isNewerBuild(WEB_BUILD, live)) return false;
+      if (!mayReloadFor(readBuildReload(), live, Date.now())) return false;
+      liveBuild = live;
+      return true;
+    } catch {
+      return false;
+    } finally {
+      versionCheckInFlight = null;
+    }
+  })();
+  return versionCheckInFlight;
+}
+
+/** The live build, read as a hidden same-origin page load, not a fetch.
+ *  Vercel's Skew Protection pins every fetch from this page to the build the
+ *  page opened with (the __vdpl cookie), so a fetch would only ever answer
+ *  with this page's own build. Page loads, frames included, are never pinned
+ *  (checked on Nov 2, 2026 on branch fix/native-release-catchup). Null when
+ *  it can't tell. */
+function readLiveBuild(timeoutMs: number): Promise<string | null> {
+  return new Promise((resolve) => {
+    if (!document.body) { resolve(null); return; }
+    const frame = document.createElement("iframe");
+    frame.setAttribute("aria-hidden", "true");
+    frame.tabIndex = -1;
+    frame.style.cssText = "position:absolute;width:0;height:0;border:0;visibility:hidden";
+    let done = false;
+    const finish = (build: string | null) => {
+      if (done) return;
+      done = true;
+      window.clearTimeout(timer);
+      frame.remove();
+      resolve(build);
+    };
+    const timer = window.setTimeout(() => finish(null), timeoutMs);
+    frame.onload = () => {
+      try { finish(buildFromPageText(frame.contentDocument?.body?.textContent)); }
+      catch { finish(null); }
+    };
+    frame.src = `/api/public/version?t=${Date.now()}`;
+    document.body.appendChild(frame);
+  });
+}
+
+async function checkVersion(force: boolean) {
+  if (pageBehind || !checkDue(lastVersionCheckAt, Date.now(), force)) return;
+  if (await liveBuildIsNewer()) {
+    pageBehind = true;
+    onUpdateReady();
+  }
+}
+
+/** Ask which build is live (shouldCheckVersion: every open production page,
+ *  not in a frame): now, hourly, and on every return to the foreground. Runs
+ *  alongside the worker's own update check, which Skew Protection can blind
+ *  (/sw.js comes back as the old worker). Called once at boot. */
+export function startReleaseCheck() {
+  if (typeof window === "undefined") return;
+  const inFrame = (() => { try { return window.self !== window.top; } catch { return true; } })();
+  if (!shouldCheckVersion({ running: WEB_BUILD, prod: import.meta.env.PROD, inFrame })) return;
+  void checkVersion(false);
+  window.setInterval(() => { void checkVersion(false); }, CHECK_EVERY_MS);
+  onForeground(() => { void checkVersion(true); });
+}
+
+/** Run `check` whenever the app comes back to the foreground. The worker's
+ *  update check and the version check share one watcher, so a return from
+ *  away is counted once. */
+const foregroundChecks: Array<() => void> = [];
+function onForeground(check: () => void) {
+  foregroundChecks.push(check);
+  if (foregroundChecks.length === 1) watchForeground(() => foregroundChecks.forEach((fn) => fn()));
+}
+
 /** Track time in the background. visibilitychange is the signal; a heartbeat
  *  covers shells that don't fire it (timers stop while the app is suspended,
  *  so a long gap between beats is time away too). */
@@ -442,4 +567,11 @@ function watchForeground(check: () => void) {
     if (document.visibilityState === "hidden") hiddenAt = Date.now();
     else back();
   });
+  // The native shells: Capacitor fires "pause" and "resume" on the document
+  // when the app goes to the background and comes back. The iOS web view
+  // doesn't reliably report that as a visibility change (Nov 2, 2026: an app
+  // brought back from the background never re-checked for a release).
+  // Running back() twice is harmless: checkDue skips the second check.
+  document.addEventListener("pause", () => { hiddenAt ??= Date.now(); });
+  document.addEventListener("resume", () => { back(); });
 }
