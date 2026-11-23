@@ -20,6 +20,13 @@ Copy this, fill it in, and put it at the top of "Runs", above the latest entry.
 
 ## Runs
 
+### 2026-11-23 15:20 EST · 1.14a Dutch for the billing screens
+- **Built:** at Brittany's go-ahead, Dutch for all 83 billing lines and the page title. Dates, the sentence on Stripe's page, Stripe Checkout and the Customer Portal now follow the member's language.
+- **PR:** https://github.com/the-kya-project/perch-perfect-plan/pull/533
+- **Tested:** `npm run test:billing`, translations, types, build, and every screen rendered in Dutch at 320 and 390 wide with made-up billing data.
+- **Not tested:** a real Stripe page in Dutch, and no native Dutch speaker has read it.
+- **Outcome:** held for Brittany.
+
 ### 2026-11-23 13:50 EST · 1.14a Card step and checkout design
 - **Built:** the nine approved billing mockups on Membership, Checkout branding through each session's settings, and the card's last four digits read from Stripe without storing them. A card added in the season's last 49 hours is saved at Checkout and first charged at the season's end (Brittany's decision). Behind `BILLING_ENABLED` (off), web only.
 - **PR:** https://github.com/the-kya-project/perch-perfect-plan/pull/533

@@ -20,7 +20,92 @@ Format:
 ```
 
 ### [#533](https://github.com/the-kya-project/perch-perfect-plan/pull/533) · 1.14a Card step and checkout design
-Held for Brittany. Nobody sees these while `BILLING_ENABLED` is off. English only: Dutch waits for her go-ahead.
+Held for Brittany. Nobody sees these while `BILLING_ENABLED` is off.
+- **Where:** every billing screen and Stripe's page, Dutch (written Nov 23, 2026 at Brittany's go-ahead; all new except `flock.you.membership`, which had no Dutch before)
+  - `flock.billing.accessUntil`: "Toegang tot"
+  - `flock.billing.addMyCard`: "Mijn kaart toevoegen · vandaag $0"
+  - `flock.billing.allSet`: "Je bent <em>helemaal klaar</em>"
+  - `flock.billing.backToFlock`: "Terug naar de Flock"
+  - `flock.billing.billedMonthly`: "Maandelijks betaald"
+  - `flock.billing.cardEnding`: "Eindigend op {{last4}}"
+  - `flock.billing.cardLabel`: "Kaart"
+  - `flock.billing.chargeMonthly`: "Je eerste betaling van {{price}}, daarna elke maand. Zeg je voor deze datum op, dan betaal je niets."
+  - `flock.billing.chargeYearly`: "Je eerste betaling van {{price}}, daarna eens per jaar. Zeg je voor deze datum op, dan betaal je niets."
+  - `flock.billing.checkoutNote`: "Je betaalt niets tot {{date}}. Je kunt tot die tijd altijd opzeggen via Lidmaatschap en betaling."
+  - `flock.billing.chooseFounder`: "Je helpt bepalen waar het naartoe gaat, <strong>via de Do good-stemmingen</strong>, ook die alleen voor oprichters."
+  - `flock.billing.chooseMember`: "Je helpt bepalen waar het naartoe gaat, <strong>via de Do good-stemmingen</strong> met de rest van de Flock."
+  - `flock.billing.confirmingLine`: "Dit kan een minuutje duren. Je kunt hier blijven, we gaan verder zodra het klaar is."
+  - `flock.billing.confirmingSlow`: "Dit duurt langer dan normaal. Je kaart is veilig bij Stripe, dus je hoeft hem niet opnieuw toe te voegen. Kijk over een paar minuten bij Lidmaatschap en betaling."
+  - `flock.billing.confirmingTitle`: "Je kaart wordt bevestigd"
+  - `flock.billing.ends`: "Je lidmaatschap wordt niet verlengd."
+  - `flock.billing.error`: "Dat is niet gelukt. Probeer het zo opnieuw."
+  - `flock.billing.firstCharge`: "Eerste betaling"
+  - `flock.billing.flockMember`: "Lid van de Flock"
+  - `flock.billing.founding`: "Oprichtersprijs: {{price}} per maand, vast zolang je lid blijft."
+  - `flock.billing.founding50`: "Founding 50"
+  - `flock.billing.foundingLabel`: "Oprichtersprijs"
+  - `flock.billing.foundingLocked`: "Vast zolang je lid blijft."
+  - `flock.billing.foundingOthers`: "Alle anderen betalen {{price}}."
+  - `flock.billing.foundingRelease`: "Staat er op {{date}} geen kaart, dan komt je oprichtersplek vrij en kun je die niet opnieuw claimen."
+  - `flock.billing.foundingSpot`: "Founding 50 · Plek #{{spot}}"
+  - `flock.billing.freeUntil`: "Gratis tot"
+  - `flock.billing.givesBack`: "Elk lidmaatschap geeft iets terug"
+  - `flock.billing.givesBackLine`: "van wat je betaalt gaat naar partners in papegaaienopvang en natuurbehoud"
+  - `flock.billing.givesBackNote`: "<strong>Je lidmaatschap geeft iets terug.</strong> 20% gaat naar partners in papegaaienopvang en natuurbehoud."
+  - `flock.billing.heroAfterLine`: "Word lid van de Flock en help papegaaien in de opvang en in het wild."
+  - `flock.billing.heroFounder`: "Dankzij jou <em>begon dit</em>. Houd je {{price}}."
+  - `flock.billing.heroFounderLine`: "Voeg uiterlijk {{date}} een kaart toe om je oprichtersplek en prijs te houden. Tot die tijd betaal je niets."
+  - `flock.billing.heroMember`: "Jouw lidmaatschap <em>doet goed</em> voor papegaaien"
+  - `flock.billing.heroSeasonLine`: "Voeg nu een kaart toe om na de gratis periode in de Flock te blijven. Je betaalt niets tot {{date}}."
+  - `flock.billing.howItWorks`: "Zo werkt het"
+  - `flock.billing.includes`: "Dit zit in je lidmaatschap"
+  - `flock.billing.joinFlock`: "Word lid van de Flock"
+  - `flock.billing.keepSpot`: "Mijn oprichtersplek houden · vandaag $0"
+  - `flock.billing.keeps`: "Dit houd je met je lidmaatschap"
+  - `flock.billing.manage`: "Betaling beheren"
+  - `flock.billing.manageLine`: "Wijzig je kaart of abonnement, of zeg op wanneer je wilt."
+  - `flock.billing.monthlyLabel`: "Maandelijks"
+  - `flock.billing.monthsFree_one`: "{{count}} maand gratis"
+  - `flock.billing.monthsFree_other`: "{{count}} maanden gratis"
+  - `flock.billing.nextCharge`: "Volgende betaling"
+  - `flock.billing.notReady`: "Je kunt een kaart toevoegen zodra het einde van de gratis periode vaststaat."
+  - `flock.billing.onFile`: "Kaart opgeslagen"
+  - `flock.billing.pastDueLine`: "Dat kan gebeuren, vaak door een verlopen kaart. Werk je kaart uiterlijk {{date}} bij om je plek in de Flock te houden."
+  - `flock.billing.pastDueNoDate`: "Dat kan gebeuren, vaak door een verlopen kaart. Werk je kaart bij om je plek in de Flock te houden."
+  - `flock.billing.pastDueTitle`: "Je laatste betaling is niet gelukt"
+  - `flock.billing.perMonth`: "/mnd"
+  - `flock.billing.perkBadge`: "Je oprichtersbadge en je plek bij de Founding 50"
+  - `flock.billing.perkChapter`: "Je afdeling, met vogeldierenartsen, opvangcentra en winkels die andere leden aanraden"
+  - `flock.billing.perkFounderAll`: "Je afdeling, trajecten en de volledige bibliotheek"
+  - `flock.billing.perkFounderVote`: "Een stem in Do good, ook bij stemmingen alleen voor oprichters"
+  - `flock.billing.perkJourneys`: "Stapsgewijze trajecten voor training en verzorging"
+  - `flock.billing.perkLibrary`: "De volledige bibliotheek"
+  - `flock.billing.perkVote`: "Een stem in Do good, over waar de donaties van de Flock naartoe gaan"
+  - `flock.billing.pickHow`: "Kies hoe je betaalt"
+  - `flock.billing.planFounding`: "Oprichtend lid"
+  - `flock.billing.planLabel`: "Abonnement"
+  - `flock.billing.renews`: "Je lidmaatschap wordt automatisch verlengd."
+  - `flock.billing.renewsMonthly`: "Wordt elke maand verlengd. Opzeggen kan altijd via Betaling beheren."
+  - `flock.billing.renewsYearly`: "Wordt eens per jaar verlengd. Opzeggen kan altijd via Betaling beheren."
+  - `flock.billing.saveCardNoteMonthly`: "De Flock, {{price}} per maand. Je betaalt niets tot {{date}}. Je kunt tot die tijd altijd opzeggen via Lidmaatschap en betaling."
+  - `flock.billing.saveCardNoteYearly`: "De Flock, {{price}} per jaar. Je betaalt niets tot {{date}}. Je kunt tot die tijd altijd opzeggen via Lidmaatschap en betaling."
+  - `flock.billing.seasonSet`: "Gratis periode · alles staat klaar voor daarna"
+  - `flock.billing.secure`: "Veilig betalen met Stripe"
+  - `flock.billing.secureCancel`: "Veilig betalen met Stripe · Altijd opzegbaar"
+  - `flock.billing.seeMembership`: "Bekijk lidmaatschap en betaling"
+  - `flock.billing.spotSafe`: "Je plek is <em>veilig</em>"
+  - `flock.billing.staysFree`: "Alles in de Flock blijft gratis, net als nu."
+  - `flock.billing.thanks`: "<strong>Dankjewel.</strong> 20% van je lidmaatschap gaat naar partners in papegaaienopvang en natuurbehoud."
+  - `flock.billing.today`: "Vandaag"
+  - `flock.billing.todayFounder`: "Voeg je kaart toe. Je oprichtersplek is veilig. Vandaag betaal je $0."
+  - `flock.billing.todayLine`: "Voeg je kaart toe. Vandaag betaal je $0."
+  - `flock.billing.until`: "Tot {{date}}"
+  - `flock.billing.updateCard`: "Mijn kaart bijwerken"
+  - `flock.billing.welcomeFounderLine`: "Je oprichtersprijs staat vast. Bedankt dat je de Flock mee hebt opgericht."
+  - `flock.billing.welcomeLine`: "Je plek in de Flock is bewaard voor na de gratis periode. Tot die tijd verandert er niets."
+  - `flock.billing.yearlyLabel`: "Jaarlijks"
+  - `flock.billing.yearlyTotal`: "{{price}} eens per jaar"
+  - `flock.you.membership`: "Lidmaatschap en betaling"
 - **Where:** Checkout, last 49 hours of the free season, `flock.billing.saveCardNoteYearly`
   - Before: new
   - After: "The Flock, {{price}} a year. You won't be charged until {{date}}. Cancel anytime before then from Membership and billing."
@@ -514,6 +599,11 @@ Format:
 - **Why:** <the reason, in plain language>
 - **To change it:** <what would need to change>
 ```
+
+### [#533](https://github.com/the-kya-project/perch-perfect-plan/pull/533) · 1.14a Dutch
+- Kept as names, in English: "the Flock", "Do good" and "Founding 50". "Free season" is "gratis periode" and "chapter" is "afdeling", as on the Dutch gift pages.
+- Dates, Stripe's Checkout and the Customer Portal follow the language the member is using. Prices stay in US dollars, because that's what Stripe charges.
+- The rest of the Flock has no Dutch yet, so a Dutch member sees Dutch billing screens inside a mostly English Flock.
 
 ### [#533](https://github.com/the-kya-project/perch-perfect-plan/pull/533) · 1.14a Card step and checkout design
 - **Decision (Brittany, Nov 23, 2026):** A card added in the free season's last 49 hours is no longer charged right away. Checkout saves the card, and the webhook starts the subscription with its first charge at the season's end, the same as everyone else.

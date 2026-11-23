@@ -11,7 +11,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { formatCents } from "./gifts";
-import { BILLING_CHOICES, billingDay, billingEnabled, checkoutDesign, checkoutPlan, firstCharge, saveCardExpiry, saveCardNote, liveSubscription, type BillingState, type PaidPlan } from "./billing";
+import { BILLING_CHOICES, billingDay, billingEnabled, checkoutDesign, checkoutPlan, firstCharge, saveCardExpiry, saveCardNote, checkoutNote, liveSubscription, type BillingLocale, type BillingState, type NoteT, type PaidPlan } from "./billing";
 
 type Ctx = { supabase: any; userId: string; claims: { email?: string } };
 
@@ -130,9 +130,16 @@ export type BillingCheckoutResult =
   | { ok: true; url: string }
   | { ok: false; reason: "off" | "on_file" | "not_ready" | "unavailable" | "error" };
 
+/** The member's language for Stripe's page and our sentence on it. */
+async function noteTranslator(locale: BillingLocale): Promise<NoteT> {
+  const { globalI18n } = await import("@/lib/i18n/i18n");
+  const fixed = globalI18n.getFixedT(locale);
+  return (key, text, v) => fixed(key, text, v) as string;
+}
+
 export const startBillingCheckout = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: { choice: string }) => z.object({ choice: z.enum(BILLING_CHOICES) }).parse(d))
+  .inputValidator((d: { choice: string; locale?: string }) => z.object({ choice: z.enum(BILLING_CHOICES), locale: z.enum(["en", "nl"]).default("en") }).parse(d))
   .handler(async ({ data, context }): Promise<BillingCheckoutResult> => {
     const ctx = context as Ctx;
     if (!(await allowed(ctx))) return { ok: false, reason: "off" };
@@ -154,15 +161,17 @@ export const startBillingCheckout = createServerFn({ method: "POST" })
       await Promise.all(open.data.filter((s) => s.metadata?.kind === "flock_billing").map((s) => stripe.checkout.sessions.expire(s.id)));
       const metadata = { kind: "flock_billing", user_id: ctx.userId, plan };
       const urls = { success_url: `${origin}/flock/you/membership?billing=done`, cancel_url: `${origin}/flock/you/membership` };
+      const locale = data.locale;
+      const noteT = await noteTranslator(locale);
       let session;
       if (fc.saveCardFirst && fc.trialEnd) {
         // Under 48 hours to the season's end, Checkout can't start the trial.
         // It saves the card, and the webhook starts the subscription.
         const amount = (await stripe.prices.retrieve(price)).unit_amount;
         if (amount == null) return { ok: false, reason: "unavailable" };
-        const note = saveCardNote(plan, formatCents(amount), billingDay(new Date(fc.trialEnd * 1000).toISOString()));
+        const note = saveCardNote(plan, formatCents(amount), billingDay(new Date(fc.trialEnd * 1000).toISOString(), locale), noteT);
         session = await stripe.checkout.sessions.create({
-          ...checkoutDesign(fc.trialEnd, note),
+          ...checkoutDesign(fc.trialEnd, note, locale),
           mode: "setup",
           customer,
           client_reference_id: ctx.userId,
@@ -174,7 +183,7 @@ export const startBillingCheckout = createServerFn({ method: "POST" })
         });
       } else {
         session = await stripe.checkout.sessions.create({
-          ...checkoutDesign(fc.trialEnd),
+          ...checkoutDesign(fc.trialEnd, fc.trialEnd ? checkoutNote(billingDay(new Date(fc.trialEnd * 1000).toISOString(), locale), noteT) : undefined, locale),
           mode: "subscription",
           customer,
           client_reference_id: ctx.userId,
@@ -199,7 +208,8 @@ export const startBillingCheckout = createServerFn({ method: "POST" })
 
 export const openBillingPortal = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .handler(async ({ context }): Promise<BillingCheckoutResult> => {
+  .inputValidator((d: { locale?: string }) => z.object({ locale: z.enum(["en", "nl"]).default("en") }).parse(d))
+  .handler(async ({ data: input, context }): Promise<BillingCheckoutResult> => {
     const ctx = context as Ctx;
     if (!(await allowed(ctx))) return { ok: false, reason: "off" };
     try {
@@ -211,6 +221,7 @@ export const openBillingPortal = createServerFn({ method: "POST" })
       const origin = new URL(getRequest().url).origin;
       const portal = await getBillingStripe().billingPortal.sessions.create({
         customer: data.stripe_customer_id,
+        locale: input.locale,
         return_url: `${origin}/flock/you/membership`,
       });
       return { ok: true, url: portal.url };

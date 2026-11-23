@@ -373,6 +373,8 @@ await check("1.14a: plan tiles show the per-month price, and the badge is only e
 });
 await check("1.14a: dates are the Flock's Eastern day, in the app and at Checkout", () => {
   assert.equal(billingDay("2027-03-02T04:59:00Z"), "Mar 1, 2027");
+  assert.equal(billingDay("2027-03-02T04:59:00Z", "nl"), "1 mrt 2027");
+  assert.equal(checkoutDesign(null, undefined, "nl").locale, "nl", "Stripe's page follows the member's language");
   const d = checkoutDesign(Date.parse("2027-03-02T04:59:00Z") / 1000);
   assert.equal(d.custom_text?.submit.message, "You won't be charged until Mar 1, 2027. Cancel anytime before then from Membership and billing.");
   assert.equal(d.branding_settings.background_color, "#1a3d2e");

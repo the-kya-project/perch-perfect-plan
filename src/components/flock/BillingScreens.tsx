@@ -7,6 +7,7 @@ import { Trans, useTranslation } from "react-i18next";
 import { K, SERIF } from "@/components/kya";
 import { billingDay, monthsFree, yearlyPerMonthCents, type BillingChoice, type PaidPlan } from "@/lib/billing";
 import { formatCents } from "@/lib/gifts";
+import { pickLocale } from "@/lib/i18n/config";
 
 export type BillingPricesCents = Partial<Record<PaidPlan, number>>;
 
@@ -398,9 +399,9 @@ export type MembershipSub = { plan: PaidPlan; status: "active" | "trialing" | "p
 /** BillingMembership. The mockup shows the free season; the other states use
  *  the same layout with the row that's true for them. */
 export function BillingMembership({ sub, busy, failed, onManage }: { sub: MembershipSub; busy: boolean; failed: boolean; onManage: () => void }) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const card = useCardValue(sub.last4);
-  const date = sub.periodEnd ? billingDay(sub.periodEnd) : null;
+  const date = sub.periodEnd ? billingDay(sub.periodEnd, pickLocale(i18n.language)) : null;
   const line = !sub.willRenew
     ? t("flock.billing.ends", "Your membership won't renew.")
     : sub.status === "trialing"
@@ -441,9 +442,9 @@ export function BillingMembership({ sub, busy, failed, onManage }: { sub: Member
 
 /** BillingPastDue: "Update my card" opens the Stripe Customer Portal. */
 export function BillingPastDue({ sub, busy, failed, onManage }: { sub: MembershipSub; busy: boolean; failed: boolean; onManage: () => void }) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const card = useCardValue(sub.last4);
-  const date = sub.periodEnd ? billingDay(sub.periodEnd) : null;
+  const date = sub.periodEnd ? billingDay(sub.periodEnd, pickLocale(i18n.language)) : null;
   return (
     <MembershipFrame>
       <section role="alert" data-testid="billing-past-due" style={{ background: K.amberBg, border: `2px solid ${K.amberText}`, borderRadius: 20, padding: 20, display: "flex", flexDirection: "column", gap: 12 }}>

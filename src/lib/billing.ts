@@ -208,8 +208,8 @@ export const CONFIRM_WAIT_MS = 2 * 60 * 1000;
 
 /** Billing dates, on the Flock's calendar (Eastern), so the app and Checkout
  *  always name the same day. */
-export function billingDay(iso: string): string {
-  return new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric", timeZone: "America/New_York" });
+export function billingDay(iso: string, locale: BillingLocale = "en"): string {
+  return new Date(iso).toLocaleDateString(locale === "nl" ? "nl-NL" : "en-US", { month: "short", day: "numeric", year: "numeric", timeZone: "America/New_York" });
 }
 
 /** The yearly plan's price per month, for the big number on its tile. */
@@ -241,15 +241,19 @@ export function billingScreen(step: Exclude<CardStep, { kind: "hidden" | "not_re
 
 /** The line above Checkout's button. Stripe needs it as text, so it's English
  *  until the Dutch is approved; the key keeps it in en.jsonc. */
-export function checkoutNote(date: string): string {
-  const t = (_key: string, text: string, v: { date: string }) => text.replace("{{date}}", v.date);
+/** Stripe's page language and ours. */
+export type BillingLocale = "en" | "nl";
+/** Translates a sentence on the server; English when none is passed. */
+export type NoteT = (key: string, text: string, v: Record<string, string>) => string;
+const plainNote: NoteT = (_key, text, v) => Object.entries(v).reduce((s, [k, x]) => s.replaceAll(`{{${k}}}`, x), text);
+
+export function checkoutNote(date: string, t: NoteT = plainNote): string {
   return t("flock.billing.checkoutNote", "You won't be charged until {{date}}. Cancel anytime before then from Membership and billing.", { date });
 }
 
 /** The same line when Checkout only saves the card. Stripe shows no plan or
  *  price on that page, so the sentence has to say what will be charged. */
-export function saveCardNote(plan: PaidPlan, price: string, date: string): string {
-  const t = (_key: string, text: string, v: { price: string; date: string }) => text.replace("{{price}}", v.price).replaceAll("{{date}}", v.date);
+export function saveCardNote(plan: PaidPlan, price: string, date: string, t: NoteT = plainNote): string {
   return plan === "annual"
     ? t("flock.billing.saveCardNoteYearly", "The Flock, {{price}} a year. You won't be charged until {{date}}. Cancel anytime before then from Membership and billing.", { price, date })
     : t("flock.billing.saveCardNoteMonthly", "The Flock, {{price}} a month. You won't be charged until {{date}}. Cancel anytime before then from Membership and billing.", { price, date });
@@ -265,9 +269,9 @@ export function saveCardExpiry(trialEnd: number, now: Date = new Date()): number
 /** Per-session branding, so nothing is changed in the Stripe Dashboard. The
  *  logo is a fixed production URL because Stripe can't fetch a protected
  *  preview. DM Sans isn't one of Stripe's fonts; Inter is the closest. */
-export function checkoutDesign(trialEnd: number | null, note?: string) {
+export function checkoutDesign(trialEnd: number | null, note?: string, locale: BillingLocale = "en") {
   return {
-    locale: "en" as const,
+    locale,
     branding_settings: {
       display_name: "Kya & Co.",
       background_color: "#1a3d2e",

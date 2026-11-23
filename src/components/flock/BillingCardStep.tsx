@@ -14,6 +14,7 @@ import {
 } from "@/components/flock/BillingScreens";
 import { getBillingState, openBillingPortal, startBillingCheckout } from "@/lib/billing.functions";
 import { billingDay, billingScreen, CONFIRM_WAIT_MS, cardStep, type BillingChoice } from "@/lib/billing";
+import { pickLocale } from "@/lib/i18n/config";
 import { isNativeApp } from "@/lib/nativeApp";
 
 export function BillingCardStep({ returned, page, soon }: {
@@ -23,7 +24,8 @@ export function BillingCardStep({ returned, page, soon }: {
   /** What that slot says while billing is off. */
   soon: ReactNode;
 }) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const locale = pickLocale(i18n.language);
   const navigate = useNavigate();
   // Read after mount, so the server render and the first browser render match.
   const [native, setNative] = useState<boolean | null>(null);
@@ -72,14 +74,14 @@ export function BillingCardStep({ returned, page, soon }: {
     if (res.ok) window.location.assign(res.url);
     else { setFailed(true); setBusy(false); }
   };
-  const checkout = (choice: BillingChoice) => go(() => checkoutFn({ data: { choice } }));
-  const manage = () => go(() => portalFn());
+  const checkout = (choice: BillingChoice) => go(() => checkoutFn({ data: { choice, locale } }));
+  const manage = () => go(() => portalFn({ data: { locale } }));
   const shared = { prices: data.prices, busy, failed, onCheckout: checkout };
 
   const screen = billingScreen(step, returned);
   if (screen === "confirming") return <BillingConfirming slow={slow} />;
   if (step.kind === "choose") {
-    const date = billingDay(step.firstChargeOn);
+    const date = billingDay(step.firstChargeOn, locale);
     if (screen === "after_season") return <CardStepAfterSeason {...shared} founding={step.founding} />;
     if (screen === "season_founder") return <CardStepSeasonFounder {...shared} date={date} spot={data.foundingSpot} />;
     return <CardStepSeasonMember {...shared} date={date} />;
@@ -98,7 +100,7 @@ export function BillingCardStep({ returned, page, soon }: {
         founder={step.plan === "founding"}
         spot={data.foundingSpot}
         plan={step.plan}
-        date={billingDay(step.firstChargeOn)}
+        date={billingDay(step.firstChargeOn, locale)}
         last4={sub.last4}
         onMembership={() => void navigate({ to: "/flock/you/membership", search: {}, replace: true })}
       />
