@@ -630,6 +630,11 @@ Format:
 - **To change it:** <what would need to change>
 ```
 
+### [#531](https://github.com/the-kya-project/perch-perfect-plan/pull/531) · 2.4 Open pages fetch the new build's files after a release
+- **Decision:** The pin is dropped before **every** update reload: the version check's (cache-busted address) and the service worker's (a plain reload, as before). The startup guard's reset after a missing code file, and the error screen's hard reset, are left as they are. The unpin waits at most 3 seconds; if it fails or times out (offline, or a page whose pinned build is older than this PR and has no `/api/public/unpin`), the page reloads anyway, exactly as it does today. The address is POST only, so a link or prefetch can never unpin anyone.
+- **Why:** the item says "when an update is ready, the app clears its own pin and reloads", which covers both kinds of update. The resets aren't updates, and they already reload with the worker and caches cleared. The 3-second limit is the reference branch's.
+- **To change it:** `unpinBuild` and `applyUpdate` in `src/lib/sw-register.ts`; `UNPIN_TIMEOUT_MS` in `src/lib/releaseCheck.ts`.
+
 ### [#525](https://github.com/the-kya-project/perch-perfect-plan/pull/525) · 1.14 Billing foundation (switched off) · approved and merged by Brittany, Nov 23, 2026
 - **Decision:** Test mode is enforced in code: billing refuses any Stripe key that isn't a test key (`getBillingStripe` in `src/lib/stripe.server.ts`), in every deployment, production included. Gifts keep using the live key as before.
 - **Why:** your approval was "test mode only". Putting it in code means turning `BILLING_ENABLED` on in production can't charge a real card by accident. Going live becomes a deliberate one-line code change you approve.
@@ -913,11 +918,8 @@ Format:
 - **Needs:** <the decision, approval or read, in one or two lines>
 ```
 
-### Free-user regression can't run: staging has a @thekyaproject.com account (Nov 23, from about 11:15 EST)
-- **Needs:** remove the `@thekyaproject.com` account from **staging** (`upygspynanvuxthgnaph`, not production), then re-run the failed "Free-user regression" checks. Since about 11:15 EST every run stops at its first step, "Rebuild the staging free account". That step is `supabase/staging/free-user.sql`, which refuses to touch a database holding a `@thekyaproject.com` account because that looks like production: "Refusing: a @thekyaproject.com account exists, so this looks like production." Runs can't change staging accounts.
-  - It may have been made by signing in to a preview during the 2.3 Simulator check. It started with #520's runs from its 11:13 and 11:15 EST commits.
-  - Until it's gone, no PR can pass this required check. That includes #529 and the record updates this run pushed to #520, #521, #523 and #525.
-- **Also:** the "Free-user regression" runs for **#523** and **#525** show *cancelled*, not failed. All runs of that check share one queue on staging, and GitHub drops a waiting run when a newer one joins the queue. They need "Re-run jobs" once staging is fixed. Runs aren't allowed to re-run checks.
+### [#531](https://github.com/the-kya-project/perch-perfect-plan/pull/531) · 2.4 Open pages fetch the new build's files after a release
+- **Needs:** your merge. It changes how every open page moves onto a new release (a short POST to `/api/public/unpin` before the reload), so a run can't merge it. No Vercel setting changes. The hands-on proof is 2.5's Simulator check (leave the app open across a release, then open the sitter preview).
 
 ### [#529](https://github.com/the-kya-project/perch-perfect-plan/pull/529) · 1.8 Do good voting (and the founding vote)
 - **Needs:** your look at the two admin screens, `/admin/votes` (the list) and `/admin/votes/<id>` (write a draft, open it, close early, extend, the announcement). They aren't in SpecVoting, and the specs say a screen that isn't mocked up is held for you. They follow the Library's admin screens. The member screens follow the mockup, apart from the voter avatars (see "Decisions agents made"). Say "merge" on the PR if they're fine, or what to change. It's behind the Flock gate, and the migration only adds tables, functions and a bucket.

@@ -109,3 +109,16 @@ export function parseBuildReload(raw: string | null): BuildReload | null {
     return null;
   }
 }
+
+/** Vercel's Skew Protection cookie: which build this browser's requests go to.
+ *  On Nov 2, 2026 the iOS web view kept it through a reload, so the "new" page
+ *  still got the old build's code files and the sitter preview stalled. Before
+ *  an update reloads, the page expires it through /api/public/unpin, so the
+ *  reload starts unpinned and lands on the live build (backlog 2.4, option B
+ *  in docs/skew-protection.md). */
+export const PIN_COOKIE = "__vdpl";
+/** The unpin address's answer: the same cookie, expired. */
+export const UNPIN_SET_COOKIE = `${PIN_COOKIE}=; Path=/; Max-Age=0; Secure; HttpOnly; SameSite=Strict`;
+/** Never hold up a reload longer than this waiting for the unpin answer
+ *  (offline, or a page whose pinned build predates the address): reload anyway. */
+export const UNPIN_TIMEOUT_MS = 3_000;
