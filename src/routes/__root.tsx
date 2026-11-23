@@ -34,7 +34,7 @@ import { initAnalytics, identifyUser, resetUser } from "@/lib/analytics";
 import { ensureProfileLocale } from "@/lib/ensureProfileLocale";
 import { applyOwnerLocale } from "@/lib/i18n/ownerLocale";
 import {
-  registerServiceWorker, installChunkErrorRecovery, hardResetAndReload,
+  registerServiceWorker, startReleaseCheck, installChunkErrorRecovery, hardResetAndReload,
   isStaleChunkError, staleChunkRecoveryExhausted, reloadForStaleChunk,
   markAppHealthySoon, STARTUP_FAILED_EVENT, pageCodeFailed,
 } from "@/lib/sw-register";
@@ -295,6 +295,9 @@ function RootComponent() {
     installChunkErrorRecovery(); // self-heal stale-build chunk 404s (incl. the sitter preview iframe)
     checkStylesApplied(); // report + one reset if the stylesheet never applied
     registerServiceWorker();
+    // Ask which build is live: the iOS app has no worker, and Skew Protection
+    // can hide a release from the worker's own check.
+    startReleaseCheck();
     // Native shell only: make a tapped push land on the screen it refers to.
     // Attached once at boot because the tap can happen while the app is cold —
     // Capacitor replays the event after launch, so a listener attached later
