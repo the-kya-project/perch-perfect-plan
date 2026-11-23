@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>After it closes, how the donation is shared</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&amp;family=Newsreader:ital,opsz,wght@0,6..72,700;1,6..72,600&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#2d6a4f}a:hover{color:#1a3d2e}
+.pc{background:#ffffff;border-radius:20px;padding:16px;display:flex;flex-direction:column;gap:12px}
+.logo{width:60px;height:60px;flex-shrink:0;border-radius:16px;display:grid;place-items:center;font-family:'Newsreader',Georgia,serif;font-size:24px;font-weight:700}
+.track{display:flex;height:12px;border-radius:999px;background:#eef3ed;overflow:hidden}
+.leg{display:flex;align-items:center;gap:8px;font-size:14px}
+.dot{width:12px;height:12px;border-radius:4px;flex-shrink:0}
+</style>
+</helmet>
+<div style="width: 390px; height: 1240px; box-sizing: border-box; display: flex; flex-direction: column; background: #1a3d2e; font-family: 'DM Sans', sans-serif; color: #1a3d2e; overflow: hidden">
+  <header style="position: relative; padding: 14px 20px 74px; color: #ffffff; display: flex; flex-direction: column; gap: 12px; overflow: hidden">
+    <a href="Main.dc.html" aria-label="Back" style="position: relative; width: 44px; height: 44px; border-radius: 999px; background: #12291f; color: #ffffff; display: grid; place-items: center"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg></a>
+    <p style="position: relative; margin: 0; font-size: 12px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: #cdeab0">Do good vote · closed [date] · 64 votes</p>
+    <h1 style="position: relative; margin: 0; font-family: 'Newsreader', Georgia, serif; font-weight: 700; font-size: 32px; line-height: 1.08">How this quarter's donation is <span style="font-style: italic; font-weight: 600; color: #f2b33d">handled</span></h1>
+    <p style="position: relative; margin: 0; font-size: 15px; line-height: 1.5; color: #d6e8dc">Every partner gets at least 10%. Your votes decided the rest.</p>
+  </header>
+  <main style="flex-grow: 1; margin-top: -30px; border-radius: 26px 26px 0 0; background: #f1f5f0; padding: 0 16px 28px; display: flex; flex-direction: column; gap: 14px">
+    <section style="margin-top: -22px; position: relative; background: #ffffff; border-radius: 22px; padding: 18px; display: flex; align-items: center; gap: 16px; box-shadow: 0 10px 24px rgba(26,61,46,0.14)">
+      <div style="position: relative; width: 140px; height: 140px; flex-shrink: 0">
+        <svg width="140" height="140" viewBox="0 0 140 140" role="img" aria-label="Donation shares: [Conservation project B] 44%, [Partner rescue A] 33%, [Partner rescue C] 23%" style="transform: rotate(-90deg)">
+          <circle cx="70" cy="70" r="56" fill="none" stroke="#eef3ed" stroke-width="20"/>
+          <circle cx="70" cy="70" r="56" fill="none" stroke="#f2b33d" stroke-width="20" stroke-dasharray="150.8 351.9" stroke-dashoffset="0"/>
+          <circle cx="70" cy="70" r="56" fill="none" stroke="#2d6a4f" stroke-width="20" stroke-dasharray="112.1 351.9" stroke-dashoffset="-154.8"/>
+          <circle cx="70" cy="70" r="56" fill="none" stroke="#9bcab8" stroke-width="20" stroke-dasharray="76.9 351.9" stroke-dashoffset="-270.9"/>
+        </svg>
+        <div style="position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center">
+          <span style="font-family: 'Newsreader', Georgia, serif; font-size: 30px; font-weight: 700; line-height: 1">3</span>
+          <span style="font-size: 12px; color: #5f5e5a">partners</span>
+        </div>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 10px; min-width: 0">
+        <div class="leg"><span class="dot" style="background: #f2b33d"></span><span style="flex-grow: 1">[Project B]</span><strong>44%</strong></div>
+        <div class="leg"><span class="dot" style="background: #2d6a4f"></span><span style="flex-grow: 1">[Rescue A]</span><strong>33%</strong></div>
+        <div class="leg"><span class="dot" style="background: #9bcab8"></span><span style="flex-grow: 1">[Rescue C]</span><strong>23%</strong></div>
+      </div>
+    </section>
+    <section class="pc">
+      <div style="display: flex; align-items: center; gap: 14px">
+        <span class="logo" role="img" aria-label="[Conservation project B] logo" style="background: #f2b33d; color: #1a3d2e">B</span>
+        <span style="flex-grow: 1; display: flex; flex-direction: column; gap: 3px"><span style="font-size: 16px; font-weight: 700">[Conservation project B]</span><span style="font-size: 13px; color: #5f5e5a">48% of the votes</span></span>
+        <span style="font-family: 'Newsreader', Georgia, serif; font-size: 32px; font-weight: 700; line-height: 1">44%</span>
+      </div>
+      <div class="track"><span style="width: 10%; background: #f6e7c4"></span><span style="width: 34%; background: #f2b33d"></span></div>
+      <span style="font-size: 13px; color: #3d4f45">10% guaranteed + 34% from votes</span>
+    </section>
+    <section class="pc">
+      <div style="display: flex; align-items: center; gap: 14px">
+        <span class="logo" role="img" aria-label="[Partner rescue A] logo" style="background: #2d6a4f; color: #ffffff">A</span>
+        <span style="flex-grow: 1; display: flex; flex-direction: column; gap: 3px"><span style="font-size: 16px; font-weight: 700">[Partner rescue A]</span><span style="font-size: 13px; color: #5f5e5a">33% of the votes</span></span>
+        <span style="font-family: 'Newsreader', Georgia, serif; font-size: 32px; font-weight: 700; line-height: 1">33%</span>
+      </div>
+      <div class="track"><span style="width: 10%; background: #b9d3c4"></span><span style="width: 23%; background: #2d6a4f"></span></div>
+      <span style="font-size: 13px; color: #3d4f45">10% guaranteed + 23% from votes</span>
+    </section>
+    <section class="pc">
+      <div style="display: flex; align-items: center; gap: 14px">
+        <span class="logo" role="img" aria-label="[Partner rescue C] logo" style="background: #9bcab8; color: #1a3d2e">C</span>
+        <span style="flex-grow: 1; display: flex; flex-direction: column; gap: 3px"><span style="font-size: 16px; font-weight: 700">[Partner rescue C]</span><span style="font-size: 13px; color: #5f5e5a">19% of the votes</span></span>
+        <span style="font-family: 'Newsreader', Georgia, serif; font-size: 32px; font-weight: 700; line-height: 1">23%</span>
+      </div>
+      <div class="track"><span style="width: 10%; background: #dbeae3"></span><span style="width: 13%; background: #9bcab8"></span></div>
+      <span style="font-size: 13px; color: #3d4f45">10% guaranteed + 13% from votes</span>
+    </section>
+    <section style="background: #1a3d2e; color: #ffffff; border-radius: 20px; padding: 18px; display: flex; flex-direction: column; gap: 12px">
+      <div style="display: flex; align-items: center; gap: 12px">
+        <span style="width: 44px; height: 44px; border-radius: 999px; background: #cdeab0; color: #1a3d2e; display: grid; place-items: center; font-family: 'Newsreader', Georgia, serif; font-size: 20px; font-weight: 700">B</span>
+        <span style="display: flex; flex-direction: column; gap: 2px"><span style="font-size: 15px; font-weight: 700">A note from Brittany</span><span style="font-size: 12px; color: #d6e8dc">The Kya Project</span></span>
+      </div>
+      <p style="margin: 0; font-family: 'Newsreader', Georgia, serif; font-size: 18px; line-height: 1.45">[Your announcement: thanks for voting, what happens next, and when the donation goes out]</p>
+    </section>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":1240}}'>
+class Component extends DCLogic {
+renderVals() {
+return {};
+}
+}
+</script>
+</body>
+</html>

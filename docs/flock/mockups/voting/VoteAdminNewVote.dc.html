@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Writing a new vote</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&amp;family=Newsreader:opsz,wght@6..72,700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#2d6a4f}a:hover{color:#1a3d2e}
+.lab{display:block;font-size:13.5px;font-weight:700;margin-bottom:6px;color:#1a3d2e}
+.fld{box-sizing:border-box;width:100%;min-height:48px;padding:0 14px;border:2px solid #dbe3da;border-radius:14px;background:#ffffff;font-family:'DM Sans',sans-serif;font-size:15px;color:#1a3d2e}
+.hint{margin:6px 2px 0;font-size:13px;line-height:1.45;color:#5f5e5a}
+.seg{min-height:44px;padding:0 16px;border-radius:999px;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:700}
+.ch{background:#ffffff;border-radius:16px;padding:12px;display:flex;flex-direction:column;gap:8px;border:1px solid #e3ebe2}
+.ib{width:44px;height:44px;border-radius:999px;border:0;background:#f1f5f0;color:#1a3d2e;display:grid;place-items:center;padding:0}
+.photo{width:44px;height:44px;flex-shrink:0;border-radius:10px;display:grid;place-items:center;font-weight:700;color:#ffffff}
+</style>
+</helmet>
+<div style="width: 390px; height: 1560px; box-sizing: border-box; display: flex; flex-direction: column; background: #1a3d2e; font-family: 'DM Sans', sans-serif; color: #1a3d2e; overflow: hidden">
+  <header style="padding: 14px 20px 46px; color: #ffffff; display: flex; flex-direction: column; gap: 12px">
+    <a href="List.dc.html" aria-label="Back" style="width: 44px; height: 44px; border-radius: 999px; background: #12291f; color: #ffffff; display: grid; place-items: center"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg></a>
+    <h1 style="margin: 0; font-family: 'Newsreader', Georgia, serif; font-weight: 700; font-size: 30px; line-height: 1.15">New vote</h1>
+    <p style="margin: 0; font-size: 14px; color: #d6e8dc">A draft. Only admins can see it.</p>
+  </header>
+  <main style="flex-grow: 1; margin-top: -26px; border-radius: 26px 26px 0 0; background: #f1f5f0; padding: 22px 16px 28px; display: flex; flex-direction: column; gap: 20px">
+    <div><label class="lab" for="nv-q">Question</label><input id="nv-q" class="fld" type="text" value="Where should this quarter's donation go?"></div>
+    <div><label class="lab" for="nv-d">Short description (optional)</label><textarea id="nv-d" class="fld" style="min-height: 84px; padding: 12px 14px; resize: none">[Your short description of the vote]</textarea></div>
+    <div>
+      <span class="lab">Who votes</span>
+      <div role="radiogroup" aria-label="Who votes" style="display: flex; flex-wrap: wrap; gap: 8px">
+        <button type="button" role="radio" aria-checked="true" class="seg" style="border: 2px solid #1a3d2e; background: #1a3d2e; color: #ffffff">All members</button>
+        <button type="button" role="radio" aria-checked="false" class="seg" style="border: 2px solid #dbe3da; background: #ffffff; color: #1a3d2e">Founders only</button>
+      </div>
+    </div>
+    <div><label class="lab" for="nv-c">Closes</label><input id="nv-c" class="fld" type="text" value="[date] · [time]"><p class="hint">Your local time. You can close it early or extend it once it's open.</p></div>
+    <div style="display: flex; flex-direction: column; gap: 10px">
+      <span class="lab" style="margin-bottom: 0">Choices</span>
+      <p class="hint" style="margin-top: -6px">Two to eight. Each has a name, a sentence or two, and the partner's logo or a photo. Every choice gets at least 10% of the donation, and the votes share out the rest.</p>
+      <div class="ch">
+        <div style="display: flex; gap: 10px; align-items: center"><span class="photo" style="background: #2d6a4f">A</span><input aria-label="Choice 1 name" class="fld" type="text" value="[Partner rescue A]"></div>
+        <textarea aria-label="Choice 1 description" class="fld" style="min-height: 64px; padding: 10px 14px; resize: none">[A sentence or two about this partner]</textarea>
+        <div style="display: flex; gap: 6px; align-items: center"><button type="button" style="min-height: 44px; padding: 0 12px; border-radius: 999px; border: 2px solid #1a3d2e; background: #ffffff; font-family: 'DM Sans', sans-serif; font-size: 13.5px; font-weight: 700; color: #1a3d2e">Replace logo</button><span style="flex-grow: 1"></span><button type="button" class="ib" aria-label="Move choice 1 up" disabled style="opacity: 0.4"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5M5 12l7-7 7 7"/></svg></button><button type="button" class="ib" aria-label="Move choice 1 down"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12l7 7 7-7"/></svg></button><button type="button" class="ib" aria-label="Remove choice 1"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
+      </div>
+      <div class="ch">
+        <div style="display: flex; gap: 10px; align-items: center"><span class="photo" style="background: #f2b33d; color: #1a3d2e">B</span><input aria-label="Choice 2 name" class="fld" type="text" value="[Conservation project B]"></div>
+        <textarea aria-label="Choice 2 description" class="fld" style="min-height: 64px; padding: 10px 14px; resize: none">[A sentence or two about this partner]</textarea>
+        <div style="display: flex; gap: 6px; align-items: center"><button type="button" style="min-height: 44px; padding: 0 12px; border-radius: 999px; border: 2px solid #1a3d2e; background: #ffffff; font-family: 'DM Sans', sans-serif; font-size: 13.5px; font-weight: 700; color: #1a3d2e">Replace logo</button><span style="flex-grow: 1"></span><button type="button" class="ib" aria-label="Move choice 2 up"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5M5 12l7-7 7 7"/></svg></button><button type="button" class="ib" aria-label="Move choice 2 down"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12l7 7 7-7"/></svg></button><button type="button" class="ib" aria-label="Remove choice 2"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
+      </div>
+      <div class="ch">
+        <div style="display: flex; gap: 10px; align-items: center"><span class="photo" role="img" aria-label="No logo yet" style="background: #ffffff; border: 2px dashed #9bb5a8; color: #5f5e5a; box-sizing: border-box"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="9" cy="10" r="2"/><path d="M21 16l-5-5-8 8"/></svg></span><input aria-label="Choice 3 name" class="fld" type="text" value="[Partner rescue C]"></div>
+        <textarea aria-label="Choice 3 description" class="fld" style="min-height: 64px; padding: 10px 14px; resize: none">[A sentence or two about this partner]</textarea>
+        <div style="display: flex; gap: 6px; align-items: center"><button type="button" style="min-height: 44px; padding: 0 12px; border-radius: 999px; border: 2px solid #1a3d2e; background: #ffffff; font-family: 'DM Sans', sans-serif; font-size: 13.5px; font-weight: 700; color: #1a3d2e">Add logo or photo</button><span style="flex-grow: 1"></span><button type="button" class="ib" aria-label="Move choice 3 up"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5M5 12l7-7 7 7"/></svg></button><button type="button" class="ib" aria-label="Move choice 3 down" disabled style="opacity: 0.4"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12l7 7 7-7"/></svg></button><button type="button" class="ib" aria-label="Remove choice 3"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
+      </div>
+      <button type="button" style="min-height: 48px; border-radius: 999px; border: 2px solid #1a3d2e; background: #ffffff; color: #1a3d2e; font-family: 'DM Sans', sans-serif; font-size: 15px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; gap: 8px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>Add a choice</button>
+    </div>
+    <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 4px">
+      <a href="OpenVote.dc.html" style="display: flex; min-height: 52px; align-items: center; justify-content: center; border-radius: 999px; border: 2px solid #1a3d2e; background: #f2b33d; color: #1a3d2e; font-size: 16px; font-weight: 700; text-decoration: none">Open the vote</a>
+      <button type="button" style="min-height: 48px; border-radius: 999px; border: 2px solid #1a3d2e; background: #ffffff; color: #1a3d2e; font-family: 'DM Sans', sans-serif; font-size: 15px; font-weight: 700">Save draft</button>
+      <button type="button" style="align-self: center; min-height: 44px; border: 0; background: transparent; color: #a32d2d; font-family: 'DM Sans', sans-serif; font-size: 15px; font-weight: 700; display: inline-flex; align-items: center; gap: 6px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/></svg>Delete draft</button>
+    </div>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":1560}}'>
+class Component extends DCLogic {
+renderVals() {
+return {};
+}
+}
+</script>
+</body>
+</html>

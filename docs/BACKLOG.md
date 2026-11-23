@@ -22,15 +22,6 @@ Where these items came from, with the detail behind each: `docs/flock/opening-sc
 
 ## Ready to build
 
-### 2.4 Open pages fetch the new build's files after a release
-- **Done means:** after a release, an open page's next request reaches the new build, not the old one Vercel's Skew Protection pinned it to, so the sitter preview can't load a page whose code files are missing. When an update is ready, the app clears its own pin through a small unpin address (`/api/public/unpin`) and reloads onto the new release.
-- **Decision (Brittany, Nov 22, 2026):** option B in [`docs/skew-protection.md`](skew-protection.md). Skew Protection stays on, with no Vercel setting change.
-- **Reference:** branch `fix/native-release-catchup` (`src/routes/api/public/unpin.ts`).
-- **Size:** M
-- **Depends on:** 2.3
-- **Overnight alone:** yes
-- **Needs Brittany:** merge. It changes how open pages update for current users, so a run holds the PR for her. Any change to Vercel settings is hers.
-
 ### D1.1 Weight baseline rules and a replay of real history
 - **Done means:**
   - A pure function works out each bird's own normal weight by meal state (before a meal, after a meal, or not labeled). It shows "still learning" until there are at least 7 weigh-ins over at least 14 days, and returns the alert tier: "worth watching", "keep an eye on this" or "call your vet today".
@@ -71,19 +62,6 @@ Where these items came from, with the detail behind each: `docs/flock/opening-sc
 - **Depends on:** 1.14 merged
 - **Overnight alone:** yes (built to a held PR)
 - **Needs Brittany:** hold the PR for her approval (payments). Show worked examples of a code with a trial in the PR, so she can confirm how "stack" and "whichever is best" combine.
-
-### 1.8 Do good voting (and the founding vote)
-- **Spec:** [Do good voting and the founding vote](flock/specs/feature-specs.md#do-good-voting-and-the-founding-vote-18) · **Mockup:** [`SpecVoting.dc.html`](flock/mockups/SpecVoting.dc.html)
-- **Done means:**
-  - An open vote shows as a card at the top of Do good and on Today. A member picks one choice and can change it until the vote closes. Before it closes, members see only that they voted and how many have voted.
-  - After it closes, everyone sees percentages, the winner and Brittany's note. Under 10 votes, results say "too few votes to share" and only admins see counts.
-  - Admins create a vote (question, description, two to eight choices, all members or founders only, close date), open, close early or extend it, write the announcement, and see full counts at any time.
-  - Founders-only votes show only to founding members, with a founder badge. Nobody, admins included, can see how a specific member voted.
-  - Close dates are admin settings. The dates in the mockup are samples.
-- **Size:** L
-- **Depends on:** nothing
-- **Overnight alone:** yes
-- **Needs Brittany:** merge only, under the normal rules. The first votes' choices are her content. The tool records who was chosen and moves no money.
 
 ### 1.7 Instagram share cards for journeys
 - **Spec:** [Instagram share cards for journeys](flock/specs/feature-specs.md#instagram-share-cards-for-journeys-17) · **Mockup:** [`SpecShareCards.dc.html`](flock/mockups/SpecShareCards.dc.html)
@@ -331,7 +309,9 @@ The launch PR itself (1.18) is already merged dark. What's left before opening i
 ## Done
 
 - **1.4** The daily `flock-purge` hook first runs `flock_moderation_purge` (`20261123193000_flock_removed_purge.sql`, service role only): posts and comments a reviewer removed 180+ days ago move, with the comments under them, into 1.3's `flock_deleted_items` already due, so the same run deletes them and their photos; reports closed 180+ days ago are deleted. Removed journey updates are left for Brittany's call. Pinned in `supabase/checks/flock_moderation_checks.sql` and `npm run test:flock-purge`. Held for Brittany (it deletes data): #534.
+- **2.4** Every update reload (the version check's and the service worker's alike) first expires Vercel's Skew Protection pin (`__vdpl`) with a POST to the new `/api/public/unpin`, waiting at most 3 seconds, then reloads, so the reloaded page gets the new build's files; Skew Protection stays on and no Vercel setting changed (option B). Pinned by `npm run test:release-check`: #531 (held for Brittany's merge; 2.5's Simulator check covers it hands-on).
 - **1.14** Billing foundation, switched off (`BILLING_ENABLED` must be exactly `true`) and Stripe test mode only, enforced in code: `billing_customers`, `billing_events`, `entitlements.product_id` / `will_renew` / `cancel_at_period_end`, `founding_claims.released_at` / `forfeited_at`, and the service-role functions the webhook writes through (`20261123180000_billing_foundation.sql`, `supabase/checks/billing_checks.sql`); the webhook `/api/public/stripe/billing` (`STRIPE_BILLING_WEBHOOK_SECRET`, re-reads each subscription, idempotent on the event id); the card step on Membership (`/flock/you/membership`, $0 until the free season's end, founders get $15, never in the native app); `npm run test:billing`. Held for Brittany (payments): #525. Approved and merged by Brittany (Nov 23, 2026), PR #525.
+- **1.8** Do good voting and the founding vote: an open vote is a card on Today and at the top of Do good (founders-only ones only for founders, with a Founders pill). Members vote once, and it's final (enforced in the database), seeing only how many have voted. The vote shares the donation: every choice gets a guaranteed 10%, the rest is split by share of the votes, always totalling 100%, evenly if no one votes, and results always show. Founders-only votes (Q&As, chapters) have no donation and show plain percentages and the top choice. Admins write drafts (question, description, 2–8 choices with a logo or photo, audience, close date), open, close early, extend, announce and see counts at any time at `/admin/votes`; nobody can see how a member voted. Matches Brittany's approved mockups in `docs/flock/mockups/voting/`. Behind the Flock gate; nothing seeded (the first votes are Brittany's content): #529.
 - **1.3** Deleting a post or comment moves it, with the comments under it, into `flock_deleted_items`, so it's hidden from everyone at once, the author included. The daily job `flock-deleted-purge-daily` (`/api/public/hooks/flock-purge`) deletes it and its photos for good 180 days later. Deleting an account removes its held items at once. Pinned in `supabase/checks/flock_posts_checks.sql` and `npm run test:flock-purge`. Approved and merged by Brittany (Nov 23, 2026): #522.
 - **D2.1** Home shows the day's card from the seasonal calendar (D3) under the Today list: the reader's own date, read after the page loads; their language; US or Dutch holidays from the account's home time zone. Behind its own switch, `today_cards` in `public.care_features` (off / admins / everyone). Redesigned Nov 23 with illustrations, tints, labels, an end date and a per-account "Got it" (`public.today_card_dismissals`). Pinned by `npm run test:today-card`, `supabase/checks/care_features_checks.sql` and `supabase/checks/today_card_dismissals_checks.sql`. Approved and merged by Brittany: #523. Switched on for everyone on Nov 23, 2026: for admins at 12:08 PM Eastern, where Brittany checked the card on her own account, then for everyone at 12:09 PM Eastern. Brittany decided to skip the before-and-after Home screenshots this item called for before going to everyone.
 - **2.3** Every open production page (not a frame) asks `/api/public/version` which build is live, on launch, hourly and on each return to the foreground (including the native app's `resume`), through a hidden frame so Skew Protection's pin can't hide a release; a newer build reloads quietly at a safe moment or waits behind "A new version is ready", once per build: #520 (approved and merged by Brittany, Nov 23, 2026).
