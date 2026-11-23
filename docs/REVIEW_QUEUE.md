@@ -19,6 +19,51 @@ Format:
   - After: "<new wording>"
 ```
 
+### [#523](https://github.com/the-kya-project/perch-perfect-plan/pull/523) · D2.1 Seasonal and holiday Today cards on Home
+
+Not merged yet: held for Brittany. English is her approved wording (Nov 23, 2026).
+
+**New labels (English / Dutch):** Seasonal tip / Seizoenstip · Holiday helper / Feestdagenhulp · Got it / Begrepen · Through {{date}} / T/m {{date}} · Couldn't hide this card. Try again. / Deze kaart verbergen is niet gelukt. Probeer het opnieuw. (the last one is the error if saving "Got it" fails, added by this change).
+
+- `seasonal.winterDrafts.body`
+  - Before: Check the cage isn't near a drafty window, an outside door or a heating vent. A cover at night helps hold in warmth.
+  - After: Check the cage isn't near a drafty window, an outside door, or a heating vent. A cover at night helps hold in warmth.
+  - Dutch before: Zet de kooi niet bij een tochtig raam, een buitendeur of een verwarmingsrooster. Een kooideken 's nachts houdt de warmte vast.
+  - Dutch after: Controleer of de kooi niet bij een tochtig raam, een buitendeur of een verwarmingsrooster staat. Een kooideken 's nachts houdt de warmte vast.
+- `seasonal.springCleaning.body`
+  - Before: Strong cleaners, sprays and fresh paint give off fumes. Move your bird to another room with fresh air while you clean, and choose bird-safe products.
+  - After: Strong cleaners, sprays, and fresh paint give off fumes. Move your bird to another room with fresh air while you clean, and choose bird-safe products.
+  - Dutch: unchanged (same meaning; Dutch doesn't use the Oxford comma)
+- `seasonal.summerTravel.body`
+  - Before: Going away? Share the care plan with your sitter before you leave, and put your avian vet's number where they'll see it.
+  - After: Going away? Share the care plan with your pet sitter before you leave, and put your avian vet's number where they'll see it.
+  - Dutch: unchanged (same meaning; Dutch doesn't use the Oxford comma)
+- `seasonal.thanksgiving.body`
+  - Before: Keep your bird well away from the kitchen: overheated non-stick pans and the oven's self-clean setting give off fumes that are dangerous to birds.
+  - After: Keep your bird well away from the kitchen. Overheated non-stick pans and the oven's self-clean setting give off fumes that are dangerous to birds.
+  - Dutch before: Houd je vogel ver uit de keuken: oververhitte pannen met antiaanbaklaag en de zelfreinigingsstand van de oven geven dampen af die gevaarlijk zijn voor vogels.
+  - Dutch after: Houd je vogel ver uit de keuken. Oververhitte pannen met antiaanbaklaag en de zelfreinigingsstand van de oven geven dampen af die gevaarlijk zijn voor vogels.
+- `seasonal.sinterklaas.body`
+  - Before: Keep chocolate letters, pepernoten and other sweets out of your bird's reach, and pick up wrapping paper and ribbon.
+  - After: Keep chocolate letters, pepernoten, and other sweets out of your bird's reach, and pick up wrapping paper and ribbon.
+  - Dutch: unchanged (same meaning; Dutch doesn't use the Oxford comma)
+- `seasonal.holidayDecorations.body`
+  - Before: Tinsel, glass ornaments and string lights are tempting to chew. Keep them out of reach, and stay close whenever your bird is near the tree.
+  - After: Tinsel, glass ornaments, and string lights are tempting to chew. Keep them out of reach, and stay close whenever your bird is near the tree.
+  - Dutch: unchanged (same meaning; Dutch doesn't use the Oxford comma)
+- `seasonal.holidayCandles.body`
+  - Before: Keep lit candles, scented sprays and plug-in air fresheners out of the room your bird is in, and never leave a flame unattended.
+  - After: Keep lit candles, scented sprays, and plug-in air fresheners out of the room your bird is in, and never leave a flame unattended.
+  - Dutch: unchanged (same meaning; Dutch doesn't use the Oxford comma)
+- `seasonal.holidayTravel.body`
+  - Before: If you're traveling, share the care plan with your sitter before you go. If your bird is coming along, pack familiar food and toys.
+  - After: If you're traveling, share the care plan with your pet sitter before you go. If your bird is coming along, pack familiar food and toys.
+  - Dutch: unchanged (same meaning; Dutch doesn't use the Oxford comma)
+- `seasonal.holidayMeals.body`
+  - Before: Keep chocolate, avocado, alcohol and salty or fatty foods away from your bird, and ask guests not to share from their plates.
+  - After: Keep chocolate, avocado, alcohol, and salty or fatty foods away from your bird, and ask guests not to share from their plates.
+  - Dutch: unchanged (same meaning; Dutch doesn't use the Oxford comma)
+
 ### [#528](https://github.com/the-kya-project/perch-perfect-plan/pull/528) · 1.6 Curated chapter collections
 All new, behind the Flock gate (admins only today). Where the mockup has wording, it's used as is.
 - **Where:** Chapter → Resources (replaces the empty state)
@@ -160,6 +205,16 @@ Format:
 - **Why:** <the reason, in plain language>
 - **To change it:** <what would need to change>
 ```
+
+### [#523](https://github.com/the-kya-project/perch-perfect-plan/pull/523) · D2.1 Seasonal and holiday Today cards on Home
+
+- **Decision:** A card's end date is the last day of its unbroken run for that reader, so a season card interrupted by a holiday shows the day before the holiday (US, Nov 23: "Through Nov 23"), and "Got it" hides it through that day. It can come back after the holiday, because a different card has come up in between.
+- **Why:** the brief says "until a different card comes up" and an end date "for that reader". Saving the end date with the dismissal also means a card returns normally next year.
+
+### [#523](https://github.com/the-kya-project/perch-perfect-plan/pull/523) · D2.1 Seasonal and holiday Today cards on Home
+
+- **Decision:** "Pet sitter" stays "oppas" in Dutch, and "Holiday helper" is "Feestdagenhulp".
+- **Why:** the locked glossary makes "sitter" "oppas" everywhere in the app. "Feestdagenhulp" is the closest short label for the pill.
 
 ### [#523](https://github.com/the-kya-project/perch-perfect-plan/pull/523) · D2.1 Seasonal and holiday Today cards on Home
 - **Decision:** The switch is a new table, `public.care_features` (`today_cards`, off / admins / everyone, starting off), built the same way as the health switches, rather than a row in `health_features`. "Brittany's account only" is `admins`: production has exactly one admin account (checked read-only, a count).

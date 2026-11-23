@@ -13,8 +13,19 @@
  * failure so it can gate a merge.
  */
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
-import { seasonalRegionForTimeZone, todayCardFor } from "@/lib/todayCard";
+import { existsSync, readFileSync } from "node:fs";
+import {
+  formatTodayCardEnd,
+  isTodayCardDismissed,
+  seasonalRegionForTimeZone,
+  todayCardFor,
+} from "@/lib/todayCard";
+import {
+  SEASONAL_CARD_TONES,
+  SEASONAL_TONES,
+  seasonalImageFor,
+  seasonalLabelFor,
+} from "@/lib/seasonalCardStyle";
 import { SEASONAL_CARDS } from "@/lib/seasonalCalendar";
 import { localDateISO } from "@/lib/localDay";
 import { CARE_FEATURES } from "@/lib/careFeatures";
@@ -130,7 +141,7 @@ check("the date is read in an effect, never during render", () => {
   const firstDateRead = card.indexOf("localDateISO()");
   assert.ok(firstDateRead > effect, "localDateISO() is called before the effect");
   assert.ok(!/new Date\(/.test(card), "the card reads the clock outside localDateISO");
-  assert.match(card, /if \(enabled !== true \|\| !day\) return null;/);
+  assert.match(card, /if \(enabled !== true \|\| !day \|\| !userId \|\| dismissal\.isPending\) return null;/);
 });
 check("the card reads its own switch and never the Flock's Today's idea", () => {
   assert.match(card, /useCareFeature\("today_cards"\)/);
@@ -138,7 +149,7 @@ check("the card reads its own switch and never the Flock's Today's idea", () => 
 });
 check("Home shows the card outside the onboarding tour's demo", () => {
   const home = readFileSync("src/routes/_authenticated/dashboard.tsx", "utf8");
-  assert.match(home, /\{!demo && <SeasonalTodayCard homeTimeZone=\{me\?\.timeZone\} \/>\}/);
+  assert.match(home, /\{!demo && <SeasonalTodayCard userId=\{me\?\.id\} homeTimeZone=\{me\?\.timeZone\} \/>\}/);
 });
 check("today_cards starts off in the code, the migration and the database check", () => {
   const expected = Object.fromEntries(CARE_FEATURES.map((f) => [f.feature, f.startsAt]));
@@ -153,6 +164,80 @@ check("today_cards starts off in the code, the migration and the database check"
   const m = /expected_features jsonb := '([^']+)'/.exec(sqlCheck);
   assert.ok(m, "no expected_features in the check");
   assert.deepEqual(JSON.parse(m![1]), expected);
+});
+
+console.log("Labels, tones and images");
+check("season cards and the clock changes say Seasonal tip; other holidays say Holiday helper", () => {
+  const tips = new Set(["clocksForward", "clocksBack"]);
+  for (const c of SEASONAL_CARDS) {
+    const expected = c.kind === "season" || tips.has(c.id) ? "seasonalTip" : "holidayHelper";
+    assert.equal(seasonalLabelFor(c), expected, c.id);
+  }
+});
+check("every card has a tone and an image, and nothing extra", () => {
+  assert.deepEqual(Object.keys(SEASONAL_CARD_TONES).sort(), SEASONAL_CARDS.map((c) => c.id).sort());
+  for (const c of SEASONAL_CARDS) {
+    assert.ok(SEASONAL_TONES[SEASONAL_CARD_TONES[c.id]], `${c.id} tone`);
+    assert.ok(existsSync(`public${seasonalImageFor(c.id)}`), `${c.id} image`);
+  }
+});
+check("the tones use the approved colors", () => {
+  assert.deepEqual(
+    Object.fromEntries(Object.entries(SEASONAL_TONES).map(([k, v]) => [k, [v.band, v.body]])),
+    {
+      teal: ["#c9e4dc", "#ebf5f1"], forest: ["#12291f", "#1a3d2e"], blush: ["#f4d3c8", "#fcede7"],
+      lime: ["#cdeab0", "#eff7e6"], sun: ["#f9dc8c", "#fdf3d4"], apricot: ["#f6c896", "#fdecd9"],
+    },
+  );
+  assert.equal(SEASONAL_TONES.forest.title, "#ffffff");
+  assert.equal(SEASONAL_TONES.forest.pillBg, "#cdeab0");
+  assert.equal(SEASONAL_TONES.sun.pillBg, "#ffffff");
+});
+
+console.log("When the card ends");
+check("Thanksgiving ends on Thursday, for a US reader", () => {
+  assert.equal(todayCardFor("2026-11-24", "America/Chicago")?.endsOn, "2026-11-26");
+});
+check("a holiday cuts a season card short only where it applies", () => {
+  assert.equal(todayCardFor("2026-11-23", "America/Chicago")?.endsOn, "2026-11-23");
+  assert.equal(todayCardFor("2026-11-23", "Europe/Amsterdam")?.endsOn, "2026-11-30");
+});
+check("New Year's runs over the year's end", () => {
+  assert.equal(todayCardFor("2026-12-30", null)?.endsOn, "2027-01-01");
+});
+check("the date reads naturally in English and Dutch", () => {
+  assert.equal(formatTodayCardEnd("2026-11-26", "en"), "Nov 26");
+  assert.match(formatTodayCardEnd("2026-11-26", "nl"), /^26 nov\.?$/);
+});
+
+console.log("Got it");
+check("dismissing hides that card through its last day", () => {
+  const t = todayCardFor("2026-11-24", "America/Chicago")!;
+  const d = { cardId: t.card.id, through: t.endsOn };
+  assert.equal(isTodayCardDismissed(t, "2026-11-24", d), true);
+  assert.equal(isTodayCardDismissed(todayCardFor("2026-11-26", "America/Chicago")!, "2026-11-26", d), true);
+});
+check("the next card appears the day after", () => {
+  const t = todayCardFor("2026-11-26", "America/Chicago")!;
+  const d = { cardId: t.card.id, through: t.endsOn };
+  const next = todayCardFor("2026-11-27", "America/Chicago")!;
+  assert.equal(next.card.id, "autumnHeating");
+  assert.equal(isTodayCardDismissed(next, "2026-11-27", d), false);
+});
+check("the same card comes back next year", () => {
+  const d = { cardId: "thanksgiving", through: "2026-11-26" };
+  const nextYear = todayCardFor("2027-11-25", "America/Chicago")!;
+  assert.equal(nextYear.card.id, "thanksgiving");
+  assert.equal(isTodayCardDismissed(nextYear, "2027-11-25", d), false);
+});
+check("no dismissal hides nothing", () => {
+  const t = todayCardFor("2026-11-24", "America/Chicago")!;
+  assert.equal(isTodayCardDismissed(t, "2026-11-24", null), false);
+});
+check("dismissals are read only while the switch is on", () => {
+  const src = readFileSync("src/lib/todayCardDismissal.ts", "utf8");
+  assert.match(src, /enabled: enabled && !!userId/);
+  assert.match(card, /useTodayCardDismissal\(userId, enabled === true\)/);
 });
 
 console.log(`\n${passed} passed${process.exitCode ? ", some FAILED" : ""}`);

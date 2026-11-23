@@ -9,11 +9,11 @@
   "seasonal.winterDryAir.body": "Door de verwarming wordt de lucht binnen droog. Een vaste douche- of sproeibeurt en een luchtbevochtiger in de kamer helpen je vogel zich prettig te voelen.",
   // Keep out the cold
   "seasonal.winterDrafts.title": "Houd de kou buiten",
-  // Check the cage isn't near a drafty window, an outside door or a heating vent. A cover at night helps hold in warmth.
-  "seasonal.winterDrafts.body": "Zet de kooi niet bij een tochtig raam, een buitendeur of een verwarmingsrooster. Een kooideken 's nachts houdt de warmte vast.",
+  // Check the cage isn't near a drafty window, an outside door, or a heating vent. A cover at night helps hold in warmth.
+  "seasonal.winterDrafts.body": "Controleer of de kooi niet bij een tochtig raam, een buitendeur of een verwarmingsrooster staat. Een kooideken 's nachts houdt de warmte vast.",
   // Bird-safe spring cleaning
   "seasonal.springCleaning.title": "Vogelveilige voorjaarsschoonmaak",
-  // Strong cleaners, sprays and fresh paint give off fumes. Move your bird to another room with fresh air while you clean, and choose bird-safe products.
+  // Strong cleaners, sprays, and fresh paint give off fumes. Move your bird to another room with fresh air while you clean, and choose bird-safe products.
   "seasonal.springCleaning.body": "Sterke schoonmaakmiddelen, sprays en verse verf geven dampen af. Zet je vogel in een andere kamer met frisse lucht terwijl je schoonmaakt, en kies vogelveilige middelen.",
   // Windows and doors
   "seasonal.springWindows.title": "Ramen en deuren",
@@ -49,7 +49,7 @@
   "seasonal.kingsDay.body": "Straatfeesten en muziek kunnen de hele dag doorgaan. Houd de ramen bij je vogel dicht, en geef je vogel een rustig plekje om zich terug te trekken.",
   // Summer trips
   "seasonal.summerTravel.title": "Zomervakantie",
-  // Going away? Share the care plan with your sitter before you leave, and put your avian vet's number where they'll see it.
+  // Going away? Share the care plan with your pet sitter before you leave, and put your avian vet's number where they'll see it.
   "seasonal.summerTravel.body": "Ga je weg? Deel het verzorgingsplan met je oppas voordat je vertrekt, en leg het nummer van je vogeldierenarts op een plek waar de oppas het ziet.",
   // Fourth of July fireworks
   "seasonal.julyFourth.title": "Vuurwerk op 4 juli",
@@ -65,27 +65,27 @@
   "seasonal.halloween.body": "Gaat de deurbel steeds? Houd je vogel dan uit de buurt van de voordeur. Gebruik batterijlichtjes in pompoenen in plaats van kaarsjes.",
   // Cooking for a crowd
   "seasonal.thanksgiving.title": "Koken voor veel gasten",
-  // Keep your bird well away from the kitchen: overheated non-stick pans and the oven's self-clean setting give off fumes that are dangerous to birds.
-  "seasonal.thanksgiving.body": "Houd je vogel ver uit de keuken: oververhitte pannen met antiaanbaklaag en de zelfreinigingsstand van de oven geven dampen af die gevaarlijk zijn voor vogels.",
+  // Keep your bird well away from the kitchen. Overheated non-stick pans and the oven's self-clean setting give off fumes that are dangerous to birds.
+  "seasonal.thanksgiving.body": "Houd je vogel ver uit de keuken. Oververhitte pannen met antiaanbaklaag en de zelfreinigingsstand van de oven geven dampen af die gevaarlijk zijn voor vogels.",
   // Sinterklaas treats
   "seasonal.sinterklaas.title": "Sinterklaaslekkers",
-  // Keep chocolate letters, pepernoten and other sweets out of your bird's reach, and pick up wrapping paper and ribbon.
+  // Keep chocolate letters, pepernoten, and other sweets out of your bird's reach, and pick up wrapping paper and ribbon.
   "seasonal.sinterklaas.body": "Houd chocoladeletters, pepernoten en ander snoepgoed buiten bereik van je vogel, en ruim cadeaupapier en lint op.",
   // Decorating safely
   "seasonal.holidayDecorations.title": "Veilig versieren",
-  // Tinsel, glass ornaments and string lights are tempting to chew. Keep them out of reach, and stay close whenever your bird is near the tree.
+  // Tinsel, glass ornaments, and string lights are tempting to chew. Keep them out of reach, and stay close whenever your bird is near the tree.
   "seasonal.holidayDecorations.body": "Engelenhaar, glazen kerstballen en lichtsnoeren zijn verleidelijk om op te kauwen. Hang ze buiten bereik, en blijf erbij als je vogel bij de boom is.",
   // Candles and scents
   "seasonal.holidayCandles.title": "Kaarsen en geurtjes",
-  // Keep lit candles, scented sprays and plug-in air fresheners out of the room your bird is in, and never leave a flame unattended.
+  // Keep lit candles, scented sprays, and plug-in air fresheners out of the room your bird is in, and never leave a flame unattended.
   "seasonal.holidayCandles.body": "Houd brandende kaarsen, geursprays en geurstekkers uit de kamer waar je vogel is, en laat een vlam nooit onbeheerd.",
   // Holiday travel
   "seasonal.holidayTravel.title": "Op reis tijdens de feestdagen",
-  // If you're traveling, share the care plan with your sitter before you go. If your bird is coming along, pack familiar food and toys.
+  // If you're traveling, share the care plan with your pet sitter before you go. If your bird is coming along, pack familiar food and toys.
   "seasonal.holidayTravel.body": "Ga je op reis? Deel het verzorgingsplan met je oppas voordat je vertrekt. Gaat je vogel mee, neem dan het vertrouwde voer en speelgoed mee.",
   // Holiday meals
   "seasonal.holidayMeals.title": "Feestmaaltijden",
-  // Keep chocolate, avocado, alcohol and salty or fatty foods away from your bird, and ask guests not to share from their plates.
+  // Keep chocolate, avocado, alcohol, and salty or fatty foods away from your bird, and ask guests not to share from their plates.
   "seasonal.holidayMeals.body": "Houd chocolade, avocado, alcohol en zout of vet eten weg van je vogel, en vraag gasten niets van hun bord te delen.",
   // New Year's fireworks
   "seasonal.newYearFireworks.title": "Vuurwerk rond oud en nieuw",

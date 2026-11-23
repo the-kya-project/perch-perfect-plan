@@ -8,38 +8,13 @@
 // idea.
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import {
-  CalendarDays,
-  Car,
-  Clock,
-  Flame,
-  Home,
-  PartyPopper,
-  Snowflake,
-  Sparkles,
-  Sun,
-  Utensils,
-  Wind,
-} from "lucide-react";
-import { K, KyaCard, KyaIconTile } from "@/components/kya";
+import { Leaf, Star } from "lucide-react";
+import { KyaLink, SERIF } from "@/components/kya";
 import { useCareFeature } from "@/lib/careFeatures";
 import { localDateISO } from "@/lib/localDay";
-import { todayCardFor } from "@/lib/todayCard";
-import type { SeasonalTopic } from "@/lib/seasonalCalendar";
-
-const TOPIC_ICON: Record<SeasonalTopic, typeof Sun> = {
-  heat: Sun,
-  cold: Snowflake,
-  fireworks: Sparkles,
-  candles: Flame,
-  "holiday-food": Utensils,
-  travel: Car,
-  fumes: Wind,
-  windows: Home,
-  decorations: PartyPopper,
-  noise: Sparkles,
-  routine: Clock,
-};
+import { seasonalImageFor, seasonalLabelFor, seasonalToneFor } from "@/lib/seasonalCardStyle";
+import { formatTodayCardEnd, isTodayCardDismissed, todayCardFor } from "@/lib/todayCard";
+import { useDismissTodayCard, useTodayCardDismissal } from "@/lib/todayCardDismissal";
 
 function deviceTimeZone(): string | null {
   try {
@@ -50,9 +25,17 @@ function deviceTimeZone(): string | null {
 }
 
 /** `homeTimeZone` is the account's stored zone (profiles.time_zone), if any. */
-export function SeasonalTodayCard({ homeTimeZone }: { homeTimeZone?: string | null }) {
-  const { t } = useTranslation();
+export function SeasonalTodayCard({
+  userId,
+  homeTimeZone,
+}: {
+  userId?: string | null;
+  homeTimeZone?: string | null;
+}) {
+  const { t, i18n } = useTranslation();
   const enabled = useCareFeature("today_cards");
+  const dismissal = useTodayCardDismissal(userId, enabled === true);
+  const dismiss = useDismissTodayCard(userId);
   const [day, setDay] = useState<{ date: string; deviceZone: string | null } | null>(null);
 
   // Read after mount, and again when the app comes back to the front, so a
@@ -70,26 +53,65 @@ export function SeasonalTodayCard({ homeTimeZone }: { homeTimeZone?: string | nu
     return () => document.removeEventListener("visibilitychange", onVisible);
   }, []);
 
-  if (enabled !== true || !day) return null;
+  if (enabled !== true || !day || !userId || dismissal.isPending) return null;
   const today = todayCardFor(day.date, homeTimeZone || day.deviceZone);
-  if (!today) return null;
-  const Icon = TOPIC_ICON[today.card.topics[0]] ?? CalendarDays;
+  if (!today || isTodayCardDismissed(today, day.date, dismissal.data)) return null;
+
+  const tone = seasonalToneFor(today.card.id);
+  const label = seasonalLabelFor(today.card);
+  const LabelIcon = label === "seasonalTip" ? Leaf : Star;
 
   return (
-    <KyaCard className="flex gap-3 px-4 py-4" style={{ color: K.forest }}>
-      <div data-testid="seasonal-today-card" data-card={today.card.id} className="contents">
-        <KyaIconTile tone="mist">
-          <Icon className="size-[18px]" />
-        </KyaIconTile>
-        <div className="min-w-0">
-          <h3 className="m-0 text-[16px] font-[700] leading-[1.3]">
-            {t(today.titleKey, { ns: "seasonal" })}
-          </h3>
-          <p className="m-0 mt-1 text-[14px] leading-[1.45]" style={{ color: K.ink }}>
-            {t(today.bodyKey, { ns: "seasonal" })}
-          </p>
+    <section
+      data-testid="seasonal-today-card"
+      data-card={today.card.id}
+      className="w-full overflow-hidden rounded-[20px]"
+      style={{ background: tone.body }}
+    >
+      <div
+        className="flex h-[120px] items-center justify-center px-4"
+        style={{ background: tone.band }}
+      >
+        <img
+          src={seasonalImageFor(today.card.id)}
+          alt=""
+          decoding="async"
+          className="h-full max-h-[100px] w-full object-contain"
+        />
+      </div>
+      <div className="px-4 pb-1 pt-[14px]">
+        <span
+          className="inline-flex items-center gap-1 rounded-full px-[10px] py-1 text-[12px] font-[700] leading-none"
+          style={{ background: tone.pillBg, color: tone.pillText }}
+        >
+          <LabelIcon className="size-3" aria-hidden />
+          {label === "seasonalTip"
+            ? t("dashboard.todayCardSeasonalTip", "Seasonal tip")
+            : t("dashboard.todayCardHolidayHelper", "Holiday helper")}
+        </span>
+        <h3
+          className="m-0 mt-2 text-[21px] font-[700] leading-[1.2]"
+          style={{ fontFamily: SERIF, color: tone.title }}
+        >
+          {t(today.titleKey, { ns: "seasonal" })}
+        </h3>
+        <p className="m-0 mt-[6px] text-[14px] leading-[1.45]" style={{ color: tone.text }}>
+          {t(today.bodyKey, { ns: "seasonal" })}
+        </p>
+        <div className="mt-1 flex min-h-[44px] items-center justify-between gap-3">
+          <KyaLink
+            color={tone.action}
+            onClick={() => dismiss.mutate({ cardId: today.card.id, through: today.endsOn })}
+          >
+            {t("dashboard.todayCardGotIt", "Got it")}
+          </KyaLink>
+          <span className="text-right text-[12px]" style={{ color: tone.endDate }}>
+            {t("dashboard.todayCardThrough", "Through {{date}}", {
+              date: formatTodayCardEnd(today.endsOn, i18n.language),
+            })}
+          </span>
         </div>
       </div>
-    </KyaCard>
+    </section>
   );
 }

@@ -340,7 +340,7 @@ function Dashboard() {
 
             {/* The day's seasonal or holiday card, behind its own switch (off
                 until Brittany turns it on); see SeasonalTodayCard. */}
-            {!demo && <SeasonalTodayCard homeTimeZone={me?.timeZone} />}
+            {!demo && <SeasonalTodayCard userId={me?.id} homeTimeZone={me?.timeZone} />}
 
             {/* A sit you're covering (any account): the sitter-style "Birds in
                 your care" cards (per-bird progress; tap a bird to open its

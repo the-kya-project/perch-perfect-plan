@@ -20,6 +20,12 @@ Copy this, fill it in, and put it at the top of "Runs", above the latest entry.
 
 ## Runs
 
+### 2026-11-23 11:45 EST · D2.1 Today card redesign (requested by Brittany)
+- **Built:** Rebuilt the card to Brittany's approved design: her 22 illustrations, six color tints, a Seasonal tip or Holiday helper label, an end date, and "Got it", which is saved per account in a new table. Applied her nine copy changes in English and Dutch, and added the card's test to the automatic checks.
+- **PR:** [#523](https://github.com/the-kya-project/perch-perfect-plan/pull/523)
+- **Outcome:** Held: Brittany reviews the screenshots. Not merged; the switch stays off.
+- **Problems:** none
+
 ### 2026-11-23 08:34 EST · 1.6 Curated chapter collections
 - **Built:** The chapter's Resources tab, which was empty, now lists the chapter's Avian vets, Rescues, and Shops and services as simple directory cards: name, city or area, a note, and Call and Website buttons. There are no comments, reactions, author or ratings, and a line says these are community picks, not endorsements. Any member can "Suggest a place". The suggestion shows to nobody but the chapter's lead and admins, who approve or decline it in the review queue under a new "Places" filter. Leads (their own chapter) and admins (any chapter) add, edit, reorder and remove listings on a "Manage listings" screen that shows when each was last updated. It all sits behind the Flock gate, so only admins can see it today. Nothing is seeded: the starter listings are Brittany's to add. Database checks cover who sees and changes what.
 - **PR:** [#528](https://github.com/the-kya-project/perch-perfect-plan/pull/528)

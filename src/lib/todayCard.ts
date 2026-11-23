@@ -73,7 +73,57 @@ export function seasonalRegionForTimeZone(
   return null;
 }
 
-export type TodayCard = { card: SeasonalCard; titleKey: string; bodyKey: string };
+export type TodayCard = {
+  card: SeasonalCard;
+  titleKey: string;
+  bodyKey: string;
+  /** The last day this reader sees this card before a different one comes up. */
+  endsOn: string;
+};
+
+/** "Got it": this card is hidden through this day. */
+export type TodayCardDismissal = { cardId: string; through: string };
+
+const addDay = (iso: string): string => {
+  const [y, m, d] = iso.split("-").map(Number);
+  return new Date(Date.UTC(y, m - 1, d + 1)).toISOString().slice(0, 10);
+};
+
+/** The last day of the unbroken run of this card, for this reader's country.
+ *  A holiday can cut a season card short: in the US, the heating card's run
+ *  ends the day before Thanksgiving's starts. */
+export function todayCardEndDate(
+  dateISO: string,
+  cardId: string,
+  region: SeasonalRegion | null,
+): string {
+  let end = dateISO;
+  for (let i = 0; i < 366; i++) {
+    const next = addDay(end);
+    if (cardForDate(next, region)?.id !== cardId) break;
+    end = next;
+  }
+  return end;
+}
+
+/** True while the card on screen is the run the reader said "Got it" to. ISO
+ *  dates compare correctly as text. */
+export function isTodayCardDismissed(
+  today: Pick<TodayCard, "card">,
+  dateISO: string,
+  dismissal: TodayCardDismissal | null | undefined,
+): boolean {
+  return !!dismissal && dismissal.cardId === today.card.id && dateISO <= dismissal.through;
+}
+
+/** "Nov 26" in English, "26 nov." in Dutch. Read as a plain calendar day, so
+ *  no time zone can move it. */
+export function formatTodayCardEnd(dateISO: string, language: string): string {
+  const [y, m, d] = dateISO.split("-").map(Number);
+  return new Intl.DateTimeFormat(language, { month: "short", day: "numeric", timeZone: "UTC" }).format(
+    new Date(Date.UTC(y, m - 1, d)),
+  );
+}
 
 /** The card for a calendar day ("YYYY-MM-DD") in a time zone, with its
  *  language keys (namespace "seasonal"). Null for an invalid date. */
@@ -81,8 +131,14 @@ export function todayCardFor(
   dateISO: string,
   timeZone: string | null | undefined,
 ): TodayCard | null {
-  const card = cardForDate(dateISO, seasonalRegionForTimeZone(timeZone));
+  const region = seasonalRegionForTimeZone(timeZone);
+  const card = cardForDate(dateISO, region);
   if (!card) return null;
   const keys = seasonalCopyKeys(card);
-  return { card, titleKey: keys.title, bodyKey: keys.body };
+  return {
+    card,
+    titleKey: keys.title,
+    bodyKey: keys.body,
+    endsOn: todayCardEndDate(dateISO, card.id, region),
+  };
 }
