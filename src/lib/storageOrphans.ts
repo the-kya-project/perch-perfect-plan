@@ -56,6 +56,7 @@ export const REFERENCE_COLUMNS: ReadonlyArray<{ table: string; column: string; a
   { table: "flock_events", column: "photo_path" },
   { table: "library_resources", column: "cover_path" },
   { table: "library_resources", column: "attachment_path" },
+  { table: "flock_vote_choices", column: "photo_path" },
 ];
 
 const ID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;

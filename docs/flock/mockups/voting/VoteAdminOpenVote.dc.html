@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Admin view while a vote is open</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&amp;family=Newsreader:opsz,wght@6..72,700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#2d6a4f}a:hover{color:#1a3d2e}
+.lab{display:block;font-size:13.5px;font-weight:700;margin-bottom:6px;color:#1a3d2e}
+.fld{box-sizing:border-box;width:100%;min-height:48px;padding:0 14px;border:2px solid #dbe3da;border-radius:14px;background:#ffffff;font-family:'DM Sans',sans-serif;font-size:15px;color:#1a3d2e}
+.hint{margin:6px 2px 0;font-size:13px;line-height:1.45;color:#5f5e5a}
+.sec{min-height:48px;border-radius:999px;border:2px solid #1a3d2e;background:#ffffff;color:#1a3d2e;font-family:'DM Sans',sans-serif;font-size:15px;font-weight:700;width:100%}
+.cnt{display:flex;justify-content:space-between;gap:12px;font-size:14px;padding:4px 0}
+</style>
+</helmet>
+<div style="width: 390px; height: 1180px; box-sizing: border-box; display: flex; flex-direction: column; background: #1a3d2e; font-family: 'DM Sans', sans-serif; color: #1a3d2e; overflow: hidden">
+  <header style="padding: 14px 20px 46px; color: #ffffff; display: flex; flex-direction: column; gap: 12px">
+    <a href="List.dc.html" aria-label="Back" style="width: 44px; height: 44px; border-radius: 999px; background: #12291f; color: #ffffff; display: grid; place-items: center"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg></a>
+    <h1 style="margin: 0; font-family: 'Newsreader', Georgia, serif; font-weight: 700; font-size: 26px; line-height: 1.15">Where should this quarter's donation go?</h1>
+    <p style="margin: 0; font-size: 14px; color: #d6e8dc">Open · closes [date] · 31 votes</p>
+  </header>
+  <main style="flex-grow: 1; margin-top: -26px; border-radius: 26px 26px 0 0; background: #f1f5f0; padding: 20px 16px 28px; display: flex; flex-direction: column; gap: 18px">
+    <div style="display: flex; justify-content: space-between; align-items: center; gap: 12px; font-size: 14px">
+      <span style="padding: 4px 10px; border-radius: 999px; background: #ffffff; font-weight: 700">All members</span>
+      <a href="../Main.dc.html" style="display: inline-flex; min-height: 44px; align-items: center; font-weight: 700; color: #2d6a4f">See what members see</a>
+    </div>
+    <section style="background: #ffffff; border-radius: 18px; padding: 16px; display: flex; flex-direction: column; gap: 4px">
+      <span style="font-size: 14px; font-weight: 700; margin-bottom: 4px">Counts (admins only) · 31 votes</span>
+      <div class="cnt"><span>[Partner rescue A]</span><span style="font-weight: 700">11</span></div>
+      <div class="cnt"><span>[Conservation project B]</span><span style="font-weight: 700">14</span></div>
+      <div class="cnt"><span>[Partner rescue C]</span><span style="font-weight: 700">6</span></div>
+      <p class="hint" style="margin-top: 8px">Members only see that they voted and how many have voted, never these counts or who voted for what.</p>
+    </section>
+    <section style="background: #ffffff; border-radius: 18px; padding: 16px; display: flex; flex-direction: column; gap: 12px">
+      <div><label class="lab" for="ov-ext">Extend to</label><input id="ov-ext" class="fld" type="text" value="[a later date] · [time]"></div>
+      <button type="button" class="sec">Extend the vote</button>
+      <a href="CloseConfirm.dc.html" style="display: flex; min-height: 48px; align-items: center; justify-content: center; border-radius: 999px; border: 2px solid #1a3d2e; background: #ffffff; color: #1a3d2e; font-size: 15px; font-weight: 700; text-decoration: none">Close early</a>
+    </section>
+    <section style="display: flex; flex-direction: column; gap: 8px">
+      <label class="lab" for="ov-note" style="margin-bottom: 0">Announcement</label>
+      <textarea id="ov-note" class="fld" style="min-height: 110px; padding: 12px 14px; resize: none" placeholder="Write it now or after the vote closes"></textarea>
+      <p class="hint" style="margin-top: 0">Shows with the results as "A note from Brittany" once the vote closes.</p>
+      <button type="button" class="sec">Save announcement</button>
+    </section>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":1180}}'>
+class Component extends DCLogic {
+renderVals() {
+return {};
+}
+}
+</script>
+</body>
+</html>

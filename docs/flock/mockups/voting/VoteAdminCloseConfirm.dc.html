@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Closing a vote early</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&amp;family=Newsreader:opsz,wght@6..72,700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#2d6a4f}a:hover{color:#1a3d2e}
+.lab{display:block;font-size:13.5px;font-weight:700;margin-bottom:6px;color:#1a3d2e}
+.fld{box-sizing:border-box;width:100%;min-height:48px;padding:0 14px;border:2px solid #dbe3da;border-radius:14px;background:#ffffff;font-family:'DM Sans',sans-serif;font-size:15px;color:#1a3d2e}
+.cnt{display:flex;justify-content:space-between;gap:12px;font-size:14px;padding:4px 0}
+</style>
+</helmet>
+<div style="width: 390px; height: 1180px; box-sizing: border-box; display: flex; flex-direction: column; background: #1a3d2e; font-family: 'DM Sans', sans-serif; color: #1a3d2e; overflow: hidden">
+  <header style="padding: 14px 20px 46px; color: #ffffff; display: flex; flex-direction: column; gap: 12px">
+    <a href="List.dc.html" aria-label="Back" style="width: 44px; height: 44px; border-radius: 999px; background: #12291f; color: #ffffff; display: grid; place-items: center"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg></a>
+    <h1 style="margin: 0; font-family: 'Newsreader', Georgia, serif; font-weight: 700; font-size: 26px; line-height: 1.15">Where should this quarter's donation go?</h1>
+    <p style="margin: 0; font-size: 14px; color: #d6e8dc">Open · closes [date] · 31 votes</p>
+  </header>
+  <main style="flex-grow: 1; margin-top: -26px; border-radius: 26px 26px 0 0; background: #f1f5f0; padding: 20px 16px 28px; display: flex; flex-direction: column; gap: 18px">
+    <section style="background: #ffffff; border-radius: 18px; padding: 16px; display: flex; flex-direction: column; gap: 4px; opacity: 0.55">
+      <span style="font-size: 14px; font-weight: 700; margin-bottom: 4px">Counts (admins only) · 31 votes</span>
+      <div class="cnt"><span>[Partner rescue A]</span><span style="font-weight: 700">11</span></div>
+      <div class="cnt"><span>[Conservation project B]</span><span style="font-weight: 700">14</span></div>
+      <div class="cnt"><span>[Partner rescue C]</span><span style="font-weight: 700">6</span></div>
+    </section>
+    <section role="alertdialog" aria-label="Close this vote now?" style="background: #ffffff; border: 2px solid #1a3d2e; border-radius: 18px; padding: 18px; display: flex; flex-direction: column; gap: 12px; box-shadow: 0 10px 24px rgba(26,61,46,0.18)">
+      <span style="font-size: 17px; font-weight: 700">Close this vote now?</span>
+      <p style="margin: 0; font-size: 15px; line-height: 1.5; color: #3d4f45">Voting stops now and everyone sees the results. This can't be undone.</p>
+      <div style="display: flex; gap: 10px">
+        <a href="OpenVote.dc.html" style="flex: 1; display: flex; min-height: 44px; align-items: center; justify-content: center; border-radius: 999px; background: #f1f5f0; color: #1a3d2e; font-size: 15px; font-weight: 700; text-decoration: none">Keep it open</a>
+        <a href="Closed.dc.html" style="flex: 1; display: flex; min-height: 44px; align-items: center; justify-content: center; border-radius: 999px; background: #1a3d2e; color: #ffffff; font-size: 15px; font-weight: 700; text-decoration: none">Close now</a>
+      </div>
+    </section>
+    <section style="display: flex; flex-direction: column; gap: 8px; opacity: 0.55">
+      <span class="lab" style="margin-bottom: 0">Announcement</span>
+      <div class="fld" style="min-height: 110px"></div>
+    </section>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":1180}}'>
+class Component extends DCLogic {
+renderVals() {
+return {};
+}
+}
+</script>
+</body>
+</html>

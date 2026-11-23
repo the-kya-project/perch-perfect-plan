@@ -49,15 +49,17 @@ Each chapter's Resources tab becomes a short, trusted list of local avian vets, 
 
 ## Do good voting and the founding vote (1.8)
 
-One simple voting tool covers two promises already made. Members choose which rescue and conservation partners receive each quarter's donation, and the Founding 50 vote on the first expert Q&As and the first chapters, which the founding page promises today. Mockup: `SpecVoting.dc.html`.
+One simple voting tool covers two promises already made. Members choose which rescue and conservation partners receive each quarter's donation, and the Founding 50 vote on the first expert Q&As and the first chapters, which the founding page promises today. Approved mockups: `docs/flock/mockups/voting/` (these replace `SpecVoting.dc.html`).
 
 **What members see**
 
 - An open vote appears as a card at the top of the Do good space, and on Today while it's open.
-- The card shows the question, a short description, the choices (each with a name, photo, and a sentence or two), and when the vote closes.
-- A member picks one choice and taps Vote. They can change their vote until it closes.
+- The card shows the question, a short description and when the vote closes. The vote screen shows the choices, each with a large logo or photo, a name, and a sentence or two.
+- A member picks one choice and taps Vote. One vote, final: it can't be changed, and the database enforces that.
+- After voting, they see a thank-you with the partner they voted for, when results show, how many have voted, and the 10% line.
 - Before the vote closes, members see only that they voted and how many people have voted, not who's winning.
-- After it closes, everyone sees the results as percentages and the winner, plus Brittany's announcement note.
+- After it closes, everyone sees how the quarter's donation is shared: a ring chart with a legend, then one card per partner, largest share first, with its share of the votes, its share of the donation and "10% guaranteed + X% from votes". Brittany's announcement note follows.
+- Founders-only votes (the first expert Q&As and chapters) involve no donation. They show each choice's percentage of the votes and the top choice, with every choice tied at the top named.
 - Founders-only votes show only to founding members, with a small founder badge on the card.
 
 **What admins do**
@@ -69,10 +71,12 @@ One simple voting tool covers two promises already made. Members choose which re
 
 **Rules**
 
-- One vote per member per question.
-- If fewer than 10 people have voted when it closes, results show as "too few votes to share" and only admins see the counts.
+- One vote per member per question, and it's final.
+- **The vote shares the donation; nobody wins it.** Every choice gets a guaranteed 10%. The rest (100% minus 10% per choice) is split by each choice's share of the votes.
+- Shares are whole percents and always add up to exactly 100%. If no one votes, the donation is split evenly.
+- Results always show after closing, however few people voted.
 - Votes are private. Nobody, including other admins, sees how a specific member voted.
-- The vote decides who receives the donation. The amount still comes from the 20% of every membership, which Brittany announces separately.
+- The vote decides how the donation is shared. The amount still comes from the 20% of every membership, which Brittany announces separately.
 
 **Out of scope**
 
