@@ -1747,6 +1747,8 @@
   "flock.billing.renews": "Your membership renews automatically.",
   "flock.billing.renewsMonthly": "Renews every month. Cancel anytime in Manage billing.",
   "flock.billing.renewsYearly": "Renews once a year. Cancel anytime in Manage billing.",
+  "flock.billing.saveCardNoteMonthly": "The Flock, {{price}} a month. You won't be charged until {{date}}. Cancel anytime before then from Membership and billing.",
+  "flock.billing.saveCardNoteYearly": "The Flock, {{price}} a year. You won't be charged until {{date}}. Cancel anytime before then from Membership and billing.",
   "flock.billing.seasonSet": "Free season · you're all set for after",
   "flock.billing.secure": "Secure checkout with Stripe",
   "flock.billing.secureCancel": "Secure checkout with Stripe · Cancel anytime",

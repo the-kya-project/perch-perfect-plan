@@ -10,7 +10,8 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { BILLING_CHOICES, billingEnabled, checkoutDesign, checkoutPlan, firstCharge, liveSubscription, type BillingState, type PaidPlan } from "./billing";
+import { formatCents } from "./gifts";
+import { BILLING_CHOICES, billingDay, billingEnabled, checkoutDesign, checkoutPlan, firstCharge, saveCardExpiry, saveCardNote, liveSubscription, type BillingState, type PaidPlan } from "./billing";
 
 type Ctx = { supabase: any; userId: string; claims: { email?: string } };
 
@@ -147,22 +148,47 @@ export const startBillingCheckout = createServerFn({ method: "POST" })
       const customer = await customerFor(ctx.userId, ctx.claims?.email);
       const { getRequest } = await import("@tanstack/react-start/server");
       const origin = new URL(getRequest().url).origin;
-      const session = await getBillingStripe().checkout.sessions.create({
-        ...checkoutDesign(fc.trialEnd),
-        mode: "subscription",
-        customer,
-        client_reference_id: ctx.userId,
-        line_items: [{ price, quantity: 1 }],
-        // The card is always collected, even with $0 due today.
-        payment_method_collection: "always",
-        subscription_data: {
-          ...(fc.trialEnd ? { trial_end: fc.trialEnd } : {}),
-          metadata: { kind: "flock_billing", user_id: ctx.userId, plan },
-        },
-        metadata: { kind: "flock_billing", user_id: ctx.userId, plan },
-        success_url: `${origin}/flock/you/membership?billing=done`,
-        cancel_url: `${origin}/flock/you/membership`,
-      });
+      const stripe = getBillingStripe();
+      // Only one open checkout per member, so two tabs can't start two memberships.
+      const open = await stripe.checkout.sessions.list({ customer, status: "open", limit: 100 });
+      await Promise.all(open.data.filter((s) => s.metadata?.kind === "flock_billing").map((s) => stripe.checkout.sessions.expire(s.id)));
+      const metadata = { kind: "flock_billing", user_id: ctx.userId, plan };
+      const urls = { success_url: `${origin}/flock/you/membership?billing=done`, cancel_url: `${origin}/flock/you/membership` };
+      let session;
+      if (fc.saveCardFirst && fc.trialEnd) {
+        // Under 48 hours to the season's end, Checkout can't start the trial.
+        // It saves the card, and the webhook starts the subscription.
+        const amount = (await stripe.prices.retrieve(price)).unit_amount;
+        if (amount == null) return { ok: false, reason: "unavailable" };
+        const note = saveCardNote(plan, formatCents(amount), billingDay(new Date(fc.trialEnd * 1000).toISOString()));
+        session = await stripe.checkout.sessions.create({
+          ...checkoutDesign(fc.trialEnd, note),
+          mode: "setup",
+          customer,
+          client_reference_id: ctx.userId,
+          payment_method_types: ["card"],
+          expires_at: saveCardExpiry(fc.trialEnd),
+          setup_intent_data: { metadata },
+          metadata,
+          ...urls,
+        });
+      } else {
+        session = await stripe.checkout.sessions.create({
+          ...checkoutDesign(fc.trialEnd),
+          mode: "subscription",
+          customer,
+          client_reference_id: ctx.userId,
+          line_items: [{ price, quantity: 1 }],
+          // The card is always collected, even with $0 due today.
+          payment_method_collection: "always",
+          subscription_data: {
+            ...(fc.trialEnd ? { trial_end: fc.trialEnd } : {}),
+            metadata,
+          },
+          metadata,
+          ...urls,
+        });
+      }
       if (!session.url) return { ok: false, reason: "error" };
       return { ok: true, url: session.url };
     } catch (err) {

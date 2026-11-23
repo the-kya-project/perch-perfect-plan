@@ -21,6 +21,12 @@ Format:
 
 ### [#533](https://github.com/the-kya-project/perch-perfect-plan/pull/533) · 1.14a Card step and checkout design
 Held for Brittany. Nobody sees these while `BILLING_ENABLED` is off. English only: Dutch waits for her go-ahead.
+- **Where:** Checkout, last 49 hours of the free season, `flock.billing.saveCardNoteYearly`
+  - Before: new
+  - After: "The Flock, {{price}} a year. You won't be charged until {{date}}. Cancel anytime before then from Membership and billing."
+- **Where:** Checkout, last 49 hours of the free season, `flock.billing.saveCardNoteMonthly`
+  - Before: new
+  - After: "The Flock, {{price}} a month. You won't be charged until {{date}}. Cancel anytime before then from Membership and billing."
 - **Where:** billing screens, `flock.billing.accessUntil`
   - Before: new
   - After: "Access until"
@@ -510,6 +516,11 @@ Format:
 ```
 
 ### [#533](https://github.com/the-kya-project/perch-perfect-plan/pull/533) · 1.14a Card step and checkout design
+- **Decision (Brittany, Nov 23, 2026):** A card added in the free season's last 49 hours is no longer charged right away. Checkout saves the card, and the webhook starts the subscription with its first charge at the season's end, the same as everyone else.
+- **Why:** Stripe Checkout can't start a trial under 48 hours long. Saving the card first avoids that limit. Stripe shows no plan or price on a save-the-card page, so its sentence names the price. Opening a new checkout closes the member's older open one, and the webhook refuses a second membership.
+- **To change it:** `firstCharge` in `src/lib/billing.ts`, `startSavedCardSubscription` in `src/lib/billingWebhook.ts`.
+
+### [#533](https://github.com/the-kya-project/perch-perfect-plan/pull/533) · 1.14a Card step and checkout design
 - **Decision:** Differences from the approved mockups:
   - **Tab bar:** the Flock's tab bar (phones) and side column (desktop) stay on these screens. The mockups don't show them.
   - **Desktop:** the content is capped at 560 px and centered on the forest background. The mockups are phone-only.
@@ -789,7 +800,7 @@ Format:
 ```
 
 ### [#533](https://github.com/the-kya-project/perch-perfect-plan/pull/533) · 1.14a Card step and checkout design
-- **Needs:** (1) your read of the screens and wording; (2) a decision on cards added in the last two days of the free season, which are charged at once because Stripe Checkout needs a trial to run at least 48 hours; (3) the founder release job built before billing opens, because the founder screen promises it and it doesn't exist yet; (4) a saved test-mode Customer Portal setup in Stripe, then one real test checkout, which hasn't been run; (5) your go-ahead on Dutch.
+- **Needs:** (1) your read of the screens and wording; (2) the founder release job built before billing opens, because the founder screen promises it and it doesn't exist yet; (3) a saved test-mode Customer Portal setup in Stripe, then two real test checkouts, one normal and one inside the season's last 49 hours, neither of which has been run; (4) your go-ahead on Dutch.
 
 ### Reminder · the hourly runs' GitHub token expires Feb 20, 2027
 - **Needs:** a new token before **Feb 20, 2027**. That's 90 days from Nov 22, 2026; GitHub → Settings → Developer settings → Fine-grained tokens shows the exact date. When it expires, runs can still build and test but can't push or open PRs, and each run's note in `~/.kya-agent/job.log` says so.
