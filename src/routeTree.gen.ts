@@ -133,6 +133,7 @@ import { Route as ApiPublicHooksOnboardingEmailsRouteImport } from './routes/api
 import { Route as ApiPublicHooksOnboardingWelcomeRouteImport } from './routes/api/public/hooks/onboarding-welcome'
 import { Route as ApiPublicHooksSaveErrorAlertsRouteImport } from './routes/api/public/hooks/save-error-alerts'
 import { Route as ApiPublicHooksSendEmailRouteImport } from './routes/api/public/hooks/send-email'
+import { Route as ApiPublicStripeBillingRouteImport } from './routes/api/public/stripe/billing'
 import { Route as ApiPublicStripeWebhookRouteImport } from './routes/api/public/stripe/webhook'
 import { Route as AuthenticatedBirdsBirdIdPlanIndexRouteImport } from './routes/_authenticated/birds/$birdId.plan.index'
 import { Route as AuthenticatedBirdsBirdIdPlanEditorRouteImport } from './routes/_authenticated/birds/$birdId.plan.editor'
@@ -838,6 +839,11 @@ const ApiPublicHooksSendEmailRoute = ApiPublicHooksSendEmailRouteImport.update({
   path: '/api/public/hooks/send-email',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicStripeBillingRoute = ApiPublicStripeBillingRouteImport.update({
+  id: '/api/public/stripe/billing',
+  path: '/api/public/stripe/billing',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicStripeWebhookRoute = ApiPublicStripeWebhookRouteImport.update({
   id: '/api/public/stripe/webhook',
   path: '/api/public/stripe/webhook',
@@ -1058,6 +1064,7 @@ export interface FileRoutesByFullPath {
   '/api/public/hooks/onboarding-welcome': typeof ApiPublicHooksOnboardingWelcomeRoute
   '/api/public/hooks/save-error-alerts': typeof ApiPublicHooksSaveErrorAlertsRoute
   '/api/public/hooks/send-email': typeof ApiPublicHooksSendEmailRoute
+  '/api/public/stripe/billing': typeof ApiPublicStripeBillingRoute
   '/api/public/stripe/webhook': typeof ApiPublicStripeWebhookRoute
   '/admin/library/': typeof AuthenticatedAdminLibraryIndexRoute
   '/birds/$birdId/': typeof AuthenticatedBirdsBirdIdIndexRoute
@@ -1193,6 +1200,7 @@ export interface FileRoutesByTo {
   '/api/public/hooks/onboarding-welcome': typeof ApiPublicHooksOnboardingWelcomeRoute
   '/api/public/hooks/save-error-alerts': typeof ApiPublicHooksSaveErrorAlertsRoute
   '/api/public/hooks/send-email': typeof ApiPublicHooksSendEmailRoute
+  '/api/public/stripe/billing': typeof ApiPublicStripeBillingRoute
   '/api/public/stripe/webhook': typeof ApiPublicStripeWebhookRoute
   '/admin/library': typeof AuthenticatedAdminLibraryIndexRoute
   '/birds/$birdId': typeof AuthenticatedBirdsBirdIdIndexRoute
@@ -1337,6 +1345,7 @@ export interface FileRoutesById {
   '/api/public/hooks/onboarding-welcome': typeof ApiPublicHooksOnboardingWelcomeRoute
   '/api/public/hooks/save-error-alerts': typeof ApiPublicHooksSaveErrorAlertsRoute
   '/api/public/hooks/send-email': typeof ApiPublicHooksSendEmailRoute
+  '/api/public/stripe/billing': typeof ApiPublicStripeBillingRoute
   '/api/public/stripe/webhook': typeof ApiPublicStripeWebhookRoute
   '/_authenticated/admin/library/': typeof AuthenticatedAdminLibraryIndexRoute
   '/_authenticated/birds/$birdId/': typeof AuthenticatedBirdsBirdIdIndexRoute
@@ -1481,6 +1490,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/onboarding-welcome'
     | '/api/public/hooks/save-error-alerts'
     | '/api/public/hooks/send-email'
+    | '/api/public/stripe/billing'
     | '/api/public/stripe/webhook'
     | '/admin/library/'
     | '/birds/$birdId/'
@@ -1616,6 +1626,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/onboarding-welcome'
     | '/api/public/hooks/save-error-alerts'
     | '/api/public/hooks/send-email'
+    | '/api/public/stripe/billing'
     | '/api/public/stripe/webhook'
     | '/admin/library'
     | '/birds/$birdId'
@@ -1759,6 +1770,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/onboarding-welcome'
     | '/api/public/hooks/save-error-alerts'
     | '/api/public/hooks/send-email'
+    | '/api/public/stripe/billing'
     | '/api/public/stripe/webhook'
     | '/_authenticated/admin/library/'
     | '/_authenticated/birds/$birdId/'
@@ -1820,6 +1832,7 @@ export interface RootRouteChildren {
   ApiPublicHooksOnboardingWelcomeRoute: typeof ApiPublicHooksOnboardingWelcomeRoute
   ApiPublicHooksSaveErrorAlertsRoute: typeof ApiPublicHooksSaveErrorAlertsRoute
   ApiPublicHooksSendEmailRoute: typeof ApiPublicHooksSendEmailRoute
+  ApiPublicStripeBillingRoute: typeof ApiPublicStripeBillingRoute
   ApiPublicStripeWebhookRoute: typeof ApiPublicStripeWebhookRoute
   ApiPublicBereavementReviewReviewIdSigRoute: typeof ApiPublicBereavementReviewReviewIdSigRoute
   ApiPublicChartBirdIdMonthSigRoute: typeof ApiPublicChartBirdIdMonthSigRoute
@@ -2696,6 +2709,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksSendEmailRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/stripe/billing': {
+      id: '/api/public/stripe/billing'
+      path: '/api/public/stripe/billing'
+      fullPath: '/api/public/stripe/billing'
+      preLoaderRoute: typeof ApiPublicStripeBillingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/stripe/webhook': {
       id: '/api/public/stripe/webhook'
       path: '/api/public/stripe/webhook'
@@ -3164,6 +3184,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicHooksOnboardingWelcomeRoute: ApiPublicHooksOnboardingWelcomeRoute,
   ApiPublicHooksSaveErrorAlertsRoute: ApiPublicHooksSaveErrorAlertsRoute,
   ApiPublicHooksSendEmailRoute: ApiPublicHooksSendEmailRoute,
+  ApiPublicStripeBillingRoute: ApiPublicStripeBillingRoute,
   ApiPublicStripeWebhookRoute: ApiPublicStripeWebhookRoute,
   ApiPublicBereavementReviewReviewIdSigRoute:
     ApiPublicBereavementReviewReviewIdSigRoute,
