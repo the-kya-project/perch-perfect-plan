@@ -31,13 +31,6 @@ Where these items came from, with the detail behind each: `docs/flock/opening-sc
 - **Overnight alone:** yes (built to a held PR)
 - **Needs Brittany:** hold the PR. The health wording goes in the review queue and the vet packet. Ask in the PR whether the log covers only her birds or every bird: this item used to say every bird, and her approval says on for her account only. Until she answers, log her birds only.
 
-### 1.4 Removed content and closed reports are deleted after 180 days
-- **Done means:** the same daily job deletes reviewer-removed content and closed reports 180 days after they were resolved. Pinned in `supabase/checks/flock_moderation_checks.sql` (legal draft D9).
-- **Size:** S
-- **Depends on:** 1.3
-- **Overnight alone:** yes
-- **Needs Brittany:** approval of the deletion (it deletes data).
-
 
 ### 1.17 Promo codes for memberships
 - **Done means:** promotion codes work on the card step, following the rule below. The Apple offer codes iPhone needs (whole months only) are listed for when the iPhone paywall is built.
@@ -109,6 +102,14 @@ Where these items came from, with the detail behind each: `docs/flock/opening-sc
 
 ## Needs Brittany before work starts
 
+### 1.15a Kya's Crew option on the payment screen
+- **Done means:** members can choose Kya's Crew on the Membership card step from 1.14a (#533), with its benefits listed, next to Monthly and Yearly. The save-the-card sentence (`saveCardNote`) has its own Crew line. It stays behind `BILLING_ENABLED`, in Stripe test mode.
+- **Decided (Brittany, Nov 23, 2026):** Crew is chosen on the payment screen. Crew members pay nothing until the free season ends.
+- **Size:** S
+- **Depends on:** 1.14a (#533), 1.15 (#535), and Brittany's approved mockup
+- **Overnight alone:** no. Don't start until the updated card step mockup is approved.
+- **Needs Brittany:** an approved mockup of the card step with Crew and its benefits, then the PR (payments).
+
 ### 2.5 The sitter preview never stalls after a release
 - **Done means:** the Nov 2 bug can't happen. The sitter preview catches up to a new release before it opens, and recovers a stalled frame. Checked in the iPhone Simulator with the app left open across a release (see the "Sitter preview stale-session test" memory).
 - **Size:** M
@@ -146,7 +147,7 @@ Where these items came from, with the detail behind each: `docs/flock/opening-sc
   - Each partner rescue has one reusable code with an optional use limit, and no rescue login.
   - "Have a rescue code?" on the Join screen and redeem page leads to a short form (bird's name, species, adoption date), then a "being confirmed" message and a welcome once an admin approves.
   - An approved adopter gets six months in the Flock, from the end of the free season or right away if it has ended. One redemption per account, never combined with a founding spot, and no payment collected.
-  - Admins manage partners and codes, pause a code, approve or decline redemptions, and see seats available, used and waiting from the Crew sponsorship count. With no seats left the adopter still gets in, and admins see a warning when the count goes negative.
+  - Admins manage partners and codes, pause a code, approve or decline redemptions, and see seats available, used and waiting from the Crew sponsorship count. The seat count is a number for marketing only (Brittany, Nov 23, 2026): rescue adopters always get in free and the count never blocks one. Admins see a warning when the count goes negative.
 - **Size:** L
 - **Depends on:** 1.15
 - **Overnight alone:** no. It depends on 1.15 Kya's Crew, and it grants access.
@@ -293,7 +294,8 @@ The launch PR itself (1.18) is already merged dark. What's left before opening i
 
 ## Done
 
-- **1.15** Kya's Crew, switched off with billing and test mode only: plans `crew_monthly` / `crew_annual` (the `entitlements` plan check widened), prices from Stripe (`STRIPE_PRICE_CREW_MONTHLY` / `_YEARLY`), counted by `is_flock_member()`, 25% giving recorded on the row (`entitlements.giving_rate`, 20% for other paid rows), no trial, one six-month sponsored seat per Crew subscription once it's paid (`crew_sponsorships`; uses go in `crew_seat_uses`, written by 1.16), and `/admin/crew` with seats sponsored, used and available (`20261123203000_kyas_crew.sql`, `supabase/checks/crew_checks.sql`, `npm run test:billing`). No card step offers Crew yet. Held for Brittany (payments, the plan check): #535.
+- **1.15** Kya's Crew, switched off with billing and test mode only: plans `crew_monthly` / `crew_annual` (the `entitlements` plan check widened), prices from Stripe (`STRIPE_PRICE_CREW_MONTHLY` / `_YEARLY`), counted by `is_flock_member()`, 25% giving recorded on the row (`entitlements.giving_rate`, 20% for other paid rows), no trial, one six-month sponsored seat per Crew subscription once it's paid (`crew_sponsorships`; uses go in `crew_seat_uses`, written by 1.16), and `/admin/crew` with seats sponsored, used and available (`20261123203000_kyas_crew.sql`, `supabase/checks/crew_checks.sql`, `npm run test:billing`). No card step offers Crew yet (1.15a). Brittany's decisions (Nov 23, 2026): Crew pays nothing until the free season ends, like every member; a renewal sponsors no further seat; the seat count is a number for marketing only and never blocks a rescue adopter. Held for Brittany (payments, the plan check): #535.
+- **1.4** The daily `flock-purge` hook first runs `flock_moderation_purge` (`20261123193000_flock_removed_purge.sql`, service role only): posts and comments a reviewer removed 180+ days ago move, with the comments under them, into 1.3's `flock_deleted_items` already due, so the same run deletes them and their photos; reports closed 180+ days ago are deleted. Removed journey updates are left for Brittany's call. Pinned in `supabase/checks/flock_moderation_checks.sql` and `npm run test:flock-purge`. Held for Brittany (it deletes data): #534.
 - **2.4** Every update reload (the version check's and the service worker's alike) first expires Vercel's Skew Protection pin (`__vdpl`) with a POST to the new `/api/public/unpin`, waiting at most 3 seconds, then reloads, so the reloaded page gets the new build's files; Skew Protection stays on and no Vercel setting changed (option B). Pinned by `npm run test:release-check`: #531 (held for Brittany's merge; 2.5's Simulator check covers it hands-on).
 - **1.14** Billing foundation, switched off (`BILLING_ENABLED` must be exactly `true`) and Stripe test mode only, enforced in code: `billing_customers`, `billing_events`, `entitlements.product_id` / `will_renew` / `cancel_at_period_end`, `founding_claims.released_at` / `forfeited_at`, and the service-role functions the webhook writes through (`20261123180000_billing_foundation.sql`, `supabase/checks/billing_checks.sql`); the webhook `/api/public/stripe/billing` (`STRIPE_BILLING_WEBHOOK_SECRET`, re-reads each subscription, idempotent on the event id); the card step on Membership (`/flock/you/membership`, $0 until the free season's end, founders get $15, never in the native app); `npm run test:billing`. Held for Brittany (payments): #525. Approved and merged by Brittany (Nov 23, 2026), PR #525.
 - **1.8** Do good voting and the founding vote: an open vote is a card on Today and at the top of Do good (founders-only ones only for founders, with a Founders pill). Members vote once, and it's final (enforced in the database), seeing only how many have voted. The vote shares the donation: every choice gets a guaranteed 10%, the rest is split by share of the votes, always totalling 100%, evenly if no one votes, and results always show. Founders-only votes (Q&As, chapters) have no donation and show plain percentages and the top choice. Admins write drafts (question, description, 2–8 choices with a logo or photo, audience, close date), open, close early, extend, announce and see counts at any time at `/admin/votes`; nobody can see how a member voted. Matches Brittany's approved mockups in `docs/flock/mockups/voting/`. Behind the Flock gate; nothing seeded (the first votes are Brittany's content): #529.

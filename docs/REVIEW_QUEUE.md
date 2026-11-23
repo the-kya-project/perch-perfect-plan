@@ -651,11 +651,13 @@ Format:
 ### [#535](https://github.com/the-kya-project/perch-perfect-plan/pull/535) · 1.15 Kya's Crew (switched off)
 - **Decision:** "No trial" means Crew never gets the 14-day trial planned for after the free season (6f, not built). During the free season a Crew card goes on at $0 until the season's end, like every membership; after it, Crew is charged the day the card goes on.
 - **Why:** the Flock is "free for everyone" until the season's end, and Crew "includes everything in a Flock membership". The $0 period is the free season, not a trial. Asked in the PR in case you meant Crew to be charged at once.
+- **Brittany's answer (Nov 23, 2026):** confirmed. Crew members pay nothing until the free season ends, the same as every other member.
 - **To change it:** in `startBillingCheckout` (`src/lib/billing.functions.ts`), drop `trial_end` for `isCrewPlan(plan)`; `planGetsTrial` in `src/lib/billing.ts` is where 6f's trial must skip Crew.
 
 ### [#535](https://github.com/the-kya-project/perch-perfect-plan/pull/535) · 1.15 Kya's Crew (switched off)
 - **Decision:** One six-month seat per Crew subscription, added the first time it's recorded as active (its first payment went through), never a second for the same subscription. Renewals add none. A seat stays when the membership ends or the account is deleted. A regular member who switches the same subscription to Crew sponsors a seat at that point.
 - **Why:** the spec says "each Crew member sponsors six months"; once per membership is the narrowest reading, and a seat is only counted once it's paid for. Asked in the PR whether a yearly renewal should add another.
+- **Brittany's answer (Nov 23, 2026):** a renewal does not sponsor another seat. The one-seat-per-new-Crew-member count is a number for marketing only. Rescue adopters always get in free, and the count never blocks one.
 - **To change it:** the `crew_sponsorships` insert at the end of `billing_record_stripe_subscription` (a new migration).
 
 ### [#535](https://github.com/the-kya-project/perch-perfect-plan/pull/535) · 1.15 Kya's Crew (switched off)
@@ -676,7 +678,13 @@ Format:
 ### [#535](https://github.com/the-kya-project/perch-perfect-plan/pull/535) · 1.15 Kya's Crew (switched off)
 - **Decision:** No Crew products for the App Store yet, and no Crew tile on the card step. Checkout accepts `crew_monthly` and `crew_annual`; nothing in the app sends them.
 - **Why:** iPhone purchases come with the launch build (RevenueCat), and the card step has no Crew design. #533 is redesigning that screen.
+- **Brittany's answer (Nov 23, 2026):** members choose Crew on the payment screen (the card step from 1.14a, #533), with its benefits listed. That waits on her approved mockup: backlog 1.15a.
 - **To change it:** add Crew to the card step once there's a design (`CHECKOUT_CHOICES` is ready).
+
+### [#534](https://github.com/the-kya-project/perch-perfect-plan/pull/534) · 1.4 Removed content and closed reports are deleted after 180 days
+- **Decision:** What counts: posts and comments a reviewer removed ("Remove it" in the review queue), timed from the removal (`flock_moderation.updated_at`), and reports closed as kept or removed, timed from `resolved_at`. Removed content goes through 1.3's hold, already due, so the same daily run deletes its photos with 1.3's rules (a photo still used elsewhere is kept, and a failed delete waits a day). The comments under a removed post, and the replies under a removed comment, go with it. Left out: removed journey updates (asked in Held), Do good posts a reviewer declined (a review result, not a removal; they stay visible to their author only), content still waiting for review, and open reports.
+- **Why:** D9 says "content removed by reviewers, and reports, are kept for 180 days, then deleted"; the item says "closed reports" and "180 days after they were resolved". Reusing 1.3's hold means a single path deletes Flock photos.
+- **To change it:** `private.flock_moderation_purge` in `20261123193000_flock_removed_purge.sql` (a new migration); the hold is `private.flock_removed_hold()`.
 
 ### [#521](https://github.com/the-kya-project/perch-perfect-plan/pull/521) · D1.1 Weight baseline rules
 - **Decision:** How the normal is worked out. It's the median (not the average) of the bird's weigh-ins of the same kind (before a meal, after a meal, not labeled) from the last 90 days, **leaving out the last 7 days**, and the range is the 10th to 90th percentile of those. "Still learning" counts only those weigh-ins, so a bird that's weighed regularly gets its normal about three weeks after its first weigh-in, not two.
@@ -975,8 +983,6 @@ Format:
 
 ## Held for Brittany
 
-### [#529](https://github.com/the-kya-project/perch-perfect-plan/pull/529) · 1.8 Do good voting: no longer held
-- **Status:** Brittany approved the mockups and asked for this to merge once every required check passes (Nov 23, 2026). The earlier #529 item below can be cleared.
 PRs waiting on Brittany, and exactly what each one needs.
 
 Format:
@@ -987,16 +993,7 @@ Format:
 ```
 
 ### [#535](https://github.com/the-kya-project/perch-perfect-plan/pull/535) · 1.15 Kya's Crew and its sponsored rescue-adopter seat (switched off)
-- **Needs:** (1) your approval of the `entitlements` plan check change (adds `crew_monthly`, `crew_annual`) and the new `giving_rate` column; it's a payments change, so it's held either way. (2) Three answers, in the PR: should a Crew member who joins during the free season pay right away instead of $0 until its end; does a Crew membership sponsor one seat in total or one per year it renews; and where members pick Crew (no mockup shows it, so no card step offers it yet). (3) The two Crew prices in Stripe test mode and `STRIPE_PRICE_CREW_MONTHLY` / `STRIPE_PRICE_CREW_YEARLY`, when you're ready; nothing in Stripe was touched.
-
-### [#521](https://github.com/the-kya-project/perch-perfect-plan/pull/521) · D1.1 Weight baseline rules and a replay of real history
-- **Needs:** (1) your read of the health rules: every number is new and draft, in `WEIGHT_BASELINE_RULES`, with the choices listed under "Decisions agents made"; (2) the replay of real history, which you run: the export query is `docs/reports/weight-history-export.sql` (read-only, no names), then `npm run weight-baseline:replay -- <the file>` (the hourly job can't run it); your read of the results is what D1.2 waits on; (3) whether the owner's typed normal weight should override the learned one; (4) optionally, `npm run test:weight-baseline` in a CI workflow (the runs' token can't push workflow changes). Then your merge.
-
-### [#531](https://github.com/the-kya-project/perch-perfect-plan/pull/531) · 2.4 Open pages fetch the new build's files after a release
-- **Needs:** your merge. It changes how every open page moves onto a new release (a short POST to `/api/public/unpin` before the reload), so a run can't merge it. No Vercel setting changes. The hands-on proof is 2.5's Simulator check (leave the app open across a release, then open the sitter preview).
-
-### [#529](https://github.com/the-kya-project/perch-perfect-plan/pull/529) · 1.8 Do good voting (and the founding vote)
-- **Needs:** your look at the two admin screens, `/admin/votes` (the list) and `/admin/votes/<id>` (write a draft, open it, close early, extend, the announcement). They aren't in SpecVoting, and the specs say a screen that isn't mocked up is held for you. They follow the Library's admin screens. The member screens follow the mockup, apart from the voter avatars (see "Decisions agents made"). Say "merge" on the PR if they're fine, or what to change. It's behind the Flock gate, and the migration only adds tables, functions and a bucket.
+- **Needs:** (1) your approval of the database change: the `entitlements` plan check adds `crew_monthly` and `crew_annual`, plus the new `giving_rate` column, two new tables and the replaced billing function. Merging applies it to production. (2) One small question: if someone leaves the Crew and later rejoins, should that count as another seat? Today it does, because seats are counted per subscription. (3) Your merge. Your three questions are answered (Nov 23, 2026). The Crew option on the payment screen is now 1.15a and doesn't hold this PR. The Stripe test prices can wait until you want to try Crew checkout.
 
 ### Reminder · the hourly runs' GitHub token expires Feb 20, 2027
 - **Needs:** a new token before **Feb 20, 2027**. That's 90 days from Nov 22, 2026; GitHub → Settings → Developer settings → Fine-grained tokens shows the exact date. When it expires, runs can still build and test but can't push or open PRs, and each run's note in `~/.kya-agent/job.log` says so.
