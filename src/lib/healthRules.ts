@@ -276,33 +276,51 @@ export const CARE_WEIGHT_RULES = {
 } as const;
 
 // ---------------------------------------------------------------------------
-// 5. Weight baseline (backlog D1; not built yet). The most conservative
-// starting values from opening-scope B4.
+// 5. Weight baseline (backlog D1.1). The most conservative starting values
+// from opening-scope B4. Behind the `weight_baseline` switch (off); nothing in
+// the app reads these yet (the screens are D1.2).
 // ---------------------------------------------------------------------------
+const WB = "computeWeightBaseline in src/lib/weightBaseline.ts";
 export const WEIGHT_BASELINE_RULES = {
   /** "Still learning" until at least this many weigh-ins… */
-  minWeighIns: draft(7, OUR_START, "not built yet (backlog D1.1)"),
+  minWeighIns: draft(7, OUR_START, WB),
   /** …spread over at least this many days. */
-  minDays: draft(14, OUR_START, "not built yet (backlog D1.1)"),
+  minDays: draft(14, OUR_START, WB),
+  /** The bird's normal is worked out from this many days of weigh-ins… */
+  baselineWindowDays: draft(
+    90,
+    `${OUR_START}; matches the care app's trend window (CARE_WEIGHT_RULES.trendWindowDays)`,
+    WB,
+  ),
+  /** …leaving out the most recent days, so a drop now doesn't pull the normal down with it. */
+  baselineSkipDays: draft(7, `${OUR_START}; the same week as keepAnEyeDays`, WB),
+  /** The normal range: these percentiles of those weigh-ins (the normal itself is the median). */
+  rangeLowPercentile: draft(10, OUR_START, WB),
+  rangeHighPercentile: draft(90, OUR_START, WB),
   /** "Worth watching": this percent below the bird's own normal. */
-  worthWatchingPct: draft(
-    2.5,
-    `${OUR_START}; the care app's existing amber level`,
-    "not built yet (backlog D1.1)",
-  ),
+  worthWatchingPct: draft(2.5, `${OUR_START}; the care app's existing amber level`, WB),
   /** "Keep an eye on this": this percent below over a week. */
-  keepAnEyePct: draft(
-    5,
-    `${OUR_START}; the Diet conversion's pause level`,
-    "not built yet (backlog D1.1)",
-  ),
-  keepAnEyeDays: draft(7, OUR_START, "not built yet (backlog D1.1)"),
+  keepAnEyePct: draft(5, `${OUR_START}; the Diet conversion's pause level`, WB),
+  keepAnEyeDays: draft(7, OUR_START, WB),
   /** "Call your vet today": this percent below. Some guidance is stricter (about 2% in one weighing). */
-  callVetTodayPct: draft(
+  callVetTodayPct: draft(10, `Avian first-aid rule of thumb (${FIRST_AID}; ${HARRISONS})`, WB),
+  /** No alert counts until a re-weigh agrees: this many weigh-ins in a row (of the same
+   *  kind) must all be that far below. Until then the app asks for a re-weigh instead. */
+  confirmMinReadings: draft(2, `${OUR_START}; the Diet conversion's diet_avg_min_recent`, WB),
+  /** …all within this many days of the latest. */
+  confirmDays: draft(3, `${OUR_START}; the Diet conversion's diet_avg_recent_days`, WB),
+  /** A drop must also be at least this many grams (a small bird's scale noise). */
+  minDropGrams: draft(2, `${OUR_START}; the Diet conversion's diet_min_drop_grams`, WB),
+  /** The free hard weight-loss alert: this percent below, confirmed by a re-weigh. It works
+   *  while the baseline is still learning, so "still learning" never reads as "all fine". */
+  hardLossPct: draft(
     10,
-    `Avian first-aid rule of thumb (${FIRST_AID}; ${HARRISONS})`,
-    "not built yet (backlog D1.1)",
+    `Avian first-aid rule of thumb (${FIRST_AID}; ${HARRISONS}); the same as callVetTodayPct`,
+    WB,
   ),
+  /** While still learning, the hard alert compares with the median of this many days before
+   *  the latest weigh-ins (the last confirmDays left out). Once learned it uses the normal. */
+  hardLossReferenceDays: draft(30, OUR_START, WB),
 } as const;
 
 // ---------------------------------------------------------------------------

@@ -635,6 +635,26 @@ Format:
 - **Why:** D9 says "content removed by reviewers, and reports, are kept for 180 days, then deleted"; the item says "closed reports" and "180 days after they were resolved". Reusing 1.3's hold means a single path deletes Flock photos.
 - **To change it:** `private.flock_moderation_purge` in `20261123193000_flock_removed_purge.sql` (a new migration); the hold is `private.flock_removed_hold()`.
 
+### [#521](https://github.com/the-kya-project/perch-perfect-plan/pull/521) · D1.1 Weight baseline rules
+- **Decision:** How the normal is worked out. It's the median (not the average) of the bird's weigh-ins of the same kind (before a meal, after a meal, not labeled) from the last 90 days, **leaving out the last 7 days**, and the range is the 10th to 90th percentile of those. "Still learning" counts only those weigh-ins, so a bird that's weighed regularly gets its normal about three weeks after its first weigh-in, not two.
+- **Why:** the median ignores one odd reading (a dish left on the scale); leaving out the last week keeps a drop that's happening now from pulling the normal down with it, which would hide a slow decline.
+- **To change it:** `baselineWindowDays`, `baselineSkipDays`, `rangeLowPercentile`, `rangeHighPercentile` in `WEIGHT_BASELINE_RULES` (`src/lib/healthRules.ts`).
+
+### [#521](https://github.com/the-kya-project/perch-perfect-plan/pull/521) · D1.1 Weight baseline rules
+- **Decision:** No tier fires on one weigh-in. A tier counts only when the last **two** weigh-ins of the same kind, within 3 days, are both that far below, and at least 2 g below. "Keep an eye on this" also needs the last 7 days' average 5% below. Until a re-weigh agrees, the function answers "weigh again" (`reweigh`) instead of an alert. Readings of another kind never confirm or compare: an after-meal weigh-in is never judged against the before-meal normal.
+- **Why:** opening-scope B4's main risk is a false "call your vet today" from an after-meal reading, a dish on the scale or a new scale; it says to compare like with like, use the 2 g floor and ask for a re-weigh before any alert. An earlier version averaged the last 3 weigh-ins (the Diet conversion's way), but a real drop confirmed by a re-weigh was then diluted by the reading before it, so it switched to "two in a row".
+- **To change it:** `confirmMinReadings`, `confirmDays`, `minDropGrams`, `keepAnEyeDays` in `WEIGHT_BASELINE_RULES`.
+
+### [#521](https://github.com/the-kya-project/perch-perfect-plan/pull/521) · D1.1 Weight baseline rules
+- **Decision:** What "the free hard weight-loss safety alert" is, since no spec defines it: a weigh-in **10% or more below** (the same rule-of-thumb value as "call your vet today"), confirmed by a re-weigh, at least 2 g. Once the normal is learned it's the same as "call your vet today". While still learning it compares with the median of the same kind's weigh-ins from the 30 days before (the last 3 days left out), so a new bird is covered from its second weigh-in and "still learning" never reads as "all fine".
+- **Why:** opening-scope says the care app has no hard weight-loss alert today and that this one uses the most conservative research values; 10% is the value B4 cites with sources. The stricter "about 2% in one weighing" isn't used, because one weighing at 2% is within ordinary day-to-day and meal-time swing and would fire constantly.
+- **To change it:** `hardLossPct`, `hardLossReferenceDays` in `WEIGHT_BASELINE_RULES`.
+
+### [#521](https://github.com/the-kya-project/perch-perfect-plan/pull/521) · D1.1 Weight baseline rules
+- **Decision:** Left out for now: the owner's typed normal weight (`birds.normal_weight` / min / max) doesn't override the learned one, and gains above the range get no note. The replay counts a tier as "fired" when a weigh-in reaches it and the one before didn't (reaching "call your vet today" from nothing counts once for each of the three tiers), and labels birds "Bird 1", "Bird 2"… by number of weigh-ins.
+- **Why:** both were in the old weight-range spec but not in D1.1's "done means"; a typed value can be years old (a bird that has grown), so it's a decision for Brittany. "One alert per crossing" is the old spec's rule for sending alerts.
+- **To change it:** say so on #521 or in D1.2; `computeWeightBaseline` would take the typed range as an extra input.
+
 ### [#531](https://github.com/the-kya-project/perch-perfect-plan/pull/531) · 2.4 Open pages fetch the new build's files after a release
 - **Decision:** The pin is dropped before **every** update reload: the version check's (cache-busted address) and the service worker's (a plain reload, as before). The startup guard's reset after a missing code file, and the error screen's hard reset, are left as they are. The unpin waits at most 3 seconds; if it fails or times out (offline, or a page whose pinned build is older than this PR and has no `/api/public/unpin`), the page reloads anyway, exactly as it does today. The address is POST only, so a link or prefetch can never unpin anyone.
 - **Why:** the item says "when an update is ready, the app clears its own pin and reloads", which covers both kinds of update. The resets aren't updates, and they already reload with the worker and caches cleared. The 3-second limit is the reference branch's.
@@ -928,6 +948,9 @@ Format:
 
 ### [#521](https://github.com/the-kya-project/perch-perfect-plan/pull/521) · D1.1 Weight baseline · conflicts with `main` in `package.json`
 - **Needs:** "Update branch" (or a merge of `main`). It conflicts with `main` in `package.json` as well as the record files, so the 14:05 EST run left it as it is. Runs only resolve conflicts in the three record files.
+
+### [#521](https://github.com/the-kya-project/perch-perfect-plan/pull/521) · D1.1 Weight baseline rules and a replay of real history
+- **Needs:** (1) your read of the health rules: every number is new and draft, in `WEIGHT_BASELINE_RULES`, with the choices listed under "Decisions agents made"; (2) the replay of real history, which you run: the export query is `docs/reports/weight-history-export.sql` (read-only, no names), then `npm run weight-baseline:replay -- <the file>` (the hourly job can't run it); your read of the results is what D1.2 waits on; (3) whether the owner's typed normal weight should override the learned one; (4) optionally, `npm run test:weight-baseline` in a CI workflow (the runs' token can't push workflow changes). Then your merge.
 
 ### [#531](https://github.com/the-kya-project/perch-perfect-plan/pull/531) · 2.4 Open pages fetch the new build's files after a release
 - **Needs:** your merge. It changes how every open page moves onto a new release (a short POST to `/api/public/unpin` before the reload), so a run can't merge it. No Vercel setting changes. The hands-on proof is 2.5's Simulator check (leave the app open across a release, then open the sitter preview).
