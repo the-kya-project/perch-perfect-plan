@@ -137,14 +137,29 @@ for (let run = 1; run <= RESET_RUNS; run++) {
       else await route.continue().catch(() => { /* cancelled by the reset */ });
     });
     const seen = resets(page);
-    page.on("framenavigated", (f) => { if (f === page.mainFrame() && f.url().includes("_r=")) missing = false; });
+    // Two things reload a page with a missing file: the guard (its URL gets
+    // `_r=`) and TanStack Router's lazy loader (a plain reload, once per tab).
+    // When the router's lands while the guard's is under way it replaces it,
+    // so the URL never shows `_r=`. Count the documents that actually started.
+    await page.addInitScript(() => {
+      try {
+        if (location.protocol === "http:") sessionStorage.setItem("kya-test-docs", String(Number(sessionStorage.getItem("kya-test-docs") || 0) + 1));
+      } catch { /* a document without storage isn't the app */ }
+    });
+    const documents = () => page.evaluate(() => Number(sessionStorage.getItem("kya-test-docs") || 0)).catch(() => 0);
+    let navigations = 0;
+    page.on("request", (r) => {
+      if (r.isNavigationRequest() && r.frame() === page.mainFrame() && ++navigations > 1) missing = false;
+    });
 
     // The reset can interrupt this first load (Chromium then reports
     // ERR_ABORTED), so wait on the reset itself rather than on navigation.
     await page.goto("/auth?mode=signin", { waitUntil: "commit" }).catch(() => { /* interrupted by the reset */ });
-    await expect.poll(() => seen.size, { timeout: 10_000, message: "the page should reset itself" }).toBeGreaterThanOrEqual(1);
+    await expect.poll(documents, { timeout: 10_000, message: "the page should reset itself" }).toBeGreaterThanOrEqual(2);
     await page.waitForTimeout(2000);
-    expect(seen.size, "exactly one automatic reset").toBe(1);
+    expect(seen.size, "the guard resets at most once").toBeLessThanOrEqual(1);
+    // The first load, the guard's reset and the router's one reload: never a loop.
+    expect(await documents(), "the page doesn't keep reloading").toBeLessThanOrEqual(3);
     // Whether the reloaded page starts is up to the browser's cache: WebKit
     // keeps the failed file for the tab (see navigation.spec.ts), Chromium
     // fetches it again and starts.
