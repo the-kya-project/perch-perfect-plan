@@ -51,6 +51,57 @@ jobs:
       - name: Translation catalog matches the code
         run: npm run i18n:check
 
+      # The rule tests (scripts/*.test.ts): no browser, build or secrets. Keep
+      # the list alphabetical, one line per test, so PRs adding one rarely
+      # conflict. A new test script needs its line here to run in CI.
+      - name: Rule tests
+        run: |
+          npm run test:app-links
+          npm run test:auth-email-hook
+          npm run test:bereavement-note
+          npm run test:bird-age
+          npm run test:bird-names
+          npm run test:blog-feed
+          npm run test:check-kind
+          npm run test:chop-ingredients
+          npm run test:confirm-links
+          npm run test:copy-from-bird
+          npm run test:cron-auth
+          npm run test:cron-telemetry
+          npm run test:daily-log
+          npm run test:drafts
+          npm run test:duo
+          npm run test:eligibility
+          npm run test:email-clicks
+          npm run test:email-tracking
+          npm run test:emergency-merge
+          npm run test:get-app
+          npm run test:gifts
+          npm run test:health-rules
+          npm run test:home-defaults
+          npm run test:intake-date
+          npm run test:local-day
+          npm run test:native-app-tags
+          npm run test:no-home-screen
+          npm run test:oauth-errors
+          npm run test:onboarding-plan
+          npm run test:onboarding-welcome
+          npm run test:person-name
+          npm run test:poison-control
+          npm run test:preview-services
+          npm run test:release-check
+          npm run test:save-errors
+          npm run test:seasonal-calendar
+          npm run test:setup-progress
+          npm run test:signup-existing
+          npm run test:sit-preview-recovery
+          npm run test:sit-time-zone
+          npm run test:supabase-env
+          npm run test:together-since
+          npm run test:url-scrub
+          npm run test:utm-carry
+          npm run test:weight-then
+
       - name: Install browsers (WebKit and Chromium)
         run: npx playwright install --with-deps webkit chromium
 

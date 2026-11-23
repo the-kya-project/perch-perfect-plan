@@ -7,6 +7,7 @@ import { FlockContactLine } from "@/components/flock/FlockGuidelines";
 import { membershipSummary } from "@/lib/flockProfile";
 import { useAvatarUrls, useIsAdmin, useMyEntitlements, useMyProfile, useMySetup, useRegions } from "@/lib/flockData";
 import { useCanReview, useReviewCounts } from "@/lib/flockModeration";
+import { usePlaceSuggestions } from "@/lib/flockPlaces";
 
 // You: your Community profile and settings, from the header avatar.
 export const Route = createFileRoute("/_authenticated/flock/you/")({
@@ -24,7 +25,8 @@ function FlockYou() {
   const { data: urls } = useAvatarUrls([me?.photo_path]);
   const { data: canReview } = useCanReview();
   const { data: counts } = useReviewCounts(canReview === true);
-  const waiting = (counts?.good ?? 0) + (counts?.reports ?? 0) + (counts?.events ?? 0);
+  const { data: placeSuggestions } = usePlaceSuggestions(canReview === true);
+  const waiting = (counts?.good ?? 0) + (counts?.reports ?? 0) + (counts?.events ?? 0) + (placeSuggestions?.length ?? 0);
   const region = regions?.find((r) => r.slug === me?.region_slug);
   const founder = !!setup?.founding_spot;
   const membership = membershipSummary(ents ?? [], !!isAdmin);
