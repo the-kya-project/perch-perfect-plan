@@ -38,7 +38,8 @@ export const STARTUP_GUARD = `(function(){try{` +
   `var C=window.__kyaCode={files:[],failed:[]};` +
   `function code(e){var el=e&&e.target;if(!el||(el.tagName!=="SCRIPT"&&el.tagName!=="LINK"))return"";var u=el.src||el.href||"";return u.indexOf(location.origin+"/assets/")===0?u:""}` +
   `function note(u,bad){try{if(C.files.indexOf(u)<0)C.files.push(u);if(bad&&C.failed.indexOf(u)<0)C.failed.push(u)}catch(x){}}` +
-  `addEventListener("load",function(e){var u=code(e);if(u)note(u,false)},true);` +
+  // On document: a file's load event never reaches window (DOM spec).
+  `document.addEventListener("load",function(e){var u=code(e);if(u)note(u,false)},true);` +
   `addEventListener("beforeunload",function(){leaving=true});addEventListener("pagehide",function(){leaving=true});` +
   `addEventListener("pageshow",function(){leaving=false});window.__kyaLeaving=function(){return leaving};` +
   `function nl(){try{return /^nl/i.test(navigator.language||"")}catch(e){return false}}` +
