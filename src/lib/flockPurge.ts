@@ -9,15 +9,27 @@
 // the next run. Running it again is always safe: removing a file that's
 // already gone isn't an error.
 //
-// Pure apart from the three calls it's given, so scripts/flock-purge.test.ts
-// pins it with fakes.
+// Removed content and closed reports (backlog 1.4, legal draft D9): before the
+// purge, `expire` (flock_moderation_purge) moves posts and comments a reviewer
+// removed 180+ days ago into flock_deleted_items, already due, and deletes
+// reports closed 180+ days ago, so the same run removes their photos too.
+//
+// Pure apart from the calls it's given, so scripts/flock-purge.test.ts pins it
+// with fakes.
 
 /** "<user id>/<uuid>.jpg", the only shape a post or comment photo has. */
 export const PURGE_PHOTO_PATH = /^[0-9a-f-]{36}\/[0-9a-f-]{36}\.jpg$/;
 
 export type DueItem = { item_id: string; paths: string[] | null };
 
+export type ModerationExpired = { posts: number; comments: number; reports: number };
+
 export type PurgeDeps = {
+  /**
+   * Moves removed content whose 180 days are over into the purge and deletes
+   * old closed reports (flock_moderation_purge); with dryRun, only counts.
+   */
+  expire?: (dryRun: boolean) => Promise<ModerationExpired>;
   /** Held items whose hold is over, oldest first (flock_purge_due). */
   due: (limit: number) => Promise<DueItem[]>;
   /** Deletes those items for good; returns how many went (flock_purge_done). */
@@ -38,6 +50,12 @@ export type PurgeResult = {
   /** True when the batch limit was reached and more may be waiting. */
   more: boolean;
   dryRun: boolean;
+  /**
+   * Removed posts and comments moved into the purge, and closed reports
+   * deleted (1.4). In a dry run, how many would be; their photos aren't in
+   * `files` then, since they're only counted once moved.
+   */
+  removed: ModerationExpired;
 };
 
 export const PURGE_BATCH = 100;
@@ -51,7 +69,18 @@ export async function runFlockPurge(
 ): Promise<PurgeResult> {
   const batch = opts.batch ?? PURGE_BATCH;
   const maxBatches = opts.maxBatches ?? PURGE_MAX_BATCHES;
-  const out: PurgeResult = { purged: 0, files: 0, failed: 0, skippedPaths: 0, more: false, dryRun: !!opts.dryRun };
+  const out: PurgeResult = {
+    purged: 0,
+    files: 0,
+    failed: 0,
+    skippedPaths: 0,
+    more: false,
+    dryRun: !!opts.dryRun,
+    removed: { posts: 0, comments: 0, reports: 0 },
+  };
+
+  // First, so what it moves is purged in this same run.
+  if (deps.expire) out.removed = await deps.expire(!!opts.dryRun);
 
   if (opts.dryRun) {
     const items = await deps.due(batch);

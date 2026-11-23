@@ -49,13 +49,6 @@ Where these items came from, with the detail behind each: `docs/flock/opening-sc
 - **Overnight alone:** yes (built to a held PR)
 - **Needs Brittany:** hold the PR. The health wording goes in the review queue and the vet packet. Ask in the PR whether the log covers only her birds or every bird: this item used to say every bird, and her approval says on for her account only. Until she answers, log her birds only.
 
-### 1.4 Removed content and closed reports are deleted after 180 days
-- **Done means:** the same daily job deletes reviewer-removed content and closed reports 180 days after they were resolved. Pinned in `supabase/checks/flock_moderation_checks.sql` (legal draft D9).
-- **Size:** S
-- **Depends on:** 1.3
-- **Overnight alone:** yes
-- **Needs Brittany:** approval of the deletion (it deletes data).
-
 
 ### 1.15 Kya's Crew and its sponsored rescue-adopter seat (switched off)
 - **Done means:**
@@ -337,6 +330,7 @@ The launch PR itself (1.18) is already merged dark. What's left before opening i
 
 ## Done
 
+- **1.4** The daily `flock-purge` hook first runs `flock_moderation_purge` (`20261123193000_flock_removed_purge.sql`, service role only): posts and comments a reviewer removed 180+ days ago move, with the comments under them, into 1.3's `flock_deleted_items` already due, so the same run deletes them and their photos; reports closed 180+ days ago are deleted. Removed journey updates are left for Brittany's call. Pinned in `supabase/checks/flock_moderation_checks.sql` and `npm run test:flock-purge`. Held for Brittany (it deletes data): #534.
 - **1.14** Billing foundation, switched off (`BILLING_ENABLED` must be exactly `true`) and Stripe test mode only, enforced in code: `billing_customers`, `billing_events`, `entitlements.product_id` / `will_renew` / `cancel_at_period_end`, `founding_claims.released_at` / `forfeited_at`, and the service-role functions the webhook writes through (`20261123180000_billing_foundation.sql`, `supabase/checks/billing_checks.sql`); the webhook `/api/public/stripe/billing` (`STRIPE_BILLING_WEBHOOK_SECRET`, re-reads each subscription, idempotent on the event id); the card step on Membership (`/flock/you/membership`, $0 until the free season's end, founders get $15, never in the native app); `npm run test:billing`. Held for Brittany (payments): #525. Approved and merged by Brittany (Nov 23, 2026), PR #525.
 - **1.3** Deleting a post or comment moves it, with the comments under it, into `flock_deleted_items`, so it's hidden from everyone at once, the author included. The daily job `flock-deleted-purge-daily` (`/api/public/hooks/flock-purge`) deletes it and its photos for good 180 days later. Deleting an account removes its held items at once. Pinned in `supabase/checks/flock_posts_checks.sql` and `npm run test:flock-purge`. Approved and merged by Brittany (Nov 23, 2026): #522.
 - **D2.1** Home shows the day's card from the seasonal calendar (D3) under the Today list: the reader's own date, read after the page loads; their language; US or Dutch holidays from the account's home time zone. Behind its own switch, `today_cards` in `public.care_features` (off / admins / everyone). Redesigned Nov 23 with illustrations, tints, labels, an end date and a per-account "Got it" (`public.today_card_dismissals`). Pinned by `npm run test:today-card`, `supabase/checks/care_features_checks.sql` and `supabase/checks/today_card_dismissals_checks.sql`. Approved and merged by Brittany: #523. Switched on for everyone on Nov 23, 2026: for admins at 12:08 PM Eastern, where Brittany checked the card on her own account, then for everyone at 12:09 PM Eastern. Brittany decided to skip the before-and-after Home screenshots this item called for before going to everyone.

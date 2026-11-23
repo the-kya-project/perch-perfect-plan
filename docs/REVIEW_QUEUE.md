@@ -257,6 +257,11 @@ Format:
 - **To change it:** <what would need to change>
 ```
 
+### [#534](https://github.com/the-kya-project/perch-perfect-plan/pull/534) · 1.4 Removed content and closed reports are deleted after 180 days
+- **Decision:** What counts: posts and comments a reviewer removed ("Remove it" in the review queue), timed from the removal (`flock_moderation.updated_at`), and reports closed as kept or removed, timed from `resolved_at`. Removed content goes through 1.3's hold, already due, so the same daily run deletes its photos with 1.3's rules (a photo still used elsewhere is kept, and a failed delete waits a day). The comments under a removed post, and the replies under a removed comment, go with it. Left out: removed journey updates (asked in Held), Do good posts a reviewer declined (a review result, not a removal; they stay visible to their author only), content still waiting for review, and open reports.
+- **Why:** D9 says "content removed by reviewers, and reports, are kept for 180 days, then deleted"; the item says "closed reports" and "180 days after they were resolved". Reusing 1.3's hold means a single path deletes Flock photos.
+- **To change it:** `private.flock_moderation_purge` in `20261123193000_flock_removed_purge.sql` (a new migration); the hold is `private.flock_removed_hold()`.
+
 ### [#525](https://github.com/the-kya-project/perch-perfect-plan/pull/525) · 1.14 Billing foundation (switched off) · approved and merged by Brittany, Nov 23, 2026
 - **Decision:** Test mode is enforced in code: billing refuses any Stripe key that isn't a test key (`getBillingStripe` in `src/lib/stripe.server.ts`), in every deployment, production included. Gifts keep using the live key as before.
 - **Why:** your approval was "test mode only". Putting it in code means turning `BILLING_ENABLED` on in production can't charge a real card by accident. Going live becomes a deliberate one-line code change you approve.
@@ -517,6 +522,12 @@ Format:
 ### <PR link> · <item ID> <item title>
 - **Needs:** <the decision, approval or read, in one or two lines>
 ```
+
+### [#534](https://github.com/the-kya-project/perch-perfect-plan/pull/534) · 1.4 Removed content and closed reports are deleted after 180 days
+- **Needs:** (1) your approval of the deletion: once merged, the daily purge deletes posts and comments a reviewer removed 180+ days ago, with their photos and the comments under them, and reports closed 180+ days ago. Production has none of either today (checked read-only: 0 removed, 0 reports), so nothing would be deleted yet. (2) Your call on removed journey updates: they still show to the bird's household, so this PR leaves them (and their clips) alone. Say whether they should be deleted after 180 days too, which takes them out of the household's journey and needs the clip deleted from Cloudflare.
+
+### [#521](https://github.com/the-kya-project/perch-perfect-plan/pull/521) · D1.1 Weight baseline · conflicts with `main` in `package.json`
+- **Needs:** "Update branch" (or a merge of `main`). It conflicts with `main` in `package.json` as well as the record files, so the 14:05 EST run left it as it is. Runs only resolve conflicts in the three record files.
 
 ### Reminder · the hourly runs' GitHub token expires Feb 20, 2027
 - **Needs:** a new token before **Feb 20, 2027**. That's 90 days from Nov 22, 2026; GitHub → Settings → Developer settings → Fine-grained tokens shows the exact date. When it expires, runs can still build and test but can't push or open PRs, and each run's note in `~/.kya-agent/job.log` says so.

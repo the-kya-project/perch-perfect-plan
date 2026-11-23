@@ -20,6 +20,12 @@ Copy this, fill it in, and put it at the top of "Runs", above the latest entry.
 
 ## Runs
 
+### 2026-11-23 14:05 EST · 1.4 Removed content and closed reports are deleted after 180 days
+- **Built:** The daily clean-up job from 1.3 now also handles reviewer decisions. When a reviewer removes a Flock post or comment, it stays hidden as before. 180 days after the removal, the job deletes it for good, with its photos and the comments under it, the same way a post its author deleted is purged. Reports that were closed (kept or removed) are deleted 180 days after they were closed. Removed journey updates are left as they are, because the bird's household still sees them; that's a question for Brittany. A "dry run" only counts. Database checks and `npm run test:flock-purge` (4 new tests) pin it.
+- **PR:** [#534](https://github.com/the-kya-project/perch-perfect-plan/pull/534)
+- **Outcome:** Held: the item asks for Brittany's approval because it deletes data, and she needs to decide on removed journey updates. Production has no removed content and no reports today (checked read-only), and the Flock is still closed (`members_open` off).
+- **Problems:** At the start, #529 and #533 were held, green and mergeable, so they were left alone. #531 (2.4) conflicted with `main` only in the three record files. This run merged `main` into it in a separate copy, kept both sides' entries, and pushed. For the held items Brittany had already cleared on `main`, `main`'s version was kept. #521 (D1.1) also conflicts in `package.json`, so it was left as it is and noted in the review queue. The database checks only run in CI, because this machine has no local database. Type check, lint and `test:flock-purge` (11) pass locally. Prettier warns about the two TypeScript files, but it warned on `main` too, so their existing style was kept. Some shell commands (heredocs, redirects) were refused, so edits were made in the editor. No lock at start. No pending-log entries to move.
+
 ### 2026-11-23 13:15 EST · Record: #525 approved and merged by Brittany
 - **Built:** Brittany approved 1.14's database change, its 16 lines of wording and the review-queue decisions. Changed the founding line as she asked, merged `main` (both sides kept), and added `npm run test:billing` to the iPhone hydration job.
 - **Migration:** renamed to `20261123180000_billing_foundation.sql`, because two later migrations reached production while this PR was open and a file older than them is refused by a plain `supabase db push`. It had not been applied anywhere.
