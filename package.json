@@ -76,7 +76,9 @@
     "test:cron-auth": "npx --yes vite-node scripts/cron-auth.test.ts",
     "test:native-app-tags": "npx --yes vite-node scripts/native-app-tags.test.ts",
     "test:seasonal-calendar": "npx --yes vite-node scripts/seasonal-calendar.test.ts",
-    "test:release-check": "npx --yes vite-node scripts/release-check.test.ts"
+    "test:release-check": "npx --yes vite-node scripts/release-check.test.ts",
+    "test:weight-baseline": "npx --yes vite-node scripts/weight-baseline.test.ts",
+    "weight-baseline:replay": "npx --yes vite-node scripts/weight-baseline-replay.ts"
   },
   "dependencies": {
     "@capacitor/android": "^8.5.3",

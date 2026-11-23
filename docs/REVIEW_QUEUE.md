@@ -137,6 +137,26 @@ Format:
 - **To change it:** <what would need to change>
 ```
 
+### [#521](https://github.com/the-kya-project/perch-perfect-plan/pull/521) · D1.1 Weight baseline rules
+- **Decision:** How the normal is worked out. It's the median (not the average) of the bird's weigh-ins of the same kind (before a meal, after a meal, not labeled) from the last 90 days, **leaving out the last 7 days**, and the range is the 10th to 90th percentile of those. "Still learning" counts only those weigh-ins, so a bird that's weighed regularly gets its normal about three weeks after its first weigh-in, not two.
+- **Why:** the median ignores one odd reading (a dish left on the scale); leaving out the last week keeps a drop that's happening now from pulling the normal down with it, which would hide a slow decline.
+- **To change it:** `baselineWindowDays`, `baselineSkipDays`, `rangeLowPercentile`, `rangeHighPercentile` in `WEIGHT_BASELINE_RULES` (`src/lib/healthRules.ts`).
+
+### [#521](https://github.com/the-kya-project/perch-perfect-plan/pull/521) · D1.1 Weight baseline rules
+- **Decision:** No tier fires on one weigh-in. A tier counts only when the last **two** weigh-ins of the same kind, within 3 days, are both that far below, and at least 2 g below. "Keep an eye on this" also needs the last 7 days' average 5% below. Until a re-weigh agrees, the function answers "weigh again" (`reweigh`) instead of an alert. Readings of another kind never confirm or compare: an after-meal weigh-in is never judged against the before-meal normal.
+- **Why:** opening-scope B4's main risk is a false "call your vet today" from an after-meal reading, a dish on the scale or a new scale; it says to compare like with like, use the 2 g floor and ask for a re-weigh before any alert. An earlier version averaged the last 3 weigh-ins (the Diet conversion's way), but a real drop confirmed by a re-weigh was then diluted by the reading before it, so it switched to "two in a row".
+- **To change it:** `confirmMinReadings`, `confirmDays`, `minDropGrams`, `keepAnEyeDays` in `WEIGHT_BASELINE_RULES`.
+
+### [#521](https://github.com/the-kya-project/perch-perfect-plan/pull/521) · D1.1 Weight baseline rules
+- **Decision:** What "the free hard weight-loss safety alert" is, since no spec defines it: a weigh-in **10% or more below** (the same rule-of-thumb value as "call your vet today"), confirmed by a re-weigh, at least 2 g. Once the normal is learned it's the same as "call your vet today". While still learning it compares with the median of the same kind's weigh-ins from the 30 days before (the last 3 days left out), so a new bird is covered from its second weigh-in and "still learning" never reads as "all fine".
+- **Why:** opening-scope says the care app has no hard weight-loss alert today and that this one uses the most conservative research values; 10% is the value B4 cites with sources. The stricter "about 2% in one weighing" isn't used, because one weighing at 2% is within ordinary day-to-day and meal-time swing and would fire constantly.
+- **To change it:** `hardLossPct`, `hardLossReferenceDays` in `WEIGHT_BASELINE_RULES`.
+
+### [#521](https://github.com/the-kya-project/perch-perfect-plan/pull/521) · D1.1 Weight baseline rules
+- **Decision:** Left out for now: the owner's typed normal weight (`birds.normal_weight` / min / max) doesn't override the learned one, and gains above the range get no note. The replay counts a tier as "fired" when a weigh-in reaches it and the one before didn't (reaching "call your vet today" from nothing counts once for each of the three tiers), and labels birds "Bird 1", "Bird 2"… by number of weigh-ins.
+- **Why:** both were in the old weight-range spec but not in D1.1's "done means"; a typed value can be years old (a bird that has grown), so it's a decision for Brittany. "One alert per crossing" is the old spec's rule for sending alerts.
+- **To change it:** say so on #521 or in D1.2; `computeWeightBaseline` would take the typed range as an extra input.
+
 ### [#519](https://github.com/the-kya-project/perch-perfect-plan/pull/519) · 2.2 A version endpoint and release rules
 - **Decision:** Ported the endpoint and rules from the reference branch `fix/native-release-catchup`, with three changes: (1) "update now or later" is its own rule, `releaseUpdateAction`, the same rule a service-worker update follows today (a quiet moment with no form in progress → now; otherwise the banner); (2) a new `parseVersionResponse` reads the endpoint's answer and ignores anything else (an error page, a proxy); (3) the branch's `staleCodeAction` (what a missing code file does) was left out, since 2.1 already handles missing files on `main` and it isn't part of 2.2. The numbers are the branch's: check hourly, at most once a minute on return to the foreground, give up after 8 seconds, never reload for the same build twice within 10 minutes.
 - **Why:** the backlog asks for the pure rules for "a new release is out, update now or later", with nothing behaving differently yet. Nothing calls them until 2.3.
@@ -295,6 +315,9 @@ Format:
 ### <PR link> · <item ID> <item title>
 - **Needs:** <the decision, approval or read, in one or two lines>
 ```
+
+### [#521](https://github.com/the-kya-project/perch-perfect-plan/pull/521) · D1.1 Weight baseline rules and a replay of real history
+- **Needs:** (1) your read of the health rules: every number is new and draft, in `WEIGHT_BASELINE_RULES`, with the choices listed under "Decisions agents made"; (2) the replay of real history, which you run: the export query is `docs/reports/weight-history-export.sql` (read-only, no names), then `npm run weight-baseline:replay -- <the file>` (the hourly job can't run it); your read of the results is what D1.2 waits on; (3) whether the owner's typed normal weight should override the learned one; (4) optionally, `npm run test:weight-baseline` in a CI workflow (the runs' token can't push workflow changes). Then your merge.
 
 ### Reminder · the hourly runs' GitHub token expires Feb 20, 2027
 - **Needs:** a new token before **Feb 20, 2027**. That's 90 days from Nov 22, 2026; GitHub → Settings → Developer settings → Fine-grained tokens shows the exact date. When it expires, runs can still build and test but can't push or open PRs, and each run's note in `~/.kya-agent/job.log` says so.
