@@ -294,8 +294,10 @@ begin
   reset role;
   perform set_config('request.jwt.claims', json_build_object('sub', m2, 'role', 'authenticated')::text, true);
   set local role authenticated;
-  ok := not exists (select 1 from public.flock_comment_delete(c1))
-    and not exists (select 1 from public.flock_comments_for('post', p_chap) where comment_id in (c1, c2));
+  -- Separate statements: a read in the same statement as the delete would
+  -- still see the comment through that statement's snapshot.
+  ok := not exists (select 1 from public.flock_comment_delete(c1));
+  ok := ok and not exists (select 1 from public.flock_comments_for('post', p_chap) where comment_id in (c1, c2));
   reset role;
   perform set_config('request.jwt.claims', json_build_object('sub', m1, 'role', 'authenticated')::text, true);
   set local role authenticated;
@@ -329,8 +331,9 @@ begin
   set local role service_role;
   ok := ok and (select paths from public.flock_purge_due(500) d join public.flock_deleted_items i on i.id = d.item_id where i.original_id = p_learn) = '{}'::text[]
            and (select paths from public.flock_purge_due(500) d join public.flock_deleted_items i on i.id = d.item_id where i.photo_paths = array[ph2]) = array[ph2]
-           and (select count(*) from public.flock_purge_due(500)) = 4;
-  ok := ok and public.flock_purge_done((select array_agg(item_id) from public.flock_purge_due(500))) = 4;
+           -- The post and its 5 comments (c1–c3, and two from the rate-limit check).
+           and (select count(*) from public.flock_purge_due(500)) = 6;
+  ok := ok and public.flock_purge_done((select array_agg(item_id) from public.flock_purge_due(500))) = 6;
   reset role;
   ok := ok and not exists (select 1 from public.flock_deleted_items where original_id = p_learn or photo_paths = array[ph2])
            and (select count(*) from public.flock_deleted_items where original_id in (c1, c2)) = 2;
