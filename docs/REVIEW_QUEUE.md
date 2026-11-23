@@ -19,9 +19,60 @@ Format:
   - After: "<new wording>"
 ```
 
+### [#525](https://github.com/the-kya-project/perch-perfect-plan/pull/525) · 1.14 Billing foundation (switched off)
+Approved and merged by Brittany (Nov 23, 2026). All 16 lines are new, as merged; nobody sees them while `BILLING_ENABLED` is off. Brittany changed the founding line before merge. `{{price}}` shows the Stripe price ($15).
+- **Where:** Membership's card step, `flock.billing.addCard`
+  - Before: new
+  - After: "Add a card"
+- **Where:** Membership's card step, `flock.billing.chargedToday`
+  - Before: new
+  - After: "You'll be charged today."
+- **Where:** Membership's card step, `flock.billing.choose`
+  - Before: new
+  - After: "Choose a plan"
+- **Where:** Membership's card step, `flock.billing.confirming`
+  - Before: new
+  - After: "We're confirming your card. This can take a minute."
+- **Where:** Membership's card step, `flock.billing.ends`
+  - Before: new
+  - After: "Your membership won't renew."
+- **Where:** Membership's card step, `flock.billing.error`
+  - Before: new
+  - After: "That didn't work. Try again in a moment."
+- **Where:** Membership's card step, `flock.billing.firstChargeOn`
+  - Before: new
+  - After: "First charge on {{date}}."
+- **Where:** Membership's card step, `flock.billing.founding`
+  - Before: new
+  - After: "Founding price: {{price}} a month, locked in for as long as you stay a member."
+- **Where:** Membership's card step, `flock.billing.manage`
+  - Before: new
+  - After: "Manage billing"
+- **Where:** Membership's card step, `flock.billing.monthly`
+  - Before: new
+  - After: "Monthly: {{price}} a month"
+- **Where:** Membership's card step, `flock.billing.notReady`
+  - Before: new
+  - After: "Adding a card opens once the free season's end is set."
+- **Where:** Membership's card step, `flock.billing.onFile`
+  - Before: new
+  - After: "Card on file"
+- **Where:** Membership's card step, `flock.billing.pastDue`
+  - Before: new
+  - After: "Your last payment didn't go through. Update your card to keep your membership."
+- **Where:** Membership's card step, `flock.billing.renews`
+  - Before: new
+  - After: "Your membership renews automatically."
+- **Where:** Membership's card step, `flock.billing.yearly`
+  - Before: new
+  - After: "Yearly: {{price}} a year"
+- **Where:** Membership's card step, `flock.billing.zeroToday`
+  - Before: new
+  - After: "$0 today. Your first charge is on {{date}}."
+
 ### [#523](https://github.com/the-kya-project/perch-perfect-plan/pull/523) · D2.1 Seasonal and holiday Today cards on Home
 
-Not merged yet: held for Brittany. English is her approved wording (Nov 23, 2026).
+Approved and merged by Brittany (Nov 23, 2026), and on for everyone since that day. English is her approved wording.
 
 **New labels (English / Dutch):** Seasonal tip / Seizoenstip · Holiday helper / Feestdagenhulp · Got it / Begrepen · Through {{date}} / T/m {{date}} · Couldn't hide this card. Try again. / Deze kaart verbergen is niet gelukt. Probeer het opnieuw. (the last one is the error if saving "Got it" fails, added by this change).
 
@@ -89,7 +140,7 @@ All new, behind the Flock gate (admins only today). Where the mockup has wording
   - After: "Call {name}, {phone}", "{name}'s website", "Kind of place", "Move {name} up", "Move {name} down"
 
 ### [#516](https://github.com/the-kya-project/perch-perfect-plan/pull/516) · D3 Seasonal calendar file
-Approved and merged by Brittany (Nov 22, 2026). All 22 cards are new, as merged; nobody sees them until D2.1 shows the card on Home. Source files: `src/locales/seasonal.en.jsonc` and `seasonal.nl.jsonc`.
+Approved and merged by Brittany (Nov 22, 2026). All 22 cards are new, as merged; nobody sees them until D2.1 shows the card on Home (it has, for everyone, since Nov 23, 2026). Source files: `src/locales/seasonal.en.jsonc` and `seasonal.nl.jsonc`.
 - **Where:** Home's Today card, `winterDryAir`
   - Before: new
   - After: "Dry winter air" / "Heating dries out the air indoors. A regular shower or misting, and a humidifier in the room, help keep your bird comfortable."
@@ -211,36 +262,62 @@ Format:
 - **Why:** the item says "when an update is ready, the app clears its own pin and reloads", which covers both kinds of update. The resets aren't updates, and they already reload with the worker and caches cleared. The 3-second limit is the reference branch's.
 - **To change it:** `unpinBuild` and `applyUpdate` in `src/lib/sw-register.ts`; `UNPIN_TIMEOUT_MS` in `src/lib/releaseCheck.ts`.
 
-### [#523](https://github.com/the-kya-project/perch-perfect-plan/pull/523) · D2.1 Seasonal and holiday Today cards on Home
+### [#525](https://github.com/the-kya-project/perch-perfect-plan/pull/525) · 1.14 Billing foundation (switched off) · approved and merged by Brittany, Nov 23, 2026
+- **Decision:** Test mode is enforced in code: billing refuses any Stripe key that isn't a test key (`getBillingStripe` in `src/lib/stripe.server.ts`), in every deployment, production included. Gifts keep using the live key as before.
+- **Why:** your approval was "test mode only". Putting it in code means turning `BILLING_ENABLED` on in production can't charge a real card by accident. Going live becomes a deliberate one-line code change you approve.
+- **To change it:** remove the key check in `getBillingStripe` when payments go live.
+
+### [#525](https://github.com/the-kya-project/perch-perfect-plan/pull/525) · 1.14 Billing foundation (switched off) · approved and merged by Brittany, Nov 23, 2026
+- **Decision:** The switch is on only when `BILLING_ENABLED` is exactly `true`. Anything else, unset included, is off. While it's off, the webhook answers 503 before reading anything, the server functions return "off" without calling Stripe, and Membership shows exactly what it shows today.
+- **Why:** the spec names the variable but not its value. A single strict value means a typo can't turn billing on.
+- **To change it:** `billingEnabled()` in `src/lib/billing.ts`.
+
+### [#525](https://github.com/the-kya-project/perch-perfect-plan/pull/525) · 1.14 Billing foundation (switched off) · approved and merged by Brittany, Nov 23, 2026
+- **Decision:** Nothing about the card step shows in the iPhone or Android app, not even an "open this in your browser" line. Membership looks the same there as it does today.
+- **Why:** the backlog says "never shown in the native app". The plan's "open this link in your browser" line conflicts with that, and Apple's rules on pointing people to web payments outside the US make a line like that risky.
+- **To change it:** `cardStep()` in `src/lib/billing.ts` returns "hidden" for the app.
+
+### [#525](https://github.com/the-kya-project/perch-perfect-plan/pull/525) · 1.14 Billing foundation (switched off) · approved and merged by Brittany, Nov 23, 2026
+- **Decision:** A founder whose founding price is still open always gets the $15 founding price, with no monthly/yearly choice. Everyone else picks monthly or yearly, with yearly selected by default. With no free-season end stored, the card step says "Adding a card opens once the free season's end is set." and can't start a checkout. Within 49 hours of the end (Stripe's 48-hour minimum for a trial, plus an hour), or after it, the card is charged the same day, with no trial. A member with a card already on file can't start a second subscription; they see "Manage billing" (Stripe's Customer Portal) instead.
+- **Why:** this follows payments-plan section d ("No yearly founding option"; `trial_end` = the free season's end). The yearly default, the not-ready line and the near-the-end rule weren't specified.
+- **To change it:** `checkoutPlan`, `firstCharge` and `cardStep` in `src/lib/billing.ts`; the default `useState("annual")` in `BillingCardStep.tsx`.
+
+### [#525](https://github.com/the-kya-project/perch-perfect-plan/pull/525) · 1.14 Billing foundation (switched off) · approved and merged by Brittany, Nov 23, 2026
+- **Decision:** Left out of this PR: refunds of memberships (the plan says "a full refund ends access now"), cancelling a Stripe subscription when an account is deleted, the end-of-season job that releases founders, the admin lists, and the 14-day trial. Stripe's statuses are mapped as follows: `unpaid` → past_due (access runs out with the period), `paused` and `incomplete_expired` → canceled, `incomplete` → no row.
+- **Why:** 1.14 covers the payments build's items 1–3 (schema, webhook, card step); the rest are later items. Refunds need a choice: the webhook re-reads the subscription, so marking a refunded row as ended would be undone by the next event. The simplest fix is to cancel the subscription in Stripe when refunding, and the webhook then ends access. Account deletion is a care-app flow current users rely on, so it was left alone.
+- **To change it:** say which you'd like for refunds, and it becomes its own item.
+
+### [#523](https://github.com/the-kya-project/perch-perfect-plan/pull/523) · D2.1 Seasonal and holiday Today cards on Home · approved and merged by Brittany, Nov 23, 2026
 
 - **Decision:** A card's end date is the last day of its unbroken run for that reader, so a season card interrupted by a holiday shows the day before the holiday (US, Nov 23: "Through Nov 23"), and "Got it" hides it through that day. It can come back after the holiday, because a different card has come up in between.
 - **Why:** the brief says "until a different card comes up" and an end date "for that reader". Saving the end date with the dismissal also means a card returns normally next year.
 
-### [#523](https://github.com/the-kya-project/perch-perfect-plan/pull/523) · D2.1 Seasonal and holiday Today cards on Home
+### [#523](https://github.com/the-kya-project/perch-perfect-plan/pull/523) · D2.1 Seasonal and holiday Today cards on Home · approved and merged by Brittany, Nov 23, 2026
 
 - **Decision:** "Pet sitter" stays "oppas" in Dutch, and "Holiday helper" is "Feestdagenhulp".
 - **Why:** the locked glossary makes "sitter" "oppas" everywhere in the app. "Feestdagenhulp" is the closest short label for the pill.
 
-### [#523](https://github.com/the-kya-project/perch-perfect-plan/pull/523) · D2.1 Seasonal and holiday Today cards on Home
+### [#523](https://github.com/the-kya-project/perch-perfect-plan/pull/523) · D2.1 Seasonal and holiday Today cards on Home · approved and merged by Brittany, Nov 23, 2026
 - **Decision:** The switch is a new table, `public.care_features` (`today_cards`, off / admins / everyone, starting off), built the same way as the health switches, rather than a row in `health_features`. "Brittany's account only" is `admins`: production has exactly one admin account (checked read-only, a count).
 - **Why:** the calendar file says the cards are plain care reminders, never health advice, so they don't belong with the switches waiting on the avian vet. A per-account list would be new machinery for one person; `admins` already means you.
 - **To change it:** move the row into `health_features` (and `HEALTH_FEATURES`) instead, or add another account to the admins.
+- **Now:** on for everyone. On Nov 23, 2026, Brittany turned it on for admins at 12:08 PM Eastern, checked the card on her own account, and turned it on for everyone at 12:09 PM Eastern. She decided to skip the before-and-after Home screenshots D2.1 called for first.
 
-### [#523](https://github.com/the-kya-project/perch-perfect-plan/pull/523) · D2.1 Seasonal and holiday Today cards on Home
+### [#523](https://github.com/the-kya-project/perch-perfect-plan/pull/523) · D2.1 Seasonal and holiday Today cards on Home · approved and merged by Brittany, Nov 23, 2026
 - **Decision:** The country (for the US-only and Netherlands-only cards) comes from the account's home time zone (Account → Time zone), or the phone's time zone when the account has none yet. A US time zone gets the US cards, Amsterdam gets the Dutch ones, and anywhere else (Canada, Belgium, the UK…) gets only the cards for everyone. The app's language isn't used. The day is the phone's own date, read after the page loads.
 - **Why:** an English speaker in Amsterdam still hears King's Day fireworks, and a Dutch speaker in Ohio still has Thanksgiving. The home time zone is the one country-like thing the app already stores.
 - **To change it:** `seasonalRegionForTimeZone` in `src/lib/todayCard.ts`; `npm run test:today-card` pins it.
 
-### [#523](https://github.com/the-kya-project/perch-perfect-plan/pull/523) · D2.1 Seasonal and holiday Today cards on Home
+### [#523](https://github.com/the-kya-project/perch-perfect-plan/pull/523) · D2.1 Seasonal and holiday Today cards on Home · approved and merged by Brittany, Nov 23, 2026
 - **Decision:** The card sits right under Home's Today list (above the birds), as a white card with a small icon for its topic (sun, snowflake, sparkles, flame, plate, car, wind, house, party popper, clock), the card's title and its body. No label, no button, no way to dismiss it. It isn't shown during the onboarding tour's demo Home, and it doesn't appear on a Home with no birds yet.
 - **Why:** the backlog asks for "the day's card" with no layout; this is the plainest card the Home design system already has. Dismissing wasn't asked for, so it's a question in the PR instead of a guess.
 - **To change it:** `src/components/SeasonalTodayCard.tsx` and its one line in `src/routes/_authenticated/dashboard.tsx`.
-### [#520](https://github.com/the-kya-project/perch-perfect-plan/pull/520) · 2.3 Open pages notice a new release
+### [#520](https://github.com/the-kya-project/perch-perfect-plan/pull/520) · 2.3 Open pages notice a new release · approved and merged by Brittany, Nov 23, 2026
 - **Decision:** The open page reads `/api/public/version` through a hidden, zero-size frame instead of an ordinary request, as the reference branch `fix/native-release-catchup` does. Vercel's Skew Protection answers an open page's ordinary requests from the copy it started with, so they would only ever see the old build; page loads, frames included, aren't pinned (checked on that branch, Nov 2, 2026).
 - **Why:** without it the check would never see a release while Skew Protection is on, which is the setting Brittany chose to keep (2.4, option B).
 - **To change it:** `readLiveBuild` in `src/lib/sw-register.ts`. If Skew Protection were ever turned off, a plain uncached request would do.
 
-### [#520](https://github.com/the-kya-project/perch-perfect-plan/pull/520) · 2.3 Open pages notice a new release
+### [#520](https://github.com/the-kya-project/perch-perfect-plan/pull/520) · 2.3 Open pages notice a new release · approved and merged by Brittany, Nov 23, 2026
 - **Decision:** A reload the version check asks for goes to the same address with `?_r=<time>` added (the cache-busted reload the startup guard already uses), so the iPhone's web view can't answer it from its own cache. A service-worker update still reloads exactly as before. Dropping Vercel's pin before that reload is left to 2.4, and the sitter preview's own catch-up (with no worker) to 2.5. The background watcher also listens for the native app's `pause` and `resume`, which the iOS web view doesn't always report as a visibility change.
 - **Why:** keeps 2.3 to its "done means" line and leaves the service-worker path that web users already have unchanged.
 - **To change it:** `reloadFresh` and `applyUpdate` in `src/lib/sw-register.ts`.
@@ -309,7 +386,7 @@ Format:
 - **To change it:** soften or remove the line in `src/locales/seasonal.en.jsonc` (and its Dutch), or add the cards to the vet packet.
 
 ### [#516](https://github.com/the-kya-project/perch-perfect-plan/pull/516) · D3 Seasonal calendar file · approved and merged by Brittany, Nov 22, 2026
-- **Decision:** The words are their own language files (`seasonal.en.jsonc` and `seasonal.nl.jsonc`), listed in the translate step like the routine catalog. The app doesn't load them yet; D2.1 adds them when Home shows the card. The Dutch was written by hand and stamped, because the run can't call the translate step.
+- **Decision:** The words are their own language files (`seasonal.en.jsonc` and `seasonal.nl.jsonc`), listed in the translate step like the routine catalog. The app doesn't load them yet; D2.1 adds them when Home shows the card (it has, for everyone, since Nov 23, 2026). The Dutch was written by hand and stamped, because the run can't call the translate step.
 - **Why:** keeps the cards out of the main word list (which only holds words the code names) and adds nothing to any page until D2.1.
 - **To change it:** a native speaker can edit the Dutch directly; the next translate run keeps hand edits.
 
@@ -448,23 +525,6 @@ Format:
 
 ### [#531](https://github.com/the-kya-project/perch-perfect-plan/pull/531) · 2.4 Open pages fetch the new build's files after a release
 - **Needs:** your merge. It changes how every open page moves onto a new release (a short POST to `/api/public/unpin` before the reload), so a run can't merge it. No Vercel setting changes. The hands-on proof is 2.5's Simulator check (leave the app open across a release, then open the sitter preview).
-
-### [#529](https://github.com/the-kya-project/perch-perfect-plan/pull/529) · 1.8 Do good voting · its migration's version is already taken
-- **Needs:** a new version for `supabase/migrations/20261123160000_flock_votes.sql` before it merges (for example `20261123180000_flock_votes.sql`; any version after `main`'s latest). `main`'s `20261123160000_today_card_dismissals.sql` (#523) has the same version, and production already records `20261123160000` as `today_card_dismissals` (checked read-only). With both files there, "Database checks" can't start its database, and that's why it went red after the 12:36 EST run updated #529 from `main`. If it merged as it is, production would probably skip the votes migration, since that version is already applied. Runs don't fix a branch whose check is failing, so it's left as it is. The admin-screens item for #529 still stands.
-
-### [#521](https://github.com/the-kya-project/perch-perfect-plan/pull/521) and [#525](https://github.com/the-kya-project/perch-perfect-plan/pull/525) · conflict with `main` in `package.json`
-- **Needs:** "Update branch" on each (or a merge of `main`). Both conflict with `main` in `package.json` as well as the record files: each adds test scripts on the same lines where `main` added `test:flock-purge` and `test:today-card`. The fix is to keep all of the lines (add a comma). Runs only resolve conflicts in the three record files, so the 12:36 EST run left both branches as they were. #525's latest "Free-user regression" run also shows *cancelled* (a newer run took its place in the shared staging queue); the update will run it again.
-
-### [#523](https://github.com/the-kya-project/perch-perfect-plan/pull/523) · D2.1 Seasonal and holiday Today cards on Home
-- **Needs:** (1) a look at the card on Home (the design below is the run's own: there's no mockup for it), and whether a card that stays the same for weeks, like Summer heat from June through August, should get a way to hide it; (2) merge, which applies the new `care_features` table to production with the switch **off**; (3) then, to try it on your account only: `select public.admin_set_care_feature('today_cards', 'admins');` (you're the only admin). Turning it on for everyone (`'everyone'`) changes Home for free users and needs before-and-after screenshots first. The card words themselves are the D3 cards you approved in #516; nothing new.
-### [#520](https://github.com/the-kya-project/perch-perfect-plan/pull/520) · 2.3 Open pages notice a new release
-- **Needs:** your merge, and the check in the iPhone Simulator: leave the app open across a preview release and see it move onto the new one (quietly when you come back after 30+ minutes or reopen, or behind "A new version is ready" while a form is open). It changes how open pages update for everyone, so a run can't merge it. Also one line for CI if you want it: add `npm run test:release-check` to the iPhone hydration job (a workflow change the runs' token can't push).
-
-### [#528](https://github.com/the-kya-project/perch-perfect-plan/pull/528) · 1.6 Curated chapter collections · needs a re-run of "iPhone hydration"
-- **Needs:** a re-run of the "iPhone hydration" check (Actions → the failed run → Re-run failed jobs). Runs aren't allowed to re-run checks. The two failures weren't from this PR.
-  - First run: the browser install took 16 minutes and the job ran out of time, just as every Community shell test, the new one included, had passed.
-  - Second run: one WebKit Dutch test of the email-confirmation page (`[webkit-nl] confirmation link waits for a tap`) failed on the dashboard's sitter-activity fetches. That's care-app code this PR doesn't touch, and the same test passed on the first run.
-- Nothing else is needed from you: no decision is waiting. Once it's green, the next run may merge it under the normal rules (hidden behind the Flock gate, additive migration). Or merge it yourself.
 
 ### Reminder · the hourly runs' GitHub token expires Feb 20, 2027
 - **Needs:** a new token before **Feb 20, 2027**. That's 90 days from Nov 22, 2026; GitHub → Settings → Developer settings → Fine-grained tokens shows the exact date. When it expires, runs can still build and test but can't push or open PRs, and each run's note in `~/.kya-agent/job.log` says so.

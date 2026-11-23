@@ -59,6 +59,7 @@ jobs:
           npm run test:app-links
           npm run test:auth-email-hook
           npm run test:bereavement-note
+          npm run test:billing
           npm run test:bird-age
           npm run test:bird-names
           npm run test:blog-feed
