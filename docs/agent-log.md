@@ -22,7 +22,7 @@ Copy this, fill it in, and put it at the top of "Runs", above the latest entry.
 
 ### 2026-11-23 13:50 EST · 1.14a Card step and checkout design
 - **Built:** the nine approved billing mockups on Membership, Checkout branding through each session's settings, and the card's last four digits read from Stripe without storing them. Behind `BILLING_ENABLED` (off), web only.
-- **PR:** https://github.com/the-kya-project/perch-perfect-plan/pull/PRNUM
+- **PR:** https://github.com/the-kya-project/perch-perfect-plan/pull/533
 - **Tested:** `npm run test:billing`, types, translations, and every screen rendered at phone and desktop width with made-up billing data.
 - **Not tested:** a real Stripe Checkout or Customer Portal page. Billing is off and this run has no Stripe test key.
 - **Outcome:** held for Brittany.

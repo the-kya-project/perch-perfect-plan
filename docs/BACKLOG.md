@@ -63,7 +63,7 @@ Where these items came from, with the detail behind each: `docs/flock/opening-sc
 - **Size:** L
 - **Depends on:** 1.14 (merged, #525)
 - **Overnight alone:** no (built by Brittany's request to a held PR)
-- **Needs Brittany:** held at [#PRNUM](https://github.com/the-kya-project/perch-perfect-plan/pull/PRNUM); what it needs is in the review queue.
+- **Needs Brittany:** held at [#533](https://github.com/the-kya-project/perch-perfect-plan/pull/533); what it needs is in the review queue.
 
 ### 1.15 Kya's Crew and its sponsored rescue-adopter seat (switched off)
 - **Done means:**

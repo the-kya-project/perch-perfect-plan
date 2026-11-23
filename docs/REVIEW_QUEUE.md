@@ -19,7 +19,7 @@ Format:
   - After: "<new wording>"
 ```
 
-### [#PRNUM](https://github.com/the-kya-project/perch-perfect-plan/pull/PRNUM) · 1.14a Card step and checkout design
+### [#533](https://github.com/the-kya-project/perch-perfect-plan/pull/533) · 1.14a Card step and checkout design
 Held for Brittany. Nobody sees these while `BILLING_ENABLED` is off. English only: Dutch waits for her go-ahead.
 - **Where:** billing screens, `flock.billing.accessUntil`
   - Before: new
@@ -509,7 +509,7 @@ Format:
 - **To change it:** <what would need to change>
 ```
 
-### [#PRNUM](https://github.com/the-kya-project/perch-perfect-plan/pull/PRNUM) · 1.14a Card step and checkout design
+### [#533](https://github.com/the-kya-project/perch-perfect-plan/pull/533) · 1.14a Card step and checkout design
 - **Decision:** Differences from the approved mockups:
   - **Tab bar:** the Flock's tab bar (phones) and side column (desktop) stay on these screens. The mockups don't show them.
   - **Desktop:** the content is capped at 560 px and centered on the forest background. The mockups are phone-only.
@@ -522,7 +522,7 @@ Format:
 - **Why:** the backlog's mockup rule asks for every difference to be listed.
 - **To change it:** `src/components/flock/BillingScreens.tsx`.
 
-### [#PRNUM](https://github.com/the-kya-project/perch-perfect-plan/pull/PRNUM) · 1.14a Card step and checkout design
+### [#533](https://github.com/the-kya-project/perch-perfect-plan/pull/533) · 1.14a Card step and checkout design
 - **Decision:** Billing dates use Eastern time everywhere, Checkout's sentence included. Checkout is set to English, and uses Inter because Stripe doesn't offer DM Sans.
 - **Why:** one day on every screen, and the custom sentence has no Dutch yet.
 - **To change it:** `billingDay` and `checkoutDesign` in `src/lib/billing.ts`.
@@ -788,7 +788,7 @@ Format:
 - **Needs:** <the decision, approval or read, in one or two lines>
 ```
 
-### [#PRNUM](https://github.com/the-kya-project/perch-perfect-plan/pull/PRNUM) · 1.14a Card step and checkout design
+### [#533](https://github.com/the-kya-project/perch-perfect-plan/pull/533) · 1.14a Card step and checkout design
 - **Needs:** (1) your read of the screens and wording; (2) a decision on cards added in the last two days of the free season, which are charged at once because Stripe Checkout needs a trial to run at least 48 hours; (3) the founder release job built before billing opens, because the founder screen promises it and it doesn't exist yet; (4) a saved test-mode Customer Portal setup in Stripe, then one real test checkout, which hasn't been run; (5) your go-ahead on Dutch.
 
 ### Reminder · the hourly runs' GitHub token expires Feb 20, 2027
