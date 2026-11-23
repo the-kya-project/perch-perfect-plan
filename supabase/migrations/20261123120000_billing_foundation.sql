@@ -138,8 +138,11 @@ grant execute on function public.billing_finish_event(text, text, text) to servi
 -- ── A Stripe subscription → its entitlement row ───────────────────────────
 -- Called by the webhook with what it just re-read from Stripe, so event order
 -- never matters. One row per subscription; the account it belongs to never
--- changes. The founding price needs a founding claim. When a founding
--- membership actually ends (status canceled), the claim's founding price is
+-- changes. The founding price needs a founding claim. The row doesn't carry
+-- founding_claim_id: that stays on the claim's own grant (one row per claim,
+-- entitlements_one_per_founding_claim); plan = 'founding' says which price.
+-- When a founding membership actually ends (status canceled), the claim's
+-- founding price is
 -- forfeited for good (payments-plan decision h8): turning off auto-renew alone
 -- leaves status active with cancel_at_period_end, so it forfeits nothing.
 create or replace function public.billing_record_stripe_subscription(
@@ -195,18 +198,17 @@ begin
 
   insert into public.entitlements as e
     (user_id, plan, status, source, external_ref, current_period_end, product_id,
-     cancel_at_period_end, will_renew, founding_claim_id, starts_at)
+     cancel_at_period_end, will_renew, starts_at)
   values
     (p_user_id, p_plan, p_status, 'stripe', p_subscription_id, p_current_period_end, p_product_id,
-     coalesce(p_cancel_at_period_end, false), p_will_renew, v_claim, now())
+     coalesce(p_cancel_at_period_end, false), p_will_renew, now())
   on conflict (source, external_ref) where external_ref is not null do update set
     plan                 = excluded.plan,
     status               = excluded.status,
     current_period_end   = excluded.current_period_end,
     product_id           = excluded.product_id,
     cancel_at_period_end = excluded.cancel_at_period_end,
-    will_renew           = excluded.will_renew,
-    founding_claim_id    = excluded.founding_claim_id
+    will_renew           = excluded.will_renew
   returning e.id into v_id;
 
   if p_plan = 'founding' and p_status = 'canceled' then

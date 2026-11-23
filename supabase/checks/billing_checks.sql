@@ -32,7 +32,8 @@ begin
   select count(*) into n from public.entitlements
   where id = id1 and source = 'stripe' and plan = 'founding' and status = 'trialing'
     and current_period_end = season_end and will_renew and not cancel_at_period_end
-    and founding_claim_id = (select id from public.founding_claims where user_id = fdr);
+    -- The claim's own grant keeps the claim link (one row per claim).
+    and founding_claim_id is null;
   if n = 1 and private.is_flock_member(fdr) then passed := passed + 1; else failed := array_append(failed, 'trialing founding row grants'); end if;
 
   -- 3) The same subscription again (a repeated or later event) updates the one row.
