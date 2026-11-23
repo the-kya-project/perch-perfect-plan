@@ -14,8 +14,8 @@ import { isNativeApp } from "./nativeApp";
 import { flushAllDrafts, formInProgress } from "./formsInProgress";
 import { WEB_BUILD } from "./errorTags";
 import {
-  CHECK_EVERY_MS, CHECK_TIMEOUT_MS, buildFromPageText, checkDue, isNewerBuild, mayReloadFor,
-  parseBuildReload, releaseUpdateAction, shouldCheckVersion, type BuildReload,
+  CHECK_EVERY_MS, CHECK_TIMEOUT_MS, UNPIN_TIMEOUT_MS, buildFromPageText, checkDue, isNewerBuild,
+  mayReloadFor, parseBuildReload, releaseUpdateAction, shouldCheckVersion, type BuildReload,
 } from "./releaseCheck";
 
 const SW_URL = "/sw.js";
@@ -373,8 +373,11 @@ async function applyUpdate(reload: boolean) {
     activating = false;
   }
   if (reload) {
-    // Found by the version check: record it (one reload per build) and load
-    // a fresh address. A worker update reloads as it always has.
+    // Either way, drop Vercel's pin to this page's build first, so the
+    // reload lands on the live one. Found by the version check: record it
+    // (one reload per build) and load a fresh address. A worker update
+    // reloads as it always has.
+    await unpinBuild();
     if (liveBuild) { noteBuildReload(); reloadFresh(); }
     else window.location.reload();
     return;
@@ -385,9 +388,23 @@ async function applyUpdate(reload: boolean) {
   notifyUpdate();
 }
 
+/** Expire Vercel's pin (the __vdpl cookie) before an update reloads. The iOS
+ *  web view kept it through a reload on Nov 2, 2026, so the "new" page still
+ *  got the old build's code files (lib/releaseCheck.ts, PIN_COOKIE). Never
+ *  waits more than UNPIN_TIMEOUT_MS, and a failure (offline, or a pinned build
+ *  from before /api/public/unpin existed) just reloads as before. */
+async function unpinBuild(): Promise<void> {
+  const ctrl = typeof AbortController !== "undefined" ? new AbortController() : null;
+  const timer = window.setTimeout(() => ctrl?.abort(), UNPIN_TIMEOUT_MS);
+  try {
+    await fetch("/api/public/unpin", { method: "POST", cache: "no-store", credentials: "same-origin", signal: ctrl?.signal });
+  } catch { /* reload anyway */ }
+  window.clearTimeout(timer);
+}
+
 /** Reload onto the live build with a cache-busted address, which the iOS web
  *  view can't answer from its own cache (it served the old page to a plain
- *  reload on Nov 2, 2026). Dropping Vercel's pin first is backlog 2.4. */
+ *  reload on Nov 2, 2026). The pin is already gone (unpinBuild). */
 function reloadFresh() {
   try {
     const u = new URL(window.location.href);

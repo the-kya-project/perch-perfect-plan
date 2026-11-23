@@ -15,12 +15,13 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import {
-  CHECK_EVERY_MS, MIN_GAP_MS, RELOAD_FOR_BUILD_WINDOW_MS,
+  CHECK_EVERY_MS, MIN_GAP_MS, PIN_COOKIE, RELOAD_FOR_BUILD_WINDOW_MS, UNPIN_SET_COOKIE, UNPIN_TIMEOUT_MS,
   buildFromPageText, checkDue, isNewerBuild, mayReloadFor, parseBuildReload, parseVersionResponse,
   releaseUpdateAction, shouldCheckVersion,
 } from "@/lib/releaseCheck";
 import { WEB_BUILD } from "@/lib/errorTags";
 import { Route as VersionRoute } from "@/routes/api/public/version";
+import { Route as UnpinRoute } from "@/routes/api/public/unpin";
 
 let passed = 0;
 async function check(name: string, fn: () => void | Promise<void>) {
@@ -43,6 +44,26 @@ await check("/api/public/version returns this build's id, never cached", async (
   assert.match(res.headers.get("cache-control") ?? "", /no-store/);
   const body = await res.json();
   assert.deepEqual(body, { build: WEB_BUILD });
+});
+
+await check("/api/public/unpin expires Vercel's pin cookie and nothing else, never cached", async () => {
+  const handlers = (UnpinRoute.options as { server?: { handlers?: Record<string, () => Response | Promise<Response>> } })
+    .server?.handlers;
+  assert.ok(handlers?.POST, "no POST handler");
+  assert.equal(handlers.GET, undefined, "only POST: a link or prefetch must never unpin");
+  const res = await handlers.POST();
+  assert.equal(res.status, 204);
+  assert.match(res.headers.get("cache-control") ?? "", /no-store/);
+  assert.equal(res.headers.get("set-cookie"), UNPIN_SET_COOKIE);
+  assert.equal(await res.text(), "");
+});
+await check("the unpin cookie is __vdpl, expired, for the whole site", () => {
+  assert.equal(PIN_COOKIE, "__vdpl");
+  const parts = UNPIN_SET_COOKIE.split(";").map((p) => p.trim());
+  assert.equal(parts[0], "__vdpl=");
+  assert.ok(parts.includes("Path=/"), "Path=/ (the pin covers every page)");
+  assert.ok(parts.includes("Max-Age=0"), "Max-Age=0 (expired at once)");
+  assert.ok(parts.includes("Secure") && parts.includes("HttpOnly"));
 });
 
 await check("every open production page checks (Skew Protection pins the worker's own check too)", () => {
@@ -142,6 +163,22 @@ await check("a newer build goes through the same update decision as a worker upd
   assert.match(swSource, /pageBehind = true;\s*onUpdateReady\(\);/);
   assert.match(swSource, /releaseUpdateAction\(\{ quietMoment: Date\.now\(\) < quietUntil, formInProgress: formInProgress\(\) \}\) === "now"/);
   assert.match(swSource, /if \(liveBuild\) \{ noteBuildReload\(\); reloadFresh\(\); \}/);
+});
+await check("every update reload drops the pin first (version check and worker update alike)", () => {
+  const apply = swSource.slice(swSource.indexOf("async function applyUpdate"), swSource.indexOf("async function unpinBuild"));
+  assert.match(apply, /if \(reload\) \{[\s\S]*?await unpinBuild\(\);\s*if \(liveBuild\) \{ noteBuildReload\(\); reloadFresh\(\); \}\s*else window\.location\.reload\(\);/);
+  assert.equal(apply.match(/reloadFresh\(\)|location\.reload\(\)/g)?.length, 2, "no reload in applyUpdate skips the unpin");
+});
+await check("the unpin is a POST to /api/public/unpin that never holds a reload up for long", () => {
+  const unpin = swSource.slice(swSource.indexOf("async function unpinBuild"), swSource.indexOf("function reloadFresh"));
+  assert.match(unpin, /fetch\("\/api\/public\/unpin", \{ method: "POST"/);
+  assert.match(unpin, /setTimeout\(\(\) => ctrl\?\.abort\(\), UNPIN_TIMEOUT_MS\)/);
+  assert.match(unpin, /catch \{/, "a failed unpin still reloads");
+  assert.ok(UNPIN_TIMEOUT_MS > 0 && UNPIN_TIMEOUT_MS <= 5_000);
+});
+await check("the service worker never answers /api/, so the unpin always reaches the server", () => {
+  const sw = readFileSync(new URL("../src/sw.ts", import.meta.url), "utf8");
+  assert.match(sw, /\^\\\/api\\\/\//);
 });
 
 console.log(`\n${passed} passed${process.exitCode ? ", some FAILED" : ""}`);
