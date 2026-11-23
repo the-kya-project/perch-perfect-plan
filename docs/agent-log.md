@@ -20,6 +20,12 @@ Copy this, fill it in, and put it at the top of "Runs", above the latest entry.
 
 ## Runs
 
+### 2026-11-23 05:39 EST · D5.1 Weekly recap by push, replacing the 10- and 30-day lapse nudges
+- **Built:** A weekly push that tells an owner how many weigh-ins, health checks and journal entries their birds had that week ("Kiwi's week: This week: 3 weigh-ins, 5 health checks and 1 journal entry. Thanks for keeping the record going."), in English and Dutch. It never mentions a weight, a trend or a result. A week with nothing logged gets a gentle "quiet week" note instead, at most twice in a row. It takes the place of the old "it's been 10 days / 30 days" check-ins, uses the same "Check-in reminders" switch in settings, and follows the same one-nudge-a-day rules. It's behind a new off switch (`WEEKLY_RECAP` in Vercel), and while that's off the old check-ins run exactly as before, so nobody gets anything new. A test pins the rules and the wording.
+- **PR:** [#524](https://github.com/the-kya-project/perch-perfect-plan/pull/524)
+- **Outcome:** Held: needs Brittany's read of the wording (the item's own "Needs Brittany" line), her merge, and a decision on the settings row's description once the recap is on. Switching it on is hers, in Vercel.
+- **Problems:** The new test (`npm run test:weekly-recap`, 13 checks, passing locally) isn't in CI: adding it means a workflow change, which the run's token can't push. The Dutch was written by hand and stamped, since the translate step isn't allowed in the job. All four open agent PRs (#520–#523) were checked at the start: held, no conflicts, checks green, so nothing to update. Production read (counts only): 9 accounts have push, 7 check-ins have ever been sent. No lock at start. No pending-log entries to move.
+
 ### 2026-11-22 22:24 EST · 2.2 A version endpoint and release rules
 - **Built:** A small public address, `/api/public/version`, that answers with which copy of the app is live, and is never cached, so an open app can later ask "has a new release gone out?". Also the rules for what to do when one has: which pages ask, how often (on launch, hourly, and when the app comes back to the front, at most once a minute), what counts as a new release, whether to update now or wait behind the "A new version is ready" banner (a form in progress always waits), and never reloading twice for the same release. A test pins all of it. Nothing in the app calls these yet (that's 2.3), so nobody sees a change.
 - **PR:** [#519](https://github.com/the-kya-project/perch-perfect-plan/pull/519)

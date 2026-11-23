@@ -12,6 +12,9 @@ type EventKey =
   | "care_plan_reminder"
   | "weight_reminder"
   | "checkin_reminder"
+  // The weekly recap (src/lib/weeklyRecap.ts) replaces the check-in nudge, so
+  // it obeys the same "Check-in reminders" toggle.
+  | "weekly_recap"
   | "health_concern"
   // To the save-error alert inbox's account when an alert email can't go
   // (save-error-alerts hook). Always sent, like health_concern.
@@ -24,6 +27,7 @@ const TOGGLE_COLUMN: Record<Exclude<EventKey, "health_concern" | "ops_alert">, s
   care_plan_reminder: "push_care_plan_reminder",
   weight_reminder: "push_weight_reminder",
   checkin_reminder: "push_checkin_reminder",
+  weekly_recap: "push_checkin_reminder",
 };
 
 export interface PushPayload {

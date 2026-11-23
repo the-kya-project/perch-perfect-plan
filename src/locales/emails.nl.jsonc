@@ -1087,6 +1087,32 @@
   "push.checkin30.title": "{{birdName}} zegt hallo",
   // {{birdName}}'s health record is right where you left it, whenever you're ready.
   "push.checkin30.body": "Het gezondheidsdossier van {{birdName}} ligt klaar waar je het liet, wanneer je er maar aan toe bent.",
+  // {{birdName}}'s week
+  "push.weeklyRecap.titleOne": "De week van {{birdName}}",
+  // Your flock's week
+  "push.weeklyRecap.titleMany": "De week van je vogels",
+  // This week: {{list}}. Thanks for keeping the record going.
+  "push.weeklyRecap.body": "Deze week: {{list}}. Fijn dat je het dossier bijhoudt.",
+  // {{n}} weigh-ins
+  "push.weeklyRecap.weighIns": "{{n}} wegingen",
+  // 1 weigh-in
+  "push.weeklyRecap.weighInsOne": "1 weging",
+  // {{n}} health checks
+  "push.weeklyRecap.checks": "{{n}} gezondheidschecks",
+  // 1 health check
+  "push.weeklyRecap.checksOne": "1 gezondheidscheck",
+  // {{n}} journal entries
+  "push.weeklyRecap.journal": "{{n}} dagboeknotities",
+  // 1 journal entry
+  "push.weeklyRecap.journalOne": "1 dagboeknotitie",
+  // {{a}} and {{b}}
+  "push.weeklyRecap.list2": "{{a}} en {{b}}",
+  // {{a}}, {{b}} and {{c}}
+  "push.weeklyRecap.list3": "{{a}}, {{b}} en {{c}}",
+  // A quiet week for {{birdName}}. A quick weigh-in or health check keeps the record whole.
+  "push.weeklyRecap.quietOne": "Een rustige week voor {{birdName}}. Even wegen of een snelle gezondheidscheck houdt het dossier compleet.",
+  // A quiet week for your flock. A quick weigh-in or health check keeps the record whole.
+  "push.weeklyRecap.quietMany": "Een rustige week voor je vogels. Even wegen of een snelle gezondheidscheck houdt het dossier compleet.",
   // {{coveringLabel}} flagged something serious
   "push.sitterConcern.title": "{{coveringLabel}} meldt iets ernstigs",
   // {{coveringLabel}} paused {{birdName}}'s reminders and may be trying to reach you. Please call them as soon as you can.

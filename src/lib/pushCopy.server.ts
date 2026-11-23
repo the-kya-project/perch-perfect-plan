@@ -44,6 +44,40 @@ export function checkinReminderPush(locale: unknown, birdName: string | null | u
   };
 }
 
+/**
+ * Weekly recap (src/lib/weeklyRecap.ts). `birdNames` are the account's living
+ * birds: one name titles it "<bird>'s week", several say "Your flock's week".
+ * Counts only, never a weight or a result. A quiet week is the gentle nudge.
+ */
+export function weeklyRecapPush(
+  locale: unknown,
+  birdNames: Array<string | null>,
+  kind: "week" | "quiet",
+  counts: { weighIns: number; healthChecks: number; journalEntries: number },
+): PushCopy {
+  const t = emailT(locale);
+  const one = birdNames.length === 1;
+  const birdName = birdNames[0] ?? t("push.common.yourBirdCap");
+  const title = one ? t("push.weeklyRecap.titleOne", { birdName }) : t("push.weeklyRecap.titleMany");
+  if (kind === "quiet") {
+    return {
+      title,
+      body: one ? t("push.weeklyRecap.quietOne", { birdName }) : t("push.weeklyRecap.quietMany"),
+    };
+  }
+  const item = (n: number, key: string) => (n === 1 ? t(`${key}One`) : t(key, { n }));
+  const items = [
+    counts.weighIns > 0 ? item(counts.weighIns, "push.weeklyRecap.weighIns") : null,
+    counts.healthChecks > 0 ? item(counts.healthChecks, "push.weeklyRecap.checks") : null,
+    counts.journalEntries > 0 ? item(counts.journalEntries, "push.weeklyRecap.journal") : null,
+  ].filter((s): s is string => !!s);
+  const list =
+    items.length === 1 ? items[0]
+    : items.length === 2 ? t("push.weeklyRecap.list2", { a: items[0], b: items[1] })
+    : t("push.weeklyRecap.list3", { a: items[0], b: items[1], c: items[2] });
+  return { title, body: t("push.weeklyRecap.body", { list }) };
+}
+
 /** "Whoever is covering flagged something serious" — always-on, urgent. */
 export function sitterConcernPush(locale: unknown, coveringLabel: string, birdName: string): PushCopy {
   const t = emailT(locale);

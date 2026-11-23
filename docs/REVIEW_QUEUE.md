@@ -137,6 +137,26 @@ Format:
 - **To change it:** <what would need to change>
 ```
 
+### [#524](https://github.com/the-kya-project/perch-perfect-plan/pull/524) · D5.1 Weekly recap by push
+- **Decision:** The switch is a Vercel env var, `WEEKLY_RECAP` = off (unset) / `test` / `everyone`, with `WEEKLY_RECAP_TEST_EMAILS` (default brittany@thekyaproject.com) for `test`. Not a database table.
+- **Why:** It needs no migration, matches how the save-error alerts are turned up or down (`SAVE_ERROR_ALERTS`), and the cron hook already reads env. D2.1's `care_features` table (#523) would also fit, but it isn't merged.
+- **To change it:** move the check to a `care_features` row once #523 merges; only `weeklyRecapMode`/`recapOnFor` in `src/lib/weeklyRecap.ts` and the hook's two lines that call them change.
+
+### [#524](https://github.com/the-kya-project/perch-perfect-plan/pull/524) · D5.1 Weekly recap by push
+- **Decision:** When it goes out: the daily 16:00 UTC run sends it on Sunday, or Monday/Tuesday if Sunday's was held back by the one-nudge-a-day rules (a weight reminder that day, an onboarding email), never within 4 days of the last recap. It covers the 7 days before the run.
+- **Why:** a fixed day reads as "weekly"; the catch-up days keep the existing guardrails from silently skipping a week. Sunday 16:00 UTC is 11 AM Eastern, 5 PM in the Netherlands.
+- **To change it:** `RECAP_WEEKDAYS`, `RECAP_MIN_GAP_DAYS`, `RECAP_WINDOW_DAYS` in `src/lib/weeklyRecap.ts`.
+
+### [#524](https://github.com/the-kya-project/perch-perfect-plan/pull/524) · D5.1 Weekly recap by push
+- **Decision:** A week with no weigh-ins, health checks or journal entries still gets a "quiet week" recap (the old check-in's gentle nudge), but only two in a row; then nothing until the owner logs something. Accounts that have never logged anything get nothing (the onboarding series covers them). The weight reminder still wins on a day both are due.
+- **Why:** the old check-ins stopped after two touches per lapse so an ignored pair went quiet instead of looping; the recap keeps that promise.
+- **To change it:** `RECAP_QUIET_MAX` in `src/lib/weeklyRecap.ts`.
+
+### [#524](https://github.com/the-kya-project/perch-perfect-plan/pull/524) · D5.1 Weekly recap by push
+- **Decision:** It uses the existing "Check-in reminders" toggle (`push_checkin_reminder`), counts only the account's own living birds (as the old check-ins did), counts journal entries as activity for the recap only, and names the bird when there's one ("Kiwi's week") or says "Your flock's week" for several. Counts only: no weights, trends or results.
+- **Why:** the backlog says to keep the existing toggles; opening-scope 5d says no health judgments.
+- **To change it:** `weeklyRecapPush` in `src/lib/pushCopy.server.ts` and the hook.
+
 ### [#519](https://github.com/the-kya-project/perch-perfect-plan/pull/519) · 2.2 A version endpoint and release rules
 - **Decision:** Ported the endpoint and rules from the reference branch `fix/native-release-catchup`, with three changes: (1) "update now or later" is its own rule, `releaseUpdateAction`, the same rule a service-worker update follows today (a quiet moment with no form in progress → now; otherwise the banner); (2) a new `parseVersionResponse` reads the endpoint's answer and ignores anything else (an error page, a proxy); (3) the branch's `staleCodeAction` (what a missing code file does) was left out, since 2.1 already handles missing files on `main` and it isn't part of 2.2. The numbers are the branch's: check hourly, at most once a minute on return to the foreground, give up after 8 seconds, never reload for the same build twice within 10 minutes.
 - **Why:** the backlog asks for the pure rules for "a new release is out, update now or later", with nothing behaving differently yet. Nothing calls them until 2.3.
@@ -295,6 +315,9 @@ Format:
 ### <PR link> · <item ID> <item title>
 - **Needs:** <the decision, approval or read, in one or two lines>
 ```
+
+### [#524](https://github.com/the-kya-project/perch-perfect-plan/pull/524) · D5.1 Weekly recap by push, replacing the 10- and 30-day lapse nudges
+- **Needs:** (1) your read of the recap wording, English and Dutch (all new; listed in the PR); (2) your merge (the switch is off, so nothing changes for anyone); (3) a decision on the settings row "Check-in reminders: A gentle reminder if it's been a while since the last entry." It stays as it is in this PR, but it no longer describes what the toggle does once the recap is on. Switching on is yours, in Vercel: `WEEKLY_RECAP=test` for your account only, then `everyone`. Before that, a dry run with `{"dryRun": true, "recapPreview": true}` shows who would get what.
 
 ### Reminder · the hourly runs' GitHub token expires Feb 20, 2027
 - **Needs:** a new token before **Feb 20, 2027**. That's 90 days from Nov 22, 2026; GitHub → Settings → Developer settings → Fine-grained tokens shows the exact date. When it expires, runs can still build and test but can't push or open PRs, and each run's note in `~/.kya-agent/job.log` says so.

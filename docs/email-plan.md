@@ -62,6 +62,8 @@ a month to someone, delete their row first.
   stale. Never sent.
 - Weigh-in reminders and lapse check-ins at 10 and 30 days: **push only**. 15 weigh-in
   reminders sent, 0 check-ins.
+- Weekly recap (push only, backlog D5.1): replaces the lapse check-ins for accounts the
+  `WEEKLY_RECAP` switch covers. Off until Brittany switches it on (`src/lib/weeklyRecap.ts`).
 
 ### Transactional
 - Household sits: assigned, updated, cancelled (localized)

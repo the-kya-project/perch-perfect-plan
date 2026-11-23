@@ -77,13 +77,6 @@ Where these items came from, with the detail behind each: `docs/flock/opening-sc
 - **Overnight alone:** yes
 - **Needs Brittany:** the copy; turning the switch on for everyone changes Home for free users, so that needs her approval and before-and-after screenshots.
 
-### D5.1 Weekly recap by push, replacing the 10- and 30-day lapse nudges
-- **Done means:** a weekly push recap (weigh-ins, health checks, journal entries, no health judgments) replaces the `checkin_reminder` branch of `src/routes/api/public/hooks/engagement-nudges.ts`. It keeps the existing toggles, cooldown and dry-run mode, and is built behind a switch that starts off. Push only, no email.
-- **Size:** M
-- **Depends on:** nothing
-- **Overnight alone:** yes (built and merged switched off)
-- **Needs Brittany:** the wording, and her approval before it's switched on, since that sends push to real users.
-
 ### 1.14 Billing foundation (switched off)
 - **Done means:** the billing tables (`billing_customers`, `billing_events`, the new `entitlements` columns), the Stripe billing webhook (`/api/public/stripe/billing`, its own secret, fixture tests in `npm run test:billing`) and the card step (`/flock/membership`, $0 due, never shown in the native app) all exist behind `BILLING_ENABLED`, which stays off. Test mode only. Spec: `docs/flock/payments-plan.md` sections c and d, items 1–3.
 - **Approved to start (Brittany, Nov 22, 2026):** test mode only, `BILLING_ENABLED` stays off, and nothing in the Stripe Dashboard is touched.
@@ -378,6 +371,7 @@ The launch PR itself (1.18) is already merged dark. What's left before opening i
 
 ## Done
 
+- **D5.1** The weekly recap push (the week's weigh-ins, health checks and journal entries; counts only) replaces the 10- and 30-day check-ins in `engagement-nudges` for accounts the `WEEKLY_RECAP` switch covers. Off by default, so the old check-ins run unchanged; same toggle, guardrails and dry run, plus `recapPreview`. Rules in `src/lib/weeklyRecap.ts`, pinned by `npm run test:weekly-recap`. Held for Brittany's read of the wording and her merge: #524.
 - **2.2** `/api/public/version` returns `{ "build": "<commit>" }` with `no-store`; `src/lib/releaseCheck.ts` holds the pure rules (which pages check, when, what counts as a newer build, update now or later behind the banner, one reload per build), pinned by `npm run test:release-check`. Nothing calls them yet (2.3): #519.
 - **D3** `src/lib/seasonalCalendar.ts`: 22 dated cards covering every day of the year (7 seasons, 15 holidays and moments, including heat, cold, fireworks, candles, holiday foods and travel; some US-only or Netherlands-only), each with a rule for its days and an English and Dutch title and body in `src/locales/seasonal.*.jsonc`; `npm run test:seasonal-calendar` checks every rule resolves in every year through 2075, every day has a card, and every card exists in both languages. Approved and merged by Brittany: #516.
 - **1.2** `src/lib/healthRules.ts` lists every health threshold and phrase list, each "draft, pending vet review" with its source, plus the language keys for each area's wording; `npm run test:health-rules` checks the code against it and `supabase/checks/health_rules_checks.sql` checks the database; every health feature has its own switch in `public.health_features` (the live ones start at everyone and aren't wired to it yet); the vet packet (opening-scope B7) points at the file: #515.

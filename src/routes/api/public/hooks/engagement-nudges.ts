@@ -14,6 +14,11 @@
  *     that until they come back (nudges since last activity are counted, so
  *     an ignored pair goes quiet instead of looping).
  *
+ *   weekly_recap — replaces checkin_reminder for an account when the
+ *     WEEKLY_RECAP switch covers it (off by default; rules and switch in
+ *     src/lib/weeklyRecap.ts): the week's weigh-ins, health checks and journal
+ *     entries, counts only. Same toggle (push_checkin_reminder) and guardrails.
+ *
  * Guardrails, in order:
  *   - at most ONE nudge per user per run
  *   - nothing if ANY nudge went to the user in the last 20 hours
@@ -31,18 +36,34 @@
  * Auth: `Authorization: Bearer <cron_hook_token>`, the Vault secret pg_cron sends
  * (src/lib/cronAuth.ts).
  * Body { "dryRun": true } → returns planned nudges, sends/logs nothing.
+ * Body { "dryRun": true, "recapPreview": true } → the same, planned as if
+ * WEEKLY_RECAP were "everyone", to check the recap before switching it on.
  */
 import { withErrorTelemetry } from "@/lib/errorTelemetry";
 import { createFileRoute } from "@tanstack/react-router";
 import { withCronTelemetry } from "@/lib/cronTelemetry";
 import { cronAuthFailure } from "@/lib/cronAuth";
+import {
+  inRecapWindow, planRecap, recapOnFor, recapTestEmails, weeklyRecapMode,
+  type RecapCounts, type RecapPlan,
+} from "@/lib/weeklyRecap";
 
 const DAY = 1000 * 60 * 60 * 24;
 
 type BirdRow = { id: string; name: string | null; owner_id: string; passed_at: string | null };
 // birdName is the English label for the dryRun report; rawName (null when the
 // bird has no name) is what the localized push copy is built from.
-type Planned = { userId: string; type: "weight_reminder" | "checkin_reminder"; birdId: string | null; birdName: string; rawName: string | null; daysSince: number; checkinStage?: 10 | 30 };
+type Planned = {
+  userId: string;
+  type: "weight_reminder" | "checkin_reminder" | "weekly_recap";
+  birdId: string | null;
+  birdName: string;
+  rawName: string | null;
+  daysSince: number;
+  checkinStage?: 10 | 30;
+  recap?: RecapPlan;
+  recapBirdNames?: Array<string | null>;
+};
 
 function median(nums: number[]): number {
   const s = [...nums].sort((a, b) => a - b);
@@ -66,8 +87,10 @@ export const Route = createFileRoute("/api/public/hooks/engagement-nudges")({
       POST: withCronTelemetry("engagement-nudges", withErrorTelemetry("/api/public/hooks/engagement-nudges", async ({ request }) => {
         const denied = await cronAuthFailure(request, "engagement-nudges");
         if (denied) return denied;
-        const body = (await request.json().catch(() => ({}))) as { dryRun?: boolean };
+        const body = (await request.json().catch(() => ({}))) as { dryRun?: boolean; recapPreview?: boolean };
         const dryRun = body.dryRun === true;
+        const recapMode = dryRun && body.recapPreview === true ? "everyone" : weeklyRecapMode(process.env.WEEKLY_RECAP);
+        const recapEmails = recapTestEmails(process.env.WEEKLY_RECAP_TEST_EMAILS);
 
         const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
         const now = Date.now();
@@ -125,6 +148,45 @@ export const Route = createFileRoute("/api/public/hooks/engagement-nudges")({
             : Promise.resolve({ data: [] as never[] }),
         ]);
 
+        // Weekly recap: who it covers, their journal entries and past recaps.
+        // Nothing extra is read while the switch is off.
+        const recapUsers = new Set<string>();
+        let journal: Array<{ bird_id: string; created_at: string }> = [];
+        let recapLog: Array<{ user_id: string; sent_at: string }> = [];
+        if (recapMode !== "off") {
+          if (recapMode === "everyone") {
+            for (const u of userIds) recapUsers.add(u);
+          } else {
+            const { data: profiles } = await admin
+              .from("profiles")
+              .select("id, email")
+              .in("id", userIds) as { data: Array<{ id: string; email: string | null }> | null };
+            for (const p of profiles ?? []) if (recapOnFor(recapMode, p.email, recapEmails)) recapUsers.add(p.id);
+          }
+          const recapBirdIds = livingBirds.filter((b) => recapUsers.has(b.owner_id)).map((b) => b.id);
+          if (recapUsers.size > 0) {
+            const [{ data: j }, { data: r }] = await Promise.all([
+              recapBirdIds.length
+                ? supabaseAdmin
+                    .from("journal_entries")
+                    .select("bird_id, created_at")
+                    .in("bird_id", recapBirdIds)
+                    .gte("created_at", new Date(now - 60 * DAY).toISOString())
+                : Promise.resolve({ data: [] as never[] }),
+              // Not limited to 45 days like recentLog: the quiet-recap count
+              // reaches back to the owner's last activity.
+              admin
+                .from("notification_log")
+                .select("user_id, sent_at")
+                .in("user_id", [...recapUsers])
+                .eq("type", "weekly_recap")
+                .gte("sent_at", new Date(now - 400 * DAY).toISOString()) as Promise<{ data: Array<{ user_id: string; sent_at: string }> | null }>,
+            ]);
+            journal = (j ?? []) as Array<{ bird_id: string; created_at: string }>;
+            recapLog = r ?? [];
+          }
+        }
+
         const weightsByBird = new Map<string, number[]>();
         for (const w of (weights ?? []) as Array<{ bird_id: string; measured_at: string | null; created_at: string }>) {
           const t = new Date(w.measured_at ?? w.created_at).getTime();
@@ -143,6 +205,31 @@ export const Route = createFileRoute("/api/public/hooks/engagement-nudges")({
         for (const l of (dailyLogs ?? []) as Array<{ bird_id: string; created_at: string }>) {
           bump(ownerOf.get(l.bird_id), new Date(l.created_at).getTime());
         }
+
+        // The recap's week and its own idea of activity, which also counts
+        // journal entries (the old check-in's doesn't; that stays as it was).
+        const recapCounts = new Map<string, RecapCounts>();
+        const recapActivity = new Map<string, number>();
+        if (recapUsers.size > 0) {
+          const tally = (birdId: string, t: number, key: keyof RecapCounts) => {
+            const owner = ownerOf.get(birdId);
+            if (!owner || !recapUsers.has(owner)) return;
+            if (t > (recapActivity.get(owner) ?? 0)) recapActivity.set(owner, t);
+            if (!inRecapWindow(t, now)) return;
+            const c = recapCounts.get(owner) ?? { weighIns: 0, healthChecks: 0, journalEntries: 0 };
+            c[key] += 1;
+            recapCounts.set(owner, c);
+          };
+          for (const w of (weights ?? []) as Array<{ bird_id: string; measured_at: string | null; created_at: string }>) {
+            tally(w.bird_id, new Date(w.measured_at ?? w.created_at).getTime(), "weighIns");
+          }
+          for (const l of (dailyLogs ?? []) as Array<{ bird_id: string; created_at: string }>) {
+            tally(l.bird_id, new Date(l.created_at).getTime(), "healthChecks");
+          }
+          for (const e of journal) tally(e.bird_id, new Date(e.created_at).getTime(), "journalEntries");
+        }
+        const recapTimes = (userId: string) =>
+          recapLog.filter((r) => r.user_id === userId).map((r) => new Date(r.sent_at).getTime());
 
         const dripToday = new Set((dripLog ?? []).map((d) => d.user_id as string));
         const logRows = (recentLog ?? []) as Array<{ user_id: string; bird_id: string | null; type: string; sent_at: string }>;
@@ -175,6 +262,33 @@ export const Route = createFileRoute("/api/public/hooks/engagement-nudges")({
           }
           if (best) { planned.push(best); continue; }
 
+          // Weekly recap, in place of the check-in nudge for accounts it covers.
+          if (recapUsers.has(userId)) {
+            const sent = recapTimes(userId);
+            const activityAt = recapActivity.get(userId) ?? 0;
+            const recap = planRecap({
+              now,
+              lastActivityAt: activityAt,
+              lastRecapAt: sent.length ? Math.max(...sent) : 0,
+              recapsSinceActivity: sent.filter((t) => t > activityAt).length,
+              counts: recapCounts.get(userId) ?? { weighIns: 0, healthChecks: 0, journalEntries: 0 },
+            });
+            if (recap) {
+              const one = myBirds.length === 1 ? myBirds[0] : null;
+              planned.push({
+                userId,
+                type: "weekly_recap",
+                birdId: one?.id ?? null,
+                birdName: one ? one.name ?? "your bird" : "your flock",
+                rawName: one?.name ?? null,
+                daysSince: activityAt ? Math.floor((now - activityAt) / DAY) : 0,
+                recap,
+                recapBirdNames: myBirds.map((b) => b.name),
+              });
+            }
+            continue;
+          }
+
           // Check-in nudge: owner-level lapse, two touches per lapse episode.
           const activity = lastActivity.get(userId) ?? 0;
           if (activity === 0) continue; // never active — drip handles onboarding
@@ -188,11 +302,11 @@ export const Route = createFileRoute("/api/public/hooks/engagement-nudges")({
           planned.push({ userId, type: "checkin_reminder", birdId: bird.id, birdName: bird.name ?? "your bird", rawName: bird.name, daysSince: lapseDays, checkinStage: stage });
         }
 
-        if (dryRun) return Response.json({ ok: true, dryRun: true, planned });
+        if (dryRun) return Response.json({ ok: true, dryRun: true, recapMode, planned });
 
         const { sendPushToOwner } = await import("@/lib/pushSender.server");
         const { localeForUser } = await import("@/lib/emailLocale.server");
-        const { weightReminderPush, checkinReminderPush } = await import("@/lib/pushCopy.server");
+        const { weightReminderPush, checkinReminderPush, weeklyRecapPush } = await import("@/lib/pushCopy.server");
         let sent = 0;
         for (const p of planned) {
           // Recipient (owner, group 1) → their stored locale; English fallback.
@@ -203,6 +317,12 @@ export const Route = createFileRoute("/api/public/hooks/engagement-nudges")({
                   ...weightReminderPush(locale, p.rawName, p.daysSince),
                   url: `/birds/${p.birdId}`,
                   tag: `weight-reminder-${p.birdId}`,
+                }
+              : p.type === "weekly_recap" && p.recap
+              ? {
+                  ...weeklyRecapPush(locale, p.recapBirdNames ?? [p.rawName], p.recap.kind, p.recap.counts),
+                  url: "/dashboard",
+                  tag: `weekly-recap-${p.userId}`,
                 }
               : {
                   ...checkinReminderPush(locale, p.rawName, p.checkinStage === 10 ? 10 : 30),

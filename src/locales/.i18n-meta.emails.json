@@ -1626,6 +1626,45 @@
     "push.checkin30.body": {
       "stamp": "f8f0f38cf122fef6"
     },
+    "push.weeklyRecap.titleOne": {
+      "stamp": "797ea0e5deefd523"
+    },
+    "push.weeklyRecap.titleMany": {
+      "stamp": "6a7b3230791ed668"
+    },
+    "push.weeklyRecap.body": {
+      "stamp": "55ec67c749c52c47"
+    },
+    "push.weeklyRecap.weighIns": {
+      "stamp": "a770f2300f93ad21"
+    },
+    "push.weeklyRecap.weighInsOne": {
+      "stamp": "7afb38e97ce6219d"
+    },
+    "push.weeklyRecap.checks": {
+      "stamp": "6872f53bf7a874f2"
+    },
+    "push.weeklyRecap.checksOne": {
+      "stamp": "0dd5a20443a117ba"
+    },
+    "push.weeklyRecap.journal": {
+      "stamp": "8e301e6b8aca5745"
+    },
+    "push.weeklyRecap.journalOne": {
+      "stamp": "521cd85250d12a3f"
+    },
+    "push.weeklyRecap.list2": {
+      "stamp": "8ae4b5e718dd5811"
+    },
+    "push.weeklyRecap.list3": {
+      "stamp": "11b64583107d15c9"
+    },
+    "push.weeklyRecap.quietOne": {
+      "stamp": "ca45a7d2985f90b4"
+    },
+    "push.weeklyRecap.quietMany": {
+      "stamp": "fabede9623578dc6"
+    },
     "push.sitterConcern.title": {
       "stamp": "4cbd886caaccebd4"
     },
