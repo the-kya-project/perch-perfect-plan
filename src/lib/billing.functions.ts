@@ -10,7 +10,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { BILLING_CHOICES, billingEnabled, checkoutPlan, firstCharge, liveSubscription, type BillingState, type PaidPlan } from "./billing";
+import { BILLING_CHOICES, billingEnabled, checkoutPlan, firstCharge, liveSubscription, promotionCodesAllowed, type BillingState, type PaidPlan } from "./billing";
 
 type Ctx = { supabase: any; userId: string; claims: { email?: string } };
 
@@ -127,6 +127,9 @@ export const startBillingCheckout = createServerFn({ method: "POST" })
         line_items: [{ price, quantity: 1 }],
         // The card is always collected, even with $0 due today.
         payment_method_collection: "always",
+        // Regular plans only, never the founding price (backlog 1.17). With a
+        // trial, the code applies to the paid invoices after it.
+        allow_promotion_codes: promotionCodesAllowed(plan),
         subscription_data: {
           ...(fc.trialEnd ? { trial_end: fc.trialEnd } : {}),
           metadata: { kind: "flock_billing", user_id: ctx.userId, plan },

@@ -630,6 +630,21 @@ Format:
 - **To change it:** <what would need to change>
 ```
 
+### [#543](https://github.com/the-kya-project/perch-perfect-plan/pull/543) · 1.17 Promo codes for memberships
+- **Decision:** Codes are entered in Stripe Checkout's own "Add promotion code" field. No code box was added to the card step, and nothing in the app creates or lists codes; they're made in the Stripe Dashboard.
+- **Why:** gift Checkout already works this way, and an app field would need a new design.
+- **To change it:** `allow_promotion_codes` in `startBillingCheckout` (`src/lib/billing.functions.ts`).
+
+### [#543](https://github.com/the-kya-project/perch-perfect-plan/pull/543) · 1.17 Promo codes for memberships
+- **Decision:** The rule is "every plan but founding" (`promotionCodesAllowed`), so Kya's Crew plans get codes as soon as #535 adds them, with no change here. The billing webhook also takes off any discount found on a founding subscription (from the Customer Portal or the Dashboard) and notes "discount removed" on the event. Discounts on a Stripe customer aren't checked.
+- **Why:** founding and regular share one Stripe product, so Stripe can't limit a coupon to the regular prices. Hiding the field covers Checkout only.
+- **To change it:** `promotionCodesAllowed` and `discountsToRemove` in `src/lib/billing.ts`.
+
+### [#543](https://github.com/the-kya-project/perch-perfect-plan/pull/543) · 1.17 Promo codes for memberships
+- **Decision:** Which codes are used isn't recorded in the app. `/admin/gifts` totals by code, but nothing like that exists for memberships yet.
+- **Why:** the item asks only for codes to work on the card step.
+- **Worth knowing:** #533 saves only the card (no subscription yet) in the free season's last 49 hours. Stripe's save-card Checkout has no code field, so a code can't be used in that window. Whichever of #533 and #543 merges second should keep `allow_promotion_codes` on the subscription Checkout.
+
 ### [#534](https://github.com/the-kya-project/perch-perfect-plan/pull/534) · 1.4 Removed content and closed reports are deleted after 180 days
 - **Decision:** What counts: posts and comments a reviewer removed ("Remove it" in the review queue), timed from the removal (`flock_moderation.updated_at`), and reports closed as kept or removed, timed from `resolved_at`. Removed content goes through 1.3's hold, already due, so the same daily run deletes its photos with 1.3's rules (a photo still used elsewhere is kept, and a failed delete waits a day). The comments under a removed post, and the replies under a removed comment, go with it. Left out: removed journey updates (asked in Held), Do good posts a reviewer declined (a review result, not a removal; they stay visible to their author only), content still waiting for review, and open reports.
 - **Why:** D9 says "content removed by reviewers, and reports, are kept for 180 days, then deleted"; the item says "closed reports" and "180 days after they were resolved". Reusing 1.3's hold means a single path deletes Flock photos.
@@ -940,6 +955,9 @@ Format:
 ### <PR link> · <item ID> <item title>
 - **Needs:** <the decision, approval or read, in one or two lines>
 ```
+
+### [#543](https://github.com/the-kya-project/perch-perfect-plan/pull/543) · 1.17 Promo codes for memberships
+- **Needs:** (1) your approval (payments); (2) a look at the worked examples in the PR and in `docs/flock/payments-plan.md` section d, to confirm that's what "stack" and "whichever is best" mean; (3) two test-mode checkouts during a test free season, one with a "20% off for 3 months" code and one with a "once" code, to see whether Stripe's months count from the card being added (trial included) or from the first charge, since that decides which kinds of code to make for the free season; (4) your OK that the webhook takes a discount off a founding subscription on its own.
 
 ### Reminder · the hourly runs' GitHub token expires Feb 20, 2027
 - **Needs:** a new token before **Feb 20, 2027**. That's 90 days from Nov 22, 2026; GitHub → Settings → Developer settings → Fine-grained tokens shows the exact date. When it expires, runs can still build and test but can't push or open PRs, and each run's note in `~/.kya-agent/job.log` says so.

@@ -67,6 +67,8 @@ export type SubscriptionLike = {
   ended_at?: number | null;
   canceled_at?: number | null;
   metadata?: Record<string, string> | null;
+  /** Discounts on the subscription (ids, or objects when expanded). */
+  discounts?: (string | { id: string })[] | null;
   items: { data: { current_period_end?: number | null; price: { id: string; product: string | { id: string } } }[] };
 };
 
@@ -149,6 +151,27 @@ export function firstCharge(
  *  option); everyone else gets what they picked. */
 export function checkoutPlan(choice: BillingChoice, foundingPriceOpen: boolean): PaidPlan {
   return foundingPriceOpen ? "founding" : choice;
+}
+
+/**
+ * Promotion codes (backlog 1.17; Brittany, Nov 22, 2026): they apply to the
+ * regular Flock plans and Kya's Crew, never to the founding price. Checkout
+ * shows its "Add promotion code" field only when this is true, and the webhook
+ * takes off any discount that reaches a founding subscription another way
+ * (the Customer Portal, the Dashboard, the customer).
+ *
+ * A code stacks with a trial: the trial runs first and the code applies to the
+ * paid invoices after it (Stripe's own order; nothing here changes it).
+ */
+export function promotionCodesAllowed(plan: PaidPlan): boolean {
+  return plan !== "founding";
+}
+
+/** The discounts a founding subscription mustn't have; empty for every
+ *  other plan. */
+export function discountsToRemove(plan: PaidPlan, sub: Pick<SubscriptionLike, "discounts">): string[] {
+  if (promotionCodesAllowed(plan)) return [];
+  return (sub.discounts ?? []).map((d) => (typeof d === "string" ? d : d.id)).filter(Boolean);
 }
 
 /** A Stripe row that still counts: anything but an ended one. */
