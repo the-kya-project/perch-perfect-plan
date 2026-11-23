@@ -932,8 +932,6 @@ Format:
 
 ## Held for Brittany
 
-### [#529](https://github.com/the-kya-project/perch-perfect-plan/pull/529) · 1.8 Do good voting: no longer held
-- **Status:** Brittany approved the mockups and asked for this to merge once every required check passes (Nov 23, 2026). The earlier #529 item below can be cleared.
 PRs waiting on Brittany, and exactly what each one needs.
 
 Format:
@@ -942,21 +940,6 @@ Format:
 ### <PR link> · <item ID> <item title>
 - **Needs:** <the decision, approval or read, in one or two lines>
 ```
-
-### [#534](https://github.com/the-kya-project/perch-perfect-plan/pull/534) · 1.4 Removed content and closed reports are deleted after 180 days
-- **Needs:** (1) your approval of the deletion: once merged, the daily purge deletes posts and comments a reviewer removed 180+ days ago, with their photos and the comments under them, and reports closed 180+ days ago. Production has none of either today (checked read-only: 0 removed, 0 reports), so nothing would be deleted yet. (2) Your call on removed journey updates: they still show to the bird's household, so this PR leaves them (and their clips) alone. Say whether they should be deleted after 180 days too, which takes them out of the household's journey and needs the clip deleted from Cloudflare.
-
-### [#521](https://github.com/the-kya-project/perch-perfect-plan/pull/521) · D1.1 Weight baseline · conflicts with `main` in `package.json`
-- **Needs:** "Update branch" (or a merge of `main`). It conflicts with `main` in `package.json` as well as the record files, so the 14:05 EST run left it as it is. Runs only resolve conflicts in the three record files.
-
-### [#521](https://github.com/the-kya-project/perch-perfect-plan/pull/521) · D1.1 Weight baseline rules and a replay of real history
-- **Needs:** (1) your read of the health rules: every number is new and draft, in `WEIGHT_BASELINE_RULES`, with the choices listed under "Decisions agents made"; (2) the replay of real history, which you run: the export query is `docs/reports/weight-history-export.sql` (read-only, no names), then `npm run weight-baseline:replay -- <the file>` (the hourly job can't run it); your read of the results is what D1.2 waits on; (3) whether the owner's typed normal weight should override the learned one; (4) optionally, `npm run test:weight-baseline` in a CI workflow (the runs' token can't push workflow changes). Then your merge.
-
-### [#531](https://github.com/the-kya-project/perch-perfect-plan/pull/531) · 2.4 Open pages fetch the new build's files after a release
-- **Needs:** your merge. It changes how every open page moves onto a new release (a short POST to `/api/public/unpin` before the reload), so a run can't merge it. No Vercel setting changes. The hands-on proof is 2.5's Simulator check (leave the app open across a release, then open the sitter preview).
-
-### [#529](https://github.com/the-kya-project/perch-perfect-plan/pull/529) · 1.8 Do good voting (and the founding vote)
-- **Needs:** your look at the two admin screens, `/admin/votes` (the list) and `/admin/votes/<id>` (write a draft, open it, close early, extend, the announcement). They aren't in SpecVoting, and the specs say a screen that isn't mocked up is held for you. They follow the Library's admin screens. The member screens follow the mockup, apart from the voter avatars (see "Decisions agents made"). Say "merge" on the PR if they're fine, or what to change. It's behind the Flock gate, and the migration only adds tables, functions and a bucket.
 
 ### Reminder · the hourly runs' GitHub token expires Feb 20, 2027
 - **Needs:** a new token before **Feb 20, 2027**. That's 90 days from Nov 22, 2026; GitHub → Settings → Developer settings → Fine-grained tokens shows the exact date. When it expires, runs can still build and test but can't push or open PRs, and each run's note in `~/.kya-agent/job.log` says so.
