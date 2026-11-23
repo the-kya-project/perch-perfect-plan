@@ -865,8 +865,8 @@ check("votes: what a draft needs before it opens", () => {
   assert.equal(toLocalInput("not a date"), "");
   assert.equal(voteDay("2026-12-15T20:00:00", "en-US", now), "Dec 15");
   assert.equal(voteDay("2027-01-05T20:00:00", "en-US", now), "Jan 5, 2027");
-  // The same limits as the tables' checks (20261123160000_flock_votes.sql).
-  const sql = readFileSync("supabase/migrations/20261123160000_flock_votes.sql", "utf8");
+  // The same limits as the tables' checks (20261123183000_flock_votes.sql).
+  const sql = readFileSync("supabase/migrations/20261123183000_flock_votes.sql", "utf8");
   assert.ok(sql.includes(`length(btrim(question)) between 1 and ${VOTE_LIMITS.question}`));
   assert.ok(sql.includes(`length(description) <= ${VOTE_LIMITS.description}`));
   assert.ok(sql.includes(`length(btrim(name)) between 1 and ${VOTE_LIMITS.choiceName}`));

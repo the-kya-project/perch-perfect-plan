@@ -1,4 +1,4 @@
--- Verification for 20261123160000_flock_votes (backlog 1.8).
+-- Verification for 20261123183000_flock_votes (backlog 1.8).
 --
 -- Self-contained and leaves nothing behind: an admin; a founding member (fd);
 -- twelve Flock members (m[1..12]); a free user. Checks who sees drafts, open

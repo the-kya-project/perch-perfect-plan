@@ -1,6 +1,6 @@
 // Do good voting and the founding vote (backlog 1.8). Data and the pure
 // helpers scripts/flock-shell.test.ts pins. Reads and writes go through
-// database functions (20261123160000_flock_votes.sql). Flock code only.
+// database functions (20261123183000_flock_votes.sql). Flock code only.
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { AvatarError, reencodeJpeg } from "@/lib/flockAvatar";
