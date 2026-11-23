@@ -77,6 +77,7 @@ import { Route as AuthenticatedSitsIndexRouteImport } from './routes/_authentica
 import { Route as AuthenticatedSitsSitIdRouteImport } from './routes/_authenticated/sits.$sitId'
 import { Route as AuthenticatedSitsNewRouteImport } from './routes/_authenticated/sits.new'
 import { Route as ApiPublicCspReportRouteImport } from './routes/api/public/csp-report'
+import { Route as ApiPublicUnpinRouteImport } from './routes/api/public/unpin'
 import { Route as ApiPublicVersionRouteImport } from './routes/api/public/version'
 import { Route as SitterTokenIndexRouteImport } from './routes/sitter/$token/index'
 import { Route as SitterTokenAroundRouteImport } from './routes/sitter/$token/around'
@@ -88,6 +89,8 @@ import { Route as SitterTokenHomeRouteImport } from './routes/sitter/$token/home
 import { Route as SitterTokenScanRouteImport } from './routes/sitter/$token/scan'
 import { Route as AuthenticatedAdminLibraryIndexRouteImport } from './routes/_authenticated/admin.library.index'
 import { Route as AuthenticatedAdminLibraryResourceIdRouteImport } from './routes/_authenticated/admin.library.$resourceId'
+import { Route as AuthenticatedAdminVotesIndexRouteImport } from './routes/_authenticated/admin.votes.index'
+import { Route as AuthenticatedAdminVotesVoteIdRouteImport } from './routes/_authenticated/admin.votes.$voteId'
 import { Route as AuthenticatedBirdsBirdIdIndexRouteImport } from './routes/_authenticated/birds/$birdId.index'
 import { Route as AuthenticatedBirdsBirdIdAccessRouteImport } from './routes/_authenticated/birds/$birdId.access'
 import { Route as AuthenticatedBirdsBirdIdCarePlanRouteImport } from './routes/_authenticated/birds/$birdId.care-plan'
@@ -118,6 +121,7 @@ import { Route as AuthenticatedFlockLibraryResourceIdRouteImport } from './route
 import { Route as AuthenticatedFlockMembersIndexRouteImport } from './routes/_authenticated/flock.members.index'
 import { Route as AuthenticatedFlockMembersUserIdRouteImport } from './routes/_authenticated/flock.members.$userId'
 import { Route as AuthenticatedFlockPostNewRouteImport } from './routes/_authenticated/flock.post.new'
+import { Route as AuthenticatedFlockVotesVoteIdRouteImport } from './routes/_authenticated/flock.votes.$voteId'
 import { Route as AuthenticatedFlockYouIndexRouteImport } from './routes/_authenticated/flock.you.index'
 import { Route as AuthenticatedFlockYouBlockedRouteImport } from './routes/_authenticated/flock.you.blocked'
 import { Route as AuthenticatedFlockYouEditRouteImport } from './routes/_authenticated/flock.you.edit'
@@ -128,12 +132,14 @@ import { Route as AuthenticatedSitsEditSitIdRouteImport } from './routes/_authen
 import { Route as ApiPublicHooksBereavementNoteRouteImport } from './routes/api/public/hooks/bereavement-note'
 import { Route as ApiPublicHooksCarePlanRemindersRouteImport } from './routes/api/public/hooks/care-plan-reminders'
 import { Route as ApiPublicHooksEngagementNudgesRouteImport } from './routes/api/public/hooks/engagement-nudges'
+import { Route as ApiPublicHooksFlockPurgeRouteImport } from './routes/api/public/hooks/flock-purge'
 import { Route as ApiPublicHooksGiftEmailsRouteImport } from './routes/api/public/hooks/gift-emails'
 import { Route as ApiPublicHooksMonthlyLetterRouteImport } from './routes/api/public/hooks/monthly-letter'
 import { Route as ApiPublicHooksOnboardingEmailsRouteImport } from './routes/api/public/hooks/onboarding-emails'
 import { Route as ApiPublicHooksOnboardingWelcomeRouteImport } from './routes/api/public/hooks/onboarding-welcome'
 import { Route as ApiPublicHooksSaveErrorAlertsRouteImport } from './routes/api/public/hooks/save-error-alerts'
 import { Route as ApiPublicHooksSendEmailRouteImport } from './routes/api/public/hooks/send-email'
+import { Route as ApiPublicStripeBillingRouteImport } from './routes/api/public/stripe/billing'
 import { Route as ApiPublicStripeWebhookRouteImport } from './routes/api/public/stripe/webhook'
 import { Route as AuthenticatedBirdsBirdIdPlanIndexRouteImport } from './routes/_authenticated/birds/$birdId.plan.index'
 import { Route as AuthenticatedBirdsBirdIdPlanEditorRouteImport } from './routes/_authenticated/birds/$birdId.plan.editor'
@@ -513,6 +519,11 @@ const ApiPublicCspReportRoute = ApiPublicCspReportRouteImport.update({
   path: '/api/public/csp-report',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicUnpinRoute = ApiPublicUnpinRouteImport.update({
+  id: '/api/public/unpin',
+  path: '/api/public/unpin',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicVersionRoute = ApiPublicVersionRouteImport.update({
   id: '/api/public/version',
   path: '/api/public/version',
@@ -568,6 +579,18 @@ const AuthenticatedAdminLibraryResourceIdRoute =
   AuthenticatedAdminLibraryResourceIdRouteImport.update({
     id: '/admin/library/$resourceId',
     path: '/admin/library/$resourceId',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedAdminVotesIndexRoute =
+  AuthenticatedAdminVotesIndexRouteImport.update({
+    id: '/admin/votes/',
+    path: '/admin/votes/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedAdminVotesVoteIdRoute =
+  AuthenticatedAdminVotesVoteIdRouteImport.update({
+    id: '/admin/votes/$voteId',
+    path: '/admin/votes/$voteId',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedBirdsBirdIdIndexRoute =
@@ -750,6 +773,12 @@ const AuthenticatedFlockPostNewRoute =
     path: '/post/new',
     getParentRoute: () => AuthenticatedFlockRoute,
   } as any)
+const AuthenticatedFlockVotesVoteIdRoute =
+  AuthenticatedFlockVotesVoteIdRouteImport.update({
+    id: '/votes/$voteId',
+    path: '/votes/$voteId',
+    getParentRoute: () => AuthenticatedFlockRoute,
+  } as any)
 const AuthenticatedFlockYouIndexRoute =
   AuthenticatedFlockYouIndexRouteImport.update({
     id: '/you/',
@@ -810,6 +839,12 @@ const ApiPublicHooksEngagementNudgesRoute =
     path: '/api/public/hooks/engagement-nudges',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicHooksFlockPurgeRoute =
+  ApiPublicHooksFlockPurgeRouteImport.update({
+    id: '/api/public/hooks/flock-purge',
+    path: '/api/public/hooks/flock-purge',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicHooksGiftEmailsRoute =
   ApiPublicHooksGiftEmailsRouteImport.update({
     id: '/api/public/hooks/gift-emails',
@@ -843,6 +878,11 @@ const ApiPublicHooksSaveErrorAlertsRoute =
 const ApiPublicHooksSendEmailRoute = ApiPublicHooksSendEmailRouteImport.update({
   id: '/api/public/hooks/send-email',
   path: '/api/public/hooks/send-email',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicStripeBillingRoute = ApiPublicStripeBillingRouteImport.update({
+  id: '/api/public/stripe/billing',
+  path: '/api/public/stripe/billing',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiPublicStripeWebhookRoute = ApiPublicStripeWebhookRouteImport.update({
@@ -1010,6 +1050,7 @@ export interface FileRoutesByFullPath {
   '/sits/$sitId': typeof AuthenticatedSitsSitIdRoute
   '/sits/new': typeof AuthenticatedSitsNewRoute
   '/api/public/csp-report': typeof ApiPublicCspReportRoute
+  '/api/public/unpin': typeof ApiPublicUnpinRoute
   '/api/public/version': typeof ApiPublicVersionRoute
   '/sitter/$token/around': typeof SitterTokenAroundRoute
   '/sitter/$token/care-sheet': typeof SitterTokenCareSheetRoute
@@ -1025,6 +1066,7 @@ export interface FileRoutesByFullPath {
   '/sits/': typeof AuthenticatedSitsIndexRoute
   '/sitter/$token/': typeof SitterTokenIndexRoute
   '/admin/library/$resourceId': typeof AuthenticatedAdminLibraryResourceIdRoute
+  '/admin/votes/$voteId': typeof AuthenticatedAdminVotesVoteIdRoute
   '/birds/$birdId/access': typeof AuthenticatedBirdsBirdIdAccessRoute
   '/birds/$birdId/care-plan': typeof AuthenticatedBirdsBirdIdCarePlanRoute
   '/birds/$birdId/concern': typeof AuthenticatedBirdsBirdIdConcernRoute
@@ -1051,6 +1093,7 @@ export interface FileRoutesByFullPath {
   '/flock/library/$resourceId': typeof AuthenticatedFlockLibraryResourceIdRoute
   '/flock/members/$userId': typeof AuthenticatedFlockMembersUserIdRoute
   '/flock/post/new': typeof AuthenticatedFlockPostNewRoute
+  '/flock/votes/$voteId': typeof AuthenticatedFlockVotesVoteIdRoute
   '/flock/you/blocked': typeof AuthenticatedFlockYouBlockedRoute
   '/flock/you/edit': typeof AuthenticatedFlockYouEditRoute
   '/flock/you/membership': typeof AuthenticatedFlockYouMembershipRoute
@@ -1060,14 +1103,17 @@ export interface FileRoutesByFullPath {
   '/api/public/hooks/bereavement-note': typeof ApiPublicHooksBereavementNoteRoute
   '/api/public/hooks/care-plan-reminders': typeof ApiPublicHooksCarePlanRemindersRoute
   '/api/public/hooks/engagement-nudges': typeof ApiPublicHooksEngagementNudgesRoute
+  '/api/public/hooks/flock-purge': typeof ApiPublicHooksFlockPurgeRoute
   '/api/public/hooks/gift-emails': typeof ApiPublicHooksGiftEmailsRoute
   '/api/public/hooks/monthly-letter': typeof ApiPublicHooksMonthlyLetterRoute
   '/api/public/hooks/onboarding-emails': typeof ApiPublicHooksOnboardingEmailsRoute
   '/api/public/hooks/onboarding-welcome': typeof ApiPublicHooksOnboardingWelcomeRoute
   '/api/public/hooks/save-error-alerts': typeof ApiPublicHooksSaveErrorAlertsRoute
   '/api/public/hooks/send-email': typeof ApiPublicHooksSendEmailRoute
+  '/api/public/stripe/billing': typeof ApiPublicStripeBillingRoute
   '/api/public/stripe/webhook': typeof ApiPublicStripeWebhookRoute
   '/admin/library/': typeof AuthenticatedAdminLibraryIndexRoute
+  '/admin/votes/': typeof AuthenticatedAdminVotesIndexRoute
   '/birds/$birdId/': typeof AuthenticatedBirdsBirdIdIndexRoute
   '/flock/journeys/': typeof AuthenticatedFlockJourneysIndexRoute
   '/flock/library/': typeof AuthenticatedFlockLibraryIndexRoute
@@ -1147,6 +1193,7 @@ export interface FileRoutesByTo {
   '/sits/$sitId': typeof AuthenticatedSitsSitIdRoute
   '/sits/new': typeof AuthenticatedSitsNewRoute
   '/api/public/csp-report': typeof ApiPublicCspReportRoute
+  '/api/public/unpin': typeof ApiPublicUnpinRoute
   '/api/public/version': typeof ApiPublicVersionRoute
   '/sitter/$token/around': typeof SitterTokenAroundRoute
   '/sitter/$token/care-sheet': typeof SitterTokenCareSheetRoute
@@ -1162,6 +1209,7 @@ export interface FileRoutesByTo {
   '/sits': typeof AuthenticatedSitsIndexRoute
   '/sitter/$token': typeof SitterTokenIndexRoute
   '/admin/library/$resourceId': typeof AuthenticatedAdminLibraryResourceIdRoute
+  '/admin/votes/$voteId': typeof AuthenticatedAdminVotesVoteIdRoute
   '/birds/$birdId/access': typeof AuthenticatedBirdsBirdIdAccessRoute
   '/birds/$birdId/care-plan': typeof AuthenticatedBirdsBirdIdCarePlanRoute
   '/birds/$birdId/concern': typeof AuthenticatedBirdsBirdIdConcernRoute
@@ -1187,6 +1235,7 @@ export interface FileRoutesByTo {
   '/flock/library/$resourceId': typeof AuthenticatedFlockLibraryResourceIdRoute
   '/flock/members/$userId': typeof AuthenticatedFlockMembersUserIdRoute
   '/flock/post/new': typeof AuthenticatedFlockPostNewRoute
+  '/flock/votes/$voteId': typeof AuthenticatedFlockVotesVoteIdRoute
   '/flock/you/blocked': typeof AuthenticatedFlockYouBlockedRoute
   '/flock/you/edit': typeof AuthenticatedFlockYouEditRoute
   '/flock/you/membership': typeof AuthenticatedFlockYouMembershipRoute
@@ -1196,14 +1245,17 @@ export interface FileRoutesByTo {
   '/api/public/hooks/bereavement-note': typeof ApiPublicHooksBereavementNoteRoute
   '/api/public/hooks/care-plan-reminders': typeof ApiPublicHooksCarePlanRemindersRoute
   '/api/public/hooks/engagement-nudges': typeof ApiPublicHooksEngagementNudgesRoute
+  '/api/public/hooks/flock-purge': typeof ApiPublicHooksFlockPurgeRoute
   '/api/public/hooks/gift-emails': typeof ApiPublicHooksGiftEmailsRoute
   '/api/public/hooks/monthly-letter': typeof ApiPublicHooksMonthlyLetterRoute
   '/api/public/hooks/onboarding-emails': typeof ApiPublicHooksOnboardingEmailsRoute
   '/api/public/hooks/onboarding-welcome': typeof ApiPublicHooksOnboardingWelcomeRoute
   '/api/public/hooks/save-error-alerts': typeof ApiPublicHooksSaveErrorAlertsRoute
   '/api/public/hooks/send-email': typeof ApiPublicHooksSendEmailRoute
+  '/api/public/stripe/billing': typeof ApiPublicStripeBillingRoute
   '/api/public/stripe/webhook': typeof ApiPublicStripeWebhookRoute
   '/admin/library': typeof AuthenticatedAdminLibraryIndexRoute
+  '/admin/votes': typeof AuthenticatedAdminVotesIndexRoute
   '/birds/$birdId': typeof AuthenticatedBirdsBirdIdIndexRoute
   '/flock/journeys': typeof AuthenticatedFlockJourneysIndexRoute
   '/flock/library': typeof AuthenticatedFlockLibraryIndexRoute
@@ -1291,6 +1343,7 @@ export interface FileRoutesById {
   '/_authenticated/sits/$sitId': typeof AuthenticatedSitsSitIdRoute
   '/_authenticated/sits/new': typeof AuthenticatedSitsNewRoute
   '/api/public/csp-report': typeof ApiPublicCspReportRoute
+  '/api/public/unpin': typeof ApiPublicUnpinRoute
   '/api/public/version': typeof ApiPublicVersionRoute
   '/sitter/$token/around': typeof SitterTokenAroundRoute
   '/sitter/$token/care-sheet': typeof SitterTokenCareSheetRoute
@@ -1306,6 +1359,7 @@ export interface FileRoutesById {
   '/_authenticated/sits/': typeof AuthenticatedSitsIndexRoute
   '/sitter/$token/': typeof SitterTokenIndexRoute
   '/_authenticated/admin/library/$resourceId': typeof AuthenticatedAdminLibraryResourceIdRoute
+  '/_authenticated/admin/votes/$voteId': typeof AuthenticatedAdminVotesVoteIdRoute
   '/_authenticated/birds/$birdId/access': typeof AuthenticatedBirdsBirdIdAccessRoute
   '/_authenticated/birds/$birdId/care-plan': typeof AuthenticatedBirdsBirdIdCarePlanRoute
   '/_authenticated/birds/$birdId/concern': typeof AuthenticatedBirdsBirdIdConcernRoute
@@ -1332,6 +1386,7 @@ export interface FileRoutesById {
   '/_authenticated/flock/library/$resourceId': typeof AuthenticatedFlockLibraryResourceIdRoute
   '/_authenticated/flock/members/$userId': typeof AuthenticatedFlockMembersUserIdRoute
   '/_authenticated/flock/post/new': typeof AuthenticatedFlockPostNewRoute
+  '/_authenticated/flock/votes/$voteId': typeof AuthenticatedFlockVotesVoteIdRoute
   '/_authenticated/flock/you/blocked': typeof AuthenticatedFlockYouBlockedRoute
   '/_authenticated/flock/you/edit': typeof AuthenticatedFlockYouEditRoute
   '/_authenticated/flock/you/membership': typeof AuthenticatedFlockYouMembershipRoute
@@ -1341,14 +1396,17 @@ export interface FileRoutesById {
   '/api/public/hooks/bereavement-note': typeof ApiPublicHooksBereavementNoteRoute
   '/api/public/hooks/care-plan-reminders': typeof ApiPublicHooksCarePlanRemindersRoute
   '/api/public/hooks/engagement-nudges': typeof ApiPublicHooksEngagementNudgesRoute
+  '/api/public/hooks/flock-purge': typeof ApiPublicHooksFlockPurgeRoute
   '/api/public/hooks/gift-emails': typeof ApiPublicHooksGiftEmailsRoute
   '/api/public/hooks/monthly-letter': typeof ApiPublicHooksMonthlyLetterRoute
   '/api/public/hooks/onboarding-emails': typeof ApiPublicHooksOnboardingEmailsRoute
   '/api/public/hooks/onboarding-welcome': typeof ApiPublicHooksOnboardingWelcomeRoute
   '/api/public/hooks/save-error-alerts': typeof ApiPublicHooksSaveErrorAlertsRoute
   '/api/public/hooks/send-email': typeof ApiPublicHooksSendEmailRoute
+  '/api/public/stripe/billing': typeof ApiPublicStripeBillingRoute
   '/api/public/stripe/webhook': typeof ApiPublicStripeWebhookRoute
   '/_authenticated/admin/library/': typeof AuthenticatedAdminLibraryIndexRoute
+  '/_authenticated/admin/votes/': typeof AuthenticatedAdminVotesIndexRoute
   '/_authenticated/birds/$birdId/': typeof AuthenticatedBirdsBirdIdIndexRoute
   '/_authenticated/flock/journeys/': typeof AuthenticatedFlockJourneysIndexRoute
   '/_authenticated/flock/library/': typeof AuthenticatedFlockLibraryIndexRoute
@@ -1436,6 +1494,7 @@ export interface FileRouteTypes {
     | '/sits/$sitId'
     | '/sits/new'
     | '/api/public/csp-report'
+    | '/api/public/unpin'
     | '/api/public/version'
     | '/sitter/$token/around'
     | '/sitter/$token/care-sheet'
@@ -1451,6 +1510,7 @@ export interface FileRouteTypes {
     | '/sits/'
     | '/sitter/$token/'
     | '/admin/library/$resourceId'
+    | '/admin/votes/$voteId'
     | '/birds/$birdId/access'
     | '/birds/$birdId/care-plan'
     | '/birds/$birdId/concern'
@@ -1477,6 +1537,7 @@ export interface FileRouteTypes {
     | '/flock/library/$resourceId'
     | '/flock/members/$userId'
     | '/flock/post/new'
+    | '/flock/votes/$voteId'
     | '/flock/you/blocked'
     | '/flock/you/edit'
     | '/flock/you/membership'
@@ -1486,14 +1547,17 @@ export interface FileRouteTypes {
     | '/api/public/hooks/bereavement-note'
     | '/api/public/hooks/care-plan-reminders'
     | '/api/public/hooks/engagement-nudges'
+    | '/api/public/hooks/flock-purge'
     | '/api/public/hooks/gift-emails'
     | '/api/public/hooks/monthly-letter'
     | '/api/public/hooks/onboarding-emails'
     | '/api/public/hooks/onboarding-welcome'
     | '/api/public/hooks/save-error-alerts'
     | '/api/public/hooks/send-email'
+    | '/api/public/stripe/billing'
     | '/api/public/stripe/webhook'
     | '/admin/library/'
+    | '/admin/votes/'
     | '/birds/$birdId/'
     | '/flock/journeys/'
     | '/flock/library/'
@@ -1573,6 +1637,7 @@ export interface FileRouteTypes {
     | '/sits/$sitId'
     | '/sits/new'
     | '/api/public/csp-report'
+    | '/api/public/unpin'
     | '/api/public/version'
     | '/sitter/$token/around'
     | '/sitter/$token/care-sheet'
@@ -1588,6 +1653,7 @@ export interface FileRouteTypes {
     | '/sits'
     | '/sitter/$token'
     | '/admin/library/$resourceId'
+    | '/admin/votes/$voteId'
     | '/birds/$birdId/access'
     | '/birds/$birdId/care-plan'
     | '/birds/$birdId/concern'
@@ -1613,6 +1679,7 @@ export interface FileRouteTypes {
     | '/flock/library/$resourceId'
     | '/flock/members/$userId'
     | '/flock/post/new'
+    | '/flock/votes/$voteId'
     | '/flock/you/blocked'
     | '/flock/you/edit'
     | '/flock/you/membership'
@@ -1622,14 +1689,17 @@ export interface FileRouteTypes {
     | '/api/public/hooks/bereavement-note'
     | '/api/public/hooks/care-plan-reminders'
     | '/api/public/hooks/engagement-nudges'
+    | '/api/public/hooks/flock-purge'
     | '/api/public/hooks/gift-emails'
     | '/api/public/hooks/monthly-letter'
     | '/api/public/hooks/onboarding-emails'
     | '/api/public/hooks/onboarding-welcome'
     | '/api/public/hooks/save-error-alerts'
     | '/api/public/hooks/send-email'
+    | '/api/public/stripe/billing'
     | '/api/public/stripe/webhook'
     | '/admin/library'
+    | '/admin/votes'
     | '/birds/$birdId'
     | '/flock/journeys'
     | '/flock/library'
@@ -1716,6 +1786,7 @@ export interface FileRouteTypes {
     | '/_authenticated/sits/$sitId'
     | '/_authenticated/sits/new'
     | '/api/public/csp-report'
+    | '/api/public/unpin'
     | '/api/public/version'
     | '/sitter/$token/around'
     | '/sitter/$token/care-sheet'
@@ -1731,6 +1802,7 @@ export interface FileRouteTypes {
     | '/_authenticated/sits/'
     | '/sitter/$token/'
     | '/_authenticated/admin/library/$resourceId'
+    | '/_authenticated/admin/votes/$voteId'
     | '/_authenticated/birds/$birdId/access'
     | '/_authenticated/birds/$birdId/care-plan'
     | '/_authenticated/birds/$birdId/concern'
@@ -1757,6 +1829,7 @@ export interface FileRouteTypes {
     | '/_authenticated/flock/library/$resourceId'
     | '/_authenticated/flock/members/$userId'
     | '/_authenticated/flock/post/new'
+    | '/_authenticated/flock/votes/$voteId'
     | '/_authenticated/flock/you/blocked'
     | '/_authenticated/flock/you/edit'
     | '/_authenticated/flock/you/membership'
@@ -1766,14 +1839,17 @@ export interface FileRouteTypes {
     | '/api/public/hooks/bereavement-note'
     | '/api/public/hooks/care-plan-reminders'
     | '/api/public/hooks/engagement-nudges'
+    | '/api/public/hooks/flock-purge'
     | '/api/public/hooks/gift-emails'
     | '/api/public/hooks/monthly-letter'
     | '/api/public/hooks/onboarding-emails'
     | '/api/public/hooks/onboarding-welcome'
     | '/api/public/hooks/save-error-alerts'
     | '/api/public/hooks/send-email'
+    | '/api/public/stripe/billing'
     | '/api/public/stripe/webhook'
     | '/_authenticated/admin/library/'
+    | '/_authenticated/admin/votes/'
     | '/_authenticated/birds/$birdId/'
     | '/_authenticated/flock/journeys/'
     | '/_authenticated/flock/library/'
@@ -1823,16 +1899,19 @@ export interface RootRouteChildren {
   RTokenRoute: typeof RTokenRoute
   GiftIndexRoute: typeof GiftIndexRoute
   ApiPublicCspReportRoute: typeof ApiPublicCspReportRoute
+  ApiPublicUnpinRoute: typeof ApiPublicUnpinRoute
   ApiPublicVersionRoute: typeof ApiPublicVersionRoute
   ApiPublicHooksBereavementNoteRoute: typeof ApiPublicHooksBereavementNoteRoute
   ApiPublicHooksCarePlanRemindersRoute: typeof ApiPublicHooksCarePlanRemindersRoute
   ApiPublicHooksEngagementNudgesRoute: typeof ApiPublicHooksEngagementNudgesRoute
+  ApiPublicHooksFlockPurgeRoute: typeof ApiPublicHooksFlockPurgeRoute
   ApiPublicHooksGiftEmailsRoute: typeof ApiPublicHooksGiftEmailsRoute
   ApiPublicHooksMonthlyLetterRoute: typeof ApiPublicHooksMonthlyLetterRoute
   ApiPublicHooksOnboardingEmailsRoute: typeof ApiPublicHooksOnboardingEmailsRoute
   ApiPublicHooksOnboardingWelcomeRoute: typeof ApiPublicHooksOnboardingWelcomeRoute
   ApiPublicHooksSaveErrorAlertsRoute: typeof ApiPublicHooksSaveErrorAlertsRoute
   ApiPublicHooksSendEmailRoute: typeof ApiPublicHooksSendEmailRoute
+  ApiPublicStripeBillingRoute: typeof ApiPublicStripeBillingRoute
   ApiPublicStripeWebhookRoute: typeof ApiPublicStripeWebhookRoute
   ApiPublicBereavementReviewReviewIdSigRoute: typeof ApiPublicBereavementReviewReviewIdSigRoute
   ApiPublicChartBirdIdMonthSigRoute: typeof ApiPublicChartBirdIdMonthSigRoute
@@ -2317,6 +2396,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicCspReportRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/unpin': {
+      id: '/api/public/unpin'
+      path: '/api/public/unpin'
+      fullPath: '/api/public/unpin'
+      preLoaderRoute: typeof ApiPublicUnpinRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/version': {
       id: '/api/public/version'
       path: '/api/public/version'
@@ -2392,6 +2478,20 @@ declare module '@tanstack/react-router' {
       path: '/admin/library/$resourceId'
       fullPath: '/admin/library/$resourceId'
       preLoaderRoute: typeof AuthenticatedAdminLibraryResourceIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/admin/votes/': {
+      id: '/_authenticated/admin/votes/'
+      path: '/admin/votes'
+      fullPath: '/admin/votes/'
+      preLoaderRoute: typeof AuthenticatedAdminVotesIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/admin/votes/$voteId': {
+      id: '/_authenticated/admin/votes/$voteId'
+      path: '/admin/votes/$voteId'
+      fullPath: '/admin/votes/$voteId'
+      preLoaderRoute: typeof AuthenticatedAdminVotesVoteIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/birds/$birdId/': {
@@ -2604,6 +2704,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedFlockPostNewRouteImport
       parentRoute: typeof AuthenticatedFlockRoute
     }
+    '/_authenticated/flock/votes/$voteId': {
+      id: '/_authenticated/flock/votes/$voteId'
+      path: '/votes/$voteId'
+      fullPath: '/flock/votes/$voteId'
+      preLoaderRoute: typeof AuthenticatedFlockVotesVoteIdRouteImport
+      parentRoute: typeof AuthenticatedFlockRoute
+    }
     '/_authenticated/flock/you/': {
       id: '/_authenticated/flock/you/'
       path: '/you'
@@ -2674,6 +2781,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksEngagementNudgesRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/flock-purge': {
+      id: '/api/public/hooks/flock-purge'
+      path: '/api/public/hooks/flock-purge'
+      fullPath: '/api/public/hooks/flock-purge'
+      preLoaderRoute: typeof ApiPublicHooksFlockPurgeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/hooks/gift-emails': {
       id: '/api/public/hooks/gift-emails'
       path: '/api/public/hooks/gift-emails'
@@ -2714,6 +2828,13 @@ declare module '@tanstack/react-router' {
       path: '/api/public/hooks/send-email'
       fullPath: '/api/public/hooks/send-email'
       preLoaderRoute: typeof ApiPublicHooksSendEmailRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/stripe/billing': {
+      id: '/api/public/stripe/billing'
+      path: '/api/public/stripe/billing'
+      fullPath: '/api/public/stripe/billing'
+      preLoaderRoute: typeof ApiPublicStripeBillingRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/stripe/webhook': {
@@ -2874,6 +2995,7 @@ interface AuthenticatedFlockRouteChildren {
   AuthenticatedFlockLibraryResourceIdRoute: typeof AuthenticatedFlockLibraryResourceIdRoute
   AuthenticatedFlockMembersUserIdRoute: typeof AuthenticatedFlockMembersUserIdRoute
   AuthenticatedFlockPostNewRoute: typeof AuthenticatedFlockPostNewRoute
+  AuthenticatedFlockVotesVoteIdRoute: typeof AuthenticatedFlockVotesVoteIdRoute
   AuthenticatedFlockYouBlockedRoute: typeof AuthenticatedFlockYouBlockedRoute
   AuthenticatedFlockYouEditRoute: typeof AuthenticatedFlockYouEditRoute
   AuthenticatedFlockYouMembershipRoute: typeof AuthenticatedFlockYouMembershipRoute
@@ -2917,6 +3039,7 @@ const AuthenticatedFlockRouteChildren: AuthenticatedFlockRouteChildren = {
     AuthenticatedFlockLibraryResourceIdRoute,
   AuthenticatedFlockMembersUserIdRoute: AuthenticatedFlockMembersUserIdRoute,
   AuthenticatedFlockPostNewRoute: AuthenticatedFlockPostNewRoute,
+  AuthenticatedFlockVotesVoteIdRoute: AuthenticatedFlockVotesVoteIdRoute,
   AuthenticatedFlockYouBlockedRoute: AuthenticatedFlockYouBlockedRoute,
   AuthenticatedFlockYouEditRoute: AuthenticatedFlockYouEditRoute,
   AuthenticatedFlockYouMembershipRoute: AuthenticatedFlockYouMembershipRoute,
@@ -3083,9 +3206,11 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedSitsNewRoute: typeof AuthenticatedSitsNewRoute
   AuthenticatedSitsIndexRoute: typeof AuthenticatedSitsIndexRoute
   AuthenticatedAdminLibraryResourceIdRoute: typeof AuthenticatedAdminLibraryResourceIdRoute
+  AuthenticatedAdminVotesVoteIdRoute: typeof AuthenticatedAdminVotesVoteIdRoute
   AuthenticatedCoveringSitIdBirdIdRoute: typeof AuthenticatedCoveringSitIdBirdIdRoute
   AuthenticatedSitsEditSitIdRoute: typeof AuthenticatedSitsEditSitIdRoute
   AuthenticatedAdminLibraryIndexRoute: typeof AuthenticatedAdminLibraryIndexRoute
+  AuthenticatedAdminVotesIndexRoute: typeof AuthenticatedAdminVotesIndexRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
@@ -3116,9 +3241,11 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedSitsIndexRoute: AuthenticatedSitsIndexRoute,
   AuthenticatedAdminLibraryResourceIdRoute:
     AuthenticatedAdminLibraryResourceIdRoute,
+  AuthenticatedAdminVotesVoteIdRoute: AuthenticatedAdminVotesVoteIdRoute,
   AuthenticatedCoveringSitIdBirdIdRoute: AuthenticatedCoveringSitIdBirdIdRoute,
   AuthenticatedSitsEditSitIdRoute: AuthenticatedSitsEditSitIdRoute,
   AuthenticatedAdminLibraryIndexRoute: AuthenticatedAdminLibraryIndexRoute,
+  AuthenticatedAdminVotesIndexRoute: AuthenticatedAdminVotesIndexRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =
@@ -3176,16 +3303,19 @@ const rootRouteChildren: RootRouteChildren = {
   RTokenRoute: RTokenRoute,
   GiftIndexRoute: GiftIndexRoute,
   ApiPublicCspReportRoute: ApiPublicCspReportRoute,
+  ApiPublicUnpinRoute: ApiPublicUnpinRoute,
   ApiPublicVersionRoute: ApiPublicVersionRoute,
   ApiPublicHooksBereavementNoteRoute: ApiPublicHooksBereavementNoteRoute,
   ApiPublicHooksCarePlanRemindersRoute: ApiPublicHooksCarePlanRemindersRoute,
   ApiPublicHooksEngagementNudgesRoute: ApiPublicHooksEngagementNudgesRoute,
+  ApiPublicHooksFlockPurgeRoute: ApiPublicHooksFlockPurgeRoute,
   ApiPublicHooksGiftEmailsRoute: ApiPublicHooksGiftEmailsRoute,
   ApiPublicHooksMonthlyLetterRoute: ApiPublicHooksMonthlyLetterRoute,
   ApiPublicHooksOnboardingEmailsRoute: ApiPublicHooksOnboardingEmailsRoute,
   ApiPublicHooksOnboardingWelcomeRoute: ApiPublicHooksOnboardingWelcomeRoute,
   ApiPublicHooksSaveErrorAlertsRoute: ApiPublicHooksSaveErrorAlertsRoute,
   ApiPublicHooksSendEmailRoute: ApiPublicHooksSendEmailRoute,
+  ApiPublicStripeBillingRoute: ApiPublicStripeBillingRoute,
   ApiPublicStripeWebhookRoute: ApiPublicStripeWebhookRoute,
   ApiPublicBereavementReviewReviewIdSigRoute:
     ApiPublicBereavementReviewReviewIdSigRoute,

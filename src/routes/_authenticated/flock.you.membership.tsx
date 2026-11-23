@@ -3,12 +3,14 @@ import { CreditCard } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { K, KyaCard, KyaIconTile } from "@/components/kya";
 import { FlockSubPage } from "@/components/flock/FlockSubPage";
+import { BillingCardStep } from "@/components/flock/BillingCardStep";
 import { membershipSummary } from "@/lib/flockProfile";
 import { useIsAdmin, useMyEntitlements } from "@/lib/flockData";
 
-// Membership and billing: what access you have, from your entitlements. No
-// payment actions yet (the payments step adds them).
+// Membership and billing: what access you have, from your entitlements, and
+// the card step (BillingCardStep), which shows only while BILLING_ENABLED is on.
 export const Route = createFileRoute("/_authenticated/flock/you/membership")({
+  validateSearch: (s: Record<string, unknown>): { billing?: "done" } => (s.billing === "done" ? { billing: "done" } : {}),
   component: FlockMembership,
 });
 
@@ -16,6 +18,7 @@ function FlockMembership() {
   const { t } = useTranslation();
   const { data: ents, isLoading } = useMyEntitlements();
   const { data: isAdmin } = useIsAdmin();
+  const { billing } = Route.useSearch();
   const m = membershipSummary(ents ?? [], !!isAdmin);
   return (
     <FlockSubPage title={t("flock.you.membership", "Membership and billing")} fallback="/flock/you">
@@ -33,9 +36,14 @@ function FlockMembership() {
           </div>
         </div>
       </KyaCard>
-      <p className="m-0 px-1 text-[14px] leading-[1.5]" style={{ color: K.quiet }}>
-        {t("flock.membership.billingSoon", "Billing details and changes will live here once payments open.")}
-      </p>
+      <BillingCardStep
+        returned={billing === "done"}
+        fallback={
+          <p className="m-0 px-1 text-[14px] leading-[1.5]" style={{ color: K.quiet }}>
+            {t("flock.membership.billingSoon", "Billing details and changes will live here once payments open.")}
+          </p>
+        }
+      />
     </FlockSubPage>
   );
 }

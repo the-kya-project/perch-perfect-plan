@@ -28,6 +28,7 @@ import { fetchScanFeed } from "@/lib/notificationsFeed";
 import { CaregiverCoveringSection, useActiveCaregiver } from "@/components/CaregiverHome";
 import { HomeChecklist } from "@/components/HomeChecklist";
 import { DailyCheckCard } from "@/components/DailyCheckCard";
+import { SeasonalTodayCard } from "@/components/SeasonalTodayCard";
 import { useDailyCheckToday } from "@/lib/dailyCheck";
 import { birdNames, namesAsCount } from "@/lib/birdNames";
 import { K, KyaPage, KyaBody, KyaCard, KyaHeading, KyaLink, KyaPrimaryButton, KyaAvatarStack, KyaRow, KyaIconTile } from "@/components/kya";
@@ -95,6 +96,7 @@ function Dashboard() {
         id: u.user.id,
         displayName: (data as any)?.display_name ?? "",
         firstName: ((data as any)?.first_name ?? "").toString().trim(),
+        timeZone: ((data as any)?.time_zone as string | null) ?? null,
       };
     },
   });
@@ -335,6 +337,10 @@ function Dashboard() {
             )}
 
             <TodayPanel items={todayPanelItems} onNavigate={onTodayNavigate} />
+
+            {/* The day's seasonal or holiday card, behind its own switch (off
+                until Brittany turns it on); see SeasonalTodayCard. */}
+            {!demo && <SeasonalTodayCard userId={me?.id} homeTimeZone={me?.timeZone} />}
 
             {/* A sit you're covering (any account): the sitter-style "Birds in
                 your care" cards (per-bird progress; tap a bird to open its

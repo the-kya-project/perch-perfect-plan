@@ -59,6 +59,7 @@ jobs:
           npm run test:app-links
           npm run test:auth-email-hook
           npm run test:bereavement-note
+          npm run test:billing
           npm run test:bird-age
           npm run test:bird-names
           npm run test:blog-feed
@@ -75,6 +76,7 @@ jobs:
           npm run test:email-clicks
           npm run test:email-tracking
           npm run test:emergency-merge
+          npm run test:flock-purge
           npm run test:get-app
           npm run test:gifts
           npm run test:health-rules
@@ -97,6 +99,7 @@ jobs:
           npm run test:sit-preview-recovery
           npm run test:sit-time-zone
           npm run test:supabase-env
+          npm run test:today-card
           npm run test:together-since
           npm run test:url-scrub
           npm run test:utm-carry

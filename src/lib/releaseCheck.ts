@@ -16,8 +16,8 @@
  * a form is in progress (releaseUpdateAction).
  *
  * The decisions are pure functions here so scripts/release-check.test.ts can
- * pin them. Nothing calls them yet: backlog 2.3 adds the timers and fetches
- * in sw-register.ts.
+ * pin them. The timers and the check itself are in sw-register.ts
+ * (startReleaseCheck).
  */
 
 /** How often an open app asks, besides launch and each return to the foreground. */
@@ -45,6 +45,16 @@ export function parseVersionResponse(body: unknown): string | null {
   if (!body || typeof body !== "object") return null;
   const build = (body as { build?: unknown }).build;
   return typeof build === "string" && BUILD_SHAPE.test(build) ? build : null;
+}
+
+/** The build id out of /api/public/version opened as a page (the check reads
+ *  it in a hidden frame, see sw-register.ts), or null. The browser shows the
+ *  JSON as text, sometimes with its own viewer's words around it, so this
+ *  looks for the "build" field rather than parsing the whole text. */
+export function buildFromPageText(text: unknown): string | null {
+  if (typeof text !== "string") return null;
+  const m = text.match(/"build"\s*:\s*"([^"]{0,64})"/);
+  return m && BUILD_SHAPE.test(m[1]) ? m[1] : null;
 }
 
 /** Should this page run its own version check? Every production build with
@@ -99,3 +109,16 @@ export function parseBuildReload(raw: string | null): BuildReload | null {
     return null;
   }
 }
+
+/** Vercel's Skew Protection cookie: which build this browser's requests go to.
+ *  On Nov 2, 2026 the iOS web view kept it through a reload, so the "new" page
+ *  still got the old build's code files and the sitter preview stalled. Before
+ *  an update reloads, the page expires it through /api/public/unpin, so the
+ *  reload starts unpinned and lands on the live build (backlog 2.4, option B
+ *  in docs/skew-protection.md). */
+export const PIN_COOKIE = "__vdpl";
+/** The unpin address's answer: the same cookie, expired. */
+export const UNPIN_SET_COOKIE = `${PIN_COOKIE}=; Path=/; Max-Age=0; Secure; HttpOnly; SameSite=Strict`;
+/** Never hold up a reload longer than this waiting for the unpin answer
+ *  (offline, or a page whose pinned build predates the address): reload anyway. */
+export const UNPIN_TIMEOUT_MS = 3_000;

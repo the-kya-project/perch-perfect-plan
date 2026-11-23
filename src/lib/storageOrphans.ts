@@ -49,11 +49,14 @@ export const REFERENCE_COLUMNS: ReadonlyArray<{ table: string; column: string; a
   { table: "flock_profiles", column: "photo_path" },
   { table: "flock_posts", column: "photo_paths", array: true },
   { table: "flock_comments", column: "photo_path" },
+  // Deleted posts and comments, held for 180 days (backlog 1.3).
+  { table: "flock_deleted_items", column: "photo_paths", array: true },
   { table: "flock_idea_tries", column: "photo_path" },
   { table: "flock_ideas", column: "photo_path" },
   { table: "flock_events", column: "photo_path" },
   { table: "library_resources", column: "cover_path" },
   { table: "library_resources", column: "attachment_path" },
+  { table: "flock_vote_choices", column: "photo_path" },
 ];
 
 const ID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
