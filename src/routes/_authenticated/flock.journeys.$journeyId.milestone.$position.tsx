@@ -1,15 +1,15 @@
 import { useState } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
-import { K, KyaPrimaryButton, SERIF } from "@/components/kya";
+import { K, KyaPrimaryButton, KyaSecondaryButton, SERIF } from "@/components/kya";
 import { ForestMoment, ProgressRing } from "@/components/flock/JourneyCelebrate";
 import { useOwnBirdPhotoUrls } from "@/lib/flockData";
 import { shareMilestone, useInvalidateJourneys, useJourney, useJourneyAccess, useJourneyBirds } from "@/lib/journeyData";
 import { journeyDay, progressOf } from "@/lib/journeys";
 
 // Milestone celebration (Batch 4, screen 3): the bird's photo in the progress
-// ring, "[Bird] [done line]!", how far along, and sharing (members only).
-// "Make a share card" comes later.
+// ring, "[Bird] [done line]!", how far along, "Make a share card" (1.7) and
+// sharing with the community (members only).
 export const Route = createFileRoute("/_authenticated/flock/journeys/$journeyId/milestone/$position")({
   component: Celebrate,
 });
@@ -42,13 +42,16 @@ function Celebrate() {
   return (
     <ForestMoment actions={(
       <>
+        <KyaPrimaryButton onClick={() => void navigate({ to: "/flock/journeys/$journeyId/card", params: { journeyId }, search: { kind: "milestone", n: m.position } })}>
+          {t("flock.journeys.shareCard.make", "Make a share card")}
+        </KyaPrimaryButton>
         {access?.can_share && (isShared ? (
           <p className="m-0 py-3 text-[15px] font-[700]" style={{ color: K.lime }} data-testid="shared">{t("flock.journeys.celebrate.shared", "Shared with the community")}</p>
         ) : (
-          <KyaPrimaryButton onClick={async () => {
+          <KyaSecondaryButton onClick={async () => {
             try { await shareMilestone(journeyId, m.position); setShared(true); await invalidate(); }
             catch { setError(t("flock.journeys.celebrate.shareError", "We couldn't share that. Try again in a moment.")); }
-          }}>{t("flock.journeys.celebrate.share", "Share with the community")}</KyaPrimaryButton>
+          }}>{t("flock.journeys.celebrate.share", "Share with the community")}</KyaSecondaryButton>
         ))}
         <button type="button" onClick={done_} className="min-h-[48px] text-[15px] font-[700]" style={{ color: K.teal }}>{t("flock.journeys.celebrate.done", "Done")}</button>
       </>

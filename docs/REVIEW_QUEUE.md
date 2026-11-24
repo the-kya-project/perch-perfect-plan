@@ -19,6 +19,84 @@ Format:
   - After: "<new wording>"
 ```
 
+### [#546](https://github.com/the-kya-project/perch-perfect-plan/pull/546) · 1.13a Badges: the Flock set
+All new. Nobody but admins sees them while the Flock is closed. The badge names, "New: badges", "Here's what you've already earned", "See all badges", "Not now", "Badge earned", "Flock badges", "x of y earned" and "Trick star: finish any tricks journey." are the mockup's or the spec's words. The rest is agent wording.
+- **Where:** `flock.badges.name.*` (everywhere a badge shows)
+  - Before: new
+  - After: "First steps", "Journey finisher", "Trick star", "Good neighbor", "Voice of the Flock", "Challenge champ"
+- **Where:** `flock.badges.oneJourney` / `.journeysN` (Journey finisher's level, under the tile and after its name)
+  - Before: new
+  - After: "1 journey" / "{{n}} journeys" (shows as "Journey finisher · 3 journeys")
+- **Where:** `flock.badges.launchLabel` / `.launchTitle` / `.launchLine` (the one-time celebration on Today)
+  - Before: new
+  - After: "New: badges" / "Here's what you've already earned" / "You've already done a lot in the Flock. These count." (the mockup's line, "You've been caring for Juno and the flock for a long time. These count.", is about care badges, which come with 1.13b)
+- **Where:** `flock.badges.seeAll` / `.notNow` / `.gotIt` (celebration buttons)
+  - Before: new
+  - After: "See all badges" / "Not now" / "Got it"
+- **Where:** `flock.badges.earnedLabel` (the "Badge earned" card on Today)
+  - Before: new
+  - After: "Badge earned"
+- **Where:** `flock.badges.earned.*` (the line on the "Badge earned" card)
+  - Before: new
+  - After: "You finished your Flock profile and joined your chapter." / "You finished your first journey." / "You've finished {{n}} journeys." / "You finished a tricks journey." / "Something you shared to help other birds was approved." / "You voted in a Do good vote." / "You completed a challenge."
+- **Where:** `flock.badges.title` / `.count` / `.flockSet` / `.loading` (Badges screen, and the Badges row in Flock settings)
+  - Before: new
+  - After: "Badges" / "{{earned}} of {{total}} earned" / "Flock badges" / "Loading your badges"
+- **Where:** `flock.badges.how.*` (Badges screen, under the grid, for the badge tapped)
+  - Before: new
+  - After: "First steps: finish your Flock profile and join your chapter." / "Journey finisher: finish a journey. There are levels at 3 and 10 finished journeys." / "Trick star: finish any tricks journey." / "Good neighbor: have a Do good post approved, or a place you suggested added to your chapter." / "Voice of the Flock: vote in a Do good vote." / "Challenge champ: complete a Flock challenge."
+- **Where:** `flock.badges.earnedOn` / `.earnedOnLevel` / `.nextLevel` (Badges screen, for an earned badge)
+  - Before: new
+  - After: "Earned {{date}}." / "{{level}} reached {{date}}." (shows as "3 journeys reached November 20, 2026.") / "Next level at {{n}} journeys."
+- **Where:** `flock.badges.footer` (Badges screen, bottom)
+  - Before: new
+  - After: "Badges show on your Flock profile. A badge from "Just me" journeys stays here, for you. You can hide your badges on Edit profile."
+- **Where:** `flock.badges.toggleLabel` / `.toggleHint` / `.see` / `.toggleError` (Edit profile, the new Badges switch)
+  - Before: new
+  - After: "Show my badges on my profile." / "Members see the Flock badges you've earned on your profile. You can change this any time." / "See your badges" / "That didn't save. Try again."
+- **Where:** `flock.privacy.see.badges` (Privacy, "Members can see")
+  - Before: new
+  - After: "Your Flock badges, unless you hide them. Badges from "Just me" journeys stay with you."
+
+### [#544](https://github.com/the-kya-project/perch-perfect-plan/pull/544) · 1.7 Instagram share cards for journeys
+All new, on the share card screen (`/flock/journeys/<id>/card`) and the buttons that open it. Nobody but admins sees them while the Flock is closed. "Make a share card", "Post", "Story", "Show [bird]'s name", "Add my name", "Share", the web hint and "Kya & Co. · thekyaproject.com" are the mockup's words. The rest is agent wording. The mark is drawn on the card in English, not translated.
+- **Where:** `flock.journeys.shareCard.make` (milestone celebration, finished journey page, Day one vs. now)
+  - Before: new
+  - After: "Make a share card"
+- **Where:** `flock.journeys.shareCard.title` (screen title)
+  - Before: new
+  - After: "Share card"
+- **Where:** `flock.journeys.shareCard.post` / `.story` (size chips)
+  - Before: new
+  - After: "Post" / "Story"
+- **Where:** `flock.journeys.shareCard.showBird` / `.addMe` (switches)
+  - Before: new
+  - After: "Show {{name}} name" (shows as "Show Echo's name") / "Add my name"
+- **Where:** `flock.journeys.shareCard.share` / `.webHint`
+  - Before: new
+  - After: "Share" / "On the web, this downloads the image so you can post it." (shown only where the browser can't share files)
+- **Where:** `flock.journeys.shareCard.saved` (after a download)
+  - Before: new
+  - After: "The card is in your downloads, ready to post."
+- **Where:** `flock.journeys.shareCard.failed`
+  - Before: new
+  - After: "We couldn't make the card. Try again in a moment."
+- **Where:** `flock.journeys.shareCard.unavailable` (someone else's journey, a milestone not reached yet)
+  - Before: new
+  - After: "A share card can be made only for your own birds' journeys."
+- **Where:** on the card, a milestone: `.milestoneEyebrow`, the title (the celebration's existing "{{name}} {{done}}!" / "{{name}} did it!"), `.lineNoName`, `.lineCustomNoName`, `.reachedOn`
+  - Before: new
+  - After: "{{skill}} · milestone {{n}}"; with the bird's name off, "{{done}}!" (e.g. "Stepped on with one foot!") or, for a custom journey, "Milestone reached!"; "Reached {{date}}"
+- **Where:** on the card, a finished journey: `.finishedEyebrow`, `.finishedTitle`, `.finishedTitleNoName`, `.finishedOn`
+  - Before: new
+  - After: "{{skill}} · Finished!"; "{{name}} learned {{skill}}" / "Learned {{skill}}"; "Finished {{date}}"
+- **Where:** on the card, day one vs. now: `.compareEyebrowFinished`, `.compareTitle`, `.compareTitleNoName`
+  - Before: new
+  - After: "{{skill}} · finished" (just the journey name while it's going); "{{name}}, day one and now" / "Day one and now"
+- **Where:** on the card, the member's name when added: `.from`
+  - Before: new
+  - After: "From {{name}}"
+
 ### [#529](https://github.com/the-kya-project/perch-perfect-plan/pull/529) · 1.8 Do good voting (shared donation)
 Every voting line as merged, all new to the live app. Nobody but admins sees them while the Flock is closed. The member wording follows Brittany's approved mockups. The founders-only lines and "See your vote" are agent wording the mockups don't cover.
 - **Where:** `flock.votes.adminCounts_one`
@@ -618,6 +696,31 @@ No new strings: every line reuses existing wording, in new places (admins only).
 - **For the vet review:** the personal-range multiples and limits, the 3.5% "Worth watching" ceiling, the sudden-drop levels with the 100 g cutoff and 7-day comparison, which alerts the ideal range may quiet, and whether observational wording is enough for a confirmed sudden loss.
 - **To change it:** the D1.2 entry in `docs/BACKLOG.md` before it's built, then `WEIGHT_BASELINE_RULES` in `src/lib/healthRules.ts`.
 
+### [#546](https://github.com/the-kya-project/perch-perfect-plan/pull/546) · 1.13a Badges: the Flock set
+- **Decision:** Badges are worked out when a member opens Today, Flock settings or the Badges screen (`flock_my_badges`), not by triggers on every table. So "the moment it's earned" means the next time they open the Flock, usually seconds later. It keeps the badge rules in one function and leaves the posts, journeys, votes and places code untouched.
+- **Decision:** "Past activity counts": the first time a member's badges are worked out, everything their history earned is recorded together, and Today shows one "Here's what you've already earned" when that's two or more. With just one (a newcomer who's just finished their profile), it's the small "Badge earned" card instead, since "already earned" would read oddly.
+- **Decision:** The launch celebration is a centered card over Today (a dialog), as the mockup shows it filling the screen. Each later badge is its own "Badge earned" card at the top of Today, styled like the mockup's care-app card (screen 3), with "See all badges" and "Got it". Opening the Badges screen counts as seeing them all.
+- **Decision:** The Badges screen shows only the Flock set for now ("x of 6 earned"); the mockup's "Care badges" section arrives with 1.13b. Founder and Chapter lead stay as they were and aren't counted in the six. The how-to-earn line shows for the badge tapped; it starts on the first one not earned yet, as the mockup shows Trick star.
+- **Decision:** On a profile, badges are small lime pills with the icon and name (and Journey finisher's level), next to the existing Founder and Chapter lead pills. The mockup doesn't show a profile.
+- **Decision:** "Members can hide badges from their Flock profile in settings": a "Show my badges on my profile." switch on Edit profile, on by default, below the founding members switch and built the same way. Hidden means hidden from everyone, your own profile view included; your Badges screen always shows them.
+- **Decision:** "A badge earned only through 'Just me' journeys ... never to anyone outside their household": a profile counts only community journeys for Journey finisher and Trick star, worked out fresh each time, so the level shown can be lower than your own (3 finished, 1 shared: "1 journey"). It's stricter than the spec, which would let the bird's co-carers see it: a profile shows the same thing to everyone.
+- **Decision:** Journey finisher counts journeys the member started (`created_by`) and finished, templates and custom ones alike. A co-carer's finished journey on a shared bird counts for whoever started it.
+- **Decision:** Good neighbor counts a Do good post that's live after review, or a place the member suggested that someone else approved. A chapter lead adding a listing directly doesn't count.
+- **Decision:** Voice of the Flock counts a ballot in any vote, founders-only ones included, since they're on Do good too.
+- **Decision:** Challenge champ shows in gray with "complete a Flock challenge" and nothing awards it; 1.10 adds the rule to `private.flock_badge_levels`.
+- **Decision:** Once earned, a badge stays earned, even if the post is later removed or the vote deleted. A higher Journey finisher level replaces the lower one and is celebrated again.
+- **Decision:** No analytics event for badges; the spec doesn't ask for one.
+- **To change it:** the rules are `private.flock_badge_levels` (`20261124013000_flock_badges.sql`); the words and which celebration shows are `src/lib/flockBadges.ts`; the screens are `src/components/flock/BadgeParts.tsx` and `src/routes/_authenticated/flock.you.badges.tsx`.
+
+### [#544](https://github.com/the-kya-project/perch-perfect-plan/pull/544) · 1.7 Instagram share cards for journeys
+- **Decision:** Only the bird's household can make a card, for any journey, community ones included. The spec only rules out other people's "Just me" journeys, but a card of someone else's bird posted to Instagram felt like it needed the owner's say. The server checks this too for day one vs. now.
+- **Decision:** A finished journey's "Make a share card" sits on the journey page once it's finished, not on the "Journey complete" screen. Leaving that screen would lose a half-written tip for the next person, and "Finish" lands on the journey page anyway. The mockup has no finished screen.
+- **Decision:** On the milestone celebration, "Make a share card" is the sunflower button and "Share with the community" became the white one under it, as in the mockup. Its wording stays "Share with the community" rather than the mockup's "Post to the Flock", since this item doesn't cover that button.
+- **Decision:** The card adds the date reached ("Reached Nov 22", "Finished Nov 22") under the title, which the spec asks for and the mockup's sample card leaves out. The member's name, when added, is "From [name]" above the Kya & Co. mark. Day one vs. now shows the date under each photo, as in the mockup.
+- **Decision:** Day one vs. now uses a still from each clip (Cloudflare's thumbnail, fetched on the server), since its "photos" are clips. It opens in story size, as in the mockup; the others open as a post.
+- **Decision:** The card's text is drawn in DM Sans and Newsreader, the app's fonts, rather than the Moments card's system font, to match the mockup. It's the Moments card's approach (a canvas PNG, the same share-or-download code) in the Flock's forest and lime.
+- **To change it:** `src/lib/journeyCard.ts` (layout, who may make one) and `src/routes/_authenticated/flock.journeys.$journeyId.card.tsx` (wording).
+
 ### [#529](https://github.com/the-kya-project/perch-perfect-plan/pull/529) · 1.8 Do good voting: approved mockups
 - **Decision (Brittany's):** Founders-only votes keep plain results: each choice's percentage and the top choice, with no donation or 10% wording. All-member votes share the donation. This replaces the earlier #529 notes below about a winner, changing a vote and the 10-vote minimum.
 - **Decision:** Rounding uses largest remainder, so shares always total exactly 100%. Leftover points go to the largest remainder, then more votes, then the earlier choice. With no votes and three choices, that's 34 / 33 / 33.
@@ -946,6 +1049,9 @@ Format:
 ### <PR link> · <item ID> <item title>
 - **Needs:** <the decision, approval or read, in one or two lines>
 ```
+
+### [#535](https://github.com/the-kya-project/perch-perfect-plan/pull/535) · 1.15 Kya's Crew: Free-user regression needs a re-run
+- **Needs:** a re-run of "Free-user regression" on #535 (Actions → the cancelled run → Re-run jobs). On its latest commit (`ebaa867`, "Crew: remove sponsored seat counting") that check was cancelled, not failed, most likely because a newer run joined the shared staging queue. It passed on the commit before. Runs can't re-run checks. The PR is otherwise held for your approval, as its description says.
 
 ### Reminder · the hourly runs' GitHub token expires Feb 20, 2027
 - **Needs:** a new token before **Feb 20, 2027**. That's 90 days from Nov 22, 2026; GitHub → Settings → Developer settings → Fine-grained tokens shows the exact date. When it expires, runs can still build and test but can't push or open PRs, and each run's note in `~/.kya-agent/job.log` says so.

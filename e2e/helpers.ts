@@ -130,6 +130,28 @@ export async function load(page: Page, path: string) {
   await page.waitForTimeout(800);
 }
 
+/** Start counting the page's requests; the returned function waits until none
+ *  is running and none has started or ended for `quietMs`. Use it before
+ *  leaving a page that moved on by itself: `networkidle` only covers full page
+ *  loads, and WebKit reports a fetch cut off by leaving as an uncaught error
+ *  ("Fetch API cannot load … due to access control checks"). */
+export function trackRequests(page: Page, quietMs = 1000) {
+  const running = new Set<unknown>();
+  let lastChange = Date.now();
+  page.on("request", (r) => { running.add(r); lastChange = Date.now(); });
+  for (const ended of ["requestfinished", "requestfailed"] as const) {
+    page.on(ended, (r) => { running.delete(r); lastChange = Date.now(); });
+  }
+  return () =>
+    expect
+      .poll(() => running.size === 0 && Date.now() - lastChange >= quietMs, {
+        message: "The page's requests should finish",
+        timeout: 20_000,
+        intervals: [100],
+      })
+      .toBe(true);
+}
+
 // ── Fixtures ─────────────────────────────────────────────────────────────────
 type Fixtures = { locale_: string; problems: Problem[]; uniqueEmail: () => string };
 

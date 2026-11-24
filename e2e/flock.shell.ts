@@ -64,6 +64,10 @@ type FlockState = {
   placeManage: boolean;
   /** Backlog 1.8: votes, as flock_votes_current / flock_vote return them. */
   votes: Record<string, any>[];
+  /** Backlog 1.13a: this account's badges (flock_my_badges), what profiles show (flock_member_badges, by user id), and the profile switch. */
+  badges: { badge: string; level: number; earned_at: string | null; unseen: boolean; at_launch: boolean }[];
+  memberBadges: Record<string, { badge: string; level: number }[]>;
+  badgesShown: boolean;
   /** Build C: where this account stands (flock_my_access), and its join calls. */
   access: { member_now: boolean; has_membership: boolean; agreed: boolean; is_admin: boolean; guidelines_version: string; opens_at: string | null; season_ends_at: string | null };
   joinResult: string;
@@ -94,6 +98,9 @@ async function mockFlock(context: BrowserContext, userId: string, opts: { setupD
     placeSuggestions: [],
     placeManage: false,
     votes: [],
+    badges: [],
+    memberBadges: {},
+    badgesShown: true,
     access: { member_now: true, has_membership: true, agreed: true, is_admin: true, guidelines_version: "2026-12", opens_at: null, season_ends_at: "2027-07-06T04:00:00Z" },
     joinResult: "joined",
   };
@@ -193,6 +200,14 @@ async function mockFlock(context: BrowserContext, userId: string, opts: { setupD
     if (fn === "flock_enabled") return route.fallback();
     state.calls.push({ fn: fn!, args });
     if (fn === "flock_founders") return json(route, state.founders);
+    if (fn === "flock_my_badges") return json(route, state.badges);
+    if (fn === "flock_badges_seen") {
+      for (const b of state.badges) if (!args.p_badges || args.p_badges.includes(b.badge)) b.unseen = false;
+      return json(route, null);
+    }
+    if (fn === "flock_member_badges") return json(route, state.memberBadges[args.p_user_id] ?? []);
+    if (fn === "flock_badges_shown") return json(route, state.badgesShown);
+    if (fn === "flock_set_badges_shown") { state.badgesShown = args.p_shown === true; return json(route, state.badgesShown); }
     const ago = (mins: number) => new Date(Date.now() - mins * 60_000).toISOString();
     const counts = (r: any) => ({ great_job: r.great_job ?? 0, been_there: r.been_there ?? 0, rooting_for_you: r.rooting_for_you ?? 0, love_this: r.love_this ?? 0, mine: r.mine ?? [] });
     const postRow = (p: any) => ({
@@ -2154,6 +2169,120 @@ test.describe("do good voting (admin, phone)", () => {
   });
 });
 
+test.describe("badges (admin, phone)", () => {
+  const day = "2026-11-20T15:00:00Z";
+  const none = (badge: string) => ({ badge, level: 0, earned_at: null, unseen: false, at_launch: false });
+
+  test("history earns one \"Here's what you've already earned\", and Not now puts it away for good", async ({ browser, baseURL }) => {
+    const { context, page, state } = await open(browser, baseURL!, { admin: true });
+    state.badges = [
+      { badge: "first_steps", level: 1, earned_at: day, unseen: true, at_launch: true },
+      { badge: "journey_finisher", level: 3, earned_at: day, unseen: true, at_launch: true },
+      none("trick_star"), none("good_neighbor"),
+      { badge: "voice_of_the_flock", level: 1, earned_at: day, unseen: true, at_launch: true },
+      none("challenge_champ"),
+    ];
+    await page.goto("/flock");
+    const dialog = page.getByTestId("badges-launch");
+    await expect(dialog).toBeVisible();
+    await expect(dialog.getByText("Here's what you've already earned")).toBeVisible();
+    await expect(dialog.locator("[data-badge]")).toHaveCount(3);
+    await expect(dialog.locator("[data-badge='journey_finisher']")).toContainText("3 journeys");
+    await expect(page.getByTestId("badge-earned")).toHaveCount(0);
+    await page.getByTestId("badges-launch-later").click();
+    await expect(dialog).toHaveCount(0);
+    expect(state.calls.filter((c) => c.fn === "flock_badges_seen").at(-1)!.args).toEqual({ p_badges: ["first_steps", "journey_finisher", "voice_of_the_flock"] });
+    await page.reload();
+    await expect(page.getByTestId("today-chips")).toBeVisible();
+    await expect(page.getByTestId("badges-launch")).toHaveCount(0);
+    await context.close();
+  });
+
+  test("a new badge gets its own card on Today, and Got it clears it", async ({ browser, baseURL }) => {
+    const { context, page, state } = await open(browser, baseURL!, { admin: true });
+    state.badges = [
+      { badge: "first_steps", level: 1, earned_at: day, unseen: false, at_launch: true },
+      { badge: "journey_finisher", level: 3, earned_at: day, unseen: true, at_launch: false },
+      none("trick_star"), none("good_neighbor"), none("voice_of_the_flock"), none("challenge_champ"),
+    ];
+    await page.goto("/flock");
+    const card = page.getByTestId("badge-earned");
+    await expect(card).toHaveCount(1);
+    await expect(card).toContainText("Badge earned");
+    await expect(card).toContainText("Journey finisher · 3 journeys");
+    await expect(card).toContainText("You've finished 3 journeys.");
+    await expect(page.getByTestId("badges-launch")).toHaveCount(0);
+    await card.getByTestId("badge-earned-done").click();
+    await expect(page.getByTestId("badge-earned")).toHaveCount(0);
+    expect(state.calls.filter((c) => c.fn === "flock_badges_seen").at(-1)!.args).toEqual({ p_badges: ["journey_finisher"] });
+    await context.close();
+  });
+
+  test("the Badges screen: reached from Flock settings, earned in color, the rest gray with how to earn them", async ({ browser, baseURL }) => {
+    const { context, page, state } = await open(browser, baseURL!, { admin: true });
+    state.badges = [
+      { badge: "first_steps", level: 1, earned_at: day, unseen: false, at_launch: true },
+      { badge: "journey_finisher", level: 3, earned_at: day, unseen: true, at_launch: false },
+      none("trick_star"), none("good_neighbor"), none("voice_of_the_flock"), none("challenge_champ"),
+    ];
+    await page.goto("/flock/you");
+    await expect(page.getByTestId("you-badges")).toContainText("2 of 6 earned");
+    await page.getByTestId("you-badges").getByText("Badges", { exact: true }).click();
+    await expect(page).toHaveURL(/\/flock\/you\/badges$/);
+    await expect(page.getByText("2 of 6 earned")).toBeVisible();
+    const grid = page.getByTestId("badges-grid");
+    await expect(grid.locator("[data-badge]")).toHaveCount(6);
+    await expect(grid.locator("[data-earned='true']")).toHaveCount(2);
+    await expect(grid.locator("[data-badge]")).toHaveText([/First steps/, /Journey finisher/, /Trick star/, /Good neighbor/, /Voice of the Flock/, /Challenge champ/]);
+    // The first one not earned yet is picked to start, with how to earn it.
+    await expect(page.getByTestId("badge-how")).toHaveText("Trick star: finish any tricks journey.");
+    await grid.locator("[data-badge='good_neighbor']").click();
+    await expect(page.getByTestId("badge-how")).toContainText("have a Do good post approved");
+    await grid.locator("[data-badge='journey_finisher']").click();
+    await expect(page.getByTestId("badge-earned-on")).toContainText("3 journeys reached November 20, 2026.");
+    await expect(page.getByTestId("badge-earned-on")).toContainText("Next level at 10 journeys.");
+    // Opening the screen counts as seeing the new one.
+    await expect.poll(() => state.calls.some((c) => c.fn === "flock_badges_seen" && c.args.p_badges === null)).toBe(true);
+    await context.close();
+  });
+
+  test("a member's profile shows the badges the database returns for it, beside the founder badge", async ({ browser, baseURL }) => {
+    const { context, page, state } = await open(browser, baseURL!, { admin: true });
+    const ADA = "00000000-0000-4000-8000-00000000f001";
+    const CY = "00000000-0000-4000-8000-00000000f002";
+    state.roster = [
+      { user_id: ADA, display_name: "Ada L.", photo_path: null, is_founder: true, is_lead: false, birds: [] },
+      { user_id: CY, display_name: "Cy T.", photo_path: null, is_founder: false, is_lead: false, birds: [] },
+    ];
+    state.memberBadges = { [ADA]: [{ badge: "first_steps", level: 1 }, { badge: "journey_finisher", level: 10 }] };
+    await page.goto(`/flock/members/${ADA}`);
+    const pills = page.getByTestId("member-badges").locator("li");
+    await expect(pills).toHaveText(["First steps", "Journey finisher · 10 journeys"]);
+    await expect(page.getByTestId("member-founder-link")).toBeVisible();
+    expect(state.calls.filter((c) => c.fn === "flock_member_badges").at(-1)!.args).toEqual({ p_user_id: ADA });
+    // None (hidden, blocked or not earned): no badge row at all.
+    await page.goto(`/flock/members/${CY}`);
+    await expect(page.getByText("Cy T.").first()).toBeVisible();
+    await expect(page.getByTestId("member-badges")).toHaveCount(0);
+    await context.close();
+  });
+
+  test("Edit profile: \"Show my badges on my profile\" is on until turned off, and saves at once", async ({ browser, baseURL }) => {
+    const { context, page, state } = await open(browser, baseURL!, { admin: true });
+    await page.goto("/flock/you/edit");
+    const toggle = page.getByTestId("badges-toggle");
+    await expect(toggle).toHaveAttribute("aria-checked", "true");
+    await expect(toggle).toContainText("Show my badges on my profile.");
+    await toggle.click();
+    await expect(toggle).toHaveAttribute("aria-checked", "false");
+    expect(state.calls.filter((c) => c.fn === "flock_set_badges_shown").at(-1)!.args).toEqual({ p_shown: false });
+    await toggle.click();
+    await expect(toggle).toHaveAttribute("aria-checked", "true");
+    expect(state.calls.filter((c) => c.fn === "flock_set_badges_shown").at(-1)!.args).toEqual({ p_shown: true });
+    await context.close();
+  });
+});
+
 test.describe("the founding members page (admin, phone)", () => {
   test("the page: a thank-you line, opted-in founders in spot order with photo, name, chapter and spot; reached from Flock settings", async ({ browser, baseURL }) => {
     const { context, page, state } = await open(browser, baseURL!, { admin: true });
@@ -2499,6 +2628,91 @@ test.describe("photos and clips at their own shape, never the player's error (ad
     const both = Promise.all([page.waitForRequest(/signed-token-0/), page.waitForRequest(/signed-token-1/)]);
     await page.goto(`/flock/journeys/${id}/compare`);
     await both;
+    await context.close();
+  });
+});
+
+// ---- Share cards (backlog 1.7) --------------------------------------------------------------
+
+test.describe("share cards (admin, phone)", () => {
+  const PNG = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==";
+  const size = (page: Page) => page.getByTestId("card-preview").evaluate((img: HTMLImageElement) => `${img.naturalWidth}x${img.naturalHeight}`);
+
+  test("a milestone: post and story sizes, the bird's name on by default, Share downloads the PNG on the web", async ({ browser, baseURL }) => {
+    const id = "00000000-0000-4000-8000-0000000074a1";
+    const { context, page } = await open(browser, baseURL!, { admin: true, journeys: { seed: [{ id, birdName: "Echo", slug: "step-up", done: 3 }] } });
+    await page.goto(`/flock/journeys/${id}/milestone/3`);
+    await page.getByRole("button", { name: "Make a share card" }).click();
+    await expect(page).toHaveURL(/\/card\?kind=milestone&n=3$/);
+    const card = page.getByTestId("share-card");
+    await expect(card).toHaveAttribute("data-size", "post");
+    await expect(page.locator("[data-flock-tab]")).toHaveCount(0);
+    await expect(page.getByTestId("card-preview")).toHaveAttribute("src", /^blob:/);
+    await expect.poll(() => size(page)).toBe("1080x1350");
+    await expect(page.getByTestId("card-preview")).toHaveAttribute("alt", "Echo stepped on with one foot!");
+    await page.getByTestId("card-size-story").click();
+    await expect.poll(() => size(page)).toBe("1080x1920");
+    await expect(page.getByRole("switch", { name: "Show Echo's name" })).toHaveAttribute("aria-checked", "true");
+    await expect(page.getByText("On the web, this downloads the image so you can post it.")).toBeVisible();
+    let download = page.waitForEvent("download");
+    await page.getByTestId("card-share").click();
+    expect((await download).suggestedFilename()).toBe("echo-step-up-story.png");
+    await expect(page.getByTestId("card-note")).toHaveText("The card is in your downloads, ready to post.");
+    // The bird's name off: the card and the file name leave it out.
+    await page.getByRole("switch", { name: "Show Echo's name" }).click();
+    await expect(page.getByTestId("card-preview")).toHaveAttribute("alt", "Stepped on with one foot!");
+    download = page.waitForEvent("download");
+    await page.getByTestId("card-share").click();
+    expect((await download).suggestedFilename()).toBe("step-up-story.png");
+    // A milestone that isn't reached has no card.
+    await page.goto(`/flock/journeys/${id}/card?kind=milestone&n=5`);
+    await expect(page.getByTestId("card-unavailable")).toBeVisible();
+    await context.close();
+  });
+
+  test("a finished journey: the card from the journey page", async ({ browser, baseURL }) => {
+    const id = "00000000-0000-4000-8000-0000000074a2";
+    const { context, page } = await open(browser, baseURL!, { admin: true, journeys: { seed: [{ id, birdName: "Willow", slug: "spin", done: 5, status: "finished" }] } });
+    await page.goto(`/flock/journeys/${id}`);
+    await page.getByRole("button", { name: "Make a share card" }).click();
+    await expect(page).toHaveURL(/\/card\?kind=finished$/);
+    await expect(page.getByTestId("card-preview")).toHaveAttribute("alt", "Willow learned spin");
+    await expect.poll(() => size(page)).toBe("1080x1350");
+    await context.close();
+  });
+
+  test("day one vs. now: two stills from your own clips, story size; never from someone else's journey", async ({ browser, baseURL }) => {
+    const id = "00000000-0000-4000-8000-0000000074a1";
+    const other = "00000000-0000-4000-8000-0000000074a3";
+    const { context, page } = await open(browser, baseURL!, { admin: true, journeys: { seed: [
+      { id, birdName: "Buzz", slug: "step-up", done: 1, clips: 2 },
+      { id: other, birdName: "Kiwi", slug: "recall", done: 5, clips: 3, owner: "Alex R.", region: "Great Lakes" },
+    ] } });
+    const signed = (n: number) => ({ player: `https://iframe.videodelivery.net/signed-token-${n}`, thumbnail: svgPhoto(270, 480), hls: `https://videodelivery.net/signed-token-${n}/manifest/video.m3u8` });
+    await mockMediaFns(context, { clips: () => [0, 1].map((n) => ({ updateId: `00000000-0000-4000-8000-00000000900${n}`, status: "ready", ...signed(n) })) });
+    const asked: string[][] = [];
+    await context.route("**/_serverFn/**", async (route) => {
+      const body = route.request().postData() ?? "";
+      if (!body.includes("cardJourneyId")) return route.fallback();
+      const ids = [...body.matchAll(/00000000-0000-4000-8000-0000000090\d\d/g)].map((m) => m[0]);
+      asked.push(ids);
+      return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ result: Object.fromEntries(ids.map((u) => [u, PNG])) }) });
+    });
+    await page.goto(`/flock/journeys/${id}/compare`);
+    await page.getByRole("button", { name: "Make a share card" }).click();
+    await expect(page).toHaveURL(/kind=compare/);
+    await expect(page.getByTestId("share-card")).toHaveAttribute("data-size", "story");
+    await expect.poll(() => size(page)).toBe("1080x1920");
+    await expect(page.getByTestId("card-preview")).toHaveAttribute("alt", "Buzz, day one and now");
+    expect([...new Set(asked.flat())].sort()).toEqual(["00000000-0000-4000-8000-000000009000", "00000000-0000-4000-8000-000000009001"]);
+    // Someone else's community journey: no button, and the card screen refuses.
+    asked.length = 0;
+    await page.goto(`/flock/journeys/${other}/compare`);
+    await expect(page.getByTestId("compare-summary")).toBeVisible();
+    await expect(page.getByRole("button", { name: "Make a share card" })).toHaveCount(0);
+    await page.goto(`/flock/journeys/${other}/card?kind=compare&a=00000000-0000-4000-8000-000000009000&b=00000000-0000-4000-8000-000000009002`);
+    await expect(page.getByTestId("card-unavailable")).toBeVisible();
+    expect(asked).toEqual([]);
     await context.close();
   });
 });
