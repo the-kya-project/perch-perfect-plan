@@ -2,28 +2,31 @@ import { useState } from "react";
 import { Link, createFileRoute, useNavigate } from "@tanstack/react-router";
 import { AlertTriangle, Check, MoreHorizontal } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import { K, KyaPrimaryButton, KyaSecondaryButton } from "@/components/kya";
+import { K, KyaHeading, KyaPrimaryButton, KyaSecondaryButton, KyaSheet } from "@/components/kya";
 import { FlockSubPage } from "@/components/flock/FlockSubPage";
 import { FlockEmpty } from "@/components/flock/FlockChips";
 import { ClipTile, JourneyMenuSheet, shortDay } from "@/components/flock/JourneyBrowse";
 import { ActionSheet } from "@/components/flock/PostParts";
 import { BlockSheet } from "@/components/flock/BlockSheet";
 import { blockActions } from "@/lib/flockBlocks";
-import { FinisherTipsCard } from "@/components/flock/JourneyParts";
+import { FinisherTipsCard, SkillAbout } from "@/components/flock/JourneyParts";
 import { ClipTileState } from "@/components/flock/JourneyClipView";
-import { DietDisclaimer, HowToMakeItWork, VetReminderCard, WeighTodayCard } from "@/components/flock/JourneyDiet";
+import { DietDisclaimer, VetReminderCard, WeighTodayCard } from "@/components/flock/JourneyDiet";
 import { deleteJourney } from "@/lib/journeyMedia.functions";
 import {
-  followJourney, resumeAfterVet, setVetCheck, useFinisherTips, setJourneyStatus, setJourneyVisibility, useBirdWeights, useInvalidateJourneys, useJourney,
-  useJourneyAccess, useJourneyClips, useJourneyTemplates, useJourneyView, useJourneyViewUpdates, useWeightCheck, type Journey, type WeightCheck,
+  finishJourney, followJourney, resumeAfterVet, setVetCheck, useBigMoments, useFinisherTips, setJourneyStatus, setJourneyVisibility, useBirdWeights,
+  useInvalidateJourneys, useJourney, useJourneyAccess, useJourneyClips, useJourneyTemplates, useJourneyView, useJourneyViewUpdates, useWeightCheck,
+  type Journey, type WeightCheck,
 } from "@/lib/journeyData";
-import { journeyDay, rollingAverage, showVetReminder } from "@/lib/journeys";
+import { canFinishLearned, journeyDay, possessive, rollingAverage, showVetReminder, skillInSentence } from "@/lib/journeys";
 
-// A journey (JourneyEverywhere, screen 6): "[Bird] · [skill]", "Day N · X
-// following", the segmented progress bar, "N of M · next: …", Post an update
-// and Day one vs. now, then every clip in a 3-column grid tagged Milestone,
-// Question or Day one. Your own journeys get the menu (pause, happy where we
-// are, who sees it, delete) and, for Diet conversion, the weight safeguard;
+// A journey (journeys redesign, screen 4): "[Bird] · [skill]", "Day N · X
+// following", the skill's description and safety notes folded under the
+// header, Post an update and Day one vs. now, "[Bird] learned it!", then
+// every clip in a 3-column grid tagged Big moment, Question or Day one. Your
+// own journeys get the menu (pause, happy where we are, who sees it, delete)
+// and, for Diet conversion, the weight safeguard; a bird that has passed
+// leaves its journeys read-only;
 // other members' community journeys get Follow (members only). Everything
 // comes through journey_view*, which never shows a "Just me" journey outside
 // the bird's household.
@@ -47,9 +50,12 @@ function JourneyPage() {
   // Tips from members who finished this template, on your own active journeys.
   const { data: finisherTips } = useFinisherTips(card?.template_slug, mine && card?.status === "active");
   const { data: templates } = useJourneyTemplates();
-  const dietTips = diet && mine ? (templates?.find((x) => x.slug === "diet-conversion")?.tips ?? []) : [];
+  const template = card?.template_slug ? templates?.find((x) => x.slug === card.template_slug) : undefined;
+  const { data: bigMoments } = useBigMoments(journeyId, !!card);
   const [vetBusy, setVetBusy] = useState(false);
   const [menu, setMenu] = useState(false);
+  const [confirmLearned, setConfirmLearned] = useState(false);
+  const [finishing, setFinishing] = useState(false);
   const [otherMenu, setOtherMenu] = useState(false);
   const [blocking, setBlocking] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -67,17 +73,37 @@ function JourneyPage() {
   const withClips = (updates ?? []).filter((u) => u.has_clip);
   const canCompare = withClips.length >= 2;
   const weightPaused = own?.status === "paused" && own.paused_reason === "weight_drop";
+  // A bird that has passed: its journeys are read-only.
+  const readOnly = !!own?.bird?.passed_at;
+  const canPost = mine && card?.status === "active" && !readOnly;
+  const canLearn = mine && !!own && canFinishLearned(own) && !readOnly;
   const act = async (fn: () => Promise<unknown>) => {
     setError(null);
     try { await fn(); await invalidate(); }
     catch { setError(t("flock.journeys.page.error", "We couldn't save that. Check your connection and try again.")); }
   };
-  const right = card && (mine ? (
+  const learned = async () => {
+    setFinishing(true);
+    setError(null);
+    try {
+      await finishJourney(journeyId, "learned");
+      await invalidate();
+      void navigate({ to: "/flock/journeys/$journeyId/finished", params: { journeyId }, replace: true });
+    } catch {
+      setError(t("flock.journeys.page.error", "We couldn't save that. Check your connection and try again."));
+      setFinishing(false);
+      setConfirmLearned(false);
+    }
+  };
+  const learnedLabel = card ? (diet
+    ? t("flock.journeys.page.onNewDiet", "{{name}} is on the new diet", { name: card.bird_name })
+    : t("flock.journeys.page.learnedIt", "{{name}} learned it!", { name: card.bird_name })) : "";
+  const right = card && (mine ? (readOnly ? undefined : (
     <button type="button" onClick={() => setMenu(true)} aria-label={t("flock.journeys.page.menu", "Journey options")} data-testid="journey-menu-button"
       className="grid size-11 place-items-center rounded-full" style={{ background: K.forestDeep, color: "#fff" }}>
       <MoreHorizontal className="size-5" aria-hidden="true" />
     </button>
-  ) : (
+  )) : (
     <div className="flex items-center gap-2">
       {access?.can_share && (
         <button type="button" data-testid="follow" aria-pressed={card.following}
@@ -104,17 +130,8 @@ function JourneyPage() {
       right={right}
     >
       <div data-testid="journey-page" className="flex flex-col gap-3">
-        {card && (
-          <>
-            <div className="flex gap-1" aria-hidden="true" data-testid="progress-bar">
-              {Array.from({ length: card.total }, (_, i) => <span key={i} className="h-2 flex-1 rounded-full" style={{ background: i < card.done ? K.moss : "#dfe7dd" }} />)}
-            </div>
-            <p className="m-0 text-[15px]" style={{ color: K.forest }} data-testid="journey-progress">
-              <b>{t("flock.journeys.page.of", "{{done}} of {{total}}", { done: card.done, total: card.total })}</b>
-              {card.next_title ? t("flock.journeys.page.next", " · next: {{next}}", { next: card.next_title }) : ""}
-            </p>
-          </>
-        )}
+        {template && <SkillAbout collapsible description={template.purpose} notes={template.safety_notes} />}
+        {!template && own?.custom_description && <SkillAbout collapsible description={own.custom_description} notes={[]} />}
 
         {mine && own && diet && weight && <WeightCard journey={own} birdName={card!.bird_name} weight={weight} paused={weightPaused} />}
         {mine && card?.status === "paused" && !weightPaused && (
@@ -128,7 +145,6 @@ function JourneyPage() {
             onTalked={() => { setVetBusy(true); void act(() => setVetCheck(journeyId, "talked")).finally(() => setVetBusy(false)); }}
             onLater={() => { setVetBusy(true); void act(() => setVetCheck(journeyId, "remind_later")).finally(() => setVetBusy(false)); }} />
         )}
-        {mine && diet && card?.status !== "finished" && <HowToMakeItWork tips={dietTips} />}
 
         {mine && card?.status === "active" && <FinisherTipsCard skill={card.skill} tips={finisherTips} />}
 
@@ -137,9 +153,9 @@ function JourneyPage() {
             {t("flock.journeys.shareCard.make", "Make a share card")}
           </KyaPrimaryButton>
         )}
-        {(mine && card?.status === "active") || canCompare ? (
+        {canPost || canCompare ? (
           <div className="flex gap-2.5">
-            {mine && card?.status === "active" && (
+            {canPost && (
               <Link to="/flock/journeys/$journeyId/post" params={{ journeyId }} search={{}} data-testid="post-update"
                 className="inline-flex min-h-[48px] flex-1 items-center justify-center rounded-full border-2 px-4 text-[15px] font-[700]"
                 style={{ background: K.sunflower, borderColor: K.forest, color: K.forest }}>
@@ -153,6 +169,11 @@ function JourneyPage() {
             )}
           </div>
         ) : null}
+        {canLearn && (
+          <div data-testid="learned-it">
+            <KyaSecondaryButton className="w-full" onClick={() => setConfirmLearned(true)}>{learnedLabel}</KyaSecondaryButton>
+          </div>
+        )}
         {error && <p role="alert" className="m-0 text-[15px]" style={{ color: K.red }}>{error}</p>}
 
         {withClips.length === 0 ? (
@@ -163,7 +184,7 @@ function JourneyPage() {
               <ClipTile key={u.update_id} testId={u.update_id} thumbnail={(() => { const c = clips?.[u.update_id]; return c?.status === "ready" ? c.thumbnail : null; })()}
                 status={<ClipTileState clip={clips?.[u.update_id]} />}
                 date={shortDay(t, u.created_at, i18n.language)}
-                tag={u.is_milestone ? "milestone" : u.is_question ? "question" : u.is_day_one ? "day_one" : null}
+                tag={bigMoments?.has(u.update_id) ? "big_moment" : u.is_question ? "question" : u.is_day_one ? "day_one" : null}
                 onOpen={() => void navigate({ to: "/flock/journeys/$journeyId/story", params: { journeyId }, search: { u: u.update_id } })} />
             ))}
           </div>
@@ -183,13 +204,31 @@ function JourneyPage() {
           onClose={() => setMenu(false)}
           onPause={() => { setMenu(false); void act(() => setJourneyStatus(journeyId, "paused")); }}
           onResume={() => { setMenu(false); void act(() => setJourneyStatus(journeyId, "active")); }}
-          onHappy={() => { setMenu(false); void act(() => setJourneyStatus(journeyId, "happy_where_we_are")); }}
+          onHappy={() => { setMenu(false); void act(() => finishJourney(journeyId, "happy_where_we_are")); }}
           onVisibility={(v) => { setMenu(false); void act(() => setJourneyVisibility(journeyId, v)); }}
           onDelete={async () => {
             setMenu(false);
             try { await deleteJourney({ data: { journeyId } }); await invalidate(); void navigate({ to: "/flock/journeys", replace: true }); }
             catch { setError(t("flock.journeys.page.deleteError", "We couldn't delete this journey. Try again in a moment.")); }
           }} />
+      )}
+      {confirmLearned && card && (
+        <KyaSheet onClose={() => setConfirmLearned(false)} closeLabel={t("flock.region.close", "Close")}
+          title={<KyaHeading size={23}>{learnedLabel}</KyaHeading>}>
+          <div className="flex flex-col gap-3" data-testid="learned-confirm">
+            <p className="m-0 text-[15px] leading-[1.5]" style={{ color: K.ink }}>
+              {diet
+                ? t("flock.journeys.page.onNewDietLine", "This finishes the journey. Keep weighing {{name}} as usual.", { name: card.bird_name })
+                : t("flock.journeys.page.learnedLine", "This finishes the journey and adds {{skill}} to {{name}} skills.", { skill: skillInSentence(card.skill), name: possessive(card.bird_name) })}
+            </p>
+            <div data-testid="learned-yes">
+              <KyaPrimaryButton onClick={() => void learned()} disabled={finishing}>
+                {finishing ? t("flock.setup.saving", "Saving…") : t("flock.journeys.page.learnedYes", "Finish the journey")}
+              </KyaPrimaryButton>
+            </div>
+            <KyaSecondaryButton onClick={() => setConfirmLearned(false)}>{t("flock.journeys.page.notYet", "Not yet")}</KyaSecondaryButton>
+          </div>
+        </KyaSheet>
       )}
     </FlockSubPage>
   );

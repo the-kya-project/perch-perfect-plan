@@ -1,7 +1,7 @@
 import i18next from "i18next";
 import { wrap } from "@/lib/momentCard";
 
-// Journey share cards (backlog 1.7): a reached milestone, a finished journey,
+// Journey share cards (backlog 1.7): a big moment, a finished journey,
 // or day one vs. now, drawn on a canvas as a PNG for Instagram or anywhere
 // else. The Moments card's approach (momentCard.ts) in the Flock's colors:
 // a forest card, the photo in a rounded frame, a lime eyebrow, a Newsreader
@@ -16,7 +16,8 @@ export const CARD_SIZES: Record<CardSize, { w: number; h: number }> = {
   story: { w: 1080, h: 1920 },
 };
 export const CARD_MARK = "Kya & Co. · thekyaproject.com";
-export type CardKind = "milestone" | "finished" | "compare";
+/** "moment": a "This was a big moment" update (it replaced milestone cards in 1.20b). */
+export type CardKind = "moment" | "finished" | "compare";
 
 /** Who may make a card: only the bird's household (`is_mine`), never anyone
  *  else, so a "Just me" journey's card is only ever made inside it. Day one vs.
@@ -36,7 +37,7 @@ export function cardFileName(parts: (string | null | undefined)[], size: CardSiz
 export type CardText = {
   eyebrow: string;
   title: string;
-  /** "Reached Nov 22" (milestone, finished); none for day one vs. now. */
+  /** "Nov 22" (big moment), "Finished Nov 22"; none for day one vs. now. */
   date?: string | null;
   /** The member's own name, only when they turned it on. */
   member?: string | null;

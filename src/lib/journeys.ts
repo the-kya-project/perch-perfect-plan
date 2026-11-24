@@ -5,8 +5,9 @@
 
 import type { TFunction } from "i18next";
 
-/** Two levels: free (the 7 husbandry journeys, one custom journey at a time)
- *  and Flock (every journey; Kya's Crew is a Flock plan). App premium is gone. */
+/** Two levels: free (every skill, private journeys, one custom journey at a
+ *  time) and Flock (the community features too; Kya's Crew is a Flock plan).
+ *  Since the redesign (1.20) the level gates the community, not the skills. */
 export type JourneyTier = "free" | "flock";
 
 export type JourneyRhythm = "most_days" | "few_times_week" | "weekends";
@@ -20,7 +21,7 @@ export type JourneyAccess = {
   max_open_custom: number | null;
   open_custom: number;
   max_upload_bytes: number;
-  /** Can use Flock-only templates (the column keeps its old name). */
+  /** Unused since the redesign: every skill can be started by everyone. */
   can_use_premium: boolean;
   can_share: boolean;
   can_view_community: boolean;
@@ -32,17 +33,16 @@ export type JourneyTemplate = {
   slug: string;
   name: string;
   category: "husbandry" | "foundations" | "food" | "tricks";
-  /** "premium" is the stored name for a Flock-only template. */
+  /** The stored tier; it no longer locks anything (1.20a). */
   tier: "free" | "premium";
+  /** The skill's short description. */
   purpose: string;
-  done_when: string;
-  suggested_first: string | null;
-  typical_length: string;
   safety_notes: string[];
   safeguards: string[];
   tips: string[];
   sort_order: number;
-  milestones: TemplateMilestone[];
+  /** A short skill video, "cfstream:<uid>", or null (none at opening). */
+  video_ref: string | null;
 };
 
 export const RHYTHMS: JourneyRhythm[] = ["most_days", "few_times_week", "weekends"];
@@ -51,15 +51,17 @@ export const CUSTOM_MAX = 8;
 export const CUSTOM_NAME_MAX = 60;
 export const MILESTONE_MAX = 300;
 
-/** "The basics · free", then "Flock journeys", each in catalog order. */
-export function groupTemplates(templates: JourneyTemplate[]): { basics: JourneyTemplate[]; more: JourneyTemplate[] } {
-  const sorted = [...templates].sort((a, b) => a.sort_order - b.sort_order || a.name.localeCompare(b.name));
-  return { basics: sorted.filter((t) => t.tier === "free"), more: sorted.filter((t) => t.tier === "premium") };
-}
+/** Pick a skill's groups, in this order. */
+export type SkillGroup = JourneyTemplate["category"];
+export const SKILL_GROUPS: SkillGroup[] = ["husbandry", "foundations", "food", "tricks"];
 
-/** A Flock-only template for someone who isn't in the Flock. */
-export function isLocked(t: Pick<JourneyTemplate, "tier">, access: Pick<JourneyAccess, "can_use_premium"> | undefined): boolean {
-  return t.tier === "premium" && !access?.can_use_premium;
+/** One list of all the skills, no free/Flock split: Handling and health,
+ *  Foundations, Food, Tricks, each in catalog order. Empty groups are left out. */
+export function groupSkills(templates: JourneyTemplate[]): { group: SkillGroup; skills: JourneyTemplate[] }[] {
+  const sorted = [...templates].sort((a, b) => a.sort_order - b.sort_order || a.name.localeCompare(b.name));
+  return SKILL_GROUPS
+    .map((group) => ({ group, skills: sorted.filter((t) => t.category === group) }))
+    .filter((g) => g.skills.length > 0);
 }
 
 /** May they write another custom journey now? Free: one open at a time. */
@@ -76,10 +78,22 @@ export function defaultVisibility(access: Pick<JourneyAccess, "can_share"> | und
   return access?.can_share ? "community" : "private";
 }
 
-/** The first milestone the bird doesn't already do: where the journey starts. */
-export function startHere(count: number, already: ReadonlySet<number>): number | null {
-  for (let p = 1; p <= count; p++) if (!already.has(p)) return p;
-  return null;
+/** A journey's status as the screens group it: "Your journeys" shows active
+ *  and paused ones first, then finished (learned it or happy where we are). */
+export function isOpenJourney(status: JourneyStatus): boolean {
+  return status === "active" || status === "paused";
+}
+export function sortYourJourneys<T extends { status: JourneyStatus; started_at: string; finished_at?: string | null }>(rows: readonly T[]): T[] {
+  const open = rows.filter((r) => isOpenJourney(r.status)).sort((a, b) => b.started_at.localeCompare(a.started_at));
+  const done = rows.filter((r) => !isOpenJourney(r.status))
+    .sort((a, b) => (b.finished_at ?? b.started_at).localeCompare(a.finished_at ?? a.started_at));
+  return [...open, ...done];
+}
+
+/** May "[Bird] learned it!" be tapped? Active, or paused by the member; a
+ *  weight pause lifts only through the vet confirmation (the database agrees). */
+export function canFinishLearned(j: { status: JourneyStatus; paused_reason: string | null }): boolean {
+  return j.status === "active" || (j.status === "paused" && j.paused_reason !== "weight_drop");
 }
 
 export type CustomProblem = "name" | "tooFew" | "tooMany" | "blank" | "long";
@@ -126,14 +140,25 @@ export function clipLimitParts(seconds: number): { count: number; unit: "seconds
   return seconds % 60 === 0 && seconds >= 120 ? { count: seconds / 60, unit: "minutes" } : { count: seconds, unit: "seconds" };
 }
 
-// ---- Step 3B: posting, milestones, finishing ----------------------------------
+// ---- Posting and finishing ----------------------------------------------------
 
 export type Engagement = "all_in" | "distracted" | "not_today";
 export const ENGAGEMENTS: Engagement[] = ["all_in", "distracted", "not_today"];
 
-/** A tip instead of the milestone question after a hard day. */
+/** A tip for next time after a hard day. */
 export function wantsTip(e: Engagement): boolean {
   return e !== "all_in";
+}
+
+/** Where a new update goes, and what Post an update offers about the Flock:
+ *  a community journey's question also shows to the Flock; a private one
+ *  offers "Ask the Flock" (free accounts: the Flock sheet; members: share
+ *  the journey). Nothing extra without a question. */
+export type AskFlock = "none" | "community" | "offer_share" | "flock_sheet";
+export function askFlock(caption: string, visibility: JourneyVisibility, canShare: boolean): AskFlock {
+  if (!caption.includes("?")) return "none";
+  if (visibility === "community") return "community";
+  return canShare ? "offer_share" : "flock_sheet";
 }
 
 /** Days since the journey started, counting the first day as day 1. */
@@ -154,14 +179,10 @@ export function skillInSentence(skill: string): string {
   return s ? s[0].toLowerCase() + s.slice(1) : s;
 }
 
-/** The milestone a post is about: the first not yet done. */
+/** The first milestone not yet done (milestones are history now; Diet
+ *  conversion's vet reminder still reads them until 1.20d). */
 export function nextMilestone<T extends { position: number; state: string }>(ms: T[]): T | null {
   return [...ms].sort((a, b) => a.position - b.position).find((m) => m.state === "todo") ?? null;
-}
-
-/** Done (reached or already) out of all. */
-export function progressOf(ms: { state: string }[]): { done: number; total: number } {
-  return { done: ms.filter((m) => m.state !== "todo").length, total: ms.length };
 }
 
 /** "Last posted 2 days ago" pieces: days since, or null when never posted. */
@@ -242,19 +263,11 @@ export function clipPhase(o: {
   return "ready";
 }
 
-/** The sheet's title: the journey with the bird's name ("Teach Echo to high
- *  five"). Flock-only templates have their own wording; anything else falls
- *  back to "[Journey] with [Bird]". */
-export function flockSheetTitle(t: TFunction, slug: string, journey: string, bird: string | undefined): string {
-  if (!bird) return journey;
-  switch (slug) {
-    case "wave": return t("flock.journeys.flockOnly.title.wave", "Teach {{bird}} to wave", { bird });
-    case "high-five": return t("flock.journeys.flockOnly.title.highFive", "Teach {{bird}} to high five", { bird });
-    case "spin": return t("flock.journeys.flockOnly.title.spin", "Teach {{bird}} to spin", { bird });
-    case "retrieve": return t("flock.journeys.flockOnly.title.retrieve", "Teach {{bird}} to retrieve", { bird });
-    case "hang-upside-down": return t("flock.journeys.flockOnly.title.hangUpsideDown", "Teach {{bird}} to hang upside down", { bird });
-    case "nail-trims": return t("flock.journeys.flockOnly.title.nailTrims", "Teach {{bird}} to be calm for nail trims", { bird });
-    case "stationing": return t("flock.journeys.flockOnly.title.stationing", "Teach {{bird}} to station", { bird });
-    default: return t("flock.journeys.flockOnly.title.other", "{{journey}} with {{bird}}", { journey, bird });
-  }
+/** Why a free account sees the "Part of the Flock" sheet: "How others did
+ *  it" on a skill page, or "Ask the Flock" on a private journey. */
+export type FlockSheetReason = "how_others" | "ask";
+export function flockSheetTitle(t: TFunction, reason: FlockSheetReason): string {
+  return reason === "ask"
+    ? t("flock.journeys.flockOnly.title.ask", "Ask the Flock")
+    : t("flock.journeys.flockOnly.title.howOthers", "See how others did it");
 }

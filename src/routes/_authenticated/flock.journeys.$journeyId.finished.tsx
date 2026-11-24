@@ -3,15 +3,14 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { Star } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { K, KyaHeading, KyaPrimaryButton, SERIF } from "@/components/kya";
-import {
-  saveFinisherTip, shareMilestone, useInvalidateJourneys, useJourney, useJourneyAccess, useJourneyBirds,
-} from "@/lib/journeyData";
-import { journeyDays, possessive, skillInSentence } from "@/lib/journeys";
+import { saveFinisherTip, useInvalidateJourneys, useJourney, useJourneyAccess, useJourneyBirds } from "@/lib/journeyData";
+import { DIET_SLUG, journeyDays, possessive, skillInSentence } from "@/lib/journeys";
 
-// Journey finished (Batch 4, screen 4): "[Bird] learned [skill]", the skill is
-// on the bird's list (done by the database when the last milestone was
-// reached), and one tip for whoever starts this journey next. Badges are
-// backlog items 1.13a/b; the finish is recorded (journeys.finished_at).
+// Finished (journeys redesign, screen 6): after "[Bird] learned it!",
+// "[Bird] learned [skill]!", the skill is on the bird's list (journey_finish
+// added it), and, for Flock members on one of the 14 skills, one tip for
+// whoever starts it next. Diet conversion finishes as "[Bird] is on the new
+// diet" and adds no known skill.
 export const Route = createFileRoute("/_authenticated/flock/journeys/$journeyId/finished")({
   component: Finished,
 });
@@ -33,16 +32,15 @@ function Finished() {
 
   const skill = journey.template?.name ?? journey.custom_name ?? "";
   const days = journeyDays(journey.started_at, journey.finished_at);
-  const fromTemplate = !!journey.template;
-  const share = !!access?.can_share;
-  const last = [...journey.milestones].sort((a, b) => b.position - a.position)[0];
+  const diet = journey.template?.slug === DIET_SLUG;
+  // Finisher tips are a Flock feature, and only for the 14 skills.
+  const askTip = !!journey.template && !!access?.can_share;
 
-  const finish = async () => {
+  const done = async () => {
     setBusy(true);
     setError(null);
     try {
-      if (fromTemplate && tip.trim()) await saveFinisherTip(journeyId, tip);
-      if (share && last && !last.shared_at) await shareMilestone(journeyId, last.position);
+      if (askTip && tip.trim()) await saveFinisherTip(journeyId, tip);
       await invalidate();
       void navigate({ to: "/flock/journeys/$journeyId", params: { journeyId }, replace: true });
     } catch {
@@ -61,12 +59,16 @@ function Finished() {
           {t("flock.journeys.finished.eyebrow", "Journey complete · {{count}} days", { count: days })}
         </span>
         <h1 className="m-0 text-[28px] font-[700] leading-[1.15]" style={{ fontFamily: SERIF }} data-testid="finished-title">
-          {t("flock.journeys.finished.title", "{{name}} learned {{skill}}", { name: bird.name, skill: skillInSentence(skill) })}
+          {diet
+            ? t("flock.journeys.finished.dietTitle", "{{name}} is on the new diet", { name: bird.name })
+            : t("flock.journeys.finished.learnedTitle", "{{name}} learned {{skill}}!", { name: bird.name, skill: skillInSentence(skill) })}
         </h1>
-        <p className="m-0 text-[15px] leading-[1.45]" style={{ color: K.ink }}>
-          {t("flock.journeys.finished.line", "{{skill}} is now on {{name}} skill list.", { skill, name: possessive(bird.name) })}
-        </p>
-        {fromTemplate && (
+        {!diet && (
+          <p className="m-0 text-[15px] leading-[1.45]" style={{ color: K.ink }}>
+            {t("flock.journeys.finished.line", "{{skill}} is now on {{name}} skill list.", { skill, name: possessive(bird.name) })}
+          </p>
+        )}
+        {askTip && (
           <section className="mt-2 flex w-full flex-col gap-2 rounded-[18px] p-4 text-left" style={{ background: K.mist }}>
             <label htmlFor={tipId}><KyaHeading size={17}>{t("flock.journeys.finished.tipQ", "What would you tell someone just starting?")}</KyaHeading></label>
             <textarea id={tipId} value={tip} onChange={(e) => setTip(e.target.value)} maxLength={500} rows={3} data-testid="finisher-tip"
@@ -80,8 +82,8 @@ function Finished() {
         {error && <p role="alert" className="m-0 text-[15px]" style={{ color: K.red }}>{error}</p>}
       </div>
       <div className="mt-6 flex flex-col gap-2.5">
-        <KyaPrimaryButton onClick={() => void finish()} disabled={busy}>
-          {share ? t("flock.journeys.finished.shareFinish", "Share and finish") : t("flock.journeys.finished.finish", "Finish")}
+        <KyaPrimaryButton onClick={() => void done()} disabled={busy}>
+          {t("flock.journeys.finished.done", "Done")}
         </KyaPrimaryButton>
         <button type="button" onClick={() => void navigate({ to: "/flock/journeys/start", search: { bird: bird.id } })}
           className="min-h-[48px] text-[15px] font-[700]" style={{ color: K.moss }}>

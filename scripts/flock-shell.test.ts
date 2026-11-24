@@ -47,8 +47,9 @@ import { QUEUE_FILTERS, queueItemPlace, type QueueItem } from "@/lib/flockModera
 import { PLACE_KINDS, PLACE_LIMITS, groupPlaces, telHref, updatedDay, websiteHref, type Place } from "@/lib/flockPlaces";
 import { VOTE_GUARANTEED_PCT, VOTE_LIMITS, choiceColor, cleanVote, emptyVoteDraft, isDonationVote, openProblems, rankedChoices, toLocalInput, topNames, voteDay, votesFor, type Vote } from "@/lib/flockVotes";
 import {
-  birdPronoun, canStartCustom, customProblem, daysSince, clipPhase, flockSheetTitle, isNectarEater, rollingAverage, showVetReminder, youngOrUnknownAge, defaultVisibility, groupTemplates, isLocked, journeyDay, journeyDays,
-  nextMilestone, possessive, progressOf, skillInSentence, startHere, trimTrailingBlanks, vetCheckLine, visibilityChoices, wantsTip,
+  birdPronoun, canStartCustom, customProblem, daysSince, clipPhase, flockSheetTitle, isNectarEater, rollingAverage, showVetReminder, youngOrUnknownAge, defaultVisibility, groupSkills, journeyDay, journeyDays,
+  SKILL_GROUPS, askFlock, canFinishLearned, isOpenJourney, sortYourJourneys,
+  nextMilestone, possessive, skillInSentence, trimTrailingBlanks, vetCheckLine, visibilityChoices, wantsTip,
   type JourneyTemplate,
 } from "@/lib/journeys";
 
@@ -300,13 +301,11 @@ check("founding: the regular price leads with $25 a month billed annually, then 
   assert.ok(!/\$30 a month or \$300 a year/.test(en + page), "old regular-price wording is gone");
 });
 
-check("journeys: no 'app premium' wording; the locked-journey refusal shows the Flock sentence", () => {
+check("journeys: no 'app premium' wording, and no skill is locked any more (1.20)", () => {
   const setup = readFileSync("src/routes/_authenticated/flock.journeys.setup.tsx", "utf8");
-  const m = setup.match(/if \((\/this journey comes with[^/]*\/)\.test\(msg\)\)/);
-  assert.ok(m, "setup maps journey_start's refusal");
-  const re = new RegExp(m![1].slice(1, -1));
-  assert.ok(re.test("this journey comes with Flock membership"));
-  assert.ok(re.test("this journey comes with app premium"), "older text still maps (before the migration runs)");
+  assert.ok(!/this journey comes with/.test(setup), "setup no longer expects a locked-skill refusal");
+  const start = readFileSync("src/routes/_authenticated/flock.journeys.start.tsx", "utf8");
+  assert.ok(!/isLocked|FlockOnlySheet|Flock journeys/.test(start), "Pick a skill has no Flock-only group or lock");
   assert.ok(!/app premium/i.test(readFileSync("e2e/journey-fixture.json", "utf8")), "e2e journey fixture");
   assert.ok(!/app premium/i.test(readFileSync("src/locales/en.jsonc", "utf8")), "en.jsonc");
 });
@@ -363,27 +362,44 @@ check("membership: gifts, comp, admin, none", () => {
 });
 
 // ---- Journeys (step 3) -------------------------------------------------------
-const tpl = (slug: string, tier: "free" | "premium", sort: number): JourneyTemplate => ({
-  id: slug, slug, name: slug, category: "tricks", tier, purpose: "", done_when: "", suggested_first: null,
-  typical_length: "", safety_notes: [], safeguards: [], tips: [], sort_order: sort, milestones: [],
+const tpl = (slug: string, category: JourneyTemplate["category"], sort: number, tier: "free" | "premium" = "free"): JourneyTemplate => ({
+  id: slug, slug, name: slug, category, tier, purpose: "", safety_notes: [], safeguards: [], tips: [], sort_order: sort, video_ref: null,
 });
-check("journeys: templates group into the basics, then tricks and more, in catalog order", () => {
-  const g = groupTemplates([tpl("wave", "premium", 100), tpl("recall", "free", 40), tpl("scale", "free", 10), tpl("spin", "premium", 120)]);
-  assert.deepEqual(g.basics.map((x) => x.slug), ["scale", "recall"]);
-  assert.deepEqual(g.more.map((x) => x.slug), ["wave", "spin"]);
+check("journeys: Pick a skill is one list in four groups, in catalog order, with no free/Flock split", () => {
+  const g = groupSkills([tpl("wave", "tricks", 100, "premium"), tpl("recall", "foundations", 40), tpl("scale", "husbandry", 10),
+    tpl("diet-conversion", "food", 60), tpl("nail-trims", "husbandry", 20, "premium"), tpl("spin", "tricks", 120, "premium")]);
+  assert.deepEqual(g.map((x) => x.group), ["husbandry", "foundations", "food", "tricks"]);
+  assert.deepEqual(g.map((x) => x.skills.map((s) => s.slug)), [["scale", "nail-trims"], ["recall"], ["diet-conversion"], ["wave", "spin"]]);
+  assert.deepEqual(groupSkills([tpl("wave", "tricks", 1)]).map((x) => x.group), ["tricks"], "empty groups are left out");
+  assert.deepEqual(SKILL_GROUPS, ["husbandry", "foundations", "food", "tricks"]);
 });
-check("journeys: the Flock-only sheet's title names the bird (no price anywhere)", () => {
+check("journeys: the Part of the Flock sheet is about the community, with no price anywhere", () => {
   const t = ((_k: string, d: string, o?: Record<string, string>) => d.replace(/\{\{(\w+)\}\}/g, (_m, n) => o?.[n] ?? "")) as unknown as Parameters<typeof flockSheetTitle>[0];
-  assert.equal(flockSheetTitle(t, "high-five", "High five", "Echo"), "Teach Echo to high five");
-  assert.equal(flockSheetTitle(t, "nail-trims", "Nail trims", "Echo"), "Teach Echo to be calm for nail trims");
-  assert.equal(flockSheetTitle(t, "stationing", "Stationing", "Echo"), "Teach Echo to station");
-  assert.equal(flockSheetTitle(t, "wave", "Wave", undefined), "Wave");
+  assert.equal(flockSheetTitle(t, "how_others"), "See how others did it");
+  assert.equal(flockSheetTitle(t, "ask"), "Ask the Flock");
+  const parts = readFileSync("src/components/flock/JourneyParts.tsx", "utf8");
+  const sheet = parts.slice(parts.indexOf("export function FlockOnlySheet"), parts.indexOf("export function CustomLimitSheet"));
+  assert.ok(!/\$\d|price|per month|a year/i.test(sheet), "no price in the sheet");
 });
-check("journeys: Flock-only templates (stored as \"premium\") lock for free accounts", () => {
-  assert.equal(isLocked({ tier: "premium" }, { can_use_premium: false }), true);
-  assert.equal(isLocked({ tier: "premium" }, undefined), true);
-  assert.equal(isLocked({ tier: "premium" }, { can_use_premium: true }), false);
-  assert.equal(isLocked({ tier: "free" }, { can_use_premium: false }), false);
+check("journeys: Ask the Flock on a question: community journeys show it, private ones offer sharing or the sheet", () => {
+  assert.equal(askFlock("Any tips for a nervous bird?", "community", true), "community");
+  assert.equal(askFlock("Any tips?", "private", true), "offer_share");
+  assert.equal(askFlock("Any tips?", "private", false), "flock_sheet");
+  assert.equal(askFlock("Great session today", "private", false), "none");
+});
+check("journeys: Your journeys lists open ones first, then finished; learned it needs no weight pause", () => {
+  const rows = [
+    { id: "f", status: "finished" as const, started_at: "2026-10-01T00:00:00Z", finished_at: "2026-11-01T00:00:00Z" },
+    { id: "a1", status: "active" as const, started_at: "2026-11-01T00:00:00Z" },
+    { id: "h", status: "happy_where_we_are" as const, started_at: "2026-09-01T00:00:00Z", finished_at: "2026-11-10T00:00:00Z" },
+    { id: "p", status: "paused" as const, started_at: "2026-11-05T00:00:00Z" },
+  ];
+  assert.deepEqual(sortYourJourneys(rows).map((r) => r.id), ["p", "a1", "h", "f"]);
+  assert.ok(isOpenJourney("active") && isOpenJourney("paused") && !isOpenJourney("finished") && !isOpenJourney("happy_where_we_are"));
+  assert.equal(canFinishLearned({ status: "active", paused_reason: null }), true);
+  assert.equal(canFinishLearned({ status: "paused", paused_reason: "member" }), true);
+  assert.equal(canFinishLearned({ status: "paused", paused_reason: "weight_drop" }), false);
+  assert.equal(canFinishLearned({ status: "finished", paused_reason: null }), false);
 });
 check("journeys: one custom journey at a time when there's a limit", () => {
   assert.equal(canStartCustom({ max_open_custom: 1, open_custom: 0 }), true);
@@ -396,11 +412,6 @@ check("journeys: only Flock members can choose the community", () => {
   assert.deepEqual(visibilityChoices({ can_share: true }), ["community", "private"]);
   assert.equal(defaultVisibility({ can_share: true }), "community");
   assert.equal(defaultVisibility({ can_share: false }), "private");
-});
-check("journeys: start here is the first milestone not already done", () => {
-  assert.equal(startHere(7, new Set([1, 2])), 3);
-  assert.equal(startHere(7, new Set([2])), 1);
-  assert.equal(startHere(3, new Set([1, 2, 3])), null);
 });
 check("journeys: a custom journey needs a name and 3 to 8 milestones", () => {
   assert.equal(customProblem("Bath time", ["a", "b", "c"]), null);
@@ -422,15 +433,23 @@ check("journeys: pronouns, possessives and the vet check line", () => {
   assert.equal(vetCheckLine({ safeguards: [] }), null);
 });
 
-check("journeys: after posting, a tip on hard days and the question on good ones", () => {
+check("journeys: after posting, a tip on hard days only", () => {
   assert.equal(wantsTip("all_in"), false);
   assert.equal(wantsTip("distracted"), true);
   assert.equal(wantsTip("not_today"), true);
 });
-check("journeys: next milestone, progress, days", () => {
+check("journeys: no milestone question or step counts on the new screens", () => {
+  const post = readFileSync("src/routes/_authenticated/flock.journeys.$journeyId.post.tsx", "utf8");
+  assert.ok(!/reachMilestone|milestoneQuestion|nextMilestone|working-on/.test(post), "Post an update asks no milestone question");
+  assert.ok(/vetNudgeTier\(caption/.test(post), "the vet nudge runs on every caption and question");
+  const page = readFileSync("src/routes/_authenticated/flock.journeys.$journeyId.index.tsx", "utf8");
+  assert.ok(!/progress-bar|next_title|card\.total/.test(page), "the journey page shows no steps");
+  const browse = readFileSync("src/components/flock/JourneyBrowse.tsx", "utf8");
+  assert.ok(!/card\.done|c\.done|c\.total/.test(browse), "cards and rings show no step counts");
+});
+check("journeys: next milestone (history), days", () => {
   const ms = [{ position: 2, state: "todo" }, { position: 1, state: "already" }, { position: 3, state: "todo" }];
   assert.equal(nextMilestone(ms)?.position, 2);
-  assert.deepEqual(progressOf(ms), { done: 1, total: 3 });
   assert.equal(nextMilestone([{ position: 1, state: "reached" }]), null);
   const now = new Date("2026-11-20T12:00:00Z");
   assert.equal(journeyDay("2026-11-20T08:00:00Z", now), 1);
@@ -444,10 +463,10 @@ check("journeys: next milestone, progress, days", () => {
 
 // ---- Share cards (backlog 1.7) ---------------------------------------------------
 check("share cards: only the household makes one; day one vs. now needs both clips", () => {
-  assert.equal(canMakeJourneyCard({ kind: "milestone", isMine: true }), true);
+  assert.equal(canMakeJourneyCard({ kind: "moment", isMine: true }), true);
   assert.equal(canMakeJourneyCard({ kind: "finished", isMine: true }), true);
   // Someone else's journey, community or not: never (so a "Just me" one can't leak).
-  for (const kind of ["milestone", "finished", "compare"] as const) assert.equal(canMakeJourneyCard({ kind, isMine: false, comparePhotos: 2 }), false, kind);
+  for (const kind of ["moment", "finished", "compare"] as const) assert.equal(canMakeJourneyCard({ kind, isMine: false, comparePhotos: 2 }), false, kind);
   assert.equal(canMakeJourneyCard({ kind: "compare", isMine: true, comparePhotos: 1 }), false);
   assert.equal(canMakeJourneyCard({ kind: "compare", isMine: true, comparePhotos: 2 }), true);
   // The card screen has no tab bar, like the milestone and finish screens.
@@ -468,7 +487,7 @@ check("share cards: everything fits on the card, in order, never overlapping", (
     const { w: W, h: H } = CARD_SIZES[size];
     for (const titleLines of [1, 2, 3]) for (const hasDate of [true, false]) for (const hasMember of [true, false]) {
       const label = `${size} ${titleLines} lines date=${hasDate} member=${hasMember}`;
-      const one = layoutJourneyCard({ kind: "milestone", size, titleLines, hasDate, hasMember });
+      const one = layoutJourneyCard({ kind: "moment", size, titleLines, hasDate, hasMember });
       assert.equal(one.photos.length, 1, label);
       const p = one.photos[0];
       assert.ok(p.x >= 0 && p.y >= 0 && p.x + p.w <= W && p.h > 400, label);
@@ -548,9 +567,9 @@ check("replying adds the first name", () => {
   assert.equal(replyPrefix(null), "");
 });
 
-check("Today mixes posts and milestone cards newest first; older cards wait for older posts", () => {
+check("Today mixes posts and journey cards newest first; older cards wait for older posts", () => {
   const posts = [{ id: "p1", created_at: "2026-11-07T12:00:00Z" }, { id: "p2", created_at: "2026-11-07T09:00:00Z" }];
-  const cards = [{ id: "m1", reached_at: "2026-11-07T10:00:00Z" }, { id: "m2", reached_at: "2026-11-06T10:00:00Z" }];
+  const cards = [{ id: "m1", happened_at: "2026-11-07T10:00:00Z" }, { id: "m2", happened_at: "2026-11-06T10:00:00Z" }];
   const ids = (xs: ReturnType<typeof mergeFeed<(typeof posts)[number], (typeof cards)[number]>>) => xs.map((x) => x.item.id);
   assert.deepEqual(ids(mergeFeed(posts, cards, true)), ["p1", "m1", "p2"]);
   assert.deepEqual(ids(mergeFeed(posts, cards, false)), ["p1", "m1", "p2", "m2"]);
@@ -1051,6 +1070,11 @@ check("challenges: the card and page lines match the mockup", () => {
   assert.equal(challengeEyebrow(ct, { state: "open", days_left: 0 }), "Challenge · last day");
   assert.equal(challengeSummary(ct, c), "Standalone challenge · 7 prompts · 63 members joined");
   assert.equal(challengeProgress(ct, c), "Juno · 3 of 7 done");
+  // A journey challenge counts no milestones (1.20b): learned it, or still going.
+  const jc = { ...c, kind: "journey" as const, template_name: "Recall", total_count: 0, done_count: 0 };
+  assert.equal(challengeSummary(ct, jc), "Journey challenge · Recall · 63 members joined");
+  assert.equal(challengeProgress(ct, { ...jc, finished: false }), "Juno · In progress");
+  assert.equal(challengeProgress(ct, { ...jc, finished: true }), "Juno · Learned it");
   assert.equal(challengeDay("2026-12-01", "en-US"), "Dec 1");
   // No winners, prizes or rankings in anything the card says.
   for (const s of [challengeEyebrow(ct, c), challengeSummary(ct, c), challengeProgress(ct, c)]) {

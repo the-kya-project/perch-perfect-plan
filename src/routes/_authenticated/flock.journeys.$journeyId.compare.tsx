@@ -5,7 +5,7 @@ import { ClipState, useClipPhase } from "@/components/flock/JourneyClipView";
 import type { JourneyClip } from "@/lib/journeyMedia.functions";
 import { K, KyaHeading, KyaPrimaryButton, KyaSheet } from "@/components/kya";
 import { FlockSubPage } from "@/components/flock/FlockSubPage";
-import { useJourneyClips, useJourneyView, useJourneyViewMilestones, useJourneyViewUpdates, type ViewUpdate } from "@/lib/journeyData";
+import { useBigMoments, useJourneyClips, useJourneyView, useJourneyViewUpdates, type ViewUpdate } from "@/lib/journeyData";
 import { journeyDays } from "@/lib/journeys";
 
 // Day one vs. now (Batch 4, screen 2): two clips side by side, Play both, Slow
@@ -30,7 +30,7 @@ function Compare() {
   const { a, b } = Route.useSearch();
   const { data: card } = useJourneyView(journeyId);
   const { data: updates } = useJourneyViewUpdates(journeyId);
-  const { data: milestones } = useJourneyViewMilestones(journeyId);
+  const { data: bigMoments } = useBigMoments(journeyId, !!card);
   const { data: clips, isLoading: clipsLoading, refetch: refetchClips } = useJourneyClips(journeyId, !!card);
   const withClips = [...(updates ?? [])].filter((u) => u.has_clip).reverse(); // oldest first
   const left = withClips.find((u) => u.update_id === a) ?? withClips.find((u) => u.is_day_one) ?? withClips[0];
@@ -48,7 +48,7 @@ function Compare() {
   const labelOf = (u: ViewUpdate, side: "a" | "b") => side === "a" && u.is_day_one
     ? t("flock.journeys.compare.dayOne", "{{date}} · day one", { date: day(u) })
     : t("flock.journeys.compare.on", "{{date}}", { date: day(u) });
-  const reached = (milestones ?? []).filter((m) => m.state === "reached").length;
+  const moments = bigMoments?.size ?? 0;
   const days = card ? journeyDays(card.started_at, card.finished_at) : 0;
   const sessions = (updates ?? []).length;
 
@@ -76,7 +76,9 @@ function Compare() {
           {chip(t("flock.journeys.compare.pick", "Pick clips"), () => setPicking("a"), false, "pick")}
         </div>
         <p className="m-0 rounded-[16px] bg-white p-3.5 text-[14.5px] leading-[1.45]" style={{ color: K.ink }} data-testid="compare-summary">
-          {t("flock.journeys.compare.summary", "{{days}} days, {{sessions}} sessions, {{milestones}} milestones.", { days, sessions, milestones: reached })}
+          {moments > 0
+            ? t("flock.journeys.compare.summaryMoments", "{{days}} days, {{sessions}} sessions, {{moments}} big moments.", { days, sessions, moments })
+            : t("flock.journeys.compare.summaryDays", "{{days}} days, {{sessions}} sessions.", { days, sessions })}
         </p>
         {card?.is_mine && left && right && left.update_id !== right.update_id && (
           <KyaPrimaryButton onClick={() => void navigate({ to: "/flock/journeys/$journeyId/card", params: { journeyId }, search: { kind: "compare", a: left.update_id, b: right.update_id } })}>

@@ -16,7 +16,8 @@ import {
 } from "@/lib/flockChallenges";
 
 // One challenge (backlog 1.10, SpecChallenges screen 2): the caller's progress
-// (the prompt checklist, or their journey's milestones) and "Post today's
+// (the prompt checklist, or whether their journey ended with "learned it";
+// journeys have no milestones since 1.20b) and "Post today's
 // entry", then the entries feed. Before joining: pick a bird and whether your
 // entries may be featured. After the end day the feed stays readable and the
 // wrap-up shows. ?finished=1 (after the last entry) shows the celebration.
@@ -240,8 +241,10 @@ function ProgressCard({ c }: { c: Challenge }) {
       ) : (
         <>
           <span className="text-[15px] font-[700]">{c.template_name}</span>
-          <span className="text-[13.5px]" style={{ color: K.ink }} data-testid="challenge-journey-progress">
-            {t("flock.challenges.milestoneProgress", "{{done}} of {{total}} milestones", { done: c.done_count, total: c.total_count })}
+          <span className="text-[13.5px] leading-[1.45]" style={{ color: K.ink }} data-testid="challenge-journey-progress">
+            {c.finished
+              ? t("flock.challenges.journeyDone", "{{name}} learned it. You finished the challenge!", { name: c.my_bird_name ?? "" })
+              : t("flock.challenges.journeyHow", "Finish the journey with “learned it” by the last day to complete the challenge.")}
           </span>
           {c.my_journey_id ? (
             <Link to="/flock/journeys/$journeyId" params={{ journeyId: c.my_journey_id }} data-testid="challenge-open-journey"
