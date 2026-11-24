@@ -85,6 +85,48 @@ Where these items came from, with the detail behind each: `docs/flock/opening-sc
 - **Overnight alone:** yes
 - **Needs Brittany:** merge only, under the normal rules.
 
+### 1.20 Journeys redesign: skills, not milestones
+- **Spec:** [Journeys redesign](flock/journeys-redesign.md) (approved direction, content draft). Build it in the five parts below, in order. Each part is its own branch and PR.
+- **Copy and content, every part:** every new or changed string is flagged for Brittany's copy review (listed in the PR and in the review queue's "Copy that merged", before and after), English first and Dutch only after she approves the English. All template text stays `review_status = 'draft'` until she approves it. Nothing in the spec's "Needs avian vet review before opening" list goes live without a vet.
+- **Ground rules, every part:** the spec's "Ground rules" and "Edge cases" sections. Database changes are additive only; no production row is deleted or overwritten outside the admin functions the spec names; `journey_template_milestones` and `journey_milestones` stay as history; the 2 production journeys and all their posts, clips, comments and reactions are kept.
+- **Size:** XL in all (parts below)
+- **Overnight alone:** yes, part by part, as marked.
+
+#### 1.20a Data and migration
+- **Done means:** the spec's "Data" and "Existing templates and started journeys" sections are true: template text rewritten as draft through the admin functions (purpose = description, safety_notes = the spec's "Skill content", tips cleared, diet conversion's five safety lines moved into safety_notes), the nullable video reference column, all 14 templates startable by everyone, no milestone rows for new journeys, a finish function taking 'learned' or 'happy_where_we_are' in place of `journey_reach_milestone`'s finish, the custom journey description and source journey columns, the big-moment flag on updates. The 2 existing journeys carry on as ordinary journeys.
+- **Size:** L
+- **Depends on:** nothing
+- **Overnight alone:** yes (built to a held PR)
+- **Needs Brittany:** hold the PR. It changes existing journey functions and template rows (Flock safety rule: her explicit approval), and the template text needs her copy review.
+
+#### 1.20b Screens
+- **Done means:** the spec's "Screens" 1 to 6 work as written (Journeys tab, Pick a skill, skill page and setup, journey page, Post an update with "This was a big moment" and "Ask the Flock", finished), with the gating moved from starting a skill to the community features, the vet nudge on every caption and question, and the iPhone Duo layout rules followed. Diet conversion's screens are left as they are for 1.20d.
+- **Size:** L
+- **Depends on:** 1.20a
+- **Overnight alone:** yes
+- **Needs Brittany:** copy review of every new or changed string. Merge only under the normal rules (hidden behind `journeys_enabled()` and `flock_enabled()`); otherwise hold.
+
+#### 1.20c Member skills
+- **Done means:** the spec's "Screens" 7 and 8 and the member-skill edge cases: "Your own skill" with a name (up to 60) and description (about 500), no step rules (`CUSTOM_MIN`, `CUSTOM_MAX` and `customProblem`'s step rules gone), a suggestion when the name matches one of the 14; "Skills from the Flock" with search, the "Member-supplied journey" label everywhere, "Start this skill" and "Started from [bird]'s journey", reporting through `flock_report`, and `flock_blocked` applied everywhere.
+- **Size:** M
+- **Depends on:** 1.20a, 1.20b
+- **Overnight alone:** yes
+- **Needs Brittany:** copy review, especially the "Member-supplied journey" line. Merge only under the normal rules; otherwise hold.
+
+#### 1.20d Diet conversion rework
+- **Done means:** the spec's diet conversion lines in "Data", "Screens" and "Edge cases": a starting-weight state that doesn't depend on milestone 1 (the first week of daily weigh-ins), the weight rules, the vet reminder ("once the starting weight is set") and `journey_weigh_reminders` reading from it, every number unchanged in `journey_settings`, the lory/lorikeet block kept, the eclectus alert built but hidden until a vet approves it, and the finish as "[Bird] is on the new diet" with no known skill added. It pauses exactly as before.
+- **Size:** M
+- **Depends on:** 1.20a
+- **Overnight alone:** yes (built to a held PR)
+- **Needs Brittany:** hold the PR (health content). The diet lines and the eclectus alert go in the review queue and the vet packet.
+
+#### 1.20e Tests and docs
+- **Done means:** the spec's "Tests and docs" section: the named checks, tests, fixture and analytics events updated; new checks that a free account can start every skill but never sees community content, that diet conversion pauses exactly as before without milestones, and that a private journey never reaches anyone outside its household; CLAUDE.md's Journeys section rewritten for the new design. Each part above keeps its own tests green; this part closes the gaps and lands the docs.
+- **Size:** M
+- **Depends on:** 1.20a to 1.20d
+- **Overnight alone:** yes
+- **Needs Brittany:** merge only, under the normal rules.
+
 ---
 
 ## Needs Brittany before work starts
@@ -181,7 +223,7 @@ The launch PR itself (1.18) is already merged dark. What's left before opening i
 ### 1.19 Content loading
 - **Done means:**
   - Today's ideas are `ready` for the first two weeks after opening.
-  - The 14 journey templates are approved.
+  - The 14 journey skills (descriptions and safety notes) are approved.
   - The Library's opening items, the chapter collections' listings and the Start here posts are in.
 - **Size:** Brittany's time
 - **Depends on:** content approval
@@ -283,7 +325,7 @@ The launch PR itself (1.18) is already merged dark. What's left before opening i
 
 - **1.15** Kya's Crew, switched off with billing and test mode only: plans `crew_monthly` / `crew_annual` (the `entitlements` plan check widened), prices from Stripe (`STRIPE_PRICE_CREW_MONTHLY` / `_YEARLY`), counted by `is_flock_member()`, 25% giving recorded on the row (`entitlements.giving_rate`, 20% for other paid rows), and no trial (`20261123203000_kyas_crew.sql`, `supabase/checks/crew_checks.sql`, `npm run test:billing`). No card step offers Crew yet (1.15a). Brittany's decisions (Nov 23, 2026): Crew pays nothing until the free season ends, like every member; sponsored seats aren't tracked at all, because that's marketing language, and rescue adopters always get in free. Held for Brittany (payments, the plan check): #535.
 - **1.13a** Flock badges: First steps, Journey finisher (1, 3 and 10), Trick star, Good neighbor, Voice of the Flock and Challenge champ (shown, not yet awarded: 1.10 adds its rule to `private.flock_badge_levels`). `flock_my_badges` works out and records what a member has earned when they open the Flock; the first time, their history is recorded together and Today shows one "Here's what you've already earned" (two or more), then a "Badge earned" card for each new badge or level. The Badges screen (`/flock/you/badges`, from Flock settings) shows earned ones in color and the rest in gray with how to earn each. Profiles show them as pills beside Founder and Chapter lead through `flock_member_badges`, which counts only community journeys and leaves everything out when hidden ("Show my badges on my profile." on Edit profile) or blocked either way. No points or rankings; the mockup's stroke icons until final art (`20261124013000_flock_badges.sql`, `src/lib/flockBadges.ts`). Pinned by `supabase/checks/flock_badges_checks.sql`, `npm run test:flock-shell` and `e2e/flock.shell.ts`: #546.
-- **1.7** "Make a share card" on a reached milestone (the celebration), a finished journey (its page) and Day one vs. now opens `/flock/journeys/<id>/card`: a post (1080×1350) or story (1080×1920) PNG in the Flock's forest and lime with the bird's photo (two clip stills for Day one vs. now), the bird's name (on, can be turned off), the journey, the milestone or "Finished!", the date, the member's name only if added, and "Kya & Co. · thekyaproject.com". Share opens the share sheet, or downloads on the web. Photos are redrawn into a fresh PNG, so no metadata. Only the bird's household can make one (`canMakeJourneyCard`, and `getJourneyCardPhotos` checks `is_mine`). Reuses the Moments card's canvas and share code (`src/lib/journeyCard.ts`, `src/lib/momentCard.ts`). Pinned by `npm run test:flock-shell` and `e2e/flock.shell.ts`: #544.
+- **1.7** "Make a share card" on a big moment (built on a reached milestone's celebration; 1.20 moves it to the "This was a big moment" update), a finished journey (its page) and Day one vs. now opens `/flock/journeys/<id>/card`: a post (1080×1350) or story (1080×1920) PNG in the Flock's forest and lime with the bird's photo (two clip stills for Day one vs. now), the bird's name (on, can be turned off), the journey, the milestone or "Finished!", the date, the member's name only if added, and "Kya & Co. · thekyaproject.com". Share opens the share sheet, or downloads on the web. Photos are redrawn into a fresh PNG, so no metadata. Only the bird's household can make one (`canMakeJourneyCard`, and `getJourneyCardPhotos` checks `is_mine`). Reuses the Moments card's canvas and share code (`src/lib/journeyCard.ts`, `src/lib/momentCard.ts`). Pinned by `npm run test:flock-shell` and `e2e/flock.shell.ts`: #544.
 - **1.4** The daily `flock-purge` hook first runs `flock_moderation_purge` (`20261123193000_flock_removed_purge.sql`, service role only): posts and comments a reviewer removed 180+ days ago move, with the comments under them, into 1.3's `flock_deleted_items` already due, so the same run deletes them and their photos; reports closed 180+ days ago are deleted. Removed journey updates stay as they are and are not deleted after 180 days (Brittany, Nov 23, 2026). Pinned in `supabase/checks/flock_moderation_checks.sql` and `npm run test:flock-purge`. Approved and merged by Brittany (Nov 23, 2026): #534.
 - **2.4** Every update reload (the version check's and the service worker's alike) first expires Vercel's Skew Protection pin (`__vdpl`) with a POST to the new `/api/public/unpin`, waiting at most 3 seconds, then reloads, so the reloaded page gets the new build's files; Skew Protection stays on and no Vercel setting changed (option B). Pinned by `npm run test:release-check`: #531 (held for Brittany's merge; 2.5's Simulator check covers it hands-on).
 - **1.14** Billing foundation, switched off (`BILLING_ENABLED` must be exactly `true`) and Stripe test mode only, enforced in code: `billing_customers`, `billing_events`, `entitlements.product_id` / `will_renew` / `cancel_at_period_end`, `founding_claims.released_at` / `forfeited_at`, and the service-role functions the webhook writes through (`20261123180000_billing_foundation.sql`, `supabase/checks/billing_checks.sql`); the webhook `/api/public/stripe/billing` (`STRIPE_BILLING_WEBHOOK_SECRET`, re-reads each subscription, idempotent on the event id); the card step on Membership (`/flock/you/membership`, $0 until the free season's end, founders get $15, never in the native app); `npm run test:billing`. Held for Brittany (payments): #525. Approved and merged by Brittany (Nov 23, 2026), PR #525.
