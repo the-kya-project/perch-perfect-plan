@@ -11,7 +11,7 @@ import { spaceLabel } from "@/components/flock/SpacesSheet";
 import type { FlockPhotoSrc } from "@/lib/flockData";
 import { react, useInvalidatePosts, type Counts, type FlockPost, type ReactSubject } from "@/lib/flockPostData";
 import type { PostPhoto } from "@/lib/flockPostMedia.functions";
-import { AAV_FIND_A_VET_URL, type PostSpace, type VetTier } from "@/lib/flockPosts";
+import { AAV_FIND_A_VET_URL, type PostRowSpace, type VetTier } from "@/lib/flockPosts";
 import { REACTIONS, type ReactionKind } from "@/lib/journeyData";
 
 /** "5m", "2h", or "Nov 3". */
@@ -23,9 +23,10 @@ export function timeAgo(t: TFunction, iso: string, lang: string, now: Date = new
   return new Date(iso).toLocaleDateString(lang, { month: "short", day: "numeric" });
 }
 
-/** "Learn together", "Do good", "Great Lakes chapter", "Start here". */
-export function postSpaceLabel(t: TFunction, space: PostSpace, chapterName?: string | null): string {
+/** "Learn together", "Do good", "Great Lakes chapter", "Start here", "Challenge". */
+export function postSpaceLabel(t: TFunction, space: PostRowSpace, chapterName?: string | null): string {
   if (space === "chapter") return t("flock.posts.chapterSpace", "{{name}} chapter", { name: chapterName ?? t("flock.posts.myChapter", "My") });
+  if (space === "challenge") return t("flock.posts.challengeSpace", "Challenge");
   return spaceLabel(t, space);
 }
 

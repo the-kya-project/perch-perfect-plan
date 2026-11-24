@@ -10,7 +10,7 @@ import { getLocalUser } from "@/integrations/supabase/currentUser";
 import { AvatarError, reencodeJpegSized } from "@/lib/flockAvatar";
 import { deleteFlockComment, deleteFlockPost, getFlockPostPhotos, type PostPhotoMap } from "@/lib/flockPostMedia.functions";
 import type { ReactionKind } from "@/lib/journeyData";
-import type { FeedSpace, PostSpace, PostStatus, VetSign } from "@/lib/flockPosts";
+import type { FeedSpace, PostRowSpace, PostSpace, PostStatus, VetSign } from "@/lib/flockPosts";
 import { trackFlock } from "@/lib/flockAnalytics";
 
 const sb = supabase as any;
@@ -26,7 +26,7 @@ export type Counts = { great_job: number; been_there: number; rooting_for_you: n
 
 export type FlockPost = Counts & {
   post_id: string; author_id: string; author_name: string | null; author_region: string | null; author_photo_path: string | null;
-  author_is_founder: boolean; space: PostSpace; region_slug: string | null; region_name: string | null;
+  author_is_founder: boolean; space: PostRowSpace; region_slug: string | null; region_name: string | null;
   title: string | null; body: string; photo_count: number; bird_id: string | null; bird_name: string | null; bird_has_photo: boolean;
   status: PostStatus; review_note: string | null; created_at: string; edited_at: string | null; is_mine: boolean; comment_count: number;
 };

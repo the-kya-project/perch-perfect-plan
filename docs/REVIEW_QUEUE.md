@@ -1038,6 +1038,27 @@ No new strings: every line reuses existing wording, in new places (admins only).
 - **Decision (merging `main`):** the checkout now accepts #535's Crew choices (`CHECKOUT_CHOICES`) along with the locale, and keeps #533's branded Checkout and notes. The card step still offers only the Flock plans (Crew on it is 1.15a).
 - **Decision:** the save-the-card note now says "a year" for `crew_annual` as well as `annual`. Before, a yearly Crew plan would have read "a month". No wording changed.
 
+### [#547](https://github.com/the-kya-project/perch-perfect-plan/pull/547) · 1.10 Challenges · Brittany's decisions, Nov 24, 2026
+- **Screens and copy:** the screens the mockup didn't show (joining, "You finished!", a closed challenge with its wrap-up, the admin list and the admin screen for a started challenge) are approved as built, and the copy is approved as written.
+- **Clips:** no short clips for now. Entries stay a few sentences plus up to four photos. Clip entries later are backlog item 1.10a (under "Later").
+- **Text required:** an entry still needs a few words even when it has a photo.
+- **Journey challenges:** they stay. When the journeys redesign (1.20b) lands, they move to the new design with no milestone progress, and a journey challenge counts as finished when its journey ends with "learned it" before the end date. Noted in `docs/BACKLOG.md` under 1.20b.
+- **Migration and merge:** migration approved; merged once every required check passed on the latest commit.
+
+### [#547](https://github.com/the-kya-project/perch-perfect-plan/pull/547) · 1.10 Challenges
+- **Decision:** Entries are Flock posts in a new `challenge` space, tied to their challenge. That way reactions, comments, reports, review, blocks, photos, deletion and the 180-day hold all work exactly as they do for posts. Entries show only in their challenge's feed, never in Today's.
+- **Decision:** Start and end are days in Eastern time (the Flock's day, like Today's idea), and both days count. A challenge opens at the start of its first day and closes after its last. Members don't see a scheduled challenge until it starts, and "Move back to draft" works only before then.
+- **Decision:** "One active challenge at a time Flock-wide, plus at most one per chapter": scheduling refuses a challenge whose days overlap another scheduled one for the same group. A Flock-wide and a chapter challenge can overlap. Once a challenge has started, it can't be edited, unscheduled or deleted, so members' progress never changes under them.
+- **Decision:** Diet conversion, and every template in the food category, can't be a challenge's journey. The admin form doesn't list them, and the database refuses them.
+- **Decision:** A journey challenge doesn't start the journey by itself. Joining picks the bird; if that bird has no journey on the template yet, the member goes to the usual journey setup (clip, rhythm, who sees it). Progress is that journey's milestones. It counts as finished when that journey finishes between joining and the end day. A journey that's already underway counts.
+- **Decision:** Standalone progress is one entry per prompt, in any order. "Post today's entry" always offers the first prompt not done yet, matching the mockup's checklist. Deleting an entry un-ticks its prompt, but a Challenge champ badge already earned stays.
+- **Decision:** Permission to feature is a switch, off by default, asked when joining and changeable later on the challenge page. Turning it off takes the member's entries out of the pin and the wrap-up at once. A pinned entry also needs that permission, since pinning features it.
+- **Decision:** On a profile, Challenge champ shows only when it was earned in a way others may see. A journey challenge counts there only if its journey is shared with the community, as with Journey finisher and Trick star. Without that cap, a challenge badge earned only through a "Just me" journey would show on the profile.
+- **Decision:** Joined members show as up to four faces (name and photo only, blocked people left out) plus a count, as in the mockup. Nobody is ranked or listed by progress.
+- **Decision:** The admin list is linked from "Manage challenges" on the Journeys tab (admins only), and from "Manage this challenge" on a challenge page. Votes use the same pattern on Do good.
+- **Decision:** No analytics events for challenges. The spec doesn't ask for any, and adding them means changing the shared event list.
+- **To change it:** the rules are in `20261124033000_flock_challenges.sql` (`private.flock_challenge_*`); the words are in `src/components/flock/ChallengeParts.tsx` and the two `flock.challenges.$challengeId` routes; the admin form is `src/routes/_authenticated/admin.challenges.$challengeId.tsx`.
+
 ### [#549](https://github.com/the-kya-project/perch-perfect-plan/pull/549) · D1.2 Weight baseline on the weight page, in shadow mode
 - **Decision:** The top tier is now called `shifted` everywhere in code, the shadow log and the replay report (it was `call_vet_today`), so "Call your vet today" isn't used as a label anywhere, as you decided. The replay report's line now reads "Weight has shifted (top level)".
 - **Decision:** While a bird is still learning, only the hard alert (the fixed 10%, against the month before) and the sudden drop can fire. That's how I read "while a bird is still learning, the fixed draft values apply". The fixed 2.5% / 5% / 10% stay in the rules file for that reading. Once learned, the hard alert uses the same personal level as the top tier.
@@ -1486,7 +1507,6 @@ Format:
 
 ### [#543](https://github.com/the-kya-project/perch-perfect-plan/pull/543) · 1.17 Promo codes: code conflicts with `main`
 - **Needs:** someone to resolve the conflicts before it can be reviewed. Since 1.15 (#535) and 1.14a (#533) merged, it conflicts with `main` in the billing code (`src/lib/billing.ts`, `src/lib/billing.functions.ts`, `scripts/billing.test.ts`). Runs only resolve conflicts in the record files.
-
 
 ### Reminder · the hourly runs' GitHub token expires Feb 20, 2027
 - **Needs:** a new token before **Feb 20, 2027**. That's 90 days from Nov 22, 2026; GitHub → Settings → Developer settings → Fine-grained tokens shows the exact date. When it expires, runs can still build and test but can't push or open PRs, and each run's note in `~/.kya-agent/job.log` says so.

@@ -9,7 +9,8 @@ import { postSpaceLabel, VetNudgeCard } from "@/components/flock/PostParts";
 import { AvatarError } from "@/lib/flockAvatar";
 import { useMyProfile, useOwnBirdPhotoUrls, useOwnBirds, useRegions, useShownChoices, type OwnBird } from "@/lib/flockData";
 import { createPost, discardPostPhotos, editPost, uploadPostPhoto, useInvalidatePosts, useVetSigns, type FlockPost } from "@/lib/flockPostData";
-import { vetNudgeTier, MAX_BODY, MAX_PHOTOS, MAX_TITLE, POST_SPACES, rateLimitKind, type PostSpace, type RateKind, type VetTier } from "@/lib/flockPosts";
+import { vetNudgeTier, MAX_BODY, MAX_PHOTOS, MAX_TITLE, POST_SPACES, rateLimitKind, type PostRowSpace, type PostSpace, type RateKind, type VetTier } from "@/lib/flockPosts";
+import { challengeError, createChallengeEntry, useInvalidateChallenges, type Challenge, type ChallengePrompt } from "@/lib/flockChallenges";
 import { useFormInProgress } from "@/lib/formsInProgress";
 
 export function rateMessage(t: TFunction, kind: RateKind): string {
@@ -22,15 +23,19 @@ export function rateMessage(t: TFunction, kind: RateKind): string {
 
 type Photo = { key: string; preview: string; path: string | null; failed?: boolean };
 
-/** Write a new post (Batch 3, screen 1), or edit your own (title and text). */
-export function PostComposer({ initialSpace, editing, onDone }: {
+/** Write a new post (Batch 3, screen 1), or edit your own (title and text).
+ *  With `challenge`, it writes a challenge entry instead (1.10): no space or
+ *  title, the prompt it answers on top. */
+export function PostComposer({ initialSpace, editing, challenge, onDone }: {
   initialSpace?: PostSpace;
   editing?: FlockPost;
-  onDone: (result: { space: PostSpace; postId: string }) => void;
+  challenge?: { challenge: Challenge; prompt: ChallengePrompt | null };
+  onDone: (result: { space: PostRowSpace; postId: string; finished?: boolean }) => void;
 }) {
   const { t } = useTranslation();
   const router = useRouter();
   const invalidate = useInvalidatePosts();
+  const invalidateChallenges = useInvalidateChallenges();
   const { data: me } = useMyProfile();
   const { data: ownBirds } = useOwnBirds();
   const { data: shownChoices } = useShownChoices();
@@ -41,7 +46,7 @@ export function PostComposer({ initialSpace, editing, onDone }: {
   const chapterName = useChapterName(me?.region_slug);
   const spaces = POST_SPACES.filter((s) => s !== "chapter" || hasChapter);
 
-  const [space, setSpace] = useState<PostSpace>(editing?.space ?? (initialSpace && spaces.includes(initialSpace) ? initialSpace : "learn"));
+  const [space, setSpace] = useState<PostSpace>(editing && editing.space !== "challenge" ? editing.space : (initialSpace && spaces.includes(initialSpace) ? initialSpace : "learn"));
   const [title, setTitle] = useState(editing?.title ?? "");
   const [body, setBody] = useState(editing?.body ?? "");
   const [photos, setPhotos] = useState<Photo[]>([]);
@@ -91,6 +96,13 @@ export function PostComposer({ initialSpace, editing, onDone }: {
         await editPost(editing.post_id, title, body);
         await invalidate();
         onDone({ space: editing.space, postId: editing.post_id });
+      } else if (challenge) {
+        const r = await createChallengeEntry({
+          challenge: challenge.challenge, prompt: challenge.prompt?.position ?? null, body,
+          photoPaths: photos.flatMap((p) => (p.path ? [p.path] : [])), birdId: bird?.id ?? null, vetNudged,
+        });
+        await invalidateChallenges();
+        onDone({ space: "challenge", postId: r.postId, finished: r.finished });
       } else {
         const r = await createPost({ space, title, body, photoPaths: photos.flatMap((p) => (p.path ? [p.path] : [])), birdId: bird?.id ?? null, vetNudged });
         await invalidate();
@@ -98,7 +110,11 @@ export function PostComposer({ initialSpace, editing, onDone }: {
       }
     } catch (e) {
       const k = rateLimitKind(e);
-      setError(k ? rateMessage(t, k) : t("flock.posts.saveError", "We couldn't post that. Check your connection and try again."));
+      const c = challengeError(e);
+      setError(k ? rateMessage(t, k)
+        : c === "challenge_closed" ? t("flock.challenges.closedError", "This challenge has closed, so it isn't taking new entries.")
+        : c === "already_posted" ? t("flock.challenges.alreadyPosted", "You've already posted for this prompt.")
+        : t("flock.posts.saveError", "We couldn't post that. Check your connection and try again."));
       setBusy(false);
     }
   };
@@ -113,14 +129,26 @@ export function PostComposer({ initialSpace, editing, onDone }: {
     <div className="flex min-h-screen flex-col" style={{ background: "#fff", color: K.forest }} data-testid="composer">
       <header className="sticky top-0 z-10 flex items-center gap-2 px-2 pb-2 pt-[max(10px,env(safe-area-inset-top))] text-white" style={{ background: K.forest }}>
         <button type="button" onClick={cancel} className="min-h-[44px] px-3 text-[15px] font-[700]" data-testid="composer-cancel">{t("flock.posts.cancel", "Cancel")}</button>
-        <KyaHeading as="h1" size={19} className="flex-1 text-center text-white">{editing ? t("flock.posts.editTitle", "Edit post") : t("flock.posts.newTitle", "New post")}</KyaHeading>
+        <KyaHeading as="h1" size={19} className="flex-1 text-center text-white">
+          {editing ? t("flock.posts.editTitle", "Edit post") : challenge ? t("flock.challenges.entryTitle", "New entry") : t("flock.posts.newTitle", "New post")}
+        </KyaHeading>
         <button type="button" onClick={() => void submit(false)} disabled={!canPost} data-testid="composer-post"
           className="min-h-[40px] rounded-full px-4 text-[15px] font-[700] disabled:opacity-50" style={{ background: K.lime, color: K.forest }}>
           {busy ? t("flock.posts.posting", "Posting…") : editing ? t("flock.posts.save", "Save") : space === "good" ? t("flock.posts.sendForReview", "Send for review") : t("flock.posts.post", "Post")}
         </button>
       </header>
       <div className="mx-auto flex w-full max-w-xl flex-1 flex-col gap-4 px-4 py-4">
-        {!editing && (
+        {challenge && (
+          <div className="flex flex-col gap-1 rounded-[14px] p-3" style={{ background: K.lime }} data-testid="entry-for">
+            <span className="text-[11.5px] font-[700] uppercase tracking-[0.06em]" style={{ color: K.moss }}>{challenge.challenge.title}</span>
+            <span className="text-[15px] font-[700]">
+              {challenge.prompt
+                ? t("flock.challenges.entryPrompt", "{{n}}. {{prompt}}", { n: challenge.prompt.position, prompt: challenge.prompt.body })
+                : t("flock.challenges.entryJourney", "How is {{journey}} going?", { journey: challenge.challenge.template_name ?? "" })}
+            </span>
+          </div>
+        )}
+        {!editing && !challenge && (
           <div className="flex flex-col gap-2">
             <span className="text-[13px] font-[700]" style={{ color: K.quiet }} id="post-to">{t("flock.posts.postTo", "Post to")}</span>
             <div role="group" aria-labelledby="post-to" className="flex flex-wrap gap-2" data-testid="post-to">
@@ -145,13 +173,19 @@ export function PostComposer({ initialSpace, editing, onDone }: {
         {editing && editing.space === "good" && editing.status === "live" && (
           <p className="m-0 text-[13.5px]" style={{ color: K.quiet }}>{t("flock.posts.editReviewHint", "Do good posts go back for a quick review after an edit.")}</p>
         )}
-        <label className="sr-only" htmlFor="post-title">{t("flock.posts.titleLabel", "Title (optional)")}</label>
-        <input id="post-title" value={title} maxLength={MAX_TITLE} onChange={(e) => setTitle(e.target.value)}
-          placeholder={t("flock.posts.titleLabel", "Title (optional)")} data-testid="post-title"
-          className="min-h-[48px] border-b text-[18px] font-[700] outline-none" style={{ borderColor: K.line, fontFamily: "'Newsreader', Georgia, serif" }} />
-        <label className="sr-only" htmlFor="post-body">{t("flock.posts.bodyLabel", "Your post")}</label>
+        {!challenge && (
+          <>
+            <label className="sr-only" htmlFor="post-title">{t("flock.posts.titleLabel", "Title (optional)")}</label>
+            <input id="post-title" value={title} maxLength={MAX_TITLE} onChange={(e) => setTitle(e.target.value)}
+              placeholder={t("flock.posts.titleLabel", "Title (optional)")} data-testid="post-title"
+              className="min-h-[48px] border-b text-[18px] font-[700] outline-none" style={{ borderColor: K.line, fontFamily: "'Newsreader', Georgia, serif" }} />
+          </>
+        )}
+        <label className="sr-only" htmlFor="post-body">{challenge ? t("flock.challenges.entryLabel", "Your entry") : t("flock.posts.bodyLabel", "Your post")}</label>
         <textarea id="post-body" value={body} maxLength={MAX_BODY} autoFocus onChange={(e) => { setBody(e.target.value); setNudge(null); }} rows={6}
-          placeholder={t("flock.posts.bodyPlaceholder", "Ask a question, share what worked, or say hello.")} data-testid="post-body-input"
+          placeholder={challenge
+            ? t("flock.challenges.entryPlaceholder", "A few sentences about how it went. Add a photo if you have one.")
+            : t("flock.posts.bodyPlaceholder", "Ask a question, share what worked, or say hello.")} data-testid="post-body-input"
           className="min-h-[140px] resize-none text-[16px] leading-[1.5] outline-none" />
         {nudge && <VetNudgeCard tier={nudge} busy={busy} onPostAnyway={() => void submit(true)} />}
         {!editing && (
