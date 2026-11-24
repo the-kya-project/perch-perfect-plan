@@ -71,6 +71,17 @@ type FlockState = {
   /** Build C: where this account stands (flock_my_access), and its join calls. */
   access: { member_now: boolean; has_membership: boolean; agreed: boolean; is_admin: boolean; guidelines_version: string; opens_at: string | null; season_ends_at: string | null };
   joinResult: string;
+  /** Backlog 1.11: buddy pods, as the flock_pod* functions return them. */
+  pods: {
+    canWait: boolean;
+    journey: Record<string, { state: string; pod_id: string | null; waiting: number; can_wait: boolean }>;
+    pod: Record<string, any> | null;
+    members: Record<string, any>[];
+    feed: Record<string, any>[];
+    mine: Record<string, any>[];
+    admin: Record<string, any>[];
+    adminMembers: Record<string, any>[];
+  };
 };
 
 async function mockFlock(context: BrowserContext, userId: string, opts: { setupDone: boolean; region?: string }): Promise<FlockState> {
@@ -103,6 +114,7 @@ async function mockFlock(context: BrowserContext, userId: string, opts: { setupD
     badgesShown: true,
     access: { member_now: true, has_membership: true, agreed: true, is_admin: true, guidelines_version: "2026-12", opens_at: null, season_ends_at: "2027-07-06T04:00:00Z" },
     joinResult: "joined",
+    pods: { canWait: true, journey: {}, pod: null, members: [], feed: [], mine: [], admin: [], adminMembers: [] },
   };
   const blocked = (id: string) => state.blocks.some((b) => b.user_id === id);
   const neighbours: Record<string, { user_id: string; display_name: string }[]> = {
@@ -154,6 +166,9 @@ async function mockFlock(context: BrowserContext, userId: string, opts: { setupD
     state.calls.push({ fn, args });
     if (fn === "admin_ideas_schedule") return json(route, state.schedule);
     if (fn === "admin_ideas_unscheduled") return json(route, []);
+    if (fn === "admin_pods") return json(route, state.pods.admin);
+    if (fn === "admin_pod_members") return json(route, state.pods.adminMembers);
+    if (fn === "admin_pod_waitlist") return json(route, [{ template_slug: "step-up", template_name: "Step up", waiting: 2, oldest: new Date().toISOString() }]);
     if (fn === "admin_save_idea") return json(route, "00000000-0000-4000-8000-0000000082aa");
     if (fn === "admin_votes") {
       return json(route, state.votes.map((v) => ({ vote_id: v.vote_id, question: v.question, audience: v.audience, state: v.state, closes_at: v.closes_at,
@@ -330,6 +345,26 @@ async function mockFlock(context: BrowserContext, userId: string, opts: { setupD
       if (v) { v.voters += 1; v.my_choice = args.p_choice_id; }
       return json(route, null);
     }
+    if (fn === "flock_pod_can_wait") return json(route, state.pods.canWait);
+    if (fn === "flock_pod_for_journey") { const x = state.pods.journey[args.p_journey_id]; return json(route, x ? [x] : []); }
+    if (fn === "flock_pod_wait") {
+      state.pods.journey[args.p_journey_id] = { state: "waiting", pod_id: null, waiting: 1, can_wait: false };
+      return json(route, [{ state: "waiting", pod_id: null }]);
+    }
+    if (fn === "flock_pod_unwait") { delete state.pods.journey[args.p_journey_id]; return json(route, null); }
+    if (fn === "flock_my_pods") return json(route, state.pods.mine);
+    if (fn === "flock_pod") return json(route, state.pods.pod && state.pods.pod.pod_id === args.p_pod_id ? [state.pods.pod] : []);
+    if (fn === "flock_pod_members") return json(route, state.pods.members);
+    if (fn === "flock_pod_feed") return json(route, state.pods.feed.map(postRow));
+    if (fn === "flock_pod_post_create") {
+      const post = { post_id: "00000000-0000-4000-8000-0000000091aa", author_id: userId, author_name: "Brittany K.", space: "pod", body: args.p_body, status: "live", created_at: ago(0) };
+      state.pods.feed.unshift(post);
+      if (state.pods.pod) state.pods.pod.checked_in_this_week = true;
+      return json(route, [{ post_id: post.post_id, status: "live" }]);
+    }
+    if (fn === "flock_pod_finished_seen") { if (state.pods.pod) state.pods.pod.my_finished = false; return json(route, null); }
+    if (fn === "flock_pod_keep_going") { if (state.pods.pod) { state.pods.pod.asking_me = false; state.pods.pod.my_answer = args.p_yes; } return json(route, null); }
+    if (fn === "flock_pod_leave") return json(route, null);
     if (fn === "flock_todays_idea") return json(route, state.idea ? [state.idea] : []);
     if (fn === "flock_idea_try") { if (state.idea) { state.idea.my_outcome = args.p_outcome; state.idea.my_bird_id = args.p_bird_id; } return json(route, null); }
     if (fn === "flock_report") return json(route, null);
@@ -619,7 +654,7 @@ async function mockJourneys(context: BrowserContext, opts: JourneyMockOpts, bird
 }
 
 // Community code chunks (FlockHealthDuo is the care app's, not Community's).
-const FLOCK_CHUNK = /\/assets\/(?!FlockHealthDuo)(Flock\w+|SpacesSheet|CommentThread|ReportSheet|IdeaParts|EventParts|admin\.(?:review|ideas|library)|LibraryParts|AdminOnly|Post(?:Compose|Feed|Parts)|Journey\w+|[jJ]ourney\w*(\.[\w$-]+)*|flock\w*(\.[\w$-]+)*)-[\w-]+\.js/;
+const FLOCK_CHUNK = /\/assets\/(?!FlockHealthDuo)(Flock\w+|SpacesSheet|CommentThread|ReportSheet|IdeaParts|EventParts|PodParts|admin\.(?:review|ideas|library|pods)|LibraryParts|AdminOnly|Post(?:Compose|Feed|Parts)|Journey\w+|[jJ]ourney\w*(\.[\w$-]+)*|flock\w*(\.[\w$-]+)*)-[\w-]+\.js/;
 
 const tabs = (page: Page) => page.locator("nav[aria-label='Community']:visible [data-flock-tab]");
 
@@ -3104,6 +3139,166 @@ test.describe("joining the Flock (members switch on, phone)", () => {
     await expect(page).toHaveURL(/\/flock\/guidelines$/);
     await expect(page.getByTestId("flock-guidelines")).toContainText("No selling or spam. Please don't advertise products, services, or birds for sale.");
     await expect(page.getByTestId("flock-guidelines").getByTestId("flock-contact-line")).toBeVisible();
+    await context.close();
+  });
+});
+
+test.describe("buddy pods (admin, phone)", () => {
+  const POD = "00000000-0000-4000-8000-0000000090a1";
+  const JOURNEY = "00000000-0000-4000-8000-0000000074a1";
+  const STARTED = "00000000-0000-4000-8000-000000007201";
+  const pod = (over: Record<string, unknown> = {}) => ({
+    pod_id: POD, kind: "journey", status: "active", template_slug: "step-up", template_name: "Step up", region_name: "Great Lakes",
+    member_count: 4, my_journey_id: JOURNEY, my_finished: false, asking_me: false, my_answer: null, checked_in_this_week: false,
+    offered_new: false, created_at: new Date().toISOString(), ...over,
+  });
+  const members = [
+    { user_id: "00000000-0000-4000-8000-00000000c009", display_name: "Brittany K.", photo_path: null, is_me: true, bird_id: null, bird_name: "Echo", bird_has_photo: false, done: 2, total: 5, finished: false },
+    { user_id: "00000000-0000-4000-8000-00000000c001", display_name: "Ana", photo_path: null, is_me: false, bird_id: null, bird_name: "Kiwi", bird_has_photo: false, done: 3, total: 5, finished: false },
+    // A "Just me" journey: the database sends no progress and no hidden bird.
+    { user_id: "00000000-0000-4000-8000-00000000c002", display_name: "Marcus", photo_path: null, is_me: false, bird_id: null, bird_name: null, bird_has_photo: false, done: null, total: null, finished: null },
+    { user_id: "00000000-0000-4000-8000-00000000c003", display_name: "Jen", photo_path: null, is_me: false, bird_id: null, bird_name: "Biscuit", bird_has_photo: false, done: 5, total: 5, finished: true },
+  ];
+
+  test("starting a journey: Pair me with buddies, and the journey goes on the waitlist", async ({ browser, baseURL }) => {
+    const { context, page, state, journeys } = await open(browser, baseURL!, { admin: true });
+    await page.goto("/flock/journeys/start");
+    await page.getByTestId("pick-bird").locator("[data-bird]", { hasText: "Echo" }).click();
+    await page.getByTestId("template-list").locator("[data-template='step-up']").click();
+    const setup = page.getByTestId("journey-setup");
+    const optIn = setup.getByTestId("pod-opt-in");
+    await expect(optIn).toContainText("Pair me with buddies working on this too");
+    await expect(optIn).toContainText("A small group of 3 to 6 members on the same journey, from your chapter when possible. You can leave anytime.");
+    await expect(optIn).toHaveAttribute("aria-checked", "false");
+    await optIn.click();
+    await expect(optIn).toHaveAttribute("aria-checked", "true");
+    // Just me: a line about what buddies see.
+    await setup.getByTestId("visibility").getByRole("radio", { name: "Just me" }).click();
+    await expect(setup.getByTestId("pod-just-me")).toContainText("Your progress stays private while the journey is Just me.");
+    await page.getByRole("button", { name: "Start Echo's journey" }).click();
+    await expect(page).toHaveURL(new RegExp(`/flock/journeys/${STARTED}$`));
+    expect(journeys.starts).toHaveLength(1);
+    expect(state.calls.filter((c) => c.fn === "flock_pod_wait").map((c) => c.args)).toEqual([{ p_journey_id: STARTED }]);
+    // The journey page shows the waiting card (SpecPods screen 2).
+    const waiting = page.getByTestId("pod-waiting");
+    await expect(waiting).toContainText("We're finding your buddies");
+    await expect(waiting).toContainText("Your pod starts when 3 members are ready. 1 so far.");
+    await waiting.getByTestId("pod-leave-waitlist").click();
+    await expect(page.getByTestId("pod-waiting")).toHaveCount(0);
+    expect(state.calls.some((c) => c.fn === "flock_pod_unwait" && c.args.p_journey_id === STARTED)).toBe(true);
+    await context.close();
+  });
+
+  test("not ticked, nothing is sent; at two pods the box can't be ticked", async ({ browser, baseURL }) => {
+    const { context, page, state } = await open(browser, baseURL!, { admin: true });
+    state.pods.canWait = false;
+    await page.goto("/flock/journeys/start");
+    await page.getByTestId("pick-bird").locator("[data-bird]", { hasText: "Echo" }).click();
+    await page.getByTestId("template-list").locator("[data-template='step-up']").click();
+    const optIn = page.getByTestId("pod-opt-in");
+    await expect(optIn).toBeDisabled();
+    await expect(optIn).toContainText("You're in two buddy pods already, the most at once.");
+    await page.getByRole("button", { name: "Start Echo's journey" }).click();
+    await expect(page).toHaveURL(new RegExp(`/flock/journeys/${STARTED}$`));
+    expect(state.calls.filter((c) => c.fn === "flock_pod_wait")).toHaveLength(0);
+    await context.close();
+  });
+
+  test("the pod page: members with progress (none from Just me), the weekly check-in, the pod's feed and Leave pod", async ({ browser, baseURL }) => {
+    const { context, page, state } = await open(browser, baseURL!, { admin: true });
+    state.pods.pod = pod();
+    state.pods.members = members;
+    state.pods.feed = [{ post_id: "00000000-0000-4000-8000-0000000091a1", author_id: "00000000-0000-4000-8000-00000000c001", author_name: "Ana", space: "pod",
+      body: "Kiwi follows the stick across the perch now. Short sessions really are the trick.", status: "live", created_at: new Date(Date.now() - 86_400_000).toISOString() }];
+    await page.goto(`/flock/pods/${POD}`);
+    await expect(page.getByRole("heading", { level: 1 })).toHaveText("Step up pod");
+    await expect(page.getByText("4 members · Great Lakes")).toBeVisible();
+    const list = page.getByTestId("pod-members");
+    await expect(list.locator("[data-member]")).toHaveCount(4);
+    await expect(list.locator("[data-member]").first()).toContainText("You · Echo");
+    await expect(list.getByRole("progressbar")).toHaveCount(3);
+    await expect(list.getByRole("progressbar").first()).toHaveAttribute("aria-valuenow", "40");
+    await expect(list.locator("[data-member='00000000-0000-4000-8000-00000000c002']")).toContainText("Progress kept private");
+    await expect(list.locator("[data-member='00000000-0000-4000-8000-00000000c003']")).toContainText("Finished");
+    await expect(page.getByTestId("pod-feed")).toContainText("Kiwi follows the stick across the perch now.");
+    await expect(page.getByTestId("pod-feed")).toContainText("Buddy pod");
+    const weekly = page.getByTestId("pod-weekly");
+    await expect(weekly).toContainText("This week");
+    await expect(weekly).toContainText("How did step up go?");
+    await weekly.getByTestId("pod-check-in").click();
+    await expect(page).toHaveURL(new RegExp(`/flock/pods/${POD}/post$`));
+    await expect(page.getByTestId("pod-prompt")).toHaveText("How did step up go?");
+    // Posts only to the pod: no "Post to" choice.
+    await expect(page.getByTestId("post-to")).toHaveCount(0);
+    await page.getByTestId("post-body-input").fill("Echo stepped up from the floor twice today.");
+    await page.getByTestId("composer-post").click();
+    await expect(page).toHaveURL(new RegExp(`/flock/pods/${POD}$`));
+    expect(state.calls.find((c) => c.fn === "flock_pod_post_create")!.args).toMatchObject({ p_pod_id: POD, p_body: "Echo stepped up from the floor twice today.", p_photo_paths: [] });
+    await expect(page.getByTestId("pod-feed")).toContainText("Echo stepped up from the floor twice today.");
+    await expect(page.getByTestId("pod-weekly")).toHaveCount(0);
+    await page.getByTestId("pod-leave").click();
+    await expect(page.getByText("The others won't be told. They'll just see one fewer member.", { exact: false })).toBeVisible();
+    await page.getByTestId("pod-leave-confirm").click();
+    await expect(page).toHaveURL(/\/flock\/pods$/);
+    expect(state.calls.some((c) => c.fn === "flock_pod_leave" && c.args.p_pod_id === POD)).toBe(true);
+    await context.close();
+  });
+
+  test("You finished! and Keep going together?", async ({ browser, baseURL }) => {
+    const { context, page, state } = await open(browser, baseURL!, { admin: true });
+    state.pods.pod = pod({ my_finished: true });
+    state.pods.members = members;
+    await page.goto(`/flock/pods/${POD}`);
+    const done = page.getByTestId("pod-finished");
+    await expect(done).toContainText("You finished!");
+    await expect(done).toContainText("Stay in the pod to cheer the others on, or leave whenever you like.");
+    await done.getByRole("button", { name: "Stay and cheer" }).click();
+    await expect(page.getByTestId("pod-finished")).toHaveCount(0);
+    expect(state.calls.some((c) => c.fn === "flock_pod_finished_seen")).toBe(true);
+
+    state.pods.pod = pod({ status: "asking", asking_me: true });
+    await page.reload();
+    const ask = page.getByTestId("pod-keep-going");
+    await expect(ask).toContainText("Keep going together?");
+    await expect(page.getByTestId("pod-weekly")).toHaveCount(0);
+    await ask.getByRole("button", { name: "Yes, keep going" }).click();
+    await expect(page.getByTestId("pod-keep-going")).toHaveCount(0);
+    expect(state.calls.find((c) => c.fn === "flock_pod_keep_going")!.args).toEqual({ p_pod_id: POD, p_yes: true });
+    await context.close();
+  });
+
+  test("Flock settings → Buddy pods lists your pods; admins manage them (move, dissolve)", async ({ browser, baseURL }) => {
+    const { context, page, state } = await open(browser, baseURL!, { admin: true });
+    const OTHER = "00000000-0000-4000-8000-0000000090a2";
+    const now = new Date().toISOString();
+    state.pods.mine = [
+      { pod_id: null, journey_id: JOURNEY, kind: "waiting", status: "waiting", template_slug: "recall", template_name: "Recall", region_name: null, member_count: 0, created_at: now },
+      { pod_id: POD, journey_id: JOURNEY, kind: "journey", status: "active", template_slug: "step-up", template_name: "Step up", region_name: "Great Lakes", member_count: 4, created_at: now },
+    ];
+    state.pods.admin = [
+      { pod_id: POD, kind: "journey", status: "active", template_slug: "step-up", template_name: "Step up", region_name: "Great Lakes", member_count: 4, last_post_at: null, created_at: now, ended_at: null },
+      { pod_id: OTHER, kind: "journey", status: "active", template_slug: "step-up", template_name: "Step up", region_name: null, member_count: 3, last_post_at: null, created_at: now, ended_at: null },
+    ];
+    state.pods.adminMembers = [{ user_id: "00000000-0000-4000-8000-00000000c001", display_name: "Ana", region_name: "Great Lakes", journey_status: "active", joined_at: now, left_at: null }];
+    await page.goto("/flock/you");
+    await page.getByText("Buddy pods", { exact: true }).click();
+    await expect(page).toHaveURL(/\/flock\/pods$/);
+    const mine = page.getByTestId("my-pods");
+    await expect(mine.locator("[data-pod-state]")).toHaveCount(2);
+    await expect(mine.locator("[data-pod-state='waiting']")).toContainText("Recall pod");
+    await expect(mine.locator("[data-pod-state='waiting']")).toContainText("We're finding your buddies");
+    await expect(mine.locator("[data-pod-state='active']")).toContainText("4 members · Great Lakes");
+    await page.getByTestId("manage-pods").click();
+    await expect(page).toHaveURL(/\/admin\/pods$/);
+    await expect(page.getByTestId("admin-pod-waits")).toContainText("Step up: 2 waiting");
+    const row = page.locator(`[data-pod='${POD}']`);
+    await row.getByRole("button", { name: /Step up pod/ }).click();
+    await row.getByTestId("admin-pod-move").click();
+    await row.locator(`[data-target='${OTHER}']`).click();
+    await expect.poll(() => state.calls.find((c) => c.fn === "admin_pod_move")?.args).toEqual({ p_user_id: "00000000-0000-4000-8000-00000000c001", p_from: POD, p_to: OTHER });
+    await row.getByTestId("admin-pod-dissolve").click();
+    await page.getByTestId("confirm-delete").click();
+    await expect.poll(() => state.calls.find((c) => c.fn === "admin_pod_dissolve")?.args).toEqual({ p_pod_id: POD });
     await context.close();
   });
 });
