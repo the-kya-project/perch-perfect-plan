@@ -13,7 +13,7 @@ This is the **single ordered build list** for everything before the Flock opens,
   - **no**: it needs her before work starts.
   - **after spec**: it waits for her written spec (see "Waiting on Brittany's spec").
 - **Sizes:** S = less than one session, M = about one session (one PR), L = two to three, XL = four or more.
-- **Health features** always ship behind their own off switch, with every value in the vet-content settings file (item 1.2) marked "draft, pending vet review". Nothing that tells an owner something about their bird's health reaches real users until an avian vet approves it.
+- **Health features** always ship behind their own off switch, with every value in the vet-content settings file (item 1.2) marked "draft, pending vet review". Nothing new that tells an owner something about their bird's health reaches real users until an avian vet approves it. The live daily health check, care weight trend, emergency guides and passing guidance are approved by Brittany and stay as they are (Nov 23, 2026).
 - **Mark an item done in this file in the same PR that finishes it** (move it to "Done" at the bottom with the PR number).
 
 Where these items came from, with the detail behind each: `docs/flock/opening-scope.md`.
@@ -23,36 +23,6 @@ Where these items came from, with the detail behind each: `docs/flock/opening-sc
 ## Ready to build
 
 
-### D1.2 Weight baseline on the weight page, in shadow mode
-- **Done means:** the weight page shows the range and "still learning", a small celebration when the baseline is learned, and the alert cards. Everything is behind its own switch, on for Brittany's account only. Would-be alerts are logged to a new table nobody else sees, so they can be checked against what actually happened.
-- **Approved (Brittany, Nov 22, 2026):** the shadow-log table. It only adds a new table, on for her account only.
-- **Size:** L
-- **Depends on:** D1.1 (#521), and Brittany's read of its replay results
-- **Overnight alone:** yes (built to a held PR)
-- **Needs Brittany:** hold the PR. The health wording goes in the review queue and the vet packet. Ask in the PR whether the log covers only her birds or every bird: this item used to say every bird, and her approval says on for her account only. Until she answers, log her birds only.
-
-
-### 1.14a Card step and checkout design (switched off)
-- **Done means:** the billing screens match the approved mockups in [`docs/flock/mockups/billing/`](flock/mockups/billing/): the card step during and after the free season (member and founder), branded Stripe Checkout with the "You won't be charged until" line, the confirming screen, "You're all set" for members and founders, Membership with plan, first charge date and the card's last four digits, and the past-due alert that opens the Customer Portal. Behind `BILLING_ENABLED` (off), web only, never in the iPhone or Android app. Giving is only ever shown as "20%".
-- **Approved mockups (Brittany, Nov 23, 2026):** nine `.dc.html` files. Bracketed values in them are placeholders.
-- **Size:** L
-- **Depends on:** 1.14 (merged, #525)
-- **Overnight alone:** no (built by Brittany's request to a held PR)
-- **Needs Brittany:** held at [#533](https://github.com/the-kya-project/perch-perfect-plan/pull/533); what it needs is in the review queue.
-
-### 1.15 Kya's Crew and its sponsored rescue-adopter seat (switched off)
-- **Done means:**
-  - Crew plans exist: $37 a month billed annually ($444 a year) or $45 month to month.
-  - They count as a Flock membership and record 25% giving.
-  - Each Crew member sponsors six months for a new rescue adopter, tracked in a sponsorship count, with an admin view of seats sponsored and used.
-  - No trial.
-  - Nothing is on sale until billing starts. Spec: `docs/flock/payments-plan.md` item 6d.
-- **Approved to start (Brittany, Nov 22, 2026):** once 1.14 is merged, under the same rules: test mode only, `BILLING_ENABLED` off, nothing in the Stripe Dashboard touched.
-- **Size:** L
-- **Depends on:** 1.14 merged
-- **Overnight alone:** yes (built to a held PR)
-- **Needs Brittany:** hold the PR for her approval (payments, and the `entitlements` plan change).
-
 ### 1.17 Promo codes for memberships
 - **Done means:** promotion codes work on the card step, following the rule below. The Apple offer codes iPhone needs (whole months only) are listed for when the iPhone paywall is built.
 - **Rule (Brittany, Nov 22, 2026):** codes apply to regular Flock and Kya's Crew plans, never to the $15 founding price. A code can stack with a trial (whichever is best for the member).
@@ -61,32 +31,6 @@ Where these items came from, with the detail behind each: `docs/flock/opening-sc
 - **Depends on:** 1.14 merged
 - **Overnight alone:** yes (built to a held PR)
 - **Needs Brittany:** hold the PR for her approval (payments). Show worked examples of a code with a trial in the PR, so she can confirm how "stack" and "whichever is best" combine.
-
-### 1.7 Instagram share cards for journeys
-- **Spec:** [Instagram share cards for journeys](flock/specs/feature-specs.md#instagram-share-cards-for-journeys-17) · **Mockup:** [`SpecShareCards.dc.html`](flock/mockups/SpecShareCards.dc.html)
-- **Done means:**
-  - "Make a share card" replaces the "comes later" placeholders on a reached milestone, a finished journey and day one vs. now.
-  - A preview offers post (1080×1350) and story (1080×1920). The card shows the bird's photo and name, the journey, the milestone or "Finished!", the date reached, and "Kya & Co. · thekyaproject.com". Day one vs. now shows two photos.
-  - Share opens the phone's share sheet. On the web it downloads the image.
-  - The member's name is off unless they add it, and the bird's name is on but can be turned off. Photo metadata is removed. A "Just me" journey's card can be made only by the member who owns that journey.
-  - One design, reusing the Moments card (`src/lib/momentCard.ts`) in the Flock's colors.
-- **Size:** L
-- **Depends on:** nothing
-- **Overnight alone:** yes
-- **Needs Brittany:** merge only, under the normal rules.
-
-### 1.13a Badges: the Flock set
-- **Spec:** [Badges](flock/specs/feature-specs.md#badges-113a-and-113b) · **Mockup:** [`SpecBadges.dc.html`](flock/mockups/SpecBadges.dc.html)
-- **Done means:**
-  - Flock badges are awarded and shown on profiles: First steps, Journey finisher (1, 3 and 10), Trick star, Good neighbor, Voice of the Flock and Challenge champ (awarded once 1.10 exists). Founder and Chapter lead badges stay as they are.
-  - A small celebration marks each new badge. A Badges screen shows earned ones in color and unearned ones in gray, each with how to earn it. Members can hide badges from their Flock profile.
-  - Past activity counts, shown once as a single "Here's what you've already earned" celebration.
-  - No points, leaderboards or rankings. Simple stroke icons until final art arrives.
-  - A badge earned only through "Just me" journeys shows on the member's own Badges screen and never to anyone outside their household.
-- **Size:** L
-- **Depends on:** 1.6, 1.8
-- **Overnight alone:** yes
-- **Needs Brittany:** merge only, under the normal rules. Final badge art can replace the icons later.
 
 ### 1.10 Challenges
 - **Spec:** [Challenges](flock/specs/feature-specs.md#challenges-110) · **Mockup:** [`SpecChallenges.dc.html`](flock/mockups/SpecChallenges.dc.html)
@@ -122,6 +66,14 @@ Where these items came from, with the detail behind each: `docs/flock/opening-sc
 ---
 
 ## Needs Brittany before work starts
+
+### 1.15a Kya's Crew option on the payment screen
+- **Done means:** members can choose Kya's Crew on the Membership card step from 1.14a (#533), with its benefits listed, next to Monthly and Yearly. The save-the-card sentence (`saveCardNote`) has its own Crew line. It stays behind `BILLING_ENABLED`, in Stripe test mode.
+- **Decided (Brittany, Nov 23, 2026):** Crew is chosen on the payment screen. Crew members pay nothing until the free season ends.
+- **Size:** S
+- **Depends on:** 1.14a (#533), 1.15 (#535), and Brittany's approved mockup
+- **Overnight alone:** no. Don't start until the updated card step mockup is approved.
+- **Needs Brittany:** an approved mockup of the card step with Crew and its benefits, then the PR (payments).
 
 ### 2.5 The sitter preview never stalls after a release
 - **Done means:** the Nov 2 bug can't happen. The sitter preview catches up to a new release before it opens, and recovers a stalled frame. Checked in the iPhone Simulator with the app left open across a release (see the "Sitter preview stale-session test" memory).
@@ -160,7 +112,7 @@ Where these items came from, with the detail behind each: `docs/flock/opening-sc
   - Each partner rescue has one reusable code with an optional use limit, and no rescue login.
   - "Have a rescue code?" on the Join screen and redeem page leads to a short form (bird's name, species, adoption date), then a "being confirmed" message and a welcome once an admin approves.
   - An approved adopter gets six months in the Flock, from the end of the free season or right away if it has ended. One redemption per account, never combined with a founding spot, and no payment collected.
-  - Admins manage partners and codes, pause a code, approve or decline redemptions, and see seats available, used and waiting from the Crew sponsorship count. With no seats left the adopter still gets in, and admins see a warning when the count goes negative.
+  - Admins manage partners and codes, pause a code, approve or decline redemptions, Rescue adopters always get in free. There's no seat count (Brittany, Nov 23, 2026), so leave out the "Sponsored seats" card in the mockup.
 - **Size:** L
 - **Depends on:** 1.15
 - **Overnight alone:** no. It depends on 1.15 Kya's Crew, and it grants access.
@@ -182,6 +134,17 @@ Where these items came from, with the detail behind each: `docs/flock/opening-sc
 - **Depends on:** D2.1, a WeatherKit key, a privacy-policy line
 - **Overnight alone:** no
 - **Needs Brittany:** the WeatherKit key, the privacy line and the copy.
+
+---
+
+## Before billing opens
+
+Billing merged switched off (`BILLING_ENABLED` off, Stripe test mode only). Before it's turned on for anyone:
+
+- [ ] Build the founder release job.
+- [ ] Save the test-mode Customer Portal setup in Stripe.
+- [ ] Run two test checkouts: one normal, one in the free season's last 49 hours.
+- [ ] Have a native speaker read the Dutch.
 
 ---
 
@@ -217,7 +180,7 @@ The launch PR itself (1.18) is already merged dark. What's left before opening i
 ### D1.3 Weight baseline alerts on for everyone
 - **Done means:** the vet-approved values are in the settings file and the switch is on for everyone.
 - **Size:** S
-- **Depends on:** D1.2, the vet's sign-off
+- **Depends on:** D1.2 (#549), the vet's sign-off
 - **Overnight alone:** no
 - **Needs Brittany:** the vet's approval and her go-ahead.
 
@@ -307,7 +270,12 @@ The launch PR itself (1.18) is already merged dark. What's left before opening i
 
 ## Done
 
-- **1.4** The daily `flock-purge` hook first runs `flock_moderation_purge` (`20261123193000_flock_removed_purge.sql`, service role only): posts and comments a reviewer removed 180+ days ago move, with the comments under them, into 1.3's `flock_deleted_items` already due, so the same run deletes them and their photos; reports closed 180+ days ago are deleted. Removed journey updates are left for Brittany's call. Pinned in `supabase/checks/flock_moderation_checks.sql` and `npm run test:flock-purge`. Held for Brittany (it deletes data): #534.
+- **1.14a** Card step and checkout design, switched off with billing (`BILLING_ENABLED` off, web only, never in the iPhone or Android app): the screens from the nine approved mockups in [`docs/flock/mockups/billing/`](flock/mockups/billing/), namely the card step during and after the free season (member and founder), branded Stripe Checkout with the "You won't be charged until" line, the confirming screen, "You're all set" for members and founders, Membership with plan, first charge date and the card's last four, and the past-due alert that opens the Customer Portal; English and Dutch. Giving is only ever shown as "20%". Brittany approved the screens and the Dutch (Nov 24, 2026); what's left before billing opens is under "Before billing opens": #533.
+- **D1.2** The weight baseline on the weight page, behind the `weight_baseline` health switch (off; set it to `admins` for Brittany's account): the usual range for the latest weigh-in's kind or "still learning", a one-time "We've learned [Bird]'s usual weight" card, and one alert card at most (sudden drop confirmed, weight has shifted, hard loss, weigh again, keep an eye on this, worth watching), all observational, with no "call your vet". Brittany's Nov 23 decisions are in `WEIGHT_BASELINE_RULES` (draft): personal levels from each bird's wobble with their limits, 10-day re-weighs, the 14-day "keep an eye" window, the sudden drop (10%, 7% under 100 g, at least 2 g, confirmed within 3 days). The owner's optional ideal weight range (`bird_ideal_weights`, its own field on the weight page, never shown to sitters) only quiets the two lower alerts and their "weigh again". The hourly job `weight-baseline-shadow-hourly` logs what the baseline would have said about every weigh-in, for every bird, with and without the ideal range, to `weight_baseline_shadow` (service role only), after the fact so it never blocks a weigh-in (`20261124110000_weight_baseline_shadow.sql`, `src/lib/weightBaselineShadow.ts`). Pinned by `npm run test:weight-baseline`, `npm run test:health-rules` and `supabase/checks/weight_baseline_shadow_checks.sql`. Held for Brittany (health wording, the vet packet, a production migration and cron job): #549.
+- **1.15** Kya's Crew, switched off with billing and test mode only: plans `crew_monthly` / `crew_annual` (the `entitlements` plan check widened), prices from Stripe (`STRIPE_PRICE_CREW_MONTHLY` / `_YEARLY`), counted by `is_flock_member()`, 25% giving recorded on the row (`entitlements.giving_rate`, 20% for other paid rows), and no trial (`20261123203000_kyas_crew.sql`, `supabase/checks/crew_checks.sql`, `npm run test:billing`). No card step offers Crew yet (1.15a). Brittany's decisions (Nov 23, 2026): Crew pays nothing until the free season ends, like every member; sponsored seats aren't tracked at all, because that's marketing language, and rescue adopters always get in free. Held for Brittany (payments, the plan check): #535.
+- **1.13a** Flock badges: First steps, Journey finisher (1, 3 and 10), Trick star, Good neighbor, Voice of the Flock and Challenge champ (shown, not yet awarded: 1.10 adds its rule to `private.flock_badge_levels`). `flock_my_badges` works out and records what a member has earned when they open the Flock; the first time, their history is recorded together and Today shows one "Here's what you've already earned" (two or more), then a "Badge earned" card for each new badge or level. The Badges screen (`/flock/you/badges`, from Flock settings) shows earned ones in color and the rest in gray with how to earn each. Profiles show them as pills beside Founder and Chapter lead through `flock_member_badges`, which counts only community journeys and leaves everything out when hidden ("Show my badges on my profile." on Edit profile) or blocked either way. No points or rankings; the mockup's stroke icons until final art (`20261124013000_flock_badges.sql`, `src/lib/flockBadges.ts`). Pinned by `supabase/checks/flock_badges_checks.sql`, `npm run test:flock-shell` and `e2e/flock.shell.ts`: #546.
+- **1.7** "Make a share card" on a reached milestone (the celebration), a finished journey (its page) and Day one vs. now opens `/flock/journeys/<id>/card`: a post (1080×1350) or story (1080×1920) PNG in the Flock's forest and lime with the bird's photo (two clip stills for Day one vs. now), the bird's name (on, can be turned off), the journey, the milestone or "Finished!", the date, the member's name only if added, and "Kya & Co. · thekyaproject.com". Share opens the share sheet, or downloads on the web. Photos are redrawn into a fresh PNG, so no metadata. Only the bird's household can make one (`canMakeJourneyCard`, and `getJourneyCardPhotos` checks `is_mine`). Reuses the Moments card's canvas and share code (`src/lib/journeyCard.ts`, `src/lib/momentCard.ts`). Pinned by `npm run test:flock-shell` and `e2e/flock.shell.ts`: #544.
+- **1.4** The daily `flock-purge` hook first runs `flock_moderation_purge` (`20261123193000_flock_removed_purge.sql`, service role only): posts and comments a reviewer removed 180+ days ago move, with the comments under them, into 1.3's `flock_deleted_items` already due, so the same run deletes them and their photos; reports closed 180+ days ago are deleted. Removed journey updates stay as they are and are not deleted after 180 days (Brittany, Nov 23, 2026). Pinned in `supabase/checks/flock_moderation_checks.sql` and `npm run test:flock-purge`. Approved and merged by Brittany (Nov 23, 2026): #534.
 - **2.4** Every update reload (the version check's and the service worker's alike) first expires Vercel's Skew Protection pin (`__vdpl`) with a POST to the new `/api/public/unpin`, waiting at most 3 seconds, then reloads, so the reloaded page gets the new build's files; Skew Protection stays on and no Vercel setting changed (option B). Pinned by `npm run test:release-check`: #531 (held for Brittany's merge; 2.5's Simulator check covers it hands-on).
 - **1.14** Billing foundation, switched off (`BILLING_ENABLED` must be exactly `true`) and Stripe test mode only, enforced in code: `billing_customers`, `billing_events`, `entitlements.product_id` / `will_renew` / `cancel_at_period_end`, `founding_claims.released_at` / `forfeited_at`, and the service-role functions the webhook writes through (`20261123180000_billing_foundation.sql`, `supabase/checks/billing_checks.sql`); the webhook `/api/public/stripe/billing` (`STRIPE_BILLING_WEBHOOK_SECRET`, re-reads each subscription, idempotent on the event id); the card step on Membership (`/flock/you/membership`, $0 until the free season's end, founders get $15, never in the native app); `npm run test:billing`. Held for Brittany (payments): #525. Approved and merged by Brittany (Nov 23, 2026), PR #525.
 - **1.8** Do good voting and the founding vote: an open vote is a card on Today and at the top of Do good (founders-only ones only for founders, with a Founders pill). Members vote once, and it's final (enforced in the database), seeing only how many have voted. The vote shares the donation: every choice gets a guaranteed 10%, the rest is split by share of the votes, always totalling 100%, evenly if no one votes, and results always show. Founders-only votes (Q&As, chapters) have no donation and show plain percentages and the top choice. Admins write drafts (question, description, 2–8 choices with a logo or photo, audience, close date), open, close early, extend, announce and see counts at any time at `/admin/votes`; nobody can see how a member voted. Matches Brittany's approved mockups in `docs/flock/mockups/voting/`. Behind the Flock gate; nothing seeded (the first votes are Brittany's content): #529.

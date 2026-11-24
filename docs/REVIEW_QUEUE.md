@@ -19,6 +19,84 @@ Format:
   - After: "<new wording>"
 ```
 
+### [#546](https://github.com/the-kya-project/perch-perfect-plan/pull/546) · 1.13a Badges: the Flock set
+All new. Nobody but admins sees them while the Flock is closed. The badge names, "New: badges", "Here's what you've already earned", "See all badges", "Not now", "Badge earned", "Flock badges", "x of y earned" and "Trick star: finish any tricks journey." are the mockup's or the spec's words. The rest is agent wording.
+- **Where:** `flock.badges.name.*` (everywhere a badge shows)
+  - Before: new
+  - After: "First steps", "Journey finisher", "Trick star", "Good neighbor", "Voice of the Flock", "Challenge champ"
+- **Where:** `flock.badges.oneJourney` / `.journeysN` (Journey finisher's level, under the tile and after its name)
+  - Before: new
+  - After: "1 journey" / "{{n}} journeys" (shows as "Journey finisher · 3 journeys")
+- **Where:** `flock.badges.launchLabel` / `.launchTitle` / `.launchLine` (the one-time celebration on Today)
+  - Before: new
+  - After: "New: badges" / "Here's what you've already earned" / "You've already done a lot in the Flock. These count." (the mockup's line, "You've been caring for Juno and the flock for a long time. These count.", is about care badges, which come with 1.13b)
+- **Where:** `flock.badges.seeAll` / `.notNow` / `.gotIt` (celebration buttons)
+  - Before: new
+  - After: "See all badges" / "Not now" / "Got it"
+- **Where:** `flock.badges.earnedLabel` (the "Badge earned" card on Today)
+  - Before: new
+  - After: "Badge earned"
+- **Where:** `flock.badges.earned.*` (the line on the "Badge earned" card)
+  - Before: new
+  - After: "You finished your Flock profile and joined your chapter." / "You finished your first journey." / "You've finished {{n}} journeys." / "You finished a tricks journey." / "Something you shared to help other birds was approved." / "You voted in a Do good vote." / "You completed a challenge."
+- **Where:** `flock.badges.title` / `.count` / `.flockSet` / `.loading` (Badges screen, and the Badges row in Flock settings)
+  - Before: new
+  - After: "Badges" / "{{earned}} of {{total}} earned" / "Flock badges" / "Loading your badges"
+- **Where:** `flock.badges.how.*` (Badges screen, under the grid, for the badge tapped)
+  - Before: new
+  - After: "First steps: finish your Flock profile and join your chapter." / "Journey finisher: finish a journey. There are levels at 3 and 10 finished journeys." / "Trick star: finish any tricks journey." / "Good neighbor: have a Do good post approved, or a place you suggested added to your chapter." / "Voice of the Flock: vote in a Do good vote." / "Challenge champ: complete a Flock challenge."
+- **Where:** `flock.badges.earnedOn` / `.earnedOnLevel` / `.nextLevel` (Badges screen, for an earned badge)
+  - Before: new
+  - After: "Earned {{date}}." / "{{level}} reached {{date}}." (shows as "3 journeys reached November 20, 2026.") / "Next level at {{n}} journeys."
+- **Where:** `flock.badges.footer` (Badges screen, bottom)
+  - Before: new
+  - After: "Badges show on your Flock profile. A badge from "Just me" journeys stays here, for you. You can hide your badges on Edit profile."
+- **Where:** `flock.badges.toggleLabel` / `.toggleHint` / `.see` / `.toggleError` (Edit profile, the new Badges switch)
+  - Before: new
+  - After: "Show my badges on my profile." / "Members see the Flock badges you've earned on your profile. You can change this any time." / "See your badges" / "That didn't save. Try again."
+- **Where:** `flock.privacy.see.badges` (Privacy, "Members can see")
+  - Before: new
+  - After: "Your Flock badges, unless you hide them. Badges from "Just me" journeys stay with you."
+
+### [#544](https://github.com/the-kya-project/perch-perfect-plan/pull/544) · 1.7 Instagram share cards for journeys
+All new, on the share card screen (`/flock/journeys/<id>/card`) and the buttons that open it. Nobody but admins sees them while the Flock is closed. "Make a share card", "Post", "Story", "Show [bird]'s name", "Add my name", "Share", the web hint and "Kya & Co. · thekyaproject.com" are the mockup's words. The rest is agent wording. The mark is drawn on the card in English, not translated.
+- **Where:** `flock.journeys.shareCard.make` (milestone celebration, finished journey page, Day one vs. now)
+  - Before: new
+  - After: "Make a share card"
+- **Where:** `flock.journeys.shareCard.title` (screen title)
+  - Before: new
+  - After: "Share card"
+- **Where:** `flock.journeys.shareCard.post` / `.story` (size chips)
+  - Before: new
+  - After: "Post" / "Story"
+- **Where:** `flock.journeys.shareCard.showBird` / `.addMe` (switches)
+  - Before: new
+  - After: "Show {{name}} name" (shows as "Show Echo's name") / "Add my name"
+- **Where:** `flock.journeys.shareCard.share` / `.webHint`
+  - Before: new
+  - After: "Share" / "On the web, this downloads the image so you can post it." (shown only where the browser can't share files)
+- **Where:** `flock.journeys.shareCard.saved` (after a download)
+  - Before: new
+  - After: "The card is in your downloads, ready to post."
+- **Where:** `flock.journeys.shareCard.failed`
+  - Before: new
+  - After: "We couldn't make the card. Try again in a moment."
+- **Where:** `flock.journeys.shareCard.unavailable` (someone else's journey, a milestone not reached yet)
+  - Before: new
+  - After: "A share card can be made only for your own birds' journeys."
+- **Where:** on the card, a milestone: `.milestoneEyebrow`, the title (the celebration's existing "{{name}} {{done}}!" / "{{name}} did it!"), `.lineNoName`, `.lineCustomNoName`, `.reachedOn`
+  - Before: new
+  - After: "{{skill}} · milestone {{n}}"; with the bird's name off, "{{done}}!" (e.g. "Stepped on with one foot!") or, for a custom journey, "Milestone reached!"; "Reached {{date}}"
+- **Where:** on the card, a finished journey: `.finishedEyebrow`, `.finishedTitle`, `.finishedTitleNoName`, `.finishedOn`
+  - Before: new
+  - After: "{{skill}} · Finished!"; "{{name}} learned {{skill}}" / "Learned {{skill}}"; "Finished {{date}}"
+- **Where:** on the card, day one vs. now: `.compareEyebrowFinished`, `.compareTitle`, `.compareTitleNoName`
+  - Before: new
+  - After: "{{skill}} · finished" (just the journey name while it's going); "{{name}}, day one and now" / "Day one and now"
+- **Where:** on the card, the member's name when added: `.from`
+  - Before: new
+  - After: "From {{name}}"
+
 ### [#533](https://github.com/the-kya-project/perch-perfect-plan/pull/533) · 1.14a Card step and checkout design
 Held for Brittany. Nobody sees these while `BILLING_ENABLED` is off.
 - **Where:** every billing screen and Stripe's page, Dutch (written Nov 23, 2026 at Brittany's go-ahead; all new except `flock.you.membership`, which had no Dutch before)
@@ -954,6 +1032,67 @@ No new strings: every line reuses existing wording, in new places (admins only).
 
 ## Decisions agents made
 
+### [#533](https://github.com/the-kya-project/perch-perfect-plan/pull/533) · 1.14a Card step and checkout design · Brittany's decisions, Nov 24, 2026
+- **Approved:** the screens and the Dutch. Merged switched off (`BILLING_ENABLED` off), the same way #525 did, once every required check passed.
+- **Before billing opens:** the founder release job, the test-mode Customer Portal setup, two test checkouts (one normal, one in the free season's last 49 hours) and a native speaker's read of the Dutch are a checklist in `docs/BACKLOG.md` ("Before billing opens").
+- **Decision (merging `main`):** the checkout now accepts #535's Crew choices (`CHECKOUT_CHOICES`) along with the locale, and keeps #533's branded Checkout and notes. The card step still offers only the Flock plans (Crew on it is 1.15a).
+- **Decision:** the save-the-card note now says "a year" for `crew_annual` as well as `annual`. Before, a yearly Crew plan would have read "a month". No wording changed.
+
+### [#549](https://github.com/the-kya-project/perch-perfect-plan/pull/549) · D1.2 Weight baseline on the weight page, in shadow mode
+- **Decision:** The top tier is now called `shifted` everywhere in code, the shadow log and the replay report (it was `call_vet_today`), so "Call your vet today" isn't used as a label anywhere, as you decided. The replay report's line now reads "Weight has shifted (top level)".
+- **Decision:** While a bird is still learning, only the hard alert (the fixed 10%, against the month before) and the sudden drop can fire. That's how I read "while a bird is still learning, the fixed draft values apply". The fixed 2.5% / 5% / 10% stay in the rules file for that reading. Once learned, the hard alert uses the same personal level as the top tier.
+- **Decision:** Each level is worked out from the wobble rounded to two decimals (e.g. 1.48% → 2.96%), so every shadow-log row's levels follow exactly from its own `wobble_pct`.
+- **Decision:** "A re-weigh counts within 10 days" also moves the hard alert's comparison window while still learning. It now uses the weigh-ins from 30 to 10 days before, where it was 30 to 3. A bird with under 10 days of history gets no hard alert yet, but the sudden drop still covers it.
+- **Decision:** The sudden drop is confirmed when the weigh-in before was low against its own comparison (the median of up to 3 earlier ones from the 7 days before it), it was within 3 days, and the new one is low against that same comparison. So the comparison is always from before the drop started. It's reported "about X% lighter than a few days ago" against that comparison.
+- **Decision:** The shadow log runs hourly (`weight-baseline-shadow-hourly`, at :47, production only, like the other hooks). It reads saved weigh-ins rather than hooking into each save, so it covers every way a weight is logged (the weight page, the daily check, a sitter's check, the care plan) and can't slow down or block one. It picks up weigh-ins logged in the last 14 days that it hasn't logged yet. Each row is what the baseline said as of that weigh-in's own time. An edited weigh-in keeps its first row. A deleted weigh-in's row stays. Deleting the bird removes them all. `rules_version` is a fingerprint of the rule values, so rows from before and after a change can be told apart.
+- **Decision:** The ideal weight range is its own table (`bird_ideal_weights`), not new columns on `birds`, so the care plan and the sitter page never load it. The owner reads and writes it, and the household can read it (their weight page applies the same quieting). Its field sits on the weight page, owner only, behind the same switch, as "Ideal weight range (optional)" with a From / To pair. It's not in the care plan's Health step, so it can't be mistaken for the "Healthy range" sitters see. There's no mockup for it.
+- **Decision:** The weight page shows at most one alert card, most serious first: a confirmed sudden drop, weight has shifted, the hard alert, a sudden drop's "weigh again", a tier's "weigh again", keep an eye on this, then worth watching. The card sits above the chart, with the usual range below it. The celebration shows once per bird per device (remembered in the browser).
+- **Decision:** No Dutch for the new lines yet. Dutch readers see the English. Health wording waits for the vet review anyway.
+- **Draft wording (all new, draft, pending vet review; your three lines are used word for word):**
+  - "Weight dropped quickly" / "A second weigh-in shows the same change: [Bird] is about [X]% lighter than a few days ago. This is a big change in a short time. Remember, birds are excellent at hiding illness. Take note of how [Bird] is eating and acting today." (yours)
+  - "Weight has shifted" / "We've noticed [Bird]'s weight has shifted. [Bird] is about [X]% below usual. Have you noticed any changes in eating or energy? It can help to notice whether [Bird] is eating less, quieter than usual, or fluffed up." (yours)
+  - Hard alert while still learning, same title: "We've noticed [Bird]'s weight has shifted. [Bird] is about [X]% below the last few weeks. Have you noticed …" (yours, with "below the last few weeks", since there's no "usual" yet)
+  - "Weigh again" / "[Bird]'s weight is about [X]% lower than the last few days. Weigh [Bird] again to check the reading." (yours)
+  - "Weigh again" / "This weigh-in is lower than usual for [Bird]. Weigh [Bird] again to check the reading."
+  - "Keep an eye on this" / "[Bird] has been about [X]% below usual for a while. Take note of how [Bird] is eating and acting over the next few days."
+  - "Worth watching" / "[Bird] is about [X]% below usual. Keep weighing as you normally do."
+  - "We've learned [Bird]'s usual weight" / "Thanks for weighing [Bird] so regularly. From now on, each weigh-in is compared with what's usual for [Bird]." / "Got it"
+  - "Usual weight" / "[Bird] usually weighs [low]–[high] g." (also "Before a meal, …" and "After a meal, …")
+  - "Still learning" / "We're still learning [Bird]'s usual weight: [n] of 7 weigh-ins so far, over at least 14 days." (also before / after a meal)
+  - "Ideal weight range (optional)" / "Private to you. It isn't shown to sitters or anywhere else." / "From (g)" / "To (g)" / "Save" / "Remove" / "Cancel" / "Add" / "Saved." / "Removed." / "Couldn't save the range." / "Enter two weights between 1 and 5000 grams, the lower one first."
+- **To change it:** values in `WEIGHT_BASELINE_RULES` (`src/lib/healthRules.ts`); wording under `weightBaseline.` in `src/locales/en.jsonc`; the card order in `baselineCard` (`src/lib/weightBaseline.ts`).
+
+### D1.2 Weight baseline shadow mode · Brittany's decisions after the replay, Nov 23, 2026
+- **Decision (Brittany's):** She read the D1.1 replay. The shadow log covers every bird, the typed normal weight never replaces the learned one, and alerts use each bird's own range with limits. A separate sudden-drop alert (10%, or 7% under 100 g) always applies. Owners can enter an optional ideal weight range, which quietly decides whether the two lower alerts show and is never presented as a goal. Weight alerts stay observational and never tell an owner to go to or call the vet. The full rules and draft lines are under D1.2 in `docs/BACKLOG.md`.
+- **Why:** a fixed percent treats birds with very different natural swings alike, the draft timing missed sustained drops in owners who weigh every few days, a learned "usual" can be heavier than a bird's healthiest weight, and a big overnight loss from a high weight wouldn't have alerted at all. Kya & Co. is a health app, so the ideal weight informs alerts without turning into a weight-loss or weight-gain goal.
+- **For the vet review:** the personal-range multiples and limits, the 3.5% "Worth watching" ceiling, the sudden-drop levels with the 100 g cutoff and 7-day comparison, which alerts the ideal range may quiet, and whether observational wording is enough for a confirmed sudden loss.
+- **To change it:** the D1.2 entry in `docs/BACKLOG.md` before it's built, then `WEIGHT_BASELINE_RULES` in `src/lib/healthRules.ts`.
+
+### [#546](https://github.com/the-kya-project/perch-perfect-plan/pull/546) · 1.13a Badges: the Flock set
+- **Decision:** Badges are worked out when a member opens Today, Flock settings or the Badges screen (`flock_my_badges`), not by triggers on every table. So "the moment it's earned" means the next time they open the Flock, usually seconds later. It keeps the badge rules in one function and leaves the posts, journeys, votes and places code untouched.
+- **Decision:** "Past activity counts": the first time a member's badges are worked out, everything their history earned is recorded together, and Today shows one "Here's what you've already earned" when that's two or more. With just one (a newcomer who's just finished their profile), it's the small "Badge earned" card instead, since "already earned" would read oddly.
+- **Decision:** The launch celebration is a centered card over Today (a dialog), as the mockup shows it filling the screen. Each later badge is its own "Badge earned" card at the top of Today, styled like the mockup's care-app card (screen 3), with "See all badges" and "Got it". Opening the Badges screen counts as seeing them all.
+- **Decision:** The Badges screen shows only the Flock set for now ("x of 6 earned"); the mockup's "Care badges" section arrives with 1.13b. Founder and Chapter lead stay as they were and aren't counted in the six. The how-to-earn line shows for the badge tapped; it starts on the first one not earned yet, as the mockup shows Trick star.
+- **Decision:** On a profile, badges are small lime pills with the icon and name (and Journey finisher's level), next to the existing Founder and Chapter lead pills. The mockup doesn't show a profile.
+- **Decision:** "Members can hide badges from their Flock profile in settings": a "Show my badges on my profile." switch on Edit profile, on by default, below the founding members switch and built the same way. Hidden means hidden from everyone, your own profile view included; your Badges screen always shows them.
+- **Decision:** "A badge earned only through 'Just me' journeys ... never to anyone outside their household": a profile counts only community journeys for Journey finisher and Trick star, worked out fresh each time, so the level shown can be lower than your own (3 finished, 1 shared: "1 journey"). It's stricter than the spec, which would let the bird's co-carers see it: a profile shows the same thing to everyone.
+- **Decision:** Journey finisher counts journeys the member started (`created_by`) and finished, templates and custom ones alike. A co-carer's finished journey on a shared bird counts for whoever started it.
+- **Decision:** Good neighbor counts a Do good post that's live after review, or a place the member suggested that someone else approved. A chapter lead adding a listing directly doesn't count.
+- **Decision:** Voice of the Flock counts a ballot in any vote, founders-only ones included, since they're on Do good too.
+- **Decision:** Challenge champ shows in gray with "complete a Flock challenge" and nothing awards it; 1.10 adds the rule to `private.flock_badge_levels`.
+- **Decision:** Once earned, a badge stays earned, even if the post is later removed or the vote deleted. A higher Journey finisher level replaces the lower one and is celebrated again.
+- **Decision:** No analytics event for badges; the spec doesn't ask for one.
+- **To change it:** the rules are `private.flock_badge_levels` (`20261124013000_flock_badges.sql`); the words and which celebration shows are `src/lib/flockBadges.ts`; the screens are `src/components/flock/BadgeParts.tsx` and `src/routes/_authenticated/flock.you.badges.tsx`.
+
+### [#544](https://github.com/the-kya-project/perch-perfect-plan/pull/544) · 1.7 Instagram share cards for journeys
+- **Decision:** Only the bird's household can make a card, for any journey, community ones included. The spec only rules out other people's "Just me" journeys, but a card of someone else's bird posted to Instagram felt like it needed the owner's say. The server checks this too for day one vs. now.
+- **Decision:** A finished journey's "Make a share card" sits on the journey page once it's finished, not on the "Journey complete" screen. Leaving that screen would lose a half-written tip for the next person, and "Finish" lands on the journey page anyway. The mockup has no finished screen.
+- **Decision:** On the milestone celebration, "Make a share card" is the sunflower button and "Share with the community" became the white one under it, as in the mockup. Its wording stays "Share with the community" rather than the mockup's "Post to the Flock", since this item doesn't cover that button.
+- **Decision:** The card adds the date reached ("Reached Nov 22", "Finished Nov 22") under the title, which the spec asks for and the mockup's sample card leaves out. The member's name, when added, is "From [name]" above the Kya & Co. mark. Day one vs. now shows the date under each photo, as in the mockup.
+- **Decision:** Day one vs. now uses a still from each clip (Cloudflare's thumbnail, fetched on the server), since its "photos" are clips. It opens in story size, as in the mockup; the others open as a post.
+- **Decision:** The card's text is drawn in DM Sans and Newsreader, the app's fonts, rather than the Moments card's system font, to match the mockup. It's the Moments card's approach (a canvas PNG, the same share-or-download code) in the Flock's forest and lime.
+- **To change it:** `src/lib/journeyCard.ts` (layout, who may make one) and `src/routes/_authenticated/flock.journeys.$journeyId.card.tsx` (wording).
+
 ### [#529](https://github.com/the-kya-project/perch-perfect-plan/pull/529) · 1.8 Do good voting: approved mockups
 - **Decision (Brittany's):** Founders-only votes keep plain results: each choice's percentage and the top choice, with no donation or 10% wording. All-member votes share the donation. This replaces the earlier #529 notes below about a winner, changing a vote and the 10-vote minimum.
 - **Decision:** Rounding uses largest remainder, so shares always total exactly 100%. Leftover points go to the largest remainder, then more votes, then the earlier choice. With no votes and three choices, that's 34 / 33 / 33.
@@ -972,6 +1111,38 @@ Format:
 - **To change it:** <what would need to change>
 ```
 
+### [#535](https://github.com/the-kya-project/perch-perfect-plan/pull/535) · 1.15 Kya's Crew (switched off)
+- **Decision:** "No trial" means Crew never gets the 14-day trial planned for after the free season (6f, not built). During the free season a Crew card goes on at $0 until the season's end, like every membership; after it, Crew is charged the day the card goes on.
+- **Why:** the Flock is "free for everyone" until the season's end, and Crew "includes everything in a Flock membership". The $0 period is the free season, not a trial. Asked in the PR in case you meant Crew to be charged at once.
+- **Brittany's answer (Nov 23, 2026):** confirmed. Crew members pay nothing until the free season ends, the same as every other member.
+- **To change it:** in `startBillingCheckout` (`src/lib/billing.functions.ts`), drop `trial_end` for `isCrewPlan(plan)`; `planGetsTrial` in `src/lib/billing.ts` is where 6f's trial must skip Crew.
+
+### [#535](https://github.com/the-kya-project/perch-perfect-plan/pull/535) · 1.15 Kya's Crew (switched off)
+- **Decision:** One six-month seat per Crew subscription, added the first time it's recorded as active (its first payment went through), never a second for the same subscription. Renewals add none. A seat stays when the membership ends or the account is deleted. A regular member who switches the same subscription to Crew sponsors a seat at that point.
+- **Why:** the spec says "each Crew member sponsors six months"; once per membership is the narrowest reading, and a seat is only counted once it's paid for. Asked in the PR whether a yearly renewal should add another.
+- **Brittany's answer (Nov 23, 2026):** a renewal does not sponsor another seat. The one-seat-per-new-Crew-member count is a number for marketing only. Rescue adopters always get in free, and the count never blocks one.
+- **Brittany's decision (Nov 23, 2026):** seats aren't tracked at all. The sponsorship tables were removed from this PR before it merged.
+
+### [#535](https://github.com/the-kya-project/perch-perfect-plan/pull/535) · 1.15 Kya's Crew (switched off)
+- **Decision:** A founder who picks Crew gets Crew, not the founding price, and their founding claim is left as it is (not released or forfeited).
+- **Why:** Crew is its own plan above the Flock's price. Forfeiting a founding spot is only for a founding membership that ends.
+- **To change it:** `checkoutPlan` in `src/lib/billing.ts`.
+
+### [#535](https://github.com/the-kya-project/perch-perfect-plan/pull/535) · 1.15 Kya's Crew (switched off)
+- **Decision:** Giving is recorded as a rate on each Stripe row (`entitlements.giving_rate`, 0.25 for Crew and 0.20 for the other plans, like `gift_purchases.giving_rate`), not as amounts. Rows billing doesn't write keep it empty.
+- **Why:** nothing records what members pay yet. The rate is what the spec asks to record, and amounts can be added when invoices are stored.
+- **To change it:** `private.membership_giving_rate` (a new migration) and `givingRate` in `src/lib/billing.ts` together.
+
+### [#535](https://github.com/the-kya-project/perch-perfect-plan/pull/535) · 1.15 Kya's Crew (switched off)
+- **Decision:** The admin view is a new page, `/admin/crew` (admins only, English, like `/admin/gifts`): seats sponsored, used and available, Crew members now, a red line when more seats are used than sponsored, and each seat's date, Crew plan and whether the sponsor is still in the Crew. No names or emails. Nothing links to it yet. Seats given are a separate table, `crew_seat_uses`, which only 1.16 will write.
+- **Why:** the item asks for "an admin view of seats sponsored and used" and 1.16 for a warning below zero. There's no mockup, so it follows the existing admin list pages.
+- **Brittany's decision (Nov 23, 2026):** not needed. `/admin/crew` was removed from this PR before it merged.
+
+### [#535](https://github.com/the-kya-project/perch-perfect-plan/pull/535) · 1.15 Kya's Crew (switched off)
+- **Decision:** No Crew products for the App Store yet, and no Crew tile on the card step. Checkout accepts `crew_monthly` and `crew_annual`; nothing in the app sends them.
+- **Why:** iPhone purchases come with the launch build (RevenueCat), and the card step has no Crew design. #533 is redesigning that screen.
+- **Brittany's answer (Nov 23, 2026):** members choose Crew on the payment screen (the card step from 1.14a, #533), with its benefits listed. That waits on her approved mockup: backlog 1.15a.
+- **To change it:** add Crew to the card step once there's a design (`CHECKOUT_CHOICES` is ready).
 ### [#533](https://github.com/the-kya-project/perch-perfect-plan/pull/533) · 1.14a Dutch
 - Kept as names, in English: "the Flock", "Do good" and "Founding 50". "Free season" is "gratis periode" and "chapter" is "afdeling", as on the Dutch gift pages.
 - Dates, Stripe's Checkout and the Customer Portal follow the language the member is using. Prices stay in US dollars, because that's what Stripe charges.
@@ -1001,7 +1172,7 @@ Format:
 - **To change it:** `billingDay` and `checkoutDesign` in `src/lib/billing.ts`.
 
 ### [#534](https://github.com/the-kya-project/perch-perfect-plan/pull/534) · 1.4 Removed content and closed reports are deleted after 180 days
-- **Decision:** What counts: posts and comments a reviewer removed ("Remove it" in the review queue), timed from the removal (`flock_moderation.updated_at`), and reports closed as kept or removed, timed from `resolved_at`. Removed content goes through 1.3's hold, already due, so the same daily run deletes its photos with 1.3's rules (a photo still used elsewhere is kept, and a failed delete waits a day). The comments under a removed post, and the replies under a removed comment, go with it. Left out: removed journey updates (asked in Held), Do good posts a reviewer declined (a review result, not a removal; they stay visible to their author only), content still waiting for review, and open reports.
+- **Decision:** What counts: posts and comments a reviewer removed ("Remove it" in the review queue), timed from the removal (`flock_moderation.updated_at`), and reports closed as kept or removed, timed from `resolved_at`. Removed content goes through 1.3's hold, already due, so the same daily run deletes its photos with 1.3's rules (a photo still used elsewhere is kept, and a failed delete waits a day). The comments under a removed post, and the replies under a removed comment, go with it. Left out: removed journey updates (Brittany, Nov 23, 2026: they stay as they are and are not deleted after 180 days), Do good posts a reviewer declined (a review result, not a removal; they stay visible to their author only), content still waiting for review, and open reports.
 - **Why:** D9 says "content removed by reviewers, and reports, are kept for 180 days, then deleted"; the item says "closed reports" and "180 days after they were resolved". Reusing 1.3's hold means a single path deletes Flock photos.
 - **To change it:** `private.flock_moderation_purge` in `20261123193000_flock_removed_purge.sql` (a new migration); the hold is `private.flock_removed_hold()`.
 
@@ -1182,7 +1353,6 @@ Format:
 - **Decision:** Seven switches: `daily_health_check`, `care_weight_trend`, `emergency_guides`, `passing_guidance`, `diet_conversion`, `vet_nudge` (all start at `everyone`, so nothing changes) and `weight_baseline` (starts `off`, for D1). None is read by the app yet. "Everyone" means every signed-in person, and the server for sit links; signed-out visitors can't call the switch directly.
 - **Why:** wiring a live feature to a switch means deciding what users see when it's off, which the backlog doesn't say. Starting at everyone keeps the merge invisible.
 - **To change it:** add or rename rows in a new migration and in `src/lib/healthFeatures.ts`; wiring a feature is its own PR.
-- **Still open after the merge:** whether to wire the live features (daily health check, weight trend, emergency guides, passing guidance) to their switches, and what a switched-off one looks like. `npm run test:health-rules` isn't in CI yet (one line in `.github/workflows/hydration.yml`; runs can't push workflow changes).
 
 ### [#515](https://github.com/the-kya-project/perch-perfect-plan/pull/515) · 1.2 Vet-content settings file and a switch for every health feature · approved and merged by Brittany, Nov 22, 2026
 - **Decision:** Most sources say "Kya & Co. starting value; no published source", because that's what they are. Only the baseline's 10% "call your vet today" level and the poison lines cite outside sources. Wording isn't copied into the file: it lists the language keys for each area, and a test checks those keys exist. The app's code keeps its own copies of the numbers, and the test fails if they drift from the file, so this PR doesn't touch the live triage or weight code.
@@ -1311,8 +1481,12 @@ Format:
 - **Needs:** <the decision, approval or read, in one or two lines>
 ```
 
-### [#533](https://github.com/the-kya-project/perch-perfect-plan/pull/533) · 1.14a Card step and checkout design
-- **Needs:** (1) your read of the screens and wording; (2) the founder release job built before billing opens, because the founder screen promises it and it doesn't exist yet; (3) a saved test-mode Customer Portal setup in Stripe, then two real test checkouts, one normal and one inside the season's last 49 hours, neither of which has been run; (4) your go-ahead on Dutch.
+### [#548](https://github.com/the-kya-project/perch-perfect-plan/pull/548) · 1.11 Buddy pods: behind `main`
+- **Needs:** "Update branch" on the PR (or a merge of `main`). It conflicts with `main` only in the record files (`docs/BACKLOG.md`, `docs/REVIEW_QUEUE.md`). But `main` has since changed two workflow files (#538 and #545), and the runs' token can't push a merge that brings those in. So the 05:46 EST run left the branch as it is. It was green and held for you before `main` moved. (#547 was brought up to date and merged on Nov 24, 2026.)
+
+### [#543](https://github.com/the-kya-project/perch-perfect-plan/pull/543) · 1.17 Promo codes: code conflicts with `main`
+- **Needs:** someone to resolve the conflicts before it can be reviewed. Since 1.15 (#535) and 1.14a (#533) merged, it conflicts with `main` in the billing code (`src/lib/billing.ts`, `src/lib/billing.functions.ts`, `scripts/billing.test.ts`). Runs only resolve conflicts in the record files.
+
 
 ### Reminder · the hourly runs' GitHub token expires Feb 20, 2027
 - **Needs:** a new token before **Feb 20, 2027**. That's 90 days from Nov 22, 2026; GitHub → Settings → Developer settings → Fine-grained tokens shows the exact date. When it expires, runs can still build and test but can't push or open PRs, and each run's note in `~/.kya-agent/job.log` says so.

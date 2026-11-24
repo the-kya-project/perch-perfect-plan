@@ -1,7 +1,6 @@
 // Triage rules for the daily health scan.
-// IMPORTANT: This configuration is a placeholder and has NOT been reviewed by a
-// licensed avian veterinarian. It MUST be reviewed and signed off before any
-// real-world use. See PRD Phase 1.
+// Reviewed and approved by Brittany (Nov 23, 2026); not part of the vet review.
+// The values are recorded in src/lib/healthRules.ts.
 
 export type ScanAnswer = "normal" | "not_sure" | "concerning";
 export type TriageStatus = "green" | "yellow" | "red";

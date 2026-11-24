@@ -20,6 +20,7 @@ Status: **scoping only.** Written Nov 21, 2026 from `main` at `d8ec1f8`, read-on
 - **Each health-related feature has its own off switch.** If approval isn't in by opening, that feature stays hidden and everything else opens.
 - **Nothing that tells an owner something about their bird's health reaches real users until the vet approves it.** Until then it runs in shadow mode or for Brittany's account only.
 - The free hard weight-loss safety alert uses **the most conservative values from the research** until the vet weighs in.
+- **Already live and approved by Brittany (Nov 23, 2026):** the daily health check, care weight trend, emergency guides and passing guidance. She reviewed them herself. They stay as they are, aren't wired to their switches, and aren't in the vet review.
 
 ---
 
@@ -98,8 +99,8 @@ None of these exist on production under any name (no badge, challenge, pod, prom
 | **Member-submitted posts approved before going live** | **Done for Do good** (#459) | Do good posts start `pending` and go through `/admin/review`; editing sends them back | If *every* space should be pre-approved (learn, chapter, start), it's a small change to an existing Flock function, which needs approval. Needs a decision: Do good only, or all spaces? |
 | **Curated chapter collections** (e.g. avian vets) | Not started | The chapter Resources tab is an empty state ("Avian vets, rescues, and shops your chapter recommends will be collected here", `flock.chapter.tsx:53-55`); the Library is Flock-wide only | Chapter listings (kind: vet, rescue, shop; name, address, phone, link, note), a chapter-lead and admin editor, and a card-style list that doesn't look like posts. |
 | **The full badge set** (care badges earnable by free users too) | Not started; **no spec** | Founder and Chapter lead badges only (computed, no table); skills from finished journeys; the care app's Moments milestones. `flock.journeys.$journeyId.finished.tsx` said badges would come later (fixed Nov 21) | Badge definitions and earned badges, awarding rules on care events (weigh-in streaks, health checks, a finished care plan) and Flock events, art for each badge. **Care badges show in the care app for free users**, which changes the free-user experience: needs Brittany's approval and before-and-after evidence. |
-| **Kya's Crew + sponsored rescue-adopter seat** | Not started; **spec exists** (plan item 6d) | One code comment | It sits on top of the billing foundation (plan items 1–3: billing tables, Stripe billing webhook, card step), none of which exists, so **building Crew before opening pulls those forward**. Then: Crew plans (an `entitlements` check change, which needs approval), Crew counted as a Flock membership, 25% giving, a sponsorship count that rescue-adopter comps draw from, the admin view, no trial. **Selling it in the iPhone app** needs App Store products, RevenueCat and a native build reviewed by Apple; built dark before opening, and nothing is charged before the free season ends. |
-| **Rescue partner codes** | Not started; partly specced (today: a 6-month comp "granted by hand", plan h6) | None | Partners and their codes (uses, expiry), a redeem step (on Join or like `/redeem`) that records the adoption and goes to approval, a six-month comp starting when the free season ends that draws on Crew sponsorships, an admin screen. |
+| **Kya's Crew + sponsored rescue-adopter seat** | Not started; **spec exists** (plan item 6d) | One code comment | It sits on top of the billing foundation (plan items 1–3: billing tables, Stripe billing webhook, card step), none of which exists, so **building Crew before opening pulls those forward**. Then: Crew plans (an `entitlements` check change, which needs approval), Crew counted as a Flock membership, 25% giving, no trial (sponsored seats aren't tracked: Brittany, Nov 23, 2026). **Selling it in the iPhone app** needs App Store products, RevenueCat and a native build reviewed by Apple; built dark before opening, and nothing is charged before the free season ends. |
+| **Rescue partner codes** | Not started; partly specced (today: a 6-month comp "granted by hand", plan h6) | None | Partners and their codes (uses, expiry), a redeem step (on Join or like `/redeem`) that records the adoption and goes to approval, a six-month comp starting when the free season ends, an admin screen. |
 | **Promo codes** | **Partly done (gifts only)** | Gift Checkout accepts Stripe promotion codes; `/admin/gifts` totals by code | Codes for memberships (on the card step), rules for founding vs regular, Apple offer codes for iPhone (whole months only). Depends on the billing foundation. |
 | **Instagram share cards for journeys** | Not started | The care app's Moments share card (`src/lib/momentCard.ts`) to reuse; placeholders "Make a share card comes later" in the milestone and compare screens | A card renderer (1080×1350 and 1080×1920) for milestones, finishes and day-one-vs-now, photo metadata stripped, the share sheet with a download fallback, never anything from a "Just me" journey. |
 
@@ -242,7 +243,7 @@ Costs are **estimates**, projected from today's 62 accounts. "Session" = one foc
 | 1.13a | Badges: Flock badges | Badge definitions and earned badges for Flock activity, shown on profiles | L | Spec, art | After spec | Content |
 | 1.13b | Badges: care badges | Free users earn care badges in the care app | L | 1.13a | No | Yes: changes the free-user experience |
 | 1.14 | Billing foundation (plan 1–3) | Billing tables, the Stripe billing webhook and the card step exist, switched off | XL | — | Yes, in test mode | Yes: payments |
-| 1.15 | Kya's Crew + sponsored seat | Crew plans exist (dark), count as membership, record 25% giving and track sponsored adopter seats | L | 1.14 | No | Yes: payments, entitlements change |
+| 1.15 | Kya's Crew + sponsored seat | Crew plans exist (dark), count as membership and record 25% giving | L | 1.14 | No | Yes: payments, entitlements change |
 | 1.16 | Rescue partner codes | Partners get codes; an adopter redeems one and, once approved, gets six months starting when the free season ends | L | 1.15, spec | After spec | Yes: grants access |
 | 1.17 | Membership promo codes | Codes work on the card step with founding/regular rules (Apple offer codes listed for May) | M | 1.14 | No | Yes: payments |
 | 1.18 | **C. The launch PR** | Members can join (18+, guidelines accepted), the one entry point is in place, the free-user check asserts exactly that; it merges dark and is switched on with SQL on opening day | L | 1.1, 1.5 (switching on) | No | **Yes: the launch decision** (built and merged dark, #493) |
@@ -277,9 +278,16 @@ Costs are **estimates**, projected from today's 62 accounts. "Session" = one foc
 
 ## B7. The vet review packet
 
-**The settings file is [`src/lib/healthRules.ts`](../../src/lib/healthRules.ts)** (PR 1.2, #515). It lists every threshold and phrase list below, each marked "draft, pending vet review" with its source and where the app uses it, plus the language-file keys for each area's wording. `npm run test:health-rules` checks the app's code against it, and `supabase/checks/health_rules_checks.sql` checks the database (`journey_settings`, `flock_vet_signs`, the nectar-eater block). Each health feature has its own switch in `public.health_features` (`src/lib/healthFeatures.ts`). Start the packet from that file; areas 2–4 and 9–13 below are wording and content, which still live where listed. The packet should contain:
+**The settings file is [`src/lib/healthRules.ts`](../../src/lib/healthRules.ts)** (PR 1.2, #515). It lists every threshold and phrase list, with its source, where the app uses it and its status, plus the language-file keys for each area's wording. `npm run test:health-rules` checks the app's code against it, and `supabase/checks/health_rules_checks.sql` checks the database (`journey_settings`, `flock_vet_signs`, the nectar-eater block). Each health feature has its own switch in `public.health_features` (`src/lib/healthFeatures.ts`).
 
-1. **Diet conversion weight rules** (`journey_settings`; `20261107220000_journeys_updates.sql:26-27`, `20261108160000_diet_weight_rules.sql:38-47`):
+**The vet review covers only these three areas (Brittany, Nov 23, 2026):**
+
+1. **Weight baseline** (`WEIGHT_BASELINE_RULES`, `src/lib/weightBaseline.ts`):
+   - when a bird's normal is learned, and how its range is worked out;
+   - the proposed alert tiers and their sources (B4 feature 1);
+   - the re-weigh rule and the 2 g minimum drop;
+   - the free hard weight-loss alert.
+2. **Diet conversion weight rules** (`journey_settings`; `20261107220000_journeys_updates.sql:26-27`, `20261108160000_diet_weight_rules.sql:38-47`):
    - pause at 5% below the starting weight;
    - heads-up at 2.5%, clearing only within 1.5%;
    - the 3-reading average (2 within 3 days);
@@ -289,51 +297,39 @@ Costs are **estimates**, projected from today's 62 accounts. "Session" = one foc
    - 2 missed days;
    - the meal-tag rule;
    - the weight messages (`src/locales/en.jsonc:2102-2117`).
-2. **Diet conversion guidance** (`20261108150000_diet_conversion_vet_guidance.sql`, `JourneyDiet.tsx`, `en.jsonc:1904-1915`):
+3. **Vet-nudge phrase lists**, both tiers (`flock_vet_signs`: `20261108100000_flock_posts.sql:46-56`, `20261108170000_flock_vet_nudge_tiers.sql`, `20261108180000_flock_vet_nudge_tighten.sql`). About 127 phrases, plus the two card texts (`en.jsonc:2296-2302`) and the AAV Find-A-Vet link.
+
+**Approved by Brittany, not in the vet review (Nov 23, 2026):** the daily health check, care-app weight trend and its wording, emergency guides on the sitter page, and passing guidance. Their values are marked "approved by Brittany" in the settings file.
+
+**Outside the vet review, and not marked approved.** These were in the earlier packet. They're kept here so their open questions aren't lost:
+
+1. **Diet conversion guidance** (`20261108150000_diet_conversion_vet_guidance.sql`, `JourneyDiet.tsx`, `en.jsonc:1904-1915`):
    - the vet card and reminder;
    - the young-bird line;
    - the disclaimer;
    - the 11 "How to make it work" tips;
    - the nectar-eater block, which matches only lory, lories and lorikeet. **Ask whether other nectar or specialist feeders should be blocked** (hanging parrots, swift parrot, fig parrots).
-3. **Journey templates and milestones** (`20261107200000_journeys_core.sql:716-831`) and the safety notes on every template (:211-215), especially:
+2. **Journey templates and milestones** (`20261107200000_journeys_core.sql:716-831`) and the safety notes on every template (:211-215), especially:
    - scale training;
    - wing touch;
    - carrier comfort;
-   - **nail trims, which has no safeguards and nothing about the quick or bleeding.**
-4. **Tips after a hard day** (`journey_tips`, `20261107220000_journeys_updates.sql:134-139`). **Flag:** one tip says birds "care a lot more about treats when they're a little hungry", which sits close to the rule never to suggest withholding food.
-5. **Vet-nudge phrase lists**, both tiers (`flock_vet_signs`: `20261108100000_flock_posts.sql:46-56`, `20261108170000_flock_vet_nudge_tiers.sql`, `20261108180000_flock_vet_nudge_tighten.sql`). About 127 phrases, plus the two card texts (`en.jsonc:2296-2302`) and the AAV Find-A-Vet link.
-6. **The daily health check (triage)** (`src/lib/triage.ts`, whose header already says it must be vet-reviewed; questions at `en.jsonc:3726-3760`, messages at :3422-3429):
-   - the 10 questions;
-   - which answers alone mean red;
-   - the yellow rules;
-   - the red and yellow wording;
-   - the disclaimer;
-   - the sitter "Something's wrong" flow and its emails (`emails.en.jsonc:447-470, 677-684`).
-7. **Care-app weight wording** (`src/lib/weightTrend.ts`, `src/lib/dailyLog.ts:82-86`):
-   - steady within ±2.5% over 90 days;
-   - amber on any drop of 1 g or more, **with any gain shown as good** (ask whether that's right);
-   - the 10% "Save anyway?" check;
-   - the proposed baseline alert tiers and their sources (B4 feature 1).
-8. **Emergency guides on the sitter page** (`src/routes/sitter/$token/emergency.tsx`, `en.jsonc:4179-4282`):
-   - bites, bleeding, breathing, egg binding, escape, fumes, overheating, poisoning, seizure, transport;
-   - the keep-warm range of 85–90 °F (`src/lib/poisonControl.ts:93-105`);
-   - the poison control numbers by region (`poisonControl.ts:23-83`).
-9. **Parrots 101 guide cards** (`guide_cards`, 59 rows, `20260615135444_…sql`):
-   - every row is stamped `reviewed_by = 'The Kya Project · Parrot Care Bible'`, so it **looks reviewed but no vet reviewed it**;
+   - nail trims, whose safety notes on the quick and bleeding were added Nov 21 (`20261121180000_safety_content_fixes.sql`). The five-minute bleeding line comes from first-aid handouts.
+3. **Tips after a hard day** (`journey_tips`, `20261107220000_journeys_updates.sql:134-139`). The tip that leaned on a bird being hungry was rewritten on Nov 21 (`20261121180000_safety_content_fixes.sql`).
+4. **Parrots 101 guide cards** (`guide_cards`, 59 rows, `20260615135444_…sql`):
+   - no vet has reviewed these. The stored label now names the author only (`20261121180000_safety_content_fixes.sql`);
    - the toxic foods card (:48), metals and poisons (:61), temperature (:62).
-10. **Food lists:**
+5. **Food lists:**
     - the walkthrough's pre-filled "Never feed" list (`birds/$birdId.setup.tsx:1248-1258`);
     - fresh-food removal times;
     - the chop safe list and unsafe terms (`src/lib/chopIngredients.ts:13-56`; its comment already says to review with a vet; it includes grapes, chili, cherries, coconut, egg).
-11. **Passing guidance** (`en.jsonc:1666-1676, 3436-3464`, `PassingGuidance.tsx`): necropsy, refrigerate never freeze, burial.
-12. **Emails with care advice** (`emails.en.jsonc`):
+6. **Emails with care advice** (`emails.en.jsonc`):
     - the 12 monthly care notes (:168-226);
     - the onboarding weight emails (:323-340);
     - the weighing series (:514-536);
     - the vet-summary series (:646-667);
     - the daily health check series (:546-552).
-13. **Today's ideas with safety claims** (`20261108120000_flock_todays_idea.sql:413-445`): #3 (box: tape, staples, labels), #1, #4 and #8 (paper and ink), #12 ("a bird-safe tree", with no list), #14 (water and misting).
-14. **New content** drafted under the rules above:
+7. **Today's ideas with safety claims** (`20261108120000_flock_todays_idea.sql:413-445`): #3 (box: tape, staples, labels), #1, #4 and #8 (paper and ink), #12 ("a bird-safe tree", with no list), #14 (water and misting).
+8. **New content** drafted under the rules above:
     - care badges' health criteria;
     - any health-related Today cards;
     - the insights wording;

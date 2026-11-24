@@ -1,5 +1,5 @@
 // The health rules file (src/lib/healthRules.ts) is the one list of health
-// values: every one is marked draft with a source, the app's code agrees with
+// values: every one has a review status and a source, the app's code agrees with
 // it, and the database check (supabase/checks/health_rules_checks.sql) holds
 // the same values, so a database that disagrees fails "Database checks".
 import assert from "node:assert/strict";
@@ -16,6 +16,7 @@ import {
   EMERGENCY_RULES,
   HEALTH_WORDING,
   DRAFT,
+  APPROVED,
   type HealthRule,
 } from "@/lib/healthRules";
 import { HEALTH_FEATURES } from "@/lib/healthFeatures";
@@ -59,11 +60,21 @@ function sqlLiteral(name: string): string {
 }
 const sorted = (a: readonly string[]) => [...a].sort();
 
-check("every rule is marked draft, with a source and where it's used", () => {
+// Brittany reviewed the live features herself (Nov 23, 2026). Everything else
+// stays a draft, so nothing can become "approved" by accident.
+const APPROVED_BY_BRITTANY = [
+  /^TRIAGE_RULES\./,
+  /^CARE_WEIGHT_RULES\./,
+  /^EMERGENCY_RULES\./,
+  /^HEALTH_WORDING\.(dailyHealthCheck|weight|emergencyGuides|passingGuidance)$/,
+];
+
+check("every rule has the right status, a source and where it's used", () => {
   const all = allRules();
   assert.ok(all.length >= 30, `found ${all.length} rules`);
   for (const [name, r] of all) {
-    assert.equal(r.status, DRAFT, name);
+    const expected = APPROVED_BY_BRITTANY.some((re) => re.test(name)) ? APPROVED : DRAFT;
+    assert.equal(r.status, expected, name);
     assert.ok(r.source.trim().length > 0, `${name} has a source`);
     assert.ok(r.where.trim().length > 0, `${name} says where it's used`);
   }

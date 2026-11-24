@@ -245,7 +245,7 @@ Every PR follows the Flock safety rules: database changes are additive only (any
    - 6a. **Failed founding payment alert** to Brittany only (like the save-error alerts); nothing changes automatically.
    - 6b. **Deleting a post keeps it hidden for 180 days** (legal draft D10): backlog 1.3.
    - 6c. **Removed content and reports deleted after 180 days** (legal draft D9): backlog 1.4.
-   - 6d. **Kya's Crew** (backlog 1.15): `crew_monthly` / `crew_annual` (an `entitlements` check change, which needs Brittany's approval), counted by `is_flock_member()`, 25% giving, a `crew_sponsorships` count that rescue-adopter comps draw from, an admin view, no trial; Stripe and App Store products.
+   - 6d. **Kya's Crew** (backlog 1.15): `crew_monthly` / `crew_annual` (an `entitlements` check change, which needs Brittany's approval), counted by `is_flock_member()`, 25% giving, no trial (sponsored seats aren't tracked: Brittany, Nov 23, 2026); Stripe and App Store products.
    - 6f. **14-day free trial** after the free season, for new subscribers only.
    - 6g. **Cancel online** in Membership and billing.
    - 6h. **Yearly renewal reminder** list for Brittany to send (ask the lawyer whether a reminder sent by hand meets California's automatic renewal law).

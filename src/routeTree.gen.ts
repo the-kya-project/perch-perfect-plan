@@ -123,6 +123,7 @@ import { Route as AuthenticatedFlockMembersUserIdRouteImport } from './routes/_a
 import { Route as AuthenticatedFlockPostNewRouteImport } from './routes/_authenticated/flock.post.new'
 import { Route as AuthenticatedFlockVotesVoteIdRouteImport } from './routes/_authenticated/flock.votes.$voteId'
 import { Route as AuthenticatedFlockYouIndexRouteImport } from './routes/_authenticated/flock.you.index'
+import { Route as AuthenticatedFlockYouBadgesRouteImport } from './routes/_authenticated/flock.you.badges'
 import { Route as AuthenticatedFlockYouBlockedRouteImport } from './routes/_authenticated/flock.you.blocked'
 import { Route as AuthenticatedFlockYouEditRouteImport } from './routes/_authenticated/flock.you.edit'
 import { Route as AuthenticatedFlockYouMembershipRouteImport } from './routes/_authenticated/flock.you.membership'
@@ -139,6 +140,7 @@ import { Route as ApiPublicHooksOnboardingEmailsRouteImport } from './routes/api
 import { Route as ApiPublicHooksOnboardingWelcomeRouteImport } from './routes/api/public/hooks/onboarding-welcome'
 import { Route as ApiPublicHooksSaveErrorAlertsRouteImport } from './routes/api/public/hooks/save-error-alerts'
 import { Route as ApiPublicHooksSendEmailRouteImport } from './routes/api/public/hooks/send-email'
+import { Route as ApiPublicHooksWeightBaselineShadowRouteImport } from './routes/api/public/hooks/weight-baseline-shadow'
 import { Route as ApiPublicStripeBillingRouteImport } from './routes/api/public/stripe/billing'
 import { Route as ApiPublicStripeWebhookRouteImport } from './routes/api/public/stripe/webhook'
 import { Route as AuthenticatedBirdsBirdIdPlanIndexRouteImport } from './routes/_authenticated/birds/$birdId.plan.index'
@@ -146,6 +148,7 @@ import { Route as AuthenticatedBirdsBirdIdPlanEditorRouteImport } from './routes
 import { Route as AuthenticatedBirdsBirdIdScansScanIdRouteImport } from './routes/_authenticated/birds/$birdId.scans.$scanId'
 import { Route as AuthenticatedFlockCommentsSubjectTypeSubjectIdRouteImport } from './routes/_authenticated/flock.comments.$subjectType.$subjectId'
 import { Route as AuthenticatedFlockJourneysJourneyIdIndexRouteImport } from './routes/_authenticated/flock.journeys.$journeyId.index'
+import { Route as AuthenticatedFlockJourneysJourneyIdCardRouteImport } from './routes/_authenticated/flock.journeys.$journeyId.card'
 import { Route as AuthenticatedFlockJourneysJourneyIdCompareRouteImport } from './routes/_authenticated/flock.journeys.$journeyId.compare'
 import { Route as AuthenticatedFlockJourneysJourneyIdFinishedRouteImport } from './routes/_authenticated/flock.journeys.$journeyId.finished'
 import { Route as AuthenticatedFlockJourneysJourneyIdPostRouteImport } from './routes/_authenticated/flock.journeys.$journeyId.post'
@@ -785,6 +788,12 @@ const AuthenticatedFlockYouIndexRoute =
     path: '/you/',
     getParentRoute: () => AuthenticatedFlockRoute,
   } as any)
+const AuthenticatedFlockYouBadgesRoute =
+  AuthenticatedFlockYouBadgesRouteImport.update({
+    id: '/you/badges',
+    path: '/you/badges',
+    getParentRoute: () => AuthenticatedFlockRoute,
+  } as any)
 const AuthenticatedFlockYouBlockedRoute =
   AuthenticatedFlockYouBlockedRouteImport.update({
     id: '/you/blocked',
@@ -880,6 +889,12 @@ const ApiPublicHooksSendEmailRoute = ApiPublicHooksSendEmailRouteImport.update({
   path: '/api/public/hooks/send-email',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicHooksWeightBaselineShadowRoute =
+  ApiPublicHooksWeightBaselineShadowRouteImport.update({
+    id: '/api/public/hooks/weight-baseline-shadow',
+    path: '/api/public/hooks/weight-baseline-shadow',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicStripeBillingRoute = ApiPublicStripeBillingRouteImport.update({
   id: '/api/public/stripe/billing',
   path: '/api/public/stripe/billing',
@@ -918,6 +933,12 @@ const AuthenticatedFlockJourneysJourneyIdIndexRoute =
   AuthenticatedFlockJourneysJourneyIdIndexRouteImport.update({
     id: '/journeys/$journeyId/',
     path: '/journeys/$journeyId/',
+    getParentRoute: () => AuthenticatedFlockRoute,
+  } as any)
+const AuthenticatedFlockJourneysJourneyIdCardRoute =
+  AuthenticatedFlockJourneysJourneyIdCardRouteImport.update({
+    id: '/journeys/$journeyId/card',
+    path: '/journeys/$journeyId/card',
     getParentRoute: () => AuthenticatedFlockRoute,
   } as any)
 const AuthenticatedFlockJourneysJourneyIdCompareRoute =
@@ -1094,6 +1115,7 @@ export interface FileRoutesByFullPath {
   '/flock/members/$userId': typeof AuthenticatedFlockMembersUserIdRoute
   '/flock/post/new': typeof AuthenticatedFlockPostNewRoute
   '/flock/votes/$voteId': typeof AuthenticatedFlockVotesVoteIdRoute
+  '/flock/you/badges': typeof AuthenticatedFlockYouBadgesRoute
   '/flock/you/blocked': typeof AuthenticatedFlockYouBlockedRoute
   '/flock/you/edit': typeof AuthenticatedFlockYouEditRoute
   '/flock/you/membership': typeof AuthenticatedFlockYouMembershipRoute
@@ -1110,6 +1132,7 @@ export interface FileRoutesByFullPath {
   '/api/public/hooks/onboarding-welcome': typeof ApiPublicHooksOnboardingWelcomeRoute
   '/api/public/hooks/save-error-alerts': typeof ApiPublicHooksSaveErrorAlertsRoute
   '/api/public/hooks/send-email': typeof ApiPublicHooksSendEmailRoute
+  '/api/public/hooks/weight-baseline-shadow': typeof ApiPublicHooksWeightBaselineShadowRoute
   '/api/public/stripe/billing': typeof ApiPublicStripeBillingRoute
   '/api/public/stripe/webhook': typeof ApiPublicStripeWebhookRoute
   '/admin/library/': typeof AuthenticatedAdminLibraryIndexRoute
@@ -1122,6 +1145,7 @@ export interface FileRoutesByFullPath {
   '/birds/$birdId/plan/editor': typeof AuthenticatedBirdsBirdIdPlanEditorRoute
   '/birds/$birdId/scans/$scanId': typeof AuthenticatedBirdsBirdIdScansScanIdRoute
   '/flock/comments/$subjectType/$subjectId': typeof AuthenticatedFlockCommentsSubjectTypeSubjectIdRoute
+  '/flock/journeys/$journeyId/card': typeof AuthenticatedFlockJourneysJourneyIdCardRoute
   '/flock/journeys/$journeyId/compare': typeof AuthenticatedFlockJourneysJourneyIdCompareRoute
   '/flock/journeys/$journeyId/finished': typeof AuthenticatedFlockJourneysJourneyIdFinishedRoute
   '/flock/journeys/$journeyId/post': typeof AuthenticatedFlockJourneysJourneyIdPostRoute
@@ -1236,6 +1260,7 @@ export interface FileRoutesByTo {
   '/flock/members/$userId': typeof AuthenticatedFlockMembersUserIdRoute
   '/flock/post/new': typeof AuthenticatedFlockPostNewRoute
   '/flock/votes/$voteId': typeof AuthenticatedFlockVotesVoteIdRoute
+  '/flock/you/badges': typeof AuthenticatedFlockYouBadgesRoute
   '/flock/you/blocked': typeof AuthenticatedFlockYouBlockedRoute
   '/flock/you/edit': typeof AuthenticatedFlockYouEditRoute
   '/flock/you/membership': typeof AuthenticatedFlockYouMembershipRoute
@@ -1252,6 +1277,7 @@ export interface FileRoutesByTo {
   '/api/public/hooks/onboarding-welcome': typeof ApiPublicHooksOnboardingWelcomeRoute
   '/api/public/hooks/save-error-alerts': typeof ApiPublicHooksSaveErrorAlertsRoute
   '/api/public/hooks/send-email': typeof ApiPublicHooksSendEmailRoute
+  '/api/public/hooks/weight-baseline-shadow': typeof ApiPublicHooksWeightBaselineShadowRoute
   '/api/public/stripe/billing': typeof ApiPublicStripeBillingRoute
   '/api/public/stripe/webhook': typeof ApiPublicStripeWebhookRoute
   '/admin/library': typeof AuthenticatedAdminLibraryIndexRoute
@@ -1264,6 +1290,7 @@ export interface FileRoutesByTo {
   '/birds/$birdId/plan/editor': typeof AuthenticatedBirdsBirdIdPlanEditorRoute
   '/birds/$birdId/scans/$scanId': typeof AuthenticatedBirdsBirdIdScansScanIdRoute
   '/flock/comments/$subjectType/$subjectId': typeof AuthenticatedFlockCommentsSubjectTypeSubjectIdRoute
+  '/flock/journeys/$journeyId/card': typeof AuthenticatedFlockJourneysJourneyIdCardRoute
   '/flock/journeys/$journeyId/compare': typeof AuthenticatedFlockJourneysJourneyIdCompareRoute
   '/flock/journeys/$journeyId/finished': typeof AuthenticatedFlockJourneysJourneyIdFinishedRoute
   '/flock/journeys/$journeyId/post': typeof AuthenticatedFlockJourneysJourneyIdPostRoute
@@ -1387,6 +1414,7 @@ export interface FileRoutesById {
   '/_authenticated/flock/members/$userId': typeof AuthenticatedFlockMembersUserIdRoute
   '/_authenticated/flock/post/new': typeof AuthenticatedFlockPostNewRoute
   '/_authenticated/flock/votes/$voteId': typeof AuthenticatedFlockVotesVoteIdRoute
+  '/_authenticated/flock/you/badges': typeof AuthenticatedFlockYouBadgesRoute
   '/_authenticated/flock/you/blocked': typeof AuthenticatedFlockYouBlockedRoute
   '/_authenticated/flock/you/edit': typeof AuthenticatedFlockYouEditRoute
   '/_authenticated/flock/you/membership': typeof AuthenticatedFlockYouMembershipRoute
@@ -1403,6 +1431,7 @@ export interface FileRoutesById {
   '/api/public/hooks/onboarding-welcome': typeof ApiPublicHooksOnboardingWelcomeRoute
   '/api/public/hooks/save-error-alerts': typeof ApiPublicHooksSaveErrorAlertsRoute
   '/api/public/hooks/send-email': typeof ApiPublicHooksSendEmailRoute
+  '/api/public/hooks/weight-baseline-shadow': typeof ApiPublicHooksWeightBaselineShadowRoute
   '/api/public/stripe/billing': typeof ApiPublicStripeBillingRoute
   '/api/public/stripe/webhook': typeof ApiPublicStripeWebhookRoute
   '/_authenticated/admin/library/': typeof AuthenticatedAdminLibraryIndexRoute
@@ -1415,6 +1444,7 @@ export interface FileRoutesById {
   '/_authenticated/birds/$birdId/plan/editor': typeof AuthenticatedBirdsBirdIdPlanEditorRoute
   '/_authenticated/birds/$birdId/scans/$scanId': typeof AuthenticatedBirdsBirdIdScansScanIdRoute
   '/_authenticated/flock/comments/$subjectType/$subjectId': typeof AuthenticatedFlockCommentsSubjectTypeSubjectIdRoute
+  '/_authenticated/flock/journeys/$journeyId/card': typeof AuthenticatedFlockJourneysJourneyIdCardRoute
   '/_authenticated/flock/journeys/$journeyId/compare': typeof AuthenticatedFlockJourneysJourneyIdCompareRoute
   '/_authenticated/flock/journeys/$journeyId/finished': typeof AuthenticatedFlockJourneysJourneyIdFinishedRoute
   '/_authenticated/flock/journeys/$journeyId/post': typeof AuthenticatedFlockJourneysJourneyIdPostRoute
@@ -1538,6 +1568,7 @@ export interface FileRouteTypes {
     | '/flock/members/$userId'
     | '/flock/post/new'
     | '/flock/votes/$voteId'
+    | '/flock/you/badges'
     | '/flock/you/blocked'
     | '/flock/you/edit'
     | '/flock/you/membership'
@@ -1554,6 +1585,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/onboarding-welcome'
     | '/api/public/hooks/save-error-alerts'
     | '/api/public/hooks/send-email'
+    | '/api/public/hooks/weight-baseline-shadow'
     | '/api/public/stripe/billing'
     | '/api/public/stripe/webhook'
     | '/admin/library/'
@@ -1566,6 +1598,7 @@ export interface FileRouteTypes {
     | '/birds/$birdId/plan/editor'
     | '/birds/$birdId/scans/$scanId'
     | '/flock/comments/$subjectType/$subjectId'
+    | '/flock/journeys/$journeyId/card'
     | '/flock/journeys/$journeyId/compare'
     | '/flock/journeys/$journeyId/finished'
     | '/flock/journeys/$journeyId/post'
@@ -1680,6 +1713,7 @@ export interface FileRouteTypes {
     | '/flock/members/$userId'
     | '/flock/post/new'
     | '/flock/votes/$voteId'
+    | '/flock/you/badges'
     | '/flock/you/blocked'
     | '/flock/you/edit'
     | '/flock/you/membership'
@@ -1696,6 +1730,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/onboarding-welcome'
     | '/api/public/hooks/save-error-alerts'
     | '/api/public/hooks/send-email'
+    | '/api/public/hooks/weight-baseline-shadow'
     | '/api/public/stripe/billing'
     | '/api/public/stripe/webhook'
     | '/admin/library'
@@ -1708,6 +1743,7 @@ export interface FileRouteTypes {
     | '/birds/$birdId/plan/editor'
     | '/birds/$birdId/scans/$scanId'
     | '/flock/comments/$subjectType/$subjectId'
+    | '/flock/journeys/$journeyId/card'
     | '/flock/journeys/$journeyId/compare'
     | '/flock/journeys/$journeyId/finished'
     | '/flock/journeys/$journeyId/post'
@@ -1830,6 +1866,7 @@ export interface FileRouteTypes {
     | '/_authenticated/flock/members/$userId'
     | '/_authenticated/flock/post/new'
     | '/_authenticated/flock/votes/$voteId'
+    | '/_authenticated/flock/you/badges'
     | '/_authenticated/flock/you/blocked'
     | '/_authenticated/flock/you/edit'
     | '/_authenticated/flock/you/membership'
@@ -1846,6 +1883,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/onboarding-welcome'
     | '/api/public/hooks/save-error-alerts'
     | '/api/public/hooks/send-email'
+    | '/api/public/hooks/weight-baseline-shadow'
     | '/api/public/stripe/billing'
     | '/api/public/stripe/webhook'
     | '/_authenticated/admin/library/'
@@ -1858,6 +1896,7 @@ export interface FileRouteTypes {
     | '/_authenticated/birds/$birdId/plan/editor'
     | '/_authenticated/birds/$birdId/scans/$scanId'
     | '/_authenticated/flock/comments/$subjectType/$subjectId'
+    | '/_authenticated/flock/journeys/$journeyId/card'
     | '/_authenticated/flock/journeys/$journeyId/compare'
     | '/_authenticated/flock/journeys/$journeyId/finished'
     | '/_authenticated/flock/journeys/$journeyId/post'
@@ -1911,6 +1950,7 @@ export interface RootRouteChildren {
   ApiPublicHooksOnboardingWelcomeRoute: typeof ApiPublicHooksOnboardingWelcomeRoute
   ApiPublicHooksSaveErrorAlertsRoute: typeof ApiPublicHooksSaveErrorAlertsRoute
   ApiPublicHooksSendEmailRoute: typeof ApiPublicHooksSendEmailRoute
+  ApiPublicHooksWeightBaselineShadowRoute: typeof ApiPublicHooksWeightBaselineShadowRoute
   ApiPublicStripeBillingRoute: typeof ApiPublicStripeBillingRoute
   ApiPublicStripeWebhookRoute: typeof ApiPublicStripeWebhookRoute
   ApiPublicBereavementReviewReviewIdSigRoute: typeof ApiPublicBereavementReviewReviewIdSigRoute
@@ -2718,6 +2758,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedFlockYouIndexRouteImport
       parentRoute: typeof AuthenticatedFlockRoute
     }
+    '/_authenticated/flock/you/badges': {
+      id: '/_authenticated/flock/you/badges'
+      path: '/you/badges'
+      fullPath: '/flock/you/badges'
+      preLoaderRoute: typeof AuthenticatedFlockYouBadgesRouteImport
+      parentRoute: typeof AuthenticatedFlockRoute
+    }
     '/_authenticated/flock/you/blocked': {
       id: '/_authenticated/flock/you/blocked'
       path: '/you/blocked'
@@ -2830,6 +2877,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksSendEmailRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/weight-baseline-shadow': {
+      id: '/api/public/hooks/weight-baseline-shadow'
+      path: '/api/public/hooks/weight-baseline-shadow'
+      fullPath: '/api/public/hooks/weight-baseline-shadow'
+      preLoaderRoute: typeof ApiPublicHooksWeightBaselineShadowRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/stripe/billing': {
       id: '/api/public/stripe/billing'
       path: '/api/public/stripe/billing'
@@ -2877,6 +2931,13 @@ declare module '@tanstack/react-router' {
       path: '/journeys/$journeyId'
       fullPath: '/flock/journeys/$journeyId/'
       preLoaderRoute: typeof AuthenticatedFlockJourneysJourneyIdIndexRouteImport
+      parentRoute: typeof AuthenticatedFlockRoute
+    }
+    '/_authenticated/flock/journeys/$journeyId/card': {
+      id: '/_authenticated/flock/journeys/$journeyId/card'
+      path: '/journeys/$journeyId/card'
+      fullPath: '/flock/journeys/$journeyId/card'
+      preLoaderRoute: typeof AuthenticatedFlockJourneysJourneyIdCardRouteImport
       parentRoute: typeof AuthenticatedFlockRoute
     }
     '/_authenticated/flock/journeys/$journeyId/compare': {
@@ -2996,6 +3057,7 @@ interface AuthenticatedFlockRouteChildren {
   AuthenticatedFlockMembersUserIdRoute: typeof AuthenticatedFlockMembersUserIdRoute
   AuthenticatedFlockPostNewRoute: typeof AuthenticatedFlockPostNewRoute
   AuthenticatedFlockVotesVoteIdRoute: typeof AuthenticatedFlockVotesVoteIdRoute
+  AuthenticatedFlockYouBadgesRoute: typeof AuthenticatedFlockYouBadgesRoute
   AuthenticatedFlockYouBlockedRoute: typeof AuthenticatedFlockYouBlockedRoute
   AuthenticatedFlockYouEditRoute: typeof AuthenticatedFlockYouEditRoute
   AuthenticatedFlockYouMembershipRoute: typeof AuthenticatedFlockYouMembershipRoute
@@ -3006,6 +3068,7 @@ interface AuthenticatedFlockRouteChildren {
   AuthenticatedFlockMembersIndexRoute: typeof AuthenticatedFlockMembersIndexRoute
   AuthenticatedFlockYouIndexRoute: typeof AuthenticatedFlockYouIndexRoute
   AuthenticatedFlockCommentsSubjectTypeSubjectIdRoute: typeof AuthenticatedFlockCommentsSubjectTypeSubjectIdRoute
+  AuthenticatedFlockJourneysJourneyIdCardRoute: typeof AuthenticatedFlockJourneysJourneyIdCardRoute
   AuthenticatedFlockJourneysJourneyIdCompareRoute: typeof AuthenticatedFlockJourneysJourneyIdCompareRoute
   AuthenticatedFlockJourneysJourneyIdFinishedRoute: typeof AuthenticatedFlockJourneysJourneyIdFinishedRoute
   AuthenticatedFlockJourneysJourneyIdPostRoute: typeof AuthenticatedFlockJourneysJourneyIdPostRoute
@@ -3040,6 +3103,7 @@ const AuthenticatedFlockRouteChildren: AuthenticatedFlockRouteChildren = {
   AuthenticatedFlockMembersUserIdRoute: AuthenticatedFlockMembersUserIdRoute,
   AuthenticatedFlockPostNewRoute: AuthenticatedFlockPostNewRoute,
   AuthenticatedFlockVotesVoteIdRoute: AuthenticatedFlockVotesVoteIdRoute,
+  AuthenticatedFlockYouBadgesRoute: AuthenticatedFlockYouBadgesRoute,
   AuthenticatedFlockYouBlockedRoute: AuthenticatedFlockYouBlockedRoute,
   AuthenticatedFlockYouEditRoute: AuthenticatedFlockYouEditRoute,
   AuthenticatedFlockYouMembershipRoute: AuthenticatedFlockYouMembershipRoute,
@@ -3052,6 +3116,8 @@ const AuthenticatedFlockRouteChildren: AuthenticatedFlockRouteChildren = {
   AuthenticatedFlockYouIndexRoute: AuthenticatedFlockYouIndexRoute,
   AuthenticatedFlockCommentsSubjectTypeSubjectIdRoute:
     AuthenticatedFlockCommentsSubjectTypeSubjectIdRoute,
+  AuthenticatedFlockJourneysJourneyIdCardRoute:
+    AuthenticatedFlockJourneysJourneyIdCardRoute,
   AuthenticatedFlockJourneysJourneyIdCompareRoute:
     AuthenticatedFlockJourneysJourneyIdCompareRoute,
   AuthenticatedFlockJourneysJourneyIdFinishedRoute:
@@ -3315,6 +3381,8 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicHooksOnboardingWelcomeRoute: ApiPublicHooksOnboardingWelcomeRoute,
   ApiPublicHooksSaveErrorAlertsRoute: ApiPublicHooksSaveErrorAlertsRoute,
   ApiPublicHooksSendEmailRoute: ApiPublicHooksSendEmailRoute,
+  ApiPublicHooksWeightBaselineShadowRoute:
+    ApiPublicHooksWeightBaselineShadowRoute,
   ApiPublicStripeBillingRoute: ApiPublicStripeBillingRoute,
   ApiPublicStripeWebhookRoute: ApiPublicStripeWebhookRoute,
   ApiPublicBereavementReviewReviewIdSigRoute:

@@ -11,7 +11,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { formatCents } from "./gifts";
-import { BILLING_CHOICES, billingDay, billingEnabled, checkoutDesign, checkoutPlan, firstCharge, saveCardExpiry, saveCardNote, checkoutNote, liveSubscription, type BillingLocale, type BillingState, type NoteT, type PaidPlan } from "./billing";
+import { CHECKOUT_CHOICES, billingDay, billingEnabled, checkoutDesign, checkoutPlan, firstCharge, saveCardExpiry, saveCardNote, checkoutNote, liveSubscription, type BillingLocale, type BillingState, type NoteT, type PaidPlan } from "./billing";
 
 type Ctx = { supabase: any; userId: string; claims: { email?: string } };
 
@@ -139,7 +139,7 @@ async function noteTranslator(locale: BillingLocale): Promise<NoteT> {
 
 export const startBillingCheckout = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: { choice: string; locale?: string }) => z.object({ choice: z.enum(BILLING_CHOICES), locale: z.enum(["en", "nl"]).default("en") }).parse(d))
+  .inputValidator((d: { choice: string; locale?: string }) => z.object({ choice: z.enum(CHECKOUT_CHOICES), locale: z.enum(["en", "nl"]).default("en") }).parse(d))
   .handler(async ({ data, context }): Promise<BillingCheckoutResult> => {
     const ctx = context as Ctx;
     if (!(await allowed(ctx))) return { ok: false, reason: "off" };

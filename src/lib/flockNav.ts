@@ -34,7 +34,7 @@ export function isFlockOnboardingPath(pathname: string): boolean {
   return pathname.startsWith("/flock/welcome") || pathname.startsWith("/flock/setup")
     || pathname.startsWith("/flock/journeys/start") || pathname.startsWith("/flock/journeys/setup")
     || pathname.startsWith("/flock/journeys/known")
-    || /^\/flock\/journeys\/[^/]+\/(post|milestone|finished|story)(\/|$)/.test(pathname);
+    || /^\/flock\/journeys\/[^/]+\/(post|milestone|finished|story|card)(\/|$)/.test(pathname);
 }
 
 /** Full screens with no tab bar that still need a finished setup: writing or
