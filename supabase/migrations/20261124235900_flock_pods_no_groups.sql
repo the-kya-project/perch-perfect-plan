@@ -30,11 +30,23 @@
 -- 1) Close anything that was asking or running as a group --------------------------------
 
 -- A group kept the journey it formed around, so it becomes an ended journey
--- pod, still readable to its members.
-update public.flock_pods p
-set status = 'closed', asked_at = null, ended_at = coalesce(p.ended_at, now())
-where p.status = 'asking' or (p.kind = 'group' and p.status = 'active');
-update public.flock_pods p set kind = 'journey', group_since = null where p.kind = 'group';
+-- pod, still readable to its members. Only while the old columns are there,
+-- so running this again (after they're gone) is a no-op.
+do $$
+begin
+  if exists (select 1 from information_schema.columns
+             where table_schema = 'public' and table_name = 'flock_pods' and column_name = 'asked_at') then
+    execute $sql$
+      update public.flock_pods p
+      set status = 'closed', asked_at = null, ended_at = coalesce(p.ended_at, now())
+      where p.status = 'asking' or (p.kind = 'group' and p.status = 'active')
+    $sql$;
+    execute $sql$
+      update public.flock_pods p set kind = 'journey', group_since = null where p.kind = 'group'
+    $sql$;
+  end if;
+end;
+$$;
 
 
 -- 2) Functions that go away --------------------------------------------------------------
