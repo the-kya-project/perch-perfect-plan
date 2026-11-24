@@ -26,6 +26,12 @@ Copy this, fill it in, and put it at the top of "Runs", above the latest entry.
 - **Outcome:** merged once every required check passed on the latest commit.
 - **Problems:** none.
 
+### 2026-11-24 15:00 EST · 1.11 Buddy pods: brought up to date with `main` (Brittany asked, in a session)
+- **Built:** merged `main` into #548. Kept both #547's challenges and #548's pods everywhere they meet: the post composer (a pod check-in or a challenge entry), the space labels and types (`pod` in `PostSpace`, `challenge` in `PostRowSpace`), the new-post redirect, and both sets of tests. The two migrations stack: both patch post visibility and Today's feed from their live definitions with different anchors, and #548 rebuilds the space check from its live definition, so `challenge` stays.
+- **PR:** [#548](https://github.com/the-kya-project/perch-perfect-plan/pull/548)
+- **Outcome:** held for Brittany, as before. Not merged.
+- **Problems:** none.
+
 ### 2026-11-24 14:30 EST · 1.17 Promo codes: brought up to date and merged (Brittany asked, in a session)
 - **Built:** merged `main` (with 1.14a, #533, and Kya's Crew, #535) into #543. Took `main`'s billing code and put #543's promotion-code rule back on top: the code field on the subscription Checkout only (not the save-the-card one), for the Flock plans and Crew, never the founding price, and the webhook's founding-discount removal. Added tests that Crew gets the field. Recorded Brittany's approval and added the promo-code test checkouts to "Before billing opens".
 - **PR:** [#543](https://github.com/the-kya-project/perch-perfect-plan/pull/543)
