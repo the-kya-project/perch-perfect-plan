@@ -10,7 +10,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { BILLING_CHOICES, billingEnabled, checkoutPlan, firstCharge, liveSubscription, type BillingState, type PaidPlan } from "./billing";
+import { CHECKOUT_CHOICES, billingEnabled, checkoutPlan, firstCharge, liveSubscription, type BillingState, type PaidPlan } from "./billing";
 
 type Ctx = { supabase: any; userId: string; claims: { email?: string } };
 
@@ -104,7 +104,7 @@ export type BillingCheckoutResult =
 
 export const startBillingCheckout = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: { choice: string }) => z.object({ choice: z.enum(BILLING_CHOICES) }).parse(d))
+  .inputValidator((d: { choice: string }) => z.object({ choice: z.enum(CHECKOUT_CHOICES) }).parse(d))
   .handler(async ({ data, context }): Promise<BillingCheckoutResult> => {
     const ctx = context as Ctx;
     if (!(await allowed(ctx))) return { ok: false, reason: "off" };
