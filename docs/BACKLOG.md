@@ -13,7 +13,7 @@ This is the **single ordered build list** for everything before the Flock opens,
   - **no**: it needs her before work starts.
   - **after spec**: it waits for her written spec (see "Waiting on Brittany's spec").
 - **Sizes:** S = less than one session, M = about one session (one PR), L = two to three, XL = four or more.
-- **Health features** always ship behind their own off switch, with every value in the vet-content settings file (item 1.2) marked "draft, pending vet review". Nothing that tells an owner something about their bird's health reaches real users until an avian vet approves it.
+- **Health features** always ship behind their own off switch, with every value in the vet-content settings file (item 1.2) marked "draft, pending vet review". Nothing new that tells an owner something about their bird's health reaches real users until an avian vet approves it. The live daily health check, care weight trend, emergency guides and passing guidance are approved by Brittany and stay as they are (Nov 23, 2026).
 - **Mark an item done in this file in the same PR that finishes it** (move it to "Done" at the bottom with the PR number).
 
 Where these items came from, with the detail behind each: `docs/flock/opening-scope.md`.
