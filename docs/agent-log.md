@@ -20,7 +20,7 @@ Copy this, fill it in, and put it at the top of "Runs", above the latest entry.
 
 ## Runs
 
-### 2026-11-24 12:25 EST · D1.2 update: brought #549 up to date with `main` (Brittany asked, in a session)
+### 2026-11-24 12:35 EST · D1.2 update: brought #549 up to date with `main` (Brittany asked, in a session)
 - **Built:** nothing new. Merged `main` into the branch (a merge, no force-push) after Brittany merged #540. Two conflicts, resolved by keeping both sides. In `CLAUDE.md`, #540's "Health rules and switches" line was kept word for word, with #549's "Weight baseline" line after it. In `src/lib/healthRules.ts`, #540's `emergencyGuides: approved(` was kept along with #549's new `weightBaseline: draft(` wording entry. Checked after the merge: compared with `main`, `healthRules.ts` and `healthFeatures.ts` differ only by #549's weight baseline additions. Every one of them is `draft(...)`, and `weight_baseline` still starts `off`. #540's "approved by Brittany" labels and the narrowed vet review are unchanged. The record files merged with no conflict and both sides' entries are kept. `src/routeTree.gen.ts` didn't conflict.
 - **PR:** [#549](https://github.com/the-kya-project/perch-perfect-plan/pull/549)
 - **Outcome:** Still held for Brittany. Locally, `test:weight-baseline`, `test:health-rules`, `test:today-card`, `i18n:check` and `build` all pass. All required CI checks pass. "Database checks" applied `20261124110000_weight_baseline_shadow.sql` and ran `weight_baseline_shadow_checks.sql` for the first time: 16 passed, 0 failed.
