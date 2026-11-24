@@ -145,6 +145,7 @@ volatile
 security definer
 set search_path = ''
 as $$
+#variable_conflict use_column
 declare
   v_me uuid := auth.uid();
   v_first boolean;
@@ -238,6 +239,7 @@ stable
 security definer
 set search_path = ''
 as $$
+#variable_conflict use_column
 begin
   perform private.assert_can_use_flock();
   if p_user_id is null
