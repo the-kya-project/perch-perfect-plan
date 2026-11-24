@@ -19,6 +19,45 @@ Format:
   - After: "<new wording>"
 ```
 
+### [#544](https://github.com/the-kya-project/perch-perfect-plan/pull/544) · 1.7 Instagram share cards for journeys
+All new, on the share card screen (`/flock/journeys/<id>/card`) and the buttons that open it. Nobody but admins sees them while the Flock is closed. "Make a share card", "Post", "Story", "Show [bird]'s name", "Add my name", "Share", the web hint and "Kya & Co. · thekyaproject.com" are the mockup's words. The rest is agent wording. The mark is drawn on the card in English, not translated.
+- **Where:** `flock.journeys.shareCard.make` (milestone celebration, finished journey page, Day one vs. now)
+  - Before: new
+  - After: "Make a share card"
+- **Where:** `flock.journeys.shareCard.title` (screen title)
+  - Before: new
+  - After: "Share card"
+- **Where:** `flock.journeys.shareCard.post` / `.story` (size chips)
+  - Before: new
+  - After: "Post" / "Story"
+- **Where:** `flock.journeys.shareCard.showBird` / `.addMe` (switches)
+  - Before: new
+  - After: "Show {{name}} name" (shows as "Show Echo's name") / "Add my name"
+- **Where:** `flock.journeys.shareCard.share` / `.webHint`
+  - Before: new
+  - After: "Share" / "On the web, this downloads the image so you can post it." (shown only where the browser can't share files)
+- **Where:** `flock.journeys.shareCard.saved` (after a download)
+  - Before: new
+  - After: "The card is in your downloads, ready to post."
+- **Where:** `flock.journeys.shareCard.failed`
+  - Before: new
+  - After: "We couldn't make the card. Try again in a moment."
+- **Where:** `flock.journeys.shareCard.unavailable` (someone else's journey, a milestone not reached yet)
+  - Before: new
+  - After: "A share card can be made only for your own birds' journeys."
+- **Where:** on the card, a milestone: `.milestoneEyebrow`, the title (the celebration's existing "{{name}} {{done}}!" / "{{name}} did it!"), `.lineNoName`, `.lineCustomNoName`, `.reachedOn`
+  - Before: new
+  - After: "{{skill}} · milestone {{n}}"; with the bird's name off, "{{done}}!" (e.g. "Stepped on with one foot!") or, for a custom journey, "Milestone reached!"; "Reached {{date}}"
+- **Where:** on the card, a finished journey: `.finishedEyebrow`, `.finishedTitle`, `.finishedTitleNoName`, `.finishedOn`
+  - Before: new
+  - After: "{{skill}} · Finished!"; "{{name}} learned {{skill}}" / "Learned {{skill}}"; "Finished {{date}}"
+- **Where:** on the card, day one vs. now: `.compareEyebrowFinished`, `.compareTitle`, `.compareTitleNoName`
+  - Before: new
+  - After: "{{skill}} · finished" (just the journey name while it's going); "{{name}}, day one and now" / "Day one and now"
+- **Where:** on the card, the member's name when added: `.from`
+  - Before: new
+  - After: "From {{name}}"
+
 ### [#529](https://github.com/the-kya-project/perch-perfect-plan/pull/529) · 1.8 Do good voting (shared donation)
 Every voting line as merged, all new to the live app. Nobody but admins sees them while the Flock is closed. The member wording follows Brittany's approved mockups. The founders-only lines and "See your vote" are agent wording the mockups don't cover.
 - **Where:** `flock.votes.adminCounts_one`
@@ -612,6 +651,15 @@ No new strings: every line reuses existing wording, in new places (admins only).
 
 ## Decisions agents made
 
+### [#544](https://github.com/the-kya-project/perch-perfect-plan/pull/544) · 1.7 Instagram share cards for journeys
+- **Decision:** Only the bird's household can make a card, for any journey, community ones included. The spec only rules out other people's "Just me" journeys, but a card of someone else's bird posted to Instagram felt like it needed the owner's say. The server checks this too for day one vs. now.
+- **Decision:** A finished journey's "Make a share card" sits on the journey page once it's finished, not on the "Journey complete" screen. Leaving that screen would lose a half-written tip for the next person, and "Finish" lands on the journey page anyway. The mockup has no finished screen.
+- **Decision:** On the milestone celebration, "Make a share card" is the sunflower button and "Share with the community" became the white one under it, as in the mockup. Its wording stays "Share with the community" rather than the mockup's "Post to the Flock", since this item doesn't cover that button.
+- **Decision:** The card adds the date reached ("Reached Nov 22", "Finished Nov 22") under the title, which the spec asks for and the mockup's sample card leaves out. The member's name, when added, is "From [name]" above the Kya & Co. mark. Day one vs. now shows the date under each photo, as in the mockup.
+- **Decision:** Day one vs. now uses a still from each clip (Cloudflare's thumbnail, fetched on the server), since its "photos" are clips. It opens in story size, as in the mockup; the others open as a post.
+- **Decision:** The card's text is drawn in DM Sans and Newsreader, the app's fonts, rather than the Moments card's system font, to match the mockup. It's the Moments card's approach (a canvas PNG, the same share-or-download code) in the Flock's forest and lime.
+- **To change it:** `src/lib/journeyCard.ts` (layout, who may make one) and `src/routes/_authenticated/flock.journeys.$journeyId.card.tsx` (wording).
+
 ### [#529](https://github.com/the-kya-project/perch-perfect-plan/pull/529) · 1.8 Do good voting: approved mockups
 - **Decision (Brittany's):** Founders-only votes keep plain results: each choice's percentage and the top choice, with no donation or 10% wording. All-member votes share the donation. This replaces the earlier #529 notes below about a winner, changing a vote and the 10-vote minimum.
 - **Decision:** Rounding uses largest remainder, so shares always total exactly 100%. Leftover points go to the largest remainder, then more votes, then the earlier choice. With no votes and three choices, that's 34 / 33 / 33.
@@ -940,6 +988,9 @@ Format:
 ### <PR link> · <item ID> <item title>
 - **Needs:** <the decision, approval or read, in one or two lines>
 ```
+
+### [#535](https://github.com/the-kya-project/perch-perfect-plan/pull/535) · 1.15 Kya's Crew: Free-user regression needs a re-run
+- **Needs:** a re-run of "Free-user regression" on #535 (Actions → the cancelled run → Re-run jobs). On its latest commit (`ebaa867`, "Crew: remove sponsored seat counting") that check was cancelled, not failed, most likely because a newer run joined the shared staging queue. It passed on the commit before. Runs can't re-run checks. The PR is otherwise held for your approval, as its description says.
 
 ### Reminder · the hourly runs' GitHub token expires Feb 20, 2027
 - **Needs:** a new token before **Feb 20, 2027**. That's 90 days from Nov 22, 2026; GitHub → Settings → Developer settings → Fine-grained tokens shows the exact date. When it expires, runs can still build and test but can't push or open PRs, and each run's note in `~/.kya-agent/job.log` says so.
