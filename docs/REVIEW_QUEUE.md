@@ -19,6 +19,51 @@ Format:
   - After: "<new wording>"
 ```
 
+### [#554](https://github.com/the-kya-project/perch-perfect-plan/pull/554) · 1.20b Journeys redesign: screens
+English only (Dutch waits for your read of the English, as 1.20 says). Behind `journeys_enabled()` (off in production) and the Flock gate, so nobody sees these yet. Keys in `src/locales/en.jsonc`.
+- **Where:** Journeys tab
+  - "Start a journey" → "Start something new"
+  - New: "Your journeys", "Paused", "From the Flock", "Day {{day}}", "Learned it · {{count}} days", "Learned it" (card pill; was "Finished"), "Happy where we are"
+  - Card line. Before: "{{done}} of {{total}} · [owner] · N following". After: "Day 17 · [owner] · N following" (or "Learned it · 31 days")
+  - Empty For you. Before: "Journeys are members' stories told one step at a time: a new trick, a calmer bird, a better diet. The first ones will appear here." After: "Journeys are members' stories of teaching their birds: a new trick, a calmer vet visit, a better diet. The first ones will appear here."
+  - Empty Following. Before: "Follow a member's journey and each new step they share will show up here." After: "Follow a member's journey and each update they share will show up here."
+  - "Post an update for…" rows: the "3/7" ring became a "Day N" badge ("Day")
+- **Where:** Pick a skill
+  - Title. Before: "Start a journey". After: "Pick a skill"
+  - Groups. Before: "The basics · free", "Flock journeys". After: "Handling and health", "Foundations", "Food", "Tricks"
+  - Row line. Before: "{{count}} milestones · usually {{length}}". After: the skill's description
+  - Before: "{{name}} knows this". After: "{{name}} already knows this"
+  - Before: "Write your own journey". After: "Your own skill" (button and the custom screen's title)
+  - Removed: "{{name}}, part of the Flock" (the lock's label)
+- **Where:** a skill's page and setup
+  - Line under the title. Before: "{{name}} new journey". After: "for {{name}}"
+  - New: "Safety notes", "How others did it", "Journeys and tips from Flock members", "No one has shared a journey for this skill yet. Yours could be the first.", "Learned it in {{count}} days", "Set it up", "{{skill}} video"
+  - Removed: "Where is {{name}} starting?", "Tap anything she/he/they already do(es).", "Already", "Start here", "Leave at least one step to work on, or mark the whole skill as known instead.", "Day-one clip", "Record or add a clip", "Day-one clip added", "Replace", "You'll compare it with later clips. It's worth the 30 seconds.", "This journey is only available to Flock members."
+- **Where:** the "Part of the Flock" sheet (free accounts; still no price)
+  - Title. Before: "Teach {{bird}} to wave" (and the other six per-skill titles). After: "See how others did it", or "Ask the Flock"
+  - Before: "Tricks like this one are only available to Flock members." After: "In the Flock, members share their journeys and what helped them, so you can see how other birds learned {{skill}}." / "In the Flock, you can ask other members about your journey and hear from people who've been there."
+  - Before: "The Flock is The Kya Project's community, where you'll find your local chapter, a library of guides and recordings, and every training journey, including tricks, nail trims, and stationing." After: "The Flock is The Kya Project's community, where you'll find your local chapter, a library of guides and recordings, and other members' journeys."
+- **Where:** the journey page
+  - Removed: "{{done}} of {{total}}", " · next: {{next}}" and the step bar
+  - New: "About this skill", "{{name}} learned it!", "{{name}} is on the new diet" (Diet conversion), the confirm sheet's "This finishes the journey and adds {{skill}} to {{name}} skills." / "This finishes the journey. Keep weighing {{name}} as usual." (Diet conversion), "Finish the journey", "Not yet"
+  - Clip tag. Before: "Milestone". After: "Big moment" (also the story viewer, where it was "Milestone {{n}} of {{total}}")
+  - Delete. Before: "This removes the journey, its milestones and its {{count}} clips for good. It can't be undone." After: "This removes the journey and its {{count}} clips for good. It can't be undone."
+  - Day one vs. now. Before: "{{days}} days, {{sessions}} sessions, {{milestones}} milestones." After: "{{days}} days, {{sessions}} sessions, {{count}} big moments." (or without the last part when there are none)
+- **Where:** Post an update
+  - Removed: "Working on:", "Did {{name}} {{ask}}?", "Did {{name}} get this one? “{{title}}”", "Yes!", "Not yet"
+  - New: "This was a big moment", "A first, a breakthrough, or a day worth remembering. Followers see it on Today, and you can make a share card.", "Your question will show to the Flock too, so members can answer.", "Only you can see this journey, so only you will see the question.", "Ask the Flock", "What a moment for {{name}}!"
+  - The vet nudge's existing cards now show here too (no new wording).
+- **Where:** finished
+  - Title. Before: "{{name}} learned {{skill}}". After: "{{name}} learned {{skill}}!" or "{{name}} is on the new diet"
+  - Button. Before: "Share and finish" / "Finish". After: "Done"
+- **Where:** Today
+  - Pill. Before: "Milestone {{n}} of {{total}} · {{name}} {{skill}}". After: "Big moment · {{name}} {{skill}}", or "Learned it · {{name}} {{skill}}" with "{{name}} learned {{skill}}!" / "{{name}} is on the new diet!"
+  - Rings: "Day N" or "Learned it" under the name; the label "{{name}}'s {{skill}}, {{done}} of {{total}}" became "{{name}}'s {{skill}}, {{day}}"
+- **Where:** share cards
+  - Before: "{{skill}} · milestone {{n}}", "[Bird] [done line]!", "Milestone reached!", "Reached {{date}}". After: "{{skill}} · big moment", "A big moment for {{name}}!", "A big moment!", the date
+- **Where:** challenges (journey challenges)
+  - Before: "{{n}} milestones" in the summary, "{{done}} of {{total}} milestones" on the page. After: no step count; "Learned it" / "In progress" in the progress line; on the page "Finish the journey with “learned it” by the last day to complete the challenge." or "{{name}} learned it. You finished the challenge!"
+
 ### [#552](https://github.com/the-kya-project/perch-perfect-plan/pull/552) · 1.20a Journeys redesign: data and migration
 Held, not merged yet. All of it is template text in the database (`journey_templates`), still `review_status = 'draft'`, written by `20261124190000_journeys_skills_data.sql` through `admin_update_journey_template`. Every "After" is the spec's "Skill content" word for word; nothing is shown to anyone but admins (journeys are off for everyone else). No app strings changed, so no Dutch.
 - **Where:** each skill's description (`purpose`, shown on the skill page and the journey page from 1.20b)
@@ -1058,6 +1103,24 @@ No new strings: every line reuses existing wording, in new places (admins only).
 ---
 
 ## Decisions agents made
+
+### [#554](https://github.com/the-kya-project/perch-perfect-plan/pull/554) · 1.20b Journeys redesign: screens
+- **Decision:** "[Bird] learned it!" asks once before finishing (a small sheet: "Finish the journey" / "Not yet"), because finishing can't be undone from the app. "We're happy where we are" stays in the journey's menu, now through `journey_finish`.
+- **Decision:** Today's "learned it" cards have no reactions or comments: a finish has no update to hang them on. They open the journey. Big-moment cards react and comment on the update itself (`journey_update`), like the story viewer.
+- **Decision:** Today's journey cards and rings still come only from journeys you follow, as the milestone cards did.
+- **Decision:** "Ask the Flock" shows only when the caption has a "?" (that's what makes it a question). On a private journey a member's "Ask the Flock" opens the existing "Who sees it?" sheet to share the journey; it doesn't share on its own.
+- **Decision:** The "This was a big moment" switch sits under the caption; after a big moment the post sheet offers "Make a share card" (the 1.7 card, now made from that update: `?kind=moment&u=`).
+- **Decision:** Setup no longer asks for a day-one clip (the spec: setup asks only which bird, how often and who sees it). Day one vs. now compares the first clip posted with the latest, as it already did when there was no day-one clip.
+- **Decision:** The bird is picked before the skill (as before), so setup shows "for [Bird]" instead of asking again.
+- **Decision:** The Journeys tab keeps its four chips (For you, Following, Tricks, Basics) inside "From the Flock". "Basics" still means the seven skills stored as free; worth renaming or dropping in 1.20e.
+- **Decision:** Free accounts never call the community reads on a skill page (no tips, no other journeys): "How others did it" is one row that opens the sheet.
+- **Decision:** "Your own skill" keeps today's name-and-steps screen for now (the database ignores the steps since 1.20a). 1.20c replaces it with a name and description. "Skills from the Flock" and member skills in "From the Flock" are 1.20c too.
+- **Decision:** Diet conversion's screens are left as they are for 1.20d, apart from what every journey lost: the "How to make it work" list (its tips are empty since 1.20a) and the step bar. Its weight card, vet card and reminder, weigh-in reminder, pause banner and disclaimer are unchanged; the vet reminder still reads milestone 2 until 1.20d. A weight pause hides "is on the new diet".
+- **Decision:** A bird that has passed: its journeys open read-only (no posting, no finishing, no menu).
+- **Decision:** The milestone celebration screen (`/flock/journeys/<id>/milestone/<n>`) is gone. Old milestone comment links still open (`/flock/comments/journey_milestone/…`).
+- **Decision:** A skill's video plays through a new server function (`getSkillVideo`) that reads the template as the member and signs the Cloudflare clip for an hour; there are no videos yet, so nothing shows.
+- **Decision:** The vet nudge's phrases reach free accounts through a new `journey_vet_sign_tiers()` (journeys only); `flock_vet_sign_tiers()` stays Flock-only. Journey updates have no "vet nudged" column, so posting anyway isn't recorded.
+- **Decision:** Journey challenges: finishing already meant "the journey ended as learned it by the end day" (`flock_challenge_done`), so only the progress counts changed (`flock_challenge_rows` returns 0 milestones for a journey challenge, patched from its live definition).
 
 ### [#552](https://github.com/the-kya-project/perch-perfect-plan/pull/552) · 1.20a Journeys redesign: data and migration
 - **Approved (Brittany, Nov 24, 2026):** she asked for #552 to be brought up to date and merged, which approves the migration. The template text's copy read stays open under "Copy that merged".
