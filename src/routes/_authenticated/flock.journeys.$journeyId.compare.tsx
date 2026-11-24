@@ -77,7 +77,7 @@ function Compare() {
         </div>
         <p className="m-0 rounded-[16px] bg-white p-3.5 text-[14.5px] leading-[1.45]" style={{ color: K.ink }} data-testid="compare-summary">
           {moments > 0
-            ? t("flock.journeys.compare.summaryMoments", "{{days}} days, {{sessions}} sessions, {{moments}} big moments.", { days, sessions, moments })
+            ? t("flock.journeys.compare.summaryMoments", "{{days}} days, {{sessions}} sessions, {{count}} big moments.", { days, sessions, count: moments })
             : t("flock.journeys.compare.summaryDays", "{{days}} days, {{sessions}} sessions.", { days, sessions })}
         </p>
         {card?.is_mine && left && right && left.update_id !== right.update_id && (

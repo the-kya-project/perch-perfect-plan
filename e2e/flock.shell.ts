@@ -454,7 +454,7 @@ type SeedJourney = {
   lastPostedDaysAgo?: number; visibility?: string;
   /** Someone else's journey (a made-up member), not one of the signed-in owner's birds. */
   owner?: string; region?: string;
-  /** How many clips it has: the first is the day-one clip, one is a Question, the newest is a Milestone. */
+  /** How many clips it has: the first is the day-one clip, one is a Question, the newest is a Big moment. */
   clips?: number; followers?: number; following?: boolean;
 };
 type JourneyMockOpts = {
@@ -490,13 +490,18 @@ async function mockJourneys(context: BrowserContext, opts: JourneyMockOpts, bird
     const ms = tp ? tp.milestones.map((m) => ({ title: m.title, words: { ask: m.ask, done_line: m.done_line } })) : custom!.milestones.map((title) => ({ title, words: null }));
     return {
       id, bird_id: birdId, template_id: tp?.id ?? null, custom_name: custom?.name ?? null, status: "active", visibility: "community", rhythm: "most_days",
-      started_at: new Date(Date.now() - 16 * 86_400_000).toISOString(), finished_at: null, paused_reason: null, vet_check: null, vet_remind_after: null,
-      template: tp ? { name: tp.name, slug: tp.slug } : null, bird: { name: birds.find((b) => b.id === birdId)?.name ?? "" },
+      started_at: new Date(Date.now() - 16 * 86_400_000).toISOString(), finished_at: null as string | null, paused_reason: null, vet_check: null, vet_remind_after: null,
+      custom_description: null,
+      template: tp ? { name: tp.name, slug: tp.slug } : null, bird: { name: birds.find((b) => b.id === birdId)?.name ?? "", passed_at: null },
       milestones: ms.map((m, i) => ({ id: `${id}-m${i + 1}`, position: i + 1, title: m.title, state: "todo", reached_at: null, shared_at: null, words: m.words })),
       ...extra,
     };
   };
   const updates = new Map<string, any[]>();
+  /** Updates posted during the test. */
+  const posted: { update_id: string; journey_id: string; caption: string | null; is_question: boolean; is_day_one: boolean; created_at: string }[] = [];
+  /** "This was a big moment" updates (the newest of each seeded journey with 2+ clips, and new posts that say so). */
+  const bigMoments = new Set<string>();
   const follows = new Set<string>();
   const meta = new Map<string, { owner: string; region: string | null; mine: boolean; followers: number }>();
   for (const sj of opts.seed ?? []) {
@@ -504,9 +509,10 @@ async function mockJourneys(context: BrowserContext, opts: JourneyMockOpts, bird
     const j = make(sj.id, bird.id, JOURNEY_TEMPLATES.find((x) => x.slug === sj.slug), sj.custom ?? null,
       { status: sj.status ?? "active", paused_reason: sj.pausedReason ?? null, visibility: sj.visibility ?? "community", vet_check: sj.vetCheck ?? null });
     j.milestones.forEach((m: any, i: number) => { if (i < sj.done) m.state = "reached"; });
+    if (j.status === "finished") j.finished_at = new Date(Date.now() - 3_600_000).toISOString();
     journeys.set(sj.id, j);
     if (sj.lastPostedDaysAgo != null) lastPosted.set(sj.id, new Date(Date.now() - sj.lastPostedDaysAgo * 86_400_000).toISOString());
-    if (sj.owner) j.bird = { name: sj.birdName };
+    if (sj.owner) j.bird = { name: sj.birdName, passed_at: null };
     meta.set(sj.id, { owner: sj.owner ?? "Brittany K.", region: sj.region ?? null, mine: !sj.owner, followers: sj.followers ?? 0 });
     if (sj.following) follows.add(sj.id);
     const n = sj.clips ?? 0;
@@ -519,6 +525,7 @@ async function mockJourneys(context: BrowserContext, opts: JourneyMockOpts, bird
         great_job: newest ? 3 : 0, been_there: 0, rooting_for_you: 0, love_this: 0, mine: [],
       };
     }).reverse());
+    if (n > 1) bigMoments.add(`${sj.id}:${updates.get(sj.id)![0].update_id}`);
   }
   const card = (j: any) => {
     const m = meta.get(j.id) ?? { owner: "Brittany K.", region: null, mine: true, followers: 0 };
@@ -545,6 +552,12 @@ async function mockJourneys(context: BrowserContext, opts: JourneyMockOpts, bird
   await context.route(`${MOCK}/rest/v1/journey_updates**`, (route) => {
     const url = new URL(route.request().url());
     if ((url.searchParams.get("select") ?? "").startsWith("journey_id")) return json(route, [...lastPosted].map(([journey_id, created_at]) => ({ journey_id, created_at })));
+    // One journey's own updates (the household reads the table): the share card's big moment.
+    const jid = url.searchParams.get("journey_id")?.replace(/^eq\./, "");
+    if (jid) return json(route, [...(updates.get(jid) ?? []), ...posted.filter((p) => p.journey_id === jid)].map((u) => ({
+      id: u.update_id, clip_ref: "cfstream:0123456789abcdef", engagement: "all_in", caption: u.caption, is_question: u.is_question, is_day_one: u.is_day_one,
+      is_big_moment: bigMoments.has(`${jid}:${u.update_id}`), milestone_position: null, created_at: u.created_at,
+    })));
     return json(route, []);
   });
   await context.route(`${MOCK}/rest/v1/bird_skills**`, (route) => {
@@ -559,7 +572,8 @@ async function mockJourneys(context: BrowserContext, opts: JourneyMockOpts, bird
       return j ? json(route, j) : json(route, { code: "PGRST116" }, 406);
     }
     const status = url.searchParams.get("status")?.replace(/^eq\./, "");
-    return json(route, [...journeys.values()].filter((j) => !status || j.status === status));
+    // The table only ever returns the household's own journeys (RLS).
+    return json(route, [...journeys.values()].filter((j) => (meta.get(j.id)?.mine ?? true) && (!status || j.status === status)));
   });
   await context.route(`${MOCK}/rest/v1/rpc/journey_*`, async (route) => {
     const fn = new URL(route.request().url()).pathname.split("/").pop()!;
@@ -582,7 +596,43 @@ async function mockJourneys(context: BrowserContext, opts: JourneyMockOpts, bird
       journeys.set(id, jn);
       return json(route, id);
     }
-    if (fn === "journey_post_update") return json(route, "00000000-0000-4000-8000-0000000073aa");
+    if (fn === "journey_post_update") {
+      const id = `00000000-0000-4000-8000-0000000073${String(posted.length + 10).padStart(2, "0")}`;
+      posted.push({ update_id: id, journey_id: args.p_journey_id, caption: args.p_caption, is_question: /\?/.test(args.p_caption ?? ""), is_day_one: false, created_at: new Date().toISOString() });
+      if (args.p_big_moment) bigMoments.add(`${args.p_journey_id}:${id}`);
+      return json(route, id);
+    }
+    if (fn === "journey_finish" && j) {
+      j.status = args.p_how === "learned" ? "finished" : "happy_where_we_are";
+      j.finished_at = new Date().toISOString(); j.paused_reason = null;
+      return json(route, j.status);
+    }
+    if (fn === "journey_vet_sign_tiers") return json(route, [
+      ...["fluffed up all day", "sleeping a lot", "isn't eating", "tail bobbing", "bleeding"].map((phrase) => ({ phrase, tier: "today" })),
+      ...["won't stop bleeding", "teflon fumes", "ate chocolate"].map((phrase) => ({ phrase, tier: "urgent" })),
+    ]);
+    if (fn === "journey_big_moments") return json(route, (updates.get(args.p_journey_id) ?? []).filter((u) => bigMoments.has(`${args.p_journey_id}:${u.update_id}`)).map((u) => ({ update_id: u.update_id })));
+    if (fn === "journey_following_latest") {
+      return json(route, [...journeys.values()].filter((x) => follows.has(x.id)).map((x) => ({ journey_id: x.id, update_id: (updates.get(x.id) ?? [])[0]?.update_id ?? null })));
+    }
+    if (fn === "journey_skill_journeys") {
+      if (tier === "free") return json(route, []);
+      return json(route, [...journeys.values()].filter((x) => x.visibility === "community" && !(meta.get(x.id)?.mine ?? true)).map(card)
+        .filter((c) => c.template_slug === args.p_template_slug));
+    }
+    if (fn === "journey_moment_cards") {
+      return json(route, [...journeys.values()].filter((x) => follows.has(x.id)).flatMap((x) => {
+        const c = card(x); const m = meta.get(x.id);
+        const base = { journey_id: x.id, bird_id: x.bird_id, bird_name: c.bird_name, bird_has_photo: false, skill: c.skill, template_slug: c.template_slug,
+          owner_name: m?.owner ?? null, owner_region: m?.region ?? null };
+        const big = (updates.get(x.id) ?? []).filter((u) => bigMoments.has(`${x.id}:${u.update_id}`)).map((u) => ({ ...base, card_kind: "big_moment", update_id: u.update_id,
+          happened_at: new Date(Date.now() - 2 * 3_600_000).toISOString(), caption: u.caption, has_clip: true,
+          great_job: 12, been_there: 4, rooting_for_you: 0, love_this: 0, mine: [] }));
+        const learned = x.status === "finished" ? [{ ...base, card_kind: "learned", update_id: null, happened_at: x.finished_at, caption: null, has_clip: false,
+          great_job: 0, been_there: 0, rooting_for_you: 0, love_this: 0, mine: [] }] : [];
+        return [...big, ...learned];
+      }));
+    }
     if (fn === "journey_view") return json(route, j ? [card(j)] : []);
     if (fn === "journey_finisher_tips_for") {
       const list = tier === "free" ? [] : (opts.finisherTips?.[args.p_template_slug] ?? []);
@@ -813,7 +863,7 @@ test("as an admin, Duo / wide: the five Community tabs sit in the side column", 
 });
 
 test.describe("journeys: start a journey (admin, phone)", () => {
-  test("pick a bird, pick Step up, mark what he already does, start: the database gets exactly that", async ({ browser, baseURL }) => {
+  test("pick a bird, pick a skill from one list, read about it, choose how often and who sees it, start: the database gets exactly that", async ({ browser, baseURL }) => {
     const { context, page, journeys } = await open(browser, baseURL!, { admin: true, journeys: { knownSlugs: ["target-training"] } });
     await page.goto("/flock/journeys");
     await page.getByTestId("start-journey").click();
@@ -821,36 +871,61 @@ test.describe("journeys: start a journey (admin, phone)", () => {
     // A full screen: no tab bar.
     await expect(page.locator("[data-flock-tab]")).toHaveCount(0);
     await page.getByTestId("pick-bird").locator("[data-bird]", { hasText: "Echo" }).click();
+    await expect(page.getByRole("heading", { level: 1 })).toHaveText("Pick a skill");
     const list = page.getByTestId("template-list");
-    await expect(list.getByRole("heading", { name: "The basics · free" })).toBeVisible();
-    await expect(list.getByRole("heading", { name: "Flock journeys" })).toBeVisible();
+    // One list, no free/Flock split: Handling and health, Foundations, Food, Tricks.
+    await expect(list.getByRole("heading")).toHaveText(["Handling and health", "Foundations", "Food", "Tricks"]);
+    await expect(list.getByRole("heading", { name: "Flock journeys" })).toHaveCount(0);
     await expect(list.locator("[data-template]")).toHaveCount(7);
-    await expect(list.locator("[data-template='target-training']")).toContainText("Echo knows this");
-    await expect(list.locator("[data-template='step-up']")).toContainText("7 milestones · usually 2–6 weeks");
+    await expect(list.locator("[data-skill-group='tricks'] [data-template]")).toHaveCount(2);
+    // Already knows it: says so, and it can still be started.
+    await expect(list.locator("[data-template='target-training']")).toContainText("Echo already knows this");
+    await expect(list.locator("[data-template='step-up']")).toContainText("So your bird steps onto your hand calmly and by choice");
     await expect(list.locator("[data-locked]")).toHaveCount(0);
+    await expect(page.getByTestId("write-own")).toHaveText("Your own skill");
     await list.locator("[data-template='step-up']").click();
 
     await expect(page).toHaveURL(/\/flock\/journeys\/setup\?/);
     const setup = page.getByTestId("journey-setup");
     await expect(page.getByRole("heading", { level: 1 })).toHaveText("Step up");
-    await expect(setup.getByText("Where is Echo starting?")).toBeVisible();
-    await expect(setup.getByText("Tap anything he already does.")).toBeVisible();
-    await setup.locator("[data-position='1']").click();
-    await setup.locator("[data-position='2']").click();
-    await expect(setup.locator("[data-position='3']")).toContainText("Start here");
-    await expect(setup.locator("[data-position='1']")).toContainText("Already");
-    await expect(setup.getByText("You'll compare it with later clips. It's worth the 30 seconds.")).toBeVisible();
+    await expect(setup.getByTestId("skill-description")).toContainText("So your bird steps onto your hand calmly and by choice");
+    await expect(setup.getByTestId("safety-notes")).toContainText("Never withhold food to make a bird hungrier for training.");
+    await expect(setup.getByTestId("skill-video")).toHaveCount(0);
+    // No milestone checklist, no "already does", no day-one clip, no tips list.
+    await expect(setup.locator("[data-position]")).toHaveCount(0);
+    await expect(setup.getByText("Where is Echo starting?")).toHaveCount(0);
+    await expect(setup.getByTestId("day-one-add")).toHaveCount(0);
+    await expect(setup.getByTestId("how-to")).toHaveCount(0);
+    // How others did it: a Flock member sees the section (empty here).
+    await expect(setup.getByTestId("how-others")).toContainText("How others did it");
+    await expect(setup.getByTestId("how-others-empty")).toBeVisible();
     await expect(setup.getByTestId("rhythm").locator("[aria-checked='true']")).toHaveText("A few times a week");
     await expect(setup.getByTestId("visibility").locator("[role='radio']")).toHaveText(["The community", "Just me"]);
     await expect(setup.getByTestId("visibility").locator("[aria-checked='true']")).toHaveText("The community");
-    await expect(setup.getByTestId("safety-notes")).toContainText("Never withhold food to make a bird hungrier for training.");
     await setup.getByTestId("rhythm").getByRole("radio", { name: "Most days" }).click();
     await page.getByRole("button", { name: "Start Echo's journey" }).click();
 
     await expect(page).toHaveURL(/\/flock\/journeys\/00000000-0000-4000-8000-000000007201$/);
     expect(journeys.starts).toHaveLength(1);
-    expect(journeys.starts[0]).toMatchObject({ p_template_slug: "step-up", p_custom_name: null, p_already: [1, 2], p_rhythm: "most_days", p_visibility: "community", p_day_one_clip: null });
-    await expect(page.getByTestId("journey-progress")).toHaveText("2 of 7 · next: Shifts weight and steps on with one foot, then steps back off.");
+    expect(journeys.starts[0]).toMatchObject({ p_template_slug: "step-up", p_custom_name: null, p_already: null, p_rhythm: "most_days", p_visibility: "community", p_day_one_clip: null });
+    await expect(page.getByTestId("journey-page")).toBeVisible();
+    await expect(page.getByTestId("progress-bar")).toHaveCount(0);
+    await context.close();
+  });
+
+  test("How others did it: other members' community journeys for the skill, and their tips", async ({ browser, baseURL }) => {
+    const kiwi = { id: "00000000-0000-4000-8000-0000000074a3", birdName: "Kiwi", slug: "step-up", done: 0, owner: "Alex R.", region: "Great Lakes", status: "finished" };
+    const { context, page } = await open(browser, baseURL!, { admin: true, journeys: { seed: [kiwi], finisherTips: { "step-up": ["Keep your hand still and let them choose."] } } });
+    await page.goto("/flock/journeys/start");
+    await page.getByTestId("pick-bird").locator("[data-bird]", { hasText: "Echo" }).click();
+    await page.locator("[data-template='step-up']").click();
+    const others = page.getByTestId("how-others");
+    await expect(others.getByTestId("finisher-tips")).toContainText("Keep your hand still and let them choose.");
+    await expect(others.locator(`[data-other-journey='${kiwi.id}']`)).toContainText("Kiwi · Alex R.");
+    await expect(others.locator(`[data-other-journey='${kiwi.id}']`)).toContainText(/Learned it in \d+ days?/);
+    await expect(others.getByTestId("how-others-empty")).toHaveCount(0);
+    await others.locator(`[data-other-journey='${kiwi.id}']`).click();
+    await expect(page).toHaveURL(new RegExp(`/flock/journeys/${kiwi.id}$`));
     await context.close();
   });
 
@@ -871,10 +946,8 @@ test.describe("journeys: start a journey (admin, phone)", () => {
     const setup = page.getByTestId("journey-setup");
     await expect(setup.getByTestId("safeguards")).toContainText("If weight drops, the journey pauses with a clear message to call your avian vet.");
     await expect(setup.getByTestId("vet-check")).toHaveCount(0);
-    await setup.getByTestId("how-to").locator("summary").click();
-    await expect(setup.getByTestId("how-to").locator("li").first()).toHaveText("Offer the new food first thing in the morning, with the usual food alongside.");
-    await expect(setup.getByTestId("how-to").locator("li")).toHaveCount(11);
-    await expect(setup.getByText("Tap anything she already does.")).toBeVisible();
+    // The "How to make it work" tips list is gone (its protective lines are safety notes now).
+    await expect(setup.getByTestId("how-to")).toHaveCount(0);
     await page.getByRole("button", { name: "Start Willow's journey" }).click();
     await expect(page).toHaveURL(/\/flock\/journeys\/00000000-0000-4000-8000-000000007201$/);
     expect(journeys.starts[0]).toMatchObject({ p_template_slug: "diet-conversion" });
@@ -931,24 +1004,24 @@ test.describe("journeys: start a journey (admin, phone)", () => {
     // Still on milestone 1, or "I've talked": no reminder. Another journey: no disclaimer.
     o = await open(browser, baseURL!, { admin: true, journeys: { seed: [{ ...diet, done: 0 }, { ...diet, id: "00000000-0000-4000-8000-0000000074b2", birdName: "Echo", vetCheck: "talked" }, { id: "00000000-0000-4000-8000-0000000074b3", birdName: "Max", slug: "step-up", done: 1 }] } });
     await o.page.goto(`/flock/journeys/${id}`);
-    await expect(o.page.getByTestId("journey-progress")).toBeVisible();
+    await expect(o.page.getByTestId("journey-page")).toBeVisible();
     await expect(o.page.getByTestId("vet-reminder")).toHaveCount(0);
     await expect(o.page.getByTestId("diet-disclaimer")).toBeVisible();
     await o.page.goto("/flock/journeys/00000000-0000-4000-8000-0000000074b2");
-    await expect(o.page.getByTestId("journey-progress")).toBeVisible();
+    await expect(o.page.getByTestId("journey-page")).toBeVisible();
     await expect(o.page.getByTestId("vet-reminder")).toHaveCount(0);
     await o.page.goto("/flock/journeys/00000000-0000-4000-8000-0000000074b3");
-    await expect(o.page.getByTestId("journey-progress")).toBeVisible();
+    await expect(o.page.getByTestId("journey-page")).toBeVisible();
     await expect(o.page.getByTestId("diet-disclaimer")).toHaveCount(0);
     await o.context.close();
   });
 
-  test("write your own: a name and 3 milestones, privately", async ({ browser, baseURL }) => {
+  test("your own skill: a name and 3 steps, privately (1.20c reworks this screen)", async ({ browser, baseURL }) => {
     const { context, page, journeys } = await open(browser, baseURL!, { admin: true });
     await page.goto("/flock/journeys/start");
     await page.getByTestId("pick-bird").locator("[data-bird]", { hasText: "Max" }).click();
     await page.getByTestId("write-own").click();
-    await expect(page.getByRole("heading", { level: 1 })).toHaveText("Write your own journey");
+    await expect(page.getByRole("heading", { level: 1 })).toHaveText("Your own skill");
     const start = page.getByRole("button", { name: "Start Max's journey" });
     await expect(start).toBeDisabled();
     await page.getByTestId("custom-name").fill("Bath time");
@@ -984,12 +1057,12 @@ test.describe("journeys: posting updates and milestones (admin, phone)", () => {
   const CLIP = "cfstream:0123456789abcdef0123456789abcdef";
   const stepUp = { id: "00000000-0000-4000-8000-0000000074a1", birdName: "Echo", slug: "step-up", done: 2, lastPostedDaysAgo: 2 };
 
-  test("a good day: post, answer yes, celebrate the milestone, share it", async ({ browser, baseURL }) => {
+  test("a good day: post a big moment with a question, no milestone question, then a share card", async ({ browser, baseURL }) => {
     const { context, page, journeys } = await open(browser, baseURL!, { admin: true, journeys: { seed: [stepUp] } });
     await page.goto(`/flock/journeys/00000000-0000-4000-8000-0000000074a1`);
     await page.getByTestId("post-update").click();
     await expect(page.getByTestId("post-camera")).toBeVisible();
-    await expect(page.getByTestId("working-on")).toHaveText("Working on: Shifts weight and steps on with one foot, then steps back off.");
+    await expect(page.getByTestId("working-on")).toHaveCount(0);
     await expect(page.locator("[data-flock-tab]")).toHaveCount(0);
 
     await page.goto(`/flock/journeys/00000000-0000-4000-8000-0000000074a1/post?clip=${CLIP}`);
@@ -999,64 +1072,120 @@ test.describe("journeys: posting updates and milestones (admin, phone)", () => {
     await expect(post).toBeDisabled();
     await compose.getByTestId("engagement").getByRole("radio", { name: "All in" }).click();
     await compose.getByTestId("caption").fill("Three seconds on my hand! Almonds or walnuts?");
+    // A question on a community journey shows to the Flock too.
+    await expect(compose.getByTestId("ask-community")).toHaveText("Your question will show to the Flock too, so members can answer.");
+    await expect(compose.getByTestId("ask-flock")).toHaveCount(0);
     await expect(compose.getByTestId("posting-to")).toContainText("Posting to your followers and the community");
     await expect(compose.getByTestId("posting-to").getByRole("button", { name: "Change" })).toBeVisible();
+    await compose.getByTestId("big-moment").getByRole("switch", { name: "This was a big moment" }).click();
     await post.click();
 
     const after = page.getByTestId("after-post");
     await expect(after).toContainText("Posted to Echo's journey");
-    await expect(after.getByRole("heading")).toHaveText("Did Echo step on with one foot?");
+    await expect(after.getByRole("heading")).toHaveText("What a moment for Echo!");
+    await expect(after.getByRole("button", { name: "Yes!" })).toHaveCount(0);
     await expect(page.getByTestId("tip")).toHaveCount(0);
     const posted = journeys.calls.find((c) => c.fn === "journey_post_update")!;
-    expect(posted.args).toMatchObject({ p_journey_id: "00000000-0000-4000-8000-0000000074a1", p_clip_ref: CLIP, p_engagement: "all_in", p_caption: "Three seconds on my hand! Almonds or walnuts?" });
-    await after.getByRole("button", { name: "Yes!" }).click();
-
-    await expect(page).toHaveURL(/\/milestone\/3$/);
-    expect(journeys.calls.find((c) => c.fn === "journey_reach_milestone")!.args).toMatchObject({ p_journey_id: "00000000-0000-4000-8000-0000000074a1", p_position: 3 });
-    await expect(page.getByTestId("celebrate-eyebrow")).toHaveText("Milestone 3 of 7 · Step up");
-    await expect(page.getByTestId("celebrate-line")).toHaveText("Echo stepped on with one foot!");
-    await expect(page.getByText("Day 17. 4 to go.")).toBeVisible();
-    await expect(page.getByTestId("progress-ring")).toHaveAttribute("data-done", "3");
-    await page.getByRole("button", { name: "Share with the community" }).click();
-    await expect(page.getByTestId("shared")).toHaveText("Shared with the community");
-    expect(journeys.calls.find((c) => c.fn === "journey_share_milestone")!.args).toMatchObject({ p_position: 3 });
-    await page.getByRole("button", { name: "Done" }).click();
-    await expect(page).toHaveURL(new RegExp(`/flock/journeys/00000000-0000-4000-8000-0000000074a1$`));
+    expect(posted.args).toMatchObject({ p_journey_id: "00000000-0000-4000-8000-0000000074a1", p_clip_ref: CLIP, p_engagement: "all_in",
+      p_caption: "Three seconds on my hand! Almonds or walnuts?", p_big_moment: true });
+    expect(journeys.calls.some((c) => c.fn === "journey_reach_milestone")).toBe(false);
+    await after.getByRole("button", { name: "Make a share card" }).click();
+    await expect(page).toHaveURL(/\/card\?kind=moment&u=0000/);
+    await expect(page.getByTestId("card-preview")).toHaveAttribute("alt", "A big moment for Echo!");
     await context.close();
   });
 
-  test("a distracted day: a tip instead of the question", async ({ browser, baseURL }) => {
+  test("a distracted day: a tip for next time, and an ordinary update isn't a big moment", async ({ browser, baseURL }) => {
     const { context, page, journeys } = await open(browser, baseURL!, { admin: true, journeys: { seed: [stepUp] } });
     await page.goto(`/flock/journeys/00000000-0000-4000-8000-0000000074a1/post?clip=${CLIP}`);
     await page.getByTestId("engagement").getByRole("radio", { name: "Distracted" }).click();
     await page.getByRole("button", { name: "Post", exact: true }).click();
     await expect(page.getByTestId("tip")).toContainText("A tip for next time");
     await expect(page.getByTestId("tip")).toContainText("Keep it to a few minutes, and stop while your bird still wants more.");
-    await expect(page.getByTestId("after-post").getByRole("button", { name: "Yes!" })).toHaveCount(0);
+    await expect(page.getByTestId("make-share-card")).toHaveCount(0);
+    expect(journeys.calls.find((c) => c.fn === "journey_post_update")!.args).toMatchObject({ p_big_moment: false });
     await page.getByRole("button", { name: "Back to the journey" }).click();
     await expect(page).toHaveURL(new RegExp(`/flock/journeys/00000000-0000-4000-8000-0000000074a1$`));
-    expect(journeys.calls.some((c) => c.fn === "journey_reach_milestone")).toBe(false);
     await context.close();
   });
 
-  test("the last milestone finishes the journey: learned, on the skill list, a tip for the next person", async ({ browser, baseURL }) => {
-    const spin = { id: "00000000-0000-4000-8000-0000000074a2", birdName: "Willow", slug: "spin", done: 4 };
-    const { context, page, journeys } = await open(browser, baseURL!, { admin: true, journeys: { seed: [spin] } });
-    await page.goto(`/flock/journeys/00000000-0000-4000-8000-0000000074a2/post?clip=${CLIP}`);
-    await page.getByTestId("engagement").getByRole("radio", { name: "All in" }).click();
+  test("the vet nudge runs on every caption: the card first, and posting is never blocked", async ({ browser, baseURL }) => {
+    const { context, page, journeys } = await open(browser, baseURL!, { admin: true, journeys: { seed: [stepUp] } });
+    await page.goto(`/flock/journeys/00000000-0000-4000-8000-0000000074a1/post?clip=${CLIP}`);
+    await page.getByTestId("engagement").getByRole("radio", { name: "Not today" }).click();
+    await page.getByTestId("caption").fill("Echo has been fluffed up all day and sleeping a lot. Should we keep training?");
     await page.getByRole("button", { name: "Post", exact: true }).click();
-    await expect(page.getByTestId("after-post").getByRole("heading")).toHaveText("Did Willow spin to a flick of your finger?");
-    await page.getByRole("button", { name: "Yes!" }).click();
+    const card = page.getByTestId("vet-nudge");
+    await expect(card.getByRole("heading")).toHaveText("This sounds like something for your avian vet");
+    await expect(card.getByTestId("find-vet")).toHaveAttribute("href", "https://www.aav.org/page/FindAVet2");
+    expect(journeys.calls.some((c) => c.fn === "journey_post_update")).toBe(false);
+    await card.getByTestId("post-anyway").click();
+    await expect(page.getByTestId("after-post")).toContainText("Posted to Echo's journey");
+    expect(journeys.calls.filter((c) => c.fn === "journey_post_update")).toHaveLength(1);
+    await context.close();
+  });
+
+  test("Ask the Flock on a private journey: members can share it; free accounts see the Flock sheet", async ({ browser, baseURL }) => {
+    const priv = { ...stepUp, visibility: "private" };
+    let o = await open(browser, baseURL!, { admin: true, journeys: { seed: [priv] } });
+    await o.page.goto(`/flock/journeys/${priv.id}/post?clip=${CLIP}`);
+    await o.page.getByTestId("caption").fill("How long did step up take your bird?");
+    const ask = o.page.getByTestId("ask-flock");
+    await expect(ask).toContainText("Only you can see this journey, so only you will see the question.");
+    await ask.getByRole("button", { name: "Ask the Flock" }).click();
+    await o.page.getByTestId("change-visibility").getByRole("radio", { name: "The community" }).click();
+    await expect.poll(() => o.journeys.calls.find((c) => c.fn === "journey_set_visibility")?.args).toMatchObject({ p_journey_id: priv.id, p_visibility: "community" });
+    await o.context.close();
+
+    o = await open(browser, baseURL!, { admin: true, journeys: { tier: "free", seed: [priv] } });
+    await o.page.goto(`/flock/journeys/${priv.id}/post?clip=${CLIP}`);
+    await o.page.getByTestId("caption").fill("How long did step up take your bird?");
+    await o.page.getByTestId("ask-flock").getByRole("button", { name: "Ask the Flock" }).click();
+    const sheet = o.page.getByTestId("flock-only-sheet");
+    await expect(sheet).toHaveAttribute("data-reason", "ask");
+    await expect(o.page.getByRole("heading", { name: "Ask the Flock" })).toBeVisible();
+    await expect(sheet).toContainText("In the Flock, you can ask other members about your journey");
+    await expect(sheet).not.toContainText("$");
+    await o.context.close();
+  });
+
+  test("[Bird] learned it!: the journey ends, the skill is on the list, a tip for the next person", async ({ browser, baseURL }) => {
+    const spin = { id: "00000000-0000-4000-8000-0000000074a2", birdName: "Willow", slug: "spin", done: 0 };
+    const { context, page, journeys } = await open(browser, baseURL!, { admin: true, journeys: { seed: [spin] } });
+    await page.goto(`/flock/journeys/${spin.id}`);
+    await page.getByTestId("learned-it").getByRole("button", { name: "Willow learned it!" }).click();
+    const confirm = page.getByTestId("learned-confirm");
+    await expect(confirm).toContainText("This finishes the journey and adds spin to Willow's skills.");
+    await confirm.getByRole("button", { name: "Finish the journey" }).click();
     await expect(page).toHaveURL(/\/finished$/);
-    await expect(page.getByTestId("finished-title")).toHaveText("Willow learned spin");
+    expect(journeys.calls.find((c) => c.fn === "journey_finish")!.args).toEqual({ p_journey_id: spin.id, p_how: "learned" });
+    await expect(page.getByTestId("finished-title")).toHaveText("Willow learned spin!");
     await expect(page.getByText("Spin is now on Willow's skill list.")).toBeVisible();
     await expect(page.getByText("Shown to members who start Spin later.")).toBeVisible();
     await page.getByTestId("finisher-tip").fill("Pick one direction and stay with it.");
-    await page.getByRole("button", { name: "Share and finish" }).click();
-    await expect(page).toHaveURL(new RegExp(`/flock/journeys/00000000-0000-4000-8000-0000000074a2$`));
-    expect(journeys.calls.find((c) => c.fn === "journey_save_finisher_tip")!.args).toMatchObject({ p_journey_id: "00000000-0000-4000-8000-0000000074a2", p_body: "Pick one direction and stay with it." });
-    expect(journeys.calls.find((c) => c.fn === "journey_share_milestone")!.args).toMatchObject({ p_position: 5 });
+    await page.getByRole("button", { name: "Done" }).click();
+    await expect(page).toHaveURL(new RegExp(`/flock/journeys/${spin.id}$`));
+    expect(journeys.calls.find((c) => c.fn === "journey_save_finisher_tip")!.args).toMatchObject({ p_journey_id: spin.id, p_body: "Pick one direction and stay with it." });
+    expect(journeys.calls.some((c) => c.fn === "journey_share_milestone")).toBe(false);
     await context.close();
+  });
+
+  test("Diet conversion finishes as \"[Bird] is on the new diet\"; a weight pause can't be finished as learned", async ({ browser, baseURL }) => {
+    const diet = { id: "00000000-0000-4000-8000-0000000074a2", birdName: "Willow", slug: "diet-conversion", done: 2, vetCheck: "talked" as const };
+    let o = await open(browser, baseURL!, { admin: true, journeys: { seed: [diet], weight: { level: "none", start: 400, now: 401 } } });
+    await o.page.goto(`/flock/journeys/${diet.id}`);
+    await o.page.getByTestId("learned-it").getByRole("button", { name: "Willow is on the new diet" }).click();
+    await o.page.getByTestId("learned-confirm").getByRole("button", { name: "Finish the journey" }).click();
+    await expect(o.page).toHaveURL(/\/finished$/);
+    await expect(o.page.getByTestId("finished-title")).toHaveText("Willow is on the new diet");
+    await expect(o.page.getByText("is now on Willow's skill list.")).toHaveCount(0);
+    await o.context.close();
+
+    o = await open(browser, baseURL!, { admin: true, journeys: { seed: [{ ...diet, status: "paused", pausedReason: "weight_drop" }], weight: { level: "pause", start: 400, now: 378 } } });
+    await o.page.goto(`/flock/journeys/${diet.id}`);
+    await expect(o.page.getByTestId("weight-paused")).toBeVisible();
+    await expect(o.page.getByTestId("learned-it")).toHaveCount(0);
+    await o.context.close();
   });
 
   test("which journey: with two going, Post an update asks which, with when each was last posted", async ({ browser, baseURL }) => {
@@ -1159,18 +1288,26 @@ test.describe("journeys: pages, the Journeys tab, following and Today (admin, ph
   const kiwi = { id: "00000000-0000-4000-8000-0000000074a3", birdName: "Kiwi", slug: "recall", done: 5, clips: 3, owner: "Alex R.", region: "Great Lakes", followers: 2 };
   const mango = { id: "00000000-0000-4000-8000-0000000074a4", birdName: "Mango", slug: "spin", done: 2, clips: 2, owner: "Cy T.", region: "Texas" };
 
-  test("your journey: header, progress, clip grid with tags, and the menu", async ({ browser, baseURL }) => {
+  test("your journey: header, the skill folded away, no steps, clip grid with tags, learned it, and the menu", async ({ browser, baseURL }) => {
     const { context, page, journeys } = await open(browser, baseURL!, { admin: true, journeys: { seed: [mine] } });
     await page.goto(`/flock/journeys/00000000-0000-4000-8000-0000000074a1`);
     await expect(page.getByRole("heading", { level: 1 })).toHaveText("Echo · Step up");
     await expect(page.getByText("Day 17 · 6 following")).toBeVisible();
-    await expect(page.getByTestId("journey-progress")).toHaveText("3 of 7 · next: Steps up with both feet.");
-    await expect(page.getByTestId("progress-bar").locator("span")).toHaveCount(7);
+    await expect(page.getByTestId("journey-progress")).toHaveCount(0);
+    await expect(page.getByTestId("progress-bar")).toHaveCount(0);
+    // The description and safety notes fold away under the header.
+    const about = page.getByTestId("skill-about");
+    await expect(about.getByTestId("skill-description")).toBeHidden();
+    await about.locator("summary").click();
+    await expect(about.getByTestId("skill-description")).toContainText("So your bird steps onto your hand calmly and by choice");
+    await expect(about.getByTestId("safety-notes")).toContainText("Stop at the first sign of stress.");
     await expect(page.getByTestId("post-update")).toBeVisible();
     await expect(page.getByRole("button", { name: "Day one vs. now" })).toBeVisible();
+    await expect(page.getByTestId("learned-it")).toHaveText("Echo learned it!");
     const grid = page.getByTestId("clip-grid");
     await expect(grid.locator("[data-tile]")).toHaveCount(4);
-    await expect(grid.locator("[data-tag='milestone']")).toHaveText(/Milestone/);
+    await expect(grid.locator("[data-tag='big_moment']")).toHaveText(/Big moment/);
+    await expect(grid.locator("[data-tag='milestone']")).toHaveCount(0);
     await expect(grid.locator("[data-tag='question']")).toHaveText(/Question/);
     await expect(grid.locator("[data-tag='day_one']")).toHaveText(/Day one/);
     await expect(page.getByTestId("follow")).toHaveCount(0);
@@ -1193,9 +1330,12 @@ test.describe("journeys: pages, the Journeys tab, following and Today (admin, ph
     await expect.poll(() => journeys.calls.find((c) => c.fn === "journey_set_visibility")?.args).toMatchObject({ p_visibility: "private" });
     await page.getByTestId("journey-menu-button").click();
     await page.getByTestId("journey-menu").locator("[data-menu='delete']").click();
-    await expect(page.getByTestId("delete-confirm")).toContainText("This removes the journey, its milestones and its 4 clips for good. It can't be undone.");
+    await expect(page.getByTestId("delete-confirm")).toContainText("This removes the journey and its 4 clips for good. It can't be undone.");
     await page.getByRole("button", { name: "Keep it" }).click();
     await expect(page.getByTestId("journey-menu")).toBeVisible();
+    // We're happy where we are: ends it through journey_finish.
+    await page.getByTestId("journey-menu").locator("[data-menu='happy']").click();
+    await expect.poll(() => journeys.calls.find((c) => c.fn === "journey_finish")?.args).toEqual({ p_journey_id: "00000000-0000-4000-8000-0000000074a1", p_how: "happy_where_we_are" });
     await context.close();
   });
 
@@ -1205,6 +1345,7 @@ test.describe("journeys: pages, the Journeys tab, following and Today (admin, ph
     await expect(page.getByRole("heading", { level: 1 })).toHaveText("Kiwi · Recall");
     await expect(page.getByTestId("journey-menu-button")).toHaveCount(0);
     await expect(page.getByTestId("post-update")).toHaveCount(0);
+    await expect(page.getByTestId("learned-it")).toHaveCount(0);
     const follow = page.getByTestId("follow");
     await expect(follow).toHaveText("Follow");
     await follow.click();
@@ -1213,39 +1354,62 @@ test.describe("journeys: pages, the Journeys tab, following and Today (admin, ph
     await context.close();
   });
 
-  test("the Journeys tab: big cards, and the chips change what's shown", async ({ browser, baseURL }) => {
-    const { context, page, journeys } = await open(browser, baseURL!, { admin: true, journeys: { seed: [mine, kiwi, { ...mango, following: true }] } });
+  test("the Journeys tab: your journeys first, then From the Flock with big cards, and the chips change what's shown", async ({ browser, baseURL }) => {
+    const done = { id: "00000000-0000-4000-8000-0000000074a5", birdName: "Max", slug: "wave", done: 0, status: "finished" };
+    const { context, page, journeys } = await open(browser, baseURL!, { admin: true, journeys: { seed: [mine, done, kiwi, { ...mango, following: true }] } });
     await page.goto("/flock/journeys");
-    const cards = page.getByTestId("journey-cards").locator("[data-journey-card]");
-    await expect(cards).toHaveCount(3);
+    // Your journeys: active ones first, then finished; never other members'.
+    const yours = page.getByTestId("your-journeys");
+    await expect(yours.getByRole("heading")).toHaveText("Your journeys");
+    await expect(yours.locator("[data-your-journey]")).toHaveCount(2);
+    await expect(yours.locator("[data-your-journey]").first()).toHaveAttribute("data-status", "active");
+    await expect(yours.locator("[data-your-journey]").first()).toContainText("Echo · Step up");
+    await expect(yours.locator(`[data-your-journey='${done.id}']`)).toContainText(/Learned it · \d+ days?/);
+    await expect(page.getByTestId("start-journey")).toHaveText("Start something new");
+    const flock = page.getByTestId("from-the-flock");
+    await expect(flock.getByRole("heading", { name: "From the Flock" })).toBeVisible();
+    const cards = flock.getByTestId("journey-cards").locator("[data-journey-card]");
+    await expect(cards).toHaveCount(2);
     await expect(page.locator("[data-journey-card='00000000-0000-4000-8000-0000000074a3']")).toContainText("Kiwi · Recall");
-    await expect(page.locator("[data-journey-card='00000000-0000-4000-8000-0000000074a3']")).toContainText("5 of 7 · Alex R. · 2 following");
+    await expect(page.locator("[data-journey-card='00000000-0000-4000-8000-0000000074a3']")).toContainText("Day 17 · Alex R. · 2 following");
+    await expect(page.locator("[data-journey-card='00000000-0000-4000-8000-0000000074a3']")).not.toContainText(" of 7");
     await page.getByTestId("journeys-chips").getByRole("button", { name: "Tricks" }).click();
     await expect(cards).toHaveCount(1);
     await expect(cards.first()).toContainText("Mango · Spin");
     await page.getByTestId("journeys-chips").getByRole("button", { name: "Following" }).click();
     await expect(cards).toHaveCount(1);
     await page.getByTestId("journeys-chips").getByRole("button", { name: "Basics" }).click();
-    await expect(cards).toHaveCount(2);
+    await expect(cards).toHaveCount(1);
     expect(journeys.calls.filter((c) => c.fn === "journey_feed").map((c) => c.args.p_filter)).toEqual(expect.arrayContaining(["for_you", "tricks", "following", "basics"]));
     await cards.first().click();
     await expect(page).toHaveURL(/\/flock\/journeys\/0000/);
     await context.close();
   });
 
-  test("Today: followed journeys as rings, milestone cards with reactions, and the story viewer", async ({ browser, baseURL }) => {
-    const { context, page, journeys } = await open(browser, baseURL!, { admin: true, journeys: { seed: [{ ...kiwi, following: true }, { ...mango, following: true }] } });
+  test("Today: followed journeys as rings with Day N, big-moment and learned-it cards with reactions, and the story viewer", async ({ browser, baseURL }) => {
+    const finished = { id: "00000000-0000-4000-8000-0000000074a6", birdName: "Sunny", slug: "wave", done: 0, owner: "Priya S.", status: "finished", following: true };
+    const { context, page, journeys } = await open(browser, baseURL!, { admin: true, journeys: { seed: [{ ...kiwi, following: true }, { ...mango, following: true }, finished] } });
     await page.goto("/flock");
     const rings = page.getByTestId("follow-rings");
     await expect(rings.getByRole("heading")).toHaveText("Journeys you follow");
-    await expect(rings.locator("[data-ring]")).toHaveCount(2);
-    const card = page.locator("[data-milestone-card='00000000-0000-4000-8000-0000000074a3-m5']");
+    await expect(rings.locator("[data-ring]")).toHaveCount(3);
+    await expect(rings.locator("[data-ring='00000000-0000-4000-8000-0000000074a3'] [data-testid='ring-day']")).toHaveText("Day 17");
+    await expect(rings.locator(`[data-ring='${finished.id}'] [data-testid='ring-day']`)).toHaveText("Learned it");
+    await expect(rings).not.toContainText(" of 7");
+    expect(journeys.calls.some((c) => c.fn === "journey_following_latest")).toBe(true);
+    expect(journeys.calls.some((c) => c.fn === "journey_milestone_cards")).toBe(false);
+    const learned = page.locator(`[data-moment-card='${finished.id}']`);
+    await expect(learned).toHaveAttribute("data-kind", "learned");
+    await expect(learned.getByTestId("moment-pill")).toHaveText("Learned it · Sunny's wave");
+    await expect(learned).toContainText("Sunny learned wave!");
+    const card = page.locator("[data-moment-card='00000000-0000-4000-8000-000000009002']");
+    await expect(card).toHaveAttribute("data-kind", "big_moment");
     await expect(card).toContainText("Alex R. · Great Lakes · 2h");
-    await expect(card.getByTestId("milestone-pill")).toHaveText("Milestone 5 of 7 · Kiwi's recall");
+    await expect(card.getByTestId("moment-pill")).toHaveText("Big moment · Kiwi's recall");
     await expect(card.locator("[data-reaction]")).toHaveText(["Great job · 12", "Been there · 4", "Rooting for you", "Love this"]);
     await card.locator("[data-reaction='been_there']").click();
     await expect(card.locator("[data-reaction='been_there']")).toHaveText("Been there · 5");
-    expect(journeys.calls.find((c) => c.fn === "journey_react")!.args).toMatchObject({ p_subject_type: "journey_milestone", p_subject_id: "00000000-0000-4000-8000-0000000074a3-m5", p_kind: "been_there", p_on: true });
+    expect(journeys.calls.find((c) => c.fn === "journey_react")!.args).toMatchObject({ p_subject_type: "journey_update", p_subject_id: "00000000-0000-4000-8000-000000009002", p_kind: "been_there", p_on: true });
 
     await expect(card.getByTestId("card-comments")).toHaveText("Comment");
     await expect(card.getByTestId("card-who-reacted")).toHaveText("Who reacted");
@@ -1266,19 +1430,19 @@ test.describe("journeys: pages, the Journeys tab, following and Today (admin, ph
     await context.close();
   });
 
-  test("comments on a milestone card: the journey in the header, the comment saved on the milestone", async ({ browser, baseURL }) => {
+  test("comments on a big-moment card: the journey in the header, the comment saved on the update", async ({ browser, baseURL }) => {
     const { context, page, state } = await open(browser, baseURL!, { admin: true, journeys: { seed: [{ ...kiwi, following: true }] } });
     await page.goto("/flock");
-    const card = page.locator("[data-milestone-card='00000000-0000-4000-8000-0000000074a3-m5']");
+    const card = page.locator("[data-moment-card='00000000-0000-4000-8000-000000009002']");
     await card.getByTestId("card-comments").click();
-    await expect(page).toHaveURL(/\/flock\/comments\/journey_milestone\/00000000-0000-4000-8000-0000000074a3-m5\?/);
-    await expect(page.getByTestId("thread-line")).toHaveText("Kiwi · Recall · Milestone 5 of 7 · Alex R.");
+    await expect(page).toHaveURL(/\/flock\/comments\/journey_update\/00000000-0000-4000-8000-000000009002\?/);
+    await expect(page.getByTestId("thread-line")).toHaveText("Kiwi · Recall · Alex R.");
     await expect(page.getByTestId("no-comments")).toBeVisible();
     await expect(page.getByTestId("comment-box")).toBeFocused();
     await page.getByTestId("comment-box").fill("Rooting for Kiwi!");
     await page.getByTestId("comment-send").click();
     expect(state.calls.find((c) => c.fn === "flock_comment_create")!.args).toMatchObject({
-      p_subject_type: "journey_milestone", p_subject_id: "00000000-0000-4000-8000-0000000074a3-m5", p_reply_to: null, p_body: "Rooting for Kiwi!" });
+      p_subject_type: "journey_update", p_subject_id: "00000000-0000-4000-8000-000000009002", p_reply_to: null, p_body: "Rooting for Kiwi!" });
     await expect(page.locator("[data-comment]")).toContainText("Rooting for Kiwi!");
     await context.close();
   });
@@ -1291,7 +1455,7 @@ test.describe("journeys: pages, the Journeys tab, following and Today (admin, ph
     await expect(page.getByRole("heading", { level: 1 })).toHaveText("Day one vs. now");
     await expect(page.getByTestId("compare-a")).toHaveAttribute("data-update", /9000$/);
     await expect(page.getByTestId("compare-b")).toHaveAttribute("data-update", /9003$/);
-    await expect(page.getByTestId("compare-summary")).toHaveText("16 days, 4 sessions, 3 milestones.");
+    await expect(page.getByTestId("compare-summary")).toHaveText("16 days, 4 sessions, 1 big moment.");
     await expect(page.getByTestId("play-both")).toBeVisible();
     await page.getByTestId("pick").click();
     await page.getByTestId("pick-sheet").locator("[data-pick$='9001']").click();
@@ -1338,32 +1502,46 @@ test.describe("journeys: finisher tips (admin, phone)", () => {
 });
 
 test.describe("journeys: what a free account sees", () => {
-  test("Flock-only templates are locked and explain the Flock with no price; only Just me; one custom journey at a time", async ({ browser, baseURL }) => {
-    const { context, page, journeys } = await open(browser, baseURL!, { admin: true, journeys: { tier: "free", openCustom: 1 } });
+  test("every skill can be started; How others did it opens the Flock sheet with no price; only Just me; one custom journey at a time", async ({ browser, baseURL }) => {
+    const { context, page, journeys } = await open(browser, baseURL!, { admin: true, journeys: { tier: "free", openCustom: 1, finisherTips: { wave: ["Reward the first lift."] } } });
     await page.goto("/flock/journeys/start");
     await page.getByTestId("pick-bird").locator("[data-bird]", { hasText: "Buzz" }).click();
-    await expect(page.locator("[data-locked]")).toHaveCount(2);
+    // No locks, no Flock-only group: a trick opens its page like any other skill.
+    await expect(page.locator("[data-locked]")).toHaveCount(0);
+    await expect(page.getByTestId("template-list").getByRole("heading", { name: "Tricks" })).toBeVisible();
     await page.locator("[data-template='wave']").click();
+    await expect(page).toHaveURL(/\/flock\/journeys\/setup\?.*template=wave/);
+    await expect(page.getByTestId("flock-only-sheet")).toHaveCount(0);
+    // Community content never shows: no tips, no other journeys, just one row that explains the Flock.
+    await expect(page.getByTestId("how-others")).toHaveCount(0);
+    await expect(page.getByTestId("finisher-tips")).toHaveCount(0);
+    await page.getByTestId("how-others-locked").click();
     const sheet = page.getByTestId("flock-only-sheet");
     await expect(page.getByText("Part of the Flock", { exact: true })).toBeVisible();
-    await expect(page.getByRole("heading", { name: "Teach Buzz to wave" })).toBeVisible();
-    await expect(sheet).toContainText("Tricks like this one are only available to Flock members.");
-    await expect(sheet).toContainText("The Flock is The Kya Project's community, where you'll find your local chapter, a library of guides and recordings, and every training journey, including tricks, nail trims, and stationing.");
+    await expect(page.getByRole("heading", { name: "See how others did it" })).toBeVisible();
+    await expect(sheet).toContainText("In the Flock, members share their journeys and what helped them, so you can see how other birds learned wave.");
+    await expect(sheet).toContainText("The Flock is The Kya Project's community, where you'll find your local chapter, a library of guides and recordings, and other members' journeys.");
     await expect(sheet).toContainText("Join the Flock early, while it's free for everyone.");
     await expect(sheet.getByRole("button", { name: "Join the Flock free" })).toBeVisible();
     await expect(sheet).not.toContainText("$");
-    await expect(page.locator("[data-template='wave']")).toHaveAttribute("aria-label", "Wave, part of the Flock");
     await page.keyboard.press("Escape");
-    await page.getByTestId("write-own").click();
-    await expect(page.getByTestId("custom-limit-sheet")).toHaveText(
-      "Free accounts can have one custom journey going at a time. Flock members can start as many as they like.Got it");
-    await page.getByRole("button", { name: "Got it" }).click();
-    await page.locator("[data-template='step-up']").click();
     await expect(page.getByTestId("visibility").locator("[role='radio']")).toHaveText(["Just me"]);
     await expect(page.getByText("Sharing journeys with the community comes with Flock membership.")).toBeVisible();
     await page.getByRole("button", { name: "Start Buzz's journey" }).click();
     await expect.poll(() => journeys.starts.length).toBe(1);
-    expect(journeys.starts[0]).toMatchObject({ p_visibility: "private" });
+    expect(journeys.starts[0]).toMatchObject({ p_template_slug: "wave", p_visibility: "private" });
+    expect(journeys.calls.some((c) => c.fn === "journey_skill_journeys" || c.fn === "journey_finisher_tips_for")).toBe(false);
+
+    await page.goto("/flock/journeys/start");
+    await page.getByTestId("pick-bird").locator("[data-bird]", { hasText: "Buzz" }).click();
+    await page.getByTestId("write-own").click();
+    await expect(page.getByTestId("custom-limit-sheet")).toHaveText(
+      "Free accounts can have one custom journey going at a time. Flock members can start as many as they like.Got it");
+    await page.getByRole("button", { name: "Got it" }).click();
+    // The Journeys tab: no From the Flock for a free account.
+    await page.goto("/flock/journeys");
+    await expect(page.getByTestId("start-journey")).toBeVisible();
+    await expect(page.getByTestId("from-the-flock")).toHaveCount(0);
     await context.close();
   });
 });
@@ -1376,7 +1554,7 @@ test("everyone else: every /flock URL sends them Home and no Community code load
     context.on("request", (r) => { const m = r.url().match(/\/rpc\/((?:flock|journey)_\w+)/); if (m && m[1] !== "flock_enabled") calls.push(m[1]); });
     // Nor the library's table or files.
     context.on("request", (r) => { if (/\/rest\/v1\/library_resources\b|\/storage\/v1\/object\/(?:sign\/)?flock-library\//.test(r.url())) calls.push(r.url()); });
-    for (const path of ["/flock", "/flock/journeys", "/flock/journeys/start", "/flock/journeys/setup?bird=x&template=step-up", "/flock/journeys/known?bird=x", "/flock/journeys/00000000-0000-4000-8000-0000000074a1/post", "/flock/journeys/00000000-0000-4000-8000-0000000074a1/milestone/1", "/flock/journeys/00000000-0000-4000-8000-0000000074a1/story", "/flock/journeys/00000000-0000-4000-8000-0000000074a1/compare", "/flock/chapter", "/flock/library", "/flock/spaces", "/flock/learn", "/flock?space=good",
+    for (const path of ["/flock", "/flock/journeys", "/flock/journeys/start", "/flock/journeys/setup?bird=x&template=step-up", "/flock/journeys/known?bird=x", "/flock/journeys/00000000-0000-4000-8000-0000000074a1/post", "/flock/journeys/00000000-0000-4000-8000-0000000074a1/finished", "/flock/journeys/00000000-0000-4000-8000-0000000074a1/story", "/flock/journeys/00000000-0000-4000-8000-0000000074a1/compare", "/flock/chapter", "/flock/library", "/flock/spaces", "/flock/learn", "/flock?space=good",
       "/flock/post/new", "/flock/post/00000000-0000-4000-8000-0000000079a1", "/flock/you/notifications", "/admin/review", "/flock/idea", "/admin/ideas", "/flock/chapter?tab=events", "/flock/events/new",
       "/flock/chapter?tab=resources", "/flock/places", "/flock/places?region=texas",
       "/flock/library/00000000-0000-4000-8000-0000000090a1", "/flock/library?type=guides&subject=foraging&q=cups", "/admin/library", "/admin/library/new",
@@ -2671,18 +2849,18 @@ test.describe("share cards (admin, phone)", () => {
   const PNG = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==";
   const size = (page: Page) => page.getByTestId("card-preview").evaluate((img: HTMLImageElement) => `${img.naturalWidth}x${img.naturalHeight}`);
 
-  test("a milestone: post and story sizes, the bird's name on by default, Share downloads the PNG on the web", async ({ browser, baseURL }) => {
+  test("a big moment: post and story sizes, the bird's name on by default, Share downloads the PNG on the web", async ({ browser, baseURL }) => {
     const id = "00000000-0000-4000-8000-0000000074a1";
-    const { context, page } = await open(browser, baseURL!, { admin: true, journeys: { seed: [{ id, birdName: "Echo", slug: "step-up", done: 3 }] } });
-    await page.goto(`/flock/journeys/${id}/milestone/3`);
-    await page.getByRole("button", { name: "Make a share card" }).click();
-    await expect(page).toHaveURL(/\/card\?kind=milestone&n=3$/);
+    const { context, page } = await open(browser, baseURL!, { admin: true, journeys: { seed: [{ id, birdName: "Echo", slug: "step-up", done: 0, clips: 2 }] } });
+    // The newest seeded update is the big moment.
+    await page.goto(`/flock/journeys/${id}/card?kind=moment&u=00000000-0000-4000-8000-000000009001`);
     const card = page.getByTestId("share-card");
+    await expect(card).toHaveAttribute("data-kind", "moment");
     await expect(card).toHaveAttribute("data-size", "post");
     await expect(page.locator("[data-flock-tab]")).toHaveCount(0);
     await expect(page.getByTestId("card-preview")).toHaveAttribute("src", /^blob:/);
     await expect.poll(() => size(page)).toBe("1080x1350");
-    await expect(page.getByTestId("card-preview")).toHaveAttribute("alt", "Echo stepped on with one foot!");
+    await expect(page.getByTestId("card-preview")).toHaveAttribute("alt", "A big moment for Echo!");
     await page.getByTestId("card-size-story").click();
     await expect.poll(() => size(page)).toBe("1080x1920");
     await expect(page.getByRole("switch", { name: "Show Echo's name" })).toHaveAttribute("aria-checked", "true");
@@ -2693,12 +2871,12 @@ test.describe("share cards (admin, phone)", () => {
     await expect(page.getByTestId("card-note")).toHaveText("The card is in your downloads, ready to post.");
     // The bird's name off: the card and the file name leave it out.
     await page.getByRole("switch", { name: "Show Echo's name" }).click();
-    await expect(page.getByTestId("card-preview")).toHaveAttribute("alt", "Stepped on with one foot!");
+    await expect(page.getByTestId("card-preview")).toHaveAttribute("alt", "A big moment!");
     download = page.waitForEvent("download");
     await page.getByTestId("card-share").click();
     expect((await download).suggestedFilename()).toBe("step-up-story.png");
-    // A milestone that isn't reached has no card.
-    await page.goto(`/flock/journeys/${id}/card?kind=milestone&n=5`);
+    // An update that isn't a big moment has no card.
+    await page.goto(`/flock/journeys/${id}/card?kind=moment&u=00000000-0000-4000-8000-000000009000`);
     await expect(page.getByTestId("card-unavailable")).toBeVisible();
     await context.close();
   });
@@ -2710,6 +2888,10 @@ test.describe("share cards (admin, phone)", () => {
     await page.getByRole("button", { name: "Make a share card" }).click();
     await expect(page).toHaveURL(/\/card\?kind=finished$/);
     await expect(page.getByTestId("card-preview")).toHaveAttribute("alt", "Willow learned spin");
+    // A finished journey offers no more posting or "learned it".
+    await page.goBack();
+    await expect(page.getByTestId("post-update")).toHaveCount(0);
+    await expect(page.getByTestId("learned-it")).toHaveCount(0);
     await expect.poll(() => size(page)).toBe("1080x1350");
     await context.close();
   });
