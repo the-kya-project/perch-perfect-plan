@@ -141,9 +141,11 @@ begin
   --    shows on c's own Badges screen and nowhere else, until it's shared.
   perform set_config('request.jwt.claims', json_build_object('sub', c, 'role', 'authenticated')::text, true);
   set local role authenticated;
-  ok := (select level from public.flock_my_badges() where badge = 'trick_star') = 1
-    and (select level from public.flock_my_badges() where badge = 'journey_finisher') = 1
-    and (select array_agg(badge) from public.flock_member_badges(c)) = array['first_steps'];
+  -- (Separate statements: a stable read doesn't see a write made earlier in
+  -- the same statement. The app's calls are separate requests.)
+  ok := (select level from public.flock_my_badges() where badge = 'trick_star') = 1;
+  ok := ok and (select level from public.flock_my_badges() where badge = 'journey_finisher') = 1;
+  ok := ok and (select array_agg(badge) from public.flock_member_badges(c)) = array['first_steps'];
   reset role;
   perform set_config('request.jwt.claims', json_build_object('sub', b, 'role', 'authenticated')::text, true);
   set local role authenticated;
@@ -172,8 +174,8 @@ begin
   set local role authenticated;
   perform * from public.flock_my_badges();
   ok := public.flock_badges_shown() = true and (select count(*) from public.flock_member_badges(h)) = 1;
-  ok := ok and public.flock_set_badges_shown(false) = false and public.flock_badges_shown() = false
-    and (select count(*) from public.flock_member_badges(h)) = 0;
+  ok := ok and public.flock_set_badges_shown(false) = false;
+  ok := ok and public.flock_badges_shown() = false and (select count(*) from public.flock_member_badges(h)) = 0;
   reset role;
   perform set_config('request.jwt.claims', json_build_object('sub', a, 'role', 'authenticated')::text, true);
   set local role authenticated;
