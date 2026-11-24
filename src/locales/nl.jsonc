@@ -3369,12 +3369,180 @@
   "farewell.you": "jij",
   // your bird
   "farewell.yourBird": "je vogel",
+  // Access until
+  "flock.billing.accessUntil": "Toegang tot",
+  // Add my card · $0 today
+  "flock.billing.addMyCard": "Mijn kaart toevoegen · vandaag $0",
+  // You're <em>all set</em>
+  "flock.billing.allSet": "Je bent <em>helemaal klaar</em>",
+  // Back to the Flock
+  "flock.billing.backToFlock": "Terug naar de Flock",
+  // Billed monthly
+  "flock.billing.billedMonthly": "Maandelijks betaald",
+  // Ending in {{last4}}
+  "flock.billing.cardEnding": "Eindigend op {{last4}}",
+  // Card
+  "flock.billing.cardLabel": "Kaart",
+  // Your first charge of {{price}}, then monthly. Cancel before this date and you won't be charged.
+  "flock.billing.chargeMonthly": "Je eerste betaling van {{price}}, daarna elke maand. Zeg je voor deze datum op, dan betaal je niets.",
+  // Your first charge of {{price}}, then once a year. Cancel before this date and you won't be charged.
+  "flock.billing.chargeYearly": "Je eerste betaling van {{price}}, daarna eens per jaar. Zeg je voor deze datum op, dan betaal je niets.",
+  // You won't be charged until {{date}}. Cancel anytime before then from Membership and billing.
+  "flock.billing.checkoutNote": "Je betaalt niets tot {{date}}. Je kunt tot die tijd altijd opzeggen via Lidmaatschap en betaling.",
+  // You help choose where it goes, <strong>through Do good votes</strong>, including the founders-only ones.
+  "flock.billing.chooseFounder": "Je helpt bepalen waar het naartoe gaat, <strong>via de Do good-stemmingen</strong>, ook die alleen voor oprichters.",
+  // You help choose where it goes, <strong>through Do good votes</strong> with the rest of the Flock.
+  "flock.billing.chooseMember": "Je helpt bepalen waar het naartoe gaat, <strong>via de Do good-stemmingen</strong> met de rest van de Flock.",
+  // This can take a minute. You can stay right here, and we'll move on as soon as it's done.
+  "flock.billing.confirmingLine": "Dit kan een minuutje duren. Je kunt hier blijven, we gaan verder zodra het klaar is.",
+  // This is taking longer than usual. Your card is safe with Stripe, so there's no need to add it again. Check Membership and billing in a few minutes.
+  "flock.billing.confirmingSlow": "Dit duurt langer dan normaal. Je kaart is veilig bij Stripe, dus je hoeft hem niet opnieuw toe te voegen. Kijk over een paar minuten bij Lidmaatschap en betaling.",
+  // Confirming your card
+  "flock.billing.confirmingTitle": "Je kaart wordt bevestigd",
+  // Your membership won't renew.
+  "flock.billing.ends": "Je lidmaatschap wordt niet verlengd.",
+  // That didn't work. Try again in a moment.
+  "flock.billing.error": "Dat is niet gelukt. Probeer het zo opnieuw.",
+  // First charge
+  "flock.billing.firstCharge": "Eerste betaling",
+  // Flock member
+  "flock.billing.flockMember": "Lid van de Flock",
+  // Founding price: {{price}} a month, locked in for as long as you stay a member.
+  "flock.billing.founding": "Oprichtersprijs: {{price}} per maand, vast zolang je lid blijft.",
+  // Founding 50
+  "flock.billing.founding50": "Founding 50",
+  // Founding price
+  "flock.billing.foundingLabel": "Oprichtersprijs",
+  // Locked in for as long as you stay a member.
+  "flock.billing.foundingLocked": "Vast zolang je lid blijft.",
+  // Everyone else pays {{price}}.
+  "flock.billing.foundingOthers": "Alle anderen betalen {{price}}.",
+  // Without a card on file by {{date}}, your founding spot is released and can't be claimed again.
+  "flock.billing.foundingRelease": "Staat er op {{date}} geen kaart, dan komt je oprichtersplek vrij en kun je die niet opnieuw claimen.",
+  // Founding 50 · Spot #{{spot}}
+  "flock.billing.foundingSpot": "Founding 50 · Plek #{{spot}}",
+  // Free until
+  "flock.billing.freeUntil": "Gratis tot",
+  // Every membership gives back
+  "flock.billing.givesBack": "Elk lidmaatschap geeft iets terug",
+  // of what you pay goes to parrot rescue and conservation partners
+  "flock.billing.givesBackLine": "van wat je betaalt gaat naar partners in papegaaienopvang en natuurbehoud",
+  // <strong>Your membership gives back.</strong> 20% goes to parrot rescue and conservation partners.
+  "flock.billing.givesBackNote": "<strong>Je lidmaatschap geeft iets terug.</strong> 20% gaat naar partners in papegaaienopvang en natuurbehoud.",
+  // Join the Flock, and help parrots in rescues and in the wild.
+  "flock.billing.heroAfterLine": "Word lid van de Flock en help papegaaien in de opvang en in het wild.",
+  // You helped <em>start this</em>. Keep your {{price}}.
+  "flock.billing.heroFounder": "Dankzij jou <em>begon dit</em>. Houd je {{price}}.",
+  // Add a card by {{date}} to hold your founding spot and price. You won't pay anything until then.
+  "flock.billing.heroFounderLine": "Voeg uiterlijk {{date}} een kaart toe om je oprichtersplek en prijs te houden. Tot die tijd betaal je niets.",
+  // Your membership <em>does good</em> for parrots
+  "flock.billing.heroMember": "Jouw lidmaatschap <em>doet goed</em> voor papegaaien",
+  // Add a card now to stay in the Flock after the free season. You won't pay anything until {{date}}.
+  "flock.billing.heroSeasonLine": "Voeg nu een kaart toe om na de gratis periode in de Flock te blijven. Je betaalt niets tot {{date}}.",
+  // How it works
+  "flock.billing.howItWorks": "Zo werkt het",
+  // What your membership includes
+  "flock.billing.includes": "Dit zit in je lidmaatschap",
+  // Join the Flock
+  "flock.billing.joinFlock": "Word lid van de Flock",
+  // What your membership keeps
+  "flock.billing.keeps": "Dit houd je met je lidmaatschap",
+  // Keep my founding spot · $0 today
+  "flock.billing.keepSpot": "Mijn oprichtersplek houden · vandaag $0",
+  // Manage billing
+  "flock.billing.manage": "Betaling beheren",
+  // Change your card or plan, or cancel, any time.
+  "flock.billing.manageLine": "Wijzig je kaart of abonnement, of zeg op wanneer je wilt.",
+  // Monthly
+  "flock.billing.monthlyLabel": "Maandelijks",
+  // {{count}} month free
+  "flock.billing.monthsFree_one": "{{count}} maand gratis",
+  // {{count}} months free
+  "flock.billing.monthsFree_other": "{{count}} maanden gratis",
+  // Next charge
+  "flock.billing.nextCharge": "Volgende betaling",
+  // Adding a card opens once the free season's end is set.
+  "flock.billing.notReady": "Je kunt een kaart toevoegen zodra het einde van de gratis periode vaststaat.",
+  // Card on file
+  "flock.billing.onFile": "Kaart opgeslagen",
+  // It happens, often with an expired card. Update your card by {{date}} to keep your place in the Flock.
+  "flock.billing.pastDueLine": "Dat kan gebeuren, vaak door een verlopen kaart. Werk je kaart uiterlijk {{date}} bij om je plek in de Flock te houden.",
+  // It happens, often with an expired card. Update your card to keep your place in the Flock.
+  "flock.billing.pastDueNoDate": "Dat kan gebeuren, vaak door een verlopen kaart. Werk je kaart bij om je plek in de Flock te houden.",
+  // Your last payment didn't go through
+  "flock.billing.pastDueTitle": "Je laatste betaling is niet gelukt",
+  // Your founder badge and your place among the Founding 50
+  "flock.billing.perkBadge": "Je oprichtersbadge en je plek bij de Founding 50",
+  // Your chapter, with avian vets, rescues and shops other members recommend
+  "flock.billing.perkChapter": "Je afdeling, met vogeldierenartsen, opvangcentra en winkels die andere leden aanraden",
+  // Your chapter, journeys and the full Library
+  "flock.billing.perkFounderAll": "Je afdeling, trajecten en de volledige bibliotheek",
+  // A vote in Do good, including founders-only votes
+  "flock.billing.perkFounderVote": "Een stem in Do good, ook bij stemmingen alleen voor oprichters",
+  // Step-by-step journeys for training and care
+  "flock.billing.perkJourneys": "Stapsgewijze trajecten voor training en verzorging",
+  // The full Library
+  "flock.billing.perkLibrary": "De volledige bibliotheek",
+  // A vote in Do good, on where the Flock's giving goes
+  "flock.billing.perkVote": "Een stem in Do good, over waar de donaties van de Flock naartoe gaan",
+  // /mo
+  "flock.billing.perMonth": "/mnd",
+  // Pick how you pay
+  "flock.billing.pickHow": "Kies hoe je betaalt",
+  // Founding member
+  "flock.billing.planFounding": "Oprichtend lid",
+  // Plan
+  "flock.billing.planLabel": "Abonnement",
+  // Your membership renews automatically.
+  "flock.billing.renews": "Je lidmaatschap wordt automatisch verlengd.",
+  // Renews every month. Cancel anytime in Manage billing.
+  "flock.billing.renewsMonthly": "Wordt elke maand verlengd. Opzeggen kan altijd via Betaling beheren.",
+  // Renews once a year. Cancel anytime in Manage billing.
+  "flock.billing.renewsYearly": "Wordt eens per jaar verlengd. Opzeggen kan altijd via Betaling beheren.",
+  // The Flock, {{price}} a month. You won't be charged until {{date}}. Cancel anytime before then from Membership and billing.
+  "flock.billing.saveCardNoteMonthly": "De Flock, {{price}} per maand. Je betaalt niets tot {{date}}. Je kunt tot die tijd altijd opzeggen via Lidmaatschap en betaling.",
+  // The Flock, {{price}} a year. You won't be charged until {{date}}. Cancel anytime before then from Membership and billing.
+  "flock.billing.saveCardNoteYearly": "De Flock, {{price}} per jaar. Je betaalt niets tot {{date}}. Je kunt tot die tijd altijd opzeggen via Lidmaatschap en betaling.",
+  // Free season · you're all set for after
+  "flock.billing.seasonSet": "Gratis periode · alles staat klaar voor daarna",
+  // Secure checkout with Stripe
+  "flock.billing.secure": "Veilig betalen met Stripe",
+  // Secure checkout with Stripe · Cancel anytime
+  "flock.billing.secureCancel": "Veilig betalen met Stripe · Altijd opzegbaar",
+  // See membership and billing
+  "flock.billing.seeMembership": "Bekijk lidmaatschap en betaling",
+  // Your spot is <em>safe</em>
+  "flock.billing.spotSafe": "Je plek is <em>veilig</em>",
+  // Everything in the Flock stays free, just like now.
+  "flock.billing.staysFree": "Alles in de Flock blijft gratis, net als nu.",
+  // <strong>Thank you.</strong> 20% of your membership will go to parrot rescue and conservation partners.
+  "flock.billing.thanks": "<strong>Dankjewel.</strong> 20% van je lidmaatschap gaat naar partners in papegaaienopvang en natuurbehoud.",
+  // Today
+  "flock.billing.today": "Vandaag",
+  // Add your card. Your founding spot is safe. $0 due today.
+  "flock.billing.todayFounder": "Voeg je kaart toe. Je oprichtersplek is veilig. Vandaag betaal je $0.",
+  // Add your card. $0 due today.
+  "flock.billing.todayLine": "Voeg je kaart toe. Vandaag betaal je $0.",
+  // Until {{date}}
+  "flock.billing.until": "Tot {{date}}",
+  // Update my card
+  "flock.billing.updateCard": "Mijn kaart bijwerken",
+  // Your founding price is locked in. Thank you for helping start the Flock.
+  "flock.billing.welcomeFounderLine": "Je oprichtersprijs staat vast. Bedankt dat je de Flock mee hebt opgericht.",
+  // Your place in the Flock is saved for after the free season. Nothing changes until then.
+  "flock.billing.welcomeLine": "Je plek in de Flock is bewaard voor na de gratis periode. Tot die tijd verandert er niets.",
+  // Yearly
+  "flock.billing.yearlyLabel": "Jaarlijks",
+  // {{price}} once a year
+  "flock.billing.yearlyTotal": "{{price}} eens per jaar",
   // Community
   "flock.nav.aria": "Community",
   // My birds
   "flock.nav.care": "Mijn vogels",
   // Spaces
   "flock.spaces.title": "Ruimtes",
+  // Membership and billing
+  "flock.you.membership": "Lidmaatschap en betaling",
   // Add weight
   "flockCheck.addWeight": "Gewicht toevoegen",
   // Back to home

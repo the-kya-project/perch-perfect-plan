@@ -4977,6 +4977,255 @@
     "farewell.yourBird": {
       "stamp": "fb5d7aead9178f25"
     },
+    "flock.billing.accessUntil": {
+      "stamp": "cf93d5a798f0c777"
+    },
+    "flock.billing.addMyCard": {
+      "stamp": "6f2355860068be3d"
+    },
+    "flock.billing.allSet": {
+      "stamp": "707e1d994cca57b2"
+    },
+    "flock.billing.backToFlock": {
+      "stamp": "717facd9c30c7170"
+    },
+    "flock.billing.billedMonthly": {
+      "stamp": "ee4dc901c03bdd8b"
+    },
+    "flock.billing.cardEnding": {
+      "stamp": "aec219fb905515c0"
+    },
+    "flock.billing.cardLabel": {
+      "stamp": "d733b74bb09bf781"
+    },
+    "flock.billing.chargeMonthly": {
+      "stamp": "8636721675b653d0"
+    },
+    "flock.billing.chargeYearly": {
+      "stamp": "d209d8064584fa05"
+    },
+    "flock.billing.checkoutNote": {
+      "stamp": "738b1eb3c840a44c"
+    },
+    "flock.billing.chooseFounder": {
+      "stamp": "96b3aee0a440effe"
+    },
+    "flock.billing.chooseMember": {
+      "stamp": "cbeb0300995042c1"
+    },
+    "flock.billing.confirmingLine": {
+      "stamp": "6b0b75fe0b2e79c8"
+    },
+    "flock.billing.confirmingSlow": {
+      "stamp": "002e7ed381035068"
+    },
+    "flock.billing.confirmingTitle": {
+      "stamp": "34d2664ddfdcfdab"
+    },
+    "flock.billing.ends": {
+      "stamp": "139d823087f8cd1d"
+    },
+    "flock.billing.error": {
+      "stamp": "2c52f637fd328238"
+    },
+    "flock.billing.firstCharge": {
+      "stamp": "6e0a937fec0f3b05"
+    },
+    "flock.billing.flockMember": {
+      "stamp": "ecd48bed39fec7f9"
+    },
+    "flock.billing.founding": {
+      "stamp": "cde6f061170fbbed"
+    },
+    "flock.billing.founding50": {
+      "stamp": "c8f66a745895cdba"
+    },
+    "flock.billing.foundingLabel": {
+      "stamp": "25c95125a2acdfc8"
+    },
+    "flock.billing.foundingLocked": {
+      "stamp": "f77069f868a9e88c"
+    },
+    "flock.billing.foundingOthers": {
+      "stamp": "a946e813549d80fb"
+    },
+    "flock.billing.foundingRelease": {
+      "stamp": "5772d1ad4c0548e0"
+    },
+    "flock.billing.foundingSpot": {
+      "stamp": "5cb4eec8e661a9a5"
+    },
+    "flock.billing.freeUntil": {
+      "stamp": "4f2271f458476736"
+    },
+    "flock.billing.givesBack": {
+      "stamp": "4c2370e1d48103dc"
+    },
+    "flock.billing.givesBackLine": {
+      "stamp": "88b56fc591ff62e8"
+    },
+    "flock.billing.givesBackNote": {
+      "stamp": "79057cb7e1b941d3"
+    },
+    "flock.billing.heroAfterLine": {
+      "stamp": "9973974cefb5ea04"
+    },
+    "flock.billing.heroFounder": {
+      "stamp": "43ca3e1989b91998"
+    },
+    "flock.billing.heroFounderLine": {
+      "stamp": "0d415e8f88766c79"
+    },
+    "flock.billing.heroMember": {
+      "stamp": "40940c876ce8a7e7"
+    },
+    "flock.billing.heroSeasonLine": {
+      "stamp": "27c4bae9cc924e89"
+    },
+    "flock.billing.howItWorks": {
+      "stamp": "e3b4beed230557fa"
+    },
+    "flock.billing.includes": {
+      "stamp": "e9ed736f637b36a7"
+    },
+    "flock.billing.joinFlock": {
+      "stamp": "874f61e3ee58e788"
+    },
+    "flock.billing.keeps": {
+      "stamp": "1f136f593074e88f"
+    },
+    "flock.billing.keepSpot": {
+      "stamp": "aa99373e46cc3fc9"
+    },
+    "flock.billing.manage": {
+      "stamp": "32bf8520708f9a89"
+    },
+    "flock.billing.manageLine": {
+      "stamp": "459e2256fce35b1a"
+    },
+    "flock.billing.monthlyLabel": {
+      "stamp": "d9dfaeb24e6946ef"
+    },
+    "flock.billing.monthsFree_one": {
+      "stamp": "27ee0ccb7f5ae553"
+    },
+    "flock.billing.monthsFree_other": {
+      "stamp": "64e7725bba442cab"
+    },
+    "flock.billing.nextCharge": {
+      "stamp": "7c96cc0fdf47d99a"
+    },
+    "flock.billing.notReady": {
+      "stamp": "ced5fcf89bca4ff2"
+    },
+    "flock.billing.onFile": {
+      "stamp": "6539e266ed33948b"
+    },
+    "flock.billing.pastDueLine": {
+      "stamp": "b2502b83a4b359a4"
+    },
+    "flock.billing.pastDueNoDate": {
+      "stamp": "1f531c0020c11fc3"
+    },
+    "flock.billing.pastDueTitle": {
+      "stamp": "3984249d6038705e"
+    },
+    "flock.billing.perkBadge": {
+      "stamp": "a894fd3996c500e4"
+    },
+    "flock.billing.perkChapter": {
+      "stamp": "a7e9504ad8b4cf47"
+    },
+    "flock.billing.perkFounderAll": {
+      "stamp": "90a38bb37eff295c"
+    },
+    "flock.billing.perkFounderVote": {
+      "stamp": "cc876edf46493320"
+    },
+    "flock.billing.perkJourneys": {
+      "stamp": "08a26502166148bd"
+    },
+    "flock.billing.perkLibrary": {
+      "stamp": "f215fc4befb7bf9d"
+    },
+    "flock.billing.perkVote": {
+      "stamp": "aec61e6820cad1c9"
+    },
+    "flock.billing.perMonth": {
+      "stamp": "0f1ccdec32314093"
+    },
+    "flock.billing.pickHow": {
+      "stamp": "5bffcb9e0d55dfca"
+    },
+    "flock.billing.planFounding": {
+      "stamp": "48becebe659da444"
+    },
+    "flock.billing.planLabel": {
+      "stamp": "7169d0ff9a6b36a3"
+    },
+    "flock.billing.renews": {
+      "stamp": "c003c097863239d8"
+    },
+    "flock.billing.renewsMonthly": {
+      "stamp": "c9c0b2405740127b"
+    },
+    "flock.billing.renewsYearly": {
+      "stamp": "470ef197983afd82"
+    },
+    "flock.billing.saveCardNoteMonthly": {
+      "stamp": "a8922f5e179bc541"
+    },
+    "flock.billing.saveCardNoteYearly": {
+      "stamp": "85a6e3387715d95e"
+    },
+    "flock.billing.seasonSet": {
+      "stamp": "3a96d0a26cdd6db8"
+    },
+    "flock.billing.secure": {
+      "stamp": "06c6f688d794f419"
+    },
+    "flock.billing.secureCancel": {
+      "stamp": "1c1c840effb2109e"
+    },
+    "flock.billing.seeMembership": {
+      "stamp": "9211bc4ec9721903"
+    },
+    "flock.billing.spotSafe": {
+      "stamp": "7a976a0857286ff7"
+    },
+    "flock.billing.staysFree": {
+      "stamp": "a96709e5a06821c0"
+    },
+    "flock.billing.thanks": {
+      "stamp": "32044e5d1758a5e3"
+    },
+    "flock.billing.today": {
+      "stamp": "65e7700b50124553"
+    },
+    "flock.billing.todayFounder": {
+      "stamp": "32f1a46724072a45"
+    },
+    "flock.billing.todayLine": {
+      "stamp": "5b7135534f444479"
+    },
+    "flock.billing.until": {
+      "stamp": "0e8be9bf1202bfa3"
+    },
+    "flock.billing.updateCard": {
+      "stamp": "7f5a0670258fc9e9"
+    },
+    "flock.billing.welcomeFounderLine": {
+      "stamp": "efe8edb3a281e2e8"
+    },
+    "flock.billing.welcomeLine": {
+      "stamp": "a55d7f0c23d49619"
+    },
+    "flock.billing.yearlyLabel": {
+      "stamp": "86978285e3017916"
+    },
+    "flock.billing.yearlyTotal": {
+      "stamp": "663485083086f81c"
+    },
     "flock.nav.aria": {
       "stamp": "856262315fd175c0"
     },
@@ -4985,6 +5234,9 @@
     },
     "flock.spaces.title": {
       "stamp": "2a10581379fa1095"
+    },
+    "flock.you.membership": {
+      "stamp": "dbc836c859ce0792"
     },
     "flockCheck.addWeight": {
       "stamp": "1e7d56b6177867b4"

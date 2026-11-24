@@ -23,15 +23,6 @@ Where these items came from, with the detail behind each: `docs/flock/opening-sc
 ## Ready to build
 
 
-### 1.17 Promo codes for memberships
-- **Done means:** promotion codes work on the card step, following the rule below. The Apple offer codes iPhone needs (whole months only) are listed for when the iPhone paywall is built.
-- **Rule (Brittany, Nov 22, 2026):** codes apply to regular Flock and Kya's Crew plans, never to the $15 founding price. A code can stack with a trial (whichever is best for the member).
-- **Approved to start (Brittany, Nov 22, 2026):** once 1.14 is merged, under the same rules: test mode only, `BILLING_ENABLED` off, nothing in the Stripe Dashboard touched.
-- **Size:** M
-- **Depends on:** 1.14 merged
-- **Overnight alone:** yes (built to a held PR)
-- **Needs Brittany:** hold the PR for her approval (payments). Show worked examples of a code with a trial in the PR, so she can confirm how "stack" and "whichever is best" combine.
-
 ### 1.11 Buddy pods
 - **Spec:** [Buddy pods](flock/specs/feature-specs.md#buddy-pods-111) · **Mockup:** [`SpecPods.dc.html`](flock/mockups/SpecPods.dc.html)
 - **Done means:**
@@ -160,6 +151,18 @@ Where these items came from, with the detail behind each: `docs/flock/opening-sc
 
 ---
 
+## Before billing opens
+
+Billing merged switched off (`BILLING_ENABLED` off, Stripe test mode only). Before it's turned on for anyone:
+
+- [ ] Build the founder release job.
+- [ ] Save the test-mode Customer Portal setup in Stripe.
+- [ ] Run two test checkouts: one normal, one in the free season's last 49 hours.
+- [ ] Have a native speaker read the Dutch.
+- [ ] Run two test checkouts during a test free season, one with a "20% off for 3 months" promotion code and one with a "once" code, to see whether Stripe counts the months from when the card is added or from the first charge (1.17, #543).
+
+---
+
 ## Last: when Brittany decides to open
 
 The launch PR itself (1.18) is already merged dark. What's left before opening is the items below, then switching it on.
@@ -283,7 +286,9 @@ The launch PR itself (1.18) is already merged dark. What's left before opening i
 
 ## Done
 
-- **1.20a** Journeys redesign, data and migration (`20261124190000_journeys_skills_data.sql`): the 14 templates' text rewritten as drafts through `admin_update_journey_template` (description in `purpose`, the spec's safety notes, tips cleared, diet conversion's five protective lines moved into its safety notes, nail trims' notes unchanged); `journey_templates.video_ref` (none yet); every skill startable by everyone; new journeys get no milestone rows and a custom journey needs only a name, with an optional `custom_description`; `journeys.source_journey_id` for 1.20c; `journey_finish(journey, 'learned' | 'happy_where_we_are')` (diet conversion adds no known skill), and `journey_reach_milestone` no longer finishes anything; `journey_updates.is_big_moment` through `journey_post_update`'s `p_big_moment`. The 2 existing journeys keep everything and carry on. Pinned by `supabase/checks/journeys_skills_data_checks.sql` and the updated journey checks. Held for Brittany (changes existing journey functions and template rows; copy review): #552.
+- **1.20a** Journeys redesign, data and migration (`20261124190000_journeys_skills_data.sql`): the 14 templates' text rewritten as drafts through `admin_update_journey_template` (description in `purpose`, the spec's safety notes, tips cleared, diet conversion's five protective lines moved into its safety notes, nail trims' notes unchanged); `journey_templates.video_ref` (none yet); every skill startable by everyone; new journeys get no milestone rows and a custom journey needs only a name, with an optional `custom_description`; `journeys.source_journey_id` for 1.20c; `journey_finish(journey, 'learned' | 'happy_where_we_are')` (diet conversion adds no known skill), and `journey_reach_milestone` no longer finishes anything; `journey_updates.is_big_moment` through `journey_post_update`'s `p_big_moment`. The 2 existing journeys keep everything and carry on. Pinned by `supabase/checks/journeys_skills_data_checks.sql` and the updated journey checks. Brittany approved the migration and asked for it to merge (Nov 24, 2026): #552.
+- **1.17** Promotion codes: the subscription Checkout offers Stripe's code field for the regular Flock plans and Kya's Crew, never the founding price (`promotionCodesAllowed`), and the billing webhook takes off any discount that reaches a founding subscription another way (`discountsToRemove`). A code stacks with a trial (the trial first, then the code on the paid invoices). Worked examples and the Apple offer codes for the iPhone paywall are in `docs/flock/payments-plan.md` section d. Brittany approved it (Nov 24, 2026): the worked examples match what she meant, and the webhook may remove discounts from founding memberships. Switched off with `BILLING_ENABLED`, test mode only, nothing in the Stripe Dashboard touched; pinned by `npm run test:billing`. The test checkout that shows how Stripe counts a code's months is under "Before billing opens": #543.
+- **1.14a** Card step and checkout design, switched off with billing (`BILLING_ENABLED` off, web only, never in the iPhone or Android app): the screens from the nine approved mockups in [`docs/flock/mockups/billing/`](flock/mockups/billing/), namely the card step during and after the free season (member and founder), branded Stripe Checkout with the "You won't be charged until" line, the confirming screen, "You're all set" for members and founders, Membership with plan, first charge date and the card's last four, and the past-due alert that opens the Customer Portal; English and Dutch. Giving is only ever shown as "20%". Brittany approved the screens and the Dutch (Nov 24, 2026); what's left before billing opens is under "Before billing opens": #533.
 - **1.10** Challenges: admins write a Journey or Standalone challenge (title, description, a journey template or a list of prompts, start and end days, the whole Flock or one chapter) at `/admin/challenges`; one at a time per audience, and no food or diet templates. An open one is a card on Today and Journeys; members join with a bird and choose whether their entries may be featured. Entries (a few sentences and up to four photos) are Flock posts in their challenge's own feed, under the post rules for visibility, blocks, reactions, comments and reports. Finishing (every prompt, or the journey finished by the end day) shows "You finished!" and awards Challenge champ. After the end day the feed stays readable; admins pin an entry and write a wrap-up featuring entries only with permission. No winners, prizes or rankings (`20261124033000_flock_challenges.sql`, `src/lib/flockChallenges.ts`). Brittany's decisions (Nov 24, 2026): the unmocked screens and the copy approved as built; no clips for now (1.10a, under "Later"); an entry needs a few words even with a photo; journey challenges stay (noted in 1.20b): #547.
 - **D1.2** The weight baseline on the weight page, behind the `weight_baseline` health switch (off; set it to `admins` for Brittany's account): the usual range for the latest weigh-in's kind or "still learning", a one-time "We've learned [Bird]'s usual weight" card, and one alert card at most (sudden drop confirmed, weight has shifted, hard loss, weigh again, keep an eye on this, worth watching), all observational, with no "call your vet". Brittany's Nov 23 decisions are in `WEIGHT_BASELINE_RULES` (draft): personal levels from each bird's wobble with their limits, 10-day re-weighs, the 14-day "keep an eye" window, the sudden drop (10%, 7% under 100 g, at least 2 g, confirmed within 3 days). The owner's optional ideal weight range (`bird_ideal_weights`, its own field on the weight page, never shown to sitters) only quiets the two lower alerts and their "weigh again". The hourly job `weight-baseline-shadow-hourly` logs what the baseline would have said about every weigh-in, for every bird, with and without the ideal range, to `weight_baseline_shadow` (service role only), after the fact so it never blocks a weigh-in (`20261124110000_weight_baseline_shadow.sql`, `src/lib/weightBaselineShadow.ts`). Pinned by `npm run test:weight-baseline`, `npm run test:health-rules` and `supabase/checks/weight_baseline_shadow_checks.sql`. Held for Brittany (health wording, the vet packet, a production migration and cron job): #549.
 - **1.15** Kya's Crew, switched off with billing and test mode only: plans `crew_monthly` / `crew_annual` (the `entitlements` plan check widened), prices from Stripe (`STRIPE_PRICE_CREW_MONTHLY` / `_YEARLY`), counted by `is_flock_member()`, 25% giving recorded on the row (`entitlements.giving_rate`, 20% for other paid rows), and no trial (`20261123203000_kyas_crew.sql`, `supabase/checks/crew_checks.sql`, `npm run test:billing`). No card step offers Crew yet (1.15a). Brittany's decisions (Nov 23, 2026): Crew pays nothing until the free season ends, like every member; sponsored seats aren't tracked at all, because that's marketing language, and rescue adopters always get in free. Held for Brittany (payments, the plan check): #535.

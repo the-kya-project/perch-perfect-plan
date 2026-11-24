@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Back in the app, confirming the card</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&amp;family=Newsreader:opsz,wght@6..72,700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#2d6a4f}a:hover{color:#1a3d2e}
+@keyframes spin{to{transform:rotate(360deg)}}
+.ring{animation:spin 1.2s linear infinite}
+@media (prefers-reduced-motion: reduce){.ring{animation:none}}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 22px; padding: 40px 32px; background: #1a3d2e; font-family: 'DM Sans', sans-serif; color: #ffffff; text-align: center">
+  <div style="position: relative; width: 112px; height: 112px">
+    <svg class="ring" width="112" height="112" viewBox="0 0 112 112" aria-hidden="true" style="position: absolute; inset: 0"><circle cx="56" cy="56" r="50" fill="none" stroke="#2d6a4f" stroke-width="6"/><path d="M56 6a50 50 0 0 1 50 50" fill="none" stroke="#f2b33d" stroke-width="6" stroke-linecap="round"/></svg>
+    <span style="position: absolute; inset: 20px; border-radius: 999px; background: #cdeab0; color: #1a3d2e; display: grid; place-items: center"><svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3c4 3 6 7 5 12-3-1-5-3-6-6"/><path d="M12 3c-1 5 0 10 2 16"/></svg></span>
+  </div>
+  <h1 style="margin: 0; font-family: 'Newsreader', Georgia, serif; font-size: 30px; font-weight: 700; line-height: 1.15">Confirming your card</h1>
+  <p role="status" style="margin: 0; font-size: 16px; line-height: 1.5; color: #d6e8dc">This can take a minute. You can stay right here, and we'll move on as soon as it's done.</p>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+renderVals() {
+return {};
+}
+}
+</script>
+</body>
+</html>
