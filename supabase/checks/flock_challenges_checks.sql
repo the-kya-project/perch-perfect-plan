@@ -194,6 +194,9 @@ begin
 
   -- 7) A journey challenge counts its journey: finished after joining and by
   --    the end day; a "Just me" journey's badge stays off the profile.
+  --    (b's entry finished the one-prompt Great Lakes challenge in 5; it goes,
+  --    so the journey is b's only way to the badge.)
+  delete from public.flock_posts where id = eo;
   update public.flock_challenges set starts_on = today, ends_on = today + 10 where id = jc;
   perform set_config('request.jwt.claims', json_build_object('sub', b, 'role', 'authenticated')::text, true);
   set local role authenticated;
