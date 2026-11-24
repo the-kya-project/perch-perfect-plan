@@ -2923,11 +2923,12 @@ test.describe("share cards (admin, phone)", () => {
     await page.getByRole("button", { name: "Make a share card" }).click();
     await expect(page).toHaveURL(/\/card\?kind=finished$/);
     await expect(page.getByTestId("card-preview")).toHaveAttribute("alt", "Willow learned spin");
+    await expect.poll(() => size(page)).toBe("1080x1350");
     // A finished journey offers no more posting or "learned it".
     await page.goBack();
+    await expect(page.getByTestId("journey-page")).toBeVisible();
     await expect(page.getByTestId("post-update")).toHaveCount(0);
     await expect(page.getByTestId("learned-it")).toHaveCount(0);
-    await expect.poll(() => size(page)).toBe("1080x1350");
     await context.close();
   });
 
