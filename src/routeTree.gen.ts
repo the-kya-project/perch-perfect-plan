@@ -165,7 +165,6 @@ import { Route as AuthenticatedFlockPostPostIdIndexRouteImport } from './routes/
 import { Route as AuthenticatedFlockPostPostIdEditRouteImport } from './routes/_authenticated/flock.post.$postId.edit'
 import { Route as AuthenticatedFlockReactionsSubjectTypeSubjectIdRouteImport } from './routes/_authenticated/flock.reactions.$subjectType.$subjectId'
 import { Route as ApiPublicBereavementReviewReviewIdSigRouteImport } from './routes/api/public/bereavement-review.$reviewId.$sig'
-import { Route as AuthenticatedFlockJourneysJourneyIdMilestonePositionRouteImport } from './routes/_authenticated/flock.journeys.$journeyId.milestone.$position'
 import { Route as ApiPublicChartBirdIdMonthSigRouteImport } from './routes/api/public/chart.$birdId.$month.$sig'
 import { Route as ApiPublicUnsubscribeCategoryUserIdSigRouteImport } from './routes/api/public/unsubscribe.$category.$userId.$sig'
 
@@ -1044,12 +1043,6 @@ const ApiPublicBereavementReviewReviewIdSigRoute =
     path: '/api/public/bereavement-review/$reviewId/$sig',
     getParentRoute: () => rootRouteImport,
   } as any)
-const AuthenticatedFlockJourneysJourneyIdMilestonePositionRoute =
-  AuthenticatedFlockJourneysJourneyIdMilestonePositionRouteImport.update({
-    id: '/journeys/$journeyId/milestone/$position',
-    path: '/journeys/$journeyId/milestone/$position',
-    getParentRoute: () => AuthenticatedFlockRoute,
-  } as any)
 const ApiPublicChartBirdIdMonthSigRoute =
   ApiPublicChartBirdIdMonthSigRouteImport.update({
     id: '/api/public/chart/$birdId/$month/$sig',
@@ -1219,7 +1212,6 @@ export interface FileRoutesByFullPath {
   '/flock/journeys/$journeyId/': typeof AuthenticatedFlockJourneysJourneyIdIndexRoute
   '/flock/pods/$podId/': typeof AuthenticatedFlockPodsPodIdIndexRoute
   '/flock/post/$postId/': typeof AuthenticatedFlockPostPostIdIndexRoute
-  '/flock/journeys/$journeyId/milestone/$position': typeof AuthenticatedFlockJourneysJourneyIdMilestonePositionRoute
   '/api/public/chart/$birdId/$month/$sig': typeof ApiPublicChartBirdIdMonthSigRoute
   '/api/public/unsubscribe/$category/$userId/$sig': typeof ApiPublicUnsubscribeCategoryUserIdSigRoute
 }
@@ -1372,7 +1364,6 @@ export interface FileRoutesByTo {
   '/flock/journeys/$journeyId': typeof AuthenticatedFlockJourneysJourneyIdIndexRoute
   '/flock/pods/$podId': typeof AuthenticatedFlockPodsPodIdIndexRoute
   '/flock/post/$postId': typeof AuthenticatedFlockPostPostIdIndexRoute
-  '/flock/journeys/$journeyId/milestone/$position': typeof AuthenticatedFlockJourneysJourneyIdMilestonePositionRoute
   '/api/public/chart/$birdId/$month/$sig': typeof ApiPublicChartBirdIdMonthSigRoute
   '/api/public/unsubscribe/$category/$userId/$sig': typeof ApiPublicUnsubscribeCategoryUserIdSigRoute
 }
@@ -1534,7 +1525,6 @@ export interface FileRoutesById {
   '/_authenticated/flock/journeys/$journeyId/': typeof AuthenticatedFlockJourneysJourneyIdIndexRoute
   '/_authenticated/flock/pods/$podId/': typeof AuthenticatedFlockPodsPodIdIndexRoute
   '/_authenticated/flock/post/$postId/': typeof AuthenticatedFlockPostPostIdIndexRoute
-  '/_authenticated/flock/journeys/$journeyId/milestone/$position': typeof AuthenticatedFlockJourneysJourneyIdMilestonePositionRoute
   '/api/public/chart/$birdId/$month/$sig': typeof ApiPublicChartBirdIdMonthSigRoute
   '/api/public/unsubscribe/$category/$userId/$sig': typeof ApiPublicUnsubscribeCategoryUserIdSigRoute
 }
@@ -1696,7 +1686,6 @@ export interface FileRouteTypes {
     | '/flock/journeys/$journeyId/'
     | '/flock/pods/$podId/'
     | '/flock/post/$postId/'
-    | '/flock/journeys/$journeyId/milestone/$position'
     | '/api/public/chart/$birdId/$month/$sig'
     | '/api/public/unsubscribe/$category/$userId/$sig'
   fileRoutesByTo: FileRoutesByTo
@@ -1849,7 +1838,6 @@ export interface FileRouteTypes {
     | '/flock/journeys/$journeyId'
     | '/flock/pods/$podId'
     | '/flock/post/$postId'
-    | '/flock/journeys/$journeyId/milestone/$position'
     | '/api/public/chart/$birdId/$month/$sig'
     | '/api/public/unsubscribe/$category/$userId/$sig'
   id:
@@ -2010,7 +1998,6 @@ export interface FileRouteTypes {
     | '/_authenticated/flock/journeys/$journeyId/'
     | '/_authenticated/flock/pods/$podId/'
     | '/_authenticated/flock/post/$postId/'
-    | '/_authenticated/flock/journeys/$journeyId/milestone/$position'
     | '/api/public/chart/$birdId/$month/$sig'
     | '/api/public/unsubscribe/$category/$userId/$sig'
   fileRoutesById: FileRoutesById
@@ -3155,13 +3142,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicBereavementReviewReviewIdSigRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/_authenticated/flock/journeys/$journeyId/milestone/$position': {
-      id: '/_authenticated/flock/journeys/$journeyId/milestone/$position'
-      path: '/journeys/$journeyId/milestone/$position'
-      fullPath: '/flock/journeys/$journeyId/milestone/$position'
-      preLoaderRoute: typeof AuthenticatedFlockJourneysJourneyIdMilestonePositionRouteImport
-      parentRoute: typeof AuthenticatedFlockRoute
-    }
     '/api/public/chart/$birdId/$month/$sig': {
       id: '/api/public/chart/$birdId/$month/$sig'
       path: '/api/public/chart/$birdId/$month/$sig'
@@ -3241,7 +3221,6 @@ interface AuthenticatedFlockRouteChildren {
   AuthenticatedFlockJourneysJourneyIdIndexRoute: typeof AuthenticatedFlockJourneysJourneyIdIndexRoute
   AuthenticatedFlockPodsPodIdIndexRoute: typeof AuthenticatedFlockPodsPodIdIndexRoute
   AuthenticatedFlockPostPostIdIndexRoute: typeof AuthenticatedFlockPostPostIdIndexRoute
-  AuthenticatedFlockJourneysJourneyIdMilestonePositionRoute: typeof AuthenticatedFlockJourneysJourneyIdMilestonePositionRoute
 }
 
 const AuthenticatedFlockRouteChildren: AuthenticatedFlockRouteChildren = {
@@ -3304,8 +3283,6 @@ const AuthenticatedFlockRouteChildren: AuthenticatedFlockRouteChildren = {
   AuthenticatedFlockPodsPodIdIndexRoute: AuthenticatedFlockPodsPodIdIndexRoute,
   AuthenticatedFlockPostPostIdIndexRoute:
     AuthenticatedFlockPostPostIdIndexRoute,
-  AuthenticatedFlockJourneysJourneyIdMilestonePositionRoute:
-    AuthenticatedFlockJourneysJourneyIdMilestonePositionRoute,
 }
 
 const AuthenticatedFlockRouteWithChildren =

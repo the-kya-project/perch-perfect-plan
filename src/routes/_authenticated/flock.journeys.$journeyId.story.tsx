@@ -10,11 +10,11 @@ import { ClipState, ReadyClip, useClipPhase } from "@/components/flock/JourneyCl
 import { BirdThumb } from "@/components/flock/FlockPeople";
 import { useCardBirdPhotos } from "@/components/flock/JourneyBrowse";
 import {
-  reactTo, useInvalidateJourneys, useJourneyAccess, useJourneyClips, useJourneyFollowing, useJourneyView, useJourneyViewUpdates,
+  reactTo, useBigMoments, useInvalidateJourneys, useJourneyAccess, useJourneyClips, useJourneyFollowing, useJourneyView, useJourneyViewUpdates,
 } from "@/lib/journeyData";
 
 // The story viewer (JourneyEverywhere, screen 7): a journey's clips play like
-// stories. "[owner] · time · Milestone N of M", one-tap "Go [bird]" (a Great
+// stories. "[owner] · time · Big moment", one-tap "Go [bird]" (a Great
 // job), tap the sides or swipe for the previous or next clip; from the rings
 // in Today (?queue=following) the last clip moves on to the next bird.
 // Clips come only as short-lived signed links for people allowed to see them.
@@ -46,6 +46,7 @@ function Story() {
   const { data: clips, isLoading: clipsLoading, refetch: refetchClips } = useJourneyClips(journeyId, !!card);
   const { data: access } = useJourneyAccess();
   const { data: following } = useJourneyFollowing();
+  const { data: bigMoments } = useBigMoments(journeyId, !!card);
   const photos = useCardBirdPhotos(card ? [card] : undefined, 120);
   // Oldest first, clips only.
   const reel = useMemo(() => [...(updates ?? [])].filter((x) => x.has_clip).reverse(), [updates]);
@@ -84,8 +85,8 @@ function Story() {
   const clip = cur ? clips?.[cur.update_id] : undefined;
   const { phase, retry, markFailed } = useClipPhase(journeyId, clip, clipsLoading || !clips, refetchClips);
   const name = card?.bird_name ?? "";
-  const tag = !cur ? "" : cur.is_milestone && cur.milestone_position
-    ? t("flock.journeys.story.milestone", "Milestone {{n}} of {{total}}", { n: cur.milestone_position, total: card?.total ?? 0 })
+  const tag = !cur ? "" : bigMoments?.has(cur.update_id)
+    ? t("flock.journeys.tag.bigMoment", "Big moment")
     : cur.is_question ? t("flock.journeys.tag.question", "Question") : cur.is_day_one ? t("flock.journeys.tag.dayOne", "Day one") : "";
   const isCheered = !!cur && (cheered.has(cur.update_id) || cur.mine.includes("great_job"));
 

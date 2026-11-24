@@ -5,7 +5,7 @@ import { useTranslation } from "react-i18next";
 import { K, KyaCard, KyaSwitch } from "@/components/kya";
 import { FlockSubPage } from "@/components/flock/FlockSubPage";
 import { useMyProfile, useOwnBirdPhotoUrls, type FlockPhotoSrc } from "@/lib/flockData";
-import { useJourney, useJourneyBirds, useJourneyView, useJourneyViewUpdates } from "@/lib/journeyData";
+import { useJourney, useJourneyBirds, useJourneyUpdates, useJourneyView, useJourneyViewUpdates } from "@/lib/journeyData";
 import { getJourneyCardPhotos } from "@/lib/journeyMedia.functions";
 import { possessive, skillInSentence } from "@/lib/journeys";
 import { CARD_SIZES, canMakeJourneyCard, cardFileName, renderJourneyCard, type CardKind, type CardSize, type CardText } from "@/lib/journeyCard";
@@ -18,12 +18,12 @@ import { canShareImageFiles, shareOrSaveImage } from "@/lib/momentCard";
 // the bird's household: a milestone or a finish is read through the
 // household-only journeys table, and day one vs. now's stills come from
 // getJourneyCardPhotos, which checks is_mine.
-type CardSearch = { kind: CardKind; n?: number; a?: string; b?: string };
+type CardSearch = { kind: CardKind; u?: string; a?: string; b?: string };
 
 export const Route = createFileRoute("/_authenticated/flock/journeys/$journeyId/card")({
   validateSearch: (s: Record<string, unknown>): CardSearch => ({
-    kind: s.kind === "finished" || s.kind === "compare" ? s.kind : "milestone",
-    n: Number.isInteger(Number(s.n)) && Number(s.n) > 0 ? Number(s.n) : undefined,
+    kind: s.kind === "finished" || s.kind === "compare" ? s.kind : "moment",
+    u: typeof s.u === "string" ? s.u : undefined,
     a: typeof s.a === "string" ? s.a : undefined,
     b: typeof s.b === "string" ? s.b : undefined,
   }),
@@ -35,9 +35,10 @@ const photoUrl = (src: FlockPhotoSrc): string | null => (typeof src === "string"
 function ShareCard() {
   const { t, i18n } = useTranslation();
   const { journeyId } = Route.useParams();
-  const { kind, n, a, b } = Route.useSearch();
+  const { kind, u, a, b } = Route.useSearch();
   const compare = kind === "compare";
   const { data: journey, isFetched: journeyFetched } = useJourney(compare ? "" : journeyId);
+  const { data: ownUpdates, isFetched: ownUpdatesFetched } = useJourneyUpdates(kind === "moment" ? journeyId : "");
   const { data: birds } = useJourneyBirds();
   const { data: view, isFetched: viewFetched } = useJourneyView(compare ? journeyId : "");
   const { data: updates } = useJourneyViewUpdates(compare ? journeyId : "");
@@ -86,18 +87,16 @@ function ShareCard() {
         },
       };
     } else {
-      const m = journey.milestones.find((x) => x.position === n);
-      if (m && m.state !== "todo") {
-        const done = m.words?.done_line ?? null;
+      // A big moment: an update on this journey marked "This was a big moment".
+      const m = ownUpdates?.find((x) => x.id === u && x.is_big_moment);
+      if (m) {
         card = {
           skill, photos, text: {
-            eyebrow: t("flock.journeys.shareCard.milestoneEyebrow", "{{skill}} · milestone {{n}}", { skill, n: m.position }),
-            title: done
-              ? (showBird ? t("flock.journeys.celebrate.line", "{{name}} {{done}}!", { name: birdName, done })
-                : t("flock.journeys.shareCard.lineNoName", "{{done}}!", { done: done[0].toUpperCase() + done.slice(1) }))
-              : (showBird ? t("flock.journeys.celebrate.lineCustom", "{{name}} did it!", { name: birdName })
-                : t("flock.journeys.shareCard.lineCustomNoName", "Milestone reached!")),
-            date: m.reached_at ? t("flock.journeys.shareCard.reachedOn", "Reached {{date}}", { date: day(m.reached_at) }) : null,
+            eyebrow: t("flock.journeys.shareCard.momentEyebrow", "{{skill}} · big moment", { skill }),
+            title: showBird
+              ? t("flock.journeys.shareCard.momentTitle", "A big moment for {{name}}!", { name: birdName })
+              : t("flock.journeys.shareCard.momentTitleNoName", "A big moment!"),
+            date: day(m.created_at),
             member,
           },
         };
@@ -153,11 +152,11 @@ function ShareCard() {
     }
   };
 
-  // Nothing to make: not the household's journey, a milestone that isn't
-  // reached, or day one vs. now without both clips.
+  // Nothing to make: not the household's journey, an update that isn't a big
+  // moment, or day one vs. now without both clips.
   const nothing = compare
     ? viewFetched && (!view || (!!updates && !allowed))
-    : journeyFetched && !!birds && !card;
+    : journeyFetched && !!birds && (kind !== "moment" || ownUpdatesFetched) && !card;
   const { w, h } = CARD_SIZES[size];
   const chip = (s: CardSize, label: string) => (
     <button type="button" onClick={() => setSize(s)} aria-pressed={size === s} data-testid={`card-size-${s}`}

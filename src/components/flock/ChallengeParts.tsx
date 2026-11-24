@@ -42,23 +42,26 @@ export function challengeEyebrow(t: TFunction, c: Pick<Challenge, "state" | "day
   return t("flock.challenges.daysLeft", "Challenge · {{n}} days left", { n: c.days_left });
 }
 
-/** "Standalone challenge · 7 prompts · 63 members joined". */
+/** "Standalone challenge · 7 prompts · 63 members joined", or "Journey
+ *  challenge · Recall · 63 members joined" (journeys have no steps since 1.20). */
 export function challengeSummary(t: TFunction, c: Pick<Challenge, "kind" | "total_count" | "member_count" | "template_name">): string {
   const kind = c.kind === "standalone"
     ? t("flock.challenges.standaloneKind", "Standalone challenge")
     : t("flock.challenges.journeyKind", "Journey challenge · {{name}}", { name: c.template_name ?? "" });
   const steps = c.kind === "standalone"
     ? (c.total_count === 1 ? t("flock.challenges.onePrompt", "1 prompt") : t("flock.challenges.prompts", "{{n}} prompts", { n: c.total_count }))
-    : (c.total_count === 1 ? t("flock.challenges.oneMilestone", "1 milestone") : t("flock.challenges.milestones", "{{n}} milestones", { n: c.total_count }));
+    : null;
   const joined = c.member_count === 1
     ? t("flock.challenges.oneJoined", "1 member joined")
     : t("flock.challenges.joined", "{{n}} members joined", { n: c.member_count });
-  return [kind, steps, joined].join(" · ");
+  return [kind, steps, joined].filter(Boolean).join(" · ");
 }
 
-/** "Juno · 3 of 7 done". */
-export function challengeProgress(t: TFunction, c: Pick<Challenge, "my_bird_name" | "done_count" | "total_count">): string {
-  const done = t("flock.challenges.progress", "{{done}} of {{total}} done", { done: c.done_count, total: c.total_count });
+/** "Juno · 3 of 7 done"; a journey challenge: "Juno · Learned it" or "Juno · In progress". */
+export function challengeProgress(t: TFunction, c: Pick<Challenge, "kind" | "my_bird_name" | "done_count" | "total_count" | "finished">): string {
+  const done = c.kind === "journey"
+    ? (c.finished ? t("flock.challenges.journeyLearned", "Learned it") : t("flock.challenges.journeyGoing", "In progress"))
+    : t("flock.challenges.progress", "{{done}} of {{total}} done", { done: c.done_count, total: c.total_count });
   return c.my_bird_name ? `${c.my_bird_name} · ${done}` : done;
 }
 

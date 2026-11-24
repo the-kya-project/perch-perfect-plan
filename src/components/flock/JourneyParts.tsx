@@ -1,9 +1,9 @@
 import { useState, type ReactNode } from "react";
-import { useNavigate } from "@tanstack/react-router";
-import { Check, ChevronRight, Lock } from "lucide-react";
+import { Link, useNavigate } from "@tanstack/react-router";
+import { Check, ChevronRight } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { K, KyaHeading, KyaPrimaryButton, KyaSheet } from "@/components/kya";
-import { flockSheetTitle } from "@/lib/journeys";
+import { flockSheetTitle, journeyDay, journeyDays, skillInSentence, type FlockSheetReason } from "@/lib/journeys";
 
 const CHIP_ON_BG = "#cdeab0";
 const CHIP_OFF_BORDER = "#c9d3c8";
@@ -13,40 +13,35 @@ export function JourneyEyebrow({ children }: { children: ReactNode }) {
   return <h2 className="m-0 pt-1 text-[11.5px] font-[700] uppercase tracking-[0.06em]" style={{ color: "#5a8c7a" }}>{children}</h2>;
 }
 
-/** One template in the picker: name, "7 milestones · usually 2–6 weeks", and
- *  either "[Bird] knows this", "Going now", a lock, or a chevron. */
-export function TemplateRow({ name, meta, known, going, locked, onClick, testId }: {
+/** One skill in the picker: name, its short description, and "[Bird]
+ *  already knows this" or "Going now" when they apply. Every skill opens. */
+export function TemplateRow({ name, meta, known, going, onClick, testId }: {
   name: string;
   meta: string;
   known?: string | null;
   going?: string | null;
-  locked?: boolean;
   onClick: () => void;
   testId?: string;
 }) {
-  const { t } = useTranslation();
   return (
     <button
       type="button"
       onClick={onClick}
       data-template={testId}
-      data-locked={locked ? "true" : undefined}
-      aria-label={locked ? t("flock.journeys.start.lockedAria", "{{name}}, part of the Flock", { name }) : undefined}
       className="flex min-h-[56px] w-full items-center gap-3 rounded-[14px] bg-white px-3.5 py-2 text-left active:scale-[0.99]"
       style={{ color: K.forest }}
     >
       <span className="flex min-w-0 flex-1 flex-col">
         <span className="text-[15px] font-[700]">{name}</span>
-        <span className="text-[12.5px]" style={{ color: K.quiet }}>{meta}</span>
+        {meta && <span className="line-clamp-2 text-[12.5px] leading-[1.35]" style={{ color: K.quiet }}>{meta}</span>}
+        {known && (
+          <span className="mt-1 self-start rounded-full px-2 py-[3px] text-[11px] font-[700]" style={{ background: "#e5f4e4", color: K.moss }} data-testid="already-knows">{known}</span>
+        )}
       </span>
-      {known ? (
-        <span className="shrink-0 rounded-full px-2 py-[3px] text-[11px] font-[700]" style={{ background: "#e5f4e4", color: K.moss }}>{known}</span>
-      ) : going ? (
+      {going && (
         <span className="shrink-0 rounded-full px-2 py-[3px] text-[11px] font-[700]" style={{ background: K.amberBg, color: K.amberText }}>{going}</span>
-      ) : null}
-      {locked
-        ? <Lock className="size-4 shrink-0" style={{ color: K.quiet }} aria-hidden="true" />
-        : <ChevronRight className="size-[18px] shrink-0" style={{ color: K.forest }} aria-hidden="true" />}
+      )}
+      <ChevronRight className="size-[18px] shrink-0" style={{ color: K.forest }} aria-hidden="true" />
     </button>
   );
 }
@@ -113,10 +108,12 @@ export function FlowFooter({ children }: { children: ReactNode }) {
   );
 }
 
-/** A free account tapping a Flock-only journey. No price: the Flock is free
- *  for everyone while it's getting started. The button goes to the founding page until the join step
+/** A free account reaching for a community feature: "How others did it" on a
+ *  skill page, or "Ask the Flock" on a private journey. Every skill can be
+ *  started without it. No price: the Flock is free for everyone while it's
+ *  getting started. The button goes to the founding page until the join step
  *  exists. */
-export function FlockOnlySheet({ slug, journey, bird, onClose }: { slug: string; journey: string; bird?: string; onClose: () => void }) {
+export function FlockOnlySheet({ reason, skill, onClose }: { reason: FlockSheetReason; skill?: string; onClose: () => void }) {
   const { t } = useTranslation();
   const navigate = useNavigate();
   return (
@@ -126,16 +123,20 @@ export function FlockOnlySheet({ slug, journey, bird, onClose }: { slug: string;
       title={(
         <div className="flex flex-col gap-1">
           <span className="text-[11.5px] font-[700] uppercase tracking-[0.06em]" style={{ color: K.moss }}>{t("flock.journeys.flockOnly.eyebrow", "Part of the Flock")}</span>
-          <KyaHeading size={23}>{flockSheetTitle(t, slug, journey, bird)}</KyaHeading>
+          <KyaHeading size={23}>{flockSheetTitle(t, reason)}</KyaHeading>
         </div>
       )}
     >
-      <div data-testid="flock-only-sheet" className="flex flex-col gap-3">
+      <div data-testid="flock-only-sheet" data-reason={reason} className="flex flex-col gap-3">
         <p className="m-0 text-[15px] leading-[1.5]" style={{ color: K.ink }}>
-          {t("flock.journeys.flockOnly.line", "Tricks like this one are only available to Flock members.")}
+          {reason === "ask"
+            ? t("flock.journeys.flockOnly.askLine", "In the Flock, you can ask other members about your journey and hear from people who've been there.")
+            : skill
+              ? t("flock.journeys.flockOnly.howOthersLine", "In the Flock, members share their journeys and what helped them, so you can see how other birds learned {{skill}}.", { skill: skillInSentence(skill) })
+              : t("flock.journeys.flockOnly.howOthersLineNoSkill", "In the Flock, members share their journeys and what helped them, so you can see how other birds learned.")}
         </p>
         <p className="m-0 text-[15px] leading-[1.5]" style={{ color: K.ink }}>
-          {t("flock.journeys.flockOnly.about", "The Flock is The Kya Project's community, where you'll find your local chapter, a library of guides and recordings, and every training journey, including tricks, nail trims, and stationing.")}
+          {t("flock.journeys.flockOnly.aboutCommunity", "The Flock is The Kya Project's community, where you'll find your local chapter, a library of guides and recordings, and other members' journeys.")}
         </p>
         <p className="m-0 rounded-[14px] px-3.5 py-3 text-[15px] font-[700] leading-[1.45]" style={{ background: "#e8f3dc", color: K.forest }}>
           {t("flock.journeys.flockOnly.free", "Join the Flock early, while it's free for everyone.")}
@@ -163,19 +164,12 @@ export function CustomLimitSheet({ onClose }: { onClose: () => void }) {
   );
 }
 
-/** A small progress ring with "3/7" inside, for journey rows. */
-export function MiniRing({ done, total, size = 40 }: { done: number; total: number; size?: number }) {
-  const stroke = 3.5;
-  const r = (size - stroke) / 2;
-  const c = 2 * Math.PI * r;
-  const pct = total > 0 ? Math.min(1, done / total) : 0;
+/** A small "Day 12" badge for journey rows (no steps, no progress). */
+export function DayBadge({ day, size = 40 }: { day: number; size?: number }) {
+  const { t } = useTranslation();
   return (
-    <span className="relative grid shrink-0 place-items-center" style={{ width: size, height: size }} aria-hidden="true">
-      <svg width={size} height={size} className="absolute inset-0 -rotate-90">
-        <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="#dfe7dd" strokeWidth={stroke} />
-        <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke={K.moss} strokeWidth={stroke} strokeLinecap="round" strokeDasharray={`${c * pct} ${c}`} />
-      </svg>
-      <span className="text-[10.5px] font-[700]" style={{ color: K.forest }}>{done}/{total}</span>
+    <span className="grid shrink-0 place-items-center rounded-full text-center leading-[1.05]" style={{ width: size, height: size, background: "#eef4ec", border: `2px solid ${K.moss}`, color: K.forest }} aria-hidden="true">
+      <span className="text-[9.5px] font-[700] uppercase tracking-[0.04em]">{t("flock.journeys.dayShort", "Day")}<br /><span className="text-[12.5px]">{day}</span></span>
     </span>
   );
 }
@@ -183,7 +177,7 @@ export function MiniRing({ done, total, size = 40 }: { done: number; total: numb
 /** "Post an update for…" (Batch 4, screen 1): which journey, with when each
  *  was last posted to, and "Or start a new journey". */
 export function WhichJourneySheet({ journeys, onPick, onStartNew, onClose }: {
-  journeys: { id: string; title: string; done: number; total: number; daysSince: number | null }[];
+  journeys: { id: string; title: string; day: number; daysSince: number | null }[];
   onPick: (id: string) => void;
   onStartNew: () => void;
   onClose: () => void;
@@ -202,7 +196,7 @@ export function WhichJourneySheet({ journeys, onPick, onStartNew, onClose }: {
           <button key={j.id} type="button" data-journey={j.id} onClick={() => onPick(j.id)}
             className="flex min-h-[60px] items-center gap-3 rounded-[14px] px-3 py-2 text-left active:scale-[0.99]"
             style={{ border: `1px solid ${K.line}`, color: K.forest }}>
-            <MiniRing done={j.done} total={j.total} />
+            <DayBadge day={j.day} />
             <span className="flex min-w-0 flex-1 flex-col">
               <span className="truncate text-[15px] font-[700]">{j.title}</span>
               <span className="text-[12.5px]" style={{ color: K.quiet }}>{last(j.daysSince)}</span>
@@ -215,6 +209,87 @@ export function WhichJourneySheet({ journeys, onPick, onStartNew, onClose }: {
         </button>
       </div>
     </KyaSheet>
+  );
+}
+
+/** A skill's short description and its safety notes. On the journey page
+ *  they fold away under the header ("About this skill"). */
+export function SkillAbout({ description, notes, collapsible }: { description: string | null; notes: string[]; collapsible?: boolean }) {
+  const { t } = useTranslation();
+  if (!description && notes.length === 0) return null;
+  const body = (
+    <div className="flex flex-col gap-2.5">
+      {description && <p className="m-0 text-[15px] leading-[1.5]" style={{ color: K.ink }} data-testid="skill-description">{description}</p>}
+      {notes.length > 0 && (
+        <section className="rounded-[16px] p-3.5" style={{ background: "#eef4ec" }} data-testid="safety-notes">
+          <h3 className="m-0 text-[14.5px] font-[700]" style={{ color: K.forest }}>{t("flock.journeys.skill.safety", "Safety notes")}</h3>
+          <ul className="m-0 mt-2 flex list-none flex-col gap-1 p-0">
+            {notes.map((n) => <li key={n} className="text-[14px] leading-[1.45]" style={{ color: K.ink }}>{n}</li>)}
+          </ul>
+        </section>
+      )}
+    </div>
+  );
+  if (!collapsible) return body;
+  return (
+    <details className="group rounded-[16px] bg-white px-3.5 py-2.5" data-testid="skill-about">
+      <summary className="flex min-h-[40px] cursor-pointer list-none items-center gap-2 text-[14.5px] font-[700]" style={{ color: K.forest }}>
+        <span className="flex-1">{t("flock.journeys.skill.about", "About this skill")}</span>
+        <ChevronRight className="size-[18px] shrink-0 transition-transform group-open:rotate-90" aria-hidden="true" />
+      </summary>
+      <div className="pb-1.5 pt-1">{body}</div>
+    </details>
+  );
+}
+
+/** "How others did it" on a skill page: finisher tips and other members'
+ *  community journeys for the skill. A free account sees one row that opens
+ *  the "Part of the Flock" sheet instead. */
+export function HowOthersDidIt({ skill, tips, journeys, canView, onLocked }: {
+  skill: string;
+  tips: { body: string; total: number }[] | undefined;
+  journeys: { journey_id: string; bird_name: string; owner_name: string | null; status: string; started_at: string; finished_at: string | null }[] | undefined;
+  canView: boolean;
+  onLocked: () => void;
+}) {
+  const { t } = useTranslation();
+  if (!canView) {
+    return (
+      <button type="button" onClick={onLocked} data-testid="how-others-locked"
+        className="flex min-h-[56px] w-full items-center gap-3 rounded-[16px] bg-white px-3.5 py-2 text-left active:scale-[0.99]" style={{ color: K.forest }}>
+        <span className="flex min-w-0 flex-1 flex-col">
+          <span className="text-[15px] font-[700]">{t("flock.journeys.skill.howOthers", "How others did it")}</span>
+          <span className="text-[12.5px]" style={{ color: K.quiet }}>{t("flock.journeys.skill.howOthersLocked", "Journeys and tips from Flock members")}</span>
+        </span>
+        <ChevronRight className="size-[18px] shrink-0" aria-hidden="true" />
+      </button>
+    );
+  }
+  const rows = journeys ?? [];
+  return (
+    <section className="flex flex-col gap-2" data-testid="how-others">
+      <JourneyEyebrow>{t("flock.journeys.skill.howOthers", "How others did it")}</JourneyEyebrow>
+      <FinisherTipsCard skill={skill} tips={tips} />
+      {rows.map((j) => (
+        <Link key={j.journey_id} to="/flock/journeys/$journeyId" params={{ journeyId: j.journey_id }} data-other-journey={j.journey_id}
+          className="flex min-h-[52px] items-center gap-3 rounded-[14px] bg-white px-3.5 py-2" style={{ color: K.forest }}>
+          <span className="flex min-w-0 flex-1 flex-col">
+            <span className="truncate text-[14.5px] font-[700]">{j.bird_name}{j.owner_name ? ` · ${j.owner_name}` : ""}</span>
+            <span className="text-[12.5px]" style={{ color: K.quiet }}>
+              {j.status === "finished"
+                ? t("flock.journeys.skill.learnedIn", "Learned it in {{count}} days", { count: journeyDays(j.started_at, j.finished_at) })
+                : t("flock.journeys.skill.onDay", "Day {{day}}", { day: journeyDay(j.started_at) })}
+            </span>
+          </span>
+          <ChevronRight className="size-[18px] shrink-0" aria-hidden="true" />
+        </Link>
+      ))}
+      {rows.length === 0 && (!tips || tips.length === 0) && (
+        <p className="m-0 text-[14px]" style={{ color: K.quiet }} data-testid="how-others-empty">
+          {t("flock.journeys.skill.howOthersEmpty", "No one has shared a journey for this skill yet. Yours could be the first.")}
+        </p>
+      )}
+    </section>
   );
 }
 
