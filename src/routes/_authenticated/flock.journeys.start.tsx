@@ -1,21 +1,33 @@
 import { useState } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
+import type { TFunction } from "i18next";
 import { K, KyaLink } from "@/components/kya";
 import { FlockSubPage } from "@/components/flock/FlockSubPage";
 import { BirdThumb } from "@/components/flock/FlockPeople";
-import { CustomLimitSheet, FlowFooter, JourneyEyebrow, FlockOnlySheet, TemplateRow } from "@/components/flock/JourneyParts";
+import { CustomLimitSheet, FlowFooter, JourneyEyebrow, TemplateRow } from "@/components/flock/JourneyParts";
 import { useOwnBirdPhotoUrls } from "@/lib/flockData";
 import { useBirdJourneys, useBirdSkills, useJourneyAccess, useJourneyBirds, useJourneyTemplates } from "@/lib/journeyData";
-import { canStartCustom, groupTemplates, isLocked, type JourneyTemplate } from "@/lib/journeys";
+import { canStartCustom, groupSkills, type JourneyTemplate, type SkillGroup } from "@/lib/journeys";
 
-// Start a journey (JourneyFlow, screen 1): the basics (free), then Flock
-// journeys (locked for free accounts), known skills marked, and "Write
-// your own journey" at the bottom. With more than one bird, pick the bird first.
+// Pick a skill (journeys redesign, screen 2): one list of all 14, no
+// free/Flock split, grouped Handling and health, Foundations, Food, Tricks.
+// A skill the bird already knows says so and can still be started; one that's
+// going now opens that journey. "Your own skill" at the bottom. With more than
+// one bird, pick the bird first.
 export const Route = createFileRoute("/_authenticated/flock/journeys/start")({
   validateSearch: (s: Record<string, unknown>): { bird?: string } => ({ bird: typeof s.bird === "string" ? s.bird : undefined }),
   component: StartJourney,
 });
+
+function groupLabel(t: TFunction, g: SkillGroup): string {
+  switch (g) {
+    case "husbandry": return t("flock.journeys.start.groupHusbandry", "Handling and health");
+    case "foundations": return t("flock.journeys.start.groupFoundations", "Foundations");
+    case "food": return t("flock.journeys.start.groupFood", "Food");
+    case "tricks": return t("flock.journeys.start.groupTricks", "Tricks");
+  }
+}
 
 function StartJourney() {
   const { t } = useTranslation();
@@ -28,11 +40,11 @@ function StartJourney() {
   const { data: skills } = useBirdSkills(bird?.id);
   const { data: open } = useBirdJourneys(bird?.id);
   const { data: photos } = useOwnBirdPhotoUrls(birds, 96);
-  const [sheet, setSheet] = useState<"custom" | JourneyTemplate | null>(null);
+  const [limitSheet, setLimitSheet] = useState(false);
 
   if (birds && !bird) {
     return (
-      <FlockSubPage title={t("flock.journeys.start.title", "Start a journey")} fallback="/flock/journeys">
+      <FlockSubPage title={t("flock.journeys.start.pickTitle", "Pick a skill")} fallback="/flock/journeys">
         <div className="flex flex-col gap-2" data-testid="pick-bird">
           <JourneyEyebrow>{t("flock.journeys.start.whichBird", "Which bird?")}</JourneyEyebrow>
           {birds.length === 0 && (
@@ -51,40 +63,40 @@ function StartJourney() {
     );
   }
 
-  const groups = groupTemplates(templates ?? []);
+  const groups = groupSkills(templates ?? []);
   const knownIds = new Set((skills ?? []).map((s) => s.template_id).filter(Boolean));
-  const goingIds = new Set((open ?? []).map((j) => j.template_id).filter(Boolean));
-  const meta = (tp: JourneyTemplate) => t("flock.journeys.start.meta", "{{count}} milestones · usually {{length}}", { count: tp.milestones.length, length: tp.typical_length });
+  const goingBy = new Map((open ?? []).filter((j) => j.template_id).map((j) => [j.template_id as string, j.id]));
   const pick = (tp: JourneyTemplate) => {
     if (!bird) return;
-    if (isLocked(tp, access)) { setSheet(tp); return; }
+    const going = goingBy.get(tp.id);
+    if (going) { void navigate({ to: "/flock/journeys/$journeyId", params: { journeyId: going } }); return; }
     void navigate({ to: "/flock/journeys/setup", search: { bird: bird.id, template: tp.slug } });
   };
-  const row = (tp: JourneyTemplate) => (
-    <TemplateRow
-      key={tp.id}
-      testId={tp.slug}
-      name={tp.name}
-      meta={meta(tp)}
-      known={bird && knownIds.has(tp.id) ? t("flock.journeys.start.knows", "{{name}} knows this", { name: bird.name }) : null}
-      going={goingIds.has(tp.id) ? t("flock.journeys.start.going", "Going now") : null}
-      locked={isLocked(tp, access)}
-      onClick={() => pick(tp)}
-    />
-  );
 
   return (
-    <FlockSubPage title={t("flock.journeys.start.title", "Start a journey")} line={bird ? t("flock.journeys.start.for", "for {{name}}", { name: bird.name }) : " "} fallback="/flock/journeys">
+    <FlockSubPage title={t("flock.journeys.start.pickTitle", "Pick a skill")} line={bird ? t("flock.journeys.start.for", "for {{name}}", { name: bird.name }) : " "} fallback="/flock/journeys">
       <div className="flex flex-col gap-2" data-testid="template-list">
         {bird && (
           <KyaLink onClick={() => void navigate({ to: "/flock/journeys/known", search: { bird: bird.id } })} className="self-start">
             {t("flock.journeys.start.markKnown", "Mark what {{name}} already knows", { name: bird.name })}
           </KyaLink>
         )}
-        <JourneyEyebrow>{t("flock.journeys.start.basics", "The basics · free")}</JourneyEyebrow>
-        {groups.basics.map(row)}
-        <div className="pt-1.5"><JourneyEyebrow>{t("flock.journeys.start.more", "Flock journeys")}</JourneyEyebrow></div>
-        {groups.more.map(row)}
+        {groups.map((g, i) => (
+          <div key={g.group} className="flex flex-col gap-2" data-skill-group={g.group}>
+            <div className={i > 0 ? "pt-1.5" : undefined}><JourneyEyebrow>{groupLabel(t, g.group)}</JourneyEyebrow></div>
+            {g.skills.map((tp) => (
+              <TemplateRow
+                key={tp.id}
+                testId={tp.slug}
+                name={tp.name}
+                meta={tp.purpose}
+                known={bird && knownIds.has(tp.id) ? t("flock.journeys.start.alreadyKnows", "{{name}} already knows this", { name: bird.name }) : null}
+                going={goingBy.has(tp.id) ? t("flock.journeys.start.going", "Going now") : null}
+                onClick={() => pick(tp)}
+              />
+            ))}
+          </div>
+        ))}
       </div>
       <FlowFooter>
         <button
@@ -92,17 +104,16 @@ function StartJourney() {
           data-testid="write-own"
           onClick={() => {
             if (!bird) return;
-            if (!canStartCustom(access)) { setSheet("custom"); return; }
+            if (!canStartCustom(access)) { setLimitSheet(true); return; }
             void navigate({ to: "/flock/journeys/setup", search: { bird: bird.id, custom: true } });
           }}
           className="min-h-[48px] w-full rounded-[14px] text-[14.5px] font-[700] active:scale-[0.99]"
           style={{ border: `1px dashed ${K.moss}`, background: "#f4f7f4", color: K.forest }}
         >
-          {t("flock.journeys.start.writeOwn", "Write your own journey")}
+          {t("flock.journeys.start.ownSkill", "Your own skill")}
         </button>
       </FlowFooter>
-      {sheet && sheet !== "custom" && <FlockOnlySheet slug={sheet.slug} journey={sheet.name} bird={bird?.name} onClose={() => setSheet(null)} />}
-      {sheet === "custom" && <CustomLimitSheet onClose={() => setSheet(null)} />}
+      {limitSheet && <CustomLimitSheet onClose={() => setLimitSheet(false)} />}
     </FlockSubPage>
   );
 }

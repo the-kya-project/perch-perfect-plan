@@ -8,7 +8,7 @@ import { ChallengeCard } from "@/components/flock/ChallengeParts";
 import { useCurrentChallenges } from "@/lib/flockChallenges";
 import { useIsAdmin } from "@/lib/flockData";
 import { useCurrentVotes, votesFor } from "@/lib/flockVotes";
-import { JourneyMilestoneCard } from "@/components/flock/JourneyToday";
+import { JourneyMomentCard } from "@/components/flock/JourneyToday";
 import { ComposePrompt, LoadMore, PostMenus, usePostMedia } from "@/components/flock/PostFeed";
 import { PostCard } from "@/components/flock/PostParts";
 import { TodaysIdeaCard } from "@/components/flock/IdeaParts";
@@ -16,7 +16,7 @@ import { useIdeaPhotos, useTodaysIdea } from "@/lib/flockIdeas";
 import { useCommentCounts, useFlockFeed, type FlockPost } from "@/lib/flockPostData";
 import { feedSpaceFor, mergeFeed } from "@/lib/flockPosts";
 import { FollowRings, useCardBirdPhotos } from "@/components/flock/JourneyBrowse";
-import { useJourneyFollowing, useMilestoneCards, useWeighReminders } from "@/lib/journeyData";
+import { useFollowingLatest, useJourneyFollowing, useMomentCards, useWeighReminders } from "@/lib/journeyData";
 import { WeighTodayCard } from "@/components/flock/JourneyDiet";
 import { Sun } from "lucide-react";
 import { useTranslation } from "react-i18next";
@@ -65,7 +65,8 @@ function FlockToday() {
   const filter: TodayFilter = space ?? "everything";
   const empty = emptyCopy(t, filter);
   const { data: following } = useJourneyFollowing();
-  const { data: cards } = useMilestoneCards();
+  const { data: latest } = useFollowingLatest(!!following?.length);
+  const { data: cards } = useMomentCards();
   const photos = useCardBirdPhotos([...(following ?? []), ...(cards ?? [])]);
   const feed = useFlockFeed(feedSpaceFor(space));
   const posts = (feed.data?.pages ?? []).flat();
@@ -80,10 +81,10 @@ function FlockToday() {
   const { data: isAdmin } = useIsAdmin();
   const { data: challenges } = useCurrentChallenges();
   const shownVotes = filter === "everything" ? votesFor(votes ?? [], "today") : filter === "good" ? votesFor(votes ?? [], "good") : [];
-  // Followed journeys and their milestones belong to Everything.
+  // Followed journeys, their big moments and finishes belong to Everything.
   const showJourneys = filter === "everything";
   const items = mergeFeed(posts, showJourneys ? cards ?? [] : [], !!feed.hasNextPage);
-  const { data: cardComments } = useCommentCounts("journey_milestone", items.flatMap((x) => (x.kind === "milestone" ? [x.item.milestone_id] : [])));
+  const { data: cardComments } = useCommentCounts("journey_update", items.flatMap((x) => (x.kind === "moment" && x.item.update_id ? [x.item.update_id] : [])));
   return (
     <>
       <FlockHeader title={t("flock.today.title", "Today")} />
@@ -110,14 +111,15 @@ function FlockToday() {
         {idea && <TodaysIdeaCard idea={idea} photo={ideaPhotos?.find((p) => p.kind === "idea")?.url ?? null} />}
         <ComposePrompt space={space} />
         {showJourneys && following && following.length > 0 && (
-          <FollowRings cards={following} photos={photos}
+          <FollowRings cards={following} photos={photos} latest={latest}
             onOpen={(id) => void navigate({ to: "/flock/journeys/$journeyId/story", params: { journeyId: id }, search: { queue: "following" } })} />
         )}
         {items.length > 0 ? (
           <div className="flex flex-col gap-3" data-testid="today-feed">
             {items.map((x) => x.kind === "post"
               ? <PostCard key={x.item.post_id} post={x.item} avatar={media.avatar(x.item)} photos={media.photos(x.item)} birdPhoto={media.bird(x.item)} onMenu={() => setMenuFor(x.item)} />
-              : <JourneyMilestoneCard key={x.item.milestone_id} card={x.item} photo={photos[x.item.bird_id]} comments={cardComments?.[x.item.milestone_id] ?? 0} />)}
+              : <JourneyMomentCard key={`${x.item.card_kind}:${x.item.update_id ?? x.item.journey_id}`} card={x.item} photo={photos[x.item.bird_id]}
+                  comments={x.item.update_id ? cardComments?.[x.item.update_id] ?? 0 : 0} />)}
             <LoadMore hasMore={!!feed.hasNextPage} loading={feed.isFetchingNextPage} onMore={() => void feed.fetchNextPage()} />
           </div>
         ) : !feed.isLoading && (

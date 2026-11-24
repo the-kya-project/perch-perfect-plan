@@ -69,6 +69,27 @@ export const getJourneyClips = createServerFn({ method: "POST" })
     }));
   });
 
+/** A skill's short video (journey_templates.video_ref, none at opening),
+ *  signed for an hour. The template is read as the caller, so only someone
+ *  who can read journey templates (journeys_enabled()) gets a link. */
+export const getSkillVideo = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { slug: string }) => z.object({ slug: z.string().regex(/^[a-z0-9-]{1,60}$/) }).parse(d))
+  .handler(async ({ data, context }): Promise<{ player: string; thumbnail: string; hls: string } | null> => {
+    const { data: row, error } = await (context as any).supabase
+      .from("journey_templates").select("video_ref").eq("slug", data.slug).maybeSingle();
+    if (error) throw new Error("Not found.");
+    const ref = (row as { video_ref: string | null } | null)?.video_ref ?? null;
+    if (!ref || !/^cfstream:[A-Za-z0-9]{8,64}$/.test(ref)) return null;
+    const { signPlaybackToken, signedClipUrls } = await import("@/lib/cloudflareStream.server");
+    try {
+      return signedClipUrls(await signPlaybackToken(ref.slice("cfstream:".length), TTL));
+    } catch (e: any) {
+      console.error(`[getSkillVideo] ${data.slug}: ${e?.message ?? e}`);
+      return null;
+    }
+  });
+
 /** Day one vs. now's share card (backlog 1.7): a still from each of two clips,
  *  as data URLs so the card's canvas can draw them. Only for the bird's
  *  household (`journey_view`'s is_mine, asked as the caller), so a "Just me"

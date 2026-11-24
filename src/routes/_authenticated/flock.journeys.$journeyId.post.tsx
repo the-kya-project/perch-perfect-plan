@@ -3,28 +3,33 @@ import { Link, createFileRoute, useNavigate } from "@tanstack/react-router";
 import { Check, Scissors, X } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import type { TFunction } from "i18next";
-import { K, KyaHeading, KyaLink, KyaPrimaryButton, KyaSheet } from "@/components/kya";
+import { K, KyaHeading, KyaLink, KyaPrimaryButton, KyaSecondaryButton, KyaSheet, KyaSwitch } from "@/components/kya";
+import { VetNudgeCard } from "@/components/flock/PostParts";
+import { vetNudgeTier, type VetTier } from "@/lib/flockPosts";
 import { ClipRecorder } from "@/components/ClipRecorder";
 import { ClipPlayer } from "@/components/ClipPlayer";
 import { ClipState } from "@/components/flock/JourneyClipView";
 import { useOwnerClipPreview } from "@/lib/useOwnerClipPreview";
 import { FlockSubPage } from "@/components/flock/FlockSubPage";
-import { ChoiceChips, FlowFooter } from "@/components/flock/JourneyParts";
+import { ChoiceChips, FlockOnlySheet, FlowFooter } from "@/components/flock/JourneyParts";
 import { DietDisclaimer } from "@/components/flock/JourneyDiet";
 import { getClipStatus } from "@/lib/clips.functions";
 import { createJourneyClipUpload, trimJourneyClip } from "@/lib/journeyClips.functions";
 import {
-  postJourneyUpdate, reachMilestone, setJourneyVisibility, useClipAllowance, useInvalidateJourneys, useJourney,
-  useJourneyAccess, useJourneyBirds, useJourneyTips, type JourneyMilestone,
+  postJourneyUpdate, setJourneyVisibility, useClipAllowance, useInvalidateJourneys, useJourney,
+  useJourneyAccess, useJourneyBirds, useJourneyTips, useJourneyVetSigns,
 } from "@/lib/journeyData";
-import { ENGAGEMENTS, nextMilestone, possessive, visibilityChoices, wantsTip, type Engagement, type JourneyVisibility } from "@/lib/journeys";
+import { ENGAGEMENTS, askFlock, possessive, visibilityChoices, wantsTip, type Engagement, type JourneyVisibility } from "@/lib/journeys";
 
-// Post an update (JourneyFlow screens 3–5): straight to the camera with what
-// you're working on, then the post (clip, trim, how into it the bird was, a
-// caption or question, where it's posting), then one yes/no question about the
-// next milestone, or a tip after a harder day. The uploaded clip rides in the
-// URL (?clip=), so a reload keeps it; the database refuses a clip that isn't
-// this bird's.
+// Post an update (journeys redesign, screen 5): straight to the camera, then
+// the post (clip, trim, how into it the bird was, a caption or question, "This
+// was a big moment", where it's posting), then a tip after a harder day, or
+// "Make a share card" after a big moment. A "?" makes it a question: on a
+// community journey the Flock sees it too; on a private one "Ask the Flock"
+// offers to share the journey (members) or explains the Flock (free). The vet
+// nudge runs on every caption and question and never blocks. The uploaded clip
+// rides in the URL (?clip=), so a reload keeps it; the database refuses a clip
+// that isn't this bird's.
 export const Route = createFileRoute("/_authenticated/flock/journeys/$journeyId/post")({
   validateSearch: (s: Record<string, unknown>): { clip?: string } => ({
     clip: typeof s.clip === "string" && /^cfstream:[A-Za-z0-9]{8,64}$/.test(s.clip) ? s.clip : undefined,
@@ -40,13 +45,6 @@ function engagementLabel(t: TFunction, e: Engagement): string {
   }
 }
 
-/** "Did Juno stay on your hand for a few seconds?" (custom journeys: the milestone in quotes). */
-function milestoneQuestion(t: TFunction, bird: string, m: Pick<JourneyMilestone, "title" | "words">): string {
-  return m.words?.ask
-    ? t("flock.journeys.post.question", "Did {{name}} {{ask}}?", { name: bird, ask: m.words.ask })
-    : t("flock.journeys.post.questionCustom", "Did {{name}} get this one? “{{title}}”", { name: bird, title: m.title });
-}
-
 function PostUpdate() {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -57,10 +55,9 @@ function PostUpdate() {
   const { data: access } = useJourneyAccess();
   const bird = birds?.find((b) => b.id === journey?.bird_id);
   const skill = journey?.template?.name ?? journey?.custom_name ?? "";
-  const next = journey ? nextMilestone(journey.milestones) : null;
   const toJourney = () => void navigate({ to: "/flock/journeys/$journeyId", params: { journeyId }, replace: true });
 
-  if (journey && journey.status !== "active") {
+  if (journey && (journey.status !== "active" || journey.bird?.passed_at)) {
     return (
       <FlockSubPage title={t("flock.journeys.post.title", "Post an update")} fallback={`/flock/journeys/${journeyId}`}>
         <p className="m-0 text-[15px]" style={{ color: K.ink }} data-testid="post-not-active">
@@ -71,17 +68,17 @@ function PostUpdate() {
   }
 
   return clip
-    ? <Compose journeyId={journeyId} clip={clip} birdName={bird?.name ?? ""} diet={journey?.template?.slug === "diet-conversion"} next={next} visibility={journey?.visibility ?? "private"}
+    ? <Compose journeyId={journeyId} clip={clip} birdName={bird?.name ?? ""} diet={journey?.template?.slug === "diet-conversion"} visibility={journey?.visibility ?? "private"}
         canShare={!!access?.can_share} onBack={() => void navigate({ to: "/flock/journeys/$journeyId/post", params: { journeyId }, search: {}, replace: true })}
         onClip={(ref) => void navigate({ to: "/flock/journeys/$journeyId/post", params: { journeyId }, search: { clip: ref }, replace: true })} />
-    : <Camera journeyId={journeyId} birdId={journey?.bird_id ?? null} birdName={bird?.name ?? ""} skill={skill} next={next}
+    : <Camera journeyId={journeyId} birdId={journey?.bird_id ?? null} birdName={bird?.name ?? ""} skill={skill}
         onClose={toJourney}
         onUploaded={(ref) => void navigate({ to: "/flock/journeys/$journeyId/post", params: { journeyId }, search: { clip: ref }, replace: true })} />;
 }
 
-/** Screen 3: the camera, with what you're working on. */
-function Camera({ journeyId, birdId, birdName, skill, next, onClose, onUploaded }: {
-  journeyId: string; birdId: string | null; birdName: string; skill: string; next: JourneyMilestone | null;
+/** The camera, with the bird and the skill. */
+function Camera({ journeyId, birdId, birdName, skill, onClose, onUploaded }: {
+  journeyId: string; birdId: string | null; birdName: string; skill: string;
   onClose: () => void; onUploaded: (ref: string) => void;
 }) {
   const { t } = useTranslation();
@@ -101,11 +98,6 @@ function Camera({ journeyId, birdId, birdName, skill, next, onClose, onUploaded 
         <span className="flex-1 text-center text-[14px] font-[700]">{birdName && skill ? `${birdName} · ${skill}` : " "}</span>
         <span className="size-11" />
       </div>
-      {next && (
-        <div className="mx-4 rounded-[14px] px-3.5 py-2.5 text-[13.5px] leading-[1.4]" style={{ background: "rgba(205,234,176,0.12)" }} data-testid="working-on">
-          <b style={{ color: K.lime }}>{t("flock.journeys.post.workingOn", "Working on:")}</b> {next.title}
-        </div>
-      )}
       <div className="flex flex-1 flex-col justify-center px-4 py-4">
         {allowance && !allowance.can_add ? (
           <ClipLimitCard used={allowance.clips_used} onBack={onClose} />
@@ -136,9 +128,9 @@ function ClipLimitCard({ used, onBack }: { used: number; onBack: () => void }) {
   );
 }
 
-/** Screen 4: the post. Then screen 5 as a sheet. */
-function Compose({ journeyId, clip, birdName, diet, next, visibility, canShare, onBack, onClip }: {
-  journeyId: string; clip: string; birdName: string; diet: boolean; next: JourneyMilestone | null; visibility: JourneyVisibility; canShare: boolean;
+/** The post, then what comes after it as a sheet. */
+function Compose({ journeyId, clip, birdName, diet, visibility, canShare, onBack, onClip }: {
+  journeyId: string; clip: string; birdName: string; diet: boolean; visibility: JourneyVisibility; canShare: boolean;
   onBack: () => void; onClip: (ref: string) => void;
 }) {
   const { t } = useTranslation();
@@ -146,24 +138,33 @@ function Compose({ journeyId, clip, birdName, diet, next, visibility, canShare, 
   const invalidate = useInvalidateJourneys();
   const captionId = useId();
   const { data: tips } = useJourneyTips();
+  const { data: signs } = useJourneyVetSigns();
   const [engagement, setEngagement] = useState<Engagement | null>(null);
   const [caption, setCaption] = useState("");
+  const [bigMoment, setBigMoment] = useState(false);
   const [where, setWhere] = useState<JourneyVisibility>(visibility);
   const [changing, setChanging] = useState(false);
   const [trimming, setTrimming] = useState(false);
+  const [flockSheet, setFlockSheet] = useState(false);
+  const [nudge, setNudge] = useState<VetTier | null>(null);
   const [busy, setBusy] = useState(false);
-  const [posted, setPosted] = useState<Engagement | null>(null);
+  const [posted, setPosted] = useState<{ engagement: Engagement; updateId: string; bigMoment: boolean } | null>(null);
   const [error, setError] = useState<string | null>(null);
   useEffect(() => { setWhere(visibility); }, [visibility]);
+  const ask = askFlock(caption, where, canShare);
 
-  const post = async () => {
+  const post = async (vetNudged = false) => {
     if (!engagement || busy) return;
+    // The vet nudge: never diagnoses and never blocks ("Post anyway, after I've called").
+    const tier = vetNudged ? null : vetNudgeTier(caption, signs ?? []);
+    if (tier) { setNudge(tier); return; }
     setBusy(true);
     setError(null);
     try {
-      await postJourneyUpdate(journeyId, clip, engagement, caption);
+      const updateId = await postJourneyUpdate(journeyId, clip, engagement, caption, bigMoment);
       await invalidate();
-      setPosted(engagement);
+      setNudge(null);
+      setPosted({ engagement, updateId, bigMoment });
     } catch (e) {
       const msg = (e as { message?: string })?.message ?? "";
       setError(/clip limit/.test(msg)
@@ -174,19 +175,7 @@ function Compose({ journeyId, clip, birdName, diet, next, visibility, canShare, 
     }
   };
 
-  const answer = async (yes: boolean) => {
-    if (!yes || !next) { void navigate({ to: "/flock/journeys/$journeyId", params: { journeyId }, replace: true }); return; }
-    setBusy(true);
-    try {
-      const r = await reachMilestone(journeyId, next.position);
-      await invalidate();
-      if (r.finished) void navigate({ to: "/flock/journeys/$journeyId/finished", params: { journeyId }, replace: true });
-      else void navigate({ to: "/flock/journeys/$journeyId/milestone/$position", params: { journeyId, position: String(next.position) }, replace: true });
-    } catch {
-      setError(t("flock.journeys.post.error", "We couldn't post that. Check your connection and try again."));
-      setBusy(false);
-    }
-  };
+  const backToJourney = () => void navigate({ to: "/flock/journeys/$journeyId", params: { journeyId }, replace: true });
 
   // The clip is the "cfstream:<uid>" reference: wait until Cloudflare has it
   // ready, then show it through a signed link (never the raw reference).
@@ -217,9 +206,32 @@ function Compose({ journeyId, clip, birdName, diet, next, visibility, canShare, 
         <label htmlFor={captionId} className="flex flex-col gap-1.5 text-[15px] font-[700]" style={{ color: K.forest }}>
           <span>{t("flock.journeys.post.say", "Say something")} <span className="text-[13px] font-[400]" style={{ color: K.quiet }}>{t("flock.journeys.post.sayHint", "or ask a question (optional)")}</span></span>
         </label>
-        <textarea id={captionId} value={caption} maxLength={1000} rows={3} data-testid="caption" onChange={(e) => setCaption(e.target.value)}
+        <textarea id={captionId} value={caption} maxLength={1000} rows={3} data-testid="caption" onChange={(e) => { setCaption(e.target.value); setNudge(null); }}
           className="-mt-2 w-full resize-none rounded-[12px] border bg-white px-3 py-2.5 text-[15px] leading-[1.45] outline-none focus:border-[#1a3d2e]"
           style={{ borderColor: "#c9d3c8", color: K.forest }} />
+        {ask === "community" && (
+          <p className="-mt-1.5 m-0 text-[13px]" style={{ color: K.quiet }} data-testid="ask-community">
+            {t("flock.journeys.post.askCommunity", "Your question will show to the Flock too, so members can answer.")}
+          </p>
+        )}
+        {(ask === "offer_share" || ask === "flock_sheet") && (
+          <div className="-mt-1.5 flex items-center gap-2.5 rounded-[14px] px-3.5 py-2.5" style={{ background: "#eef4ec" }} data-testid="ask-flock">
+            <span className="flex-1 text-[13.5px] leading-[1.4]" style={{ color: K.ink }}>
+              {t("flock.journeys.post.askPrivate", "Only you can see this journey, so only you will see the question.")}
+            </span>
+            <KyaLink onClick={() => (ask === "offer_share" ? setChanging(true) : setFlockSheet(true))}>{t("flock.journeys.post.askFlock", "Ask the Flock")}</KyaLink>
+          </div>
+        )}
+
+        <div className="flex items-center gap-3 rounded-[14px] bg-white px-3.5 py-2.5" data-testid="big-moment">
+          <span className="flex flex-1 flex-col">
+            <span className="text-[15px] font-[700]" style={{ color: K.forest }}>{t("flock.journeys.post.bigMoment", "This was a big moment")}</span>
+            <span className="text-[12.5px]" style={{ color: K.quiet }}>
+              {t("flock.journeys.post.bigMomentHint", "A first, a breakthrough, or a day worth remembering. Followers see it on Today, and you can make a share card.")}
+            </span>
+          </span>
+          <KyaSwitch checked={bigMoment} onChange={setBigMoment} label={t("flock.journeys.post.bigMoment", "This was a big moment")} />
+        </div>
 
         <div className="flex items-center gap-2.5 text-[13.5px]" style={{ color: K.ink }} data-testid="posting-to">
           <span className="flex-1">
@@ -229,6 +241,7 @@ function Compose({ journeyId, clip, birdName, diet, next, visibility, canShare, 
           </span>
           {canShare && <KyaLink onClick={() => setChanging(true)}>{t("flock.setup.change", "Change")}</KyaLink>}
         </div>
+        {nudge && <VetNudgeCard tier={nudge} busy={busy} onPostAnyway={() => void post(true)} />}
         {error && <p role="alert" className="m-0 text-[15px]" style={{ color: K.red }}>{error}</p>}
         {diet && birdName && <DietDisclaimer birdName={birdName} />}
       </div>
@@ -237,6 +250,7 @@ function Compose({ journeyId, clip, birdName, diet, next, visibility, canShare, 
           {busy && !posted ? t("flock.journeys.post.posting", "Posting…") : t("flock.journeys.post.post", "Post")}
         </KyaPrimaryButton>
       </FlowFooter>
+      {flockSheet && <FlockOnlySheet reason="ask" onClose={() => setFlockSheet(false)} />}
 
       {changing && (
         <KyaSheet onClose={() => setChanging(false)} closeLabel={t("flock.region.close", "Close")} title={<KyaHeading size={23}>{t("flock.journeys.setup.who", "Who sees it?")}</KyaHeading>}>
@@ -258,22 +272,21 @@ function Compose({ journeyId, clip, birdName, diet, next, visibility, canShare, 
               <span className="grid size-7 place-items-center rounded-full" style={{ background: K.moss }}><Check className="size-4 text-white" strokeWidth={3} aria-hidden="true" /></span>
               <span className="text-[15px] font-[700]">{t("flock.journeys.post.posted", "Posted to {{name}} journey", { name: possessive(birdName) })}</span>
             </div>
-            {!wantsTip(posted) && next ? (
+            {posted.bigMoment && (
               <>
-                <KyaHeading size={21}>{milestoneQuestion(t, birdName, next)}</KyaHeading>
-                <div className="flex gap-2.5">
-                  <div className="flex-1"><KyaPrimaryButton onClick={() => void answer(true)} disabled={busy}>{t("flock.journeys.post.yes", "Yes!")}</KyaPrimaryButton></div>
-                  <button type="button" onClick={() => void answer(false)} disabled={busy}
-                    className="min-h-[52px] flex-1 rounded-full border bg-white text-[15px] font-[700]" style={{ borderColor: "#c9d3c8", color: K.forest }}>
-                    {t("flock.journeys.post.notYet", "Not yet")}
-                  </button>
+                <KyaHeading size={21}>{t("flock.journeys.post.bigMomentDone", "What a moment for {{name}}!", { name: birdName })}</KyaHeading>
+                <div data-testid="make-share-card">
+                  <KyaPrimaryButton onClick={() => void navigate({ to: "/flock/journeys/$journeyId/card", params: { journeyId }, search: { kind: "moment", u: posted.updateId }, replace: true })}>
+                    {t("flock.journeys.shareCard.make", "Make a share card")}
+                  </KyaPrimaryButton>
                 </div>
               </>
-            ) : (
-              <KyaPrimaryButton onClick={() => void answer(false)}>{t("flock.journeys.post.backToJourney", "Back to the journey")}</KyaPrimaryButton>
             )}
+            {posted.bigMoment
+              ? <KyaSecondaryButton onClick={backToJourney}>{t("flock.journeys.post.backToJourney", "Back to the journey")}</KyaSecondaryButton>
+              : <KyaPrimaryButton onClick={backToJourney}>{t("flock.journeys.post.backToJourney", "Back to the journey")}</KyaPrimaryButton>}
           </div>
-          {wantsTip(posted) && tip && (
+          {wantsTip(posted.engagement) && tip && (
             <div className="mx-3 mb-[max(28px,env(safe-area-inset-bottom))] flex flex-col gap-1.5 rounded-[22px] px-[18px] py-4" style={{ background: "#fbf3df" }} data-testid="tip">
               <span className="text-[11.5px] font-[700] uppercase tracking-[0.06em]" style={{ color: K.amberText }}>{t("flock.journeys.post.tipEyebrow", "A tip for next time")}</span>
               <span className="text-[14.5px] leading-[1.45]" style={{ color: K.forest }}>{tip}</span>

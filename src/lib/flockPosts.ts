@@ -85,18 +85,18 @@ export function threadComments<T extends CommentRow>(rows: readonly T[]): { comm
   return [...threads.values()];
 }
 
-/** Today mixes posts and followed-journey milestone cards, newest first.
- *  While older posts are still to load, cards older than the oldest loaded
- *  post wait, so scrolling never shows a card out of order. */
-export type FeedItem<P, C> = { kind: "post"; at: string; item: P } | { kind: "milestone"; at: string; item: C };
-export function mergeFeed<P extends { created_at: string }, C extends { reached_at: string }>(
+/** Today mixes posts and followed-journey cards (big moments and "learned
+ *  it"), newest first. While older posts are still to load, cards older than
+ *  the oldest loaded post wait, so scrolling never shows a card out of order. */
+export type FeedItem<P, C> = { kind: "post"; at: string; item: P } | { kind: "moment"; at: string; item: C };
+export function mergeFeed<P extends { created_at: string }, C extends { happened_at: string }>(
   posts: readonly P[], cards: readonly C[], morePosts: boolean,
 ): FeedItem<P, C>[] {
   const oldest = posts.length ? posts[posts.length - 1].created_at : null;
-  const shownCards = morePosts && oldest ? cards.filter((c) => c.reached_at >= oldest) : cards;
+  const shownCards = morePosts && oldest ? cards.filter((c) => c.happened_at >= oldest) : cards;
   const all: FeedItem<P, C>[] = [
     ...posts.map((p) => ({ kind: "post" as const, at: p.created_at, item: p })),
-    ...shownCards.map((c) => ({ kind: "milestone" as const, at: c.reached_at, item: c })),
+    ...shownCards.map((c) => ({ kind: "moment" as const, at: c.happened_at, item: c })),
   ];
   return all.sort((a, b) => b.at.localeCompare(a.at));
 }

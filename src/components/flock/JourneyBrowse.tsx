@@ -7,8 +7,8 @@ import { K, KyaHeading, KyaPrimaryButton, KyaSheet } from "@/components/kya";
 import { BirdThumb } from "@/components/flock/FlockPeople";
 import { ChoiceChips } from "@/components/flock/JourneyParts";
 import { useBirdPhotoUrls, useOwnBirdPhotoUrls, type FlockPhotoSrc } from "@/lib/flockData";
-import { REACTIONS, useJourneyBirds, type JourneyCard, type ReactionKind } from "@/lib/journeyData";
-import { visibilityChoices, type JourneyStatus, type JourneyVisibility } from "@/lib/journeys";
+import { REACTIONS, useJourneyBirds, useJourneyClips, type JourneyCard, type ReactionKind } from "@/lib/journeyData";
+import { journeyDay, journeyDays, visibilityChoices, type JourneyStatus, type JourneyVisibility } from "@/lib/journeys";
 
 /** Bird photos for journey cards: your own birds signed as usual; other
  *  members' only when the database says the bird is shown (bird_has_photo). */
@@ -65,7 +65,15 @@ export function shortDay(t: TFunction, iso: string, lang: string, now: Date = ne
   return d.toLocaleDateString(lang, { month: "short", day: "numeric" });
 }
 
-/** A big photo card on the Journeys tab: the bird, the skill, progress, owner. */
+/** Where a journey card stands: "Day 12", "Learned it · 31 days", or
+ *  "Happy where we are". No steps or progress. */
+export function journeyCardLine(t: TFunction, c: Pick<JourneyCard, "status" | "started_at" | "finished_at">): string {
+  if (c.status === "finished") return t("flock.journeys.card.learned", "Learned it · {{count}} days", { count: journeyDays(c.started_at, c.finished_at) });
+  if (c.status === "happy_where_we_are") return t("flock.journeys.card.happy", "Happy where we are");
+  return t("flock.journeys.card.day", "Day {{day}}", { day: journeyDay(c.started_at) });
+}
+
+/** A big photo card on the Journeys tab: the bird, the skill, its day, owner. */
 export function JourneyBigCard({ card, photo }: { card: JourneyCard; photo: FlockPhotoSrc }) {
   const { t } = useTranslation();
   return (
@@ -75,17 +83,14 @@ export function JourneyBigCard({ card, photo }: { card: JourneyCard; photo: Floc
         <BirdThumb name={card.bird_name} photo={photo} size={132} />
         {card.status === "finished" && (
           <span className="absolute left-3 top-3 rounded-full px-2.5 py-1 text-[11.5px] font-[700]" style={{ background: K.lime, color: K.forest }}>
-            {t("flock.journeys.card.finished", "Finished")}
+            {t("flock.journeys.card.learnedPill", "Learned it")}
           </span>
         )}
       </div>
       <div className="flex flex-col gap-1.5 p-4">
         <span className="text-[17px] font-[700]">{card.bird_name} · {card.skill}</span>
-        <div className="flex gap-1" aria-hidden="true">
-          {Array.from({ length: card.total }, (_, i) => <span key={i} className="h-1.5 flex-1 rounded-full" style={{ background: i < card.done ? K.moss : "#dfe7dd" }} />)}
-        </div>
-        <span className="text-[13px]" style={{ color: K.quiet }}>
-          {t("flock.journeys.card.progress", "{{done}} of {{total}}", { done: card.done, total: card.total })}
+        <span className="text-[13px]" style={{ color: K.quiet }} data-testid="journey-card-line">
+          {journeyCardLine(t, card)}
           {card.owner_name ? ` · ${card.owner_name}` : ""}
           {card.followers > 0 ? ` · ${t("flock.journeys.card.following", "{{count}} following", { count: card.followers })}` : ""}
         </span>
@@ -94,47 +99,55 @@ export function JourneyBigCard({ card, photo }: { card: JourneyCard; photo: Floc
   );
 }
 
-/** Followed journeys as rings across the top of Today. */
-export function FollowRings({ cards, photos, onOpen }: { cards: JourneyCard[]; photos: Record<string, FlockPhotoSrc>; onOpen: (id: string) => void }) {
+/** One followed journey's ring on Today: the latest clip's still (or the
+ *  bird), and "Day N" under the name. */
+function FollowRing({ card, photo, latest, onOpen }: { card: JourneyCard; photo: FlockPhotoSrc; latest: string | null | undefined; onOpen: () => void }) {
+  const { t } = useTranslation();
+  const { data: clips } = useJourneyClips(card.journey_id, !!latest);
+  const clip = latest ? clips?.[latest] : undefined;
+  const still = clip?.status === "ready" ? clip.thumbnail : null;
+  const size = 62;
+  const day = card.status === "finished" ? t("flock.today.ringLearned", "Learned it") : t("flock.journeys.card.day", "Day {{day}}", { day: journeyDay(card.started_at) });
+  return (
+    <button type="button" data-ring={card.journey_id} onClick={onOpen}
+      aria-label={t("flock.today.ringAriaDay", "{{name}}'s {{skill}}, {{day}}", { name: card.bird_name, skill: card.skill, day })}
+      className="flex w-[70px] shrink-0 flex-col items-center gap-1">
+      <span className="relative grid place-items-center overflow-hidden rounded-full" style={{ width: size, height: size, border: `3px solid ${K.moss}` }}>
+        {still
+          ? <img src={still} alt="" className="size-full object-cover" loading="lazy" data-testid="ring-clip" />
+          : <BirdThumb name={card.bird_name} photo={photo} size={size - 8} />}
+      </span>
+      <span className="w-full truncate text-center text-[12px]" style={{ color: K.forest }}>{card.bird_name}</span>
+      <span className="w-full truncate text-center text-[11px] font-[700]" style={{ color: K.moss }} data-testid="ring-day">{day}</span>
+    </button>
+  );
+}
+
+/** Followed journeys as rings across the top of Today: the latest clip and
+ *  "Day N" (no step counts). */
+export function FollowRings({ cards, photos, latest, onOpen }: {
+  cards: JourneyCard[]; photos: Record<string, FlockPhotoSrc>; latest?: Record<string, string | null>; onOpen: (id: string) => void;
+}) {
   const { t } = useTranslation();
   if (cards.length === 0) return null;
   return (
     <section data-testid="follow-rings">
       <h2 className="m-0 mb-2 text-[11.5px] font-[700] uppercase tracking-[0.06em]" style={{ color: "#5a8c7a" }}>{t("flock.today.following", "Journeys you follow")}</h2>
       <div className="-mx-4 flex gap-3 overflow-x-auto px-4 pb-1">
-        {cards.map((c) => {
-          const size = 62;
-          const r = (size - 4) / 2;
-          const circ = 2 * Math.PI * r;
-          const pct = c.total ? c.done / c.total : 0;
-          return (
-            <button key={c.journey_id} type="button" data-ring={c.journey_id} onClick={() => onOpen(c.journey_id)}
-              aria-label={t("flock.today.ringAria", "{{name}}'s {{skill}}, {{done}} of {{total}}", { name: c.bird_name, skill: c.skill, done: c.done, total: c.total })}
-              className="flex w-[70px] shrink-0 flex-col items-center gap-1">
-              <span className="relative grid place-items-center" style={{ width: size, height: size }}>
-                <svg width={size} height={size} className="absolute inset-0 -rotate-90" aria-hidden="true">
-                  <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="#dfe7dd" strokeWidth={3} />
-                  <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke={K.moss} strokeWidth={3} strokeLinecap="round" strokeDasharray={`${circ * pct} ${circ}`} />
-                </svg>
-                <BirdThumb name={c.bird_name} photo={photos[c.bird_id]} size={size - 10} />
-              </span>
-              <span className="w-full truncate text-center text-[12px]" style={{ color: K.forest }}>{c.bird_name}</span>
-            </button>
-          );
-        })}
+        {cards.map((c) => <FollowRing key={c.journey_id} card={c} photo={photos[c.bird_id]} latest={latest?.[c.journey_id]} onOpen={() => onOpen(c.journey_id)} />)}
       </div>
     </section>
   );
 }
 
-/** A clip tile in a journey's grid, with its Milestone / Question / Day one tag. */
+/** A clip tile in a journey's grid, with its Big moment / Question / Day one tag. */
 export function ClipTile({ thumbnail, date, tag, onOpen, testId, status }: {
-  thumbnail?: string | null; date: string; tag: "milestone" | "question" | "day_one" | null; onOpen: () => void; testId?: string;
+  thumbnail?: string | null; date: string; tag: "big_moment" | "question" | "day_one" | null; onOpen: () => void; testId?: string;
   /** Still being prepared, or can't be played (JourneyClipView). */
   status?: ReactNode;
 }) {
   const { t } = useTranslation();
-  const tagStyle = tag === "milestone" ? { background: K.lime, color: K.forest }
+  const tagStyle = tag === "big_moment" ? { background: K.lime, color: K.forest }
     : tag === "question" ? { background: K.amberBg, color: K.amberText } : { background: "#fff", color: K.forest };
   return (
     <button type="button" onClick={onOpen} data-tile={testId} data-tag={tag ?? undefined}
@@ -143,7 +156,7 @@ export function ClipTile({ thumbnail, date, tag, onOpen, testId, status }: {
       {status}
       {tag && (
         <span className="absolute left-1.5 top-1.5 rounded-full px-2 py-0.5 text-[10.5px] font-[700]" style={tagStyle}>
-          {tag === "milestone" ? t("flock.journeys.tag.milestone", "Milestone") : tag === "question" ? t("flock.journeys.tag.question", "Question") : t("flock.journeys.tag.dayOne", "Day one")}
+          {tag === "big_moment" ? t("flock.journeys.tag.bigMoment", "Big moment") : tag === "question" ? t("flock.journeys.tag.question", "Question") : t("flock.journeys.tag.dayOne", "Day one")}
         </span>
       )}
       <span className="absolute bottom-1.5 left-1.5 text-[11px] font-[700] text-white" style={{ textShadow: "0 1px 2px rgba(0,0,0,.5)" }}>{date}</span>
@@ -190,7 +203,7 @@ export function JourneyMenuSheet({ status, visibility, canShare, clipCount, onPa
       {mode === "delete" && (
         <div className="flex flex-col gap-3" data-testid="delete-confirm">
           <p className="m-0 text-[15px] leading-[1.5]" style={{ color: K.ink }}>
-            {t("flock.journeys.menu.deleteLineLong", "This removes the journey, its milestones and its {{count}} clips for good. It can't be undone.", { count: clipCount })}
+            {t("flock.journeys.menu.deleteLineClips", "This removes the journey and its {{count}} clips for good. It can't be undone.", { count: clipCount })}
           </p>
           <button type="button" onClick={onDelete} className="min-h-[52px] rounded-full text-[16px] font-[700] text-white" style={{ background: K.red }}>
             {t("flock.journeys.menu.deleteConfirm", "Delete journey")}
