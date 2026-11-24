@@ -20,6 +20,12 @@ Copy this, fill it in, and put it at the top of "Runs", above the latest entry.
 
 ## Runs
 
+### 2026-11-24 · 1.12 Flock insights: Brittany's diet conversion decision recorded (Brittany asked, in a session)
+- **Built:** nothing in code. Recorded Brittany's decision in `docs/BACKLOG.md` (item 1.12) and `docs/REVIEW_QUEUE.md` (the #506 "1.12 Flock insights" entry): diet conversion shows no typical length anywhere (no number, range or "usually takes" line), because it could read as health guidance. No code, migrations or existing `typical_length` data changed.
+- **PR:** [#553](https://github.com/the-kya-project/perch-perfect-plan/pull/553)
+- **Outcome:** Merged once every required check passed.
+- **Problems:** `main` moved while checks ran; merged it into the branch (only `docs/agent-log.md` conflicted, both entries kept) and waited for the checks again.
+
 ### 2026-11-24 16:41 EST · 1.20a Journeys redesign: data and migration: brought up to date and merged (Brittany asked, in a session)
 - **Built:** merged `main` (with #533, #543, #547 and #551) into #552. Only the three record files conflicted, and both sides' entries were kept. Recorded Brittany's approval of the migration. Removed #552's item from "Held for Brittany", since she has answered it, and #533's, which `main` had already cleared when it merged. None of `main`'s new migrations redefine a journey function. Challenge progress still counts milestones; that's already noted for 1.20b.
 - **PR:** [#552](https://github.com/the-kya-project/perch-perfect-plan/pull/552)

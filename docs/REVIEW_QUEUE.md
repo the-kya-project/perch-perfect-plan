@@ -1509,7 +1509,7 @@ Format:
 - **Decision:** The mockup's "Share my profile with my chapter" switch stays out, and the diet conversion duration is marked as a question for Brittany.
 - **Why:** The switch isn't in the spec, and a typical diet conversion length could read as health guidance, which the spec rules out.
 - **To change it:** say so when approving 1.12.
-- **Brittany:** agreed that the "Share my profile with my chapter" switch won't be built (Nov 22, 2026). The diet conversion duration question is still open.
+- **Brittany:** agreed that the "Share my profile with my chapter" switch won't be built (Nov 22, 2026). Diet conversion duration: no typical length (Nov 24, 2026). Diet conversion shows no number, range or "usually takes" line anywhere.
 
 ### [#506](https://github.com/the-kya-project/perch-perfect-plan/pull/506) · 1.6, 1.8, 1.7, 1.13a, 1.10, 1.11 order
 - **Decision:** The six items go after the existing Ready items, in the requested order. 1.6 depends on 0.5, 1.13a on 1.6 and 1.8, and 1.10 on 1.13a. 1.6 keeps the app's tab order (Resources before Members), which differs from its mockup.
