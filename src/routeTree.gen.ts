@@ -123,6 +123,7 @@ import { Route as AuthenticatedFlockMembersUserIdRouteImport } from './routes/_a
 import { Route as AuthenticatedFlockPostNewRouteImport } from './routes/_authenticated/flock.post.new'
 import { Route as AuthenticatedFlockVotesVoteIdRouteImport } from './routes/_authenticated/flock.votes.$voteId'
 import { Route as AuthenticatedFlockYouIndexRouteImport } from './routes/_authenticated/flock.you.index'
+import { Route as AuthenticatedFlockYouBadgesRouteImport } from './routes/_authenticated/flock.you.badges'
 import { Route as AuthenticatedFlockYouBlockedRouteImport } from './routes/_authenticated/flock.you.blocked'
 import { Route as AuthenticatedFlockYouEditRouteImport } from './routes/_authenticated/flock.you.edit'
 import { Route as AuthenticatedFlockYouMembershipRouteImport } from './routes/_authenticated/flock.you.membership'
@@ -146,6 +147,7 @@ import { Route as AuthenticatedBirdsBirdIdPlanEditorRouteImport } from './routes
 import { Route as AuthenticatedBirdsBirdIdScansScanIdRouteImport } from './routes/_authenticated/birds/$birdId.scans.$scanId'
 import { Route as AuthenticatedFlockCommentsSubjectTypeSubjectIdRouteImport } from './routes/_authenticated/flock.comments.$subjectType.$subjectId'
 import { Route as AuthenticatedFlockJourneysJourneyIdIndexRouteImport } from './routes/_authenticated/flock.journeys.$journeyId.index'
+import { Route as AuthenticatedFlockJourneysJourneyIdCardRouteImport } from './routes/_authenticated/flock.journeys.$journeyId.card'
 import { Route as AuthenticatedFlockJourneysJourneyIdCompareRouteImport } from './routes/_authenticated/flock.journeys.$journeyId.compare'
 import { Route as AuthenticatedFlockJourneysJourneyIdFinishedRouteImport } from './routes/_authenticated/flock.journeys.$journeyId.finished'
 import { Route as AuthenticatedFlockJourneysJourneyIdPostRouteImport } from './routes/_authenticated/flock.journeys.$journeyId.post'
@@ -785,6 +787,12 @@ const AuthenticatedFlockYouIndexRoute =
     path: '/you/',
     getParentRoute: () => AuthenticatedFlockRoute,
   } as any)
+const AuthenticatedFlockYouBadgesRoute =
+  AuthenticatedFlockYouBadgesRouteImport.update({
+    id: '/you/badges',
+    path: '/you/badges',
+    getParentRoute: () => AuthenticatedFlockRoute,
+  } as any)
 const AuthenticatedFlockYouBlockedRoute =
   AuthenticatedFlockYouBlockedRouteImport.update({
     id: '/you/blocked',
@@ -918,6 +926,12 @@ const AuthenticatedFlockJourneysJourneyIdIndexRoute =
   AuthenticatedFlockJourneysJourneyIdIndexRouteImport.update({
     id: '/journeys/$journeyId/',
     path: '/journeys/$journeyId/',
+    getParentRoute: () => AuthenticatedFlockRoute,
+  } as any)
+const AuthenticatedFlockJourneysJourneyIdCardRoute =
+  AuthenticatedFlockJourneysJourneyIdCardRouteImport.update({
+    id: '/journeys/$journeyId/card',
+    path: '/journeys/$journeyId/card',
     getParentRoute: () => AuthenticatedFlockRoute,
   } as any)
 const AuthenticatedFlockJourneysJourneyIdCompareRoute =
@@ -1094,6 +1108,7 @@ export interface FileRoutesByFullPath {
   '/flock/members/$userId': typeof AuthenticatedFlockMembersUserIdRoute
   '/flock/post/new': typeof AuthenticatedFlockPostNewRoute
   '/flock/votes/$voteId': typeof AuthenticatedFlockVotesVoteIdRoute
+  '/flock/you/badges': typeof AuthenticatedFlockYouBadgesRoute
   '/flock/you/blocked': typeof AuthenticatedFlockYouBlockedRoute
   '/flock/you/edit': typeof AuthenticatedFlockYouEditRoute
   '/flock/you/membership': typeof AuthenticatedFlockYouMembershipRoute
@@ -1122,6 +1137,7 @@ export interface FileRoutesByFullPath {
   '/birds/$birdId/plan/editor': typeof AuthenticatedBirdsBirdIdPlanEditorRoute
   '/birds/$birdId/scans/$scanId': typeof AuthenticatedBirdsBirdIdScansScanIdRoute
   '/flock/comments/$subjectType/$subjectId': typeof AuthenticatedFlockCommentsSubjectTypeSubjectIdRoute
+  '/flock/journeys/$journeyId/card': typeof AuthenticatedFlockJourneysJourneyIdCardRoute
   '/flock/journeys/$journeyId/compare': typeof AuthenticatedFlockJourneysJourneyIdCompareRoute
   '/flock/journeys/$journeyId/finished': typeof AuthenticatedFlockJourneysJourneyIdFinishedRoute
   '/flock/journeys/$journeyId/post': typeof AuthenticatedFlockJourneysJourneyIdPostRoute
@@ -1236,6 +1252,7 @@ export interface FileRoutesByTo {
   '/flock/members/$userId': typeof AuthenticatedFlockMembersUserIdRoute
   '/flock/post/new': typeof AuthenticatedFlockPostNewRoute
   '/flock/votes/$voteId': typeof AuthenticatedFlockVotesVoteIdRoute
+  '/flock/you/badges': typeof AuthenticatedFlockYouBadgesRoute
   '/flock/you/blocked': typeof AuthenticatedFlockYouBlockedRoute
   '/flock/you/edit': typeof AuthenticatedFlockYouEditRoute
   '/flock/you/membership': typeof AuthenticatedFlockYouMembershipRoute
@@ -1264,6 +1281,7 @@ export interface FileRoutesByTo {
   '/birds/$birdId/plan/editor': typeof AuthenticatedBirdsBirdIdPlanEditorRoute
   '/birds/$birdId/scans/$scanId': typeof AuthenticatedBirdsBirdIdScansScanIdRoute
   '/flock/comments/$subjectType/$subjectId': typeof AuthenticatedFlockCommentsSubjectTypeSubjectIdRoute
+  '/flock/journeys/$journeyId/card': typeof AuthenticatedFlockJourneysJourneyIdCardRoute
   '/flock/journeys/$journeyId/compare': typeof AuthenticatedFlockJourneysJourneyIdCompareRoute
   '/flock/journeys/$journeyId/finished': typeof AuthenticatedFlockJourneysJourneyIdFinishedRoute
   '/flock/journeys/$journeyId/post': typeof AuthenticatedFlockJourneysJourneyIdPostRoute
@@ -1387,6 +1405,7 @@ export interface FileRoutesById {
   '/_authenticated/flock/members/$userId': typeof AuthenticatedFlockMembersUserIdRoute
   '/_authenticated/flock/post/new': typeof AuthenticatedFlockPostNewRoute
   '/_authenticated/flock/votes/$voteId': typeof AuthenticatedFlockVotesVoteIdRoute
+  '/_authenticated/flock/you/badges': typeof AuthenticatedFlockYouBadgesRoute
   '/_authenticated/flock/you/blocked': typeof AuthenticatedFlockYouBlockedRoute
   '/_authenticated/flock/you/edit': typeof AuthenticatedFlockYouEditRoute
   '/_authenticated/flock/you/membership': typeof AuthenticatedFlockYouMembershipRoute
@@ -1415,6 +1434,7 @@ export interface FileRoutesById {
   '/_authenticated/birds/$birdId/plan/editor': typeof AuthenticatedBirdsBirdIdPlanEditorRoute
   '/_authenticated/birds/$birdId/scans/$scanId': typeof AuthenticatedBirdsBirdIdScansScanIdRoute
   '/_authenticated/flock/comments/$subjectType/$subjectId': typeof AuthenticatedFlockCommentsSubjectTypeSubjectIdRoute
+  '/_authenticated/flock/journeys/$journeyId/card': typeof AuthenticatedFlockJourneysJourneyIdCardRoute
   '/_authenticated/flock/journeys/$journeyId/compare': typeof AuthenticatedFlockJourneysJourneyIdCompareRoute
   '/_authenticated/flock/journeys/$journeyId/finished': typeof AuthenticatedFlockJourneysJourneyIdFinishedRoute
   '/_authenticated/flock/journeys/$journeyId/post': typeof AuthenticatedFlockJourneysJourneyIdPostRoute
@@ -1538,6 +1558,7 @@ export interface FileRouteTypes {
     | '/flock/members/$userId'
     | '/flock/post/new'
     | '/flock/votes/$voteId'
+    | '/flock/you/badges'
     | '/flock/you/blocked'
     | '/flock/you/edit'
     | '/flock/you/membership'
@@ -1566,6 +1587,7 @@ export interface FileRouteTypes {
     | '/birds/$birdId/plan/editor'
     | '/birds/$birdId/scans/$scanId'
     | '/flock/comments/$subjectType/$subjectId'
+    | '/flock/journeys/$journeyId/card'
     | '/flock/journeys/$journeyId/compare'
     | '/flock/journeys/$journeyId/finished'
     | '/flock/journeys/$journeyId/post'
@@ -1680,6 +1702,7 @@ export interface FileRouteTypes {
     | '/flock/members/$userId'
     | '/flock/post/new'
     | '/flock/votes/$voteId'
+    | '/flock/you/badges'
     | '/flock/you/blocked'
     | '/flock/you/edit'
     | '/flock/you/membership'
@@ -1708,6 +1731,7 @@ export interface FileRouteTypes {
     | '/birds/$birdId/plan/editor'
     | '/birds/$birdId/scans/$scanId'
     | '/flock/comments/$subjectType/$subjectId'
+    | '/flock/journeys/$journeyId/card'
     | '/flock/journeys/$journeyId/compare'
     | '/flock/journeys/$journeyId/finished'
     | '/flock/journeys/$journeyId/post'
@@ -1830,6 +1854,7 @@ export interface FileRouteTypes {
     | '/_authenticated/flock/members/$userId'
     | '/_authenticated/flock/post/new'
     | '/_authenticated/flock/votes/$voteId'
+    | '/_authenticated/flock/you/badges'
     | '/_authenticated/flock/you/blocked'
     | '/_authenticated/flock/you/edit'
     | '/_authenticated/flock/you/membership'
@@ -1858,6 +1883,7 @@ export interface FileRouteTypes {
     | '/_authenticated/birds/$birdId/plan/editor'
     | '/_authenticated/birds/$birdId/scans/$scanId'
     | '/_authenticated/flock/comments/$subjectType/$subjectId'
+    | '/_authenticated/flock/journeys/$journeyId/card'
     | '/_authenticated/flock/journeys/$journeyId/compare'
     | '/_authenticated/flock/journeys/$journeyId/finished'
     | '/_authenticated/flock/journeys/$journeyId/post'
@@ -2718,6 +2744,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedFlockYouIndexRouteImport
       parentRoute: typeof AuthenticatedFlockRoute
     }
+    '/_authenticated/flock/you/badges': {
+      id: '/_authenticated/flock/you/badges'
+      path: '/you/badges'
+      fullPath: '/flock/you/badges'
+      preLoaderRoute: typeof AuthenticatedFlockYouBadgesRouteImport
+      parentRoute: typeof AuthenticatedFlockRoute
+    }
     '/_authenticated/flock/you/blocked': {
       id: '/_authenticated/flock/you/blocked'
       path: '/you/blocked'
@@ -2879,6 +2912,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedFlockJourneysJourneyIdIndexRouteImport
       parentRoute: typeof AuthenticatedFlockRoute
     }
+    '/_authenticated/flock/journeys/$journeyId/card': {
+      id: '/_authenticated/flock/journeys/$journeyId/card'
+      path: '/journeys/$journeyId/card'
+      fullPath: '/flock/journeys/$journeyId/card'
+      preLoaderRoute: typeof AuthenticatedFlockJourneysJourneyIdCardRouteImport
+      parentRoute: typeof AuthenticatedFlockRoute
+    }
     '/_authenticated/flock/journeys/$journeyId/compare': {
       id: '/_authenticated/flock/journeys/$journeyId/compare'
       path: '/journeys/$journeyId/compare'
@@ -2996,6 +3036,7 @@ interface AuthenticatedFlockRouteChildren {
   AuthenticatedFlockMembersUserIdRoute: typeof AuthenticatedFlockMembersUserIdRoute
   AuthenticatedFlockPostNewRoute: typeof AuthenticatedFlockPostNewRoute
   AuthenticatedFlockVotesVoteIdRoute: typeof AuthenticatedFlockVotesVoteIdRoute
+  AuthenticatedFlockYouBadgesRoute: typeof AuthenticatedFlockYouBadgesRoute
   AuthenticatedFlockYouBlockedRoute: typeof AuthenticatedFlockYouBlockedRoute
   AuthenticatedFlockYouEditRoute: typeof AuthenticatedFlockYouEditRoute
   AuthenticatedFlockYouMembershipRoute: typeof AuthenticatedFlockYouMembershipRoute
@@ -3006,6 +3047,7 @@ interface AuthenticatedFlockRouteChildren {
   AuthenticatedFlockMembersIndexRoute: typeof AuthenticatedFlockMembersIndexRoute
   AuthenticatedFlockYouIndexRoute: typeof AuthenticatedFlockYouIndexRoute
   AuthenticatedFlockCommentsSubjectTypeSubjectIdRoute: typeof AuthenticatedFlockCommentsSubjectTypeSubjectIdRoute
+  AuthenticatedFlockJourneysJourneyIdCardRoute: typeof AuthenticatedFlockJourneysJourneyIdCardRoute
   AuthenticatedFlockJourneysJourneyIdCompareRoute: typeof AuthenticatedFlockJourneysJourneyIdCompareRoute
   AuthenticatedFlockJourneysJourneyIdFinishedRoute: typeof AuthenticatedFlockJourneysJourneyIdFinishedRoute
   AuthenticatedFlockJourneysJourneyIdPostRoute: typeof AuthenticatedFlockJourneysJourneyIdPostRoute
@@ -3040,6 +3082,7 @@ const AuthenticatedFlockRouteChildren: AuthenticatedFlockRouteChildren = {
   AuthenticatedFlockMembersUserIdRoute: AuthenticatedFlockMembersUserIdRoute,
   AuthenticatedFlockPostNewRoute: AuthenticatedFlockPostNewRoute,
   AuthenticatedFlockVotesVoteIdRoute: AuthenticatedFlockVotesVoteIdRoute,
+  AuthenticatedFlockYouBadgesRoute: AuthenticatedFlockYouBadgesRoute,
   AuthenticatedFlockYouBlockedRoute: AuthenticatedFlockYouBlockedRoute,
   AuthenticatedFlockYouEditRoute: AuthenticatedFlockYouEditRoute,
   AuthenticatedFlockYouMembershipRoute: AuthenticatedFlockYouMembershipRoute,
@@ -3052,6 +3095,8 @@ const AuthenticatedFlockRouteChildren: AuthenticatedFlockRouteChildren = {
   AuthenticatedFlockYouIndexRoute: AuthenticatedFlockYouIndexRoute,
   AuthenticatedFlockCommentsSubjectTypeSubjectIdRoute:
     AuthenticatedFlockCommentsSubjectTypeSubjectIdRoute,
+  AuthenticatedFlockJourneysJourneyIdCardRoute:
+    AuthenticatedFlockJourneysJourneyIdCardRoute,
   AuthenticatedFlockJourneysJourneyIdCompareRoute:
     AuthenticatedFlockJourneysJourneyIdCompareRoute,
   AuthenticatedFlockJourneysJourneyIdFinishedRoute:

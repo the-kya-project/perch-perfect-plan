@@ -12,9 +12,12 @@ import { setChapterLead, useChapterLeadOf, useInvalidateMembers } from "@/lib/fl
 import { ConfirmSheet } from "@/components/flock/PostParts";
 import { BlockSheet } from "@/components/flock/BlockSheet";
 import { blockName } from "@/lib/flockBlocks";
+import { useMemberBadges } from "@/lib/flockBadges";
+import { BadgePills } from "@/components/flock/BadgeParts";
 
-// Another member: photo or initial, name, region, bio, founding badge, and the
-// birds they chose to show. Nothing else exists to show (flock_member_profile).
+// Another member: photo or initial, name, region, bio, founding badge, the
+// birds they chose to show, and the Flock badges they haven't hidden. Nothing
+// else exists to show (flock_member_profile, flock_member_badges).
 export const Route = createFileRoute("/_authenticated/flock/members/$userId")({
   component: FlockMember,
 });
@@ -27,6 +30,7 @@ function FlockMember() {
   const { data: avatar } = useAvatarUrls([m?.photo_path]);
   const { data: photos } = useBirdPhotoUrls((birds ?? []).filter((b) => b.has_photo).map((b) => b.bird_id), 120);
   const { data: leadOf } = useChapterLeadOf(userId);
+  const { data: badges } = useMemberBadges(userId);
   const { data: isAdmin } = useIsAdmin();
   const invalidateMembers = useInvalidateMembers();
   const [confirming, setConfirming] = useState(false);
@@ -63,6 +67,7 @@ function FlockMember() {
             )}
           </div>
         )}
+        {m && <BadgePills badges={badges ?? []} />}
         {m?.bio && <p className="m-0 mt-3 max-w-[36ch] text-[15px] leading-[1.55]" style={{ color: K.ink }} data-testid="member-bio">{m.bio}</p>}
       </KyaCard>
       <KyaCard className="p-5">

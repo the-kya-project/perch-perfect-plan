@@ -3,6 +3,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { Settings2 } from "lucide-react";
 import { K } from "@/components/kya";
 import { VoteCard } from "@/components/flock/VoteParts";
+import { TodayBadges } from "@/components/flock/BadgeParts";
 import { useIsAdmin } from "@/lib/flockData";
 import { useCurrentVotes, votesFor } from "@/lib/flockVotes";
 import { JourneyMilestoneCard } from "@/components/flock/JourneyToday";
@@ -97,6 +98,8 @@ function FlockToday() {
             <Settings2 className="size-4" aria-hidden="true" />{t("flock.votes.manageAll", "Manage votes")}
           </Link>
         )}
+        {/* Badges (1.13a): what history earned, once, then each new one. */}
+        <TodayBadges />
         {shownVotes.map((v) => <VoteCard key={v.vote_id} vote={v} />)}
         {(weighReminders ?? []).map((w) => <WeighTodayCard key={w.journey_id} birdId={w.bird_id} birdName={w.bird_name} />)}
         {idea && <TodaysIdeaCard idea={idea} photo={ideaPhotos?.find((p) => p.kind === "idea")?.url ?? null} />}
