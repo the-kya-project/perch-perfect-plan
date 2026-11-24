@@ -1,9 +1,14 @@
 // Health rules: every health threshold, phrase list and safety wording in one
-// place, for the avian vet's review (docs/flock/opening-scope.md B7, backlog 1.2).
+// place (docs/flock/opening-scope.md B7, backlog 1.2).
 //
-// Nothing here has been reviewed by an avian vet. Every value is marked
-// "draft, pending vet review" with where it came from. When the vet approves,
-// changes or rejects one, change it here first; `npm run test:health-rules`
+// Each value says where it came from and its review status:
+//   - "approved by Brittany": the live daily health check, care-app weight
+//     trend, emergency guides and passing guidance. She reviewed these herself
+//     (Nov 23, 2026); they don't go to the vet.
+//   - "draft, pending vet review": everything else. The vet review covers the
+//     weight baseline, the Diet conversion weight safeguard and the vet-nudge
+//     phrases.
+// When a value changes, change it here first; `npm run test:health-rules`
 // then shows every place that has to follow (the app's own code, and the
 // database values pinned by supabase/checks/health_rules_checks.sql).
 //
@@ -20,7 +25,8 @@
 // src/lib/healthFeatures.ts.
 
 export const DRAFT = "draft, pending vet review" as const;
-export type ReviewStatus = typeof DRAFT;
+export const APPROVED = "approved by Brittany" as const;
+export type ReviewStatus = typeof DRAFT | typeof APPROVED;
 
 export type HealthRule<T> = {
   value: T;
@@ -33,6 +39,10 @@ export type HealthRule<T> = {
 
 function draft<T>(value: T, source: string, where: string): HealthRule<T> {
   return { value, status: DRAFT, source, where };
+}
+
+function approved<T>(value: T, source: string, where: string): HealthRule<T> {
+  return { value, status: APPROVED, source, where };
 }
 
 const OUR_START = "Kya & Co. starting value; no published source";
@@ -234,13 +244,13 @@ export const FIND_A_VET_URL = draft(
 // ---------------------------------------------------------------------------
 export const TRIAGE_RULES = {
   /** A single "concerning" answer to one of these means red. */
-  redOnConcerning: draft<readonly string[]>(
+  redOnConcerning: approved<readonly string[]>(
     ["food", "droppings", "breathing", "posture", "vomiting", "injury", "exposure"],
     `${OUR_START} (placeholder from the PRD, Phase 1)`,
     "SCAN_FIELDS[].redOnConcerning in src/lib/triage.ts",
   ),
   /** Questions where "not sure" counts as a sign. Every "not sure" currently counts. */
-  notSureYellow: draft<readonly string[]>(
+  notSureYellow: approved<readonly string[]>(
     [
       "alertness",
       "food",
@@ -257,7 +267,7 @@ export const TRIAGE_RULES = {
     "computeTriage in src/lib/triage.ts",
   ),
   /** This many yellow signs together gets the "worth a call" message. */
-  yellowCallAt: draft(2, OUR_START, "computeTriage in src/lib/triage.ts"),
+  yellowCallAt: approved(2, OUR_START, "computeTriage in src/lib/triage.ts"),
 } as const;
 
 // ---------------------------------------------------------------------------
@@ -265,14 +275,14 @@ export const TRIAGE_RULES = {
 // ---------------------------------------------------------------------------
 export const CARE_WEIGHT_RULES = {
   /** Within this percent of the window's first weight reads "steady". */
-  steadyPct: draft(2.5, OUR_START, "computeWeightTrend in src/lib/weightTrend.ts"),
+  steadyPct: approved(2.5, OUR_START, "computeWeightTrend in src/lib/weightTrend.ts"),
   /** The trend window, in days. */
-  trendWindowDays: draft(90, OUR_START, "computeWeightTrend in src/lib/weightTrend.ts"),
+  trendWindowDays: approved(90, OUR_START, "computeWeightTrend in src/lib/weightTrend.ts"),
   /** The Home pill: less than this many grams from the last weight reads "Steady";
-   *  any drop of this much or more is amber, and any gain shows as good (open question for the vet). */
-  pillSteadyGrams: draft(1, OUR_START, "weightTrendPill in src/lib/weightTrend.ts"),
+   *  any drop of this much or more is amber, and any gain shows as good. */
+  pillSteadyGrams: approved(1, OUR_START, "weightTrendPill in src/lib/weightTrend.ts"),
   /** "Save anyway?" when a new weight is more than this percent from the last one (a likely typo). */
-  bigChangePct: draft(10, OUR_START, "bigWeightChange in src/lib/dailyLog.ts"),
+  bigChangePct: approved(10, OUR_START, "bigWeightChange in src/lib/dailyLog.ts"),
 } as const;
 
 // ---------------------------------------------------------------------------
@@ -365,10 +375,10 @@ export const WEIGHT_BASELINE_RULES = {
 // 6. Emergency guidance numbers (the sitter page's emergency guides).
 // ---------------------------------------------------------------------------
 export const EMERGENCY_RULES = {
-  keepWarmF: draft("85–90 °F", OUR_START, "warmRange in src/lib/poisonControl.ts"),
-  keepWarmC: draft("29–32 °C", "85–90 °F converted", "warmRange in src/lib/poisonControl.ts"),
+  keepWarmF: approved("85–90 °F", OUR_START, "warmRange in src/lib/poisonControl.ts"),
+  keepWarmC: approved("29–32 °C", "85–90 °F converted", "warmRange in src/lib/poisonControl.ts"),
   /** Default poison lines by region, when the owner left theirs empty. Checked on each service's site, Oct 2026. */
-  poisonLines: draft<Readonly<Record<"us" | "uk" | "au", readonly string[]>>>(
+  poisonLines: approved<Readonly<Record<"us" | "uk" | "au", readonly string[]>>>(
     { us: ["8884264435", "8557647661"], uk: ["01202509000"], au: ["1300869738"] },
     "Each service's own website (ASPCA, Pet Poison Helpline, Animal PoisonLine, Animal Poisons Helpline), Oct 2026",
     "defaultPoisonLines in src/lib/poisonControl.ts",
@@ -380,7 +390,7 @@ export const EMERGENCY_RULES = {
 // src/locales/en.jsonc (Dutch follows the same keys) or a file.
 // ---------------------------------------------------------------------------
 export const HEALTH_WORDING: Readonly<Record<string, HealthRule<readonly string[]>>> = {
-  dailyHealthCheck: draft(
+  dailyHealthCheck: approved(
     [
       "ownerScan.msg",
       "ownerScan.title",
@@ -393,7 +403,7 @@ export const HEALTH_WORDING: Readonly<Record<string, HealthRule<readonly string[
     OUR_START,
     "the daily and full health check; TRIAGE_DISCLAIMER and SCAN_FIELDS help text in src/lib/triage.ts",
   ),
-  weight: draft(
+  weight: approved(
     ["weightPill.", "weightTrend.", "vetSummary.trend"],
     OUR_START,
     "src/lib/weightTrend.ts",
@@ -403,12 +413,12 @@ export const HEALTH_WORDING: Readonly<Record<string, HealthRule<readonly string[
     `${OUR_START}; the top-level and sudden-drop lines are Brittany's drafts (Nov 23, 2026)`,
     "src/components/WeightBaselineCard.tsx (behind the weight_baseline switch)",
   ),
-  emergencyGuides: draft(
+  emergencyGuides: approved(
     ["sitter.emergency."],
     OUR_START,
     "src/routes/sitter/$token/emergency.tsx",
   ),
-  passingGuidance: draft(["passingGuidance."], OUR_START, "src/components/PassingGuidance.tsx"),
+  passingGuidance: approved(["passingGuidance."], OUR_START, "src/components/PassingGuidance.tsx"),
   dietConversion: draft(
     ["flock.journeys.diet."],
     OUR_START,
