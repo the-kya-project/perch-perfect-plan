@@ -6,7 +6,9 @@
 --     may see its challenge;
 --   * private.flock_feed: Today's "everything" leaves challenge entries out
 --     (they live in their challenge's feed);
---   * private.flock_badge_levels: Challenge champ is awarded.
+--   * private.flock_badge_levels: Challenge champ is awarded;
+--   * private.flock_member_badges: a profile shows it only when it was
+--     earned in a way others may see (as Journey finisher and Trick star).
 -- Each is rewritten from its live definition with exact text replacements
 -- (as 20261121100000_flock_member_blocking.sql did), so the block rules
 -- already in them stay.
@@ -919,6 +921,14 @@ select private.flock_challenge_patch('private.flock_badge_levels(uuid, boolean)'
          case when exists (select 1 from public.flock_challenge_members m
                            where m.user_id = p_user and private.flock_challenge_done(p_user, m.challenge_id, p_public))
               then 1 else 0 end;'
+]);
+
+-- Profiles cap Challenge champ at what others may see, as they already do
+-- for the journey badges, so one earned through a "Just me" journey never
+-- shows outside the household.
+select private.flock_challenge_patch('private.flock_member_badges(uuid)', array[
+  'b.id in (''journey_finisher'', ''trick_star'')',
+  'b.id in (''journey_finisher'', ''trick_star'', ''challenge_champ'')'
 ]);
 
 drop function private.flock_challenge_patch(text, text[]);
