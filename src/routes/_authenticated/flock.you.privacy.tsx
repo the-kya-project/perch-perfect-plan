@@ -6,7 +6,8 @@ import { FlockSubPage } from "@/components/flock/FlockSubPage";
 
 // Privacy: exactly what other members see, and what they never see. Keep this
 // in step with the flock_* functions in 20261107180000_flock_profiles.sql
-// (and blocking, 20261121100000_flock_member_blocking.sql).
+// (and blocking, 20261121100000_flock_member_blocking.sql; badges,
+// 20261124013000_flock_badges.sql).
 export const Route = createFileRoute("/_authenticated/flock/you/privacy")({
   component: FlockPrivacy,
 });
@@ -38,6 +39,7 @@ function FlockPrivacy() {
             t("flock.privacy.see.bio", "Your bio"),
             t("flock.privacy.see.photo", "Your profile photo"),
             t("flock.privacy.see.birds", "The birds you choose to show: their name, species, and photo"),
+            t("flock.privacy.see.badges", "Your Flock badges, unless you hide them. Badges from \"Just me\" journeys stay with you."),
           ]} />
         </div>
       </KyaCard>

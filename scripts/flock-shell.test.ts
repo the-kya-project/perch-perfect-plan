@@ -32,6 +32,9 @@ import { defaultDisplayName, greetingName, isAutomaticDisplayName, memberCountLi
 import { accessCells, accessDay } from "@/lib/flockAccess";
 import { blockActions, blockName } from "@/lib/flockBlocks";
 import { spotLabel } from "@/lib/flockFounders";
+import {
+  FINISHER_LEVELS, FLOCK_BADGES, badgeName, badgeTitle, celebrationFor, cleanMyBadges, cleanShownBadges, earnedCount, earnedLine, howToEarn, levelLabel, nextLevel,
+} from "@/lib/flockBadges";
 import { foundingClosedCase } from "@/lib/foundingClosed";
 import { formatFlockDay, freeSeasonEndLabel, NO_FLOCK_DATES } from "@/lib/flockDates";
 import { FLOCK_CONTACT_EMAIL, FLOCK_GUIDELINES_VERSION, contactLine, guidelineSections, guidelinesClosing, guidelinesIntro } from "@/lib/flockGuidelines";
@@ -945,6 +948,72 @@ check("votes: what a draft needs before it opens", () => {
   assert.ok(sql.includes(`length(announcement) <= ${VOTE_LIMITS.announcement}`));
   assert.ok(sql.includes(`jsonb_array_length(v_choices) > ${VOTE_LIMITS.maxChoices}`));
   assert.ok(sql.includes(`n < ${VOTE_LIMITS.minChoices} or n > ${VOTE_LIMITS.maxChoices}`));
+});
+
+check("badges: every badge in screen order, matching the database's list", () => {
+  const rows = cleanMyBadges([
+    { badge: "voice_of_the_flock", level: 1, earned_at: "2026-11-20T15:00:00Z", unseen: false, at_launch: true },
+    { badge: "journey_finisher", level: 3, earned_at: "2026-11-21T15:00:00Z", unseen: true, at_launch: false },
+    { badge: "made_up", level: 1 },
+    { badge: "trick_star", level: 0, earned_at: "2026-11-21T15:00:00Z", unseen: true },
+  ]);
+  assert.deepEqual(rows.map((b) => b.badge), [...FLOCK_BADGES]);
+  assert.deepEqual(rows.map((b) => b.level), [0, 3, 0, 0, 1, 0]);
+  // Not earned: never unseen, never dated.
+  assert.equal(rows[2].unseen, false);
+  assert.equal(rows[2].earned_at, null);
+  assert.equal(earnedCount(rows), 2);
+  assert.deepEqual(cleanMyBadges(null).map((b) => b.level), [0, 0, 0, 0, 0, 0]);
+  assert.deepEqual(cleanShownBadges([{ badge: "trick_star", level: 1 }, { badge: "first_steps", level: 1 }, { badge: "nope", level: 1 }, { badge: "good_neighbor", level: 0 }]),
+    [{ badge: "first_steps", level: 1 }, { badge: "trick_star", level: 1 }]);
+  assert.deepEqual(cleanShownBadges(null), []);
+  const sql = readFileSync("supabase/migrations/20261124013000_flock_badges.sql", "utf8");
+  assert.ok(sql.includes(`select array[${FLOCK_BADGES.map((b) => `'${b}'`).join(", ")}];`));
+  assert.ok(sql.includes("when p_finished >= 10 then 10 when p_finished >= 3 then 3 when p_finished >= 1 then 1"));
+  assert.deepEqual([...FINISHER_LEVELS], [1, 3, 10]);
+});
+
+check("badges: one launch celebration for history, then a card for each new one", () => {
+  const b = (badge: (typeof FLOCK_BADGES)[number], level: number, unseen: boolean, at_launch: boolean) =>
+    ({ badge, level, earned_at: level ? "2026-11-21T15:00:00Z" : null, unseen, at_launch });
+  // History earned two or more: one "Here's what you've already earned".
+  const launch = celebrationFor([b("first_steps", 1, true, true), b("journey_finisher", 3, true, true), b("trick_star", 0, false, false)]);
+  assert.equal(launch?.kind, "launch");
+  assert.deepEqual(launch?.badges.map((x) => x.badge), ["first_steps", "journey_finisher"]);
+  // Just one from history (a newcomer who's just set up): the small card.
+  assert.equal(celebrationFor([b("first_steps", 1, true, true)])?.kind, "new");
+  // Earned later: a card each; seen ones never come back.
+  const later = celebrationFor([b("first_steps", 1, false, true), b("journey_finisher", 10, true, false), b("voice_of_the_flock", 1, true, false)]);
+  assert.equal(later?.kind, "new");
+  assert.deepEqual(later?.badges.map((x) => x.badge), ["journey_finisher", "voice_of_the_flock"]);
+  assert.equal(celebrationFor([b("first_steps", 1, false, true)]), null);
+  assert.equal(celebrationFor([]), null);
+});
+
+check("badges: levels, names and how to earn each one", () => {
+  const t = ((_k: string, d: string, o?: Record<string, unknown>) => d.replace(/\{\{(\w+)\}\}/g, (_m, n) => String(o?.[n] ?? ""))) as unknown as Parameters<typeof badgeName>[0];
+  assert.equal(nextLevel("journey_finisher", 0), 1);
+  assert.equal(nextLevel("journey_finisher", 1), 3);
+  assert.equal(nextLevel("journey_finisher", 3), 10);
+  assert.equal(nextLevel("journey_finisher", 10), null);
+  assert.equal(nextLevel("trick_star", 1), null);
+  assert.equal(levelLabel(t, "journey_finisher", 1), "1 journey");
+  assert.equal(levelLabel(t, "journey_finisher", 3), "3 journeys");
+  assert.equal(levelLabel(t, "journey_finisher", 0), null);
+  assert.equal(levelLabel(t, "good_neighbor", 1), null);
+  assert.equal(badgeTitle(t, "journey_finisher", 10), "Journey finisher · 10 journeys");
+  assert.equal(badgeTitle(t, "voice_of_the_flock", 1), "Voice of the Flock");
+  assert.equal(earnedLine(t, "journey_finisher", 1), "You finished your first journey.");
+  assert.equal(earnedLine(t, "journey_finisher", 3), "You've finished 3 journeys.");
+  assert.equal(howToEarn(t, "trick_star"), "Trick star: finish any tricks journey.");
+  // Every badge has a name, a way to earn it and a line for earning it, and
+  // none of them talks about points, rankings or health.
+  for (const x of FLOCK_BADGES) {
+    for (const s of [badgeName(t, x), howToEarn(t, x), earnedLine(t, x, 1)]) {
+      assert.ok(s.length > 0);
+      assert.ok(!/\b(points?|rank|leaderboard|weight|healthy)\b/i.test(s), s);
+    }
+  }
 });
 
 console.log(`\n${passed} passed${process.exitCode ? ", some FAILED" : ""}`);
