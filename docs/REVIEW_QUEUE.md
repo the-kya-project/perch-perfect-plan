@@ -690,6 +690,20 @@ No new strings: every line reuses existing wording, in new places (admins only).
 
 ## Decisions agents made
 
+### [#547](https://github.com/the-kya-project/perch-perfect-plan/pull/547) · 1.10 Challenges
+- **Decision:** Entries are Flock posts in a new `challenge` space, tied to their challenge. That way reactions, comments, reports, review, blocks, photos, deletion and the 180-day hold all work exactly as they do for posts. Entries show only in their challenge's feed, never in Today's.
+- **Decision:** Start and end are days in Eastern time (the Flock's day, like Today's idea), and both days count. A challenge opens at the start of its first day and closes after its last. Members don't see a scheduled challenge until it starts, and "Move back to draft" works only before then.
+- **Decision:** "One active challenge at a time Flock-wide, plus at most one per chapter": scheduling refuses a challenge whose days overlap another scheduled one for the same group. A Flock-wide and a chapter challenge can overlap. Once a challenge has started, it can't be edited, unscheduled or deleted, so members' progress never changes under them.
+- **Decision:** Diet conversion, and every template in the food category, can't be a challenge's journey. The admin form doesn't list them, and the database refuses them.
+- **Decision:** A journey challenge doesn't start the journey by itself. Joining picks the bird; if that bird has no journey on the template yet, the member goes to the usual journey setup (clip, rhythm, who sees it). Progress is that journey's milestones. It counts as finished when that journey finishes between joining and the end day. A journey that's already underway counts.
+- **Decision:** Standalone progress is one entry per prompt, in any order. "Post today's entry" always offers the first prompt not done yet, matching the mockup's checklist. Deleting an entry un-ticks its prompt, but a Challenge champ badge already earned stays.
+- **Decision:** Permission to feature is a switch, off by default, asked when joining and changeable later on the challenge page. Turning it off takes the member's entries out of the pin and the wrap-up at once. A pinned entry also needs that permission, since pinning features it.
+- **Decision:** On a profile, Challenge champ shows only when it was earned in a way others may see. A journey challenge counts there only if its journey is shared with the community, as with Journey finisher and Trick star. The checks caught this: before the fix, a "Just me" journey's challenge badge would have shown on the profile.
+- **Decision:** Joined members show as up to four faces (name and photo only, blocked people left out) plus a count, as in the mockup. Nobody is ranked or listed by progress.
+- **Decision:** The admin list is linked from "Manage challenges" on the Journeys tab (admins only), and from "Manage this challenge" on a challenge page. Votes use the same pattern on Do good.
+- **Decision:** No analytics events for challenges. The spec doesn't ask for any, and adding them means changing the shared event list.
+- **To change it:** the rules are in `20261124033000_flock_challenges.sql` (`private.flock_challenge_*`); the words are in `src/components/flock/ChallengeParts.tsx` and the two `flock.challenges.$challengeId` routes; the admin form is `src/routes/_authenticated/admin.challenges.$challengeId.tsx`.
+
 ### [#546](https://github.com/the-kya-project/perch-perfect-plan/pull/546) · 1.13a Badges: the Flock set
 - **Decision:** Badges are worked out when a member opens Today, Flock settings or the Badges screen (`flock_my_badges`), not by triggers on every table. So "the moment it's earned" means the next time they open the Flock, usually seconds later. It keeps the badge rules in one function and leaves the posts, journeys, votes and places code untouched.
 - **Decision:** "Past activity counts": the first time a member's badges are worked out, everything their history earned is recorded together, and Today shows one "Here's what you've already earned" when that's two or more. With just one (a newcomer who's just finished their profile), it's the small "Badge earned" card instead, since "already earned" would read oddly.
@@ -1043,6 +1057,12 @@ Format:
 ### <PR link> · <item ID> <item title>
 - **Needs:** <the decision, approval or read, in one or two lines>
 ```
+
+### [#547](https://github.com/the-kya-project/perch-perfect-plan/pull/547) · 1.10 Challenges
+- **Needs:** (1) A look at the screens the mockup doesn't show, built from the app's existing cards, switches and admin forms: joining (pick a bird, and "It's OK to feature my entries in the wrap-up."), the "You finished!" card, a closed challenge with its wrap-up, the admin list, and the admin screen for a challenge that has started (pin, feature, wrap-up). The spec says to hold and ask about unmocked screens. Approve them or send mockups. (2) Clips: entries are a few sentences plus up to four photos. Short clips aren't built, because Flock posts have no clips. Say whether you want them; that's a larger change. (3) An entry needs a few words even when it has a photo, as posts do. Is that OK? (4) Your merge: the migration changes Flock functions (post visibility, Today's feed, badge rules and profiles), and merging applies it to production.
+
+### [#533](https://github.com/the-kya-project/perch-perfect-plan/pull/533) · 1.14a Card step: conflicts with `main` outside the record files
+- **Needs:** #533 now conflicts with `main` in `src/locales/en.jsonc` as well as the record files, because `main` added catalog lines near its own. Runs may only fix conflicts in the three record files, so this run left the branch as it is. Update it from `main`, keeping both sides' lines, or say in the PR that a run may.
 
 ### [#535](https://github.com/the-kya-project/perch-perfect-plan/pull/535) · 1.15 Kya's Crew: Free-user regression needs a re-run
 - **Needs:** a re-run of "Free-user regression" on #535 (Actions → the cancelled run → Re-run jobs). On its latest commit (`ebaa867`, "Crew: remove sponsored seat counting") that check was cancelled, not failed, most likely because a newer run joined the shared staging queue. It passed on the commit before. Runs can't re-run checks. The PR is otherwise held for your approval, as its description says.
