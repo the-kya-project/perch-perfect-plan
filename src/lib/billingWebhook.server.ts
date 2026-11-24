@@ -35,6 +35,10 @@ export async function handleStripeBillingEvent(event: BillingEventLike) {
       });
       if (error) throw new Error(`billing_record_stripe_subscription failed: ${error.message}`);
     },
+    removeDiscounts: async (id) => {
+      // An empty string clears the subscription's discounts.
+      await stripe.subscriptions.update(id, { discounts: "" });
+    },
     claimEvent: async (eventId, type, objectId) => {
       const { data, error } = await db.rpc("billing_claim_event", { p_provider: "stripe", p_event_id: eventId, p_event_type: type, p_object_id: objectId });
       if (error) throw new Error(`billing_claim_event failed: ${error.message}`);

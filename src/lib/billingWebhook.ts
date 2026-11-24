@@ -9,7 +9,7 @@
  * event is claimed once in billing_events; one that fails is left unfinished
  * and the error goes up, so the route returns 500 and Stripe retries.
  */
-import { subscriptionRow, type BillingPrices, type PaidPlan, type SubscriptionLike, type SubscriptionRow } from "./billing";
+import { discountsToRemove, subscriptionRow, type BillingPrices, type PaidPlan, type SubscriptionLike, type SubscriptionRow } from "./billing";
 
 /** The parts of a Stripe event the handler reads. */
 export type BillingEventLike = {
@@ -24,6 +24,8 @@ export type BillingDeps = {
   /** The account a Stripe customer belongs to (billing_customers), or null. */
   userForCustomer(customerId: string): Promise<string | null>;
   record(userId: string, row: SubscriptionRow): Promise<void>;
+  /** Clears every discount on a subscription (a founding one must have none). */
+  removeDiscounts(subscriptionId: string): Promise<void>;
   /** True when the event still needs handling (new, or an earlier try failed). */
   claimEvent(eventId: string, type: string, objectId: string | null): Promise<boolean>;
   finishEvent(eventId: string, outcome: string): Promise<void>;
@@ -166,7 +168,12 @@ export async function handleBillingEvent(event: BillingEventLike, deps: BillingD
   const mdUser = sub.metadata?.user_id;
   if (mdUser && mdUser !== userId) throw new Error(`subscription ${sub.id} metadata names another account`);
 
+  // Promotion codes never apply to the founding price (backlog 1.17). Checkout
+  // doesn't offer them there; this catches one added any other way.
+  const stripped = discountsToRemove(row.plan, sub).length > 0;
+  if (stripped) await deps.removeDiscounts(sub.id);
+
   await deps.record(userId, row);
-  await deps.finishEvent(event.id, `recorded: ${row.plan} ${row.status}`);
+  await deps.finishEvent(event.id, `recorded: ${row.plan} ${row.status}${stripped ? ", discount removed" : ""}`);
   return { handled: "recorded", subscription: row.subscriptionId, plan: row.plan, status: row.status };
 }

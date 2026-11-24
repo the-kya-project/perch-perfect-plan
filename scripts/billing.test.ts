@@ -17,8 +17,8 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import Stripe from "stripe";
 import {
-  BILLING_CHOICES, billingEnabled, cardStep, CHECKOUT_CHOICES, checkoutPlan, entitlementStatus, firstCharge, givingRate, isCrewPlan,
-  liveSubscription, MIN_TRIAL_LEAD_MS, planForPrice, planGetsTrial, subscriptionRow,
+  BILLING_CHOICES, billingEnabled, cardStep, CHECKOUT_CHOICES, checkoutPlan, discountsToRemove, entitlementStatus, firstCharge, givingRate, isCrewPlan,
+  liveSubscription, MIN_TRIAL_LEAD_MS, planForPrice, planGetsTrial, promotionCodesAllowed, subscriptionRow,
   type BillingPrices, type BillingState, type SubscriptionLike, type SubscriptionRow,
   billingDay,
   saveCardExpiry,
@@ -235,6 +235,7 @@ await check("card on file: first charge date while trialing, renewal state after
 function fakeDeps(subs: Record<string, SubscriptionLike>, customers: Record<string, string> = { cus_1: "user_1" }) {
   const events = new Map<string, { done: boolean; outcome?: string }>();
   const rows: { userId: string; row: SubscriptionRow }[] = [];
+  const cleared: string[] = [];
   let retrieved = 0;
   const deps: BillingDeps = {
     prices: PRICES,
@@ -249,6 +250,7 @@ function fakeDeps(subs: Record<string, SubscriptionLike>, customers: Record<stri
       const i = rows.findIndex((r) => r.row.subscriptionId === row.subscriptionId);
       if (i >= 0) rows[i] = { userId, row }; else rows.push({ userId, row });
     },
+    removeDiscounts: async (id) => { cleared.push(id); },
     claimEvent: async (id) => {
       const e = events.get(id);
       if (!e) { events.set(id, { done: false }); return true; }
@@ -256,7 +258,7 @@ function fakeDeps(subs: Record<string, SubscriptionLike>, customers: Record<stri
     },
     finishEvent: async (id, outcome) => { events.set(id, { done: true, outcome }); },
   };
-  return { deps, rows, events, get retrieved() { return retrieved; } };
+  return { deps, rows, events, cleared, get retrieved() { return retrieved; } };
 }
 const ev = (id: string, type: string, object: Record<string, unknown>): BillingEventLike => ({ id, type, data: { object } });
 
@@ -386,6 +388,61 @@ await check("the migration widens the plan check, records giving and tracks no s
   assert.match(sql, /'crew_monthly', 'crew_annual'\)\);/);
   assert.match(sql, /when p_plan in \('crew_monthly', 'crew_annual'\) then 0\.25 else 0\.20/);
   assert.doesNotMatch(sql, /crew_sponsorships|crew_seat_uses/);
+});
+
+// ── Promotion codes (backlog 1.17) ─────────────────────────────────────────
+await check("promotion codes: regular plans yes, the founding price never", () => {
+  assert.equal(promotionCodesAllowed("monthly"), true);
+  assert.equal(promotionCodesAllowed("annual"), true);
+  assert.equal(promotionCodesAllowed("founding"), false);
+  assert.equal(promotionCodesAllowed(checkoutPlan("annual", true)), false, "a founder picking yearly still gets founding, so no code");
+  assert.equal(promotionCodesAllowed("crew_monthly"), true, "Kya's Crew gets the code field");
+  assert.equal(promotionCodesAllowed("crew_annual"), true);
+  assert.equal(promotionCodesAllowed(checkoutPlan("crew_annual", true)), true, "a founder picking Crew gets Crew, so the code field shows");
+});
+await check("discounts to remove: only a founding subscription's, ids or expanded", () => {
+  assert.deepEqual(discountsToRemove("monthly", { discounts: ["di_1"] }), []);
+  assert.deepEqual(discountsToRemove("founding", { discounts: [] }), []);
+  assert.deepEqual(discountsToRemove("founding", { discounts: null }), []);
+  assert.deepEqual(discountsToRemove("founding", {}), []);
+  assert.deepEqual(discountsToRemove("founding", { discounts: ["di_1", { id: "di_2" }] }), ["di_1", "di_2"]);
+});
+await check("checkout offers the code field from the rule, after the plan is picked", () => {
+  const src = readFileSync("src/lib/billing.functions.ts", "utf8");
+  const plan = src.indexOf("const plan = checkoutPlan(");
+  const allow = src.indexOf("allow_promotion_codes: promotionCodesAllowed(plan)");
+  assert.ok(plan > 0 && allow > plan, "allow_promotion_codes follows promotionCodesAllowed(plan)");
+  assert.doesNotMatch(src, /allow_promotion_codes: true/);
+  const subAt = src.indexOf('mode: "subscription"');
+  assert.ok(subAt > 0 && allow > subAt, "the code field is on the subscription Checkout");
+  assert.equal(src.match(/allow_promotion_codes/g)?.length, 1, "and only there (a save-the-card Checkout can't take one)");
+});
+await check("a founding subscription with a discount: it's removed, then the row is recorded", async () => {
+  const f = fakeDeps({ sub_1: sub({ price: "price_founding", discounts: ["di_1"] }) });
+  const r = await handleBillingEvent(ev("evt_d", "customer.subscription.updated", { id: "sub_1" }), f.deps);
+  assert.equal(r.handled, "recorded");
+  assert.deepEqual(f.cleared, ["sub_1"]);
+  assert.equal(f.rows[0].row.plan, "founding");
+  assert.match(f.events.get("evt_d")?.outcome ?? "", /discount removed/);
+});
+await check("a regular subscription keeps its code; a founding one without a discount isn't touched", async () => {
+  const f = fakeDeps({ sub_1: sub({ discounts: ["di_1"] }), sub_2: sub({ id: "sub_2", price: "price_founding", discounts: [] }) });
+  await handleBillingEvent(ev("evt_k", "customer.subscription.updated", { id: "sub_1" }), f.deps);
+  await handleBillingEvent(ev("evt_k2", "customer.subscription.updated", { id: "sub_2" }), f.deps);
+  assert.deepEqual(f.cleared, []);
+  assert.equal(f.rows.length, 2);
+});
+await check("a failed discount removal leaves the event unfinished (500, Stripe retries), nothing written", async () => {
+  const f = fakeDeps({ sub_1: sub({ price: "price_founding", discounts: ["di_1"] }) });
+  f.deps.removeDiscounts = async () => { throw new Error("stripe down"); };
+  await assert.rejects(handleBillingEvent(ev("evt_df", "customer.subscription.updated", { id: "sub_1" }), f.deps));
+  assert.equal(f.rows.length, 0);
+  assert.equal(f.events.get("evt_df")?.done, false);
+});
+await check("an unknown customer's founding discount is left alone", async () => {
+  const f = fakeDeps({ sub_1: sub({ customer: "cus_stranger", price: "price_founding", discounts: ["di_1"] }) });
+  await handleBillingEvent(ev("evt_u", "customer.subscription.updated", { id: "sub_1" }), f.deps);
+  assert.deepEqual(f.cleared, []);
 });
 
 // ── Native app and free-season rows ────────────────────────────────────────

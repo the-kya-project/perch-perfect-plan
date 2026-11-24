@@ -11,7 +11,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { formatCents } from "./gifts";
-import { CHECKOUT_CHOICES, billingDay, billingEnabled, checkoutDesign, checkoutPlan, firstCharge, saveCardExpiry, saveCardNote, checkoutNote, liveSubscription, type BillingLocale, type BillingState, type NoteT, type PaidPlan } from "./billing";
+import { CHECKOUT_CHOICES, billingDay, billingEnabled, checkoutDesign, checkoutPlan, firstCharge, saveCardExpiry, saveCardNote, checkoutNote, liveSubscription, promotionCodesAllowed, type BillingLocale, type BillingState, type NoteT, type PaidPlan } from "./billing";
 
 type Ctx = { supabase: any; userId: string; claims: { email?: string } };
 
@@ -190,6 +190,10 @@ export const startBillingCheckout = createServerFn({ method: "POST" })
           line_items: [{ price, quantity: 1 }],
           // The card is always collected, even with $0 due today.
           payment_method_collection: "always",
+          // Regular plans and Kya's Crew only, never the founding price
+          // (backlog 1.17). With a trial, the code applies to the paid
+          // invoices after it.
+          allow_promotion_codes: promotionCodesAllowed(plan),
           subscription_data: {
             ...(fc.trialEnd ? { trial_end: fc.trialEnd } : {}),
             metadata,

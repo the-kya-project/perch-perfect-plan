@@ -1032,6 +1032,11 @@ No new strings: every line reuses existing wording, in new places (admins only).
 
 ## Decisions agents made
 
+### [#543](https://github.com/the-kya-project/perch-perfect-plan/pull/543) · 1.17 Promo codes · Brittany's decisions, Nov 24, 2026
+- **Approved:** the worked examples match what she meant, and the webhook may remove discounts from founding memberships. Merged switched off once every required check passed.
+- **Before billing opens:** two test checkouts during a test free season (one "20% off for 3 months" code, one "once" code) to see whether Stripe counts the months from the card being added or from the first charge. In the "Before billing opens" checklist in `docs/BACKLOG.md`.
+- **Decision (merging `main`):** the code field stays on the subscription Checkout only. The save-the-card Checkout from #533 (the free season's last 49 hours) can't take a code, because Stripe allows none in setup mode, and the subscription the webhook starts from it has no discount. Crew plans get the field and the founding price doesn't; `npm run test:billing` pins both.
+
 ### [#533](https://github.com/the-kya-project/perch-perfect-plan/pull/533) · 1.14a Card step and checkout design · Brittany's decisions, Nov 24, 2026
 - **Approved:** the screens and the Dutch. Merged switched off (`BILLING_ENABLED` off), the same way #525 did, once every required check passed.
 - **Before billing opens:** the founder release job, the test-mode Customer Portal setup, two test checkouts (one normal, one in the free season's last 49 hours) and a native speaker's read of the Dutch are a checklist in `docs/BACKLOG.md` ("Before billing opens").
@@ -1131,6 +1136,21 @@ Format:
 - **Why:** <the reason, in plain language>
 - **To change it:** <what would need to change>
 ```
+
+### [#543](https://github.com/the-kya-project/perch-perfect-plan/pull/543) · 1.17 Promo codes for memberships
+- **Decision:** Codes are entered in Stripe Checkout's own "Add promotion code" field. No code box was added to the card step, and nothing in the app creates or lists codes; they're made in the Stripe Dashboard.
+- **Why:** gift Checkout already works this way, and an app field would need a new design.
+- **To change it:** `allow_promotion_codes` in `startBillingCheckout` (`src/lib/billing.functions.ts`).
+
+### [#543](https://github.com/the-kya-project/perch-perfect-plan/pull/543) · 1.17 Promo codes for memberships
+- **Decision:** The rule is "every plan but founding" (`promotionCodesAllowed`), so Kya's Crew plans get codes as soon as #535 adds them, with no change here. The billing webhook also takes off any discount found on a founding subscription (from the Customer Portal or the Dashboard) and notes "discount removed" on the event. Discounts on a Stripe customer aren't checked.
+- **Why:** founding and regular share one Stripe product, so Stripe can't limit a coupon to the regular prices. Hiding the field covers Checkout only.
+- **To change it:** `promotionCodesAllowed` and `discountsToRemove` in `src/lib/billing.ts`.
+
+### [#543](https://github.com/the-kya-project/perch-perfect-plan/pull/543) · 1.17 Promo codes for memberships
+- **Decision:** Which codes are used isn't recorded in the app. `/admin/gifts` totals by code, but nothing like that exists for memberships yet.
+- **Why:** the item asks only for codes to work on the card step.
+- **Worth knowing:** #533 saves only the card (no subscription yet) in the free season's last 49 hours. Stripe's save-card Checkout has no code field, so a code can't be used in that window. Whichever of #533 and #543 merges second should keep `allow_promotion_codes` on the subscription Checkout.
 
 ### [#535](https://github.com/the-kya-project/perch-perfect-plan/pull/535) · 1.15 Kya's Crew (switched off)
 - **Decision:** "No trial" means Crew never gets the 14-day trial planned for after the free season (6f, not built). During the free season a Crew card goes on at $0 until the season's end, like every membership; after it, Crew is charged the day the card goes on.
@@ -1505,8 +1525,6 @@ Format:
 ### [#548](https://github.com/the-kya-project/perch-perfect-plan/pull/548) · 1.11 Buddy pods: behind `main`
 - **Needs:** "Update branch" on the PR (or a merge of `main`). It conflicts with `main` only in the record files (`docs/BACKLOG.md`, `docs/REVIEW_QUEUE.md`). But `main` has since changed two workflow files (#538 and #545), and the runs' token can't push a merge that brings those in. So the 05:46 EST run left the branch as it is. It was green and held for you before `main` moved. (#547 was brought up to date and merged on Nov 24, 2026.)
 
-### [#543](https://github.com/the-kya-project/perch-perfect-plan/pull/543) · 1.17 Promo codes: code conflicts with `main`
-- **Needs:** someone to resolve the conflicts before it can be reviewed. Since 1.15 (#535) and 1.14a (#533) merged, it conflicts with `main` in the billing code (`src/lib/billing.ts`, `src/lib/billing.functions.ts`, `scripts/billing.test.ts`). Runs only resolve conflicts in the record files.
 
 ### Reminder · the hourly runs' GitHub token expires Feb 20, 2027
 - **Needs:** a new token before **Feb 20, 2027**. That's 90 days from Nov 22, 2026; GitHub → Settings → Developer settings → Fine-grained tokens shows the exact date. When it expires, runs can still build and test but can't push or open PRs, and each run's note in `~/.kya-agent/job.log` says so.
