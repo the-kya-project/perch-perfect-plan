@@ -13,7 +13,7 @@ This is the **single ordered build list** for everything before the Flock opens,
   - **no**: it needs her before work starts.
   - **after spec**: it waits for her written spec (see "Waiting on Brittany's spec").
 - **Sizes:** S = less than one session, M = about one session (one PR), L = two to three, XL = four or more.
-- **Health features** always ship behind their own off switch, with every value in the vet-content settings file (item 1.2) marked "draft, pending vet review". Nothing that tells an owner something about their bird's health reaches real users until an avian vet approves it.
+- **Health features** always ship behind their own off switch, with every value in the vet-content settings file (item 1.2) marked "draft, pending vet review". Nothing new that tells an owner something about their bird's health reaches real users until an avian vet approves it. The live daily health check, care weight trend, emergency guides and passing guidance are approved by Brittany and stay as they are (Nov 23, 2026).
 - **Mark an item done in this file in the same PR that finishes it** (move it to "Done" at the bottom with the PR number).
 
 Where these items came from, with the detail behind each: `docs/flock/opening-scope.md`.
@@ -21,28 +21,6 @@ Where these items came from, with the detail behind each: `docs/flock/opening-sc
 ---
 
 ## Ready to build
-
-
-### D1.2 Weight baseline on the weight page, in shadow mode
-- **Done means:** the weight page shows the range and "still learning", a small celebration when the baseline is learned, and the alert cards, following the decisions below. Everything is behind its own switch, and the screens are on for Brittany's account only. Would-be alerts for **every bird** are logged to a new table nobody else sees, so they can be checked against what actually happened. No other owner sees, or is sent, anything, and a logging failure never blocks a weigh-in.
-- **Approved (Brittany, Nov 22, 2026):** the shadow-log table. It only adds a new table.
-- **Replay read (Brittany, Nov 23, 2026):** she ran the D1.1 replay on real history and read the results. The export and report stay outside the repo.
-- **Decisions (Brittany, Nov 23, 2026).** Every number and line below is draft, pending vet review:
-  - **Shadow log:** covers every bird. This replaces "her birds only".
-  - **Typed normal weight:** never replaces the learned one.
-  - **Personal range:** each alert is measured against the bird's own usual wobble (1.4826 × the median absolute difference from its normal, as a percent of the normal), with limits. Worth watching = 2 wobbles, kept between 2% and 3.5%. Keep an eye on this = 3 wobbles, between 3.5% and 5%. The top level and the hard loss alert = 4 wobbles, between 5% and 10%. While a bird is still learning, the fixed draft values apply.
-  - **Timing:** a re-weigh counts within 10 days (`confirmDays`), and "Keep an eye on this" looks back 14 days (`keepAnEyeDays`).
-  - **Ideal weight:** owners can enter an optional ideal weight range for a bird, separate from the existing "Healthy range" field and not shown to sitters. The entry field is the only place it appears. It must never feel like a weight-loss or weight-gain app: no goal, target or progress language, no chart line, and no alert, note or celebration that mentions it or says a bird is moving toward or away from it. Behind the scenes it decides which alerts to show: when a weigh-in is at or above the low end of the ideal range, "Worth watching", "Keep an eye on this" and their "Weigh again" prompts stay quiet. Below the low end they work as usual. The top-level alert and the sudden-drop alert, with their "Weigh again" prompts, are never quieted by it. The shadow log records each would-be alert with and without the ideal range, so the effect can be checked.
-  - **Sudden drop:** a separate alert that ignores the usual and ideal weights, so it still fires when a bird lands at or above either. It compares a weigh-in with the median of up to the last 3 weigh-ins of the same kind from the past 7 days. The level is 10%, or 7% for birds under 100 g, and at least 2 g. One low reading asks for a re-weigh, and a second low reading of the same kind within 3 days confirms it.
-  - **Wording:** weight alerts are observational and never tell the owner to go to or call the vet. "Call your vet today" is not used as a label or in copy for these alerts. Draft lines:
-    - Top level: "We've noticed [Bird]'s weight has shifted. [Bird] is about [X]% below usual. Have you noticed any changes in eating or energy? It can help to notice whether [Bird] is eating less, quieter than usual, or fluffed up."
-    - Sudden drop, first reading: "[Bird]'s weight is about [X]% lower than the last few days. Weigh [Bird] again to check the reading."
-    - Sudden drop, confirmed: "A second weigh-in shows the same change: [Bird] is about [X]% lighter than a few days ago. This is a big change in a short time. Remember, birds are excellent at hiding illness. Take note of how [Bird] is eating and acting today."
-- **For the vet review:** the personal-range multiples and limits, the 3.5% "Worth watching" ceiling, the 10% and 7% sudden-drop levels with the 100 g cutoff and 7-day comparison, which alerts the ideal range may quiet, and whether the observational wording is enough for a confirmed sudden loss.
-- **Size:** L
-- **Depends on:** D1.1 (#521). Brittany's read of its replay is done.
-- **Overnight alone:** yes (built to a held PR)
-- **Needs Brittany:** hold the PR. The health wording goes in the review queue and the vet packet.
 
 
 ### 1.17 Promo codes for memberships
@@ -71,6 +49,10 @@ Where these items came from, with the detail behind each: `docs/flock/opening-sc
 - **Depends on:** nothing
 - **Overnight alone:** yes
 - **Needs Brittany:** merge only, under the normal rules.
+
+### Note for 1.20b Screens (journeys redesign): journey challenges
+- **Brittany's decision (Nov 24, 2026, on #547):** journey challenges (1.10) stay. When the journeys redesign lands, they move to the new design: a journey challenge shows no milestone progress, and it counts as finished when its journey ends with "learned it" before the challenge's end date.
+- **For the run that builds 1.20b:** this belongs in 1.20b's "Done means" (1.20 is added by #550). Carry it over there once #550 has merged, and change the challenge page and `private.flock_challenge_*` rules from `20261124033000_flock_challenges.sql` along with the journey screens.
 
 ---
 
@@ -178,7 +160,7 @@ The launch PR itself (1.18) is already merged dark. What's left before opening i
 ### D1.3 Weight baseline alerts on for everyone
 - **Done means:** the vet-approved values are in the settings file and the switch is on for everyone.
 - **Size:** S
-- **Depends on:** D1.2, the vet's sign-off
+- **Depends on:** D1.2 (#549), the vet's sign-off
 - **Overnight alone:** no
 - **Needs Brittany:** the vet's approval and her go-ahead.
 
@@ -237,6 +219,7 @@ The launch PR itself (1.18) is already merged dark. What's left before opening i
 - **CSP is still report-only.** Read the `[csp-report]` lines in Vercel runtime logs, add any hosts that are really needed, then switch to enforcing. Never flip it blind.
 
 ### Product
+- **1.10a Short clips as challenge entries.** Decided (Brittany, Nov 24, 2026, on #547): not now. Challenge entries are a few sentences plus up to four photos. Clips would need clip support on Flock posts first (Cloudflare Stream uploads, the clip limits, playback and the "never the player's own error" handling, as journey clips have). Not to be built until she asks for it; then it needs her before work starts.
 - **1.9 Pre-approval for more spaces.** Decided (Brittany, Nov 22, 2026): pre-approval stays on Do good only, as it works today. No other space waits for review, and nothing here is to be built unless she reopens it.
 - **iPad landscape polish:**
   - the weight log card stretches too wide;
@@ -268,7 +251,8 @@ The launch PR itself (1.18) is already merged dark. What's left before opening i
 
 ## Done
 
-- **1.10** Challenges: admins write a Journey or Standalone challenge (title, description, a journey template or a list of prompts, start and end days, the whole Flock or one chapter) at `/admin/challenges`; one at a time per audience, and no food or diet templates. An open one is a card on Today and Journeys; members join with a bird and choose whether their entries may be featured. Entries (a few sentences and up to four photos) are Flock posts in their challenge's own feed, under the post rules for visibility, blocks, reactions, comments and reports. Finishing (every prompt, or the journey finished by the end day) shows "You finished!" and awards Challenge champ. After the end day the feed stays readable; admins pin an entry and write a wrap-up featuring entries only with permission. No winners, prizes or rankings (`20261124033000_flock_challenges.sql`, `src/lib/flockChallenges.ts`). Held for Brittany (unmocked screens, clips): #547.
+- **1.10** Challenges: admins write a Journey or Standalone challenge (title, description, a journey template or a list of prompts, start and end days, the whole Flock or one chapter) at `/admin/challenges`; one at a time per audience, and no food or diet templates. An open one is a card on Today and Journeys; members join with a bird and choose whether their entries may be featured. Entries (a few sentences and up to four photos) are Flock posts in their challenge's own feed, under the post rules for visibility, blocks, reactions, comments and reports. Finishing (every prompt, or the journey finished by the end day) shows "You finished!" and awards Challenge champ. After the end day the feed stays readable; admins pin an entry and write a wrap-up featuring entries only with permission. No winners, prizes or rankings (`20261124033000_flock_challenges.sql`, `src/lib/flockChallenges.ts`). Brittany's decisions (Nov 24, 2026): the unmocked screens and the copy approved as built; no clips for now (1.10a, under "Later"); an entry needs a few words even with a photo; journey challenges stay (carried into 1.20b, below "Ready to build"): #547.
+- **D1.2** The weight baseline on the weight page, behind the `weight_baseline` health switch (off; set it to `admins` for Brittany's account): the usual range for the latest weigh-in's kind or "still learning", a one-time "We've learned [Bird]'s usual weight" card, and one alert card at most (sudden drop confirmed, weight has shifted, hard loss, weigh again, keep an eye on this, worth watching), all observational, with no "call your vet". Brittany's Nov 23 decisions are in `WEIGHT_BASELINE_RULES` (draft): personal levels from each bird's wobble with their limits, 10-day re-weighs, the 14-day "keep an eye" window, the sudden drop (10%, 7% under 100 g, at least 2 g, confirmed within 3 days). The owner's optional ideal weight range (`bird_ideal_weights`, its own field on the weight page, never shown to sitters) only quiets the two lower alerts and their "weigh again". The hourly job `weight-baseline-shadow-hourly` logs what the baseline would have said about every weigh-in, for every bird, with and without the ideal range, to `weight_baseline_shadow` (service role only), after the fact so it never blocks a weigh-in (`20261124110000_weight_baseline_shadow.sql`, `src/lib/weightBaselineShadow.ts`). Pinned by `npm run test:weight-baseline`, `npm run test:health-rules` and `supabase/checks/weight_baseline_shadow_checks.sql`. Held for Brittany (health wording, the vet packet, a production migration and cron job): #549.
 - **1.15** Kya's Crew, switched off with billing and test mode only: plans `crew_monthly` / `crew_annual` (the `entitlements` plan check widened), prices from Stripe (`STRIPE_PRICE_CREW_MONTHLY` / `_YEARLY`), counted by `is_flock_member()`, 25% giving recorded on the row (`entitlements.giving_rate`, 20% for other paid rows), and no trial (`20261123203000_kyas_crew.sql`, `supabase/checks/crew_checks.sql`, `npm run test:billing`). No card step offers Crew yet (1.15a). Brittany's decisions (Nov 23, 2026): Crew pays nothing until the free season ends, like every member; sponsored seats aren't tracked at all, because that's marketing language, and rescue adopters always get in free. Held for Brittany (payments, the plan check): #535.
 - **1.13a** Flock badges: First steps, Journey finisher (1, 3 and 10), Trick star, Good neighbor, Voice of the Flock and Challenge champ (shown, not yet awarded: 1.10 adds its rule to `private.flock_badge_levels`). `flock_my_badges` works out and records what a member has earned when they open the Flock; the first time, their history is recorded together and Today shows one "Here's what you've already earned" (two or more), then a "Badge earned" card for each new badge or level. The Badges screen (`/flock/you/badges`, from Flock settings) shows earned ones in color and the rest in gray with how to earn each. Profiles show them as pills beside Founder and Chapter lead through `flock_member_badges`, which counts only community journeys and leaves everything out when hidden ("Show my badges on my profile." on Edit profile) or blocked either way. No points or rankings; the mockup's stroke icons until final art (`20261124013000_flock_badges.sql`, `src/lib/flockBadges.ts`). Pinned by `supabase/checks/flock_badges_checks.sql`, `npm run test:flock-shell` and `e2e/flock.shell.ts`: #546.
 - **1.7** "Make a share card" on a reached milestone (the celebration), a finished journey (its page) and Day one vs. now opens `/flock/journeys/<id>/card`: a post (1080×1350) or story (1080×1920) PNG in the Flock's forest and lime with the bird's photo (two clip stills for Day one vs. now), the bird's name (on, can be turned off), the journey, the milestone or "Finished!", the date, the member's name only if added, and "Kya & Co. · thekyaproject.com". Share opens the share sheet, or downloads on the web. Photos are redrawn into a fresh PNG, so no metadata. Only the bird's household can make one (`canMakeJourneyCard`, and `getJourneyCardPhotos` checks `is_mine`). Reuses the Moments card's canvas and share code (`src/lib/journeyCard.ts`, `src/lib/momentCard.ts`). Pinned by `npm run test:flock-shell` and `e2e/flock.shell.ts`: #544.

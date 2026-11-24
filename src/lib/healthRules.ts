@@ -1,9 +1,14 @@
 // Health rules: every health threshold, phrase list and safety wording in one
-// place, for the avian vet's review (docs/flock/opening-scope.md B7, backlog 1.2).
+// place (docs/flock/opening-scope.md B7, backlog 1.2).
 //
-// Nothing here has been reviewed by an avian vet. Every value is marked
-// "draft, pending vet review" with where it came from. When the vet approves,
-// changes or rejects one, change it here first; `npm run test:health-rules`
+// Each value says where it came from and its review status:
+//   - "approved by Brittany": the live daily health check, care-app weight
+//     trend, emergency guides and passing guidance. She reviewed these herself
+//     (Nov 23, 2026); they don't go to the vet.
+//   - "draft, pending vet review": everything else. The vet review covers the
+//     weight baseline, the Diet conversion weight safeguard and the vet-nudge
+//     phrases.
+// When a value changes, change it here first; `npm run test:health-rules`
 // then shows every place that has to follow (the app's own code, and the
 // database values pinned by supabase/checks/health_rules_checks.sql).
 //
@@ -20,7 +25,8 @@
 // src/lib/healthFeatures.ts.
 
 export const DRAFT = "draft, pending vet review" as const;
-export type ReviewStatus = typeof DRAFT;
+export const APPROVED = "approved by Brittany" as const;
+export type ReviewStatus = typeof DRAFT | typeof APPROVED;
 
 export type HealthRule<T> = {
   value: T;
@@ -33,6 +39,10 @@ export type HealthRule<T> = {
 
 function draft<T>(value: T, source: string, where: string): HealthRule<T> {
   return { value, status: DRAFT, source, where };
+}
+
+function approved<T>(value: T, source: string, where: string): HealthRule<T> {
+  return { value, status: APPROVED, source, where };
 }
 
 const OUR_START = "Kya & Co. starting value; no published source";
@@ -234,13 +244,13 @@ export const FIND_A_VET_URL = draft(
 // ---------------------------------------------------------------------------
 export const TRIAGE_RULES = {
   /** A single "concerning" answer to one of these means red. */
-  redOnConcerning: draft<readonly string[]>(
+  redOnConcerning: approved<readonly string[]>(
     ["food", "droppings", "breathing", "posture", "vomiting", "injury", "exposure"],
     `${OUR_START} (placeholder from the PRD, Phase 1)`,
     "SCAN_FIELDS[].redOnConcerning in src/lib/triage.ts",
   ),
   /** Questions where "not sure" counts as a sign. Every "not sure" currently counts. */
-  notSureYellow: draft<readonly string[]>(
+  notSureYellow: approved<readonly string[]>(
     [
       "alertness",
       "food",
@@ -257,7 +267,7 @@ export const TRIAGE_RULES = {
     "computeTriage in src/lib/triage.ts",
   ),
   /** This many yellow signs together gets the "worth a call" message. */
-  yellowCallAt: draft(2, OUR_START, "computeTriage in src/lib/triage.ts"),
+  yellowCallAt: approved(2, OUR_START, "computeTriage in src/lib/triage.ts"),
 } as const;
 
 // ---------------------------------------------------------------------------
@@ -265,22 +275,24 @@ export const TRIAGE_RULES = {
 // ---------------------------------------------------------------------------
 export const CARE_WEIGHT_RULES = {
   /** Within this percent of the window's first weight reads "steady". */
-  steadyPct: draft(2.5, OUR_START, "computeWeightTrend in src/lib/weightTrend.ts"),
+  steadyPct: approved(2.5, OUR_START, "computeWeightTrend in src/lib/weightTrend.ts"),
   /** The trend window, in days. */
-  trendWindowDays: draft(90, OUR_START, "computeWeightTrend in src/lib/weightTrend.ts"),
+  trendWindowDays: approved(90, OUR_START, "computeWeightTrend in src/lib/weightTrend.ts"),
   /** The Home pill: less than this many grams from the last weight reads "Steady";
-   *  any drop of this much or more is amber, and any gain shows as good (open question for the vet). */
-  pillSteadyGrams: draft(1, OUR_START, "weightTrendPill in src/lib/weightTrend.ts"),
+   *  any drop of this much or more is amber, and any gain shows as good. */
+  pillSteadyGrams: approved(1, OUR_START, "weightTrendPill in src/lib/weightTrend.ts"),
   /** "Save anyway?" when a new weight is more than this percent from the last one (a likely typo). */
-  bigChangePct: draft(10, OUR_START, "bigWeightChange in src/lib/dailyLog.ts"),
+  bigChangePct: approved(10, OUR_START, "bigWeightChange in src/lib/dailyLog.ts"),
 } as const;
 
 // ---------------------------------------------------------------------------
-// 5. Weight baseline (backlog D1.1). The most conservative starting values
-// from opening-scope B4. Behind the `weight_baseline` switch (off); nothing in
-// the app reads these yet (the screens are D1.2).
+// 5. Weight baseline (backlog D1.1, with Brittany's D1.2 decisions of Nov 23,
+// 2026 after she read the replay). Behind the `weight_baseline` switch (off);
+// the weight page reads it when the switch is on (D1.2), and the hourly shadow
+// log (src/lib/weightBaselineShadow.ts) records what it would have said.
 // ---------------------------------------------------------------------------
 const WB = "computeWeightBaseline in src/lib/weightBaseline.ts";
+const D12 = "Brittany's D1.2 decision (Nov 23, 2026), after the D1.1 replay";
 export const WEIGHT_BASELINE_RULES = {
   /** "Still learning" until at least this many weigh-ins… */
   minWeighIns: draft(7, OUR_START, WB),
@@ -293,44 +305,80 @@ export const WEIGHT_BASELINE_RULES = {
     WB,
   ),
   /** …leaving out the most recent days, so a drop now doesn't pull the normal down with it. */
-  baselineSkipDays: draft(7, `${OUR_START}; the same week as keepAnEyeDays`, WB),
+  baselineSkipDays: draft(7, OUR_START, WB),
   /** The normal range: these percentiles of those weigh-ins (the normal itself is the median). */
   rangeLowPercentile: draft(10, OUR_START, WB),
   rangeHighPercentile: draft(90, OUR_START, WB),
-  /** "Worth watching": this percent below the bird's own normal. */
+  /** The bird's own wobble: this × the median absolute difference from its normal,
+   *  as a percent of the normal (a robust standard deviation). Each tier is a number of
+   *  wobbles below the normal, kept between a floor and a ceiling. */
+  wobbleFactor: draft(1.4826, `${D12}; the usual scale factor for a median absolute deviation`, WB),
+  /** "Worth watching": this many wobbles below the normal… */
+  worthWatchingWobbles: draft(2, D12, WB),
+  /** …kept between these percents. */
+  worthWatchingMinPct: draft(2, D12, WB),
+  worthWatchingMaxPct: draft(3.5, D12, WB),
+  /** "Keep an eye on this": this many wobbles below, over keepAnEyeDays… */
+  keepAnEyeWobbles: draft(3, D12, WB),
+  /** …kept between these percents. */
+  keepAnEyeMinPct: draft(3.5, D12, WB),
+  keepAnEyeMaxPct: draft(5, D12, WB),
+  /** The top level ("[Bird]'s weight has shifted") and, once learned, the hard alert:
+   *  this many wobbles below… */
+  shiftedWobbles: draft(4, D12, WB),
+  /** …kept between these percents. */
+  shiftedMinPct: draft(5, D12, WB),
+  shiftedMaxPct: draft(
+    10,
+    `${D12}; Avian first-aid rule of thumb (${FIRST_AID}; ${HARRISONS})`,
+    WB,
+  ),
+  /** The fixed starting values, from D1.1. Only the hard alert (hardLossPct) can fire while a
+   *  bird is still learning; once learned, the personal range above replaces these. */
   worthWatchingPct: draft(2.5, `${OUR_START}; the care app's existing amber level`, WB),
-  /** "Keep an eye on this": this percent below over a week. */
   keepAnEyePct: draft(5, `${OUR_START}; the Diet conversion's pause level`, WB),
-  keepAnEyeDays: draft(7, OUR_START, WB),
-  /** "Call your vet today": this percent below. Some guidance is stricter (about 2% in one weighing). */
-  callVetTodayPct: draft(10, `Avian first-aid rule of thumb (${FIRST_AID}; ${HARRISONS})`, WB),
+  shiftedPct: draft(10, `Avian first-aid rule of thumb (${FIRST_AID}; ${HARRISONS})`, WB),
+  /** "Keep an eye on this" also needs the average of this many days' weigh-ins that far below. */
+  keepAnEyeDays: draft(14, D12, WB),
   /** No alert counts until a re-weigh agrees: this many weigh-ins in a row (of the same
    *  kind) must all be that far below. Until then the app asks for a re-weigh instead. */
   confirmMinReadings: draft(2, `${OUR_START}; the Diet conversion's diet_avg_min_recent`, WB),
   /** …all within this many days of the latest. */
-  confirmDays: draft(3, `${OUR_START}; the Diet conversion's diet_avg_recent_days`, WB),
+  confirmDays: draft(10, D12, WB),
   /** A drop must also be at least this many grams (a small bird's scale noise). */
   minDropGrams: draft(2, `${OUR_START}; the Diet conversion's diet_min_drop_grams`, WB),
-  /** The free hard weight-loss alert: this percent below, confirmed by a re-weigh. It works
-   *  while the baseline is still learning, so "still learning" never reads as "all fine". */
+  /** The free hard weight-loss alert while still learning: this percent below, confirmed by a
+   *  re-weigh, so "still learning" never reads as "all fine". Once learned it uses the top level. */
   hardLossPct: draft(
     10,
-    `Avian first-aid rule of thumb (${FIRST_AID}; ${HARRISONS}); the same as callVetTodayPct`,
+    `Avian first-aid rule of thumb (${FIRST_AID}; ${HARRISONS}); the same as shiftedPct`,
     WB,
   ),
   /** While still learning, the hard alert compares with the median of this many days before
    *  the latest weigh-ins (the last confirmDays left out). Once learned it uses the normal. */
   hardLossReferenceDays: draft(30, OUR_START, WB),
+  /** The sudden-drop alert, which ignores the usual and ideal weights: a weigh-in this percent
+   *  below the median of the last few of the same kind… */
+  suddenDropPct: draft(10, D12, WB),
+  /** …or this percent for a bird under suddenSmallBirdGrams. */
+  suddenDropSmallPct: draft(7, D12, WB),
+  suddenSmallBirdGrams: draft(100, D12, WB),
+  /** The comparison: the median of up to this many weigh-ins of the same kind… */
+  suddenCompareCount: draft(3, D12, WB),
+  /** …from this many days before. */
+  suddenLookbackDays: draft(7, D12, WB),
+  /** A second low reading of the same kind within this many days confirms it. */
+  suddenConfirmDays: draft(3, D12, WB),
 } as const;
 
 // ---------------------------------------------------------------------------
 // 6. Emergency guidance numbers (the sitter page's emergency guides).
 // ---------------------------------------------------------------------------
 export const EMERGENCY_RULES = {
-  keepWarmF: draft("85–90 °F", OUR_START, "warmRange in src/lib/poisonControl.ts"),
-  keepWarmC: draft("29–32 °C", "85–90 °F converted", "warmRange in src/lib/poisonControl.ts"),
+  keepWarmF: approved("85–90 °F", OUR_START, "warmRange in src/lib/poisonControl.ts"),
+  keepWarmC: approved("29–32 °C", "85–90 °F converted", "warmRange in src/lib/poisonControl.ts"),
   /** Default poison lines by region, when the owner left theirs empty. Checked on each service's site, Oct 2026. */
-  poisonLines: draft<Readonly<Record<"us" | "uk" | "au", readonly string[]>>>(
+  poisonLines: approved<Readonly<Record<"us" | "uk" | "au", readonly string[]>>>(
     { us: ["8884264435", "8557647661"], uk: ["01202509000"], au: ["1300869738"] },
     "Each service's own website (ASPCA, Pet Poison Helpline, Animal PoisonLine, Animal Poisons Helpline), Oct 2026",
     "defaultPoisonLines in src/lib/poisonControl.ts",
@@ -342,7 +390,7 @@ export const EMERGENCY_RULES = {
 // src/locales/en.jsonc (Dutch follows the same keys) or a file.
 // ---------------------------------------------------------------------------
 export const HEALTH_WORDING: Readonly<Record<string, HealthRule<readonly string[]>>> = {
-  dailyHealthCheck: draft(
+  dailyHealthCheck: approved(
     [
       "ownerScan.msg",
       "ownerScan.title",
@@ -355,17 +403,22 @@ export const HEALTH_WORDING: Readonly<Record<string, HealthRule<readonly string[
     OUR_START,
     "the daily and full health check; TRIAGE_DISCLAIMER and SCAN_FIELDS help text in src/lib/triage.ts",
   ),
-  weight: draft(
+  weight: approved(
     ["weightPill.", "weightTrend.", "vetSummary.trend"],
     OUR_START,
     "src/lib/weightTrend.ts",
   ),
-  emergencyGuides: draft(
+  weightBaseline: draft(
+    ["weightBaseline."],
+    `${OUR_START}; the top-level and sudden-drop lines are Brittany's drafts (Nov 23, 2026)`,
+    "src/components/WeightBaselineCard.tsx (behind the weight_baseline switch)",
+  ),
+  emergencyGuides: approved(
     ["sitter.emergency."],
     OUR_START,
     "src/routes/sitter/$token/emergency.tsx",
   ),
-  passingGuidance: draft(["passingGuidance."], OUR_START, "src/components/PassingGuidance.tsx"),
+  passingGuidance: approved(["passingGuidance."], OUR_START, "src/components/PassingGuidance.tsx"),
   dietConversion: draft(
     ["flock.journeys.diet."],
     OUR_START,

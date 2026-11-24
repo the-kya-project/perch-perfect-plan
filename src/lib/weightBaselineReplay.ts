@@ -1,4 +1,4 @@
-// Replays weight history through the baseline rules (backlog D1.1): for every
+// Replays weight history through the baseline rules (backlog D1.1, D1.2): for every
 // weigh-in, in order, what `computeWeightBaseline` would have said at that
 // moment, and how often each tier would have fired. "Fired" is a crossing: a
 // tier counts when a weigh-in reaches it and the one before didn't, the same
@@ -27,6 +27,9 @@ export type BirdReplay = {
   fired: Record<AlertTier, number>;
   hardLoss: number;
   reweigh: number;
+  /** Sudden drops confirmed by a second low reading (crossings), and one-reading asks. */
+  sudden: number;
+  suddenReweigh: number;
 };
 
 export type ReplayReport = {
@@ -34,7 +37,9 @@ export type ReplayReport = {
   totals: { birds: number; weighIns: number; learned: number } & Record<AlertTier, number> & {
       hardLoss: number;
       reweigh: number;
-      birdsWithAny: Record<AlertTier | "hardLoss", number>;
+      sudden: number;
+      suddenReweigh: number;
+      birdsWithAny: Record<AlertTier | "hardLoss" | "sudden", number>;
     };
 };
 
@@ -42,7 +47,7 @@ const DAY = 86_400_000;
 const emptyTiers = (): Record<AlertTier, number> => ({
   worth_watching: 0,
   keep_an_eye: 0,
-  call_vet_today: 0,
+  shifted: 0,
 });
 
 export function replayBird(
@@ -59,6 +64,9 @@ export function replayBird(
   let daysToLearn: number | null = null;
   let prevRank = -1;
   let prevHard = false;
+  let sudden = 0;
+  let suddenReweigh = 0;
+  let prevSudden = false;
   for (let i = 0; i < sorted.length; i++) {
     const res = computeWeightBaseline(sorted.slice(0, i + 1), rules);
     if (daysToLearn == null && Object.values(res.baselines).some((b) => b.status === "learned")) {
@@ -73,8 +81,20 @@ export function replayBird(
     if (res.hardLoss && !prevHard) hardLoss++;
     prevHard = res.hardLoss;
     if (res.reweigh) reweigh++;
+    if (res.sudden.confirmed && !prevSudden) sudden++;
+    prevSudden = res.sudden.confirmed;
+    if (res.sudden.reweigh) suddenReweigh++;
   }
-  return { label, weighIns: sorted.length, daysToLearn, fired, hardLoss, reweigh };
+  return {
+    label,
+    weighIns: sorted.length,
+    daysToLearn,
+    fired,
+    hardLoss,
+    reweigh,
+    sudden,
+    suddenReweigh,
+  };
 }
 
 export function replayHistory(
@@ -100,14 +120,17 @@ export function replayHistory(
       learned: count((b) => b.daysToLearn != null),
       worth_watching: sum((b) => b.fired.worth_watching),
       keep_an_eye: sum((b) => b.fired.keep_an_eye),
-      call_vet_today: sum((b) => b.fired.call_vet_today),
+      shifted: sum((b) => b.fired.shifted),
       hardLoss: sum((b) => b.hardLoss),
       reweigh: sum((b) => b.reweigh),
+      sudden: sum((b) => b.sudden),
+      suddenReweigh: sum((b) => b.suddenReweigh),
       birdsWithAny: {
         worth_watching: count((b) => b.fired.worth_watching > 0),
         keep_an_eye: count((b) => b.fired.keep_an_eye > 0),
-        call_vet_today: count((b) => b.fired.call_vet_today > 0),
+        shifted: count((b) => b.fired.shifted > 0),
         hardLoss: count((b) => b.hardLoss > 0),
+        sudden: count((b) => b.sudden > 0),
       },
     },
   };
@@ -151,15 +174,16 @@ export function formatReplay(report: ReplayReport): string {
     `- Birds: ${t.birds}; weigh-ins: ${t.weighIns}; birds whose normal was learned: ${t.learned}`,
     `- Worth watching: fired ${t.worth_watching} times, for ${t.birdsWithAny.worth_watching} birds`,
     `- Keep an eye on this: fired ${t.keep_an_eye} times, for ${t.birdsWithAny.keep_an_eye} birds`,
-    `- Call your vet today: fired ${t.call_vet_today} times, for ${t.birdsWithAny.call_vet_today} birds`,
+    `- Weight has shifted (top level): fired ${t.shifted} times, for ${t.birdsWithAny.shifted} birds`,
     `- Hard weight-loss alert: fired ${t.hardLoss} times, for ${t.birdsWithAny.hardLoss} birds`,
     `- "Weigh again" asks: ${t.reweigh}`,
+    `- Sudden drop, confirmed: fired ${t.sudden} times, for ${t.birdsWithAny.sudden} birds; "weigh again" asks: ${t.suddenReweigh}`,
     "",
-    "| Bird | Weigh-ins | Days to learn | Worth watching | Keep an eye | Call vet today | Hard loss | Weigh again |",
-    "| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |",
+    "| Bird | Weigh-ins | Days to learn | Worth watching | Keep an eye | Shifted | Hard loss | Weigh again | Sudden drop | Sudden weigh again |",
+    "| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |",
     ...report.birds.map(
       (b) =>
-        `| ${b.label} | ${b.weighIns} | ${b.daysToLearn ?? "not yet"} | ${b.fired.worth_watching} | ${b.fired.keep_an_eye} | ${b.fired.call_vet_today} | ${b.hardLoss} | ${b.reweigh} |`,
+        `| ${b.label} | ${b.weighIns} | ${b.daysToLearn ?? "not yet"} | ${b.fired.worth_watching} | ${b.fired.keep_an_eye} | ${b.fired.shifted} | ${b.hardLoss} | ${b.reweigh} | ${b.sudden} | ${b.suddenReweigh} |`,
     ),
   ];
   return out.join("\n") + "\n";
