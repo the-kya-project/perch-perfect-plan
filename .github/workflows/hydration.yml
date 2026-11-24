@@ -103,6 +103,7 @@ jobs:
           npm run test:together-since
           npm run test:url-scrub
           npm run test:utm-carry
+          npm run test:weight-baseline
           npm run test:weight-then
 
       - name: Install browsers (WebKit and Chromium)
