@@ -26,5 +26,8 @@ export const HEALTH_FEATURES: readonly HealthFeature[] = [
   { feature: "passing_guidance", startsAt: "everyone", wired: false },
   { feature: "diet_conversion", startsAt: "everyone", wired: false },
   { feature: "vet_nudge", startsAt: "everyone", wired: false },
-  { feature: "weight_baseline", startsAt: "off", wired: false },
+  // The weight page's usual range, celebration, alert cards and ideal weight
+  // field (backlog D1.2, useHealthFeature). The shadow log runs for every
+  // bird whatever the switch says, and shows nothing to anyone.
+  { feature: "weight_baseline", startsAt: "off", wired: true },
 ];

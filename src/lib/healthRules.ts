@@ -276,11 +276,13 @@ export const CARE_WEIGHT_RULES = {
 } as const;
 
 // ---------------------------------------------------------------------------
-// 5. Weight baseline (backlog D1.1). The most conservative starting values
-// from opening-scope B4. Behind the `weight_baseline` switch (off); nothing in
-// the app reads these yet (the screens are D1.2).
+// 5. Weight baseline (backlog D1.1, with Brittany's D1.2 decisions of Nov 23,
+// 2026 after she read the replay). Behind the `weight_baseline` switch (off);
+// the weight page reads it when the switch is on (D1.2), and the hourly shadow
+// log (src/lib/weightBaselineShadow.ts) records what it would have said.
 // ---------------------------------------------------------------------------
 const WB = "computeWeightBaseline in src/lib/weightBaseline.ts";
+const D12 = "Brittany's D1.2 decision (Nov 23, 2026), after the D1.1 replay";
 export const WEIGHT_BASELINE_RULES = {
   /** "Still learning" until at least this many weigh-ins… */
   minWeighIns: draft(7, OUR_START, WB),
@@ -293,34 +295,70 @@ export const WEIGHT_BASELINE_RULES = {
     WB,
   ),
   /** …leaving out the most recent days, so a drop now doesn't pull the normal down with it. */
-  baselineSkipDays: draft(7, `${OUR_START}; the same week as keepAnEyeDays`, WB),
+  baselineSkipDays: draft(7, OUR_START, WB),
   /** The normal range: these percentiles of those weigh-ins (the normal itself is the median). */
   rangeLowPercentile: draft(10, OUR_START, WB),
   rangeHighPercentile: draft(90, OUR_START, WB),
-  /** "Worth watching": this percent below the bird's own normal. */
+  /** The bird's own wobble: this × the median absolute difference from its normal,
+   *  as a percent of the normal (a robust standard deviation). Each tier is a number of
+   *  wobbles below the normal, kept between a floor and a ceiling. */
+  wobbleFactor: draft(1.4826, `${D12}; the usual scale factor for a median absolute deviation`, WB),
+  /** "Worth watching": this many wobbles below the normal… */
+  worthWatchingWobbles: draft(2, D12, WB),
+  /** …kept between these percents. */
+  worthWatchingMinPct: draft(2, D12, WB),
+  worthWatchingMaxPct: draft(3.5, D12, WB),
+  /** "Keep an eye on this": this many wobbles below, over keepAnEyeDays… */
+  keepAnEyeWobbles: draft(3, D12, WB),
+  /** …kept between these percents. */
+  keepAnEyeMinPct: draft(3.5, D12, WB),
+  keepAnEyeMaxPct: draft(5, D12, WB),
+  /** The top level ("[Bird]'s weight has shifted") and, once learned, the hard alert:
+   *  this many wobbles below… */
+  shiftedWobbles: draft(4, D12, WB),
+  /** …kept between these percents. */
+  shiftedMinPct: draft(5, D12, WB),
+  shiftedMaxPct: draft(
+    10,
+    `${D12}; Avian first-aid rule of thumb (${FIRST_AID}; ${HARRISONS})`,
+    WB,
+  ),
+  /** The fixed starting values, from D1.1. Only the hard alert (hardLossPct) can fire while a
+   *  bird is still learning; once learned, the personal range above replaces these. */
   worthWatchingPct: draft(2.5, `${OUR_START}; the care app's existing amber level`, WB),
-  /** "Keep an eye on this": this percent below over a week. */
   keepAnEyePct: draft(5, `${OUR_START}; the Diet conversion's pause level`, WB),
-  keepAnEyeDays: draft(7, OUR_START, WB),
-  /** "Call your vet today": this percent below. Some guidance is stricter (about 2% in one weighing). */
-  callVetTodayPct: draft(10, `Avian first-aid rule of thumb (${FIRST_AID}; ${HARRISONS})`, WB),
+  shiftedPct: draft(10, `Avian first-aid rule of thumb (${FIRST_AID}; ${HARRISONS})`, WB),
+  /** "Keep an eye on this" also needs the average of this many days' weigh-ins that far below. */
+  keepAnEyeDays: draft(14, D12, WB),
   /** No alert counts until a re-weigh agrees: this many weigh-ins in a row (of the same
    *  kind) must all be that far below. Until then the app asks for a re-weigh instead. */
   confirmMinReadings: draft(2, `${OUR_START}; the Diet conversion's diet_avg_min_recent`, WB),
   /** …all within this many days of the latest. */
-  confirmDays: draft(3, `${OUR_START}; the Diet conversion's diet_avg_recent_days`, WB),
+  confirmDays: draft(10, D12, WB),
   /** A drop must also be at least this many grams (a small bird's scale noise). */
   minDropGrams: draft(2, `${OUR_START}; the Diet conversion's diet_min_drop_grams`, WB),
-  /** The free hard weight-loss alert: this percent below, confirmed by a re-weigh. It works
-   *  while the baseline is still learning, so "still learning" never reads as "all fine". */
+  /** The free hard weight-loss alert while still learning: this percent below, confirmed by a
+   *  re-weigh, so "still learning" never reads as "all fine". Once learned it uses the top level. */
   hardLossPct: draft(
     10,
-    `Avian first-aid rule of thumb (${FIRST_AID}; ${HARRISONS}); the same as callVetTodayPct`,
+    `Avian first-aid rule of thumb (${FIRST_AID}; ${HARRISONS}); the same as shiftedPct`,
     WB,
   ),
   /** While still learning, the hard alert compares with the median of this many days before
    *  the latest weigh-ins (the last confirmDays left out). Once learned it uses the normal. */
   hardLossReferenceDays: draft(30, OUR_START, WB),
+  /** The sudden-drop alert, which ignores the usual and ideal weights: a weigh-in this percent
+   *  below the median of the last few of the same kind… */
+  suddenDropPct: draft(10, D12, WB),
+  /** …or this percent for a bird under suddenSmallBirdGrams. */
+  suddenDropSmallPct: draft(7, D12, WB),
+  suddenSmallBirdGrams: draft(100, D12, WB),
+  /** The comparison: the median of up to this many weigh-ins of the same kind… */
+  suddenCompareCount: draft(3, D12, WB),
+  /** …from this many days before. */
+  suddenLookbackDays: draft(7, D12, WB),
+  /** A second low reading of the same kind within this many days confirms it. */
+  suddenConfirmDays: draft(3, D12, WB),
 } as const;
 
 // ---------------------------------------------------------------------------
@@ -359,6 +397,11 @@ export const HEALTH_WORDING: Readonly<Record<string, HealthRule<readonly string[
     ["weightPill.", "weightTrend.", "vetSummary.trend"],
     OUR_START,
     "src/lib/weightTrend.ts",
+  ),
+  weightBaseline: draft(
+    ["weightBaseline."],
+    `${OUR_START}; the top-level and sudden-drop lines are Brittany's drafts (Nov 23, 2026)`,
+    "src/components/WeightBaselineCard.tsx (behind the weight_baseline switch)",
   ),
   emergencyGuides: draft(
     ["sitter.emergency."],
