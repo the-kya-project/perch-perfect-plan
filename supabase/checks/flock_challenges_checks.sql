@@ -197,26 +197,29 @@ begin
   update public.flock_challenges set starts_on = today, ends_on = today + 10 where id = jc;
   perform set_config('request.jwt.claims', json_build_object('sub', b, 'role', 'authenticated')::text, true);
   set local role authenticated;
-  ok := public.flock_challenge_join(jc, bb, false) is null;
+  -- (Each step is named, so a failure says which one.)
+  msg := null;
+  if public.flock_challenge_join(jc, bb, false) is not null then msg := 'join returned a journey'; end if;
   reset role;
   insert into public.journeys (bird_id, created_by, template_id, status, visibility, rhythm)
   values (bb, b, step, 'active', 'private', 'most_days') returning id into jr;
   perform set_config('request.jwt.claims', json_build_object('sub', b, 'role', 'authenticated')::text, true);
   set local role authenticated;
-  ok := ok and (select my_journey_id = jr and not finished from public.flock_challenge(jc));
+  if msg is null and not coalesce((select my_journey_id = jr from public.flock_challenge(jc)), false) then msg := 'the journey isn''t linked'; end if;
+  if msg is null and coalesce((select finished from public.flock_challenge(jc)), true) then msg := 'finished before the journey'; end if;
   reset role;
   update public.journeys set status = 'finished', finished_at = now() where id = jr;
   perform set_config('request.jwt.claims', json_build_object('sub', b, 'role', 'authenticated')::text, true);
   set local role authenticated;
-  ok := ok and (select finished from public.flock_challenge(jc));
-  ok := ok and (select level from public.flock_my_badges() where badge = 'challenge_champ') = 1;
+  if msg is null and not coalesce((select finished from public.flock_challenge(jc)), false) then msg := 'not finished with the journey'; end if;
+  if msg is null and coalesce((select level from public.flock_my_badges() where badge = 'challenge_champ'), 0) <> 1 then msg := 'no Challenge champ'; end if;
   reset role;
   perform set_config('request.jwt.claims', json_build_object('sub', a, 'role', 'authenticated')::text, true);
   set local role authenticated;
-  ok := ok and exists (select 1 from public.flock_member_badges(b) where badge = 'first_steps')
-    and not exists (select 1 from public.flock_member_badges(b) where badge = 'challenge_champ');
+  if msg is null and not exists (select 1 from public.flock_member_badges(b) where badge = 'first_steps') then msg := 'profile shows nothing'; end if;
+  if msg is null and exists (select 1 from public.flock_member_badges(b) where badge = 'challenge_champ') then msg := 'a Just me badge on the profile'; end if;
   reset role;
-  if ok then passed := passed + 1; else failed := array_append(failed, 'journey challenges count their journey'); end if;
+  if msg is null then passed := passed + 1; else failed := array_append(failed, 'journey challenges count their journey (' || msg || ')'); end if;
 
   -- 8) Started challenges can't be edited, unscheduled or deleted; drafts can go.
   perform set_config('request.jwt.claims', json_build_object('sub', ad, 'role', 'authenticated')::text, true);
