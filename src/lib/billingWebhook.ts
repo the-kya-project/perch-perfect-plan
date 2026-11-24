@@ -9,7 +9,7 @@
  * event is claimed once in billing_events; one that fails is left unfinished
  * and the error goes up, so the route returns 500 and Stripe retries.
  */
-import { discountsToRemove, subscriptionRow, type BillingPrices, type SubscriptionLike, type SubscriptionRow } from "./billing";
+import { discountsToRemove, subscriptionRow, type BillingPrices, type PaidPlan, type SubscriptionLike, type SubscriptionRow } from "./billing";
 
 /** The parts of a Stripe event the handler reads. */
 export type BillingEventLike = {
@@ -29,11 +29,22 @@ export type BillingDeps = {
   /** True when the event still needs handling (new, or an earlier try failed). */
   claimEvent(eventId: string, type: string, objectId: string | null): Promise<boolean>;
   finishEvent(eventId: string, outcome: string): Promise<void>;
+  /** The free season's end, read when the saved card arrives. */
+  seasonEnd(): Promise<string | null>;
+  /** The card a save-the-card Checkout collected. */
+  setupPaymentMethod(setupIntentId: string): Promise<string | null>;
+  /** True when this customer already has a subscription that hasn't ended. */
+  customerHasSubscription(customerId: string): Promise<boolean>;
+  createSubscription(input: {
+    customerId: string; priceId: string; paymentMethodId: string; trialEnd: number | null;
+    userId: string; plan: PaidPlan; idempotencyKey: string;
+  }): Promise<SubscriptionLike>;
 };
 
 export type BillingWebhookResult =
   | { handled: "recorded"; subscription: string; plan: string; status: string }
   | { handled: "duplicate" }
+  | { handled: "already_subscribed" }
   | { handled: "ignored"; why: string };
 
 const SUBSCRIPTION_EVENTS = new Set([
@@ -72,7 +83,67 @@ export function subscriptionIdOf(event: BillingEventLike): { id: string } | { ig
   return { ignore: event.type };
 }
 
+/** A finished save-the-card Checkout (the last 48 hours of the free season). */
+export function savedCardCheckout(event: BillingEventLike): { sessionId: string; customerId: string; setupIntentId: string; plan: string; userId: string } | null {
+  if (event.type !== "checkout.session.completed") return null;
+  const o = event.data.object;
+  const md = (o.metadata ?? {}) as Record<string, string>;
+  if (o.mode !== "setup" || md.kind !== "flock_billing" || o.status !== "complete") return null;
+  const customerId = idOf(o.customer);
+  const setupIntentId = idOf(o.setup_intent);
+  if (!o.id || !customerId || !setupIntentId || !md.plan || !md.user_id) throw new Error("saved-card checkout is missing its details");
+  return { sessionId: o.id, customerId, setupIntentId, plan: md.plan, userId: md.user_id };
+}
+
+/** Stripe refuses a trial that ends now or in the past, so a card that arrives
+ *  in the season's last minute (or after it) is charged as it arrives. */
+const TRIAL_END_MARGIN_S = 60;
+
+async function startSavedCardSubscription(event: BillingEventLike, saved: NonNullable<ReturnType<typeof savedCardCheckout>>, deps: BillingDeps): Promise<BillingWebhookResult> {
+  const fresh = await deps.claimEvent(event.id, event.type, saved.sessionId);
+  if (!fresh) return { handled: "duplicate" };
+
+  const userId = await deps.userForCustomer(saved.customerId);
+  if (!userId) {
+    await deps.finishEvent(event.id, "ignored: unknown customer");
+    return { handled: "ignored", why: "unknown customer" };
+  }
+  if (saved.userId !== userId) throw new Error(`checkout ${saved.sessionId} metadata names another account`);
+  // Never a second membership, whatever else happened.
+  if (await deps.customerHasSubscription(saved.customerId)) {
+    await deps.finishEvent(event.id, "already subscribed");
+    return { handled: "already_subscribed" };
+  }
+  const plan = saved.plan as PaidPlan;
+  const priceId = deps.prices[plan];
+  if (!priceId) throw new Error(`no price for plan ${saved.plan}`);
+  const paymentMethodId = await deps.setupPaymentMethod(saved.setupIntentId);
+  if (!paymentMethodId) throw new Error(`setup ${saved.setupIntentId} has no card`);
+  const end = await deps.seasonEnd();
+  const endUnix = end ? Math.floor(new Date(end).getTime() / 1000) : NaN;
+  if (!Number.isFinite(endUnix)) throw new Error("no free-season end to bill from");
+  const trialEnd = endUnix > Math.floor(Date.now() / 1000) + TRIAL_END_MARGIN_S ? endUnix : null;
+
+  const sub = await deps.createSubscription({
+    customerId: saved.customerId, priceId, paymentMethodId, trialEnd, userId, plan,
+    // A retry of this event returns the same subscription.
+    idempotencyKey: `flock-saved-card-${saved.sessionId}-${trialEnd ?? "now"}`,
+  });
+  const parsed = subscriptionRow(sub, deps.prices);
+  if (!parsed.ok) {
+    // Its own customer.subscription events will write the row once it settles.
+    await deps.finishEvent(event.id, `started: ${parsed.why}`);
+    return { handled: "ignored", why: parsed.why };
+  }
+  await deps.record(userId, parsed.row);
+  await deps.finishEvent(event.id, `recorded: ${parsed.row.plan} ${parsed.row.status}`);
+  return { handled: "recorded", subscription: parsed.row.subscriptionId, plan: parsed.row.plan, status: parsed.row.status };
+}
+
 export async function handleBillingEvent(event: BillingEventLike, deps: BillingDeps): Promise<BillingWebhookResult> {
+  const saved = savedCardCheckout(event);
+  if (saved) return startSavedCardSubscription(event, saved, deps);
+
   const target = subscriptionIdOf(event);
   if ("ignore" in target) return { handled: "ignored", why: target.ignore };
 

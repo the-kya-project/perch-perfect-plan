@@ -54,6 +54,8 @@ export function giftPriceId(plan: GiftPlan): string {
 //   STRIPE_PRICE_FLOCK_FOUNDING     Founding $15/month (never edited: that's the lock)
 //   STRIPE_PRICE_FLOCK_MONTHLY      Regular $30/month
 //   STRIPE_PRICE_FLOCK_YEARLY       Regular $300/year
+//   STRIPE_PRICE_CREW_MONTHLY       Kya's Crew $45/month (backlog 1.15)
+//   STRIPE_PRICE_CREW_YEARLY        Kya's Crew $444/year
 
 /** Billing is test mode only until Brittany approves going live: any key
  *  that isn't a test key is refused here, in every deployment. Going live is
@@ -71,6 +73,8 @@ export function billingPrices(): BillingPrices {
   if (process.env.STRIPE_PRICE_FLOCK_FOUNDING) prices.founding = process.env.STRIPE_PRICE_FLOCK_FOUNDING;
   if (process.env.STRIPE_PRICE_FLOCK_MONTHLY) prices.monthly = process.env.STRIPE_PRICE_FLOCK_MONTHLY;
   if (process.env.STRIPE_PRICE_FLOCK_YEARLY) prices.annual = process.env.STRIPE_PRICE_FLOCK_YEARLY;
+  if (process.env.STRIPE_PRICE_CREW_MONTHLY) prices.crew_monthly = process.env.STRIPE_PRICE_CREW_MONTHLY;
+  if (process.env.STRIPE_PRICE_CREW_YEARLY) prices.crew_annual = process.env.STRIPE_PRICE_CREW_YEARLY;
   return prices;
 }
 

@@ -36,6 +36,10 @@ import {
   FINISHER_LEVELS, FLOCK_BADGES, badgeName, badgeTitle, celebrationFor, cleanMyBadges, cleanShownBadges, earnedCount, earnedLine, howToEarn, levelLabel, nextLevel,
 } from "@/lib/flockBadges";
 import { foundingClosedCase } from "@/lib/foundingClosed";
+import {
+  CHALLENGE_LIMITS, challengeError, challengeProblems, challengeTemplateAllowed, cleanChallenge, flockTodayIso, nextPrompt, parsePrompts,
+} from "@/lib/flockChallenges";
+import { challengeDay, challengeEyebrow, challengeProgress, challengeSummary } from "@/components/flock/ChallengeParts";
 import { formatFlockDay, freeSeasonEndLabel, NO_FLOCK_DATES } from "@/lib/flockDates";
 import { FLOCK_CONTACT_EMAIL, FLOCK_GUIDELINES_VERSION, contactLine, guidelineSections, guidelinesClosing, guidelinesIntro } from "@/lib/flockGuidelines";
 import { isJoinPath, joinErrorKind, joinRedirect, type FlockAccess } from "@/lib/flockJoin";
@@ -1014,6 +1018,68 @@ check("badges: levels, names and how to earn each one", () => {
       assert.ok(!/\b(points?|rank|leaderboard|weight|healthy)\b/i.test(s), s);
     }
   }
+});
+
+// ---- Challenges (backlog 1.10) ----------------------------------------------------------
+console.log("challenges");
+const challengeRow = {
+  challenge_id: "c1", kind: "standalone", title: "Foraging week", description: null, template_slug: null, template_name: null,
+  region_slug: null, region_name: null, state: "open", starts_on: "2026-12-01", ends_on: "2026-12-07", days_left: 4,
+  prompts: [
+    { position: 1, body: "Paper cup surprise", done: true }, { position: 2, body: "Shred a cardboard tube", done: true },
+    { position: 3, body: "Hide a treat in a basket", done: true }, { position: 4, body: "Foraging box with crinkle paper", done: false },
+    { position: 5, body: "Five", done: false }, { position: 6, body: "Six", done: false }, { position: 7, body: "Seven", done: false },
+  ],
+  member_count: 63, faces: [{ name: "A", photo_path: null }], joined: true, my_bird_id: "b1", my_bird_name: "Juno", feature_ok: false,
+  my_journey_id: null, done_count: 3, total_count: 7, finished: false, wrap_up: null, pinned_post_id: null, featured_post_ids: [],
+};
+const ct = ((_k: string, d: string, o?: Record<string, unknown>) => d.replace(/\{\{(\w+)\}\}/g, (_m, n) => String(o?.[n] ?? ""))) as unknown as Parameters<typeof challengeEyebrow>[0];
+check("challenges: rows are cleaned, and the next prompt is the first not done", () => {
+  const c = cleanChallenge(challengeRow);
+  assert.equal(nextPrompt(c)?.position, 4);
+  assert.equal(nextPrompt({ prompts: c.prompts.map((p) => ({ ...p, done: true })) }), null);
+  const odd = cleanChallenge({ kind: "nope", state: "weird", prompts: "x", faces: null, featured_post_ids: ["p1"] });
+  assert.equal(odd.kind, "standalone");
+  assert.equal(odd.state, "closed");
+  assert.deepEqual(odd.prompts, []);
+  assert.deepEqual(odd.featured_post_ids, ["p1"]);
+});
+check("challenges: the card and page lines match the mockup", () => {
+  const c = cleanChallenge(challengeRow);
+  assert.equal(challengeEyebrow(ct, c), "Challenge · 4 days left");
+  assert.equal(challengeEyebrow(ct, { state: "open", days_left: 1 }), "Challenge · 1 day left");
+  assert.equal(challengeEyebrow(ct, { state: "open", days_left: 0 }), "Challenge · last day");
+  assert.equal(challengeSummary(ct, c), "Standalone challenge · 7 prompts · 63 members joined");
+  assert.equal(challengeProgress(ct, c), "Juno · 3 of 7 done");
+  assert.equal(challengeDay("2026-12-01", "en-US"), "Dec 1");
+  // No winners, prizes or rankings in anything the card says.
+  for (const s of [challengeEyebrow(ct, c), challengeSummary(ct, c), challengeProgress(ct, c)]) {
+    assert.ok(!/\b(win|winner|prize|rank|leaderboard|points?)\b/i.test(s), s);
+  }
+});
+check("challenges: food templates can't be challenges", () => {
+  assert.equal(challengeTemplateAllowed({ slug: "diet-conversion", category: "food" }), false);
+  assert.equal(challengeTemplateAllowed({ slug: "new-foods", category: "food" }), false);
+  assert.equal(challengeTemplateAllowed({ slug: "step-up", category: "husbandry" }), true);
+});
+check("challenges: the admin form's prompts and what scheduling needs", () => {
+  assert.deepEqual(parsePrompts(" Paper cup surprise \n\n Shred a tube\n"), ["Paper cup surprise", "Shred a tube"]);
+  const d = { id: null, kind: "standalone" as const, title: "", description: "", template_slug: "", prompts: [], region_slug: null, starts_on: "2026-12-07", ends_on: "2026-12-01" };
+  assert.deepEqual(challengeProblems(d, "2026-11-30"), ["title", "prompts", "dates"]);
+  assert.deepEqual(challengeProblems({ ...d, title: "x", prompts: ["a"], starts_on: "2026-11-29", ends_on: "2026-12-01" }, "2026-11-30"), ["past"]);
+  assert.deepEqual(challengeProblems({ ...d, kind: "journey", title: "x", starts_on: "2026-12-01", ends_on: "2026-12-01" }, "2026-11-30"), ["template"]);
+  assert.deepEqual(challengeProblems({ ...d, title: "x", prompts: ["a".repeat(CHALLENGE_LIMITS.prompt + 1)], starts_on: "2026-12-01", ends_on: "2026-12-02" }, "2026-11-30"), ["promptLength"]);
+  assert.equal(flockTodayIso(new Date("2026-12-01T03:00:00Z")), "2026-11-30");
+});
+check("challenges: the database's refusals are recognised", () => {
+  assert.equal(challengeError({ message: "challenge_overlap" }), "challenge_overlap");
+  assert.equal(challengeError({ message: "no_food_challenges" }), "no_food_challenges");
+  assert.equal(challengeError({ message: "something else" }), null);
+  assert.equal(challengeError(null), null);
+});
+check("challenges: the migration's food rule matches the app's", () => {
+  const sql = readFileSync("supabase/migrations/20261124033000_flock_challenges.sql", "utf8");
+  assert.ok(sql.includes("t.slug <> 'diet-conversion' and t.category <> 'food'"));
 });
 
 console.log(`\n${passed} passed${process.exitCode ? ", some FAILED" : ""}`);

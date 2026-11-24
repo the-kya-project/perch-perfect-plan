@@ -8,11 +8,31 @@
  * (stripe.server.ts, getBillingStripe).
  */
 
-/** Paid Flock plans, as stored in entitlements.plan for a Stripe row. */
-export type PaidPlan = "founding" | "monthly" | "annual";
+/** Paid Flock plans, as stored in entitlements.plan for a Stripe row. Kya's
+ *  Crew (backlog 1.15) is a Flock plan too. */
+export type PaidPlan = "founding" | "monthly" | "annual" | "crew_monthly" | "crew_annual";
+export const PAID_PLANS = ["founding", "monthly", "annual", "crew_monthly", "crew_annual"] as const satisfies readonly PaidPlan[];
 /** What a member who isn't a founder picks on the card step. */
 export const BILLING_CHOICES = ["monthly", "annual"] as const;
 export type BillingChoice = (typeof BILLING_CHOICES)[number];
+
+/** Kya's Crew: $45 a month or $444 a year (prices come from Stripe). No card
+ *  step offers it yet; checkout accepts it. */
+export const CREW_CHOICES = ["crew_monthly", "crew_annual"] as const;
+export type CrewChoice = (typeof CREW_CHOICES)[number];
+export const CHECKOUT_CHOICES = [...BILLING_CHOICES, ...CREW_CHOICES] as const;
+export type CheckoutChoice = (typeof CHECKOUT_CHOICES)[number];
+
+export function isCrewPlan(plan: string | null | undefined): plan is CrewChoice {
+  return plan === "crew_monthly" || plan === "crew_annual";
+}
+
+/** The share of what a member pays that goes to rescue and conservation
+ *  partners: 25% for Kya's Crew, 20% for every other membership. The database
+ *  records the same on each row (private.membership_giving_rate). */
+export function givingRate(plan: PaidPlan): number {
+  return isCrewPlan(plan) ? 0.25 : 0.2;
+}
 
 export type EntitlementStatus = "active" | "trialing" | "past_due" | "canceled";
 
@@ -29,7 +49,7 @@ export function billingEnabled(value: string | undefined | null): boolean {
 /** A paid row's plan comes from its price, never from metadata. */
 export function planForPrice(priceId: string | null | undefined, prices: BillingPrices): PaidPlan | null {
   if (!priceId) return null;
-  for (const plan of ["founding", "monthly", "annual"] as const) {
+  for (const plan of PAID_PLANS) {
     if (prices[plan] && prices[plan] === priceId) return plan;
   }
   return null;
@@ -122,8 +142,9 @@ export function subscriptionRow(
   };
 }
 
-/** Stripe Checkout needs a trial to end at least 48 hours ahead; we keep an
- *  hour more so a slow click can't land inside the limit. */
+/** A subscription started in Checkout needs its trial to end at least 48 hours
+ *  ahead; we keep an hour more so a slow click can't land inside the limit.
+ *  Closer to the season's end, Checkout only saves the card (saveCardFirst). */
 export const MIN_TRIAL_LEAD_MS = 49 * 60 * 60 * 1000;
 
 /**
@@ -131,25 +152,30 @@ export const MIN_TRIAL_LEAD_MS = 49 * 60 * 60 * 1000;
  *   - No free-season end stored yet: the card step can't open (no date to
  *     bill from, and no date may be invented).
  *   - The end is comfortably ahead: a trial to exactly that moment, $0 today.
- *   - Otherwise (the season has ended or is about to): no trial, charged today.
+ *   - The end is under 49 hours away: still $0 today and the same first charge.
+ *     Checkout saves the card, and the webhook starts the subscription.
+ *   - The season has ended: no trial, charged today.
  */
 export function firstCharge(
   seasonEndsAt: string | null | undefined,
   now: Date = new Date(),
-): { ok: false; reason: "no_season_end" } | { ok: true; trialEnd: number | null; firstChargeOn: string } {
+): { ok: false; reason: "no_season_end" } | { ok: true; trialEnd: number | null; firstChargeOn: string; saveCardFirst: boolean } {
   if (!seasonEndsAt) return { ok: false, reason: "no_season_end" };
   const end = new Date(seasonEndsAt);
   if (Number.isNaN(end.getTime())) return { ok: false, reason: "no_season_end" };
-  if (end.getTime() - now.getTime() >= MIN_TRIAL_LEAD_MS) {
-    return { ok: true, trialEnd: Math.floor(end.getTime() / 1000), firstChargeOn: end.toISOString() };
+  const lead = end.getTime() - now.getTime();
+  if (lead > 0) {
+    return { ok: true, trialEnd: Math.floor(end.getTime() / 1000), firstChargeOn: end.toISOString(), saveCardFirst: lead < MIN_TRIAL_LEAD_MS };
   }
-  return { ok: true, trialEnd: null, firstChargeOn: now.toISOString() };
+  return { ok: true, trialEnd: null, firstChargeOn: now.toISOString(), saveCardFirst: false };
 }
 
 /** Which price a member gets: a founder whose claim is neither released nor
- *  forfeited always gets the founding price (there's no yearly founding
- *  option); everyone else gets what they picked. */
-export function checkoutPlan(choice: BillingChoice, foundingPriceOpen: boolean): PaidPlan {
+ *  forfeited gets the founding price for the Flock (there's no yearly founding
+ *  option); everyone else gets what they picked. Kya's Crew is its own plan,
+ *  so a founder who picks it gets Crew, and their claim is left as it is. */
+export function checkoutPlan(choice: CheckoutChoice, foundingPriceOpen: boolean): PaidPlan {
+  if (isCrewPlan(choice)) return choice;
   return foundingPriceOpen ? "founding" : choice;
 }
 
@@ -172,6 +198,15 @@ export function promotionCodesAllowed(plan: PaidPlan): boolean {
 export function discountsToRemove(plan: PaidPlan, sub: Pick<SubscriptionLike, "discounts">): string[] {
   if (promotionCodesAllowed(plan)) return [];
   return (sub.discounts ?? []).map((d) => (typeof d === "string" ? d : d.id)).filter(Boolean);
+}
+
+/** Kya's Crew has no trial (payments-plan pricing answer 7): once the free
+ *  season is over it's charged the day the card goes on. During the free
+ *  season it's $0 until the season's end like every membership, because the
+ *  Flock is free for everyone until then. The 14-day trial (payments build
+ *  6f, not built yet) must skip the plans this returns false for. */
+export function planGetsTrial(plan: PaidPlan): boolean {
+  return plan !== "founding" && !isCrewPlan(plan);
 }
 
 /** A Stripe row that still counts: anything but an ended one. */
@@ -200,7 +235,10 @@ export type BillingState =
       seasonEndsAt: string | null;
       foundingPriceOpen: boolean;
       prices: Partial<Record<PaidPlan, number>>;
-      subscription: { plan: PaidPlan; status: EntitlementStatus; current_period_end: string | null; will_renew: boolean | null } | null;
+      /** The founder's spot number, for the Founding 50 line. */
+      foundingSpot: number | null;
+      /** card_last4 is read from Stripe when the page loads and is never stored. */
+      subscription: { plan: PaidPlan; status: EntitlementStatus; current_period_end: string | null; will_renew: boolean | null; card_last4: string | null } | null;
     };
 
 /** Never in the native app (payments-plan section b: the app's paywall is
@@ -215,4 +253,88 @@ export function cardStep(state: BillingState | undefined, native: boolean, now: 
   const fc = firstCharge(state.seasonEndsAt, now);
   if (!fc.ok) return { kind: "not_ready" };
   return { kind: "choose", founding: state.foundingPriceOpen, firstChargeOn: fc.firstChargeOn, chargedToday: fc.trialEnd === null };
+}
+
+// ── The card step and checkout design (backlog 1.14a) ───────────────────────
+
+/** How long the confirming screen waits for the webhook before saying so. */
+export const CONFIRM_WAIT_MS = 2 * 60 * 1000;
+
+/** Billing dates, on the Flock's calendar (Eastern), so the app and Checkout
+ *  always name the same day. */
+export function billingDay(iso: string, locale: BillingLocale = "en"): string {
+  return new Date(iso).toLocaleDateString(locale === "nl" ? "nl-NL" : "en-US", { month: "short", day: "numeric", year: "numeric", timeZone: "America/New_York" });
+}
+
+/** The yearly plan's price per month, for the big number on its tile. */
+export function yearlyPerMonthCents(annualCents: number): number {
+  return Math.round(annualCents / 12);
+}
+
+/** Whole months the yearly plan saves. Null unless it's exact, so the
+ *  "2 months free" badge can't outlive a price change. */
+export function monthsFree(annualCents: number, monthlyCents: number): number | null {
+  if (monthlyCents <= 0) return null;
+  const months = (monthlyCents * 12 - annualCents) / monthlyCents;
+  return Number.isInteger(months) && months > 0 ? months : null;
+}
+
+export type BillingScreen = "season_member" | "season_founder" | "after_season" | "confirming" | "welcome" | "membership" | "past_due";
+
+/** Which billing screen shows. `returned` means just back from Checkout. */
+export function billingScreen(step: Exclude<CardStep, { kind: "hidden" | "not_ready" }>, returned: boolean): BillingScreen {
+  if (step.kind === "choose") {
+    if (returned) return "confirming";
+    if (step.chargedToday) return "after_season";
+    return step.founding ? "season_founder" : "season_member";
+  }
+  if (step.status === "past_due") return "past_due";
+  // "You're all set" is about the free season, so it needs a first charge ahead.
+  return returned && step.status === "trialing" && step.firstChargeOn && step.willRenew ? "welcome" : "membership";
+}
+
+/** The line above Checkout's button. Stripe needs it as text, so it's English
+ *  until the Dutch is approved; the key keeps it in en.jsonc. */
+/** Stripe's page language and ours. */
+export type BillingLocale = "en" | "nl";
+/** Translates a sentence on the server; English when none is passed. */
+export type NoteT = (key: string, text: string, v: Record<string, string>) => string;
+const plainNote: NoteT = (_key, text, v) => Object.entries(v).reduce((s, [k, x]) => s.replaceAll(`{{${k}}}`, x), text);
+
+export function checkoutNote(date: string, t: NoteT = plainNote): string {
+  return t("flock.billing.checkoutNote", "You won't be charged until {{date}}. Cancel anytime before then from Membership and billing.", { date });
+}
+
+/** The same line when Checkout only saves the card. Stripe shows no plan or
+ *  price on that page, so the sentence has to say what will be charged. */
+export function saveCardNote(plan: PaidPlan, price: string, date: string, t: NoteT = plainNote): string {
+  return plan === "annual" || plan === "crew_annual"
+    ? t("flock.billing.saveCardNoteYearly", "The Flock, {{price}} a year. You won't be charged until {{date}}. Cancel anytime before then from Membership and billing.", { price, date })
+    : t("flock.billing.saveCardNoteMonthly", "The Flock, {{price}} a month. You won't be charged until {{date}}. Cancel anytime before then from Membership and billing.", { price, date });
+}
+
+/** When a save-the-card Checkout closes: at the season's end, within the 30
+ *  minutes to 24 hours Stripe allows. */
+export function saveCardExpiry(trialEnd: number, now: Date = new Date()): number {
+  const t = Math.floor(now.getTime() / 1000);
+  return Math.max(t + 31 * 60, Math.min(trialEnd, t + 23 * 60 * 60));
+}
+
+/** Per-session branding, so nothing is changed in the Stripe Dashboard. The
+ *  logo is a fixed production URL because Stripe can't fetch a protected
+ *  preview. DM Sans isn't one of Stripe's fonts; Inter is the closest. */
+export function checkoutDesign(trialEnd: number | null, note?: string, locale: BillingLocale = "en") {
+  return {
+    locale,
+    branding_settings: {
+      display_name: "Kya & Co.",
+      background_color: "#1a3d2e",
+      button_color: "#1a3d2e",
+      border_style: "rounded" as const,
+      font_family: "inter" as const,
+      logo: { type: "url" as const, url: "https://app.thekyaproject.com/brand/lockups/horizontal-cream.png" },
+      icon: { type: "url" as const, url: "https://app.thekyaproject.com/icon-rounded-512.png" },
+    },
+    ...(trialEnd ? { custom_text: { submit: { message: note ?? checkoutNote(billingDay(new Date(trialEnd * 1000).toISOString())) } } } : {}),
+  };
 }

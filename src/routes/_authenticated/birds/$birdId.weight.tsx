@@ -31,6 +31,7 @@ import type { TFunction } from "i18next";
 import { useTranslation } from "react-i18next";
 import { BIRD_PHOTO_FOCUS } from "@/lib/birdPhotoFocus";
 import { NotEnoughWeights, WeightChart } from "@/components/WeightChart";
+import { WeightBaselinePanel } from "@/components/WeightBaselineCard";
 
 export const Route = createFileRoute("/_authenticated/birds/$birdId/weight")({
   head: () => ({ meta: [{ title: i18next.t("birdWeight.metaTitle", "Weight — Kya & Co.") }] }),
@@ -304,6 +305,8 @@ function WeightFacet() {
           <section className="flex min-w-0 flex-col gap-3.5" data-duo-pane="right">
             <MemberContextBanner birdId={birdId} />
             {load.failed && <LoadError onRetry={load.retry} />}
+            {/* Behind the weight_baseline health switch (backlog D1.2): nothing without it. */}
+            <WeightBaselinePanel birdId={birdId} name={name} entries={entries} isOwner={isOwner} />
             {all.length > 0 && (
               <>
                 <ChartCard wide entries={all} win={win} setWin={setWin} isMine={isMine} />
@@ -379,6 +382,9 @@ function WeightFacet() {
           )}
 
           {load.failed && <LoadError onRetry={load.retry} />}
+
+          {/* Behind the weight_baseline health switch (backlog D1.2): nothing without it. */}
+          <WeightBaselinePanel birdId={birdId} name={name} entries={entries} isOwner={isOwner} />
 
           {all.length > 0 && (
             <>

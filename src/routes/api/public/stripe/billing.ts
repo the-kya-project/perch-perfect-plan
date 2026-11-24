@@ -12,8 +12,9 @@
  *   400  missing or invalid signature (never retried into success).
  *   500  a Stripe or database error, so Stripe retries.
  *
- * Events: checkout.session.completed (subscription mode, metadata kind
- * flock_billing), customer.subscription.*, invoice.paid / payment_failed /
+ * Events: checkout.session.completed (metadata kind flock_billing: subscription
+ * mode, or setup mode in the free season's last 49 hours, which starts the
+ * subscription here), customer.subscription.*, invoice.paid / payment_failed /
  * payment_succeeded. Each one re-reads the subscription and writes its
  * entitlement row from that (billingWebhook.ts). Everything else is
  * acknowledged and ignored.
