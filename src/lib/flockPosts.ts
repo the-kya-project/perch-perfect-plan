@@ -3,6 +3,8 @@
 // never imports this file.
 
 export type PostSpace = "learn" | "good" | "chapter" | "start";
+/** Where a post row lives: a space, or a challenge's feed (its entries, 1.10). */
+export type PostRowSpace = PostSpace | "challenge";
 /** The "Post to" chips, left to right (Batch 3, screen 1). */
 export const POST_SPACES: PostSpace[] = ["learn", "good", "chapter", "start"];
 export type PostStatus = "live" | "pending" | "changes_requested" | "declined" | "removed";

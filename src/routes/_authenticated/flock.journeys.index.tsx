@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link, createFileRoute, useNavigate } from "@tanstack/react-router";
-import { Plus, Route as RouteIcon } from "lucide-react";
+import { Plus, Route as RouteIcon, Settings2 } from "lucide-react";
+import { useIsAdmin } from "@/lib/flockData";
 import { useTranslation } from "react-i18next";
 import type { TFunction } from "i18next";
 import { FlockBody, FlockHeader } from "@/components/FlockShell";
@@ -8,6 +9,8 @@ import { FlockChips, FlockEmpty } from "@/components/flock/FlockChips";
 import { K } from "@/components/kya";
 import { WhichJourneySheet } from "@/components/flock/JourneyParts";
 import { JourneyBigCard, useCardBirdPhotos } from "@/components/flock/JourneyBrowse";
+import { ChallengeCard } from "@/components/flock/ChallengeParts";
+import { useCurrentChallenges } from "@/lib/flockChallenges";
 import { useActiveJourneys, useJourneyFeed, type JourneysFilterKey } from "@/lib/journeyData";
 import { daysSince, progressOf } from "@/lib/journeys";
 import { JOURNEYS_FILTERS, pickOptional, type JourneysFilter } from "@/lib/flockNav";
@@ -58,6 +61,8 @@ function FlockJourneys() {
   const key: JourneysFilterKey = current === "for-you" ? "for_you" : current;
   const { data: feed, isLoading: feedLoading } = useJourneyFeed(key);
   const photos = useCardBirdPhotos(feed);
+  const { data: challenges } = useCurrentChallenges();
+  const { data: isAdmin } = useIsAdmin();
   const [picking, setPicking] = useState(false);
   const postUpdate = () => {
     if (!active?.length) return;
@@ -75,6 +80,14 @@ function FlockJourneys() {
           value={current}
           onChange={(v) => void navigate({ search: { filter: !v || v === "for-you" ? undefined : v }, replace: true })}
         />
+        {/* Challenges (1.10): open ones, Flock-wide first. */}
+        {current === "for-you" && isAdmin && (
+          <Link to="/admin/challenges" data-testid="manage-challenges"
+            className="inline-flex min-h-[44px] items-center gap-2 self-end rounded-full bg-white px-4 text-[14px] font-[700]" style={{ color: K.forest, border: `1.5px solid ${K.line}` }}>
+            <Settings2 className="size-4" aria-hidden="true" />{t("flock.challenges.manageAll", "Manage challenges")}
+          </Link>
+        )}
+        {current === "for-you" && (challenges ?? []).map((c) => <ChallengeCard key={c.challenge_id} challenge={c} />)}
         {!!active?.length && (
           <button type="button" onClick={postUpdate} data-testid="post-update-any"
             className="inline-flex min-h-[48px] items-center justify-center gap-2 rounded-full border-2 bg-white px-5 text-[15px] font-[700] active:scale-[0.99]"
