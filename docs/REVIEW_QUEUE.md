@@ -19,6 +19,45 @@ Format:
   - After: "<new wording>"
 ```
 
+### [#546](https://github.com/the-kya-project/perch-perfect-plan/pull/546) · 1.13a Badges: the Flock set
+All new. Nobody but admins sees them while the Flock is closed. The badge names, "New: badges", "Here's what you've already earned", "See all badges", "Not now", "Badge earned", "Flock badges", "x of y earned" and "Trick star: finish any tricks journey." are the mockup's or the spec's words. The rest is agent wording.
+- **Where:** `flock.badges.name.*` (everywhere a badge shows)
+  - Before: new
+  - After: "First steps", "Journey finisher", "Trick star", "Good neighbor", "Voice of the Flock", "Challenge champ"
+- **Where:** `flock.badges.oneJourney` / `.journeysN` (Journey finisher's level, under the tile and after its name)
+  - Before: new
+  - After: "1 journey" / "{{n}} journeys" (shows as "Journey finisher · 3 journeys")
+- **Where:** `flock.badges.launchLabel` / `.launchTitle` / `.launchLine` (the one-time celebration on Today)
+  - Before: new
+  - After: "New: badges" / "Here's what you've already earned" / "You've already done a lot in the Flock. These count." (the mockup's line, "You've been caring for Juno and the flock for a long time. These count.", is about care badges, which come with 1.13b)
+- **Where:** `flock.badges.seeAll` / `.notNow` / `.gotIt` (celebration buttons)
+  - Before: new
+  - After: "See all badges" / "Not now" / "Got it"
+- **Where:** `flock.badges.earnedLabel` (the "Badge earned" card on Today)
+  - Before: new
+  - After: "Badge earned"
+- **Where:** `flock.badges.earned.*` (the line on the "Badge earned" card)
+  - Before: new
+  - After: "You finished your Flock profile and joined your chapter." / "You finished your first journey." / "You've finished {{n}} journeys." / "You finished a tricks journey." / "Something you shared to help other birds was approved." / "You voted in a Do good vote." / "You completed a challenge."
+- **Where:** `flock.badges.title` / `.count` / `.flockSet` / `.loading` (Badges screen, and the Badges row in Flock settings)
+  - Before: new
+  - After: "Badges" / "{{earned}} of {{total}} earned" / "Flock badges" / "Loading your badges"
+- **Where:** `flock.badges.how.*` (Badges screen, under the grid, for the badge tapped)
+  - Before: new
+  - After: "First steps: finish your Flock profile and join your chapter." / "Journey finisher: finish a journey. There are levels at 3 and 10 finished journeys." / "Trick star: finish any tricks journey." / "Good neighbor: have a Do good post approved, or a place you suggested added to your chapter." / "Voice of the Flock: vote in a Do good vote." / "Challenge champ: complete a Flock challenge."
+- **Where:** `flock.badges.earnedOn` / `.earnedOnLevel` / `.nextLevel` (Badges screen, for an earned badge)
+  - Before: new
+  - After: "Earned {{date}}." / "{{level}} reached {{date}}." (shows as "3 journeys reached November 20, 2026.") / "Next level at {{n}} journeys."
+- **Where:** `flock.badges.footer` (Badges screen, bottom)
+  - Before: new
+  - After: "Badges show on your Flock profile. A badge from "Just me" journeys stays here, for you. You can hide your badges on Edit profile."
+- **Where:** `flock.badges.toggleLabel` / `.toggleHint` / `.see` / `.toggleError` (Edit profile, the new Badges switch)
+  - Before: new
+  - After: "Show my badges on my profile." / "Members see the Flock badges you've earned on your profile. You can change this any time." / "See your badges" / "That didn't save. Try again."
+- **Where:** `flock.privacy.see.badges` (Privacy, "Members can see")
+  - Before: new
+  - After: "Your Flock badges, unless you hide them. Badges from "Just me" journeys stay with you."
+
 ### [#544](https://github.com/the-kya-project/perch-perfect-plan/pull/544) · 1.7 Instagram share cards for journeys
 All new, on the share card screen (`/flock/journeys/<id>/card`) and the buttons that open it. Nobody but admins sees them while the Flock is closed. "Make a share card", "Post", "Story", "Show [bird]'s name", "Add my name", "Share", the web hint and "Kya & Co. · thekyaproject.com" are the mockup's words. The rest is agent wording. The mark is drawn on the card in English, not translated.
 - **Where:** `flock.journeys.shareCard.make` (milestone celebration, finished journey page, Day one vs. now)
@@ -650,6 +689,22 @@ No new strings: every line reuses existing wording, in new places (admins only).
 ---
 
 ## Decisions agents made
+
+### [#546](https://github.com/the-kya-project/perch-perfect-plan/pull/546) · 1.13a Badges: the Flock set
+- **Decision:** Badges are worked out when a member opens Today, Flock settings or the Badges screen (`flock_my_badges`), not by triggers on every table. So "the moment it's earned" means the next time they open the Flock, usually seconds later. It keeps the badge rules in one function and leaves the posts, journeys, votes and places code untouched.
+- **Decision:** "Past activity counts": the first time a member's badges are worked out, everything their history earned is recorded together, and Today shows one "Here's what you've already earned" when that's two or more. With just one (a newcomer who's just finished their profile), it's the small "Badge earned" card instead, since "already earned" would read oddly.
+- **Decision:** The launch celebration is a centered card over Today (a dialog), as the mockup shows it filling the screen. Each later badge is its own "Badge earned" card at the top of Today, styled like the mockup's care-app card (screen 3), with "See all badges" and "Got it". Opening the Badges screen counts as seeing them all.
+- **Decision:** The Badges screen shows only the Flock set for now ("x of 6 earned"); the mockup's "Care badges" section arrives with 1.13b. Founder and Chapter lead stay as they were and aren't counted in the six. The how-to-earn line shows for the badge tapped; it starts on the first one not earned yet, as the mockup shows Trick star.
+- **Decision:** On a profile, badges are small lime pills with the icon and name (and Journey finisher's level), next to the existing Founder and Chapter lead pills. The mockup doesn't show a profile.
+- **Decision:** "Members can hide badges from their Flock profile in settings": a "Show my badges on my profile." switch on Edit profile, on by default, below the founding members switch and built the same way. Hidden means hidden from everyone, your own profile view included; your Badges screen always shows them.
+- **Decision:** "A badge earned only through 'Just me' journeys ... never to anyone outside their household": a profile counts only community journeys for Journey finisher and Trick star, worked out fresh each time, so the level shown can be lower than your own (3 finished, 1 shared: "1 journey"). It's stricter than the spec, which would let the bird's co-carers see it: a profile shows the same thing to everyone.
+- **Decision:** Journey finisher counts journeys the member started (`created_by`) and finished, templates and custom ones alike. A co-carer's finished journey on a shared bird counts for whoever started it.
+- **Decision:** Good neighbor counts a Do good post that's live after review, or a place the member suggested that someone else approved. A chapter lead adding a listing directly doesn't count.
+- **Decision:** Voice of the Flock counts a ballot in any vote, founders-only ones included, since they're on Do good too.
+- **Decision:** Challenge champ shows in gray with "complete a Flock challenge" and nothing awards it; 1.10 adds the rule to `private.flock_badge_levels`.
+- **Decision:** Once earned, a badge stays earned, even if the post is later removed or the vote deleted. A higher Journey finisher level replaces the lower one and is celebrated again.
+- **Decision:** No analytics event for badges; the spec doesn't ask for one.
+- **To change it:** the rules are `private.flock_badge_levels` (`20261124013000_flock_badges.sql`); the words and which celebration shows are `src/lib/flockBadges.ts`; the screens are `src/components/flock/BadgeParts.tsx` and `src/routes/_authenticated/flock.you.badges.tsx`.
 
 ### [#544](https://github.com/the-kya-project/perch-perfect-plan/pull/544) · 1.7 Instagram share cards for journeys
 - **Decision:** Only the bird's household can make a card, for any journey, community ones included. The spec only rules out other people's "Just me" journeys, but a card of someone else's bird posted to Instagram felt like it needed the owner's say. The server checks this too for day one vs. now.

@@ -12,6 +12,7 @@ import {
   useMySetup, useRegions, useShownChoices,
 } from "@/lib/flockData";
 import { setFoundersChoice, useInvalidateFounders, useMyFoundersChoice } from "@/lib/flockFounders";
+import { setBadgesShown, useBadgesShown, useInvalidateBadges } from "@/lib/flockBadges";
 
 // Edit profile: display name, bio, photo, region (= chapter) and shown birds.
 // Changing region moves you to that chapter as soon as it's saved.
@@ -151,6 +152,7 @@ function FlockEditProfile() {
       </div>
 
       <FoundersPageToggle />
+      <BadgesToggle />
 
       {error && <p role="alert" className="m-0 text-[15px]" style={{ color: K.red }}>{error}</p>}
       <button type="button" onClick={() => void save()} disabled={saving || !nameOk || !region}
@@ -162,6 +164,37 @@ function FlockEditProfile() {
         <RegionSheet regions={regions} value={region} onClose={() => setPicking(false)} onPick={(s) => { setRegion(s); setPicking(false); }} />
       )}
     </FlockSubPage>
+  );
+}
+
+/** "Show my badges on my profile" (on unless turned off), saved as soon as
+ *  it's switched. Your own Badges screen always shows them. */
+function BadgesToggle() {
+  const { t } = useTranslation();
+  const { data: shown } = useBadgesShown();
+  const invalidate = useInvalidateBadges();
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  if (shown == null) return null;
+  const toggle = async () => {
+    setBusy(true); setError(null);
+    try { await setBadgesShown(!shown); await invalidate(); }
+    catch { setError(t("flock.badges.toggleError", "That didn't save. Try again.")); }
+    finally { setBusy(false); }
+  };
+  return (
+    <FlockSection title={t("flock.badges.title", "Badges")}
+      hint={<>{t("flock.badges.toggleHint", "Members see the Flock badges you've earned on your profile. You can change this any time.")}{" "}
+        <Link to="/flock/you/badges" className="font-[700] underline underline-offset-4" style={{ color: K.moss }}>{t("flock.badges.see", "See your badges")}</Link></>}>
+      <button type="button" role="switch" aria-checked={shown} onClick={() => void toggle()} disabled={busy} data-testid="badges-toggle"
+        className="flex min-h-[52px] w-full items-center justify-between gap-3 text-left text-[16px] font-[700] disabled:opacity-60" style={{ color: K.forest }}>
+        <span>{t("flock.badges.toggleLabel", "Show my badges on my profile.")}</span>
+        <span aria-hidden="true" className="relative h-7 w-12 shrink-0 rounded-full transition-colors" style={{ background: shown ? K.forest : K.line }}>
+          <span className="absolute top-0.5 size-6 rounded-full bg-white transition-all" style={{ left: shown ? 22 : 2 }} />
+        </span>
+      </button>
+      {error && <p role="alert" className="m-0 mt-2 text-[14px]" style={{ color: K.red }}>{error}</p>}
+    </FlockSection>
   );
 }
 

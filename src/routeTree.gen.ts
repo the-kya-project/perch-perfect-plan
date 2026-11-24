@@ -123,6 +123,7 @@ import { Route as AuthenticatedFlockMembersUserIdRouteImport } from './routes/_a
 import { Route as AuthenticatedFlockPostNewRouteImport } from './routes/_authenticated/flock.post.new'
 import { Route as AuthenticatedFlockVotesVoteIdRouteImport } from './routes/_authenticated/flock.votes.$voteId'
 import { Route as AuthenticatedFlockYouIndexRouteImport } from './routes/_authenticated/flock.you.index'
+import { Route as AuthenticatedFlockYouBadgesRouteImport } from './routes/_authenticated/flock.you.badges'
 import { Route as AuthenticatedFlockYouBlockedRouteImport } from './routes/_authenticated/flock.you.blocked'
 import { Route as AuthenticatedFlockYouEditRouteImport } from './routes/_authenticated/flock.you.edit'
 import { Route as AuthenticatedFlockYouMembershipRouteImport } from './routes/_authenticated/flock.you.membership'
@@ -786,6 +787,12 @@ const AuthenticatedFlockYouIndexRoute =
     path: '/you/',
     getParentRoute: () => AuthenticatedFlockRoute,
   } as any)
+const AuthenticatedFlockYouBadgesRoute =
+  AuthenticatedFlockYouBadgesRouteImport.update({
+    id: '/you/badges',
+    path: '/you/badges',
+    getParentRoute: () => AuthenticatedFlockRoute,
+  } as any)
 const AuthenticatedFlockYouBlockedRoute =
   AuthenticatedFlockYouBlockedRouteImport.update({
     id: '/you/blocked',
@@ -1101,6 +1108,7 @@ export interface FileRoutesByFullPath {
   '/flock/members/$userId': typeof AuthenticatedFlockMembersUserIdRoute
   '/flock/post/new': typeof AuthenticatedFlockPostNewRoute
   '/flock/votes/$voteId': typeof AuthenticatedFlockVotesVoteIdRoute
+  '/flock/you/badges': typeof AuthenticatedFlockYouBadgesRoute
   '/flock/you/blocked': typeof AuthenticatedFlockYouBlockedRoute
   '/flock/you/edit': typeof AuthenticatedFlockYouEditRoute
   '/flock/you/membership': typeof AuthenticatedFlockYouMembershipRoute
@@ -1244,6 +1252,7 @@ export interface FileRoutesByTo {
   '/flock/members/$userId': typeof AuthenticatedFlockMembersUserIdRoute
   '/flock/post/new': typeof AuthenticatedFlockPostNewRoute
   '/flock/votes/$voteId': typeof AuthenticatedFlockVotesVoteIdRoute
+  '/flock/you/badges': typeof AuthenticatedFlockYouBadgesRoute
   '/flock/you/blocked': typeof AuthenticatedFlockYouBlockedRoute
   '/flock/you/edit': typeof AuthenticatedFlockYouEditRoute
   '/flock/you/membership': typeof AuthenticatedFlockYouMembershipRoute
@@ -1396,6 +1405,7 @@ export interface FileRoutesById {
   '/_authenticated/flock/members/$userId': typeof AuthenticatedFlockMembersUserIdRoute
   '/_authenticated/flock/post/new': typeof AuthenticatedFlockPostNewRoute
   '/_authenticated/flock/votes/$voteId': typeof AuthenticatedFlockVotesVoteIdRoute
+  '/_authenticated/flock/you/badges': typeof AuthenticatedFlockYouBadgesRoute
   '/_authenticated/flock/you/blocked': typeof AuthenticatedFlockYouBlockedRoute
   '/_authenticated/flock/you/edit': typeof AuthenticatedFlockYouEditRoute
   '/_authenticated/flock/you/membership': typeof AuthenticatedFlockYouMembershipRoute
@@ -1548,6 +1558,7 @@ export interface FileRouteTypes {
     | '/flock/members/$userId'
     | '/flock/post/new'
     | '/flock/votes/$voteId'
+    | '/flock/you/badges'
     | '/flock/you/blocked'
     | '/flock/you/edit'
     | '/flock/you/membership'
@@ -1691,6 +1702,7 @@ export interface FileRouteTypes {
     | '/flock/members/$userId'
     | '/flock/post/new'
     | '/flock/votes/$voteId'
+    | '/flock/you/badges'
     | '/flock/you/blocked'
     | '/flock/you/edit'
     | '/flock/you/membership'
@@ -1842,6 +1854,7 @@ export interface FileRouteTypes {
     | '/_authenticated/flock/members/$userId'
     | '/_authenticated/flock/post/new'
     | '/_authenticated/flock/votes/$voteId'
+    | '/_authenticated/flock/you/badges'
     | '/_authenticated/flock/you/blocked'
     | '/_authenticated/flock/you/edit'
     | '/_authenticated/flock/you/membership'
@@ -2731,6 +2744,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedFlockYouIndexRouteImport
       parentRoute: typeof AuthenticatedFlockRoute
     }
+    '/_authenticated/flock/you/badges': {
+      id: '/_authenticated/flock/you/badges'
+      path: '/you/badges'
+      fullPath: '/flock/you/badges'
+      preLoaderRoute: typeof AuthenticatedFlockYouBadgesRouteImport
+      parentRoute: typeof AuthenticatedFlockRoute
+    }
     '/_authenticated/flock/you/blocked': {
       id: '/_authenticated/flock/you/blocked'
       path: '/you/blocked'
@@ -3016,6 +3036,7 @@ interface AuthenticatedFlockRouteChildren {
   AuthenticatedFlockMembersUserIdRoute: typeof AuthenticatedFlockMembersUserIdRoute
   AuthenticatedFlockPostNewRoute: typeof AuthenticatedFlockPostNewRoute
   AuthenticatedFlockVotesVoteIdRoute: typeof AuthenticatedFlockVotesVoteIdRoute
+  AuthenticatedFlockYouBadgesRoute: typeof AuthenticatedFlockYouBadgesRoute
   AuthenticatedFlockYouBlockedRoute: typeof AuthenticatedFlockYouBlockedRoute
   AuthenticatedFlockYouEditRoute: typeof AuthenticatedFlockYouEditRoute
   AuthenticatedFlockYouMembershipRoute: typeof AuthenticatedFlockYouMembershipRoute
@@ -3061,6 +3082,7 @@ const AuthenticatedFlockRouteChildren: AuthenticatedFlockRouteChildren = {
   AuthenticatedFlockMembersUserIdRoute: AuthenticatedFlockMembersUserIdRoute,
   AuthenticatedFlockPostNewRoute: AuthenticatedFlockPostNewRoute,
   AuthenticatedFlockVotesVoteIdRoute: AuthenticatedFlockVotesVoteIdRoute,
+  AuthenticatedFlockYouBadgesRoute: AuthenticatedFlockYouBadgesRoute,
   AuthenticatedFlockYouBlockedRoute: AuthenticatedFlockYouBlockedRoute,
   AuthenticatedFlockYouEditRoute: AuthenticatedFlockYouEditRoute,
   AuthenticatedFlockYouMembershipRoute: AuthenticatedFlockYouMembershipRoute,

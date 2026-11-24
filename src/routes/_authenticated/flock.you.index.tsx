@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { Bell, BookOpen, ClipboardCheck, CreditCard, ShieldCheck, Star, UserX } from "lucide-react";
+import { Award, Bell, BookOpen, ClipboardCheck, CreditCard, ShieldCheck, Star, UserX } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { K, KyaCard, KyaHeading, KyaIconTile, KyaRow } from "@/components/kya";
 import { FlockAvatar } from "@/components/flock/FlockPeople";
@@ -8,6 +8,7 @@ import { membershipSummary } from "@/lib/flockProfile";
 import { useAvatarUrls, useIsAdmin, useMyEntitlements, useMyProfile, useMySetup, useRegions } from "@/lib/flockData";
 import { useCanReview, useReviewCounts } from "@/lib/flockModeration";
 import { usePlaceSuggestions } from "@/lib/flockPlaces";
+import { FLOCK_BADGES, earnedCount, useMyBadges } from "@/lib/flockBadges";
 
 // You: your Community profile and settings, from the header avatar.
 export const Route = createFileRoute("/_authenticated/flock/you/")({
@@ -26,6 +27,7 @@ function FlockYou() {
   const { data: canReview } = useCanReview();
   const { data: counts } = useReviewCounts(canReview === true);
   const { data: placeSuggestions } = usePlaceSuggestions(canReview === true);
+  const { data: badges } = useMyBadges();
   const waiting = (counts?.good ?? 0) + (counts?.reports ?? 0) + (counts?.events ?? 0) + (placeSuggestions?.length ?? 0);
   const region = regions?.find((r) => r.slug === me?.region_slug);
   const founder = !!setup?.founding_spot;
@@ -46,7 +48,18 @@ function FlockYou() {
         </div>
       </header>
       <main className="relative mx-auto -mt-[26px] flex min-h-[40vh] max-w-md flex-col gap-4 rounded-t-[26px] px-4 pb-6 pt-5 lg:max-w-2xl" style={{ background: K.mist }}>
-        {/* STATS: a card for journeys, posts and badges goes here once those exist. */}
+        {/* STATS: a card for journeys and posts goes here once those exist. */}
+        <div data-testid="you-badges">
+          <KyaCard>
+            <KyaRow
+              leading={<KyaIconTile tone="mist"><Award className="size-5" /></KyaIconTile>}
+              title={t("flock.badges.title", "Badges")}
+              detail={badges ? t("flock.badges.count", "{{earned}} of {{total}} earned", { earned: earnedCount(badges), total: FLOCK_BADGES.length }) : undefined}
+              onClick={() => void navigate({ to: "/flock/you/badges" })}
+              last
+            />
+          </KyaCard>
+        </div>
         {/* Reviewers only (flock_can_review: admins today). */}
         {canReview && (
           <div data-testid="you-review-queue">
