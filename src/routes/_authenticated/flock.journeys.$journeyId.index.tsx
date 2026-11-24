@@ -132,6 +132,11 @@ function JourneyPage() {
 
         {mine && card?.status === "active" && <FinisherTipsCard skill={card.skill} tips={finisherTips} />}
 
+        {mine && card?.status === "finished" && (
+          <KyaPrimaryButton onClick={() => void navigate({ to: "/flock/journeys/$journeyId/card", params: { journeyId }, search: { kind: "finished" } })}>
+            {t("flock.journeys.shareCard.make", "Make a share card")}
+          </KyaPrimaryButton>
+        )}
         {(mine && card?.status === "active") || canCompare ? (
           <div className="flex gap-2.5">
             {mine && card?.status === "active" && (

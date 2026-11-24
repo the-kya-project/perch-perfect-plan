@@ -3,7 +3,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
 import { ClipState, useClipPhase } from "@/components/flock/JourneyClipView";
 import type { JourneyClip } from "@/lib/journeyMedia.functions";
-import { K, KyaHeading, KyaSheet } from "@/components/kya";
+import { K, KyaHeading, KyaPrimaryButton, KyaSheet } from "@/components/kya";
 import { FlockSubPage } from "@/components/flock/FlockSubPage";
 import { useJourneyClips, useJourneyView, useJourneyViewMilestones, useJourneyViewUpdates, type ViewUpdate } from "@/lib/journeyData";
 import { journeyDays } from "@/lib/journeys";
@@ -13,7 +13,8 @@ import { journeyDays } from "@/lib/journeys";
 // HLS itself (Safari, the iPhone app) the clips are <video> elements, so
 // "Play both" starts them together and "Slow motion" halves the speed;
 // elsewhere they're the Stream player and "Play both" starts both players
-// (no slow motion there). "Share this comparison" comes later.
+// (no slow motion there). Your own journeys get "Make a share card" (1.7),
+// with a still from each of the two clips.
 export const Route = createFileRoute("/_authenticated/flock/journeys/$journeyId/compare")({
   validateSearch: (s: Record<string, unknown>): { a?: string; b?: string } => ({
     a: typeof s.a === "string" ? s.a : undefined,
@@ -77,6 +78,11 @@ function Compare() {
         <p className="m-0 rounded-[16px] bg-white p-3.5 text-[14.5px] leading-[1.45]" style={{ color: K.ink }} data-testid="compare-summary">
           {t("flock.journeys.compare.summary", "{{days}} days, {{sessions}} sessions, {{milestones}} milestones.", { days, sessions, milestones: reached })}
         </p>
+        {card?.is_mine && left && right && left.update_id !== right.update_id && (
+          <KyaPrimaryButton onClick={() => void navigate({ to: "/flock/journeys/$journeyId/card", params: { journeyId }, search: { kind: "compare", a: left.update_id, b: right.update_id } })}>
+            {t("flock.journeys.shareCard.make", "Make a share card")}
+          </KyaPrimaryButton>
+        )}
       </div>
       {picking && (
         <KyaSheet onClose={() => setPicking(null)} closeLabel={t("flock.region.close", "Close")}

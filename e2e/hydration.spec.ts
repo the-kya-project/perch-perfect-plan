@@ -1,7 +1,7 @@
 // The iPhone hydration check. Each test runs once per browser engine and
 // language (see playwright.config.ts), and fails on any React hydration error
 // (#418/#421/#422/#423/#425) or uncaught error. Background: PRs #393–#395.
-import { test, expect, load, expectClean, wording, asIOSApp, pageLanguage, MOCK } from "./helpers";
+import { test, expect, load, expectClean, wording, asIOSApp, pageLanguage, trackRequests, MOCK } from "./helpers";
 
 const PENDING_EMAIL_KEY = "ppc_pending_confirm_email"; // src/routes/confirm-email.tsx
 
@@ -121,9 +121,13 @@ test("confirmation link waits for a tap, then works once", async ({ page, reques
   // page visited rather than wait for /welcome to finish loading.
   const visited: string[] = [];
   page.on("framenavigated", (f) => { if (f === page.mainFrame()) visited.push(new URL(f.url()).pathname); });
+  const requestsSettled = trackRequests(page);
   await button().click();
   await expect.poll(() => visited, { message: "The tap should go to next (/welcome)" }).toContain("/welcome");
   expect(await links()).toMatchObject({ confirmed: true, verifyCalls: 1 });
+  // Let the page it moved on to finish loading before this test leaves it, so
+  // WebKit doesn't report those requests being cut off as uncaught errors.
+  await requestsSettled();
 
   // The same link again, signed out (another browser or device): the button
   // still shows (nothing is spent on load), and the tap lands on the expired
