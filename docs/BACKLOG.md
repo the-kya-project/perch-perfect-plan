@@ -70,7 +70,7 @@ Where these items came from, with the detail behind each: `docs/flock/opening-sc
 - **Size:** S
 - **Depends on:** 1.14a (#533), 1.15 (#535), and Brittany's approved mockup (approved Nov 24, 2026)
 - **Overnight alone:** yes (built to a held PR)
-- **Needs Brittany:** the PR (payments). Also the two rescue-adopter lines: the mockup says "You sponsor six free months in the Flock for a family who just adopted a rescue parrot" and "Six free months in the Flock for a new rescue adopter, from you", but seats aren't tracked (1.15) and #551 changed the legal draft to "Crew memberships help support free Flock access for rescue adopters". Build them as drawn and ask in the PR which wording she wants.
+- **Needs Brittany:** the PR (payments). Both rescue-adopter lines (the Crew benefit and the Crew line under "What your membership keeps") say "Crew memberships help support free Flock access for rescue adopters" (Brittany, Nov 24, 2026, matching #551); never promise a sponsored seat or six free months.
 
 ### 2.5 The sitter preview never stalls after a release
 - **Done means:** the Nov 2 bug can't happen. The sitter preview catches up to a new release before it opens, and recovers a stalled frame. Checked in the iPhone Simulator with the app left open across a release (see the "Sitter preview stale-session test" memory).
