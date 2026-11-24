@@ -16,7 +16,7 @@ function NewPost() {
     <PostComposer initialSpace={space} onDone={(r) => {
       // Back where it shows: the chapter's Posts, or Today filtered to its space.
       if (r.space === "chapter") void navigate({ to: "/flock/chapter", replace: true });
-      else void navigate({ to: "/flock", search: { space: r.space }, replace: true });
+      else if (r.space !== "pod") void navigate({ to: "/flock", search: { space: r.space }, replace: true });
     }} />
   );
 }

@@ -8,6 +8,8 @@ import { ClipRecorder } from "@/components/ClipRecorder";
 import { FlockSubPage } from "@/components/flock/FlockSubPage";
 import { ChoiceChips, FinisherTipsCard, FlowFooter } from "@/components/flock/JourneyParts";
 import { DietNotForBird, DietVetCard, HowToMakeItWork } from "@/components/flock/JourneyDiet";
+import { PodOptIn } from "@/components/flock/PodParts";
+import { podWait, usePodCanWait, useInvalidatePods } from "@/lib/flockPods";
 import { createJourneyClipUpload } from "@/lib/journeyClips.functions";
 import { startJourney, useFinisherTips, useInvalidateJourneys, useJourneyAccess, useJourneyBirds, useJourneyTemplates } from "@/lib/journeyData";
 import {
@@ -20,7 +22,9 @@ import {
 // safety notes (Diet conversion adds its safeguards). Diet conversion first
 // shows the vet card (both answers continue; the answer is saved on the
 // journey), and isn't offered to lories and lorikeets. For
-// "Write your own journey": a name and 3–8 milestones instead.
+// "Write your own journey": a name and 3–8 milestones instead. A template
+// journey also offers "Pair me with buddies working on this too" (buddy
+// pods, backlog 1.11).
 export const Route = createFileRoute("/_authenticated/flock/journeys/setup")({
   validateSearch: (s: Record<string, unknown>): { bird: string; template?: string; custom?: boolean } => ({
     bird: typeof s.bird === "string" ? s.bird : "",
@@ -50,6 +54,7 @@ function SetupJourney() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const invalidate = useInvalidateJourneys();
+  const invalidatePods = useInvalidatePods();
   const nameId = useId();
   const { bird: birdId, template: slug, custom } = Route.useSearch();
   const { data: birds } = useJourneyBirds();
@@ -70,6 +75,8 @@ function SetupJourney() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [vetChoice, setVetChoice] = useState<VetCheck | null>(null);
+  const [buddies, setBuddies] = useState(false);
+  const { data: canWait } = usePodCanWait(!custom);
 
   useEffect(() => { if (access && visibility === null) setVisibility(defaultVisibility(access)); }, [access, visibility]);
 
@@ -107,7 +114,9 @@ function SetupJourney() {
         dayOneClip: clip,
         vetCheck: diet ? vetChoice : null,
       });
-      await invalidate();
+      // The journey has started either way; a failed pairing shows on its page.
+      if (buddies && !custom) await podWait(id).catch(() => undefined);
+      await Promise.all([invalidate(), invalidatePods()]);
       void navigate({ to: "/flock/journeys/$journeyId", params: { journeyId: id }, replace: true });
     } catch (e) {
       setError(friendlyStartError(t, e));
@@ -256,6 +265,10 @@ function SetupJourney() {
               {notes.map((n) => <li key={n} className="text-[14px] leading-[1.45]" style={{ color: K.ink }}>{n}</li>)}
             </ul>
           </section>
+        )}
+
+        {!custom && canWait !== undefined && (
+          <PodOptIn on={buddies && canWait} onChange={setBuddies} disabled={!canWait} justMe={visibility === "private"} />
         )}
 
         {error && <p role="alert" className="m-0 text-[15px]" style={{ color: K.red }}>{error}</p>}

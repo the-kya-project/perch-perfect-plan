@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { Award, Bell, BookOpen, ClipboardCheck, CreditCard, ShieldCheck, Star, UserX } from "lucide-react";
+import { Award, Bell, BookOpen, ClipboardCheck, CreditCard, ShieldCheck, Star, UserX, Users } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { K, KyaCard, KyaHeading, KyaIconTile, KyaRow } from "@/components/kya";
 import { FlockAvatar } from "@/components/flock/FlockPeople";
@@ -56,6 +56,12 @@ function FlockYou() {
               title={t("flock.badges.title", "Badges")}
               detail={badges ? t("flock.badges.count", "{{earned}} of {{total}} earned", { earned: earnedCount(badges), total: FLOCK_BADGES.length }) : undefined}
               onClick={() => void navigate({ to: "/flock/you/badges" })}
+            />
+            <KyaRow
+              leading={<KyaIconTile tone="mist"><Users className="size-5" /></KyaIconTile>}
+              title={t("flock.pods.listTitle", "Buddy pods")}
+              detail={t("flock.pods.listLine", "Small groups on the same journey")}
+              onClick={() => void navigate({ to: "/flock/pods" })}
               last
             />
           </KyaCard>

@@ -2,7 +2,8 @@
 // scripts/flock-posts.test.ts can pin them. Flock code only: shared care code
 // never imports this file.
 
-export type PostSpace = "learn" | "good" | "chapter" | "start";
+/** "pod" = a buddy pod's own posts (backlog 1.11): never a "Post to" chip. */
+export type PostSpace = "learn" | "good" | "chapter" | "start" | "pod";
 /** The "Post to" chips, left to right (Batch 3, screen 1). */
 export const POST_SPACES: PostSpace[] = ["learn", "good", "chapter", "start"];
 export type PostStatus = "live" | "pending" | "changes_requested" | "declined" | "removed";

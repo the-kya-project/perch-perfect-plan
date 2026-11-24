@@ -26,6 +26,7 @@ export function timeAgo(t: TFunction, iso: string, lang: string, now: Date = new
 /** "Learn together", "Do good", "Great Lakes chapter", "Start here". */
 export function postSpaceLabel(t: TFunction, space: PostSpace, chapterName?: string | null): string {
   if (space === "chapter") return t("flock.posts.chapterSpace", "{{name}} chapter", { name: chapterName ?? t("flock.posts.myChapter", "My") });
+  if (space === "pod") return t("flock.pods.space", "Buddy pod");
   return spaceLabel(t, space);
 }
 
