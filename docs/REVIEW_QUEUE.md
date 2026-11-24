@@ -97,6 +97,348 @@ All new, on the share card screen (`/flock/journeys/<id>/card`) and the buttons 
   - Before: new
   - After: "From {{name}}"
 
+### [#533](https://github.com/the-kya-project/perch-perfect-plan/pull/533) · 1.14a Card step and checkout design
+Held for Brittany. Nobody sees these while `BILLING_ENABLED` is off.
+- **Where:** every billing screen and Stripe's page, Dutch (written Nov 23, 2026 at Brittany's go-ahead; all new except `flock.you.membership`, which had no Dutch before)
+  - `flock.billing.accessUntil`: "Toegang tot"
+  - `flock.billing.addMyCard`: "Mijn kaart toevoegen · vandaag $0"
+  - `flock.billing.allSet`: "Je bent <em>helemaal klaar</em>"
+  - `flock.billing.backToFlock`: "Terug naar de Flock"
+  - `flock.billing.billedMonthly`: "Maandelijks betaald"
+  - `flock.billing.cardEnding`: "Eindigend op {{last4}}"
+  - `flock.billing.cardLabel`: "Kaart"
+  - `flock.billing.chargeMonthly`: "Je eerste betaling van {{price}}, daarna elke maand. Zeg je voor deze datum op, dan betaal je niets."
+  - `flock.billing.chargeYearly`: "Je eerste betaling van {{price}}, daarna eens per jaar. Zeg je voor deze datum op, dan betaal je niets."
+  - `flock.billing.checkoutNote`: "Je betaalt niets tot {{date}}. Je kunt tot die tijd altijd opzeggen via Lidmaatschap en betaling."
+  - `flock.billing.chooseFounder`: "Je helpt bepalen waar het naartoe gaat, <strong>via de Do good-stemmingen</strong>, ook die alleen voor oprichters."
+  - `flock.billing.chooseMember`: "Je helpt bepalen waar het naartoe gaat, <strong>via de Do good-stemmingen</strong> met de rest van de Flock."
+  - `flock.billing.confirmingLine`: "Dit kan een minuutje duren. Je kunt hier blijven, we gaan verder zodra het klaar is."
+  - `flock.billing.confirmingSlow`: "Dit duurt langer dan normaal. Je kaart is veilig bij Stripe, dus je hoeft hem niet opnieuw toe te voegen. Kijk over een paar minuten bij Lidmaatschap en betaling."
+  - `flock.billing.confirmingTitle`: "Je kaart wordt bevestigd"
+  - `flock.billing.ends`: "Je lidmaatschap wordt niet verlengd."
+  - `flock.billing.error`: "Dat is niet gelukt. Probeer het zo opnieuw."
+  - `flock.billing.firstCharge`: "Eerste betaling"
+  - `flock.billing.flockMember`: "Lid van de Flock"
+  - `flock.billing.founding`: "Oprichtersprijs: {{price}} per maand, vast zolang je lid blijft."
+  - `flock.billing.founding50`: "Founding 50"
+  - `flock.billing.foundingLabel`: "Oprichtersprijs"
+  - `flock.billing.foundingLocked`: "Vast zolang je lid blijft."
+  - `flock.billing.foundingOthers`: "Alle anderen betalen {{price}}."
+  - `flock.billing.foundingRelease`: "Staat er op {{date}} geen kaart, dan komt je oprichtersplek vrij en kun je die niet opnieuw claimen."
+  - `flock.billing.foundingSpot`: "Founding 50 · Plek #{{spot}}"
+  - `flock.billing.freeUntil`: "Gratis tot"
+  - `flock.billing.givesBack`: "Elk lidmaatschap geeft iets terug"
+  - `flock.billing.givesBackLine`: "van wat je betaalt gaat naar partners in papegaaienopvang en natuurbehoud"
+  - `flock.billing.givesBackNote`: "<strong>Je lidmaatschap geeft iets terug.</strong> 20% gaat naar partners in papegaaienopvang en natuurbehoud."
+  - `flock.billing.heroAfterLine`: "Word lid van de Flock en help papegaaien in de opvang en in het wild."
+  - `flock.billing.heroFounder`: "Dankzij jou <em>begon dit</em>. Houd je {{price}}."
+  - `flock.billing.heroFounderLine`: "Voeg uiterlijk {{date}} een kaart toe om je oprichtersplek en prijs te houden. Tot die tijd betaal je niets."
+  - `flock.billing.heroMember`: "Jouw lidmaatschap <em>doet goed</em> voor papegaaien"
+  - `flock.billing.heroSeasonLine`: "Voeg nu een kaart toe om na de gratis periode in de Flock te blijven. Je betaalt niets tot {{date}}."
+  - `flock.billing.howItWorks`: "Zo werkt het"
+  - `flock.billing.includes`: "Dit zit in je lidmaatschap"
+  - `flock.billing.joinFlock`: "Word lid van de Flock"
+  - `flock.billing.keepSpot`: "Mijn oprichtersplek houden · vandaag $0"
+  - `flock.billing.keeps`: "Dit houd je met je lidmaatschap"
+  - `flock.billing.manage`: "Betaling beheren"
+  - `flock.billing.manageLine`: "Wijzig je kaart of abonnement, of zeg op wanneer je wilt."
+  - `flock.billing.monthlyLabel`: "Maandelijks"
+  - `flock.billing.monthsFree_one`: "{{count}} maand gratis"
+  - `flock.billing.monthsFree_other`: "{{count}} maanden gratis"
+  - `flock.billing.nextCharge`: "Volgende betaling"
+  - `flock.billing.notReady`: "Je kunt een kaart toevoegen zodra het einde van de gratis periode vaststaat."
+  - `flock.billing.onFile`: "Kaart opgeslagen"
+  - `flock.billing.pastDueLine`: "Dat kan gebeuren, vaak door een verlopen kaart. Werk je kaart uiterlijk {{date}} bij om je plek in de Flock te houden."
+  - `flock.billing.pastDueNoDate`: "Dat kan gebeuren, vaak door een verlopen kaart. Werk je kaart bij om je plek in de Flock te houden."
+  - `flock.billing.pastDueTitle`: "Je laatste betaling is niet gelukt"
+  - `flock.billing.perMonth`: "/mnd"
+  - `flock.billing.perkBadge`: "Je oprichtersbadge en je plek bij de Founding 50"
+  - `flock.billing.perkChapter`: "Je afdeling, met vogeldierenartsen, opvangcentra en winkels die andere leden aanraden"
+  - `flock.billing.perkFounderAll`: "Je afdeling, trajecten en de volledige bibliotheek"
+  - `flock.billing.perkFounderVote`: "Een stem in Do good, ook bij stemmingen alleen voor oprichters"
+  - `flock.billing.perkJourneys`: "Stapsgewijze trajecten voor training en verzorging"
+  - `flock.billing.perkLibrary`: "De volledige bibliotheek"
+  - `flock.billing.perkVote`: "Een stem in Do good, over waar de donaties van de Flock naartoe gaan"
+  - `flock.billing.pickHow`: "Kies hoe je betaalt"
+  - `flock.billing.planFounding`: "Oprichtend lid"
+  - `flock.billing.planLabel`: "Abonnement"
+  - `flock.billing.renews`: "Je lidmaatschap wordt automatisch verlengd."
+  - `flock.billing.renewsMonthly`: "Wordt elke maand verlengd. Opzeggen kan altijd via Betaling beheren."
+  - `flock.billing.renewsYearly`: "Wordt eens per jaar verlengd. Opzeggen kan altijd via Betaling beheren."
+  - `flock.billing.saveCardNoteMonthly`: "De Flock, {{price}} per maand. Je betaalt niets tot {{date}}. Je kunt tot die tijd altijd opzeggen via Lidmaatschap en betaling."
+  - `flock.billing.saveCardNoteYearly`: "De Flock, {{price}} per jaar. Je betaalt niets tot {{date}}. Je kunt tot die tijd altijd opzeggen via Lidmaatschap en betaling."
+  - `flock.billing.seasonSet`: "Gratis periode · alles staat klaar voor daarna"
+  - `flock.billing.secure`: "Veilig betalen met Stripe"
+  - `flock.billing.secureCancel`: "Veilig betalen met Stripe · Altijd opzegbaar"
+  - `flock.billing.seeMembership`: "Bekijk lidmaatschap en betaling"
+  - `flock.billing.spotSafe`: "Je plek is <em>veilig</em>"
+  - `flock.billing.staysFree`: "Alles in de Flock blijft gratis, net als nu."
+  - `flock.billing.thanks`: "<strong>Dankjewel.</strong> 20% van je lidmaatschap gaat naar partners in papegaaienopvang en natuurbehoud."
+  - `flock.billing.today`: "Vandaag"
+  - `flock.billing.todayFounder`: "Voeg je kaart toe. Je oprichtersplek is veilig. Vandaag betaal je $0."
+  - `flock.billing.todayLine`: "Voeg je kaart toe. Vandaag betaal je $0."
+  - `flock.billing.until`: "Tot {{date}}"
+  - `flock.billing.updateCard`: "Mijn kaart bijwerken"
+  - `flock.billing.welcomeFounderLine`: "Je oprichtersprijs staat vast. Bedankt dat je de Flock mee hebt opgericht."
+  - `flock.billing.welcomeLine`: "Je plek in de Flock is bewaard voor na de gratis periode. Tot die tijd verandert er niets."
+  - `flock.billing.yearlyLabel`: "Jaarlijks"
+  - `flock.billing.yearlyTotal`: "{{price}} eens per jaar"
+  - `flock.you.membership`: "Lidmaatschap en betaling"
+- **Where:** Checkout, last 49 hours of the free season, `flock.billing.saveCardNoteYearly`
+  - Before: new
+  - After: "The Flock, {{price}} a year. You won't be charged until {{date}}. Cancel anytime before then from Membership and billing."
+- **Where:** Checkout, last 49 hours of the free season, `flock.billing.saveCardNoteMonthly`
+  - Before: new
+  - After: "The Flock, {{price}} a month. You won't be charged until {{date}}. Cancel anytime before then from Membership and billing."
+- **Where:** billing screens, `flock.billing.accessUntil`
+  - Before: new
+  - After: "Access until"
+- **Where:** billing screens, `flock.billing.addMyCard`
+  - Before: new
+  - After: "Add my card · $0 today"
+- **Where:** billing screens, `flock.billing.allSet`
+  - Before: new
+  - After: "You're <em>all set</em>"
+- **Where:** billing screens, `flock.billing.backToFlock`
+  - Before: new
+  - After: "Back to the Flock"
+- **Where:** billing screens, `flock.billing.billedMonthly`
+  - Before: new
+  - After: "Billed monthly"
+- **Where:** billing screens, `flock.billing.cardEnding`
+  - Before: new
+  - After: "Ending in {{last4}}"
+- **Where:** billing screens, `flock.billing.cardLabel`
+  - Before: new
+  - After: "Card"
+- **Where:** billing screens, `flock.billing.chargeMonthly`
+  - Before: new
+  - After: "Your first charge of {{price}}, then monthly. Cancel before this date and you won't be charged."
+- **Where:** billing screens, `flock.billing.chargeYearly`
+  - Before: new
+  - After: "Your first charge of {{price}}, then once a year. Cancel before this date and you won't be charged."
+- **Where:** billing screens, `flock.billing.checkoutNote`
+  - Before: new
+  - After: "You won't be charged until {{date}}. Cancel anytime before then from Membership and billing."
+- **Where:** billing screens, `flock.billing.chooseFounder`
+  - Before: new
+  - After: "You help choose where it goes, <strong>through Do good votes</strong>, including the founders-only ones."
+- **Where:** billing screens, `flock.billing.chooseMember`
+  - Before: new
+  - After: "You help choose where it goes, <strong>through Do good votes</strong> with the rest of the Flock."
+- **Where:** billing screens, `flock.billing.confirmingLine`
+  - Before: new
+  - After: "This can take a minute. You can stay right here, and we'll move on as soon as it's done."
+- **Where:** billing screens, `flock.billing.confirmingSlow`
+  - Before: new
+  - After: "This is taking longer than usual. Your card is safe with Stripe, so there's no need to add it again. Check Membership and billing in a few minutes."
+- **Where:** billing screens, `flock.billing.confirmingTitle`
+  - Before: new
+  - After: "Confirming your card"
+- **Where:** billing screens, `flock.billing.firstCharge`
+  - Before: new
+  - After: "First charge"
+- **Where:** billing screens, `flock.billing.flockMember`
+  - Before: new
+  - After: "Flock member"
+- **Where:** billing screens, `flock.billing.founding50`
+  - Before: new
+  - After: "Founding 50"
+- **Where:** billing screens, `flock.billing.foundingLabel`
+  - Before: new
+  - After: "Founding price"
+- **Where:** billing screens, `flock.billing.foundingLocked`
+  - Before: new
+  - After: "Locked in for as long as you stay a member."
+- **Where:** billing screens, `flock.billing.foundingOthers`
+  - Before: new
+  - After: "Everyone else pays {{price}}."
+- **Where:** billing screens, `flock.billing.foundingRelease`
+  - Before: new
+  - After: "Without a card on file by {{date}}, your founding spot is released and can't be claimed again."
+- **Where:** billing screens, `flock.billing.foundingSpot`
+  - Before: new
+  - After: "Founding 50 · Spot #{{spot}}"
+- **Where:** billing screens, `flock.billing.freeUntil`
+  - Before: new
+  - After: "Free until"
+- **Where:** billing screens, `flock.billing.givesBack`
+  - Before: new
+  - After: "Every membership gives back"
+- **Where:** billing screens, `flock.billing.givesBackLine`
+  - Before: new
+  - After: "of what you pay goes to parrot rescue and conservation partners"
+- **Where:** billing screens, `flock.billing.givesBackNote`
+  - Before: new
+  - After: "<strong>Your membership gives back.</strong> 20% goes to parrot rescue and conservation partners."
+- **Where:** billing screens, `flock.billing.heroAfterLine`
+  - Before: new
+  - After: "Join the Flock, and help parrots in rescues and in the wild."
+- **Where:** billing screens, `flock.billing.heroFounder`
+  - Before: new
+  - After: "You helped <em>start this</em>. Keep your {{price}}."
+- **Where:** billing screens, `flock.billing.heroFounderLine`
+  - Before: new
+  - After: "Add a card by {{date}} to hold your founding spot and price. You won't pay anything until then."
+- **Where:** billing screens, `flock.billing.heroMember`
+  - Before: new
+  - After: "Your membership <em>does good</em> for parrots"
+- **Where:** billing screens, `flock.billing.heroSeasonLine`
+  - Before: new
+  - After: "Add a card now to stay in the Flock after the free season. You won't pay anything until {{date}}."
+- **Where:** billing screens, `flock.billing.howItWorks`
+  - Before: new
+  - After: "How it works"
+- **Where:** billing screens, `flock.billing.includes`
+  - Before: new
+  - After: "What your membership includes"
+- **Where:** billing screens, `flock.billing.joinFlock`
+  - Before: new
+  - After: "Join the Flock"
+- **Where:** billing screens, `flock.billing.keepSpot`
+  - Before: new
+  - After: "Keep my founding spot · $0 today"
+- **Where:** billing screens, `flock.billing.keeps`
+  - Before: new
+  - After: "What your membership keeps"
+- **Where:** billing screens, `flock.billing.manageLine`
+  - Before: new
+  - After: "Change your card or plan, or cancel, any time."
+- **Where:** billing screens, `flock.billing.monthlyLabel`
+  - Before: new
+  - After: "Monthly"
+- **Where:** billing screens, `flock.billing.monthsFree_one`
+  - Before: new
+  - After: "{{count}} month free"
+- **Where:** billing screens, `flock.billing.monthsFree_other`
+  - Before: new
+  - After: "{{count}} months free"
+- **Where:** billing screens, `flock.billing.nextCharge`
+  - Before: new
+  - After: "Next charge"
+- **Where:** billing screens, `flock.billing.pastDueLine`
+  - Before: new
+  - After: "It happens, often with an expired card. Update your card by {{date}} to keep your place in the Flock."
+- **Where:** billing screens, `flock.billing.pastDueNoDate`
+  - Before: new
+  - After: "It happens, often with an expired card. Update your card to keep your place in the Flock."
+- **Where:** billing screens, `flock.billing.pastDueTitle`
+  - Before: new
+  - After: "Your last payment didn't go through"
+- **Where:** billing screens, `flock.billing.perMonth`
+  - Before: new
+  - After: "/mo"
+- **Where:** billing screens, `flock.billing.perkBadge`
+  - Before: new
+  - After: "Your founder badge and your place among the Founding 50"
+- **Where:** billing screens, `flock.billing.perkChapter`
+  - Before: new
+  - After: "Your chapter, with avian vets, rescues and shops other members recommend"
+- **Where:** billing screens, `flock.billing.perkFounderAll`
+  - Before: new
+  - After: "Your chapter, journeys and the full Library"
+- **Where:** billing screens, `flock.billing.perkFounderVote`
+  - Before: new
+  - After: "A vote in Do good, including founders-only votes"
+- **Where:** billing screens, `flock.billing.perkJourneys`
+  - Before: new
+  - After: "Step-by-step journeys for training and care"
+- **Where:** billing screens, `flock.billing.perkLibrary`
+  - Before: new
+  - After: "The full Library"
+- **Where:** billing screens, `flock.billing.perkVote`
+  - Before: new
+  - After: "A vote in Do good, on where the Flock's giving goes"
+- **Where:** billing screens, `flock.billing.pickHow`
+  - Before: new
+  - After: "Pick how you pay"
+- **Where:** billing screens, `flock.billing.planFounding`
+  - Before: new
+  - After: "Founding member"
+- **Where:** billing screens, `flock.billing.planLabel`
+  - Before: new
+  - After: "Plan"
+- **Where:** billing screens, `flock.billing.renewsMonthly`
+  - Before: new
+  - After: "Renews every month. Cancel anytime in Manage billing."
+- **Where:** billing screens, `flock.billing.renewsYearly`
+  - Before: new
+  - After: "Renews once a year. Cancel anytime in Manage billing."
+- **Where:** billing screens, `flock.billing.seasonSet`
+  - Before: new
+  - After: "Free season · you're all set for after"
+- **Where:** billing screens, `flock.billing.secure`
+  - Before: new
+  - After: "Secure checkout with Stripe"
+- **Where:** billing screens, `flock.billing.secureCancel`
+  - Before: new
+  - After: "Secure checkout with Stripe · Cancel anytime"
+- **Where:** billing screens, `flock.billing.seeMembership`
+  - Before: new
+  - After: "See membership and billing"
+- **Where:** billing screens, `flock.billing.spotSafe`
+  - Before: new
+  - After: "Your spot is <em>safe</em>"
+- **Where:** billing screens, `flock.billing.staysFree`
+  - Before: new
+  - After: "Everything in the Flock stays free, just like now."
+- **Where:** billing screens, `flock.billing.thanks`
+  - Before: new
+  - After: "<strong>Thank you.</strong> 20% of your membership will go to parrot rescue and conservation partners."
+- **Where:** billing screens, `flock.billing.today`
+  - Before: new
+  - After: "Today"
+- **Where:** billing screens, `flock.billing.todayFounder`
+  - Before: new
+  - After: "Add your card. Your founding spot is safe. $0 due today."
+- **Where:** billing screens, `flock.billing.todayLine`
+  - Before: new
+  - After: "Add your card. $0 due today."
+- **Where:** billing screens, `flock.billing.until`
+  - Before: new
+  - After: "Until {{date}}"
+- **Where:** billing screens, `flock.billing.updateCard`
+  - Before: new
+  - After: "Update my card"
+- **Where:** billing screens, `flock.billing.welcomeFounderLine`
+  - Before: new
+  - After: "Your founding price is locked in. Thank you for helping start the Flock."
+- **Where:** billing screens, `flock.billing.welcomeLine`
+  - Before: new
+  - After: "Your place in the Flock is saved for after the free season. Nothing changes until then."
+- **Where:** billing screens, `flock.billing.yearlyLabel`
+  - Before: new
+  - After: "Yearly"
+- **Where:** billing screens, `flock.billing.yearlyTotal`
+  - Before: new
+  - After: "{{price}} once a year"
+- **Where:** billing screens, `flock.billing.addCard`
+  - Before: "Add a card"
+  - After: removed, replaced by the mockup's wording
+- **Where:** billing screens, `flock.billing.chargedToday`
+  - Before: "You'll be charged today."
+  - After: removed, replaced by the mockup's wording
+- **Where:** billing screens, `flock.billing.choose`
+  - Before: "Choose a plan"
+  - After: removed, replaced by the mockup's wording
+- **Where:** billing screens, `flock.billing.confirming`
+  - Before: "We're confirming your card. This can take a minute."
+  - After: removed, replaced by the mockup's wording
+- **Where:** billing screens, `flock.billing.firstChargeOn`
+  - Before: "First charge on {{date}}."
+  - After: removed, replaced by the mockup's wording
+- **Where:** billing screens, `flock.billing.monthly`
+  - Before: "Monthly: {{price}} a month"
+  - After: removed, replaced by the mockup's wording
+- **Where:** billing screens, `flock.billing.pastDue`
+  - Before: "Your last payment didn't go through. Update your card to keep your membership."
+  - After: removed, replaced by the mockup's wording
+- **Where:** billing screens, `flock.billing.yearly`
+  - Before: "Yearly: {{price}} a year"
+  - After: removed, replaced by the mockup's wording
+- **Where:** billing screens, `flock.billing.zeroToday`
+  - Before: "$0 today. Your first charge is on {{date}}."
+  - After: removed, replaced by the mockup's wording
 ### [#529](https://github.com/the-kya-project/perch-perfect-plan/pull/529) · 1.8 Do good voting (shared donation)
 Every voting line as merged, all new to the live app. Nobody but admins sees them while the Flock is closed. The member wording follows Brittany's approved mockups. The founders-only lines and "See your vote" are agent wording the mockups don't cover.
 - **Where:** `flock.votes.adminCounts_one`
@@ -706,6 +1048,39 @@ No new strings: every line reuses existing wording, in new places (admins only).
 - **Decision:** Where pods are reached: a card at the top of your own journey (waiting, "Your buddy pod", or the new-pod offer), and a "Buddy pods" row in Flock settings listing your pods and waits. Admins get "Manage pods" on that list. The Privacy screen gains a line for pods.
 - **Decision:** No analytics events for pods; the spec doesn't ask for any.
 - **To change it:** the rules are in `20261124070000_flock_buddy_pods.sql` (placement `private.flock_pod_place`, the job `private.flock_pods_tick`); the words are in `src/components/flock/PodParts.tsx`.
+
+### [#543](https://github.com/the-kya-project/perch-perfect-plan/pull/543) · 1.17 Promo codes · Brittany's decisions, Nov 24, 2026
+- **Approved:** the worked examples match what she meant, and the webhook may remove discounts from founding memberships. Merged switched off once every required check passed.
+- **Before billing opens:** two test checkouts during a test free season (one "20% off for 3 months" code, one "once" code) to see whether Stripe counts the months from the card being added or from the first charge. In the "Before billing opens" checklist in `docs/BACKLOG.md`.
+- **Decision (merging `main`):** the code field stays on the subscription Checkout only. The save-the-card Checkout from #533 (the free season's last 49 hours) can't take a code, because Stripe allows none in setup mode, and the subscription the webhook starts from it has no discount. Crew plans get the field and the founding price doesn't; `npm run test:billing` pins both.
+
+### [#533](https://github.com/the-kya-project/perch-perfect-plan/pull/533) · 1.14a Card step and checkout design · Brittany's decisions, Nov 24, 2026
+- **Approved:** the screens and the Dutch. Merged switched off (`BILLING_ENABLED` off), the same way #525 did, once every required check passed.
+- **Before billing opens:** the founder release job, the test-mode Customer Portal setup, two test checkouts (one normal, one in the free season's last 49 hours) and a native speaker's read of the Dutch are a checklist in `docs/BACKLOG.md` ("Before billing opens").
+- **Decision (merging `main`):** the checkout now accepts #535's Crew choices (`CHECKOUT_CHOICES`) along with the locale, and keeps #533's branded Checkout and notes. The card step still offers only the Flock plans (Crew on it is 1.15a).
+- **Decision:** the save-the-card note now says "a year" for `crew_annual` as well as `annual`. Before, a yearly Crew plan would have read "a month". No wording changed.
+
+### [#547](https://github.com/the-kya-project/perch-perfect-plan/pull/547) · 1.10 Challenges · Brittany's decisions, Nov 24, 2026
+- **Screens and copy:** the screens the mockup didn't show (joining, "You finished!", a closed challenge with its wrap-up, the admin list and the admin screen for a started challenge) are approved as built, and the copy is approved as written.
+- **Clips:** no short clips for now. Entries stay a few sentences plus up to four photos. Clip entries later are backlog item 1.10a (under "Later").
+- **Text required:** an entry still needs a few words even when it has a photo.
+- **Journey challenges:** they stay. When the journeys redesign (1.20b) lands, they move to the new design with no milestone progress, and a journey challenge counts as finished when its journey ends with "learned it" before the end date. Noted in `docs/BACKLOG.md` under 1.20b.
+- **Migration and merge:** migration approved; merged once every required check passed on the latest commit.
+
+### [#547](https://github.com/the-kya-project/perch-perfect-plan/pull/547) · 1.10 Challenges
+- **Decision:** Entries are Flock posts in a new `challenge` space, tied to their challenge. That way reactions, comments, reports, review, blocks, photos, deletion and the 180-day hold all work exactly as they do for posts. Entries show only in their challenge's feed, never in Today's.
+- **Decision:** Start and end are days in Eastern time (the Flock's day, like Today's idea), and both days count. A challenge opens at the start of its first day and closes after its last. Members don't see a scheduled challenge until it starts, and "Move back to draft" works only before then.
+- **Decision:** "One active challenge at a time Flock-wide, plus at most one per chapter": scheduling refuses a challenge whose days overlap another scheduled one for the same group. A Flock-wide and a chapter challenge can overlap. Once a challenge has started, it can't be edited, unscheduled or deleted, so members' progress never changes under them.
+- **Decision:** Diet conversion, and every template in the food category, can't be a challenge's journey. The admin form doesn't list them, and the database refuses them.
+- **Decision:** A journey challenge doesn't start the journey by itself. Joining picks the bird; if that bird has no journey on the template yet, the member goes to the usual journey setup (clip, rhythm, who sees it). Progress is that journey's milestones. It counts as finished when that journey finishes between joining and the end day. A journey that's already underway counts.
+- **Decision:** Standalone progress is one entry per prompt, in any order. "Post today's entry" always offers the first prompt not done yet, matching the mockup's checklist. Deleting an entry un-ticks its prompt, but a Challenge champ badge already earned stays.
+- **Decision:** Permission to feature is a switch, off by default, asked when joining and changeable later on the challenge page. Turning it off takes the member's entries out of the pin and the wrap-up at once. A pinned entry also needs that permission, since pinning features it.
+- **Decision:** On a profile, Challenge champ shows only when it was earned in a way others may see. A journey challenge counts there only if its journey is shared with the community, as with Journey finisher and Trick star. Without that cap, a challenge badge earned only through a "Just me" journey would show on the profile.
+- **Decision:** Joined members show as up to four faces (name and photo only, blocked people left out) plus a count, as in the mockup. Nobody is ranked or listed by progress.
+- **Decision:** The admin list is linked from "Manage challenges" on the Journeys tab (admins only), and from "Manage this challenge" on a challenge page. Votes use the same pattern on Do good.
+- **Decision:** No analytics events for challenges. The spec doesn't ask for any, and adding them means changing the shared event list.
+- **To change it:** the rules are in `20261124033000_flock_challenges.sql` (`private.flock_challenge_*`); the words are in `src/components/flock/ChallengeParts.tsx` and the two `flock.challenges.$challengeId` routes; the admin form is `src/routes/_authenticated/admin.challenges.$challengeId.tsx`.
+
 ### [#549](https://github.com/the-kya-project/perch-perfect-plan/pull/549) · D1.2 Weight baseline on the weight page, in shadow mode
 - **Decision:** The top tier is now called `shifted` everywhere in code, the shadow log and the replay report (it was `call_vet_today`), so "Call your vet today" isn't used as a label anywhere, as you decided. The replay report's line now reads "Weight has shifted (top level)".
 - **Decision:** While a bird is still learning, only the hard alert (the fixed 10%, against the month before) and the sudden drop can fire. That's how I read "while a bird is still learning, the fixed draft values apply". The fixed 2.5% / 5% / 10% stay in the rules file for that reading. Once learned, the hard alert uses the same personal level as the top tier.
@@ -779,6 +1154,21 @@ Format:
 - **To change it:** <what would need to change>
 ```
 
+### [#543](https://github.com/the-kya-project/perch-perfect-plan/pull/543) · 1.17 Promo codes for memberships
+- **Decision:** Codes are entered in Stripe Checkout's own "Add promotion code" field. No code box was added to the card step, and nothing in the app creates or lists codes; they're made in the Stripe Dashboard.
+- **Why:** gift Checkout already works this way, and an app field would need a new design.
+- **To change it:** `allow_promotion_codes` in `startBillingCheckout` (`src/lib/billing.functions.ts`).
+
+### [#543](https://github.com/the-kya-project/perch-perfect-plan/pull/543) · 1.17 Promo codes for memberships
+- **Decision:** The rule is "every plan but founding" (`promotionCodesAllowed`), so Kya's Crew plans get codes as soon as #535 adds them, with no change here. The billing webhook also takes off any discount found on a founding subscription (from the Customer Portal or the Dashboard) and notes "discount removed" on the event. Discounts on a Stripe customer aren't checked.
+- **Why:** founding and regular share one Stripe product, so Stripe can't limit a coupon to the regular prices. Hiding the field covers Checkout only.
+- **To change it:** `promotionCodesAllowed` and `discountsToRemove` in `src/lib/billing.ts`.
+
+### [#543](https://github.com/the-kya-project/perch-perfect-plan/pull/543) · 1.17 Promo codes for memberships
+- **Decision:** Which codes are used isn't recorded in the app. `/admin/gifts` totals by code, but nothing like that exists for memberships yet.
+- **Why:** the item asks only for codes to work on the card step.
+- **Worth knowing:** #533 saves only the card (no subscription yet) in the free season's last 49 hours. Stripe's save-card Checkout has no code field, so a code can't be used in that window. Whichever of #533 and #543 merges second should keep `allow_promotion_codes` on the subscription Checkout.
+
 ### [#535](https://github.com/the-kya-project/perch-perfect-plan/pull/535) · 1.15 Kya's Crew (switched off)
 - **Decision:** "No trial" means Crew never gets the 14-day trial planned for after the free season (6f, not built). During the free season a Crew card goes on at $0 until the season's end, like every membership; after it, Crew is charged the day the card goes on.
 - **Why:** the Flock is "free for everyone" until the season's end, and Crew "includes everything in a Flock membership". The $0 period is the free season, not a trial. Asked in the PR in case you meant Crew to be charged at once.
@@ -811,6 +1201,33 @@ Format:
 - **Why:** iPhone purchases come with the launch build (RevenueCat), and the card step has no Crew design. #533 is redesigning that screen.
 - **Brittany's answer (Nov 23, 2026):** members choose Crew on the payment screen (the card step from 1.14a, #533), with its benefits listed. That waits on her approved mockup: backlog 1.15a.
 - **To change it:** add Crew to the card step once there's a design (`CHECKOUT_CHOICES` is ready).
+### [#533](https://github.com/the-kya-project/perch-perfect-plan/pull/533) · 1.14a Dutch
+- Kept as names, in English: "the Flock", "Do good" and "Founding 50". "Free season" is "gratis periode" and "chapter" is "afdeling", as on the Dutch gift pages.
+- Dates, Stripe's Checkout and the Customer Portal follow the language the member is using. Prices stay in US dollars, because that's what Stripe charges.
+- The rest of the Flock has no Dutch yet, so a Dutch member sees Dutch billing screens inside a mostly English Flock.
+
+### [#533](https://github.com/the-kya-project/perch-perfect-plan/pull/533) · 1.14a Card step and checkout design
+- **Decision (Brittany, Nov 23, 2026):** A card added in the free season's last 49 hours is no longer charged right away. Checkout saves the card, and the webhook starts the subscription with its first charge at the season's end, the same as everyone else.
+- **Why:** Stripe Checkout can't start a trial under 48 hours long. Saving the card first avoids that limit. Stripe shows no plan or price on a save-the-card page, so its sentence names the price. Opening a new checkout closes the member's older open one, and the webhook refuses a second membership.
+- **To change it:** `firstCharge` in `src/lib/billing.ts`, `startSavedCardSubscription` in `src/lib/billingWebhook.ts`.
+
+### [#533](https://github.com/the-kya-project/perch-perfect-plan/pull/533) · 1.14a Card step and checkout design
+- **Decision:** Differences from the approved mockups:
+  - **Tab bar:** the Flock's tab bar (phones) and side column (desktop) stay on these screens. The mockups don't show them.
+  - **Desktop:** the content is capped at 560 px and centered on the forest background. The mockups are phone-only.
+  - **Founding line:** the visible card uses the mockup's "Locked in for as long as you stay a member." Your `flock.billing.founding` sentence is what screen readers hear on that card.
+  - **Founder after the free season:** no mockup. A founder whose price is still open sees the founding price card, not plan tiles, because Checkout will charge the founding price.
+  - **Membership states the mockup doesn't show:** a paid member sees "Next charge"; a cancelled one sees "Your membership won't renew." and "Access until". The all-set screen shows only during the free season.
+  - **Slow confirmation:** after two minutes the confirming screen says it's taking longer than usual, not to add the card again, and offers Back to the Flock.
+  - **Missing values:** no Card row if Stripe can't return the digits, no tile for a price that isn't set, and the "2 months free" badge only while the two prices really work out to it.
+  - **Checkout:** Stripe draws the page, so its layout differs from `BillingCheckout`. See "What Stripe won't let us change" in the PR.
+- **Why:** the backlog's mockup rule asks for every difference to be listed.
+- **To change it:** `src/components/flock/BillingScreens.tsx`.
+
+### [#533](https://github.com/the-kya-project/perch-perfect-plan/pull/533) · 1.14a Card step and checkout design
+- **Decision:** Billing dates use Eastern time everywhere, Checkout's sentence included. Checkout is set to English, and uses Inter because Stripe doesn't offer DM Sans.
+- **Why:** one day on every screen, and the custom sentence has no Dutch yet.
+- **To change it:** `billingDay` and `checkoutDesign` in `src/lib/billing.ts`.
 
 ### [#534](https://github.com/the-kya-project/perch-perfect-plan/pull/534) · 1.4 Removed content and closed reports are deleted after 180 days
 - **Decision:** What counts: posts and comments a reviewer removed ("Remove it" in the review queue), timed from the removal (`flock_moderation.updated_at`), and reports closed as kept or removed, timed from `resolved_at`. Removed content goes through 1.3's hold, already due, so the same daily run deletes its photos with 1.3's rules (a photo still used elsewhere is kept, and a failed delete waits a day). The comments under a removed post, and the replies under a removed comment, go with it. Left out: removed journey updates (Brittany, Nov 23, 2026: they stay as they are and are not deleted after 180 days), Do good posts a reviewer declined (a review result, not a removal; they stay visible to their author only), content still waiting for review, and open reports.
@@ -1123,27 +1540,9 @@ Format:
 ```
 
 ### [#548](https://github.com/the-kya-project/perch-perfect-plan/pull/548) · 1.11 Buddy pods
-- **Needs:** (1) A look at the screens the mockup doesn't show, built from the app's existing cards and lists: the "Buddy pods" list in Flock settings, the admin screen (`/admin/pods`), the "Your buddy pod" and "Your buddy pod has closed" cards on a journey, the Leave pod sheet, and the closed-pod note. "You finished!" and "Keep going together?" follow the backlog's note. The spec says to hold and ask about unmocked screens. (2) The placement and 3-week-rule readings under "Decisions agents made". (3) Your merge: the migration changes two Flock functions (post visibility, Today's feed) and the posts table's space check, and adds an hourly job; merging applies it to production. (4) #547 (Challenges) also changes the space check. Whichever of #547 and #548 merges second needs its space list to keep the other's space (`challenge`, `pod`); #548 rewrites the check from its live definition, so it keeps `challenge` if #547 goes first, but #547 writes a fixed list.
+- **Needs:** (1) A look at the screens the mockup doesn't show, built from the app's existing cards and lists: the "Buddy pods" list in Flock settings, the admin screen (`/admin/pods`), the "Your buddy pod" and "Your buddy pod has closed" cards on a journey, the Leave pod sheet, and the closed-pod note. "You finished!" and "Keep going together?" follow the backlog's note. The spec says to hold and ask about unmocked screens. (2) The placement and 3-week-rule readings under "Decisions agents made". (3) Your merge: the migration changes two Flock functions (post visibility, Today's feed) and the posts table's space check, and adds an hourly job; merging applies it to production. (4) #547 (Challenges) merged first (Nov 24, 2026), and #548 has been brought up to date with it: #548 rebuilds the space check from its live definition, so it keeps `challenge`, and both migrations' function patches stack.
 
-### [#543](https://github.com/the-kya-project/perch-perfect-plan/pull/543) · 1.17 Promo codes: two checks need a re-run
-- **Needs:** a re-run of "Free-user regression" and "iPhone hydration" on #543 (Actions → each run → Re-run jobs). On its latest commit (`c68861b`, the record merge from `main`), both were cancelled, not failed: the regression run when a newer run joined the shared staging queue, and iPhone hydration after 25 minutes stuck installing browsers. Runs can't re-run checks. The PR is otherwise held for your approval, as its description says.
 
-### [#535](https://github.com/the-kya-project/perch-perfect-plan/pull/535) · 1.15 Kya's Crew: Free-user regression failed after the record merge
-- **Needs:** a look at, or a re-run of, "Free-user regression" on #535's latest commit (`7b7bd3f`, the record merge from `main`). This time it failed in "Run the free-user regression check" rather than being cancelled. This run couldn't read the failure's details: the log is too long to show here, and the report is an artifact runs can't open. Another PR's run sharing staging at the same time is a likely cause. The earlier note about the cancelled run (below) still applies to the commit before.
-### [#549](https://github.com/the-kya-project/perch-perfect-plan/pull/549) · D1.2 Weight baseline on the weight page, in shadow mode
-- **Needs:** (1) a read of the health wording and the decisions above (your three lines are used word for word; the others are drafts). (2) Your approval of the migration. It adds two tables (`bird_ideal_weights`, `weight_baseline_shadow`), one function and the hourly job `weight-baseline-shadow-hourly`. Merging applies it to production and starts logging for every bird. Nobody is shown or sent anything. (3) Your merge. After it merges, `select public.admin_set_health_feature('weight_baseline', 'admins');` turns the screens on for your account. Everything in it goes into the vet packet with the D1.2 list ("For the vet review").
-
-### [#547](https://github.com/the-kya-project/perch-perfect-plan/pull/547) and [#548](https://github.com/the-kya-project/perch-perfect-plan/pull/548) · 1.10 Challenges and 1.11 Buddy pods: behind `main`
-- **Needs:** "Update branch" on each PR (or a merge of `main`). Both conflict with `main` only in the record files (`docs/BACKLOG.md`, `docs/REVIEW_QUEUE.md`). But `main` has since changed two workflow files (#538 and #545), and the runs' token can't push a merge that brings those in. So the 05:46 EST run left both branches as they are. Both were green and held for you before `main` moved.
-
-### [#543](https://github.com/the-kya-project/perch-perfect-plan/pull/543) and [#533](https://github.com/the-kya-project/perch-perfect-plan/pull/533) · 1.17 Promo codes and 1.14a Card step: code conflicts with `main`
-- **Needs:** someone to resolve the conflicts before either can be reviewed. Since 1.15 (#535) merged, both conflict with `main` in the billing code (`src/lib/billing.ts`, `src/lib/billing.functions.ts`, `scripts/billing.test.ts`), and #533 also conflicts in `src/locales/en.jsonc`. Runs only resolve conflicts in the record files, so the 05:46 EST run left both branches as they are.
-
-### [#535](https://github.com/the-kya-project/perch-perfect-plan/pull/535) · 1.15 Kya's Crew and its sponsored rescue-adopter seat (switched off)
-- **Needs:** (1) your approval of the database change: the `entitlements` plan check adds `crew_monthly` and `crew_annual`, plus the new `giving_rate` column and the replaced billing function. Merging applies it to production. (2) Your merge. Your Crew questions are answered (Nov 23, 2026), and seat counting is out. The Crew option on the payment screen is 1.15a and doesn't hold this PR. The Stripe test prices can wait until you want to try Crew checkout.
-
-### [#535](https://github.com/the-kya-project/perch-perfect-plan/pull/535) · 1.15 Kya's Crew: Free-user regression needs a re-run
-- **Needs:** a re-run of "Free-user regression" on #535 (Actions → the cancelled run → Re-run jobs). On its latest commit (`ebaa867`, "Crew: remove sponsored seat counting") that check was cancelled, not failed, most likely because a newer run joined the shared staging queue. It passed on the commit before. Runs can't re-run checks. The PR is otherwise held for your approval, as its description says.
 
 ### Reminder · the hourly runs' GitHub token expires Feb 20, 2027
 - **Needs:** a new token before **Feb 20, 2027**. That's 90 days from Nov 22, 2026; GitHub → Settings → Developer settings → Fine-grained tokens shows the exact date. When it expires, runs can still build and test but can't push or open PRs, and each run's note in `~/.kya-agent/job.log` says so.

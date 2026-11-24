@@ -88,6 +88,8 @@ import { Route as SitterTokenEmergencyRouteImport } from './routes/sitter/$token
 import { Route as SitterTokenGuideRouteImport } from './routes/sitter/$token/guide'
 import { Route as SitterTokenHomeRouteImport } from './routes/sitter/$token/home'
 import { Route as SitterTokenScanRouteImport } from './routes/sitter/$token/scan'
+import { Route as AuthenticatedAdminChallengesIndexRouteImport } from './routes/_authenticated/admin.challenges.index'
+import { Route as AuthenticatedAdminChallengesChallengeIdRouteImport } from './routes/_authenticated/admin.challenges.$challengeId'
 import { Route as AuthenticatedAdminLibraryIndexRouteImport } from './routes/_authenticated/admin.library.index'
 import { Route as AuthenticatedAdminLibraryResourceIdRouteImport } from './routes/_authenticated/admin.library.$resourceId'
 import { Route as AuthenticatedAdminVotesIndexRouteImport } from './routes/_authenticated/admin.votes.index'
@@ -148,6 +150,8 @@ import { Route as ApiPublicStripeWebhookRouteImport } from './routes/api/public/
 import { Route as AuthenticatedBirdsBirdIdPlanIndexRouteImport } from './routes/_authenticated/birds/$birdId.plan.index'
 import { Route as AuthenticatedBirdsBirdIdPlanEditorRouteImport } from './routes/_authenticated/birds/$birdId.plan.editor'
 import { Route as AuthenticatedBirdsBirdIdScansScanIdRouteImport } from './routes/_authenticated/birds/$birdId.scans.$scanId'
+import { Route as AuthenticatedFlockChallengesChallengeIdIndexRouteImport } from './routes/_authenticated/flock.challenges.$challengeId.index'
+import { Route as AuthenticatedFlockChallengesChallengeIdEntryRouteImport } from './routes/_authenticated/flock.challenges.$challengeId.entry'
 import { Route as AuthenticatedFlockCommentsSubjectTypeSubjectIdRouteImport } from './routes/_authenticated/flock.comments.$subjectType.$subjectId'
 import { Route as AuthenticatedFlockJourneysJourneyIdIndexRouteImport } from './routes/_authenticated/flock.journeys.$journeyId.index'
 import { Route as AuthenticatedFlockJourneysJourneyIdCardRouteImport } from './routes/_authenticated/flock.journeys.$journeyId.card'
@@ -581,6 +585,18 @@ const SitterTokenScanRoute = SitterTokenScanRouteImport.update({
   path: '/scan',
   getParentRoute: () => SitterTokenRouteRoute,
 } as any)
+const AuthenticatedAdminChallengesIndexRoute =
+  AuthenticatedAdminChallengesIndexRouteImport.update({
+    id: '/admin/challenges/',
+    path: '/admin/challenges/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedAdminChallengesChallengeIdRoute =
+  AuthenticatedAdminChallengesChallengeIdRouteImport.update({
+    id: '/admin/challenges/$challengeId',
+    path: '/admin/challenges/$challengeId',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedAdminLibraryIndexRoute =
   AuthenticatedAdminLibraryIndexRouteImport.update({
     id: '/admin/library/',
@@ -938,6 +954,18 @@ const AuthenticatedBirdsBirdIdScansScanIdRoute =
     path: '/scans/$scanId',
     getParentRoute: () => AuthenticatedBirdsBirdIdRoute,
   } as any)
+const AuthenticatedFlockChallengesChallengeIdIndexRoute =
+  AuthenticatedFlockChallengesChallengeIdIndexRouteImport.update({
+    id: '/challenges/$challengeId/',
+    path: '/challenges/$challengeId/',
+    getParentRoute: () => AuthenticatedFlockRoute,
+  } as any)
+const AuthenticatedFlockChallengesChallengeIdEntryRoute =
+  AuthenticatedFlockChallengesChallengeIdEntryRouteImport.update({
+    id: '/challenges/$challengeId/entry',
+    path: '/challenges/$challengeId/entry',
+    getParentRoute: () => AuthenticatedFlockRoute,
+  } as any)
 const AuthenticatedFlockCommentsSubjectTypeSubjectIdRoute =
   AuthenticatedFlockCommentsSubjectTypeSubjectIdRouteImport.update({
     id: '/comments/$subjectType/$subjectId',
@@ -1114,6 +1142,7 @@ export interface FileRoutesByFullPath {
   '/scans/': typeof AuthenticatedScansIndexRoute
   '/sits/': typeof AuthenticatedSitsIndexRoute
   '/sitter/$token/': typeof SitterTokenIndexRoute
+  '/admin/challenges/$challengeId': typeof AuthenticatedAdminChallengesChallengeIdRoute
   '/admin/library/$resourceId': typeof AuthenticatedAdminLibraryResourceIdRoute
   '/admin/votes/$voteId': typeof AuthenticatedAdminVotesVoteIdRoute
   '/birds/$birdId/access': typeof AuthenticatedBirdsBirdIdAccessRoute
@@ -1163,6 +1192,7 @@ export interface FileRoutesByFullPath {
   '/api/public/hooks/weight-baseline-shadow': typeof ApiPublicHooksWeightBaselineShadowRoute
   '/api/public/stripe/billing': typeof ApiPublicStripeBillingRoute
   '/api/public/stripe/webhook': typeof ApiPublicStripeWebhookRoute
+  '/admin/challenges/': typeof AuthenticatedAdminChallengesIndexRoute
   '/admin/library/': typeof AuthenticatedAdminLibraryIndexRoute
   '/admin/votes/': typeof AuthenticatedAdminVotesIndexRoute
   '/birds/$birdId/': typeof AuthenticatedBirdsBirdIdIndexRoute
@@ -1173,6 +1203,7 @@ export interface FileRoutesByFullPath {
   '/flock/you/': typeof AuthenticatedFlockYouIndexRoute
   '/birds/$birdId/plan/editor': typeof AuthenticatedBirdsBirdIdPlanEditorRoute
   '/birds/$birdId/scans/$scanId': typeof AuthenticatedBirdsBirdIdScansScanIdRoute
+  '/flock/challenges/$challengeId/entry': typeof AuthenticatedFlockChallengesChallengeIdEntryRoute
   '/flock/comments/$subjectType/$subjectId': typeof AuthenticatedFlockCommentsSubjectTypeSubjectIdRoute
   '/flock/journeys/$journeyId/card': typeof AuthenticatedFlockJourneysJourneyIdCardRoute
   '/flock/journeys/$journeyId/compare': typeof AuthenticatedFlockJourneysJourneyIdCompareRoute
@@ -1184,6 +1215,7 @@ export interface FileRoutesByFullPath {
   '/flock/reactions/$subjectType/$subjectId': typeof AuthenticatedFlockReactionsSubjectTypeSubjectIdRoute
   '/api/public/bereavement-review/$reviewId/$sig': typeof ApiPublicBereavementReviewReviewIdSigRoute
   '/birds/$birdId/plan/': typeof AuthenticatedBirdsBirdIdPlanIndexRoute
+  '/flock/challenges/$challengeId/': typeof AuthenticatedFlockChallengesChallengeIdIndexRoute
   '/flock/journeys/$journeyId/': typeof AuthenticatedFlockJourneysJourneyIdIndexRoute
   '/flock/pods/$podId/': typeof AuthenticatedFlockPodsPodIdIndexRoute
   '/flock/post/$postId/': typeof AuthenticatedFlockPostPostIdIndexRoute
@@ -1264,6 +1296,7 @@ export interface FileRoutesByTo {
   '/scans': typeof AuthenticatedScansIndexRoute
   '/sits': typeof AuthenticatedSitsIndexRoute
   '/sitter/$token': typeof SitterTokenIndexRoute
+  '/admin/challenges/$challengeId': typeof AuthenticatedAdminChallengesChallengeIdRoute
   '/admin/library/$resourceId': typeof AuthenticatedAdminLibraryResourceIdRoute
   '/admin/votes/$voteId': typeof AuthenticatedAdminVotesVoteIdRoute
   '/birds/$birdId/access': typeof AuthenticatedBirdsBirdIdAccessRoute
@@ -1312,6 +1345,7 @@ export interface FileRoutesByTo {
   '/api/public/hooks/weight-baseline-shadow': typeof ApiPublicHooksWeightBaselineShadowRoute
   '/api/public/stripe/billing': typeof ApiPublicStripeBillingRoute
   '/api/public/stripe/webhook': typeof ApiPublicStripeWebhookRoute
+  '/admin/challenges': typeof AuthenticatedAdminChallengesIndexRoute
   '/admin/library': typeof AuthenticatedAdminLibraryIndexRoute
   '/admin/votes': typeof AuthenticatedAdminVotesIndexRoute
   '/birds/$birdId': typeof AuthenticatedBirdsBirdIdIndexRoute
@@ -1322,6 +1356,7 @@ export interface FileRoutesByTo {
   '/flock/you': typeof AuthenticatedFlockYouIndexRoute
   '/birds/$birdId/plan/editor': typeof AuthenticatedBirdsBirdIdPlanEditorRoute
   '/birds/$birdId/scans/$scanId': typeof AuthenticatedBirdsBirdIdScansScanIdRoute
+  '/flock/challenges/$challengeId/entry': typeof AuthenticatedFlockChallengesChallengeIdEntryRoute
   '/flock/comments/$subjectType/$subjectId': typeof AuthenticatedFlockCommentsSubjectTypeSubjectIdRoute
   '/flock/journeys/$journeyId/card': typeof AuthenticatedFlockJourneysJourneyIdCardRoute
   '/flock/journeys/$journeyId/compare': typeof AuthenticatedFlockJourneysJourneyIdCompareRoute
@@ -1333,6 +1368,7 @@ export interface FileRoutesByTo {
   '/flock/reactions/$subjectType/$subjectId': typeof AuthenticatedFlockReactionsSubjectTypeSubjectIdRoute
   '/api/public/bereavement-review/$reviewId/$sig': typeof ApiPublicBereavementReviewReviewIdSigRoute
   '/birds/$birdId/plan': typeof AuthenticatedBirdsBirdIdPlanIndexRoute
+  '/flock/challenges/$challengeId': typeof AuthenticatedFlockChallengesChallengeIdIndexRoute
   '/flock/journeys/$journeyId': typeof AuthenticatedFlockJourneysJourneyIdIndexRoute
   '/flock/pods/$podId': typeof AuthenticatedFlockPodsPodIdIndexRoute
   '/flock/post/$postId': typeof AuthenticatedFlockPostPostIdIndexRoute
@@ -1421,6 +1457,7 @@ export interface FileRoutesById {
   '/_authenticated/scans/': typeof AuthenticatedScansIndexRoute
   '/_authenticated/sits/': typeof AuthenticatedSitsIndexRoute
   '/sitter/$token/': typeof SitterTokenIndexRoute
+  '/_authenticated/admin/challenges/$challengeId': typeof AuthenticatedAdminChallengesChallengeIdRoute
   '/_authenticated/admin/library/$resourceId': typeof AuthenticatedAdminLibraryResourceIdRoute
   '/_authenticated/admin/votes/$voteId': typeof AuthenticatedAdminVotesVoteIdRoute
   '/_authenticated/birds/$birdId/access': typeof AuthenticatedBirdsBirdIdAccessRoute
@@ -1470,6 +1507,7 @@ export interface FileRoutesById {
   '/api/public/hooks/weight-baseline-shadow': typeof ApiPublicHooksWeightBaselineShadowRoute
   '/api/public/stripe/billing': typeof ApiPublicStripeBillingRoute
   '/api/public/stripe/webhook': typeof ApiPublicStripeWebhookRoute
+  '/_authenticated/admin/challenges/': typeof AuthenticatedAdminChallengesIndexRoute
   '/_authenticated/admin/library/': typeof AuthenticatedAdminLibraryIndexRoute
   '/_authenticated/admin/votes/': typeof AuthenticatedAdminVotesIndexRoute
   '/_authenticated/birds/$birdId/': typeof AuthenticatedBirdsBirdIdIndexRoute
@@ -1480,6 +1518,7 @@ export interface FileRoutesById {
   '/_authenticated/flock/you/': typeof AuthenticatedFlockYouIndexRoute
   '/_authenticated/birds/$birdId/plan/editor': typeof AuthenticatedBirdsBirdIdPlanEditorRoute
   '/_authenticated/birds/$birdId/scans/$scanId': typeof AuthenticatedBirdsBirdIdScansScanIdRoute
+  '/_authenticated/flock/challenges/$challengeId/entry': typeof AuthenticatedFlockChallengesChallengeIdEntryRoute
   '/_authenticated/flock/comments/$subjectType/$subjectId': typeof AuthenticatedFlockCommentsSubjectTypeSubjectIdRoute
   '/_authenticated/flock/journeys/$journeyId/card': typeof AuthenticatedFlockJourneysJourneyIdCardRoute
   '/_authenticated/flock/journeys/$journeyId/compare': typeof AuthenticatedFlockJourneysJourneyIdCompareRoute
@@ -1491,6 +1530,7 @@ export interface FileRoutesById {
   '/_authenticated/flock/reactions/$subjectType/$subjectId': typeof AuthenticatedFlockReactionsSubjectTypeSubjectIdRoute
   '/api/public/bereavement-review/$reviewId/$sig': typeof ApiPublicBereavementReviewReviewIdSigRoute
   '/_authenticated/birds/$birdId/plan/': typeof AuthenticatedBirdsBirdIdPlanIndexRoute
+  '/_authenticated/flock/challenges/$challengeId/': typeof AuthenticatedFlockChallengesChallengeIdIndexRoute
   '/_authenticated/flock/journeys/$journeyId/': typeof AuthenticatedFlockJourneysJourneyIdIndexRoute
   '/_authenticated/flock/pods/$podId/': typeof AuthenticatedFlockPodsPodIdIndexRoute
   '/_authenticated/flock/post/$postId/': typeof AuthenticatedFlockPostPostIdIndexRoute
@@ -1579,6 +1619,7 @@ export interface FileRouteTypes {
     | '/scans/'
     | '/sits/'
     | '/sitter/$token/'
+    | '/admin/challenges/$challengeId'
     | '/admin/library/$resourceId'
     | '/admin/votes/$voteId'
     | '/birds/$birdId/access'
@@ -1628,6 +1669,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/weight-baseline-shadow'
     | '/api/public/stripe/billing'
     | '/api/public/stripe/webhook'
+    | '/admin/challenges/'
     | '/admin/library/'
     | '/admin/votes/'
     | '/birds/$birdId/'
@@ -1638,6 +1680,7 @@ export interface FileRouteTypes {
     | '/flock/you/'
     | '/birds/$birdId/plan/editor'
     | '/birds/$birdId/scans/$scanId'
+    | '/flock/challenges/$challengeId/entry'
     | '/flock/comments/$subjectType/$subjectId'
     | '/flock/journeys/$journeyId/card'
     | '/flock/journeys/$journeyId/compare'
@@ -1649,6 +1692,7 @@ export interface FileRouteTypes {
     | '/flock/reactions/$subjectType/$subjectId'
     | '/api/public/bereavement-review/$reviewId/$sig'
     | '/birds/$birdId/plan/'
+    | '/flock/challenges/$challengeId/'
     | '/flock/journeys/$journeyId/'
     | '/flock/pods/$podId/'
     | '/flock/post/$postId/'
@@ -1729,6 +1773,7 @@ export interface FileRouteTypes {
     | '/scans'
     | '/sits'
     | '/sitter/$token'
+    | '/admin/challenges/$challengeId'
     | '/admin/library/$resourceId'
     | '/admin/votes/$voteId'
     | '/birds/$birdId/access'
@@ -1777,6 +1822,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/weight-baseline-shadow'
     | '/api/public/stripe/billing'
     | '/api/public/stripe/webhook'
+    | '/admin/challenges'
     | '/admin/library'
     | '/admin/votes'
     | '/birds/$birdId'
@@ -1787,6 +1833,7 @@ export interface FileRouteTypes {
     | '/flock/you'
     | '/birds/$birdId/plan/editor'
     | '/birds/$birdId/scans/$scanId'
+    | '/flock/challenges/$challengeId/entry'
     | '/flock/comments/$subjectType/$subjectId'
     | '/flock/journeys/$journeyId/card'
     | '/flock/journeys/$journeyId/compare'
@@ -1798,6 +1845,7 @@ export interface FileRouteTypes {
     | '/flock/reactions/$subjectType/$subjectId'
     | '/api/public/bereavement-review/$reviewId/$sig'
     | '/birds/$birdId/plan'
+    | '/flock/challenges/$challengeId'
     | '/flock/journeys/$journeyId'
     | '/flock/pods/$podId'
     | '/flock/post/$postId'
@@ -1885,6 +1933,7 @@ export interface FileRouteTypes {
     | '/_authenticated/scans/'
     | '/_authenticated/sits/'
     | '/sitter/$token/'
+    | '/_authenticated/admin/challenges/$challengeId'
     | '/_authenticated/admin/library/$resourceId'
     | '/_authenticated/admin/votes/$voteId'
     | '/_authenticated/birds/$birdId/access'
@@ -1934,6 +1983,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/weight-baseline-shadow'
     | '/api/public/stripe/billing'
     | '/api/public/stripe/webhook'
+    | '/_authenticated/admin/challenges/'
     | '/_authenticated/admin/library/'
     | '/_authenticated/admin/votes/'
     | '/_authenticated/birds/$birdId/'
@@ -1944,6 +1994,7 @@ export interface FileRouteTypes {
     | '/_authenticated/flock/you/'
     | '/_authenticated/birds/$birdId/plan/editor'
     | '/_authenticated/birds/$birdId/scans/$scanId'
+    | '/_authenticated/flock/challenges/$challengeId/entry'
     | '/_authenticated/flock/comments/$subjectType/$subjectId'
     | '/_authenticated/flock/journeys/$journeyId/card'
     | '/_authenticated/flock/journeys/$journeyId/compare'
@@ -1955,6 +2006,7 @@ export interface FileRouteTypes {
     | '/_authenticated/flock/reactions/$subjectType/$subjectId'
     | '/api/public/bereavement-review/$reviewId/$sig'
     | '/_authenticated/birds/$birdId/plan/'
+    | '/_authenticated/flock/challenges/$challengeId/'
     | '/_authenticated/flock/journeys/$journeyId/'
     | '/_authenticated/flock/pods/$podId/'
     | '/_authenticated/flock/post/$postId/'
@@ -2564,6 +2616,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SitterTokenScanRouteImport
       parentRoute: typeof SitterTokenRouteRoute
     }
+    '/_authenticated/admin/challenges/': {
+      id: '/_authenticated/admin/challenges/'
+      path: '/admin/challenges'
+      fullPath: '/admin/challenges/'
+      preLoaderRoute: typeof AuthenticatedAdminChallengesIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/admin/challenges/$challengeId': {
+      id: '/_authenticated/admin/challenges/$challengeId'
+      path: '/admin/challenges/$challengeId'
+      fullPath: '/admin/challenges/$challengeId'
+      preLoaderRoute: typeof AuthenticatedAdminChallengesChallengeIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/admin/library/': {
       id: '/_authenticated/admin/library/'
       path: '/admin/library'
@@ -2984,6 +3050,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedBirdsBirdIdScansScanIdRouteImport
       parentRoute: typeof AuthenticatedBirdsBirdIdRoute
     }
+    '/_authenticated/flock/challenges/$challengeId/': {
+      id: '/_authenticated/flock/challenges/$challengeId/'
+      path: '/challenges/$challengeId'
+      fullPath: '/flock/challenges/$challengeId/'
+      preLoaderRoute: typeof AuthenticatedFlockChallengesChallengeIdIndexRouteImport
+      parentRoute: typeof AuthenticatedFlockRoute
+    }
+    '/_authenticated/flock/challenges/$challengeId/entry': {
+      id: '/_authenticated/flock/challenges/$challengeId/entry'
+      path: '/challenges/$challengeId/entry'
+      fullPath: '/flock/challenges/$challengeId/entry'
+      preLoaderRoute: typeof AuthenticatedFlockChallengesChallengeIdEntryRouteImport
+      parentRoute: typeof AuthenticatedFlockRoute
+    }
     '/_authenticated/flock/comments/$subjectType/$subjectId': {
       id: '/_authenticated/flock/comments/$subjectType/$subjectId'
       path: '/comments/$subjectType/$subjectId'
@@ -3147,6 +3227,7 @@ interface AuthenticatedFlockRouteChildren {
   AuthenticatedFlockMembersIndexRoute: typeof AuthenticatedFlockMembersIndexRoute
   AuthenticatedFlockPodsIndexRoute: typeof AuthenticatedFlockPodsIndexRoute
   AuthenticatedFlockYouIndexRoute: typeof AuthenticatedFlockYouIndexRoute
+  AuthenticatedFlockChallengesChallengeIdEntryRoute: typeof AuthenticatedFlockChallengesChallengeIdEntryRoute
   AuthenticatedFlockCommentsSubjectTypeSubjectIdRoute: typeof AuthenticatedFlockCommentsSubjectTypeSubjectIdRoute
   AuthenticatedFlockJourneysJourneyIdCardRoute: typeof AuthenticatedFlockJourneysJourneyIdCardRoute
   AuthenticatedFlockJourneysJourneyIdCompareRoute: typeof AuthenticatedFlockJourneysJourneyIdCompareRoute
@@ -3156,6 +3237,7 @@ interface AuthenticatedFlockRouteChildren {
   AuthenticatedFlockPodsPodIdPostRoute: typeof AuthenticatedFlockPodsPodIdPostRoute
   AuthenticatedFlockPostPostIdEditRoute: typeof AuthenticatedFlockPostPostIdEditRoute
   AuthenticatedFlockReactionsSubjectTypeSubjectIdRoute: typeof AuthenticatedFlockReactionsSubjectTypeSubjectIdRoute
+  AuthenticatedFlockChallengesChallengeIdIndexRoute: typeof AuthenticatedFlockChallengesChallengeIdIndexRoute
   AuthenticatedFlockJourneysJourneyIdIndexRoute: typeof AuthenticatedFlockJourneysJourneyIdIndexRoute
   AuthenticatedFlockPodsPodIdIndexRoute: typeof AuthenticatedFlockPodsPodIdIndexRoute
   AuthenticatedFlockPostPostIdIndexRoute: typeof AuthenticatedFlockPostPostIdIndexRoute
@@ -3197,6 +3279,8 @@ const AuthenticatedFlockRouteChildren: AuthenticatedFlockRouteChildren = {
   AuthenticatedFlockMembersIndexRoute: AuthenticatedFlockMembersIndexRoute,
   AuthenticatedFlockPodsIndexRoute: AuthenticatedFlockPodsIndexRoute,
   AuthenticatedFlockYouIndexRoute: AuthenticatedFlockYouIndexRoute,
+  AuthenticatedFlockChallengesChallengeIdEntryRoute:
+    AuthenticatedFlockChallengesChallengeIdEntryRoute,
   AuthenticatedFlockCommentsSubjectTypeSubjectIdRoute:
     AuthenticatedFlockCommentsSubjectTypeSubjectIdRoute,
   AuthenticatedFlockJourneysJourneyIdCardRoute:
@@ -3213,6 +3297,8 @@ const AuthenticatedFlockRouteChildren: AuthenticatedFlockRouteChildren = {
   AuthenticatedFlockPostPostIdEditRoute: AuthenticatedFlockPostPostIdEditRoute,
   AuthenticatedFlockReactionsSubjectTypeSubjectIdRoute:
     AuthenticatedFlockReactionsSubjectTypeSubjectIdRoute,
+  AuthenticatedFlockChallengesChallengeIdIndexRoute:
+    AuthenticatedFlockChallengesChallengeIdIndexRoute,
   AuthenticatedFlockJourneysJourneyIdIndexRoute:
     AuthenticatedFlockJourneysJourneyIdIndexRoute,
   AuthenticatedFlockPodsPodIdIndexRoute: AuthenticatedFlockPodsPodIdIndexRoute,
@@ -3357,10 +3443,12 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedSitsSitIdRoute: typeof AuthenticatedSitsSitIdRoute
   AuthenticatedSitsNewRoute: typeof AuthenticatedSitsNewRoute
   AuthenticatedSitsIndexRoute: typeof AuthenticatedSitsIndexRoute
+  AuthenticatedAdminChallengesChallengeIdRoute: typeof AuthenticatedAdminChallengesChallengeIdRoute
   AuthenticatedAdminLibraryResourceIdRoute: typeof AuthenticatedAdminLibraryResourceIdRoute
   AuthenticatedAdminVotesVoteIdRoute: typeof AuthenticatedAdminVotesVoteIdRoute
   AuthenticatedCoveringSitIdBirdIdRoute: typeof AuthenticatedCoveringSitIdBirdIdRoute
   AuthenticatedSitsEditSitIdRoute: typeof AuthenticatedSitsEditSitIdRoute
+  AuthenticatedAdminChallengesIndexRoute: typeof AuthenticatedAdminChallengesIndexRoute
   AuthenticatedAdminLibraryIndexRoute: typeof AuthenticatedAdminLibraryIndexRoute
   AuthenticatedAdminVotesIndexRoute: typeof AuthenticatedAdminVotesIndexRoute
 }
@@ -3392,11 +3480,15 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedSitsSitIdRoute: AuthenticatedSitsSitIdRoute,
   AuthenticatedSitsNewRoute: AuthenticatedSitsNewRoute,
   AuthenticatedSitsIndexRoute: AuthenticatedSitsIndexRoute,
+  AuthenticatedAdminChallengesChallengeIdRoute:
+    AuthenticatedAdminChallengesChallengeIdRoute,
   AuthenticatedAdminLibraryResourceIdRoute:
     AuthenticatedAdminLibraryResourceIdRoute,
   AuthenticatedAdminVotesVoteIdRoute: AuthenticatedAdminVotesVoteIdRoute,
   AuthenticatedCoveringSitIdBirdIdRoute: AuthenticatedCoveringSitIdBirdIdRoute,
   AuthenticatedSitsEditSitIdRoute: AuthenticatedSitsEditSitIdRoute,
+  AuthenticatedAdminChallengesIndexRoute:
+    AuthenticatedAdminChallengesIndexRoute,
   AuthenticatedAdminLibraryIndexRoute: AuthenticatedAdminLibraryIndexRoute,
   AuthenticatedAdminVotesIndexRoute: AuthenticatedAdminVotesIndexRoute,
 }

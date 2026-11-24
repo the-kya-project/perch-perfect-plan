@@ -212,7 +212,7 @@ async function main() {
       if (statSync(p).isDirectory()) walk(p); else if (/\.(ts|tsx)$/.test(f)) files.push(relative(".", p));
     }
   })("src");
-  const FLOCK_FILE = /^src\/(routes\/_authenticated\/(flock|admin)\.|components\/flock\/|components\/FlockShell\.tsx$|lib\/(flockAnalytics|flockPostData|journeyData|flockIdeas|flockEvents|flockJoin|flockPods)\.ts$)/;
+  const FLOCK_FILE = /^src\/(routes\/_authenticated\/(flock|admin)\.|components\/flock\/|components\/FlockShell\.tsx$|lib\/(flockAnalytics|flockPostData|journeyData|flockIdeas|flockEvents|flockJoin|flockChallenges|flockPods)\.ts$)/;
   await check("only Flock code imports flockAnalytics", () => {
     for (const f of files) {
       if (/@\/lib\/flockAnalytics|\.\/flockAnalytics/.test(readFileSync(f, "utf8"))) assert.ok(FLOCK_FILE.test(f), `${f} imports flockAnalytics`);

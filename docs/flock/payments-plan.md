@@ -181,6 +181,33 @@ Why this split:
   - After the free season, new Flock members get a 14-day free trial (an Apple introductory offer); founders, rescue adopters and Kya's Crew get none.
   - When the account has a claim, it says "Founding members: check your email".
 
+**Promotion codes for memberships (backlog 1.17, built switched off):**
+
+- **The rule (Brittany, Nov 22, 2026):** codes apply to the regular Flock plans (monthly, yearly) and Kya's Crew, never to the $15 founding price. A code stacks with a trial.
+- **Web (Stripe):** the card step's Checkout shows Stripe's own "Add promotion code" field for every plan except founding (`promotionCodesAllowed` in `src/lib/billing.ts`). A founder never sees it. If a discount reaches a founding subscription another way (the Customer Portal, the Dashboard), the billing webhook takes it off (`discountsToRemove`) and records "discount removed" on the event. It doesn't look at discounts on the Stripe customer itself, so never put a coupon on a founder's customer.
+- **Codes are made in the Stripe Dashboard** (coupon, then promotion code), in test mode until billing starts. Nothing in the app creates or lists them. Founding and regular share one product, so a coupon can't be limited to the regular prices in Stripe; the app's rule is what keeps founding out.
+- **How a code stacks with a trial:** the trial runs first (the free season, or the 14-day trial once 6f is built), and the code applies to the paid invoices after it. Worked examples, with the free season ending on "the season's end":
+
+  | Member | Code | Today | After the season's end |
+  |---|---|---|---|
+  | Monthly ($30), card added during the free season | 20% off for 3 months | $0 | $24 for 3 months, then $30 (see the caveat below) |
+  | Yearly ($300), card added during the free season | $50 off once | $0 | $250 for the first year, then $300 |
+  | Monthly, card added during the free season | 100% off for 1 month | $0 | first paid month free, then $30: the free season and the free month both count |
+  | Monthly, after the season, with the 14-day trial (6f) | 20% off for 3 months | $0 for 14 days | then $24 for 3 months, then $30 |
+  | Founder ($15) | any | no code field | $15 |
+
+  **Caveat to confirm in test mode:** Stripe counts a "for N months" code from when the subscription starts, trial included. A member who adds a card two months before the season's end with "20% off for 3 months" may get only one discounted month, not three. A "once" code during a long trial needs the same check. If Stripe does count that way, "whichever is best for the member" points to making free-season codes "forever" or "once", or to a later build that applies the code at the season's end.
+- **iPhone (Apple offer codes), for when the iPhone paywall is built:** offer codes are set up per subscription in App Store Connect and come in whole months only. Founding isn't sold in the app, so no founding code is needed. The ones to create, mirroring the Stripe codes in use:
+
+  | Stripe code | Apple offer code | Plans |
+  |---|---|---|
+  | N months free (100% off for N months) | Free, N months | Flock monthly, Flock yearly, Crew monthly, Crew yearly |
+  | X% off for N months | Pay as you go, N months at the reduced monthly price | Flock monthly, Crew monthly |
+  | Amount off the first year | Pay up front, 12 months at the reduced price | Flock yearly, Crew yearly |
+  | Forever discounts, or days rather than months | No match: don't offer it in the app | none |
+
+  Apple sets its own rules on whether an offer code combines with an introductory offer (the 14-day trial); check them in App Store Connect when the paywall is built.
+
 ---
 
 ## e) What Brittany does by hand, in order
