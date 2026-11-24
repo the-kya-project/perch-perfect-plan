@@ -1,5 +1,5 @@
 -- Verification for 20261124070000_flock_buddy_pods (backlog 1.11) and
--- 20261124230000_flock_pods_no_groups (no buddy groups; a stage instead of
+-- 20261124235900_flock_pods_no_groups (no buddy groups; a stage instead of
 -- progress).
 --
 -- Self-contained and leaves nothing behind: an admin; members a, b, c, d, e

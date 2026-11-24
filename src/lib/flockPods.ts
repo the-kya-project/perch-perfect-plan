@@ -1,7 +1,7 @@
 // Buddy pods (backlog 1.11). Data and the pure helpers
 // scripts/flock-shell.test.ts pins. Reads and writes go through database
 // functions (20261124070000_flock_buddy_pods.sql, changed by
-// 20261124230000_flock_pods_no_groups.sql), which decide who's in a
+// 20261124235900_flock_pods_no_groups.sql), which decide who's in a
 // pod, what members see of each other (never progress from a "Just me"
 // journey outside the household) and when a pod forms, closes or ends.
 // Flock code only.

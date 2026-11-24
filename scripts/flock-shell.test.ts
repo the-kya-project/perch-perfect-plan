@@ -1080,8 +1080,8 @@ check("buddy pods: stages, the weekly card, waiting and refusals", () => {
 
 check("buddy pods: the app's numbers match the database's", () => {
   const sql = readFileSync("supabase/migrations/20261124070000_flock_buddy_pods.sql", "utf8");
-  // The live placement rules (20261124230000 replaced flock_pod_place).
-  const next = readFileSync("supabase/migrations/20261124230000_flock_pods_no_groups.sql", "utf8");
+  // The live placement rules (20261124235900 replaced flock_pod_place).
+  const next = readFileSync("supabase/migrations/20261124235900_flock_pods_no_groups.sql", "utf8");
   const code = next.replace(/--.*$/gm, "");
   assert.match(code, /cardinality\(v_users\) >= 6/);
   assert.match(code, /cardinality\(v_users\) >= 3/);
