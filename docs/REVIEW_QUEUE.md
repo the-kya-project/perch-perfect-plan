@@ -19,6 +19,33 @@ Format:
   - After: "<new wording>"
 ```
 
+### [#552](https://github.com/the-kya-project/perch-perfect-plan/pull/552) · 1.20a Journeys redesign: data and migration
+Held, not merged yet. All of it is template text in the database (`journey_templates`), still `review_status = 'draft'`, written by `20261124190000_journeys_skills_data.sql` through `admin_update_journey_template`. Every "After" is the spec's "Skill content" word for word; nothing is shown to anyone but admins (journeys are off for everyone else). No app strings changed, so no Dutch.
+- **Where:** each skill's description (`purpose`, shown on the skill page and the journey page from 1.20b)
+  - Scale training. Before: "So your bird steps onto the scale calmly and stays still long enough for an accurate daily weight." After: "Your bird steps onto the scale calmly and stays still long enough for an accurate weight, so daily weigh-ins become easy."
+  - Target training. Before: "So your bird learns to touch the tip of a stick for a reward, a simple tool that can guide them almost anywhere." After: "Your bird touches the tip of a stick and follows it, which gives you a gentle way to guide your bird almost anywhere."
+  - Step up. Before: "So your bird steps onto your hand calmly and by choice, foot first, without biting." After: "Your bird steps onto your hand calmly and by choice, without biting."
+  - Recall. Before: "So your bird comes to you when you say their name, which is the most important safety skill if they ever get out." After: "Your bird comes to you when you call its name, whether that means flying across the room or walking along a perch. It's the most important safety skill if your bird ever gets out."
+  - Wing touch. Before: "So your bird is comfortable having wings touched and gently extended, for vet exams and health checks. The bird gives consent at every step." After: "Your bird is comfortable having its wings touched and gently opened, the way a vet does during an exam, and it stays relaxed the whole time."
+  - Carrier comfort. Before: "So vet trips and travel start calmly, without chasing your bird into a crate." After: "Your bird walks into its carrier on its own and stays relaxed inside, so vet trips and travel start calmly."
+  - Diet conversion. Before: "So your bird moves gradually from a seed-heavy diet to pellets, chop, and fresh foods without losing weight." After: "Your bird moves gradually from a seed-heavy diet to pellets, chop, and fresh foods while its weight stays steady."
+  - Nail trims. Before: "So nail trims become a calm, two-minute routine instead of a towel wrestle." After: "Your bird stays calm while its nails are trimmed, without being wrapped in a towel."
+  - Stationing. Before: "So your bird can stay on a perch while you move around, which matters most for birds that never want to leave your side." After: "Your bird goes to a chosen perch and stays there while you move around the room. It's especially helpful for birds that never want to leave your side."
+  - Wave. Before: "So your bird lifts a foot and waves on cue. It builds on step up, since the wave starts as the beginning of a step up." After: "Your bird lifts one foot and waves it on cue."
+  - High five. Before: "So your bird touches its raised foot to your palm. Wave is the natural first step." After: "Your bird touches its raised foot to your open palm."
+  - Spin. Before: "So your bird turns a full circle on the perch. Pick one direction and stay with it until the spin is solid." After: "Your bird turns a full circle on its perch on cue."
+  - Retrieve. Before: "So your bird picks up a small ball and drops it in your hand." After: "Your bird picks up a small ball and drops it into your hand."
+  - Hang upside down. Before: "So your bird hangs upside down from your finger or a perch, a natural play behavior put on cue." After: "Your bird hangs upside down from your finger or a perch on cue, which turns a natural play behavior into a trick."
+- **Where:** safety notes (`safety_notes`). Every skill keeps "Keep sessions short." / "Stop at the first sign of stress." / "Never withhold food to make a bird hungrier for training." first. Nail trims' ten lines are unchanged.
+  - Wing touch. Before: (the three shared lines only). After: adds "Keep touches brief, because long body contact can trigger hormonal behavior." / "Never pull a wing that resists." / "If your bird has an injury, arthritis, or a wing that doesn't open fully, ask your avian vet what's comfortable first."
+  - Spin. Before: (shared only). After: adds "Skip this one, or keep it very small, for birds with balance, grip, or leg problems."
+  - Retrieve. Before: (shared only). After: adds "Use objects too big to swallow, with no small parts or paint that could chip."
+  - Hang upside down. Before: (shared only). After: adds "Skip this one for birds with balance, grip, or leg problems, and practice over a soft surface."
+  - Diet conversion. Before: (shared only). After: adds "Watch droppings and appetite as well as weight. If your bird stops eating, put the usual food back and call your vet." / "Some birds refuse new food so firmly that they stop eating. If your bird isn't eating, go back to the usual food today and call your vet." / "Weigh in grams at the same time every day. A few grams matter on a bird." / "Take uneaten fresh food out after a few hours so it doesn't spoil." / "How much to feed varies from bird to bird, even within a species. Your vet can tell you what's right for yours."
+- **Where:** Diet conversion's "How to make it work" tips (`tips`, the only template with any)
+  - Before: 11 tips (the five above, plus "Offer the new food first thing in the morning, with the usual food alongside.", "Eat it in front of them. …", "Change one thing at a time, …", "Try different forms: …", "Notice how your bird likes food already: …", "If your bird picks out the old food, …")
+  - After: none (the five protective lines moved to the safety notes; the other six are gone)
+
 ### [#546](https://github.com/the-kya-project/perch-perfect-plan/pull/546) · 1.13a Badges: the Flock set
 All new. Nobody but admins sees them while the Flock is closed. The badge names, "New: badges", "Here's what you've already earned", "See all badges", "Not now", "Badge earned", "Flock badges", "x of y earned" and "Trick star: finish any tricks journey." are the mockup's or the spec's words. The rest is agent wording.
 - **Where:** `flock.badges.name.*` (everywhere a badge shows)
@@ -1032,6 +1059,19 @@ No new strings: every line reuses existing wording, in new places (admins only).
 
 ## Decisions agents made
 
+### [#552](https://github.com/the-kya-project/perch-perfect-plan/pull/552) · 1.20a Journeys redesign: data and migration
+- **Approved (Brittany, Nov 24, 2026):** she asked for #552 to be brought up to date and merged, which approves the migration. The template text's copy read stays open under "Copy that merged".
+- **Decision:** "All 14 startable by everyone" is done in `journey_start` (it no longer checks the stored tier), not by changing any row. `journey_templates.tier` keeps its seven 'premium' values and `journey_limits` is unchanged, so `journey_my_access` still says `can_use_premium` is false for free accounts until 1.20b removes the locks from the screens.
+- **Decision:** `journey_start` and `journey_post_update` keep their old arguments so today's screens keep working until 1.20b: `p_custom_milestones` and `p_already` are accepted and ignored, and the new `p_custom_description` (journey_start) and `p_big_moment` (post update) come last with defaults. The old signatures were dropped and recreated with the new argument, so there's one of each.
+- **Decision:** `journey_reach_milestone` is kept but never finishes a journey any more ("replace … the milestone-based finish"). It only marks a milestone on journeys that still have milestone rows (the two production journeys). Dropping it is left for 1.20b/1.20e, once no screen calls it.
+- **Decision:** `journey_finish(journey, 'learned' | 'happy_where_we_are')`: "learned" works from active or a pause the member chose; a weight pause refuses it ("confirm you've called your avian vet first", as resuming does). "We're happy where we are" works from active or any pause, as `journey_set_status` already allowed, and clears the pause. Both refuse a finished journey and a bird that has passed. Diet conversion's "learned" adds no known skill (spec "Screens" 6).
+- **Decision:** The source journey column only takes a custom journey (a check), and clears when the source is deleted. Nothing fills it yet: "Start this skill" is 1.20c, so `journey_start` doesn't take a source in this part. A description is only for your own skill (refused on a template journey), up to 500 characters.
+- **Decision:** Template text is rewritten only on templates still marked draft, so anything you've approved since is left as it is. Wing touch's safety paragraph is split into three lines, one per sentence, like nail trims'. `safeguards` (diet conversion's "Safeguards built into this journey"), `done_when`, `suggested_first` and `typical_length` are left in place, unused; diet conversion's safeguards still mention "every step", for 1.20d to settle.
+- **Decision:** Diet conversion's second safety line uses the spec's words ("Some birds refuse new food so firmly…"); the stored tip said "Some birds will refuse…".
+- **Decision:** The skill video is `journey_templates.video_ref`, a "cfstream:<uid>" reference like journey clips, set with `admin_update_journey_template('recall', '{"video_ref": "cfstream:…"}')`. Signing it for viewers comes with the skill page in 1.20b.
+- **Decision:** CLAUDE.md's Journeys section isn't rewritten here; 1.20e does that when the build lands.
+- **Decision:** Challenges (#547, merged during this run) count a journey challenge's progress from milestone rows. This PR doesn't change that, so a journey started after it merges shows no milestone progress in a challenge until 1.20b follows your note (finished = the journey ends with "learned it" before the end date). `journey_finish(…, 'learned')` sets status `finished`, which is what that rule reads.
+
 ### [#543](https://github.com/the-kya-project/perch-perfect-plan/pull/543) · 1.17 Promo codes · Brittany's decisions, Nov 24, 2026
 - **Approved:** the worked examples match what she meant, and the webhook may remove discounts from founding memberships. Merged switched off once every required check passed.
 - **Before billing opens:** two test checkouts during a test free season (one "20% off for 3 months" code, one "once" code) to see whether Stripe counts the months from the card being added or from the first charge. In the "Before billing opens" checklist in `docs/BACKLOG.md`.
@@ -1521,6 +1561,9 @@ Format:
 ### <PR link> · <item ID> <item title>
 - **Needs:** <the decision, approval or read, in one or two lines>
 ```
+
+### [#548](https://github.com/the-kya-project/perch-perfect-plan/pull/548) · 1.11 Buddy pods: conflicts with `main` in code since #547 merged
+- **Needs:** someone to resolve the conflicts with 1.10 Challenges (#547), which merged during the 13:12 EST run. #548 now conflicts with `main` outside the record files, in `src/lib/flockPosts.ts`, `src/components/flock/PostCompose.tsx`, `src/components/flock/PostParts.tsx`, `src/routes/_authenticated/flock.post.new.tsx`, `scripts/flock-shell.test.ts`, `scripts/flock-analytics.test.ts` and `e2e/flock.shell.ts`. Both PRs add a new post space, so whoever resolves it must keep both. #548's migration rewrites the posts table's space check from the live definition, so it should keep `main`'s challenge space, but the checks need a run to confirm. Runs may only fix record-file conflicts, so the branch was left as it is. The same run had already merged `main` into it once, at 13:15 EST before #547 merged, with record files only.
 
 ### [#548](https://github.com/the-kya-project/perch-perfect-plan/pull/548) · 1.11 Buddy pods: behind `main`
 - **Needs:** "Update branch" on the PR (or a merge of `main`). It conflicts with `main` only in the record files (`docs/BACKLOG.md`, `docs/REVIEW_QUEUE.md`). But `main` has since changed two workflow files (#538 and #545), and the runs' token can't push a merge that brings those in. So the 05:46 EST run left the branch as it is. It was green and held for you before `main` moved. (#547 was brought up to date and merged on Nov 24, 2026.)
