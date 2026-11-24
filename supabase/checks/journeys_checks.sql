@@ -1,4 +1,8 @@
--- Verification for 20261107200000_journeys_core.
+-- Verification for 20261107200000_journeys_core, as changed by
+-- 20261124190000_journeys_skills_data (skills, not milestones: every template
+-- can be started by everyone, new journeys get no milestone rows, a custom
+-- journey needs only a name and takes an optional description, and
+-- journey_finish ends a journey).
 --
 -- Self-contained and leaves nothing behind: it makes a free user, a member on
 -- a paid annual plan, a Flock member, an admin, a household member and a stranger, birds and
@@ -22,6 +26,7 @@ declare
   bd  uuid := gen_random_uuid();  -- fr's bird that has passed
   passed int := 0; failed text[] := '{}';
   ok boolean; n int; denied boolean; j uuid; j2 uuid; v text; r record;
+  jw uuid; jc uuid; jcc uuid; jd uuid;
 begin
   insert into auth.users (instance_id, id, aud, role, email, raw_app_meta_data, raw_user_meta_data, created_at, updated_at)
   select '00000000-0000-0000-0000-000000000000', u, 'authenticated', 'authenticated', u::text || '@checks.invalid', '{}', '{}', now(), now()
@@ -71,7 +76,9 @@ begin
   -- From here journeys are on for everyone, so each tier's rules can be checked.
   update public.journey_settings set audience = 'everyone';
 
-  -- 3) Free: all 14 templates are listed (the 7 Flock-only ones show, locked).
+  -- 3) Free: all 14 templates are listed. journey_my_access still returns the
+  --    stored limits as they are (can_use_premium stays false), even though the
+  --    tier no longer locks a template (check 5).
   perform set_config('request.jwt.claims', json_build_object('sub', fr, 'role', 'authenticated')::text, true);
   set local role authenticated;
   select count(*) into n from public.journey_templates;
@@ -81,24 +88,29 @@ begin
      and r.max_clip_seconds = 60 and r.max_clips_per_journey = 10 and r.max_open_custom = 1 then
     passed := passed + 1; else failed := array_append(failed, 'free: 14 templates listed, free limits'); end if;
 
-  -- 4) Free: a free template, privately, with "already does" marks and a day-one clip.
+  -- 4) Free: a free template, privately, with a day-one clip. The old "already
+  --    does" marks (p_already) are accepted and ignored: no milestone rows at all.
   perform set_config('request.jwt.claims', json_build_object('sub', fr, 'role', 'authenticated')::text, true);
   set local role authenticated;
   j := public.journey_start(bf, 'step-up', null, null, array[1, 2], 'few_times_week', 'private', 'cfstream:kiwiclip0001');
-  select count(*) into n from public.journey_milestones where journey_id = j and state = 'already';
-  ok := n = 2 and (select count(*) from public.journey_milestones where journey_id = j) = 7
-    and (select count(*) from public.journey_updates where journey_id = j and is_day_one) = 1;
+  ok := (select count(*) from public.journey_milestones where journey_id = j) = 0
+    and (select count(*) from public.journey_updates where journey_id = j and is_day_one) = 1
+    and (select status = 'active' and custom_description is null from public.journeys where id = j);
   reset role;
-  if ok then passed := passed + 1; else failed := array_append(failed, 'free: start Step up with already-does and day-one clip'); end if;
+  if ok then passed := passed + 1; else failed := array_append(failed, 'free: start Step up with day-one clip, no milestone rows'); end if;
 
-  -- 5) Free: a Flock-only template is refused.
+  -- 5) Free: a template stored as Flock-only ('premium', e.g. Wave) can be
+  --    started now; the stored tier no longer locks anything.
   perform set_config('request.jwt.claims', json_build_object('sub', fr, 'role', 'authenticated')::text, true);
   set local role authenticated;
-  denied := false;
-  begin perform public.journey_start(bf, 'wave', null, null, null, 'most_days', 'private', null);
-  exception when insufficient_privilege then denied := true; end;
+  ok := false;
+  begin
+    jw := public.journey_start(bf, 'wave', null, null, null, 'most_days', 'private', null);
+    ok := jw is not null and (select count(*) from public.journey_milestones where journey_id = jw) = 0;
+  exception when others then ok := false; end;
   reset role;
-  if denied then passed := passed + 1; else failed := array_append(failed, 'free: Flock-only template refused'); end if;
+  ok := ok and (select tier from public.journey_templates where slug = 'wave') = 'premium';
+  if ok then passed := passed + 1; else failed := array_append(failed, 'free: a premium-tier template can be started'); end if;
 
   -- 6) Free: sharing with the community is refused.
   perform set_config('request.jwt.claims', json_build_object('sub', fr, 'role', 'authenticated')::text, true);
@@ -110,6 +122,7 @@ begin
   if denied then passed := passed + 1; else failed := array_append(failed, 'free: community visibility refused'); end if;
 
   -- 7) Free: one custom journey at a time; a second opens once the first ends.
+  --    (Milestone arrays are still accepted from today's screens, and ignored.)
   perform set_config('request.jwt.claims', json_build_object('sub', fr, 'role', 'authenticated')::text, true);
   set local role authenticated;
   j2 := public.journey_start(bf, null, 'Bath time', array['Near the dish', 'Toes in', 'Splashes'], null, 'weekends', 'private', null);
@@ -126,29 +139,42 @@ begin
   reset role;
   if denied and ok then passed := passed + 1; else failed := array_append(failed, 'free: one custom journey at a time'); end if;
 
-  -- 8) The limit is config: raise free's custom limit and a second open one is allowed.
+  -- 8) The limit is config: raise free's custom limit and a second open one is
+  --    allowed (this one with no milestones and a description).
   update public.journey_limits set max_open_custom = 2 where tier = 'free';
   perform set_config('request.jwt.claims', json_build_object('sub', fr, 'role', 'authenticated')::text, true);
   set local role authenticated;
   ok := false;
-  begin perform public.journey_start(bf, null, 'Foot target', array['Looks', 'Lifts', 'Touches'], null, 'weekends', 'private', null); ok := true;
+  begin perform public.journey_start(bf, null, 'Foot target', null, null, 'weekends', 'private', null, 'Lifts a foot to touch my finger.'); ok := true;
   exception when others then ok := false; end;
   reset role;
   update public.journey_limits set max_open_custom = 1 where tier = 'free';
   if ok then passed := passed + 1; else failed := array_append(failed, 'limits are config values'); end if;
 
-  -- 9) Custom journeys need 3 to 8 milestones and a name.
+  -- 9) Custom journeys need only a name (1 to 60 characters), with an optional
+  --    description up to 500; milestones are ignored and never stored. Only a
+  --    custom journey takes a description.
   perform set_config('request.jwt.claims', json_build_object('sub', pr, 'role', 'authenticated')::text, true);
   set local role authenticated;
+  ok := false;
+  begin
+    jc := public.journey_start(bp, null, 'Bell ringing', null, null, 'weekends', 'private', null, '  Rings the bell when it wants out.  ');
+    perform public.journey_start(bp, null, 'Two steps', array['One', 'Two'], null, 'weekends', 'private', null);
+    ok := true;
+  exception when others then ok := false; end;
+  ok := ok and (select custom_name = 'Bell ringing' and custom_description = 'Rings the bell when it wants out.' from public.journeys where id = jc)
+    and (select count(*) from public.journey_milestones m join public.journeys x on x.id = m.journey_id where x.bird_id = bp) = 0;
   n := 0;
-  begin perform public.journey_start(bp, null, 'Too short', array['One', 'Two'], null, 'weekends', 'private', null);
+  begin perform public.journey_start(bp, null, '  ', null, null, 'weekends', 'private', null);
   exception when invalid_parameter_value then n := n + 1; end;
-  begin perform public.journey_start(bp, null, 'Too long', array['1','2','3','4','5','6','7','8','9'], null, 'weekends', 'private', null);
+  begin perform public.journey_start(bp, null, repeat('x', 61), null, null, 'weekends', 'private', null);
   exception when invalid_parameter_value then n := n + 1; end;
-  begin perform public.journey_start(bp, null, '  ', array['1','2','3'], null, 'weekends', 'private', null);
+  begin perform public.journey_start(bp, null, 'Long story', null, null, 'weekends', 'private', null, repeat('x', 501));
+  exception when invalid_parameter_value then n := n + 1; end;
+  begin perform public.journey_start(bp, 'recall', null, null, null, 'most_days', 'private', null, 'A description.');
   exception when invalid_parameter_value then n := n + 1; end;
   reset role;
-  if n = 3 then passed := passed + 1; else failed := array_append(failed, 'custom: 3 to 8 milestones and a name'); end if;
+  if ok and n = 4 then passed := passed + 1; else failed := array_append(failed, 'custom: a name, optional description, no milestones; template takes no description'); end if;
 
   -- 10) A paid Flock plan (annual here; Kya's Crew is a Flock plan too): every
   --     template, unlimited custom journeys and sharing. App premium is gone,
@@ -230,16 +256,20 @@ begin
   reset role;
   if denied and ok then passed := passed + 1; else failed := array_append(failed, 'day-one clip is the bird''s; passed bird refused'); end if;
 
-  -- 16) One open journey per template per bird; all milestones "already" is refused.
+  -- 16) One open journey per template per bird. Marking every old milestone
+  --     "already" no longer refuses a start (p_already is ignored): it starts
+  --     with no milestone rows.
   perform set_config('request.jwt.claims', json_build_object('sub', fr, 'role', 'authenticated')::text, true);
   set local role authenticated;
   n := 0;
   begin perform public.journey_start(bf, 'step-up', null, null, null, 'most_days', 'private', null);
   exception when unique_violation then n := n + 1; end;
-  begin perform public.journey_start(bf2, 'carrier-comfort', null, null, array[1,2,3,4,5,6,7], 'most_days', 'private', null);
-  exception when invalid_parameter_value then n := n + 1; end;
+  begin
+    jcc := public.journey_start(bf2, 'carrier-comfort', null, null, array[1,2,3,4,5,6,7], 'most_days', 'private', null);
+    if (select count(*) from public.journey_milestones where journey_id = jcc) = 0 then n := n + 1; end if;
+  exception when others then null; end;
   reset role;
-  if n = 2 then passed := passed + 1; else failed := array_append(failed, 'one open per template; something left to work on'); end if;
+  if n = 2 then passed := passed + 1; else failed := array_append(failed, 'one open per template; p_already ignored'); end if;
 
   -- 17) Clip allowance per tier, and the per-journey count.
   insert into public.journey_updates (journey_id, bird_id, author_id, clip_ref)
@@ -276,7 +306,10 @@ begin
   reset role;
   if ok and denied then passed := passed + 1; else failed := array_append(failed, 'known skills'); end if;
 
-  -- 19) Template text: only an admin edits it; new journeys get new wording, old ones keep theirs.
+  -- 19) Template text: only an admin edits it (video_ref too); the tier can't be
+  --     changed. Template milestones are history: an admin can still reword one,
+  --     but a journey started afterwards gets no milestone rows.
+  v := (select purpose from public.journey_templates where slug = 'step-up');  -- the migration's draft description
   perform set_config('request.jwt.claims', json_build_object('sub', fr, 'role', 'authenticated')::text, true);
   set local role authenticated;
   denied := false;
@@ -284,34 +317,83 @@ begin
   reset role;
   perform set_config('request.jwt.claims', json_build_object('sub', adm, 'role', 'authenticated')::text, true);
   set local role authenticated;
-  perform public.admin_update_journey_template('step-up', '{"purpose": "New purpose.", "review_status": "approved"}');
+  perform public.admin_update_journey_template('step-up', '{"purpose": "New purpose.", "review_status": "approved", "video_ref": "cfstream:stepupvid001"}');
   perform public.admin_set_journey_milestone('step-up', 3, 'New third rung.');
   ok := false;
   begin perform public.admin_update_journey_template('step-up', '{"tier": "free"}');
   exception when invalid_parameter_value then ok := true; end;
   reset role;
-  select (select purpose from public.journey_templates where slug = 'step-up') = 'New purpose.'
-     and (select title from public.journey_milestones where journey_id = j and position = 3) <> 'New third rung.'
-    into v;
-  if denied and ok and v::boolean then passed := passed + 1; else failed := array_append(failed, 'admin edits template text'); end if;
+  perform set_config('request.jwt.claims', json_build_object('sub', fr, 'role', 'authenticated')::text, true);
+  set local role authenticated;
+  j2 := public.journey_start(bf2, 'step-up', null, null, null, 'most_days', 'private', null);
+  reset role;
+  ok := ok and v = 'Your bird steps onto your hand calmly and by choice, without biting.'
+    and (select purpose = 'New purpose.' and video_ref = 'cfstream:stepupvid001' and tier = 'free'
+         from public.journey_templates where slug = 'step-up')
+    and (select m.title from public.journey_template_milestones m join public.journey_templates t on t.id = m.template_id
+         where t.slug = 'step-up' and m.position = 3) = 'New third rung.'
+    and (select count(*) from public.journey_milestones where journey_id = j2) = 0;
+  if denied and ok then passed := passed + 1; else failed := array_append(failed, 'admin edits template text; new journeys get no milestones'); end if;
 
-  -- 20) The seed: 7 free, 7 Flock-only (stored as 'premium'), the doc's milestone counts, Diet conversion's safeguards.
+  -- 20) The seed, as rewritten by 20261124190000_journeys_skills_data: tiers
+  --     unchanged (7 free, 7 stored as 'premium'), template milestones kept as
+  --     history, Diet conversion's safeguards left as they were, the spec's
+  --     short descriptions as purpose, tips cleared, and safety notes = the
+  --     three shared reminders first plus each skill's own lines (nail trims
+  --     keep their 10 from 20261121180000_safety_content_fixes).
   select count(*) filter (where tier = 'free') = 7 and count(*) filter (where tier = 'premium') = 7
      and (select count(*) from public.journey_template_milestones m join public.journey_templates t on t.id = m.template_id where t.slug = 'spin') = 5
      and (select count(*) from public.journey_template_milestones m join public.journey_templates t on t.id = m.template_id where t.slug = 'step-up') = 7
      and (select array_length(safeguards, 1) from public.journey_templates where slug = 'diet-conversion') = 4
-     -- Every template keeps the three shared reminders first; nail trims adds
-     -- its own safety guidance after them (20261121180000_safety_content_fixes).
+     and (select purpose from public.journey_templates where slug = 'wave') = 'Your bird lifts one foot and waves it on cue.'
+     and bool_and(coalesce(array_length(tips, 1), 0) = 0)
      and bool_and(safety_notes[1:3] = array['Keep sessions short.', 'Stop at the first sign of stress.', 'Never withhold food to make a bird hungrier for training.']::text[])
-     and bool_and(array_length(safety_notes, 1) = case when slug = 'nail-trims' then 10 else 3 end)
+     and bool_and(array_length(safety_notes, 1) = case slug
+           when 'nail-trims' then 10
+           when 'diet-conversion' then 8
+           when 'wing-touch' then 6
+           when 'spin' then 4
+           when 'retrieve' then 4
+           when 'hang-upside-down' then 4
+           else 3 end)
+     and (select safety_notes[4] from public.journey_templates where slug = 'diet-conversion')
+           = 'Watch droppings and appetite as well as weight. If your bird stops eating, put the usual food back and call your vet.'
     into ok from public.journey_templates;
-  if ok then passed := passed + 1; else failed := array_append(failed, 'seed matches the doc'); end if;
+  if ok then passed := passed + 1; else failed := array_append(failed, 'seed matches the redesign'); end if;
 
-  -- 21) The public admin functions are invoker wrappers (privileged bodies live in private).
+  -- 21) Finishing (journey_finish): 'learned' adds the skill (source 'journey'),
+  --     except Diet conversion; 'happy_where_we_are' adds none; a finished
+  --     journey can't be finished again; only the bird's people may finish it.
+  --     Marking a milestone never finishes a journey, and new journeys have none.
+  perform set_config('request.jwt.claims', json_build_object('sub', fr, 'role', 'authenticated')::text, true);
+  set local role authenticated;
+  ok := public.journey_finish(jw, 'learned') = 'finished';
+  ok := ok and (select status = 'finished' and finished_at is not null from public.journeys where id = jw)
+    and exists (select 1 from public.bird_skills where bird_id = bf and journey_id = jw and source = 'journey');
+  n := 0;
+  begin perform public.journey_finish(jw, 'learned'); exception when invalid_parameter_value then n := n + 1; end;
+  begin perform public.journey_finish(jcc, 'done'); exception when invalid_parameter_value then n := n + 1; end;
+  begin perform * from public.journey_reach_milestone(j, 1); exception when no_data_found then n := n + 1; end;
+  ok := ok and (select status from public.journeys where id = j) = 'active';
+  ok := ok and public.journey_finish(jcc, 'happy_where_we_are') = 'happy_where_we_are'
+    and not exists (select 1 from public.bird_skills where journey_id = jcc);
+  jd := public.journey_start(bf2, 'diet-conversion', null, null, null, 'most_days', 'private', null);
+  ok := ok and public.journey_finish(jd, 'learned') = 'finished'
+    and not exists (select 1 from public.bird_skills where journey_id = jd);
+  reset role;
+  perform set_config('request.jwt.claims', json_build_object('sub', st, 'role', 'authenticated')::text, true);
+  set local role authenticated;
+  begin perform public.journey_finish(j, 'learned'); exception when no_data_found then n := n + 1; end;
+  reset role;
+  ok := ok and (select status from public.journeys where id = j) = 'active';
+  if ok and n = 4 then passed := passed + 1; else failed := array_append(failed, 'journey_finish: learned adds the skill, diet and happy add none'); end if;
+
+  -- 22) The public admin functions are invoker wrappers (privileged bodies live in private).
   select count(*) into n from pg_proc p join pg_namespace s on s.oid = p.pronamespace
   where s.nspname = 'public' and p.prosecdef
     and p.proname in ('admin_set_journeys', 'admin_update_journey_template', 'admin_set_journey_milestone',
-                      'journey_my_access', 'journey_clip_allowance', 'journey_start', 'bird_set_known_skills', 'journeys_enabled');
+                      'journey_my_access', 'journey_clip_allowance', 'journey_start', 'journey_finish',
+                      'bird_set_known_skills', 'journeys_enabled');
   if n = 0 then passed := passed + 1; else failed := array_append(failed, 'no public security definer journey functions'); end if;
 
   raise exception 'JOURNEYS CHECKS: % passed, % failed%', passed, coalesce(array_length(failed, 1), 0),
