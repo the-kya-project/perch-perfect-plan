@@ -45,32 +45,6 @@ Where these items came from, with the detail behind each: `docs/flock/opening-sc
 - **Overnight alone:** yes (built to a held PR)
 - **Needs Brittany:** hold the PR for her approval (payments, and the `entitlements` plan change).
 
-### 1.7 Instagram share cards for journeys
-- **Spec:** [Instagram share cards for journeys](flock/specs/feature-specs.md#instagram-share-cards-for-journeys-17) · **Mockup:** [`SpecShareCards.dc.html`](flock/mockups/SpecShareCards.dc.html)
-- **Done means:**
-  - "Make a share card" replaces the "comes later" placeholders on a reached milestone, a finished journey and day one vs. now.
-  - A preview offers post (1080×1350) and story (1080×1920). The card shows the bird's photo and name, the journey, the milestone or "Finished!", the date reached, and "Kya & Co. · thekyaproject.com". Day one vs. now shows two photos.
-  - Share opens the phone's share sheet. On the web it downloads the image.
-  - The member's name is off unless they add it, and the bird's name is on but can be turned off. Photo metadata is removed. A "Just me" journey's card can be made only by the member who owns that journey.
-  - One design, reusing the Moments card (`src/lib/momentCard.ts`) in the Flock's colors.
-- **Size:** L
-- **Depends on:** nothing
-- **Overnight alone:** yes
-- **Needs Brittany:** merge only, under the normal rules.
-
-### 1.13a Badges: the Flock set
-- **Spec:** [Badges](flock/specs/feature-specs.md#badges-113a-and-113b) · **Mockup:** [`SpecBadges.dc.html`](flock/mockups/SpecBadges.dc.html)
-- **Done means:**
-  - Flock badges are awarded and shown on profiles: First steps, Journey finisher (1, 3 and 10), Trick star, Good neighbor, Voice of the Flock and Challenge champ (awarded once 1.10 exists). Founder and Chapter lead badges stay as they are.
-  - A small celebration marks each new badge. A Badges screen shows earned ones in color and unearned ones in gray, each with how to earn it. Members can hide badges from their Flock profile.
-  - Past activity counts, shown once as a single "Here's what you've already earned" celebration.
-  - No points, leaderboards or rankings. Simple stroke icons until final art arrives.
-  - A badge earned only through "Just me" journeys shows on the member's own Badges screen and never to anyone outside their household.
-- **Size:** L
-- **Depends on:** 1.6, 1.8
-- **Overnight alone:** yes
-- **Needs Brittany:** merge only, under the normal rules. Final badge art can replace the icons later.
-
 ### 1.10 Challenges
 - **Spec:** [Challenges](flock/specs/feature-specs.md#challenges-110) · **Mockup:** [`SpecChallenges.dc.html`](flock/mockups/SpecChallenges.dc.html)
 - **Done means:**
@@ -291,6 +265,8 @@ The launch PR itself (1.18) is already merged dark. What's left before opening i
 ## Done
 
 - **1.17** Promotion codes on the card step: Checkout offers Stripe's code field for every plan except the founding price (`promotionCodesAllowed`), and the billing webhook takes off any discount that reaches a founding subscription another way (`discountsToRemove`). A code stacks with a trial (the trial first, then the code on the paid invoices). Worked examples and the Apple offer codes for the iPhone paywall are in `docs/flock/payments-plan.md` section d. Switched off with `BILLING_ENABLED`, test mode only, nothing in the Stripe Dashboard touched; pinned by `npm run test:billing`. Held for Brittany (payments): #543.
+- **1.13a** Flock badges: First steps, Journey finisher (1, 3 and 10), Trick star, Good neighbor, Voice of the Flock and Challenge champ (shown, not yet awarded: 1.10 adds its rule to `private.flock_badge_levels`). `flock_my_badges` works out and records what a member has earned when they open the Flock; the first time, their history is recorded together and Today shows one "Here's what you've already earned" (two or more), then a "Badge earned" card for each new badge or level. The Badges screen (`/flock/you/badges`, from Flock settings) shows earned ones in color and the rest in gray with how to earn each. Profiles show them as pills beside Founder and Chapter lead through `flock_member_badges`, which counts only community journeys and leaves everything out when hidden ("Show my badges on my profile." on Edit profile) or blocked either way. No points or rankings; the mockup's stroke icons until final art (`20261124013000_flock_badges.sql`, `src/lib/flockBadges.ts`). Pinned by `supabase/checks/flock_badges_checks.sql`, `npm run test:flock-shell` and `e2e/flock.shell.ts`: #546.
+- **1.7** "Make a share card" on a reached milestone (the celebration), a finished journey (its page) and Day one vs. now opens `/flock/journeys/<id>/card`: a post (1080×1350) or story (1080×1920) PNG in the Flock's forest and lime with the bird's photo (two clip stills for Day one vs. now), the bird's name (on, can be turned off), the journey, the milestone or "Finished!", the date, the member's name only if added, and "Kya & Co. · thekyaproject.com". Share opens the share sheet, or downloads on the web. Photos are redrawn into a fresh PNG, so no metadata. Only the bird's household can make one (`canMakeJourneyCard`, and `getJourneyCardPhotos` checks `is_mine`). Reuses the Moments card's canvas and share code (`src/lib/journeyCard.ts`, `src/lib/momentCard.ts`). Pinned by `npm run test:flock-shell` and `e2e/flock.shell.ts`: #544.
 - **1.4** The daily `flock-purge` hook first runs `flock_moderation_purge` (`20261123193000_flock_removed_purge.sql`, service role only): posts and comments a reviewer removed 180+ days ago move, with the comments under them, into 1.3's `flock_deleted_items` already due, so the same run deletes them and their photos; reports closed 180+ days ago are deleted. Removed journey updates are left for Brittany's call. Pinned in `supabase/checks/flock_moderation_checks.sql` and `npm run test:flock-purge`. Held for Brittany (it deletes data): #534.
 - **2.4** Every update reload (the version check's and the service worker's alike) first expires Vercel's Skew Protection pin (`__vdpl`) with a POST to the new `/api/public/unpin`, waiting at most 3 seconds, then reloads, so the reloaded page gets the new build's files; Skew Protection stays on and no Vercel setting changed (option B). Pinned by `npm run test:release-check`: #531 (held for Brittany's merge; 2.5's Simulator check covers it hands-on).
 - **1.14** Billing foundation, switched off (`BILLING_ENABLED` must be exactly `true`) and Stripe test mode only, enforced in code: `billing_customers`, `billing_events`, `entitlements.product_id` / `will_renew` / `cancel_at_period_end`, `founding_claims.released_at` / `forfeited_at`, and the service-role functions the webhook writes through (`20261123180000_billing_foundation.sql`, `supabase/checks/billing_checks.sql`); the webhook `/api/public/stripe/billing` (`STRIPE_BILLING_WEBHOOK_SECRET`, re-reads each subscription, idempotent on the event id); the card step on Membership (`/flock/you/membership`, $0 until the free season's end, founders get $15, never in the native app); `npm run test:billing`. Held for Brittany (payments): #525. Approved and merged by Brittany (Nov 23, 2026), PR #525.
