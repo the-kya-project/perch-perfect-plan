@@ -109,11 +109,15 @@ begin
   reset role;
   ok := ok and not exists (select 1 from public.flock_pods where template_id = step);
   if ok then passed := passed + 1; else failed := array_append(failed, 'no pod until 3 are waiting, and blocks don''t count'); end if;
-  -- Waits in one transaction share now(), so placement would fall back to
-  -- the random ids: give them the order they happened in (a, k, b).
-  update public.flock_pod_waitlist set created_at = now() - interval '3 minutes' where user_id = a;
-  update public.flock_pod_waitlist set created_at = now() - interval '2 minutes' where user_id = k;
-  update public.flock_pod_waitlist set created_at = now() - interval '1 minute' where user_id = b;
+
+  -- Everything here runs in one transaction, so every wait has the same
+  -- created_at and placement's "oldest first" would fall to the random ids.
+  -- Give the waits the order they happened in (a, then k, then b), as they
+  -- would have outside a test; otherwise k sorts first about a third of the
+  -- time and the pod forms without a.
+  update public.flock_pod_waitlist w
+  set created_at = now() - case w.user_id when a then interval '3 minutes' when k then interval '2 minutes' else interval '1 minute' end
+  where w.user_id in (a, k, b);
 
   -- 3) c waits: a pod forms with a, b and c (never k), in Great Lakes.
   perform set_config('request.jwt.claims', json_build_object('sub', c, 'role', 'authenticated')::text, true);

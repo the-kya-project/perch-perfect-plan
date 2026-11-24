@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Card step with Kya's Crew</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&amp;family=Newsreader:ital,opsz,wght@0,6..72,700;1,6..72,600&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+</style>
+</helmet>
+<div style="width: 390px; height: 1960px; box-sizing: border-box; display: flex; flex-direction: column; background: #1a3d2e; font-family: 'DM Sans', sans-serif; color: #1a3d2e; overflow: hidden">
+  <header style="position: relative; padding: 14px 20px 64px; color: #ffffff; display: flex; flex-direction: column; gap: 22px; overflow: hidden">
+    <button type="button" aria-label="Back" style="position: relative; width: 44px; height: 44px; border: 0; border-radius: 999px; background: #12291f; color: #ffffff; display: grid; place-items: center; padding: 0">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg>
+    </button>
+    <div style="position: relative; display: flex; flex-direction: column; gap: 12px">
+      <h1 style="margin: 0; font-family: 'Newsreader', Georgia, serif; font-weight: 700; font-size: 40px; line-height: 1.02">Your membership <span style="font-style: italic; font-weight: 600; color: #f2b33d">does good</span> for parrots</h1>
+      <p style="margin: 0; font-size: 16px; line-height: 1.5; color: #d6e8dc">Add a card now to stay in the Flock after the free season. You won't pay anything until [free season end].</p>
+    </div>
+  </header>
+  <main style="flex-grow: 1; margin-top: -30px; border-radius: 26px 26px 0 0; background: #f1f5f0; padding: 0 16px 28px; display: flex; flex-direction: column; gap: 16px">
+    <section style="margin-top: -18px; position: relative; background: #f2b33d; border: 2px solid #1a3d2e; border-radius: 22px; padding: 20px; display: flex; flex-direction: column; gap: 14px">
+      <p style="margin: 0; font-size: 13px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: #1a3d2e">{{givingLabel}}</p>
+      <div style="display: flex; align-items: baseline; gap: 8px">
+        <span style="font-family: 'Newsreader', Georgia, serif; font-size: 48px; font-weight: 700; line-height: 1; color: #1a3d2e">{{givingPct}}</span>
+        <span style="font-size: 15px; line-height: 1.35; color: #1a3d2e">of what you pay goes to parrot rescue and conservation partners</span>
+      </div>
+      <div style="display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-radius: 14px; background: #ffffff; border: 2px solid #1a3d2e">
+        <span style="width: 36px; height: 36px; flex-shrink: 0; border-radius: 999px; background: #1a3d2e; color: #f2b33d; display: grid; place-items: center"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.8 5.6a5 5 0 0 0-7.1 0L12 7.3l-1.7-1.7a5 5 0 0 0-7.1 7.1L12 21.5l8.8-8.8a5 5 0 0 0 0-7.1z"/></svg></span>
+        <span style="font-size: 14px; line-height: 1.4; color: #1a3d2e">You help choose where it goes, <strong>through Do good votes</strong> with the rest of the Flock.</span>
+      </div>
+    </section>
+
+    <fieldset style="margin: 4px 0 0; border: 0; padding: 0; display: flex; flex-direction: column; gap: 10px">
+      <legend style="margin: 0 0 10px 4px; padding: 0; font-family: 'Newsreader', Georgia, serif; font-size: 22px; font-weight: 700; color: #1a3d2e">Pick your membership</legend>
+      <p style="margin: 0 0 0 4px; font-size: 14px; font-weight: 700; color: #2d6a4f">Flock membership</p>
+      <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px">
+        <label style="position: relative; background: {{fy.bg}}; color: {{fy.fg}}; border-radius: 18px; padding: 18px 14px 16px; display: flex; flex-direction: column; gap: 4px; border: 2px solid {{fy.border}}; cursor: pointer">
+          <input type="radio" name="plan" checked="{{fy.checked}}" onChange="{{fy.pick}}" style="position: absolute; top: 14px; right: 14px; width: 20px; height: 20px; margin: 0; accent-color: #f2b33d">
+          <span style="font-size: 14px; font-weight: 700; color: {{fy.label}}">Yearly</span>
+          <span style="font-family: 'Newsreader', Georgia, serif; font-size: 30px; font-weight: 700; line-height: 1.05">$25<span style="font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 500">/mo</span></span>
+          <span style="font-size: 13px; color: {{fy.sub}}">$300 once a year</span>
+          <span style="margin-top: 6px; align-self: flex-start; padding: 3px 9px; border-radius: 999px; background: #f2b33d; color: #1a3d2e; font-size: 12px; font-weight: 700">2 months free</span>
+        </label>
+        <label style="position: relative; background: {{fm.bg}}; color: {{fm.fg}}; border-radius: 18px; padding: 18px 14px 16px; display: flex; flex-direction: column; gap: 4px; border: 2px solid {{fm.border}}; cursor: pointer">
+          <input type="radio" name="plan" checked="{{fm.checked}}" onChange="{{fm.pick}}" style="position: absolute; top: 14px; right: 14px; width: 20px; height: 20px; margin: 0; accent-color: #f2b33d">
+          <span style="font-size: 14px; font-weight: 700; color: {{fm.label}}">Monthly</span>
+          <span style="font-family: 'Newsreader', Georgia, serif; font-size: 30px; font-weight: 700; line-height: 1.05">$30<span style="font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 500">/mo</span></span>
+          <span style="font-size: 13px; color: {{fm.sub}}">Billed monthly</span>
+        </label>
+      </div>
+
+      <div style="margin-top: 8px; background: #fff7e3; border: 2px solid #f2b33d; border-radius: 22px; padding: 18px 14px 16px; display: flex; flex-direction: column; gap: 12px">
+        <div style="display: flex; align-items: center; gap: 10px">
+          <span style="width: 36px; height: 36px; flex-shrink: 0; border-radius: 999px; background: #f2b33d; color: #1a3d2e; display: grid; place-items: center"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2l2.9 6.2 6.6.8-4.9 4.6 1.3 6.6L12 16.9 6.1 20.2l1.3-6.6L2.5 9l6.6-.8z"/></svg></span>
+          <div style="display: flex; flex-direction: column; gap: 2px">
+            <span style="font-family: 'Newsreader', Georgia, serif; font-size: 22px; font-weight: 700; line-height: 1.1; color: #1a3d2e">Kya's Crew</span>
+            <span style="font-size: 14px; line-height: 1.35; color: #3d4f45">For members who want to give a little more</span>
+          </div>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 10px">
+          <div style="display: flex; gap: 10px; align-items: flex-start; font-size: 14px; line-height: 1.45; color: #3d4f45"><span style="width: 22px; height: 22px; flex-shrink: 0; border-radius: 999px; background: #1a3d2e; color: #f2b33d; display: grid; place-items: center"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12l5 5L20 7"/></svg></span><span>Everything in a Flock membership</span></div>
+          <div style="display: flex; gap: 10px; align-items: flex-start; font-size: 14px; line-height: 1.45; color: #3d4f45"><span style="width: 22px; height: 22px; flex-shrink: 0; border-radius: 999px; background: #1a3d2e; color: #f2b33d; display: grid; place-items: center"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12l5 5L20 7"/></svg></span><span><strong>25%</strong> of what you pay goes to parrot rescue and conservation partners</span></div>
+          <div style="display: flex; gap: 10px; align-items: flex-start; font-size: 14px; line-height: 1.45; color: #3d4f45"><span style="width: 22px; height: 22px; flex-shrink: 0; border-radius: 999px; background: #1a3d2e; color: #f2b33d; display: grid; place-items: center"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12l5 5L20 7"/></svg></span><span>Crew memberships help support free Flock access for rescue adopters</span></div>
+        </div>
+        <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px">
+          <label style="position: relative; background: {{cy.bg}}; color: {{cy.fg}}; border-radius: 18px; padding: 18px 14px 16px; display: flex; flex-direction: column; gap: 4px; border: 2px solid {{cy.border}}; cursor: pointer">
+            <input type="radio" name="plan" checked="{{cy.checked}}" onChange="{{cy.pick}}" style="position: absolute; top: 14px; right: 14px; width: 20px; height: 20px; margin: 0; accent-color: #f2b33d">
+            <span style="font-size: 14px; font-weight: 700; color: {{cy.label}}">Crew yearly</span>
+            <span style="font-family: 'Newsreader', Georgia, serif; font-size: 30px; font-weight: 700; line-height: 1.05">$37<span style="font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 500">/mo</span></span>
+            <span style="font-size: 13px; color: {{cy.sub}}">$444 once a year</span>
+            <span style="margin-top: 6px; align-self: flex-start; padding: 3px 9px; border-radius: 999px; background: #f2b33d; color: #1a3d2e; font-size: 12px; font-weight: 700">Save $96</span>
+          </label>
+          <label style="position: relative; background: {{cm.bg}}; color: {{cm.fg}}; border-radius: 18px; padding: 18px 14px 16px; display: flex; flex-direction: column; gap: 4px; border: 2px solid {{cm.border}}; cursor: pointer">
+            <input type="radio" name="plan" checked="{{cm.checked}}" onChange="{{cm.pick}}" style="position: absolute; top: 14px; right: 14px; width: 20px; height: 20px; margin: 0; accent-color: #f2b33d">
+            <span style="font-size: 14px; font-weight: 700; color: {{cm.label}}">Crew monthly</span>
+            <span style="font-family: 'Newsreader', Georgia, serif; font-size: 30px; font-weight: 700; line-height: 1.05">$45<span style="font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 500">/mo</span></span>
+            <span style="font-size: 13px; color: {{cm.sub}}">Billed monthly</span>
+          </label>
+        </div>
+      </div>
+    </fieldset>
+
+    <section style="background: #ffffff; border-radius: 20px; padding: 20px">
+      <h2 style="margin: 0 0 16px; font-family: 'Newsreader', Georgia, serif; font-size: 22px; font-weight: 700; color: #1a3d2e">How it works</h2>
+      <ol style="margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column">
+        <li style="display: flex; gap: 14px">
+          <span style="display: flex; flex-direction: column; align-items: center"><span style="width: 28px; height: 28px; border-radius: 999px; background: #1a3d2e; color: #cdeab0; display: grid; place-items: center"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12l5 5L20 7"/></svg></span><span style="width: 2px; flex-grow: 1; background: #d6e8dc; margin: 4px 0"></span></span>
+          <span style="padding-bottom: 18px"><span style="display: block; font-size: 15px; font-weight: 700; color: #1a3d2e">Today</span><span style="display: block; font-size: 14px; line-height: 1.45; color: #5f5e5a">Add your card. $0 due today.</span></span>
+        </li>
+        <li style="display: flex; gap: 14px">
+          <span style="display: flex; flex-direction: column; align-items: center"><span style="width: 28px; height: 28px; border-radius: 999px; background: #cdeab0; color: #1a3d2e; display: grid; place-items: center"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3c4 3 6 7 5 12-3-1-5-3-6-6"/><path d="M12 3c-1 5 0 10 2 16"/></svg></span><span style="width: 2px; flex-grow: 1; background: #d6e8dc; margin: 4px 0"></span></span>
+          <span style="padding-bottom: 18px"><span style="display: block; font-size: 15px; font-weight: 700; color: #1a3d2e">Until [free season end]</span><span style="display: block; font-size: 14px; line-height: 1.45; color: #5f5e5a">Everything in the Flock stays free, just like now.</span></span>
+        </li>
+        <li style="display: flex; gap: 14px">
+          <span style="display: flex; flex-direction: column; align-items: center"><span style="width: 28px; height: 28px; border-radius: 999px; background: #f2b33d; color: #1a3d2e; display: grid; place-items: center"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="6" width="18" height="12" rx="2"/><path d="M3 10h18"/></svg></span></span>
+          <span><span style="display: block; font-size: 15px; font-weight: 700; color: #1a3d2e">[free season end]</span><span style="display: block; font-size: 14px; line-height: 1.45; color: #5f5e5a">{{chargeLine}} Cancel before this date and you won't be charged.</span></span>
+        </li>
+      </ol>
+    </section>
+
+    <section style="background: #ffffff; border-radius: 20px; padding: 20px; display: flex; flex-direction: column; gap: 14px">
+      <h2 style="margin: 0 0 2px; font-family: 'Newsreader', Georgia, serif; font-size: 22px; font-weight: 700; color: #1a3d2e">What your membership keeps</h2>
+      <div style="display: flex; gap: 12px; align-items: flex-start; font-size: 15px; line-height: 1.45; color: #3d4f45"><span style="width: 24px; height: 24px; flex-shrink: 0; border-radius: 999px; background: #cdeab0; color: #1a3d2e; display: grid; place-items: center"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12l5 5L20 7"/></svg></span><span>Your chapter, with avian vets, rescues and shops other members recommend</span></div>
+      <div style="display: flex; gap: 12px; align-items: flex-start; font-size: 15px; line-height: 1.45; color: #3d4f45"><span style="width: 24px; height: 24px; flex-shrink: 0; border-radius: 999px; background: #cdeab0; color: #1a3d2e; display: grid; place-items: center"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12l5 5L20 7"/></svg></span><span>Step-by-step journeys for training and care</span></div>
+      <div style="display: flex; gap: 12px; align-items: flex-start; font-size: 15px; line-height: 1.45; color: #3d4f45"><span style="width: 24px; height: 24px; flex-shrink: 0; border-radius: 999px; background: #cdeab0; color: #1a3d2e; display: grid; place-items: center"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12l5 5L20 7"/></svg></span><span>The full Library</span></div>
+      <div style="display: flex; gap: 12px; align-items: flex-start; font-size: 15px; line-height: 1.45; color: #3d4f45"><span style="width: 24px; height: 24px; flex-shrink: 0; border-radius: 999px; background: #cdeab0; color: #1a3d2e; display: grid; place-items: center"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12l5 5L20 7"/></svg></span><span>A vote in Do good, on where the Flock's giving goes</span></div>
+      <sc-if value="{{isCrew}}" hint-placeholder-val="{{ false }}">
+        <div style="display: flex; gap: 12px; align-items: flex-start; font-size: 15px; line-height: 1.45; color: #3d4f45"><span style="width: 24px; height: 24px; flex-shrink: 0; border-radius: 999px; background: #f2b33d; color: #1a3d2e; display: grid; place-items: center"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12l5 5L20 7"/></svg></span><span>Crew memberships help support free Flock access for rescue adopters</span></div>
+      </sc-if>
+    </section>
+
+    <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 6px">
+      <button type="button" style="width: 100%; min-height: 56px; border-radius: 999px; border: 2px solid #1a3d2e; background: #f2b33d; color: #1a3d2e; font-family: 'DM Sans', sans-serif; font-size: 17px; font-weight: 700">{{buttonText}}</button>
+      <p style="margin: 0; display: flex; justify-content: center; align-items: center; gap: 6px; font-size: 13px; color: #5f5e5a"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>Secure checkout with Stripe · Cancel anytime</p>
+    </div>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"startPlan":{"editor":"enum","options":["flock-year","flock-month","crew-year","crew-month"],"default":"flock-year"},"$preview":{"width":390,"height":1960}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const plan = (this.state && this.state.plan) || this.props.startPlan || 'flock-year';
+    const opt = (id) => {
+      const on = plan === id;
+      return {
+        checked: on,
+        pick: () => this.setState({ plan: id }),
+        bg: on ? '#1a3d2e' : '#ffffff',
+        fg: on ? '#ffffff' : '#1a3d2e',
+        border: on ? '#1a3d2e' : '#e3ebe2',
+        label: on ? '#cdeab0' : '#2d6a4f',
+        sub: on ? '#d6e8dc' : '#5f5e5a'
+      };
+    };
+    const isCrew = plan === 'crew-year' || plan === 'crew-month';
+    const charges = {
+      'flock-year': 'Your first charge of $300, then once a year.',
+      'flock-month': 'Your first charge of $30, then every month.',
+      'crew-year': 'Your first charge of $444, then once a year.',
+      'crew-month': 'Your first charge of $45, then every month.'
+    };
+    return {
+      fy: opt('flock-year'),
+      fm: opt('flock-month'),
+      cy: opt('crew-year'),
+      cm: opt('crew-month'),
+      isCrew: isCrew,
+      givingPct: isCrew ? '25%' : '20%',
+      givingLabel: isCrew ? 'Kya’s Crew gives back more' : 'Every membership gives back',
+      chargeLine: charges[plan],
+      buttonText: isCrew ? 'Join Kya’s Crew · $0 today' : 'Add my card · $0 today'
+    };
+  }
+}
+</script>
+</body>
+</html>

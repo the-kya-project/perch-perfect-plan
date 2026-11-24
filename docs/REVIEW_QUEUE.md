@@ -1085,6 +1085,10 @@ No new strings: every line reuses existing wording, in new places (admins only).
 
 ## Decisions agents made
 
+### 1.15a Kya's Crew option on the payment screen · Brittany's decisions, Nov 24, 2026
+- **Approved:** the "Kya's Crew payment option" mockup from Nov 23, 2026: the card step with Kya's Crew and its benefits next to Monthly and Yearly, and the Crew yearly selected state. Saved as `docs/flock/mockups/billing/CrewCardStep.dc.html` and `CrewCardStepYearlySelected.dc.html`. 1.15a is now "Overnight alone: yes (built to a held PR)".
+- **Decided (Brittany, Nov 24, 2026):** the mockup's two rescue-adopter lines ("You sponsor six free months in the Flock for a family who just adopted a rescue parrot" and "Six free months in the Flock for a new rescue adopter, from you") both become "Crew memberships help support free Flock access for rescue adopters", matching #551's legal draft. The saved mockup already shows it.
+
 ### [#548](https://github.com/the-kya-project/perch-perfect-plan/pull/548) · 1.11 Buddy pods
 - **Decision:** A pod's posts are Flock posts in a new `pod` space (`flock_posts.pod_id`), so reactions, comments, replies, reports, review, blocks, photos, deletion and the 180-day hold all work as they do for posts. They show only in the pod, never on Today. This needs small changes to two existing Flock functions (post visibility and Today's feed) and the posts table's space check.
 - **Decision:** Placement: a new waiter first joins an open pod on the same journey with room (under 6), their own chapter's pod first. Otherwise a new pod forms as soon as 3 compatible people are waiting: from the member's chapter when 3 there are waiting, else from everyone waiting (chapter first, then oldest). So pods start at 3 and fill toward 6. The spec doesn't say whether latecomers join an existing pod or wait for a new one.
@@ -1609,12 +1613,6 @@ Format:
 
 ### [#557](https://github.com/the-kya-project/perch-perfect-plan/pull/557) · 1.11 Buddy pods follow-up (#548 merged)
 - **Needs:** only your copy read (under "Copy that merged") and your merge.
-
-### [#543](https://github.com/the-kya-project/perch-perfect-plan/pull/543) · 1.17 Promo codes: two checks need a re-run
-- **Needs:** a re-run of "Free-user regression" and "iPhone hydration" on #543 (Actions → each run → Re-run jobs). On its latest commit (`c68861b`, the record merge from `main`), both were cancelled, not failed: the regression run when a newer run joined the shared staging queue, and iPhone hydration after 25 minutes stuck installing browsers. Runs can't re-run checks. The PR is otherwise held for your approval, as its description says.
-
-### [#535](https://github.com/the-kya-project/perch-perfect-plan/pull/535) · 1.15 Kya's Crew: Free-user regression failed after the record merge
-- **Needs:** a look at, or a re-run of, "Free-user regression" on #535's latest commit (`7b7bd3f`, the record merge from `main`). This time it failed in "Run the free-user regression check" rather than being cancelled. This run couldn't read the failure's details: the log is too long to show here, and the report is an artifact runs can't open. Another PR's run sharing staging at the same time is a likely cause. The earlier note about the cancelled run (below) still applies to the commit before.
 
 ### Reminder · the hourly runs' GitHub token expires Feb 20, 2027
 - **Needs:** a new token before **Feb 20, 2027**. That's 90 days from Nov 22, 2026; GitHub → Settings → Developer settings → Fine-grained tokens shows the exact date. When it expires, runs can still build and test but can't push or open PRs, and each run's note in `~/.kya-agent/job.log` says so.

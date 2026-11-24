@@ -64,12 +64,13 @@ Where these items came from, with the detail behind each: `docs/flock/opening-sc
 ## Needs Brittany before work starts
 
 ### 1.15a Kya's Crew option on the payment screen
+- **Mockup:** [`CrewCardStep.dc.html`](flock/mockups/billing/CrewCardStep.dc.html) (the card step with Crew; tap a plan) and [`CrewCardStepYearlySelected.dc.html`](flock/mockups/billing/CrewCardStepYearlySelected.dc.html) (Crew yearly selected). Approved by Brittany, Nov 24, 2026 ("Kya's Crew payment option", Nov 23).
 - **Done means:** members can choose Kya's Crew on the Membership card step from 1.14a (#533), with its benefits listed, next to Monthly and Yearly. The save-the-card sentence (`saveCardNote`) has its own Crew line. It stays behind `BILLING_ENABLED`, in Stripe test mode.
 - **Decided (Brittany, Nov 23, 2026):** Crew is chosen on the payment screen. Crew members pay nothing until the free season ends.
 - **Size:** S
-- **Depends on:** 1.14a (#533), 1.15 (#535), and Brittany's approved mockup
-- **Overnight alone:** no. Don't start until the updated card step mockup is approved.
-- **Needs Brittany:** an approved mockup of the card step with Crew and its benefits, then the PR (payments).
+- **Depends on:** 1.14a (#533), 1.15 (#535), and Brittany's approved mockup (approved Nov 24, 2026)
+- **Overnight alone:** yes (built to a held PR)
+- **Needs Brittany:** the PR (payments). Both rescue-adopter lines (the Crew benefit and the Crew line under "What your membership keeps") say "Crew memberships help support free Flock access for rescue adopters" (Brittany, Nov 24, 2026, matching #551); never promise a sponsored seat or six free months.
 
 ### 2.5 The sitter preview never stalls after a release
 - **Done means:** the Nov 2 bug can't happen. The sitter preview catches up to a new release before it opens, and recovers a stalled frame. Checked in the iPhone Simulator with the app left open across a release (see the "Sitter preview stale-session test" memory).
