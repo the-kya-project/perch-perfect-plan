@@ -704,6 +704,12 @@ No new strings: every line reuses existing wording, in new places (admins only).
 - **Decision:** No analytics events for challenges. The spec doesn't ask for any, and adding them means changing the shared event list.
 - **To change it:** the rules are in `20261124033000_flock_challenges.sql` (`private.flock_challenge_*`); the words are in `src/components/flock/ChallengeParts.tsx` and the two `flock.challenges.$challengeId` routes; the admin form is `src/routes/_authenticated/admin.challenges.$challengeId.tsx`.
 
+### D1.2 Weight baseline shadow mode · Brittany's decisions after the replay, Nov 23, 2026
+- **Decision (Brittany's):** She read the D1.1 replay. The shadow log covers every bird, the typed normal weight never replaces the learned one, and alerts use each bird's own range with limits. A separate sudden-drop alert (10%, or 7% under 100 g) always applies. Owners can enter an optional ideal weight range, which quietly decides whether the two lower alerts show and is never presented as a goal. Weight alerts stay observational and never tell an owner to go to or call the vet. The full rules and draft lines are under D1.2 in `docs/BACKLOG.md`.
+- **Why:** a fixed percent treats birds with very different natural swings alike, the draft timing missed sustained drops in owners who weigh every few days, a learned "usual" can be heavier than a bird's healthiest weight, and a big overnight loss from a high weight wouldn't have alerted at all. Kya & Co. is a health app, so the ideal weight informs alerts without turning into a weight-loss or weight-gain goal.
+- **For the vet review:** the personal-range multiples and limits, the 3.5% "Worth watching" ceiling, the sudden-drop levels with the 100 g cutoff and 7-day comparison, which alerts the ideal range may quiet, and whether observational wording is enough for a confirmed sudden loss.
+- **To change it:** the D1.2 entry in `docs/BACKLOG.md` before it's built, then `WEIGHT_BASELINE_RULES` in `src/lib/healthRules.ts`.
+
 ### [#546](https://github.com/the-kya-project/perch-perfect-plan/pull/546) · 1.13a Badges: the Flock set
 - **Decision:** Badges are worked out when a member opens Today, Flock settings or the Badges screen (`flock_my_badges`), not by triggers on every table. So "the moment it's earned" means the next time they open the Flock, usually seconds later. It keeps the badge rules in one function and leaves the posts, journeys, votes and places code untouched.
 - **Decision:** "Past activity counts": the first time a member's badges are worked out, everything their history earned is recorded together, and Today shows one "Here's what you've already earned" when that's two or more. With just one (a newcomer who's just finished their profile), it's the small "Badge earned" card instead, since "already earned" would read oddly.
@@ -747,8 +753,41 @@ Format:
 - **To change it:** <what would need to change>
 ```
 
+### [#535](https://github.com/the-kya-project/perch-perfect-plan/pull/535) · 1.15 Kya's Crew (switched off)
+- **Decision:** "No trial" means Crew never gets the 14-day trial planned for after the free season (6f, not built). During the free season a Crew card goes on at $0 until the season's end, like every membership; after it, Crew is charged the day the card goes on.
+- **Why:** the Flock is "free for everyone" until the season's end, and Crew "includes everything in a Flock membership". The $0 period is the free season, not a trial. Asked in the PR in case you meant Crew to be charged at once.
+- **Brittany's answer (Nov 23, 2026):** confirmed. Crew members pay nothing until the free season ends, the same as every other member.
+- **To change it:** in `startBillingCheckout` (`src/lib/billing.functions.ts`), drop `trial_end` for `isCrewPlan(plan)`; `planGetsTrial` in `src/lib/billing.ts` is where 6f's trial must skip Crew.
+
+### [#535](https://github.com/the-kya-project/perch-perfect-plan/pull/535) · 1.15 Kya's Crew (switched off)
+- **Decision:** One six-month seat per Crew subscription, added the first time it's recorded as active (its first payment went through), never a second for the same subscription. Renewals add none. A seat stays when the membership ends or the account is deleted. A regular member who switches the same subscription to Crew sponsors a seat at that point.
+- **Why:** the spec says "each Crew member sponsors six months"; once per membership is the narrowest reading, and a seat is only counted once it's paid for. Asked in the PR whether a yearly renewal should add another.
+- **Brittany's answer (Nov 23, 2026):** a renewal does not sponsor another seat. The one-seat-per-new-Crew-member count is a number for marketing only. Rescue adopters always get in free, and the count never blocks one.
+- **Brittany's decision (Nov 23, 2026):** seats aren't tracked at all. The sponsorship tables were removed from this PR before it merged.
+
+### [#535](https://github.com/the-kya-project/perch-perfect-plan/pull/535) · 1.15 Kya's Crew (switched off)
+- **Decision:** A founder who picks Crew gets Crew, not the founding price, and their founding claim is left as it is (not released or forfeited).
+- **Why:** Crew is its own plan above the Flock's price. Forfeiting a founding spot is only for a founding membership that ends.
+- **To change it:** `checkoutPlan` in `src/lib/billing.ts`.
+
+### [#535](https://github.com/the-kya-project/perch-perfect-plan/pull/535) · 1.15 Kya's Crew (switched off)
+- **Decision:** Giving is recorded as a rate on each Stripe row (`entitlements.giving_rate`, 0.25 for Crew and 0.20 for the other plans, like `gift_purchases.giving_rate`), not as amounts. Rows billing doesn't write keep it empty.
+- **Why:** nothing records what members pay yet. The rate is what the spec asks to record, and amounts can be added when invoices are stored.
+- **To change it:** `private.membership_giving_rate` (a new migration) and `givingRate` in `src/lib/billing.ts` together.
+
+### [#535](https://github.com/the-kya-project/perch-perfect-plan/pull/535) · 1.15 Kya's Crew (switched off)
+- **Decision:** The admin view is a new page, `/admin/crew` (admins only, English, like `/admin/gifts`): seats sponsored, used and available, Crew members now, a red line when more seats are used than sponsored, and each seat's date, Crew plan and whether the sponsor is still in the Crew. No names or emails. Nothing links to it yet. Seats given are a separate table, `crew_seat_uses`, which only 1.16 will write.
+- **Why:** the item asks for "an admin view of seats sponsored and used" and 1.16 for a warning below zero. There's no mockup, so it follows the existing admin list pages.
+- **Brittany's decision (Nov 23, 2026):** not needed. `/admin/crew` was removed from this PR before it merged.
+
+### [#535](https://github.com/the-kya-project/perch-perfect-plan/pull/535) · 1.15 Kya's Crew (switched off)
+- **Decision:** No Crew products for the App Store yet, and no Crew tile on the card step. Checkout accepts `crew_monthly` and `crew_annual`; nothing in the app sends them.
+- **Why:** iPhone purchases come with the launch build (RevenueCat), and the card step has no Crew design. #533 is redesigning that screen.
+- **Brittany's answer (Nov 23, 2026):** members choose Crew on the payment screen (the card step from 1.14a, #533), with its benefits listed. That waits on her approved mockup: backlog 1.15a.
+- **To change it:** add Crew to the card step once there's a design (`CHECKOUT_CHOICES` is ready).
+
 ### [#534](https://github.com/the-kya-project/perch-perfect-plan/pull/534) · 1.4 Removed content and closed reports are deleted after 180 days
-- **Decision:** What counts: posts and comments a reviewer removed ("Remove it" in the review queue), timed from the removal (`flock_moderation.updated_at`), and reports closed as kept or removed, timed from `resolved_at`. Removed content goes through 1.3's hold, already due, so the same daily run deletes its photos with 1.3's rules (a photo still used elsewhere is kept, and a failed delete waits a day). The comments under a removed post, and the replies under a removed comment, go with it. Left out: removed journey updates (asked in Held), Do good posts a reviewer declined (a review result, not a removal; they stay visible to their author only), content still waiting for review, and open reports.
+- **Decision:** What counts: posts and comments a reviewer removed ("Remove it" in the review queue), timed from the removal (`flock_moderation.updated_at`), and reports closed as kept or removed, timed from `resolved_at`. Removed content goes through 1.3's hold, already due, so the same daily run deletes its photos with 1.3's rules (a photo still used elsewhere is kept, and a failed delete waits a day). The comments under a removed post, and the replies under a removed comment, go with it. Left out: removed journey updates (Brittany, Nov 23, 2026: they stay as they are and are not deleted after 180 days), Do good posts a reviewer declined (a review result, not a removal; they stay visible to their author only), content still waiting for review, and open reports.
 - **Why:** D9 says "content removed by reviewers, and reports, are kept for 180 days, then deleted"; the item says "closed reports" and "180 days after they were resolved". Reusing 1.3's hold means a single path deletes Flock photos.
 - **To change it:** `private.flock_moderation_purge` in `20261123193000_flock_removed_purge.sql` (a new migration); the hold is `private.flock_removed_hold()`.
 
@@ -1063,6 +1102,9 @@ Format:
 
 ### [#533](https://github.com/the-kya-project/perch-perfect-plan/pull/533) · 1.14a Card step: conflicts with `main` outside the record files
 - **Needs:** #533 now conflicts with `main` in `src/locales/en.jsonc` as well as the record files, because `main` added catalog lines near its own. Runs may only fix conflicts in the three record files, so this run left the branch as it is. Update it from `main`, keeping both sides' lines, or say in the PR that a run may.
+
+### [#535](https://github.com/the-kya-project/perch-perfect-plan/pull/535) · 1.15 Kya's Crew and its sponsored rescue-adopter seat (switched off)
+- **Needs:** (1) your approval of the database change: the `entitlements` plan check adds `crew_monthly` and `crew_annual`, plus the new `giving_rate` column and the replaced billing function. Merging applies it to production. (2) Your merge. Your Crew questions are answered (Nov 23, 2026), and seat counting is out. The Crew option on the payment screen is 1.15a and doesn't hold this PR. The Stripe test prices can wait until you want to try Crew checkout.
 
 ### [#535](https://github.com/the-kya-project/perch-perfect-plan/pull/535) · 1.15 Kya's Crew: Free-user regression needs a re-run
 - **Needs:** a re-run of "Free-user regression" on #535 (Actions → the cancelled run → Re-run jobs). On its latest commit (`ebaa867`, "Crew: remove sponsored seat counting") that check was cancelled, not failed, most likely because a newer run joined the shared staging queue. It passed on the commit before. Runs can't re-run checks. The PR is otherwise held for your approval, as its description says.

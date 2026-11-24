@@ -8,11 +8,31 @@
  * (stripe.server.ts, getBillingStripe).
  */
 
-/** Paid Flock plans, as stored in entitlements.plan for a Stripe row. */
-export type PaidPlan = "founding" | "monthly" | "annual";
+/** Paid Flock plans, as stored in entitlements.plan for a Stripe row. Kya's
+ *  Crew (backlog 1.15) is a Flock plan too. */
+export type PaidPlan = "founding" | "monthly" | "annual" | "crew_monthly" | "crew_annual";
+export const PAID_PLANS = ["founding", "monthly", "annual", "crew_monthly", "crew_annual"] as const satisfies readonly PaidPlan[];
 /** What a member who isn't a founder picks on the card step. */
 export const BILLING_CHOICES = ["monthly", "annual"] as const;
 export type BillingChoice = (typeof BILLING_CHOICES)[number];
+
+/** Kya's Crew: $45 a month or $444 a year (prices come from Stripe). No card
+ *  step offers it yet; checkout accepts it. */
+export const CREW_CHOICES = ["crew_monthly", "crew_annual"] as const;
+export type CrewChoice = (typeof CREW_CHOICES)[number];
+export const CHECKOUT_CHOICES = [...BILLING_CHOICES, ...CREW_CHOICES] as const;
+export type CheckoutChoice = (typeof CHECKOUT_CHOICES)[number];
+
+export function isCrewPlan(plan: string | null | undefined): plan is CrewChoice {
+  return plan === "crew_monthly" || plan === "crew_annual";
+}
+
+/** The share of what a member pays that goes to rescue and conservation
+ *  partners: 25% for Kya's Crew, 20% for every other membership. The database
+ *  records the same on each row (private.membership_giving_rate). */
+export function givingRate(plan: PaidPlan): number {
+  return isCrewPlan(plan) ? 0.25 : 0.2;
+}
 
 export type EntitlementStatus = "active" | "trialing" | "past_due" | "canceled";
 
@@ -29,7 +49,7 @@ export function billingEnabled(value: string | undefined | null): boolean {
 /** A paid row's plan comes from its price, never from metadata. */
 export function planForPrice(priceId: string | null | undefined, prices: BillingPrices): PaidPlan | null {
   if (!priceId) return null;
-  for (const plan of ["founding", "monthly", "annual"] as const) {
+  for (const plan of PAID_PLANS) {
     if (prices[plan] && prices[plan] === priceId) return plan;
   }
   return null;
@@ -145,10 +165,21 @@ export function firstCharge(
 }
 
 /** Which price a member gets: a founder whose claim is neither released nor
- *  forfeited always gets the founding price (there's no yearly founding
- *  option); everyone else gets what they picked. */
-export function checkoutPlan(choice: BillingChoice, foundingPriceOpen: boolean): PaidPlan {
+ *  forfeited gets the founding price for the Flock (there's no yearly founding
+ *  option); everyone else gets what they picked. Kya's Crew is its own plan,
+ *  so a founder who picks it gets Crew, and their claim is left as it is. */
+export function checkoutPlan(choice: CheckoutChoice, foundingPriceOpen: boolean): PaidPlan {
+  if (isCrewPlan(choice)) return choice;
   return foundingPriceOpen ? "founding" : choice;
+}
+
+/** Kya's Crew has no trial (payments-plan pricing answer 7): once the free
+ *  season is over it's charged the day the card goes on. During the free
+ *  season it's $0 until the season's end like every membership, because the
+ *  Flock is free for everyone until then. The 14-day trial (payments build
+ *  6f, not built yet) must skip the plans this returns false for. */
+export function planGetsTrial(plan: PaidPlan): boolean {
+  return plan !== "founding" && !isCrewPlan(plan);
 }
 
 /** A Stripe row that still counts: anything but an ended one. */
