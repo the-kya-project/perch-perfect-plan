@@ -20,6 +20,12 @@ Copy this, fill it in, and put it at the top of "Runs", above the latest entry.
 
 ## Runs
 
+### 2026-11-24 17:52 EST · 1.11 Buddy pods follow-up: no buddy groups, stage pills (Brittany asked, in a session)
+- **Built:** applied Brittany's Nov 24 decisions to buddy pods, and brought them in line with the Journeys redesign (1.20a). A pod now just closes once everyone has finished or left, with no "Keep going together?" and no buddy groups. The members card shows a pill (Working on it / Learned it / Happy where we are, or "Journey kept private") instead of a progress bar. "Happy where we are" counts as finished. Finishing counts as activity for the 3-week rule. The closed-pod card links back to the old pod. #548 had already merged (its migration ran on production), so this is a new migration that changes the live tables and functions, not an edit of the old file.
+- **PR:** [#557](https://github.com/the-kya-project/perch-perfect-plan/pull/557)
+- **Outcome:** Held: Brittany's copy read and merge.
+- **Problems:** the request was to update #548 in place, but #548 merged at 5:22 PM EST before work started; Brittany confirmed a new PR. No local Postgres, so the database checks run only in CI.
+
 ### 2026-11-24 · 1.12 Flock insights: Brittany's diet conversion decision recorded (Brittany asked, in a session)
 - **Built:** nothing in code. Recorded Brittany's decision in `docs/BACKLOG.md` (item 1.12) and `docs/REVIEW_QUEUE.md` (the #506 "1.12 Flock insights" entry): diet conversion shows no typical length anywhere (no number, range or "usually takes" line), because it could read as health guidance. No code, migrations or existing `typical_length` data changed.
 - **PR:** [#553](https://github.com/the-kya-project/perch-perfect-plan/pull/553)

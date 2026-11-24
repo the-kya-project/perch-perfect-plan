@@ -19,6 +19,32 @@ Format:
   - After: "<new wording>"
 ```
 
+### [#557](https://github.com/the-kya-project/perch-perfect-plan/pull/557) · 1.11 Buddy pods follow-up (#548): no buddy groups, stage pills · **for Brittany's copy read**
+Held, not merged yet. English only (pods have no Dutch yet).
+- **Where:** setup screen, "Pair me with buddies" box (`flock.pods.optInLine`)
+  - Before: "A small group of 3 to 6 members on the same journey, from your chapter when possible. You can leave anytime."
+  - After: "A small group of 3 to 6 members on the same skill, from your chapter when possible. You can leave anytime."
+- **Where:** setup screen, the line under the box when Just me is picked (`flock.pods.optInJustMe`)
+  - Before: "Your buddies see your name and that you're on this journey. Your progress stays private while the journey is Just me."
+  - After: "Your buddies see your name and that you're on this skill, but not where you are on it."
+- **Where:** Flock settings → Buddy pods, empty list (`flock.pods.listEmpty`)
+  - Before: "When you start a journey, tick "Pair me with buddies working on this too" to join a small group on the same journey."
+  - After: "When you start a skill, tick "Pair me with buddies working on this too" to join a small group working on the same one."
+- **Where:** Flock settings → Privacy, what members see (`flock.privacy.see.pods`)
+  - Before: "In a buddy pod you joined: that you're on the journey, and your progress unless the journey is "Just me""
+  - After: "In a buddy pod you joined: that you're on the journey, and where you are on it (working on it, learned it, or happy where we are) unless the journey is "Just me""
+- **Where:** pod page, the pill on each member row (new: `flock.pods.stageWorking`, `stageLearned`, `stageHappy`, `stagePrivate`)
+  - Before: a progress bar, "Finished" after the name, or "Progress kept private"
+  - After: "Working on it" / "Learned it" / "Happy where we are", or "Journey kept private" (plain quiet text, no pill)
+- **Where:** "Your buddy pod has closed" card on a journey, under "Find new buddies" (new: `flock.pods.readOldPod`)
+  - Before: (none)
+  - After: "Read the old pod" (links to the closed pod)
+- **Where:** `/admin/pods`, member rows
+  - Before: "Finished" (`flock.pods.finishedTag`)
+  - After: "Learned it" or "Happy where we are" (the stage strings above)
+- **Where:** pod page, "You finished!" card: unchanged words ("Stay in the pod to cheer the others on, or leave whenever you like."), now shown for "learned it" and "we're happy where we are" alike.
+- **Removed:** "Keep going together?" card (`flock.pods.keepGoingTitle`, `keepGoingLine`, `keepGoingYes` "Yes, keep going", `keepGoingNo` "No, thanks"); "Buddy group" (`flock.pods.groupTitle`); "How did your week go?" (`flock.pods.weeklyGroup`); "Asking to keep going" (`flock.podsAdmin.asking`); "{{name}}'s progress" (`flock.pods.progressAria`); "Progress kept private" (`flock.pods.progressPrivate`); "Finished" (`flock.pods.finishedTag`).
+
 ### [#552](https://github.com/the-kya-project/perch-perfect-plan/pull/552) · 1.20a Journeys redesign: data and migration
 Held, not merged yet. All of it is template text in the database (`journey_templates`), still `review_status = 'draft'`, written by `20261124190000_journeys_skills_data.sql` through `admin_update_journey_template`. Every "After" is the spec's "Skill content" word for word; nothing is shown to anyone but admins (journeys are off for everyone else). No app strings changed, so no Dutch.
 - **Where:** each skill's description (`purpose`, shown on the skill page and the journey page from 1.20b)
@@ -1063,18 +1089,20 @@ No new strings: every line reuses existing wording, in new places (admins only).
 - **Decision:** A pod's posts are Flock posts in a new `pod` space (`flock_posts.pod_id`), so reactions, comments, replies, reports, review, blocks, photos, deletion and the 180-day hold all work as they do for posts. They show only in the pod, never on Today. This needs small changes to two existing Flock functions (post visibility and Today's feed) and the posts table's space check.
 - **Decision:** Placement: a new waiter first joins an open pod on the same journey with room (under 6), their own chapter's pod first. Otherwise a new pod forms as soon as 3 compatible people are waiting: from the member's chapter when 3 there are waiting, else from everyone waiting (chapter first, then oldest). So pods start at 3 and fill toward 6. The spec doesn't say whether latecomers join an existing pod or wait for a new one.
 - **Decision:** "Same journey" means the same journey template. Custom journeys ("Write your own") don't offer buddies.
-- **Decision:** The 2-pod limit counts waitlist places and "keep going" groups. At the limit, the setup screen's box is grayed out with "You're in two buddy pods already, the most at once."
+- **Decision:** The 2-pod limit counts open pods and waitlist places. At the limit, the setup screen's box is grayed out with "You're in two buddy pods already, the most at once."
 - **Decision:** A "Just me" journey can still join a pod. Buddies see the member's name and photo, and that they're on the journey, but no progress ("Progress kept private"). When Just me is picked with the box ticked, the setup screen says so. A bird's name shows only when the bird is shown in the Community (or to its household).
 - **Decision:** Blocked members are left out of a pod's member list and count for each other, and blocks stop both automatic placement and an admin's Move.
-- **Decision:** The 3-week rule: "active" means still in the pod and, in the last 21 days, joined, posted or commented in the pod, or (journey pods) posted a journey update or reached a milestone. A pod (or group) at least 3 weeks old with fewer than 2 active members is dissolved by the hourly job. Unfinished members of a journey pod see "Your buddy pod has closed" with "Find new buddies" on their journey page.
+- **Decision:** The 3-week rule: "active" means still in the pod and, in the last 21 days, joined, posted or commented in the pod, or (journey pods) posted a journey update or reached a milestone. A pod at least 3 weeks old with fewer than 2 active members is dissolved by the hourly job. Unfinished members of a journey pod see "Your buddy pod has closed" with "Find new buddies" on their journey page.
 - **Decision:** "Finished" means the journey's status is Finished. "Happy where we are" counts as still on the journey, so it doesn't close the pod on its own; the 3-week rule covers a pod that goes quiet.
-- **Decision:** "Keep going together?" stays open for 7 days; not answering by then counts as no. A No leaves at once. With fewer than 2 members left when everyone's finished, the pod just closes without asking. A group is titled "Buddy group", and its weekly card asks "How did your week go?".
 - **Decision:** The weekly card shows on the pod page until you post in the pod that week (Monday to Sunday, Eastern time). There's no Today card or notification for it.
 - **Decision:** Ended pods (closed or dissolved) stay readable to the members who were in them but take no new posts.
-- **Decision:** Admins move a member only to another open pod of the same kind, on the same journey, with room. Dissolving asks first. Admins don't read pod posts from the admin screen; reports reach the review queue as usual.
+- **Decision:** Admins move a member only to another open pod on the same journey, with room. Dissolving asks first. Admins don't read pod posts from the admin screen; reports reach the review queue as usual.
 - **Decision:** Where pods are reached: a card at the top of your own journey (waiting, "Your buddy pod", or the new-pod offer), and a "Buddy pods" row in Flock settings listing your pods and waits. Admins get "Manage pods" on that list. The Privacy screen gains a line for pods.
 - **Decision:** No analytics events for pods; the spec doesn't ask for any.
-- **To change it:** the rules are in `20261124070000_flock_buddy_pods.sql` (placement `private.flock_pod_place`, the job `private.flock_pods_tick`); the words are in `src/components/flock/PodParts.tsx`.
+- **Brittany (Nov 24, 2026):** readings approved, except 'happy where we are' now counts as finished; no 'Keep going together?' or buddy groups, a pod just closes when everyone has finished or left; progress bar dropped for a status label; activity counts finishing instead of a milestone. Built in [#557](https://github.com/the-kya-project/perch-perfect-plan/pull/557).
+- **Decision (#557):** `flock_pods.kind` stays as a column that only takes `journey`, rather than being dropped, so `flock_my_pods` and `admin_pods` keep their shape. A pod that was asking or running as a group when the migration runs is closed (a former group becomes an ended journey pod its members can still read).
+- **Decision (#557):** "Working on it" pill uses the app's pale green (`K.paleGreen`); "Happy where we are" uses the pale amber (`K.amberBg`), the closest pale sunflower in the palette, both with forest text.
+- **To change it:** the rules are in `20261124230000_flock_pods_no_groups.sql` (replacing those in `20261124070000_flock_buddy_pods.sql`) (placement `private.flock_pod_place`, the job `private.flock_pods_tick`); the words are in `src/components/flock/PodParts.tsx`.
 
 ### [#552](https://github.com/the-kya-project/perch-perfect-plan/pull/552) · 1.20a Journeys redesign: data and migration
 - **Approved (Brittany, Nov 24, 2026):** she asked for #552 to be brought up to date and merged, which approves the migration. The template text's copy read stays open under "Copy that merged".
@@ -1579,9 +1607,8 @@ Format:
 - **Needs:** <the decision, approval or read, in one or two lines>
 ```
 
-### [#548](https://github.com/the-kya-project/perch-perfect-plan/pull/548) · 1.11 Buddy pods
-- **Conflicts resolved (Nov 24, 2026):** `main` (with #547 Challenges) is merged into the branch with a normal merge. Both features are kept: posts can be in the `challenge` and `pod` spaces, the composer takes either a pod check-in or a challenge entry, and the pods migration rewrites the space check from its live definition, so it keeps `challenge` (it now runs after #547's migration). Both migrations patch `flock_post_visible` and `flock_feed` from their live definitions at different spots, so neither undoes the other.
-- **Needs:** (1) A look at the screens the mockup doesn't show, built from the app's existing cards and lists: the "Buddy pods" list in Flock settings, the admin screen (`/admin/pods`), the "Your buddy pod" and "Your buddy pod has closed" cards on a journey, the Leave pod sheet, and the closed-pod note. "You finished!" and "Keep going together?" follow the backlog's note. (2) The placement and 3-week-rule readings under "Decisions agents made". (3) Your approval of the migration: it changes two Flock functions (post visibility, Today's feed) and the posts table's space check, and adds an hourly job; merging applies it to production.
+### [#557](https://github.com/the-kya-project/perch-perfect-plan/pull/557) · 1.11 Buddy pods follow-up (#548 merged)
+- **Needs:** only your copy read (under "Copy that merged") and your merge.
 
 ### [#543](https://github.com/the-kya-project/perch-perfect-plan/pull/543) · 1.17 Promo codes: two checks need a re-run
 - **Needs:** a re-run of "Free-user regression" and "iPhone hydration" on #543 (Actions → each run → Re-run jobs). On its latest commit (`c68861b`, the record merge from `main`), both were cancelled, not failed: the regression run when a newer run joined the shared staging queue, and iPhone hydration after 25 minutes stuck installing browsers. Runs can't re-run checks. The PR is otherwise held for your approval, as its description says.
