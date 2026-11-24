@@ -25,6 +25,7 @@ import { parseBody, parseInline, plainText, safeHref } from "@/lib/libraryMarkdo
 import { normalizeUrl, publishProblems, speciesFromText } from "@/lib/flockLibraryRules";
 import { birdsLine, filterRoster, speciesGroup, topGroups } from "@/lib/flockMembers";
 import { TALLEST, WIDEST, jpegSize, photoFrame } from "@/lib/flockPhotos";
+import { CARD_MARK, CARD_SIZES, canMakeJourneyCard, cardFileName, layoutJourneyCard } from "@/lib/journeyCard";
 import { dateBlock, eventIcs, goersLine, longWhen, shortWhen } from "@/lib/flockEvents";
 import { AAV_FIND_A_VET_URL, POST_SPACES, findVetSigns, mergeFeed, vetNudgeTier, rateLimitKind, replyPrefix, threadComments } from "@/lib/flockPosts";
 import { defaultDisplayName, greetingName, isAutomaticDisplayName, memberCountLine, membershipSummary } from "@/lib/flockProfile";
@@ -432,6 +433,56 @@ check("journeys: next milestone, progress, days", () => {
   assert.equal(daysSince("2026-11-18T12:00:00Z", now), 2);
   assert.equal(skillInSentence("Recall"), "recall");
   assert.equal(skillInSentence("Step up"), "step up");
+});
+
+// ---- Share cards (backlog 1.7) ---------------------------------------------------
+check("share cards: only the household makes one; day one vs. now needs both clips", () => {
+  assert.equal(canMakeJourneyCard({ kind: "milestone", isMine: true }), true);
+  assert.equal(canMakeJourneyCard({ kind: "finished", isMine: true }), true);
+  // Someone else's journey, community or not: never (so a "Just me" one can't leak).
+  for (const kind of ["milestone", "finished", "compare"] as const) assert.equal(canMakeJourneyCard({ kind, isMine: false, comparePhotos: 2 }), false, kind);
+  assert.equal(canMakeJourneyCard({ kind: "compare", isMine: true, comparePhotos: 1 }), false);
+  assert.equal(canMakeJourneyCard({ kind: "compare", isMine: true, comparePhotos: 2 }), true);
+  // The card screen has no tab bar, like the milestone and finish screens.
+  assert.equal(isFlockOnboardingPath("/flock/journeys/abc/card"), true);
+  assert.equal(isFlockOnboardingPath("/flock/journeys/abc/cards-and-more"), false);
+});
+check("share cards: post and story sizes, the mark, a plain file name", () => {
+  assert.deepEqual(CARD_SIZES.post, { w: 1080, h: 1350 });
+  assert.deepEqual(CARD_SIZES.story, { w: 1080, h: 1920 });
+  assert.equal(CARD_MARK, "Kya & Co. · thekyaproject.com");
+  assert.equal(cardFileName(["Echo", "Step up"], "post"), "echo-step-up-post.png");
+  assert.equal(cardFileName([null, "Scale training"], "story"), "scale-training-story.png");
+  assert.equal(cardFileName(["Zoë", "Révérence!"], "post"), "zoe-reverence-post.png");
+  assert.equal(cardFileName([null, "鳥"], "post"), "journey-post.png");
+});
+check("share cards: everything fits on the card, in order, never overlapping", () => {
+  for (const size of ["post", "story"] as const) {
+    const { w: W, h: H } = CARD_SIZES[size];
+    for (const titleLines of [1, 2, 3]) for (const hasDate of [true, false]) for (const hasMember of [true, false]) {
+      const label = `${size} ${titleLines} lines date=${hasDate} member=${hasMember}`;
+      const one = layoutJourneyCard({ kind: "milestone", size, titleLines, hasDate, hasMember });
+      assert.equal(one.photos.length, 1, label);
+      const p = one.photos[0];
+      assert.ok(p.x >= 0 && p.y >= 0 && p.x + p.w <= W && p.h > 400, label);
+      assert.ok(p.y + p.h < one.eyebrowY - 40, label);
+      assert.ok(one.eyebrowY < one.titleY, label);
+      const lastTitle = one.titleY + (titleLines - 1) * 96;
+      if (hasDate) assert.ok(one.dateY! > lastTitle, label); else assert.equal(one.dateY, null, label);
+      const lastText = hasDate ? one.dateY! : lastTitle;
+      if (hasMember) assert.ok(one.memberY! - 38 > lastText && one.memberY! < one.markY, label); else assert.equal(one.memberY, null, label);
+      assert.ok(one.markY - 38 > lastText && one.markY <= H - 40, label);
+      if (titleLines > 2) continue;
+      const two = layoutJourneyCard({ kind: "compare", size, titleLines, hasDate: false, hasMember });
+      assert.equal(two.photos.length, 2, label);
+      const [l, r] = two.photos;
+      assert.equal(l.h, r.h, label);
+      assert.ok(l.x + l.w < r.x && r.x + r.w <= W, label);
+      assert.ok(l.h <= Math.round(l.w * 16 / 9), label);
+      assert.ok(l.y > two.titleY + (titleLines - 1) * 96, label);
+      assert.ok(two.photoDatesY! > l.y + l.h && two.photoDatesY! < (two.memberY ?? two.markY) - 38, label);
+    }
+  }
 });
 
 // ---- Posts, comments and the vet nudge (step 4) -------------------------------------

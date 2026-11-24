@@ -2503,6 +2503,91 @@ test.describe("photos and clips at their own shape, never the player's error (ad
   });
 });
 
+// ---- Share cards (backlog 1.7) --------------------------------------------------------------
+
+test.describe("share cards (admin, phone)", () => {
+  const PNG = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==";
+  const size = (page: Page) => page.getByTestId("card-preview").evaluate((img: HTMLImageElement) => `${img.naturalWidth}x${img.naturalHeight}`);
+
+  test("a milestone: post and story sizes, the bird's name on by default, Share downloads the PNG on the web", async ({ browser, baseURL }) => {
+    const id = "00000000-0000-4000-8000-0000000074a1";
+    const { context, page } = await open(browser, baseURL!, { admin: true, journeys: { seed: [{ id, birdName: "Echo", slug: "step-up", done: 3 }] } });
+    await page.goto(`/flock/journeys/${id}/milestone/3`);
+    await page.getByRole("button", { name: "Make a share card" }).click();
+    await expect(page).toHaveURL(/\/card\?kind=milestone&n=3$/);
+    const card = page.getByTestId("share-card");
+    await expect(card).toHaveAttribute("data-size", "post");
+    await expect(page.locator("[data-flock-tab]")).toHaveCount(0);
+    await expect(page.getByTestId("card-preview")).toHaveAttribute("src", /^blob:/);
+    await expect.poll(() => size(page)).toBe("1080x1350");
+    await expect(page.getByTestId("card-preview")).toHaveAttribute("alt", "Echo stepped on with one foot!");
+    await page.getByTestId("card-size-story").click();
+    await expect.poll(() => size(page)).toBe("1080x1920");
+    await expect(page.getByRole("switch", { name: "Show Echo's name" })).toHaveAttribute("aria-checked", "true");
+    await expect(page.getByText("On the web, this downloads the image so you can post it.")).toBeVisible();
+    let download = page.waitForEvent("download");
+    await page.getByTestId("card-share").click();
+    expect((await download).suggestedFilename()).toBe("echo-step-up-story.png");
+    await expect(page.getByTestId("card-note")).toHaveText("The card is in your downloads, ready to post.");
+    // The bird's name off: the card and the file name leave it out.
+    await page.getByRole("switch", { name: "Show Echo's name" }).click();
+    await expect(page.getByTestId("card-preview")).toHaveAttribute("alt", "Stepped on with one foot!");
+    download = page.waitForEvent("download");
+    await page.getByTestId("card-share").click();
+    expect((await download).suggestedFilename()).toBe("step-up-story.png");
+    // A milestone that isn't reached has no card.
+    await page.goto(`/flock/journeys/${id}/card?kind=milestone&n=5`);
+    await expect(page.getByTestId("card-unavailable")).toBeVisible();
+    await context.close();
+  });
+
+  test("a finished journey: the card from the journey page", async ({ browser, baseURL }) => {
+    const id = "00000000-0000-4000-8000-0000000074a2";
+    const { context, page } = await open(browser, baseURL!, { admin: true, journeys: { seed: [{ id, birdName: "Willow", slug: "spin", done: 5, status: "finished" }] } });
+    await page.goto(`/flock/journeys/${id}`);
+    await page.getByRole("button", { name: "Make a share card" }).click();
+    await expect(page).toHaveURL(/\/card\?kind=finished$/);
+    await expect(page.getByTestId("card-preview")).toHaveAttribute("alt", "Willow learned spin");
+    await expect.poll(() => size(page)).toBe("1080x1350");
+    await context.close();
+  });
+
+  test("day one vs. now: two stills from your own clips, story size; never from someone else's journey", async ({ browser, baseURL }) => {
+    const id = "00000000-0000-4000-8000-0000000074a1";
+    const other = "00000000-0000-4000-8000-0000000074a3";
+    const { context, page } = await open(browser, baseURL!, { admin: true, journeys: { seed: [
+      { id, birdName: "Buzz", slug: "step-up", done: 1, clips: 2 },
+      { id: other, birdName: "Kiwi", slug: "recall", done: 5, clips: 3, owner: "Alex R.", region: "Great Lakes" },
+    ] } });
+    const signed = (n: number) => ({ player: `https://iframe.videodelivery.net/signed-token-${n}`, thumbnail: svgPhoto(270, 480), hls: `https://videodelivery.net/signed-token-${n}/manifest/video.m3u8` });
+    await mockMediaFns(context, { clips: () => [0, 1].map((n) => ({ updateId: `00000000-0000-4000-8000-00000000900${n}`, status: "ready", ...signed(n) })) });
+    const asked: string[][] = [];
+    await context.route("**/_serverFn/**", async (route) => {
+      const body = route.request().postData() ?? "";
+      if (!body.includes("cardJourneyId")) return route.fallback();
+      const ids = [...body.matchAll(/00000000-0000-4000-8000-0000000090\d\d/g)].map((m) => m[0]);
+      asked.push(ids);
+      return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ result: Object.fromEntries(ids.map((u) => [u, PNG])) }) });
+    });
+    await page.goto(`/flock/journeys/${id}/compare`);
+    await page.getByRole("button", { name: "Make a share card" }).click();
+    await expect(page).toHaveURL(/kind=compare/);
+    await expect(page.getByTestId("share-card")).toHaveAttribute("data-size", "story");
+    await expect.poll(() => size(page)).toBe("1080x1920");
+    await expect(page.getByTestId("card-preview")).toHaveAttribute("alt", "Buzz, day one and now");
+    expect([...new Set(asked.flat())].sort()).toEqual(["00000000-0000-4000-8000-000000009000", "00000000-0000-4000-8000-000000009001"]);
+    // Someone else's community journey: no button, and the card screen refuses.
+    asked.length = 0;
+    await page.goto(`/flock/journeys/${other}/compare`);
+    await expect(page.getByTestId("compare-summary")).toBeVisible();
+    await expect(page.getByRole("button", { name: "Make a share card" })).toHaveCount(0);
+    await page.goto(`/flock/journeys/${other}/card?kind=compare&a=00000000-0000-4000-8000-000000009000&b=00000000-0000-4000-8000-000000009002`);
+    await expect(page.getByTestId("card-unavailable")).toBeVisible();
+    expect(asked).toEqual([]);
+    await context.close();
+  });
+});
+
 // ---- The library (20261118120000_flock_library) ---------------------------------------------
 
 type LibraryState = {

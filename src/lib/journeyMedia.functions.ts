@@ -69,6 +69,40 @@ export const getJourneyClips = createServerFn({ method: "POST" })
     }));
   });
 
+/** Day one vs. now's share card (backlog 1.7): a still from each of two clips,
+ *  as data URLs so the card's canvas can draw them. Only for the bird's
+ *  household (`journey_view`'s is_mine, asked as the caller), so a "Just me"
+ *  journey's card is never made outside it; journey_clip_refs then checks the
+ *  clips. A still that can't be fetched comes back null. */
+export const getJourneyCardPhotos = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { cardJourneyId: string; updateIds: string[] }) =>
+    z.object({ cardJourneyId: z.string().uuid(), updateIds: z.array(z.string().uuid()).min(1).max(2) }).parse(d),
+  )
+  .handler(async ({ data, context }): Promise<Record<string, string | null>> => {
+    const sb = (context as any).supabase;
+    const { data: view, error: viewError } = await sb.rpc("journey_view", { p_journey_id: data.cardJourneyId });
+    if (viewError || !(view ?? [])[0]?.is_mine) throw new Error("Not found.");
+    const { data: rows, error } = await sb.rpc("journey_clip_refs", { p_journey_id: data.cardJourneyId, p_update_ids: data.updateIds });
+    if (error) throw new Error("Not found.");
+    const refs = ((rows ?? []) as { update_id: string; clip_ref: string }[])
+      .filter((r) => /^cfstream:[A-Za-z0-9]{8,64}$/.test(r.clip_ref));
+    const { signPlaybackToken } = await import("@/lib/cloudflareStream.server");
+    const out: Record<string, string | null> = {};
+    await Promise.all(refs.map(async (r) => {
+      try {
+        const token = await signPlaybackToken(r.clip_ref.slice("cfstream:".length), 300);
+        const resp = await fetch(`https://videodelivery.net/${token}/thumbnails/thumbnail.jpg?time=1s&height=1080`);
+        if (!resp.ok) throw new Error(`thumbnail ${resp.status}`);
+        out[r.update_id] = `data:image/jpeg;base64,${Buffer.from(await resp.arrayBuffer()).toString("base64")}`;
+      } catch (e: any) {
+        console.error(`[getJourneyCardPhotos] ${r.update_id}: ${e?.message ?? e}`);
+        out[r.update_id] = null;
+      }
+    }));
+    return out;
+  });
+
 export const deleteJourney = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: { journeyId: string }) => z.object({ journeyId: z.string().uuid() }).parse(d))
