@@ -345,8 +345,7 @@ async function mockFlock(context: BrowserContext, userId: string, opts: { setupD
     if (fn === "flock_challenge") return json(route, state.challenges.filter((c) => c.challenge_id === args.p_id));
     if (fn === "flock_challenge_entries") return json(route, state.challengeEntries.filter((e) => e.challenge_id === args.p_id));
     if (fn === "flock_challenge_join" || fn === "flock_challenge_set_feature" || fn === "flock_challenge_entry_create") {
-      state.calls.push({ fn, args });
-      const c = state.challenges.find((x) => x.challenge_id === args.p_id);
+      const c =state.challenges.find((x) => x.challenge_id === args.p_id);
       if (!c) return json(route, { code: "P0002", message: "not found" }, 404);
       if (fn === "flock_challenge_join") {
         Object.assign(c, { joined: true, my_bird_id: args.p_bird_id, my_bird_name: "Echo", feature_ok: args.p_feature_ok, member_count: c.member_count + 1 });
