@@ -3,8 +3,9 @@
 -- Self-contained and leaves nothing behind: a member with a cockatiel, a
 -- lorikeet and a "Rainbow lory", and a stranger. Checks the vet card's answer
 -- is saved on Diet conversion only, "Remind me later", that lories and
--- lorikeets can't start Diet conversion (other journeys are fine), and the
--- "How to make it work" tips. Then rolls back.
+-- lorikeets can't start Diet conversion (other journeys are fine), and that
+-- the protective lines live in safety_notes with the tips cleared (since
+-- 20261124190000_journeys_skills_data). Then rolls back.
 --   "DIET VET GUIDANCE CHECKS: n passed, 0 failed"           → all good
 --   "DIET VET GUIDANCE CHECKS: n passed, k failed: <names>"  → which ones broke
 -- Run by .github/workflows/db-checks.yml on every PR (scripts/db-checks.sh).
@@ -30,8 +31,9 @@ begin
   update public.journey_settings set audience = 'everyone';
 
   -- 1) The vet card's answer is saved on a Diet conversion journey; the
-  --    milestone-2 card's "Yes, we've talked" changes it; "Remind me later"
-  --    hides the card for three days.
+  --    reminder card's "Yes, we've talked" changes it (the card itself is UI
+  --    only since journeys lost milestones); "Remind me later" hides the card
+  --    for three days.
   perform set_config('request.jwt.claims', json_build_object('sub', fm, 'role', 'authenticated')::text, true);
   set local role authenticated;
   jd := public.journey_start(bc, 'diet-conversion', null, null, null, 'most_days', 'private', null);
@@ -73,14 +75,17 @@ begin
     and not private.is_nectar_eater('Cockatiel') and not private.is_nectar_eater(null);
   if ok then passed := passed + 1; else failed := array_append(failed, 'lories and lorikeets blocked from Diet conversion'); end if;
 
-  -- 4) "How to make it work": the new first tip, the six added, still draft.
-  select tips, review_status into r from public.journey_templates where slug = 'diet-conversion';
-  ok := r.tips[1] = 'Offer the new food first thing in the morning, with the usual food alongside.'
-    and array_length(r.tips, 1) = 11
-    and 'Weigh in grams at the same time every day. A few grams matter on a bird.' = any (r.tips)
-    and 'How much to feed varies from bird to bird, even within a species. Your vet can tell you what''s right for yours.' = any (r.tips)
+  -- 4) Tips are cleared; the shared three lines and Diet conversion's five
+  --    protective lines are its safety notes, still draft.
+  select tips, safety_notes, review_status into r from public.journey_templates where slug = 'diet-conversion';
+  ok := coalesce(array_length(r.tips, 1), 0) = 0
+    and array_length(r.safety_notes, 1) = 8
+    and r.safety_notes[1] = 'Keep sessions short.'
+    and 'Never withhold food to make a bird hungrier for training.' = any (r.safety_notes)
+    and 'Weigh in grams at the same time every day. A few grams matter on a bird.' = any (r.safety_notes)
+    and 'How much to feed varies from bird to bird, even within a species. Your vet can tell you what''s right for yours.' = any (r.safety_notes)
     and r.review_status = 'draft';
-  if ok then passed := passed + 1; else failed := array_append(failed, 'how to make it work tips'); end if;
+  if ok then passed := passed + 1; else failed := array_append(failed, 'diet conversion safety notes, tips cleared'); end if;
 
   raise exception 'DIET VET GUIDANCE CHECKS: % passed, % failed%', passed, coalesce(array_length(failed, 1), 0),
     case when array_length(failed, 1) > 0 then ': ' || array_to_string(failed, ', ') else '' end;

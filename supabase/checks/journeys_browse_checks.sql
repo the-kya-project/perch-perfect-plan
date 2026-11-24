@@ -3,7 +3,10 @@
 -- Self-contained and leaves nothing behind: two Flock members, a member on a
 -- paid annual plan (app premium is gone; every paid plan is the Flock), a free user, a household member and an admin; a community journey and
 -- a "Just me" journey with clips, milestones and reactions. Checks who sees,
--- follows, reacts, gets clip references and deletes, then rolls back.
+-- follows, reacts, gets clip references and deletes, then rolls back. New
+-- journeys have no milestones since 20261124190000_journeys_skills_data, so
+-- the community journey is given the recall template's milestones directly
+-- (a journey from before the redesign; milestones are history now).
 --   "JOURNEYS BROWSE CHECKS: n passed, 0 failed"           → all good
 --   "JOURNEYS BROWSE CHECKS: n passed, k failed: <names>"  → which ones broke
 -- Run by .github/workflows/db-checks.yml on every PR (scripts/db-checks.sh).
@@ -39,11 +42,23 @@ begin
   set local role authenticated;
   jc := public.journey_start(b1, 'recall', null, null, null, 'most_days', 'community', 'cfstream:kiwiclip0001');
   jp := public.journey_start(b2, 'step-up', null, null, null, 'most_days', 'private', 'cfstream:mangoclip001');
+  reset role;
+  -- New journeys start with no milestones; give jc its template's, as a pre-redesign journey has.
+  ok := not exists (select 1 from public.journey_milestones where journey_id in (jc, jp));
+  insert into public.journey_milestones (journey_id, position, title, template_milestone_id, state)
+  select jc, m.position, m.title, m.id, 'todo'
+  from public.journey_template_milestones m join public.journey_templates t on t.id = m.template_id
+  where t.slug = 'recall';
+  perform set_config('request.jwt.claims', json_build_object('sub', m1, 'role', 'authenticated')::text, true);
+  set local role authenticated;
   uc := public.journey_post_update(jc, 'cfstream:kiwiclip0002', 'all_in', 'Hopped the gap!');
-  perform public.journey_reach_milestone(jc, 1);
+  select * into r from public.journey_reach_milestone(jc, 1);
+  ok := ok and not r.finished and r.done = 1
+        and (select status from public.journeys where id = jc) = 'active';
   select id into mc from public.journey_milestones where journey_id = jc and position = 1;
   select id into up from public.journey_updates where journey_id = jp limit 1;
   reset role;
+  if ok then passed := passed + 1; else failed := array_append(failed, 'new journeys have no milestones; reaching one never finishes'); end if;
 
   -- 1) A "Just me" journey never appears to anyone outside the household: not in
   --    feeds, not by id, no milestones, no updates, no clip references.
