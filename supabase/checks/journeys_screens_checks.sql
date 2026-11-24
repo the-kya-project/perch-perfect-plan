@@ -111,13 +111,13 @@ begin
   --    the "Just me" journey's; another member and a free account see nothing.
   perform set_config('request.jwt.claims', json_build_object('sub', m1, 'role', 'authenticated')::text, true);
   set local role authenticated;
-  ok := (select array_agg(b.update_id) from public.journey_big_moments(jp)) = array[up]
-    and (select array_agg(b.update_id) from public.journey_big_moments(jc)) = array[u1];
+  ok := (select array_agg(b.update_id) from public.journey_big_moments(jp) b) = array[up]
+    and (select array_agg(b.update_id) from public.journey_big_moments(jc) b) = array[u1];
   reset role;
   perform set_config('request.jwt.claims', json_build_object('sub', m2, 'role', 'authenticated')::text, true);
   set local role authenticated;
   ok := ok and not exists (select 1 from public.journey_big_moments(jp))
-    and (select array_agg(b.update_id) from public.journey_big_moments(jc)) = array[u1];
+    and (select array_agg(b.update_id) from public.journey_big_moments(jc) b) = array[u1];
   reset role;
   perform set_config('request.jwt.claims', json_build_object('sub', fr, 'role', 'authenticated')::text, true);
   set local role authenticated;
@@ -139,8 +139,8 @@ begin
   --    never your own or a "Just me" one, and nothing for a free account.
   perform set_config('request.jwt.claims', json_build_object('sub', m2, 'role', 'authenticated')::text, true);
   set local role authenticated;
-  ok := (select array_agg(s.journey_id) from public.journey_skill_journeys('recall')) = array[jc]
-    and (select array_agg(s.journey_id) from public.journey_skill_journeys('wave')) = array[jf]
+  ok := (select array_agg(s.journey_id) from public.journey_skill_journeys('recall') s) = array[jc]
+    and (select array_agg(s.journey_id) from public.journey_skill_journeys('wave') s) = array[jf]
     and not exists (select 1 from public.journey_skill_journeys('step-up'));
   reset role;
   perform set_config('request.jwt.claims', json_build_object('sub', m1, 'role', 'authenticated')::text, true);
