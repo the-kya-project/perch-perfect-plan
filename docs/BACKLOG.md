@@ -67,24 +67,6 @@ Where these items came from, with the detail behind each: `docs/flock/opening-sc
 - **Overnight alone:** yes
 - **Needs Brittany:** merge only, under the normal rules. The first challenges are her content.
 
-### 1.11 Buddy pods
-- **Spec:** [Buddy pods](flock/specs/feature-specs.md#buddy-pods-111) · **Mockup:** [`SpecPods.dc.html`](flock/mockups/SpecPods.dc.html)
-- **Done means:**
-  - Starting a journey offers "Pair me with buddies working on this too." Pods of 3 to 6 form automatically from people waiting on the same journey, preferring the same chapter. Until then the member sees "We're finding your buddies" and can leave the waitlist.
-  - A pod page shows members' names, photos, birds and journey progress, with a pod-only feed for check-ins and photos, a weekly in-app card (no push or email), and a quiet Leave pod.
-  - Admins see all pods, move a member and dissolve a pod. Pods under 2 active members for 3 weeks dissolve, and the remaining member is offered a new pod.
-  - Up to 2 pods per member. Members who've blocked each other are never placed together. Reporting works as it does elsewhere in the Flock.
-  - Progress from a "Just me" journey is never shown to pod members outside the household.
-  - A member who finishes stays in the pod to cheer the others on, and sees a short "You finished!" message with an option to leave.
-  - The pod stays open until every member has finished or left, or the 3-week rule above closes it.
-  - When it closes, each remaining member is asked "Keep going together?" If at least 2 say yes, it continues as a general buddy group not tied to a journey, with the same weekly in-app check-in. Anyone who says no or doesn't answer leaves quietly. A "keep going" group counts toward the 2-pod limit.
-  - A "keep going" group is still a pod, so the block, reporting, admin and 3-week rules apply. When the 3-week rule closes one, it ends without asking "Keep going together?" again.
-  - "You finished!" and "Keep going together?" aren't in the mockup. Build them from the app's existing card and sheet components, and list them in the PR and the review queue.
-- **Size:** XL
-- **Depends on:** nothing
-- **Overnight alone:** yes
-- **Needs Brittany:** merge only, under the normal rules.
-
 ---
 
 ## Needs Brittany before work starts
@@ -273,6 +255,7 @@ The launch PR itself (1.18) is already merged dark. What's left before opening i
 
 ## Done
 
+- **1.11** Buddy pods: starting a template journey offers "Pair me with buddies working on this too"; the journey waits ("We're finding your buddies", Leave the waitlist) and is placed at once into an open pod on the same journey with room, own chapter first, or a new pod forms once 3 compatible members wait (from the chapter when 3 there are). Members who've blocked each other are never placed together; up to 2 pods at once, waitlist places and "keep going" groups included. The pod page shows names, photos, shown birds and progress (never from a "Just me" journey outside the household), the weekly in-app "How did … go?" check-in, the pod's own feed (Flock posts in the `pod` space, so reactions, comments, reports, blocks and photos work as for posts, never on Today) and a quiet Leave pod. "You finished!" and "Keep going together?" (7 days; 2+ yeses → a general buddy group). The hourly `flock-pods-hourly` job closes finished pods, settles the question, dissolves pods with fewer than 2 active members over 3 weeks (unfinished members are offered a new pod) and places waiters. Admins: `/admin/pods` (from "Manage pods" on Flock settings → Buddy pods): the waitlist, every pod, Move and Dissolve (`20261124070000_flock_buddy_pods.sql`, `src/lib/flockPods.ts`). Pinned by `supabase/checks/flock_pods_checks.sql`, `npm run test:flock-shell` and `e2e/flock.shell.ts`. Held for Brittany (unmocked screens, and the migration changes Flock post functions): #548.
 - **1.13a** Flock badges: First steps, Journey finisher (1, 3 and 10), Trick star, Good neighbor, Voice of the Flock and Challenge champ (shown, not yet awarded: 1.10 adds its rule to `private.flock_badge_levels`). `flock_my_badges` works out and records what a member has earned when they open the Flock; the first time, their history is recorded together and Today shows one "Here's what you've already earned" (two or more), then a "Badge earned" card for each new badge or level. The Badges screen (`/flock/you/badges`, from Flock settings) shows earned ones in color and the rest in gray with how to earn each. Profiles show them as pills beside Founder and Chapter lead through `flock_member_badges`, which counts only community journeys and leaves everything out when hidden ("Show my badges on my profile." on Edit profile) or blocked either way. No points or rankings; the mockup's stroke icons until final art (`20261124013000_flock_badges.sql`, `src/lib/flockBadges.ts`). Pinned by `supabase/checks/flock_badges_checks.sql`, `npm run test:flock-shell` and `e2e/flock.shell.ts`: #546.
 - **1.7** "Make a share card" on a reached milestone (the celebration), a finished journey (its page) and Day one vs. now opens `/flock/journeys/<id>/card`: a post (1080×1350) or story (1080×1920) PNG in the Flock's forest and lime with the bird's photo (two clip stills for Day one vs. now), the bird's name (on, can be turned off), the journey, the milestone or "Finished!", the date, the member's name only if added, and "Kya & Co. · thekyaproject.com". Share opens the share sheet, or downloads on the web. Photos are redrawn into a fresh PNG, so no metadata. Only the bird's household can make one (`canMakeJourneyCard`, and `getJourneyCardPhotos` checks `is_mine`). Reuses the Moments card's canvas and share code (`src/lib/journeyCard.ts`, `src/lib/momentCard.ts`). Pinned by `npm run test:flock-shell` and `e2e/flock.shell.ts`: #544.
 - **1.4** The daily `flock-purge` hook first runs `flock_moderation_purge` (`20261123193000_flock_removed_purge.sql`, service role only): posts and comments a reviewer removed 180+ days ago move, with the comments under them, into 1.3's `flock_deleted_items` already due, so the same run deletes them and their photos; reports closed 180+ days ago are deleted. Removed journey updates are left for Brittany's call. Pinned in `supabase/checks/flock_moderation_checks.sql` and `npm run test:flock-purge`. Held for Brittany (it deletes data): #534.

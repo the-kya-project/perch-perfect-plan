@@ -690,6 +690,23 @@ No new strings: every line reuses existing wording, in new places (admins only).
 
 ## Decisions agents made
 
+### [#548](https://github.com/the-kya-project/perch-perfect-plan/pull/548) · 1.11 Buddy pods
+- **Decision:** A pod's posts are Flock posts in a new `pod` space (`flock_posts.pod_id`), so reactions, comments, replies, reports, review, blocks, photos, deletion and the 180-day hold all work as they do for posts. They show only in the pod, never on Today. This needs small changes to two existing Flock functions (post visibility and Today's feed) and the posts table's space check.
+- **Decision:** Placement: a new waiter first joins an open pod on the same journey with room (under 6), their own chapter's pod first. Otherwise a new pod forms as soon as 3 compatible people are waiting: from the member's chapter when 3 there are waiting, else from everyone waiting (chapter first, then oldest). So pods start at 3 and fill toward 6. The spec doesn't say whether latecomers join an existing pod or wait for a new one.
+- **Decision:** "Same journey" means the same journey template. Custom journeys ("Write your own") don't offer buddies.
+- **Decision:** The 2-pod limit counts waitlist places and "keep going" groups. At the limit, the setup screen's box is grayed out with "You're in two buddy pods already, the most at once."
+- **Decision:** A "Just me" journey can still join a pod. Buddies see the member's name and photo, and that they're on the journey, but no progress ("Progress kept private"). When Just me is picked with the box ticked, the setup screen says so. A bird's name shows only when the bird is shown in the Community (or to its household).
+- **Decision:** Blocked members are left out of a pod's member list and count for each other, and blocks stop both automatic placement and an admin's Move.
+- **Decision:** The 3-week rule: "active" means still in the pod and, in the last 21 days, joined, posted or commented in the pod, or (journey pods) posted a journey update or reached a milestone. A pod (or group) at least 3 weeks old with fewer than 2 active members is dissolved by the hourly job. Unfinished members of a journey pod see "Your buddy pod has closed" with "Find new buddies" on their journey page.
+- **Decision:** "Finished" means the journey's status is Finished. "Happy where we are" counts as still on the journey, so it doesn't close the pod on its own; the 3-week rule covers a pod that goes quiet.
+- **Decision:** "Keep going together?" stays open for 7 days; not answering by then counts as no. A No leaves at once. With fewer than 2 members left when everyone's finished, the pod just closes without asking. A group is titled "Buddy group", and its weekly card asks "How did your week go?".
+- **Decision:** The weekly card shows on the pod page until you post in the pod that week (Monday to Sunday, Eastern time). There's no Today card or notification for it.
+- **Decision:** Ended pods (closed or dissolved) stay readable to the members who were in them but take no new posts.
+- **Decision:** Admins move a member only to another open pod of the same kind, on the same journey, with room. Dissolving asks first. Admins don't read pod posts from the admin screen; reports reach the review queue as usual.
+- **Decision:** Where pods are reached: a card at the top of your own journey (waiting, "Your buddy pod", or the new-pod offer), and a "Buddy pods" row in Flock settings listing your pods and waits. Admins get "Manage pods" on that list. The Privacy screen gains a line for pods.
+- **Decision:** No analytics events for pods; the spec doesn't ask for any.
+- **To change it:** the rules are in `20261124070000_flock_buddy_pods.sql` (placement `private.flock_pod_place`, the job `private.flock_pods_tick`); the words are in `src/components/flock/PodParts.tsx`.
+
 ### [#546](https://github.com/the-kya-project/perch-perfect-plan/pull/546) · 1.13a Badges: the Flock set
 - **Decision:** Badges are worked out when a member opens Today, Flock settings or the Badges screen (`flock_my_badges`), not by triggers on every table. So "the moment it's earned" means the next time they open the Flock, usually seconds later. It keeps the badge rules in one function and leaves the posts, journeys, votes and places code untouched.
 - **Decision:** "Past activity counts": the first time a member's badges are worked out, everything their history earned is recorded together, and Today shows one "Here's what you've already earned" when that's two or more. With just one (a newcomer who's just finished their profile), it's the small "Badge earned" card instead, since "already earned" would read oddly.
@@ -1043,6 +1060,15 @@ Format:
 ### <PR link> · <item ID> <item title>
 - **Needs:** <the decision, approval or read, in one or two lines>
 ```
+
+### [#548](https://github.com/the-kya-project/perch-perfect-plan/pull/548) · 1.11 Buddy pods
+- **Needs:** (1) A look at the screens the mockup doesn't show, built from the app's existing cards and lists: the "Buddy pods" list in Flock settings, the admin screen (`/admin/pods`), the "Your buddy pod" and "Your buddy pod has closed" cards on a journey, the Leave pod sheet, and the closed-pod note. "You finished!" and "Keep going together?" follow the backlog's note. The spec says to hold and ask about unmocked screens. (2) The placement and 3-week-rule readings under "Decisions agents made". (3) Your merge: the migration changes two Flock functions (post visibility, Today's feed) and the posts table's space check, and adds an hourly job; merging applies it to production. (4) #547 (Challenges) also changes the space check. Whichever of #547 and #548 merges second needs its space list to keep the other's space (`challenge`, `pod`); #548 rewrites the check from its live definition, so it keeps `challenge` if #547 goes first, but #547 writes a fixed list.
+
+### [#543](https://github.com/the-kya-project/perch-perfect-plan/pull/543) · 1.17 Promo codes: two checks need a re-run
+- **Needs:** a re-run of "Free-user regression" and "iPhone hydration" on #543 (Actions → each run → Re-run jobs). On its latest commit (`c68861b`, the record merge from `main`), both were cancelled, not failed: the regression run when a newer run joined the shared staging queue, and iPhone hydration after 25 minutes stuck installing browsers. Runs can't re-run checks. The PR is otherwise held for your approval, as its description says.
+
+### [#535](https://github.com/the-kya-project/perch-perfect-plan/pull/535) · 1.15 Kya's Crew: Free-user regression failed after the record merge
+- **Needs:** a look at, or a re-run of, "Free-user regression" on #535's latest commit (`7b7bd3f`, the record merge from `main`). This time it failed in "Run the free-user regression check" rather than being cancelled. This run couldn't read the failure's details: the log is too long to show here, and the report is an artifact runs can't open. Another PR's run sharing staging at the same time is a likely cause. The earlier note about the cancelled run (below) still applies to the commit before.
 
 ### [#535](https://github.com/the-kya-project/perch-perfect-plan/pull/535) · 1.15 Kya's Crew: Free-user regression needs a re-run
 - **Needs:** a re-run of "Free-user regression" on #535 (Actions → the cancelled run → Re-run jobs). On its latest commit (`ebaa867`, "Crew: remove sponsored seat counting") that check was cancelled, not failed, most likely because a newer run joined the shared staging queue. It passed on the commit before. Runs can't re-run checks. The PR is otherwise held for your approval, as its description says.

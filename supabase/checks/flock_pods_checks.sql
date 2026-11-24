@@ -258,8 +258,8 @@ begin
     and (select count(*) from public.flock_pod_feed(old)) = 1;
   denied := false; begin perform * from public.flock_pod_post_create(old, null, 'Hello?', '{}', null, false); exception when others then denied := sqlerrm = 'pod_closed'; end; ok := ok and denied;
   select x.state into st from public.flock_pod_wait(je) x;
-  ok := ok and st = 'waiting' and not (select offered_new from public.flock_pod_members where pod_id = old and user_id = e);
   reset role;
+  ok := ok and st = 'waiting' and not (select offered_new from public.flock_pod_members where pod_id = old and user_id = e);
   if ok then passed := passed + 1; else failed := array_append(failed, 'the 3-week rule, and a new pod offered'); end if;
 
   -- 11) A group that goes quiet for 3 weeks just ends (no new question).
@@ -284,10 +284,10 @@ begin
     and (select count(*) from public.admin_pod_members(pod)) = 2;
   denied := false; begin perform public.admin_pod_move(a, pod, pod2); exception when others then denied := sqlerrm = 'pod_blocked'; end; ok := ok and denied;
   perform public.admin_pod_move(c, pod, pod2);
-  ok := ok and private.flock_pod_member(c, pod2) and not private.flock_pod_member(c, pod);
   perform public.admin_pod_dissolve(pod2);
   reset role;
-  ok := ok and (select status = 'dissolved' and ended_by = ad from public.flock_pods where id = pod2);
+  ok := ok and private.flock_pod_member(c, pod2) and not private.flock_pod_member(c, pod)
+    and (select status = 'dissolved' and ended_by = ad from public.flock_pods where id = pod2);
   if ok then passed := passed + 1; else failed := array_append(failed, 'admins see, move and dissolve'); end if;
 
   -- 13) Deleting an account removes its pod places and waitlist rows.
