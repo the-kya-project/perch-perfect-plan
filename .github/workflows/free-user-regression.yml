@@ -36,6 +36,7 @@ on:
         default: staging
 
 permissions:
+  actions: read # to see which earlier runs are still using staging
   contents: read
   deployments: read
 
@@ -44,11 +45,12 @@ jobs:
     name: Free-user regression
     if: github.event_name == 'pull_request' || inputs.target != 'production'
     runs-on: ubuntu-latest
-    timeout-minutes: 40
-    # One run at a time: every run rebuilds the same staging account.
-    concurrency:
-      group: free-user-regression-staging
-      cancel-in-progress: false
+    # Up to 100 minutes waiting for a turn, plus the 40 the check itself may take.
+    timeout-minutes: 145
+    # One run at a time: every run rebuilds the same staging account. This is
+    # the "Wait for this run's turn on staging" step, not a GitHub concurrency
+    # group: a group keeps only one waiting run and cancels the one before it,
+    # so three overlapping PRs turned one of them red.
     env:
       STAGING_DB_URL: ${{ secrets.STAGING_DB_URL }}
       VERCEL_AUTOMATION_BYPASS_SECRET: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}
@@ -75,6 +77,50 @@ jobs:
             exit 1
           fi
           echo "Target: staging ($ref), commit $SHA"
+
+      # First come, first served, by when each job started. A re-run gets a new
+      # start time, so it joins the back of the line instead of cutting in. A
+      # cancelled or finished run stops being "in progress" and frees the line.
+      - name: Wait for this run's turn on staging
+        timeout-minutes: 102
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const JOB = "Free-user regression";
+            const deadline = Date.now() + 100 * 60_000;
+            const key = (j) => [Date.parse(j.started_at), j.id];
+            const before = (a, b) => {
+              const [at, ai] = key(a), [bt, bi] = key(b);
+              return at !== bt ? at < bt : ai < bi;
+            };
+            const running = async (run_id) => {
+              const { data } = await github.rest.actions.listJobsForWorkflowRun({ ...context.repo, run_id, filter: "latest", per_page: 100 });
+              return data.jobs.filter((j) => j.name === JOB && j.status === "in_progress" && j.started_at);
+            };
+            let lastSaid = "";
+            while (Date.now() < deadline) {
+              try {
+                const [me] = await running(context.runId);
+                if (!me) throw new Error("couldn't find this job yet");
+                const { data } = await github.rest.actions.listWorkflowRuns({
+                  ...context.repo, workflow_id: "free-user-regression.yml", status: "in_progress", per_page: 100,
+                });
+                const others = data.workflow_runs.filter((r) => r.id !== context.runId);
+                const jobs = (await Promise.all(others.map((r) => running(r.id)))).flat();
+                const ahead = jobs.filter((j) => before(j, me));
+                if (ahead.length === 0) {
+                  core.info("It's this run's turn.");
+                  return;
+                }
+                const said = `Waiting for ${ahead.length} earlier run(s): ${ahead.map((j) => j.run_id).join(", ")}`;
+                if (said !== lastSaid) core.info(said);
+                lastSaid = said;
+              } catch (e) {
+                core.warning(`Couldn't read the queue, trying again: ${e.message}`);
+              }
+              await new Promise((r) => setTimeout(r, 20_000));
+            }
+            core.setFailed("Still waiting for a turn on staging after 100 minutes.");
 
       - uses: actions/checkout@v4
 
