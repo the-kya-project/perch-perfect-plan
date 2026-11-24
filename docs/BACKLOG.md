@@ -122,10 +122,11 @@ Where these items came from, with the detail behind each: `docs/flock/opening-sc
   - Totals and averages only, computed inside the app's database. Groups under 20 birds aren't shown. No weight ranges, health statistics, comparisons between birds, or anything that reads as medical advice.
   - Free users' care logs count unless they turn off "Include my birds in Flock insights" under Privacy in account settings. The card's footnote links there, and the privacy policy has a line about it.
   - The mockup's "Share my profile with my chapter" switch isn't in the spec, so it isn't built unless Brittany asks for it.
+  - Diet conversion shows no typical length, anywhere: no number, no range and no "usually takes" line, because it could read as health guidance (Brittany's decision, Nov 24, 2026).
 - **Size:** L
 - **Depends on:** the privacy-policy line from Brittany
 - **Overnight alone:** no. It reads care-app data and adds a Privacy setting free users can see.
-- **Needs Brittany:** approval before work starts, evidence of exactly what free users see, and a decision on whether the mockup's diet conversion duration counts as health information.
+- **Needs Brittany:** approval before work starts, and evidence of exactly what free users see. (The diet conversion duration is decided: no typical length, Nov 24, 2026.)
 
 ### 1.16 Rescue partner codes
 - **Spec:** [Rescue partner codes](flock/specs/feature-specs.md#rescue-partner-codes-116) · **Mockup:** [`SpecRescueCodes.dc.html`](flock/mockups/SpecRescueCodes.dc.html)

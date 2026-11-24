@@ -20,6 +20,12 @@ Copy this, fill it in, and put it at the top of "Runs", above the latest entry.
 
 ## Runs
 
+### 2026-11-24 · 1.12 Flock insights: Brittany's diet conversion decision recorded (Brittany asked, in a session)
+- **Built:** nothing in code. Recorded Brittany's decision in `docs/BACKLOG.md` (item 1.12) and `docs/REVIEW_QUEUE.md` (the #506 "1.12 Flock insights" entry): diet conversion shows no typical length anywhere (no number, range or "usually takes" line), because it could read as health guidance. No code, migrations or existing `typical_length` data changed.
+- **PR:** this PR
+- **Outcome:** Merged once every required check passed.
+- **Problems:** none.
+
 ### 2026-11-24 14:30 EST · 1.17 Promo codes: brought up to date and merged (Brittany asked, in a session)
 - **Built:** merged `main` (with 1.14a, #533, and Kya's Crew, #535) into #543. Took `main`'s billing code and put #543's promotion-code rule back on top: the code field on the subscription Checkout only (not the save-the-card one), for the Flock plans and Crew, never the founding price, and the webhook's founding-discount removal. Added tests that Crew gets the field. Recorded Brittany's approval and added the promo-code test checkouts to "Before billing opens".
 - **PR:** [#543](https://github.com/the-kya-project/perch-perfect-plan/pull/543)
