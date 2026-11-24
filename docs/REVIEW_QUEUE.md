@@ -1059,6 +1059,10 @@ No new strings: every line reuses existing wording, in new places (admins only).
 
 ## Decisions agents made
 
+### 1.15a Kya's Crew option on the payment screen · Brittany's decisions, Nov 24, 2026
+- **Approved:** the "Kya's Crew payment option" mockup from Nov 23, 2026: the card step with Kya's Crew and its benefits next to Monthly and Yearly, and the Crew yearly selected state. Saved as `docs/flock/mockups/billing/CrewCardStep.dc.html` and `CrewCardStepYearlySelected.dc.html`. 1.15a is now "Overnight alone: yes (built to a held PR)".
+- **Decided (Brittany, Nov 24, 2026):** the mockup's two rescue-adopter lines ("You sponsor six free months in the Flock for a family who just adopted a rescue parrot" and "Six free months in the Flock for a new rescue adopter, from you") both become "Crew memberships help support free Flock access for rescue adopters", matching #551's legal draft. The saved mockup already shows it.
+
 ### [#548](https://github.com/the-kya-project/perch-perfect-plan/pull/548) · 1.11 Buddy pods
 - **Decision:** A pod's posts are Flock posts in a new `pod` space (`flock_posts.pod_id`), so reactions, comments, replies, reports, review, blocks, photos, deletion and the 180-day hold all work as they do for posts. They show only in the pod, never on Today. This needs small changes to two existing Flock functions (post visibility and Today's feed) and the posts table's space check.
 - **Decision:** Placement: a new waiter first joins an open pod on the same journey with room (under 6), their own chapter's pod first. Otherwise a new pod forms as soon as 3 compatible people are waiting: from the member's chapter when 3 there are waiting, else from everyone waiting (chapter first, then oldest). So pods start at 3 and fill toward 6. The spec doesn't say whether latecomers join an existing pod or wait for a new one.
