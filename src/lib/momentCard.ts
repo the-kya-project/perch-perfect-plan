@@ -21,7 +21,9 @@ function drawCover(ctx: CanvasRenderingContext2D, img: ImageBitmap) {
   ctx.drawImage(img, (W - w) / 2, (H - h) / 2, w, h);
 }
 
-function wrap(ctx: CanvasRenderingContext2D, text: string, maxWidth: number): string[] {
+/** Word-wrap `text` to `maxWidth` in the current font, keeping the first
+ *  `maxLines` lines. Also used by the Flock's journey cards (journeyCard.ts). */
+export function wrap(ctx: CanvasRenderingContext2D, text: string, maxWidth: number, maxLines = 2): string[] {
   const words = text.split(" ");
   const lines: string[] = [];
   let line = "";
@@ -31,7 +33,7 @@ function wrap(ctx: CanvasRenderingContext2D, text: string, maxWidth: number): st
     else line = test;
   }
   if (line) lines.push(line);
-  return lines.slice(0, 2);
+  return lines.slice(0, maxLines);
 }
 
 /** Render the keepsake card to a PNG blob. Photo is loaded via fetch→bitmap so a
@@ -91,10 +93,24 @@ export async function renderMomentCard(opts: { photoUrl?: string | null; title: 
  *  to a download ("save to your photos"). Returns nothing; toasts handled by caller. */
 export async function shareMomentCard(opts: { photoUrl?: string | null; title: string; context: string; fileName?: string }): Promise<"shared" | "saved"> {
   const blob = await renderMomentCard(opts);
-  const file = new File([blob], opts.fileName ?? "moment.png", { type: "image/png" });
+  return shareOrSaveImage(blob, opts.fileName ?? "moment.png", opts.title);
+}
+
+/** True when this browser can hand an image file to the share sheet. */
+export function canShareImageFiles(): boolean {
+  if (typeof navigator === "undefined" || typeof File === "undefined") return false;
+  const nav = navigator as Navigator & { canShare?: (d: ShareData) => boolean };
+  try {
+    return !!nav.share && !!nav.canShare?.({ files: [new File([new Blob()], "card.png", { type: "image/png" })] });
+  } catch { return false; }
+}
+
+/** Hand a PNG to the share sheet, or download it where files can't be shared. */
+export async function shareOrSaveImage(blob: Blob, fileName: string, title: string): Promise<"shared" | "saved"> {
+  const file = new File([blob], fileName, { type: "image/png" });
   const nav = navigator as Navigator & { canShare?: (d: ShareData) => boolean };
   if (nav.share && nav.canShare?.({ files: [file] })) {
-    await nav.share({ files: [file], title: opts.title });
+    await nav.share({ files: [file], title });
     return "shared";
   }
   const url = URL.createObjectURL(blob);
