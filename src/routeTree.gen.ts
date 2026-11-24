@@ -140,6 +140,7 @@ import { Route as ApiPublicHooksOnboardingEmailsRouteImport } from './routes/api
 import { Route as ApiPublicHooksOnboardingWelcomeRouteImport } from './routes/api/public/hooks/onboarding-welcome'
 import { Route as ApiPublicHooksSaveErrorAlertsRouteImport } from './routes/api/public/hooks/save-error-alerts'
 import { Route as ApiPublicHooksSendEmailRouteImport } from './routes/api/public/hooks/send-email'
+import { Route as ApiPublicHooksWeightBaselineShadowRouteImport } from './routes/api/public/hooks/weight-baseline-shadow'
 import { Route as ApiPublicStripeBillingRouteImport } from './routes/api/public/stripe/billing'
 import { Route as ApiPublicStripeWebhookRouteImport } from './routes/api/public/stripe/webhook'
 import { Route as AuthenticatedBirdsBirdIdPlanIndexRouteImport } from './routes/_authenticated/birds/$birdId.plan.index'
@@ -888,6 +889,12 @@ const ApiPublicHooksSendEmailRoute = ApiPublicHooksSendEmailRouteImport.update({
   path: '/api/public/hooks/send-email',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicHooksWeightBaselineShadowRoute =
+  ApiPublicHooksWeightBaselineShadowRouteImport.update({
+    id: '/api/public/hooks/weight-baseline-shadow',
+    path: '/api/public/hooks/weight-baseline-shadow',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicStripeBillingRoute = ApiPublicStripeBillingRouteImport.update({
   id: '/api/public/stripe/billing',
   path: '/api/public/stripe/billing',
@@ -1125,6 +1132,7 @@ export interface FileRoutesByFullPath {
   '/api/public/hooks/onboarding-welcome': typeof ApiPublicHooksOnboardingWelcomeRoute
   '/api/public/hooks/save-error-alerts': typeof ApiPublicHooksSaveErrorAlertsRoute
   '/api/public/hooks/send-email': typeof ApiPublicHooksSendEmailRoute
+  '/api/public/hooks/weight-baseline-shadow': typeof ApiPublicHooksWeightBaselineShadowRoute
   '/api/public/stripe/billing': typeof ApiPublicStripeBillingRoute
   '/api/public/stripe/webhook': typeof ApiPublicStripeWebhookRoute
   '/admin/library/': typeof AuthenticatedAdminLibraryIndexRoute
@@ -1269,6 +1277,7 @@ export interface FileRoutesByTo {
   '/api/public/hooks/onboarding-welcome': typeof ApiPublicHooksOnboardingWelcomeRoute
   '/api/public/hooks/save-error-alerts': typeof ApiPublicHooksSaveErrorAlertsRoute
   '/api/public/hooks/send-email': typeof ApiPublicHooksSendEmailRoute
+  '/api/public/hooks/weight-baseline-shadow': typeof ApiPublicHooksWeightBaselineShadowRoute
   '/api/public/stripe/billing': typeof ApiPublicStripeBillingRoute
   '/api/public/stripe/webhook': typeof ApiPublicStripeWebhookRoute
   '/admin/library': typeof AuthenticatedAdminLibraryIndexRoute
@@ -1422,6 +1431,7 @@ export interface FileRoutesById {
   '/api/public/hooks/onboarding-welcome': typeof ApiPublicHooksOnboardingWelcomeRoute
   '/api/public/hooks/save-error-alerts': typeof ApiPublicHooksSaveErrorAlertsRoute
   '/api/public/hooks/send-email': typeof ApiPublicHooksSendEmailRoute
+  '/api/public/hooks/weight-baseline-shadow': typeof ApiPublicHooksWeightBaselineShadowRoute
   '/api/public/stripe/billing': typeof ApiPublicStripeBillingRoute
   '/api/public/stripe/webhook': typeof ApiPublicStripeWebhookRoute
   '/_authenticated/admin/library/': typeof AuthenticatedAdminLibraryIndexRoute
@@ -1575,6 +1585,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/onboarding-welcome'
     | '/api/public/hooks/save-error-alerts'
     | '/api/public/hooks/send-email'
+    | '/api/public/hooks/weight-baseline-shadow'
     | '/api/public/stripe/billing'
     | '/api/public/stripe/webhook'
     | '/admin/library/'
@@ -1719,6 +1730,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/onboarding-welcome'
     | '/api/public/hooks/save-error-alerts'
     | '/api/public/hooks/send-email'
+    | '/api/public/hooks/weight-baseline-shadow'
     | '/api/public/stripe/billing'
     | '/api/public/stripe/webhook'
     | '/admin/library'
@@ -1871,6 +1883,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/onboarding-welcome'
     | '/api/public/hooks/save-error-alerts'
     | '/api/public/hooks/send-email'
+    | '/api/public/hooks/weight-baseline-shadow'
     | '/api/public/stripe/billing'
     | '/api/public/stripe/webhook'
     | '/_authenticated/admin/library/'
@@ -1937,6 +1950,7 @@ export interface RootRouteChildren {
   ApiPublicHooksOnboardingWelcomeRoute: typeof ApiPublicHooksOnboardingWelcomeRoute
   ApiPublicHooksSaveErrorAlertsRoute: typeof ApiPublicHooksSaveErrorAlertsRoute
   ApiPublicHooksSendEmailRoute: typeof ApiPublicHooksSendEmailRoute
+  ApiPublicHooksWeightBaselineShadowRoute: typeof ApiPublicHooksWeightBaselineShadowRoute
   ApiPublicStripeBillingRoute: typeof ApiPublicStripeBillingRoute
   ApiPublicStripeWebhookRoute: typeof ApiPublicStripeWebhookRoute
   ApiPublicBereavementReviewReviewIdSigRoute: typeof ApiPublicBereavementReviewReviewIdSigRoute
@@ -2863,6 +2877,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksSendEmailRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/weight-baseline-shadow': {
+      id: '/api/public/hooks/weight-baseline-shadow'
+      path: '/api/public/hooks/weight-baseline-shadow'
+      fullPath: '/api/public/hooks/weight-baseline-shadow'
+      preLoaderRoute: typeof ApiPublicHooksWeightBaselineShadowRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/stripe/billing': {
       id: '/api/public/stripe/billing'
       path: '/api/public/stripe/billing'
@@ -3360,6 +3381,8 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicHooksOnboardingWelcomeRoute: ApiPublicHooksOnboardingWelcomeRoute,
   ApiPublicHooksSaveErrorAlertsRoute: ApiPublicHooksSaveErrorAlertsRoute,
   ApiPublicHooksSendEmailRoute: ApiPublicHooksSendEmailRoute,
+  ApiPublicHooksWeightBaselineShadowRoute:
+    ApiPublicHooksWeightBaselineShadowRoute,
   ApiPublicStripeBillingRoute: ApiPublicStripeBillingRoute,
   ApiPublicStripeWebhookRoute: ApiPublicStripeWebhookRoute,
   ApiPublicBereavementReviewReviewIdSigRoute:
