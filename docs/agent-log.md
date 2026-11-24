@@ -20,6 +20,11 @@ Copy this, fill it in, and put it at the top of "Runs", above the latest entry.
 
 ## Runs
 
+### 2026-11-24 13:40 EST · 1.14a Card step and checkout design: brought up to date and merged (Brittany asked, in a session)
+- **Built:** merged `main` into #533. Kept both sides: #535's Kya's Crew plans and giving rate with #533's screens, branded Checkout and Dutch. The yearly save-the-card note now covers Crew annual too. Recorded Brittany's approval and added the "Before billing opens" checklist to the backlog. Cleared the merged #535, #549, #547 and #533 entries from "Held for Brittany".
+- **PR:** [#533](https://github.com/the-kya-project/perch-perfect-plan/pull/533)
+- **Outcome:** merged switched off once every required check passed.
+- **Problems:** none.
 ### 2026-11-24 · 1.10 Challenges: Brittany's decisions recorded, branch updated, merged (Brittany asked, in a session)
 - **Built:** nothing new in code. Recorded Brittany's decisions on #547 in `docs/REVIEW_QUEUE.md` and `docs/BACKLOG.md`: the unmocked screens and copy approved, no clips for now (new item 1.10a under "Later"), an entry still needs a few words with a photo, and journey challenges stay (a note for 1.20b: no milestone progress in the new design; finished when the journey ends with "learned it" before the end date). Merged `main` into the branch (no force-push); only the three record files conflicted, and both sides' entries were kept. #547's "Held for Brittany" item was removed, since she has answered it.
 - **PR:** [#547](https://github.com/the-kya-project/perch-perfect-plan/pull/547)
@@ -86,6 +91,19 @@ Copy this, fill it in, and put it at the top of "Runs", above the latest entry.
 - **Outcome:** Held: payments, and the `entitlements` plan check change, need Brittany's approval (the item's own rule). Three questions are in the PR: whether Crew pays right away during the free season, whether a renewal sponsors another seat, and where members pick Crew.
 - **Problems:** At the start, #533 (1.14a) and #534 (1.4) conflicted with `main` only in the record files. This run merged `main` into each in a separate copy, kept both sides' entries, and pushed. Items Brittany had cleared on `main` stayed cleared. #521 (D1.1) also conflicted in `package.json`, so it was left as it is; Brittany merged it during this run, so this PR merged `main` again and dropped its note about that conflict. GitHub ran no checks on #535's work commit until then, because a PR with a merge conflict gets no `pull_request` runs. #535 touches `src/lib/billing.ts` and `billing.functions.ts`, which #533 also changes, so whichever merges second will need a small merge. The database checks only run in CI (no local database). Type check, lint, build and `test:billing` (41) pass locally. Production reads (read-only): the Flock is still closed (`members_open` off) and the plan check is named `entitlements_plan_check`. Some chained shell commands were refused, so they were run one at a time. No lock at start. No pending-log entries to move.
 
+### 2026-11-23 15:20 EST · 1.14a Dutch for the billing screens
+- **Built:** at Brittany's go-ahead, Dutch for all 83 billing lines and the page title. Dates, the sentence on Stripe's page, Stripe Checkout and the Customer Portal now follow the member's language.
+- **PR:** https://github.com/the-kya-project/perch-perfect-plan/pull/533
+- **Tested:** `npm run test:billing`, translations, types, build, and every screen rendered in Dutch at 320 and 390 wide with made-up billing data.
+- **Not tested:** a real Stripe page in Dutch, and no native Dutch speaker has read it.
+- **Outcome:** held for Brittany.
+
+### 2026-11-23 13:50 EST · 1.14a Card step and checkout design
+- **Built:** the nine approved billing mockups on Membership, Checkout branding through each session's settings, and the card's last four digits read from Stripe without storing them. A card added in the season's last 49 hours is saved at Checkout and first charged at the season's end (Brittany's decision). Behind `BILLING_ENABLED` (off), web only.
+- **PR:** https://github.com/the-kya-project/perch-perfect-plan/pull/533
+- **Tested:** `npm run test:billing`, types, translations, and every screen rendered at phone and desktop width with made-up billing data.
+- **Not tested:** a real Stripe Checkout or Customer Portal page. Billing is off and this run has no Stripe test key.
+- **Outcome:** held for Brittany.
 ### 2026-11-23 14:20 EST · 1.8 Do good voting: Brittany's approved mockups
 - **Built:** Changed the vote from "one winner" to a shared donation: every choice gets 10%, the votes share out the rest, and the shares always total 100%. A vote is now final, enforced in the database. The vote, thank-you and results screens match the approved mockups, which are saved in `docs/flock/mockups/voting/`. Admin choices now take a logo or photo, and a closed vote shows the shares to send. Founders-only votes keep plain results, as Brittany chose.
 - **PR:** [#529](https://github.com/the-kya-project/perch-perfect-plan/pull/529)

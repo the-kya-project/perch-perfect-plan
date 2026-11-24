@@ -10,7 +10,8 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { CHECKOUT_CHOICES, billingEnabled, checkoutPlan, firstCharge, liveSubscription, type BillingState, type PaidPlan } from "./billing";
+import { formatCents } from "./gifts";
+import { CHECKOUT_CHOICES, billingDay, billingEnabled, checkoutDesign, checkoutPlan, firstCharge, saveCardExpiry, saveCardNote, checkoutNote, liveSubscription, type BillingLocale, type BillingState, type NoteT, type PaidPlan } from "./billing";
 
 type Ctx = { supabase: any; userId: string; claims: { email?: string } };
 
@@ -49,12 +50,37 @@ async function seasonEnd(): Promise<string | null> {
   return row?.free_season_ends_at ?? null;
 }
 
+async function foundingSpot(userId: string): Promise<number | null> {
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { data, error } = await (supabaseAdmin as any).from("founding_claims").select("spot_number").eq("user_id", userId).maybeSingle();
+  if (error) return null;
+  return (data?.spot_number as number | undefined) ?? null;
+}
+
+/** The last four digits of the card on the member's newest subscription, read
+ *  from Stripe each time and never stored. A failure only hides the Card row. */
+async function cardLast4(userId: string): Promise<string | null> {
+  try {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data } = await (supabaseAdmin as any).from("billing_customers").select("stripe_customer_id").eq("user_id", userId).maybeSingle();
+    if (!data?.stripe_customer_id) return null;
+    const { getBillingStripe } = await import("./stripe.server");
+    const subs = await getBillingStripe().subscriptions.list({ customer: data.stripe_customer_id, status: "all", limit: 5, expand: ["data.default_payment_method"] });
+    const sub = subs.data.find((s) => s.status !== "canceled" && s.status !== "incomplete_expired");
+    const method = sub?.default_payment_method;
+    return method && typeof method !== "string" ? method.card?.last4 ?? null : null;
+  } catch (err) {
+    console.error("[billing] card read failed", err instanceof Error ? err.message : err);
+    return null;
+  }
+}
+
 export const getBillingState = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }): Promise<BillingState> => {
     if (!(await allowed(context as Ctx))) return { enabled: false };
     const userId = (context as Ctx).userId;
-    const [rows, founding, end] = await Promise.all([stripeRows(userId), foundingPriceOpen(userId), seasonEnd()]);
+    const [rows, founding, end, spot] = await Promise.all([stripeRows(userId), foundingPriceOpen(userId), seasonEnd(), foundingSpot(userId)]);
 
     // Prices come from Stripe, never hard-coded. A missing one is left out.
     const { getBillingStripe, billingPrices } = await import("./stripe.server");
@@ -68,12 +94,14 @@ export const getBillingState = createServerFn({ method: "GET" })
       }),
     );
     const live = liveSubscription(rows);
+    const last4 = live ? await cardLast4(userId) : null;
     return {
       enabled: true,
       seasonEndsAt: end,
       foundingPriceOpen: founding,
+      foundingSpot: spot,
       prices,
-      subscription: live ? { plan: live.plan, status: live.status, current_period_end: live.current_period_end, will_renew: live.will_renew } : null,
+      subscription: live ? { plan: live.plan, status: live.status, current_period_end: live.current_period_end, will_renew: live.will_renew, card_last4: last4 } : null,
     };
   });
 
@@ -102,9 +130,16 @@ export type BillingCheckoutResult =
   | { ok: true; url: string }
   | { ok: false; reason: "off" | "on_file" | "not_ready" | "unavailable" | "error" };
 
+/** The member's language for Stripe's page and our sentence on it. */
+async function noteTranslator(locale: BillingLocale): Promise<NoteT> {
+  const { globalI18n } = await import("@/lib/i18n/i18n");
+  const fixed = globalI18n.getFixedT(locale);
+  return (key, text, v) => fixed(key, text, v) as string;
+}
+
 export const startBillingCheckout = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: { choice: string }) => z.object({ choice: z.enum(CHECKOUT_CHOICES) }).parse(d))
+  .inputValidator((d: { choice: string; locale?: string }) => z.object({ choice: z.enum(CHECKOUT_CHOICES), locale: z.enum(["en", "nl"]).default("en") }).parse(d))
   .handler(async ({ data, context }): Promise<BillingCheckoutResult> => {
     const ctx = context as Ctx;
     if (!(await allowed(ctx))) return { ok: false, reason: "off" };
@@ -120,21 +155,49 @@ export const startBillingCheckout = createServerFn({ method: "POST" })
       const customer = await customerFor(ctx.userId, ctx.claims?.email);
       const { getRequest } = await import("@tanstack/react-start/server");
       const origin = new URL(getRequest().url).origin;
-      const session = await getBillingStripe().checkout.sessions.create({
-        mode: "subscription",
-        customer,
-        client_reference_id: ctx.userId,
-        line_items: [{ price, quantity: 1 }],
-        // The card is always collected, even with $0 due today.
-        payment_method_collection: "always",
-        subscription_data: {
-          ...(fc.trialEnd ? { trial_end: fc.trialEnd } : {}),
-          metadata: { kind: "flock_billing", user_id: ctx.userId, plan },
-        },
-        metadata: { kind: "flock_billing", user_id: ctx.userId, plan },
-        success_url: `${origin}/flock/you/membership?billing=done`,
-        cancel_url: `${origin}/flock/you/membership`,
-      });
+      const stripe = getBillingStripe();
+      // Only one open checkout per member, so two tabs can't start two memberships.
+      const open = await stripe.checkout.sessions.list({ customer, status: "open", limit: 100 });
+      await Promise.all(open.data.filter((s) => s.metadata?.kind === "flock_billing").map((s) => stripe.checkout.sessions.expire(s.id)));
+      const metadata = { kind: "flock_billing", user_id: ctx.userId, plan };
+      const urls = { success_url: `${origin}/flock/you/membership?billing=done`, cancel_url: `${origin}/flock/you/membership` };
+      const locale = data.locale;
+      const noteT = await noteTranslator(locale);
+      let session;
+      if (fc.saveCardFirst && fc.trialEnd) {
+        // Under 48 hours to the season's end, Checkout can't start the trial.
+        // It saves the card, and the webhook starts the subscription.
+        const amount = (await stripe.prices.retrieve(price)).unit_amount;
+        if (amount == null) return { ok: false, reason: "unavailable" };
+        const note = saveCardNote(plan, formatCents(amount), billingDay(new Date(fc.trialEnd * 1000).toISOString(), locale), noteT);
+        session = await stripe.checkout.sessions.create({
+          ...checkoutDesign(fc.trialEnd, note, locale),
+          mode: "setup",
+          customer,
+          client_reference_id: ctx.userId,
+          payment_method_types: ["card"],
+          expires_at: saveCardExpiry(fc.trialEnd),
+          setup_intent_data: { metadata },
+          metadata,
+          ...urls,
+        });
+      } else {
+        session = await stripe.checkout.sessions.create({
+          ...checkoutDesign(fc.trialEnd, fc.trialEnd ? checkoutNote(billingDay(new Date(fc.trialEnd * 1000).toISOString(), locale), noteT) : undefined, locale),
+          mode: "subscription",
+          customer,
+          client_reference_id: ctx.userId,
+          line_items: [{ price, quantity: 1 }],
+          // The card is always collected, even with $0 due today.
+          payment_method_collection: "always",
+          subscription_data: {
+            ...(fc.trialEnd ? { trial_end: fc.trialEnd } : {}),
+            metadata,
+          },
+          metadata,
+          ...urls,
+        });
+      }
       if (!session.url) return { ok: false, reason: "error" };
       return { ok: true, url: session.url };
     } catch (err) {
@@ -145,7 +208,8 @@ export const startBillingCheckout = createServerFn({ method: "POST" })
 
 export const openBillingPortal = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .handler(async ({ context }): Promise<BillingCheckoutResult> => {
+  .inputValidator((d: { locale?: string }) => z.object({ locale: z.enum(["en", "nl"]).default("en") }).parse(d))
+  .handler(async ({ data: input, context }): Promise<BillingCheckoutResult> => {
     const ctx = context as Ctx;
     if (!(await allowed(ctx))) return { ok: false, reason: "off" };
     try {
@@ -157,6 +221,7 @@ export const openBillingPortal = createServerFn({ method: "POST" })
       const origin = new URL(getRequest().url).origin;
       const portal = await getBillingStripe().billingPortal.sessions.create({
         customer: data.stripe_customer_id,
+        locale: input.locale,
         return_url: `${origin}/flock/you/membership`,
       });
       return { ok: true, url: portal.url };
