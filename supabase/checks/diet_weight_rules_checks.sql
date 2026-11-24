@@ -1,8 +1,9 @@
 -- Verification for 20261108160000_diet_weight_rules.
 --
 -- Self-contained and leaves nothing behind. Each scenario is its own bird on
--- its own Diet conversion journey (started 20 days ago, so milestone 1's week
--- of weigh-ins sets the starting weight), fed a fixed sequence of daily
+-- its own Diet conversion journey (started 20 days ago, so the first week's
+-- weigh-ins after the start set the starting weight; new journeys have no
+-- milestone 1 since 20261124190000), fed a fixed sequence of daily
 -- weigh-ins, one at a time, with the expected result after each. Then rolls
 -- back.
 --   "DIET WEIGHT RULES CHECKS: n passed, 0 failed"           → all good
