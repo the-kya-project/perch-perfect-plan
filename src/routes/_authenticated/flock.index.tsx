@@ -4,6 +4,8 @@ import { Settings2 } from "lucide-react";
 import { K } from "@/components/kya";
 import { VoteCard } from "@/components/flock/VoteParts";
 import { TodayBadges } from "@/components/flock/BadgeParts";
+import { ChallengeCard } from "@/components/flock/ChallengeParts";
+import { useCurrentChallenges } from "@/lib/flockChallenges";
 import { useIsAdmin } from "@/lib/flockData";
 import { useCurrentVotes, votesFor } from "@/lib/flockVotes";
 import { JourneyMilestoneCard } from "@/components/flock/JourneyToday";
@@ -76,6 +78,7 @@ function FlockToday() {
   // Votes (1.8): open ones on Today; Do good also shows recent results.
   const { data: votes } = useCurrentVotes();
   const { data: isAdmin } = useIsAdmin();
+  const { data: challenges } = useCurrentChallenges();
   const shownVotes = filter === "everything" ? votesFor(votes ?? [], "today") : filter === "good" ? votesFor(votes ?? [], "good") : [];
   // Followed journeys and their milestones belong to Everything.
   const showJourneys = filter === "everything";
@@ -100,6 +103,8 @@ function FlockToday() {
         )}
         {/* Badges (1.13a): what history earned, once, then each new one. */}
         <TodayBadges />
+        {/* Challenges (1.10): open ones, Flock-wide first, on Everything. */}
+        {filter === "everything" && (challenges ?? []).map((c) => <ChallengeCard key={c.challenge_id} challenge={c} />)}
         {shownVotes.map((v) => <VoteCard key={v.vote_id} vote={v} />)}
         {(weighReminders ?? []).map((w) => <WeighTodayCard key={w.journey_id} birdId={w.bird_id} birdName={w.bird_name} />)}
         {idea && <TodaysIdeaCard idea={idea} photo={ideaPhotos?.find((p) => p.kind === "idea")?.url ?? null} />}

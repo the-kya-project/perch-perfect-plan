@@ -68,6 +68,9 @@ type FlockState = {
   badges: { badge: string; level: number; earned_at: string | null; unseen: boolean; at_launch: boolean }[];
   memberBadges: Record<string, { badge: string; level: number }[]>;
   badgesShown: boolean;
+  /** Backlog 1.10: challenges as flock_challenge(s) return them, and their entries (post rows plus `prompt`). */
+  challenges: Record<string, any>[];
+  challengeEntries: Record<string, any>[];
   /** Build C: where this account stands (flock_my_access), and its join calls. */
   access: { member_now: boolean; has_membership: boolean; agreed: boolean; is_admin: boolean; guidelines_version: string; opens_at: string | null; season_ends_at: string | null };
   joinResult: string;
@@ -112,6 +115,8 @@ async function mockFlock(context: BrowserContext, userId: string, opts: { setupD
     badges: [],
     memberBadges: {},
     badgesShown: true,
+    challenges: [],
+    challengeEntries: [],
     access: { member_now: true, has_membership: true, agreed: true, is_admin: true, guidelines_version: "2026-12", opens_at: null, season_ends_at: "2027-07-06T04:00:00Z" },
     joinResult: "joined",
     pods: { canWait: true, journey: {}, pod: null, members: [], feed: [], mine: [], admin: [], adminMembers: [] },
@@ -170,6 +175,12 @@ async function mockFlock(context: BrowserContext, userId: string, opts: { setupD
     if (fn === "admin_pod_members") return json(route, state.pods.adminMembers);
     if (fn === "admin_pod_waitlist") return json(route, [{ template_slug: "step-up", template_name: "Step up", waiting: 2, oldest: new Date().toISOString() }]);
     if (fn === "admin_save_idea") return json(route, "00000000-0000-4000-8000-0000000082aa");
+    if (fn === "admin_challenges") {
+      return json(route, state.challenges.map((c) => ({ challenge_id: c.challenge_id, kind: c.kind, title: c.title, region_slug: c.region_slug, region_name: c.region_name,
+        state: c.state, starts_on: c.starts_on, ends_on: c.ends_on, member_count: c.member_count, entry_count: 0, updated_at: new Date().toISOString() })));
+    }
+    if (fn === "admin_challenge_save") return json(route, "00000000-0000-4000-8000-0000000097aa");
+    if (fn === "admin_challenge_featurable") return json(route, []);
     if (fn === "admin_votes") {
       return json(route, state.votes.map((v) => ({ vote_id: v.vote_id, question: v.question, audience: v.audience, state: v.state, closes_at: v.closes_at,
         voters: v.voters, choice_count: v.choices.length, updated_at: v.closes_at })));
@@ -365,6 +376,28 @@ async function mockFlock(context: BrowserContext, userId: string, opts: { setupD
     if (fn === "flock_pod_finished_seen") { if (state.pods.pod) state.pods.pod.my_finished = false; return json(route, null); }
     if (fn === "flock_pod_keep_going") { if (state.pods.pod) { state.pods.pod.asking_me = false; state.pods.pod.my_answer = args.p_yes; } return json(route, null); }
     if (fn === "flock_pod_leave") return json(route, null);
+    if (fn === "flock_challenges_current") return json(route, state.challenges.filter((c) => c.state === "open"));
+    if (fn === "flock_challenge") return json(route, state.challenges.filter((c) => c.challenge_id === args.p_id));
+    if (fn === "flock_challenge_entries") return json(route, state.challengeEntries.filter((e) => e.challenge_id === args.p_id));
+    if (fn === "flock_challenge_join" || fn === "flock_challenge_set_feature" || fn === "flock_challenge_entry_create") {
+      const c =state.challenges.find((x) => x.challenge_id === args.p_id);
+      if (!c) return json(route, { code: "P0002", message: "not found" }, 404);
+      if (fn === "flock_challenge_join") {
+        Object.assign(c, { joined: true, my_bird_id: args.p_bird_id, my_bird_name: "Echo", feature_ok: args.p_feature_ok, member_count: c.member_count + 1 });
+        return json(route, null);
+      }
+      if (fn === "flock_challenge_set_feature") { c.feature_ok = args.p_ok; return json(route, null); }
+      const id = `00000000-0000-4000-8000-0000000098${String(state.challengeEntries.length).padStart(2, "0")}`;
+      state.challengeEntries.unshift({ post_id: id, challenge_id: c.challenge_id, author_id: userId, author_name: "Brittany K.", author_region: "Great Lakes", author_photo_path: null,
+        author_is_founder: false, space: "challenge", region_slug: null, region_name: null, title: null, body: args.p_body, photo_count: 0, bird_id: null, bird_name: null,
+        bird_has_photo: false, status: "live", review_note: null, created_at: new Date().toISOString(), edited_at: null, is_mine: true, comment_count: 0,
+        great_job: 0, been_there: 0, rooting_for_you: 0, love_this: 0, mine: [], prompt: args.p_prompt });
+      const p = c.prompts.find((x: any) => x.position === args.p_prompt);
+      if (p) { p.done = true; c.done_count += 1; }
+      c.finished = c.kind === "standalone" && c.prompts.every((x: any) => x.done);
+      return json(route, id);
+    }
+    if (fn === "flock_challenge_finished") return json(route, state.challenges.find((x) => x.challenge_id === args.p_id)?.finished === true);
     if (fn === "flock_todays_idea") return json(route, state.idea ? [state.idea] : []);
     if (fn === "flock_idea_try") { if (state.idea) { state.idea.my_outcome = args.p_outcome; state.idea.my_bird_id = args.p_bird_id; } return json(route, null); }
     if (fn === "flock_report") return json(route, null);
@@ -3299,6 +3332,123 @@ test.describe("buddy pods (admin, phone)", () => {
     await row.getByTestId("admin-pod-dissolve").click();
     await page.getByTestId("confirm-delete").click();
     await expect.poll(() => state.calls.find((c) => c.fn === "admin_pod_dissolve")?.args).toEqual({ p_pod_id: POD });
+    await context.close();
+  });
+});
+
+test.describe("challenges (admin, phone)", () => {
+  const FORAGING = "00000000-0000-4000-8000-0000000097a1";
+  const challenge = (over: Record<string, any> = {}) => ({
+    challenge_id: FORAGING, kind: "standalone", title: "Foraging week: a new idea every day", description: "A new foraging idea every day for a week.",
+    template_slug: null, template_name: null, region_slug: null, region_name: null, state: "open", starts_on: "2026-12-01", ends_on: "2026-12-07", days_left: 4,
+    prompts: [
+      { position: 1, body: "Paper cup surprise", done: false },
+      { position: 2, body: "Shred a cardboard tube", done: false },
+      { position: 3, body: "Hide a treat in a basket", done: false },
+    ],
+    member_count: 63, faces: [{ name: "Ada L.", photo_path: null }, { name: "Cy T.", photo_path: null }],
+    joined: false, my_bird_id: null, my_bird_name: null, feature_ok: false, my_journey_id: null,
+    done_count: 0, total_count: 3, finished: false, wrap_up: null, pinned_post_id: null, featured_post_ids: [], ...over,
+  });
+
+  test("the card on Today and Journeys, joining with a bird, an entry for each prompt, and the celebration", async ({ browser, baseURL }) => {
+    const { context, page, state } = await open(browser, baseURL!, { admin: true });
+    state.challenges = [challenge()];
+    await page.goto("/flock");
+    const card = page.getByTestId("challenge-card");
+    await expect(card).toHaveCount(1);
+    await expect(card).toContainText("Challenge · 4 days left");
+    await expect(card.getByTestId("challenge-summary")).toHaveText("Standalone challenge · 3 prompts · 63 members joined");
+    await expect(card.getByTestId("challenge-open")).toHaveText("Join the challenge");
+    // Only on Everything.
+    await page.goto("/flock?space=learn");
+    await expect(page.getByTestId("challenge-card")).toHaveCount(0);
+    await page.goto("/flock/journeys");
+    await expect(page.getByTestId("challenge-card")).toHaveCount(1);
+    await expect(page.getByTestId("manage-challenges")).toBeVisible();
+
+    // Join: pick a bird; featuring is off unless the member says yes.
+    await page.getByTestId("challenge-open").click();
+    await expect(page).toHaveURL(new RegExp(`/flock/challenges/${FORAGING}`));
+    await expect(page.getByTestId("challenge-no-entries")).toHaveText("No entries yet. Yours could be the first.");
+    const join = page.getByTestId("challenge-join");
+    await expect(join.getByTestId("challenge-join-button")).toBeDisabled();
+    await join.locator("[data-bird]").first().click();
+    await expect(join.getByRole("switch")).toHaveAttribute("aria-checked", "false");
+    await join.getByTestId("challenge-join-button").click();
+    await expect(page.getByTestId("challenge-progress")).toBeVisible();
+    expect(state.calls.find((c) => c.fn === "flock_challenge_join")?.args).toMatchObject({ p_id: FORAGING, p_feature_ok: false });
+
+    // Progress: the checklist with the next prompt, and "Post today's entry".
+    const progress = page.getByTestId("challenge-progress");
+    await expect(progress.locator("[data-prompt='1']")).toHaveAttribute("data-done", "no");
+    await expect(progress).toContainText("2 more after this");
+    for (const [n, text] of [[1, "Took her ten seconds."], [2, "Shredded in a minute."], [3, "Found it in the basket."]] as const) {
+      await page.getByTestId("challenge-post").click();
+      await expect(page).toHaveURL(new RegExp(`/flock/challenges/${FORAGING}/entry\\?prompt=${n}`));
+      await expect(page.getByTestId("entry-for")).toContainText(`${n}. `);
+      await expect(page.getByTestId("post-to")).toHaveCount(0);
+      await expect(page.getByTestId("post-title")).toHaveCount(0);
+      await page.getByTestId("post-body-input").fill(text);
+      await page.getByTestId("composer-post").click();
+      await expect(page).toHaveURL(new RegExp(`/flock/challenges/${FORAGING}`));
+      await expect(page.getByTestId("challenge-entries")).toContainText(text);
+    }
+    expect(state.calls.filter((c) => c.fn === "flock_challenge_entry_create").map((c) => c.args.p_prompt)).toEqual([1, 2, 3]);
+    // The last prompt: the celebration, and no more posting.
+    await expect(page.getByTestId("challenge-finished")).toContainText("You finished!");
+    await expect(page.getByTestId("challenge-finished")).toContainText("Challenge champ");
+    await expect(page.getByTestId("challenge-post")).toHaveCount(0);
+    await expect(page.getByTestId("challenge-page").getByText(/winner|prize|rank/i)).toHaveCount(0);
+    await context.close();
+  });
+
+  test("a closed challenge: the feed stays readable, the wrap-up shows, and nobody can join", async ({ browser, baseURL }) => {
+    const { context, page, state } = await open(browser, baseURL!, { admin: true });
+    state.challenges = [challenge({ state: "closed", days_left: -3, wrap_up: "What a week. Thank you, everyone." })];
+    state.challengeEntries = [{ post_id: "00000000-0000-4000-8000-0000000098f1", challenge_id: FORAGING, author_id: "00000000-0000-4000-8000-00000000c001",
+      author_name: "Ada L.", author_region: "Great Lakes", author_photo_path: null, author_is_founder: false, space: "challenge", region_slug: null, region_name: null,
+      title: null, body: "Mango loved the basket.", photo_count: 0, bird_id: null, bird_name: null, bird_has_photo: false, status: "live", review_note: null,
+      created_at: new Date().toISOString(), edited_at: null, is_mine: false, comment_count: 0, great_job: 0, been_there: 0, rooting_for_you: 0, love_this: 0, mine: [], prompt: 3 }];
+    await page.goto("/flock");
+    await expect(page.getByTestId("today-chips")).toBeVisible();
+    await expect(page.getByTestId("challenge-card")).toHaveCount(0);
+    await page.goto(`/flock/challenges/${FORAGING}`);
+    await expect(page.getByTestId("challenge-closed")).toHaveText("This challenge has closed. Its entries stay here to read.");
+    await expect(page.getByTestId("challenge-wrap-up")).toContainText("What a week. Thank you, everyone.");
+    await expect(page.getByTestId("challenge-join")).toHaveCount(0);
+    await expect(page.getByTestId("challenge-entries")).toContainText("Mango loved the basket.");
+    await expect(page.getByTestId("entry-prompt")).toHaveText("3. Hide a treat in a basket");
+    await context.close();
+  });
+
+  test("admin: Journey or Standalone first, prompts one per line, and no food journeys", async ({ browser, baseURL }) => {
+    const { context, page, state } = await open(browser, baseURL!, { admin: true });
+    await page.goto("/admin/challenges");
+    await expect(page.getByTestId("admin-challenges-empty")).toBeVisible();
+    await page.getByTestId("new-challenge").click();
+    const form = page.getByTestId("challenge-form");
+    await expect(form.locator("[data-choice='kind-standalone']")).toHaveAttribute("aria-checked", "true");
+    // Journey: the templates, never diet conversion.
+    await form.locator("[data-choice='kind-journey']").click();
+    await expect(form.getByTestId("challenge-templates").locator("[data-choice='step-up']")).toBeVisible();
+    await expect(form.getByTestId("challenge-templates").locator("[data-choice='diet-conversion']")).toHaveCount(0);
+    await form.locator("[data-choice='kind-standalone']").click();
+    // Scheduling without the basics says what's missing.
+    await page.getByRole("button", { name: "Schedule challenge" }).click();
+    await expect(page.getByTestId("challenge-error")).toContainText("a title");
+    await form.getByTestId("challenge-title").fill("Foraging week: a new idea every day");
+    await form.getByTestId("challenge-prompts-input").fill("Paper cup surprise\n\nShred a cardboard tube\n");
+    const today = new Intl.DateTimeFormat("en-CA", { timeZone: "America/New_York", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date());
+    await form.getByTestId("challenge-starts").fill(today);
+    await form.getByTestId("challenge-ends").fill(today);
+    await page.getByRole("button", { name: "Schedule challenge" }).click();
+    await expect(page).toHaveURL(/\/admin\/challenges$/);
+    expect(state.calls.find((c) => c.fn === "admin_challenge_save")?.args).toMatchObject({
+      p_id: null, p_kind: "standalone", p_title: "Foraging week: a new idea every day", p_prompts: ["Paper cup surprise", "Shred a cardboard tube"],
+      p_template_slug: null, p_region_slug: null, p_starts_on: today, p_ends_on: today,
+    });
+    expect(state.calls.find((c) => c.fn === "admin_challenge_schedule")?.args).toEqual({ p_id: "00000000-0000-4000-8000-0000000097aa" });
     await context.close();
   });
 });

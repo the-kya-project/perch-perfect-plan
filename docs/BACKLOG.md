@@ -23,28 +23,6 @@ Where these items came from, with the detail behind each: `docs/flock/opening-sc
 ## Ready to build
 
 
-### 1.17 Promo codes for memberships
-- **Done means:** promotion codes work on the card step, following the rule below. The Apple offer codes iPhone needs (whole months only) are listed for when the iPhone paywall is built.
-- **Rule (Brittany, Nov 22, 2026):** codes apply to regular Flock and Kya's Crew plans, never to the $15 founding price. A code can stack with a trial (whichever is best for the member).
-- **Approved to start (Brittany, Nov 22, 2026):** once 1.14 is merged, under the same rules: test mode only, `BILLING_ENABLED` off, nothing in the Stripe Dashboard touched.
-- **Size:** M
-- **Depends on:** 1.14 merged
-- **Overnight alone:** yes (built to a held PR)
-- **Needs Brittany:** hold the PR for her approval (payments). Show worked examples of a code with a trial in the PR, so she can confirm how "stack" and "whichever is best" combine.
-
-### 1.10 Challenges
-- **Spec:** [Challenges](flock/specs/feature-specs.md#challenges-110) · **Mockup:** [`SpecChallenges.dc.html`](flock/mockups/SpecChallenges.dc.html)
-- **Done means:**
-  - Admins create and schedule a Journey or Standalone challenge (title, description, start and end, the whole Flock or one chapter) from a screen like the Today's ideas scheduler. One active Flock-wide, plus at most one per chapter.
-  - Members join from a card on Today and Journeys. A journey challenge starts that journey and counts progress the same way. A standalone one finishes with an entry for each prompt.
-  - Entries (photo, short clip or a few sentences) appear in a challenge feed with reactions and comments, under the same visibility, block and reporting rules as posts.
-  - Finishing brings a small celebration and the Challenge champ badge. After the end date the feed stays readable and an admin can post a wrap-up, featuring entries only with the member's permission.
-  - No winners, prizes or rankings. Nothing involving food restriction, weight goals or health, so Diet conversion can't be a challenge's template. The dates in the mockup are samples.
-- **Size:** XL
-- **Depends on:** 1.13a
-- **Overnight alone:** yes
-- **Needs Brittany:** merge only, under the normal rules. The first challenges are her content.
-
 ### 1.20 Journeys redesign: skills, not milestones
 - **Spec:** [Journeys redesign](flock/journeys-redesign.md) (approved direction, content draft). Build it in the five parts below, in order. Each part is its own branch and PR.
 - **Copy and content, every part:** every new or changed string is flagged for Brittany's copy review (listed in the PR and in the review queue's "Copy that merged", before and after), English first and Dutch only after she approves the English. All template text stays `review_status = 'draft'` until she approves it. Nothing in the spec's "Needs avian vet review before opening" list goes live without a vet.
@@ -62,6 +40,7 @@ Where these items came from, with the detail behind each: `docs/flock/opening-sc
 #### 1.20b Screens
 - **Done means:** the spec's "Screens" 1 to 6 work as written (Journeys tab, Pick a skill, skill page and setup, journey page, Post an update with "This was a big moment" and "Ask the Flock", finished), with the gating moved from starting a skill to the community features, the vet nudge on every caption and question, and the iPhone Duo layout rules followed. Diet conversion's screens are left as they are for 1.20d.
 - **Size:** L
+- **Journey challenges (Brittany, Nov 24, 2026, on #547):** journey challenges (1.10) stay and move to the new design. A journey challenge shows no milestone progress, and it counts as finished when its journey ends with "learned it" before the challenge's end date. Change the challenge page and the `private.flock_challenge_*` rules from `20261124033000_flock_challenges.sql` along with the journey screens.
 - **Depends on:** 1.20a
 - **Overnight alone:** yes
 - **Needs Brittany:** copy review of every new or changed string. Merge only under the normal rules (hidden behind `journeys_enabled()` and `flock_enabled()`); otherwise hold.
@@ -161,6 +140,18 @@ Where these items came from, with the detail behind each: `docs/flock/opening-sc
 
 ---
 
+## Before billing opens
+
+Billing merged switched off (`BILLING_ENABLED` off, Stripe test mode only). Before it's turned on for anyone:
+
+- [ ] Build the founder release job.
+- [ ] Save the test-mode Customer Portal setup in Stripe.
+- [ ] Run two test checkouts: one normal, one in the free season's last 49 hours.
+- [ ] Have a native speaker read the Dutch.
+- [ ] Run two test checkouts during a test free season, one with a "20% off for 3 months" promotion code and one with a "once" code, to see whether Stripe counts the months from when the card is added or from the first charge (1.17, #543).
+
+---
+
 ## Last: when Brittany decides to open
 
 The launch PR itself (1.18) is already merged dark. What's left before opening is the items below, then switching it on.
@@ -252,6 +243,7 @@ The launch PR itself (1.18) is already merged dark. What's left before opening i
 - **CSP is still report-only.** Read the `[csp-report]` lines in Vercel runtime logs, add any hosts that are really needed, then switch to enforcing. Never flip it blind.
 
 ### Product
+- **1.10a Short clips as challenge entries.** Decided (Brittany, Nov 24, 2026, on #547): not now. Challenge entries are a few sentences plus up to four photos. Clips would need clip support on Flock posts first (Cloudflare Stream uploads, the clip limits, playback and the "never the player's own error" handling, as journey clips have). Not to be built until she asks for it; then it needs her before work starts.
 - **1.9 Pre-approval for more spaces.** Decided (Brittany, Nov 22, 2026): pre-approval stays on Do good only, as it works today. No other space waits for review, and nothing here is to be built unless she reopens it.
 - **iPad landscape polish:**
   - the weight log card stretches too wide;
@@ -284,6 +276,9 @@ The launch PR itself (1.18) is already merged dark. What's left before opening i
 ## Done
 
 - **1.11** Buddy pods: starting a template journey offers "Pair me with buddies working on this too"; the journey waits ("We're finding your buddies", Leave the waitlist) and is placed at once into an open pod on the same journey with room, own chapter first, or a new pod forms once 3 compatible members wait (from the chapter when 3 there are). Members who've blocked each other are never placed together; up to 2 pods at once, waitlist places and "keep going" groups included. The pod page shows names, photos, shown birds and progress (never from a "Just me" journey outside the household), the weekly in-app "How did … go?" check-in, the pod's own feed (Flock posts in the `pod` space, so reactions, comments, reports, blocks and photos work as for posts, never on Today) and a quiet Leave pod. "You finished!" and "Keep going together?" (7 days; 2+ yeses → a general buddy group). The hourly `flock-pods-hourly` job closes finished pods, settles the question, dissolves pods with fewer than 2 active members over 3 weeks (unfinished members are offered a new pod) and places waiters. Admins: `/admin/pods` (from "Manage pods" on Flock settings → Buddy pods): the waitlist, every pod, Move and Dissolve (`20261124070000_flock_buddy_pods.sql`, `src/lib/flockPods.ts`). Pinned by `supabase/checks/flock_pods_checks.sql`, `npm run test:flock-shell` and `e2e/flock.shell.ts`. Held for Brittany (unmocked screens, and the migration changes Flock post functions): #548.
+- **1.17** Promotion codes: the subscription Checkout offers Stripe's code field for the regular Flock plans and Kya's Crew, never the founding price (`promotionCodesAllowed`), and the billing webhook takes off any discount that reaches a founding subscription another way (`discountsToRemove`). A code stacks with a trial (the trial first, then the code on the paid invoices). Worked examples and the Apple offer codes for the iPhone paywall are in `docs/flock/payments-plan.md` section d. Brittany approved it (Nov 24, 2026): the worked examples match what she meant, and the webhook may remove discounts from founding memberships. Switched off with `BILLING_ENABLED`, test mode only, nothing in the Stripe Dashboard touched; pinned by `npm run test:billing`. The test checkout that shows how Stripe counts a code's months is under "Before billing opens": #543.
+- **1.14a** Card step and checkout design, switched off with billing (`BILLING_ENABLED` off, web only, never in the iPhone or Android app): the screens from the nine approved mockups in [`docs/flock/mockups/billing/`](flock/mockups/billing/), namely the card step during and after the free season (member and founder), branded Stripe Checkout with the "You won't be charged until" line, the confirming screen, "You're all set" for members and founders, Membership with plan, first charge date and the card's last four, and the past-due alert that opens the Customer Portal; English and Dutch. Giving is only ever shown as "20%". Brittany approved the screens and the Dutch (Nov 24, 2026); what's left before billing opens is under "Before billing opens": #533.
+- **1.10** Challenges: admins write a Journey or Standalone challenge (title, description, a journey template or a list of prompts, start and end days, the whole Flock or one chapter) at `/admin/challenges`; one at a time per audience, and no food or diet templates. An open one is a card on Today and Journeys; members join with a bird and choose whether their entries may be featured. Entries (a few sentences and up to four photos) are Flock posts in their challenge's own feed, under the post rules for visibility, blocks, reactions, comments and reports. Finishing (every prompt, or the journey finished by the end day) shows "You finished!" and awards Challenge champ. After the end day the feed stays readable; admins pin an entry and write a wrap-up featuring entries only with permission. No winners, prizes or rankings (`20261124033000_flock_challenges.sql`, `src/lib/flockChallenges.ts`). Brittany's decisions (Nov 24, 2026): the unmocked screens and the copy approved as built; no clips for now (1.10a, under "Later"); an entry needs a few words even with a photo; journey challenges stay (noted in 1.20b): #547.
 - **D1.2** The weight baseline on the weight page, behind the `weight_baseline` health switch (off; set it to `admins` for Brittany's account): the usual range for the latest weigh-in's kind or "still learning", a one-time "We've learned [Bird]'s usual weight" card, and one alert card at most (sudden drop confirmed, weight has shifted, hard loss, weigh again, keep an eye on this, worth watching), all observational, with no "call your vet". Brittany's Nov 23 decisions are in `WEIGHT_BASELINE_RULES` (draft): personal levels from each bird's wobble with their limits, 10-day re-weighs, the 14-day "keep an eye" window, the sudden drop (10%, 7% under 100 g, at least 2 g, confirmed within 3 days). The owner's optional ideal weight range (`bird_ideal_weights`, its own field on the weight page, never shown to sitters) only quiets the two lower alerts and their "weigh again". The hourly job `weight-baseline-shadow-hourly` logs what the baseline would have said about every weigh-in, for every bird, with and without the ideal range, to `weight_baseline_shadow` (service role only), after the fact so it never blocks a weigh-in (`20261124110000_weight_baseline_shadow.sql`, `src/lib/weightBaselineShadow.ts`). Pinned by `npm run test:weight-baseline`, `npm run test:health-rules` and `supabase/checks/weight_baseline_shadow_checks.sql`. Held for Brittany (health wording, the vet packet, a production migration and cron job): #549.
 - **1.15** Kya's Crew, switched off with billing and test mode only: plans `crew_monthly` / `crew_annual` (the `entitlements` plan check widened), prices from Stripe (`STRIPE_PRICE_CREW_MONTHLY` / `_YEARLY`), counted by `is_flock_member()`, 25% giving recorded on the row (`entitlements.giving_rate`, 20% for other paid rows), and no trial (`20261123203000_kyas_crew.sql`, `supabase/checks/crew_checks.sql`, `npm run test:billing`). No card step offers Crew yet (1.15a). Brittany's decisions (Nov 23, 2026): Crew pays nothing until the free season ends, like every member; sponsored seats aren't tracked at all, because that's marketing language, and rescue adopters always get in free. Held for Brittany (payments, the plan check): #535.
 - **1.13a** Flock badges: First steps, Journey finisher (1, 3 and 10), Trick star, Good neighbor, Voice of the Flock and Challenge champ (shown, not yet awarded: 1.10 adds its rule to `private.flock_badge_levels`). `flock_my_badges` works out and records what a member has earned when they open the Flock; the first time, their history is recorded together and Today shows one "Here's what you've already earned" (two or more), then a "Badge earned" card for each new badge or level. The Badges screen (`/flock/you/badges`, from Flock settings) shows earned ones in color and the rest in gray with how to earn each. Profiles show them as pills beside Founder and Chapter lead through `flock_member_badges`, which counts only community journeys and leaves everything out when hidden ("Show my badges on my profile." on Edit profile) or blocked either way. No points or rankings; the mockup's stroke icons until final art (`20261124013000_flock_badges.sql`, `src/lib/flockBadges.ts`). Pinned by `supabase/checks/flock_badges_checks.sql`, `npm run test:flock-shell` and `e2e/flock.shell.ts`: #546.

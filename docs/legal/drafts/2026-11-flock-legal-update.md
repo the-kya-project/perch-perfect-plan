@@ -133,7 +133,7 @@ Read from the code on `main` as of #475. Everything below is stored in Supabase 
 
 - The Flock opens Mon, Jan 4, 2027. It's free for everyone until Tue, Jul 6, 2027; billing starts after that.
 - The Flock: $25 a month billed annually ($300 a year), or $30 month to month.
-- Kya's Crew: $37 a month billed annually ($444 a year), or $45 month to month, and it includes everything in a Flock membership. 25% of each Crew membership goes to rescue and conservation partners, and each Crew member sponsors six free months for a new rescue adopter.
+- Kya's Crew: $37 a month billed annually ($444 a year), or $45 month to month, and it includes everything in a Flock membership. 25% of each Crew membership goes to rescue and conservation partners, and Crew memberships help support free Flock access for rescue adopters.
 - No app Premium. The care app is free, and the journeys Premium would have included come with Flock membership.
 - Founding: $15 a month for life, the first 50 people, no closing date. Founders add a card by Jul 6, 2027 to keep the spot and price. If a founding membership ends, the founding price ends with it.
 - Rescue adopters: six free months for people who apply through a partner rescue within 60 days of adopting, starting after Jul 6, 2027.
@@ -390,7 +390,7 @@ We never feature your Flock posts, photos or journeys outside the Flock, in our 
 | Plan | Price |
 |---|---|
 | Flock membership | $25 a month billed annually ($300 a year), or $30 month to month |
-| Kya's Crew | $37 a month billed annually ($444 a year), or $45 month to month. 25% of each Crew membership goes to rescue and conservation partners, and each Crew member sponsors six free months for a new rescue adopter. It includes everything in a Flock membership. |
+| Kya's Crew | $37 a month billed annually ($444 a year), or $45 month to month. 25% of each Crew membership goes to rescue and conservation partners, and Crew memberships help support free Flock access for rescue adopters. It includes everything in a Flock membership. |
 
 Nobody is charged before July 6, 2027. Kya's Crew goes on sale when billing starts after that date. The care app itself is free.
 
@@ -488,7 +488,7 @@ These steps are for later. This PR changes none of them.
    - **Free trials (D15):** a 14-day trial for new Flock members once billing starts; none for founders, rescue adopters or Kya's Crew.
    - **Refunds (D1, D2):** the 14-day refund window for first payments and yearly renewals, and the 30-day window for unredeemed gifts, in the admin tools and support steps.
    - **Ages (D8):** the Flock's join step asks people to confirm they're 18 or older.
-   - **Kya's Crew:** on sale when billing starts, with the Crew's 25% giving share and sponsored rescue-adopter months.
+   - **Kya's Crew:** on sale when billing starts, with the Crew's 25% giving share and its support for free Flock access for rescue adopters.
    - **Cancel online:** a cancel option in Membership and billing, ready when billing starts.
    - **Yearly renewal reminder:** an email 30 days before each yearly renewal.
    - **Founding members page:** opt-in, one unchecked checkbox in the claim flow (the plan's PR H).
