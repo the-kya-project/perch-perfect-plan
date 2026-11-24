@@ -694,7 +694,7 @@ No new strings: every line reuses existing wording, in new places (admins only).
 - **Screens and copy:** the screens the mockup didn't show (joining, "You finished!", a closed challenge with its wrap-up, the admin list and the admin screen for a started challenge) are approved as built, and the copy is approved as written.
 - **Clips:** no short clips for now. Entries stay a few sentences plus up to four photos. Clip entries later are backlog item 1.10a (under "Later").
 - **Text required:** an entry still needs a few words even when it has a photo.
-- **Journey challenges:** they stay. When the journeys redesign (1.20b) lands, they move to the new design with no milestone progress, and a journey challenge counts as finished when its journey ends with "learned it" before the end date. Noted in `docs/BACKLOG.md` ("Note for 1.20b"), to carry into 1.20b once #550 merges.
+- **Journey challenges:** they stay. When the journeys redesign (1.20b) lands, they move to the new design with no milestone progress, and a journey challenge counts as finished when its journey ends with "learned it" before the end date. Noted in `docs/BACKLOG.md` under 1.20b.
 - **Migration and merge:** migration approved; merged once every required check passed on the latest commit.
 
 ### [#547](https://github.com/the-kya-project/perch-perfect-plan/pull/547) · 1.10 Challenges
