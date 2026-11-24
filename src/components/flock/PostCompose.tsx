@@ -9,6 +9,8 @@ import { postSpaceLabel, VetNudgeCard } from "@/components/flock/PostParts";
 import { AvatarError } from "@/lib/flockAvatar";
 import { useMyProfile, useOwnBirdPhotoUrls, useOwnBirds, useRegions, useShownChoices, type OwnBird } from "@/lib/flockData";
 import { createPost, discardPostPhotos, editPost, uploadPostPhoto, useInvalidatePosts, useVetSigns, type FlockPost } from "@/lib/flockPostData";
+import { createPodPost, podKeys } from "@/lib/flockPods";
+import { useQueryClient } from "@tanstack/react-query";
 import { vetNudgeTier, MAX_BODY, MAX_PHOTOS, MAX_TITLE, POST_SPACES, rateLimitKind, type PostRowSpace, type PostSpace, type RateKind, type VetTier } from "@/lib/flockPosts";
 import { challengeError, createChallengeEntry, useInvalidateChallenges, type Challenge, type ChallengePrompt } from "@/lib/flockChallenges";
 import { useFormInProgress } from "@/lib/formsInProgress";
@@ -24,17 +26,20 @@ export function rateMessage(t: TFunction, kind: RateKind): string {
 type Photo = { key: string; preview: string; path: string | null; failed?: boolean };
 
 /** Write a new post (Batch 3, screen 1), or edit your own (title and text).
- *  With `challenge`, it writes a challenge entry instead (1.10): no space or
- *  title, the prompt it answers on top. */
-export function PostComposer({ initialSpace, editing, challenge, onDone }: {
+ *  With `pod`, a check-in for a buddy pod: no "Post to" choice, and it posts
+ *  only to that pod. With `challenge`, it writes a challenge entry instead
+ *  (1.10): no space or title, the prompt it answers on top. */
+export function PostComposer({ initialSpace, editing, pod, challenge, onDone }: {
   initialSpace?: PostSpace;
   editing?: FlockPost;
+  pod?: { id: string; prompt: string };
   challenge?: { challenge: Challenge; prompt: ChallengePrompt | null };
   onDone: (result: { space: PostRowSpace; postId: string; finished?: boolean }) => void;
 }) {
   const { t } = useTranslation();
   const router = useRouter();
   const invalidate = useInvalidatePosts();
+  const qc = useQueryClient();
   const invalidateChallenges = useInvalidateChallenges();
   const { data: me } = useMyProfile();
   const { data: ownBirds } = useOwnBirds();
@@ -96,6 +101,10 @@ export function PostComposer({ initialSpace, editing, challenge, onDone }: {
         await editPost(editing.post_id, title, body);
         await invalidate();
         onDone({ space: editing.space, postId: editing.post_id });
+      } else if (pod) {
+        const r = await createPodPost({ podId: pod.id, title, body, photoPaths: photos.flatMap((p) => (p.path ? [p.path] : [])), birdId: bird?.id ?? null, vetNudged });
+        await Promise.all([invalidate(), qc.invalidateQueries({ queryKey: podKeys.all })]);
+        onDone({ space: "pod", postId: r.post_id });
       } else if (challenge) {
         const r = await createChallengeEntry({
           challenge: challenge.challenge, prompt: challenge.prompt?.position ?? null, body,
@@ -138,6 +147,9 @@ export function PostComposer({ initialSpace, editing, challenge, onDone }: {
         </button>
       </header>
       <div className="mx-auto flex w-full max-w-xl flex-1 flex-col gap-4 px-4 py-4">
+        {pod && !editing && (
+          <p className="m-0 rounded-[14px] p-3 text-[15px] font-[700] leading-[1.4]" style={{ background: K.lime, color: K.forest }} data-testid="pod-prompt">{pod.prompt}</p>
+        )}
         {challenge && (
           <div className="flex flex-col gap-1 rounded-[14px] p-3" style={{ background: K.lime }} data-testid="entry-for">
             <span className="text-[11.5px] font-[700] uppercase tracking-[0.06em]" style={{ color: K.moss }}>{challenge.challenge.title}</span>
@@ -148,7 +160,7 @@ export function PostComposer({ initialSpace, editing, challenge, onDone }: {
             </span>
           </div>
         )}
-        {!editing && !challenge && (
+        {!editing && !pod && !challenge && (
           <div className="flex flex-col gap-2">
             <span className="text-[13px] font-[700]" style={{ color: K.quiet }} id="post-to">{t("flock.posts.postTo", "Post to")}</span>
             <div role="group" aria-labelledby="post-to" className="flex flex-wrap gap-2" data-testid="post-to">

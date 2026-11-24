@@ -12,6 +12,8 @@ import { blockActions } from "@/lib/flockBlocks";
 import { FinisherTipsCard } from "@/components/flock/JourneyParts";
 import { ClipTileState } from "@/components/flock/JourneyClipView";
 import { DietDisclaimer, HowToMakeItWork, VetReminderCard, WeighTodayCard } from "@/components/flock/JourneyDiet";
+import { JourneyPodCard } from "@/components/flock/PodParts";
+import { useJourneyPod } from "@/lib/flockPods";
 import { deleteJourney } from "@/lib/journeyMedia.functions";
 import {
   followJourney, resumeAfterVet, setVetCheck, useFinisherTips, setJourneyStatus, setJourneyVisibility, useBirdWeights, useInvalidateJourneys, useJourney,
@@ -42,6 +44,8 @@ function JourneyPage() {
   const { data: clips } = useJourneyClips(journeyId, !!card);
   const mine = !!card?.is_mine;
   const { data: own } = useJourney(mine ? journeyId : "");
+  // Buddy pods (backlog 1.11): waiting, your pod, or a new pod offered.
+  const { data: podState } = useJourneyPod(journeyId, mine && !!card?.template_slug);
   const diet = card?.template_slug === "diet-conversion";
   const { data: weight } = useWeightCheck(journeyId, mine && diet && card?.status !== "finished");
   // Tips from members who finished this template, on your own active journeys.
@@ -115,6 +119,8 @@ function JourneyPage() {
             </p>
           </>
         )}
+
+        {mine && podState && <JourneyPodCard journeyId={journeyId} state={podState} />}
 
         {mine && own && diet && weight && <WeightCard journey={own} birdName={card!.bird_name} weight={weight} paused={weightPaused} />}
         {mine && card?.status === "paused" && !weightPaused && (

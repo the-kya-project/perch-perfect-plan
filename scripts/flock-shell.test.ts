@@ -35,6 +35,7 @@ import { spotLabel } from "@/lib/flockFounders";
 import {
   FINISHER_LEVELS, FLOCK_BADGES, badgeName, badgeTitle, celebrationFor, cleanMyBadges, cleanShownBadges, earnedCount, earnedLine, howToEarn, levelLabel, nextLevel,
 } from "@/lib/flockBadges";
+import { POD_MAX, POD_MIN, PODS_AT_ONCE, cleanPod, podInitial, podOpen, podProgress, podRefusal, podStillNeeded, showWeeklyCard } from "@/lib/flockPods";
 import { foundingClosedCase } from "@/lib/foundingClosed";
 import {
   CHALLENGE_LIMITS, challengeError, challengeProblems, challengeTemplateAllowed, cleanChallenge, flockTodayIso, nextPrompt, parsePrompts,
@@ -1020,6 +1021,54 @@ check("badges: levels, names and how to earn each one", () => {
   }
 });
 
+check("buddy pods: progress, the weekly card, waiting and refusals", () => {
+  // "Just me" progress comes back as nulls and draws no bar.
+  assert.equal(podProgress({ done: null, total: null, finished: null }), null);
+  assert.equal(podProgress({ done: 2, total: 5, finished: false }), 40);
+  assert.equal(podProgress({ done: 5, total: 5, finished: true }), 100);
+  assert.equal(podProgress({ done: 3, total: 5, finished: true }), 100);
+  assert.equal(podProgress({ done: 0, total: 0, finished: false }), 0);
+  assert.equal(podProgress({ done: 9, total: 5, finished: false }), 100);
+  // Ended pods stay readable but take no posts, and ask nothing weekly.
+  assert.ok(podOpen("active") && podOpen("asking"));
+  assert.ok(!podOpen("closed") && !podOpen("dissolved"));
+  assert.ok(showWeeklyCard({ status: "active", checked_in_this_week: false, asking_me: false }));
+  assert.ok(!showWeeklyCard({ status: "active", checked_in_this_week: true, asking_me: false }));
+  assert.ok(!showWeeklyCard({ status: "asking", checked_in_this_week: false, asking_me: true }));
+  assert.ok(!showWeeklyCard({ status: "dissolved", checked_in_this_week: false, asking_me: false }));
+  // "Your pod starts when 3 members are ready. N so far."
+  assert.equal(podStillNeeded(1), 2);
+  assert.equal(podStillNeeded(2), 1);
+  assert.equal(podStillNeeded(0), 2);
+  assert.equal(podStillNeeded(4), 0);
+  assert.equal(podInitial(" ana"), "A");
+  assert.equal(podInitial(null), "?");
+  assert.equal(podRefusal({ message: "pod_limit" }), "limit");
+  assert.equal(podRefusal({ message: "pod_closed" }), "closed");
+  assert.equal(podRefusal({ message: "pod_blocked" }), "blocked");
+  assert.equal(podRefusal(new Error("network")), "other");
+  // Anything unexpected from the database reads as a closed journey pod.
+  const p = cleanPod({ pod_id: "x", kind: "nope", status: "weird", member_count: "4", asking_me: "yes" });
+  assert.equal(p.kind, "journey");
+  assert.equal(p.status, "closed");
+  assert.equal(p.member_count, 4);
+  assert.equal(p.asking_me, false);
+  assert.equal(cleanPod({ kind: "group", status: "active" }).kind, "group");
+});
+
+check("buddy pods: the app's numbers match the database's", () => {
+  const sql = readFileSync("supabase/migrations/20261124070000_flock_buddy_pods.sql", "utf8");
+  assert.equal([POD_MIN, POD_MAX, PODS_AT_ONCE].join(), "3,6,2");
+  assert.match(sql, /cardinality\(v_users\) >= 6/);
+  assert.match(sql, /cardinality\(v_users\) >= 3/);
+  assert.match(sql, /flock_pod_size\(p\.id\) between 1 and 5/);
+  assert.match(sql, /flock_pod_max\(\)\s+returns integer language sql immutable set search_path = '' as \$\$ select 2; \$\$/);
+  // Pod posts never reach Today, and only the pod reads them.
+  assert.match(sql, /and r\.space <> ''pod''/);
+  assert.match(sql, /p\.space <> ''pod'' or private\.flock_pod_member\(p_user_id, p\.pod_id\)/);
+  // No push or email for pods.
+  assert.ok(!/push|brevo|email/i.test(sql.replace(/--.*$/gm, "")));
+});
 // ---- Challenges (backlog 1.10) ----------------------------------------------------------
 console.log("challenges");
 const challengeRow = {

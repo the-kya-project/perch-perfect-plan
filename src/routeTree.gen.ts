@@ -53,6 +53,7 @@ import { Route as AuthenticatedAccountSecurityRouteImport } from './routes/_auth
 import { Route as AuthenticatedAdminFoundingRouteImport } from './routes/_authenticated/admin.founding'
 import { Route as AuthenticatedAdminGiftsRouteImport } from './routes/_authenticated/admin.gifts'
 import { Route as AuthenticatedAdminIdeasRouteImport } from './routes/_authenticated/admin.ideas'
+import { Route as AuthenticatedAdminPodsRouteImport } from './routes/_authenticated/admin.pods'
 import { Route as AuthenticatedAdminReviewRouteImport } from './routes/_authenticated/admin.review'
 import { Route as AuthenticatedBirdsBirdIdRouteImport } from './routes/_authenticated/birds/$birdId'
 import { Route as AuthenticatedBirdsNewRouteImport } from './routes/_authenticated/birds/new'
@@ -122,6 +123,7 @@ import { Route as AuthenticatedFlockLibraryIndexRouteImport } from './routes/_au
 import { Route as AuthenticatedFlockLibraryResourceIdRouteImport } from './routes/_authenticated/flock.library.$resourceId'
 import { Route as AuthenticatedFlockMembersIndexRouteImport } from './routes/_authenticated/flock.members.index'
 import { Route as AuthenticatedFlockMembersUserIdRouteImport } from './routes/_authenticated/flock.members.$userId'
+import { Route as AuthenticatedFlockPodsIndexRouteImport } from './routes/_authenticated/flock.pods.index'
 import { Route as AuthenticatedFlockPostNewRouteImport } from './routes/_authenticated/flock.post.new'
 import { Route as AuthenticatedFlockVotesVoteIdRouteImport } from './routes/_authenticated/flock.votes.$voteId'
 import { Route as AuthenticatedFlockYouIndexRouteImport } from './routes/_authenticated/flock.you.index'
@@ -157,6 +159,8 @@ import { Route as AuthenticatedFlockJourneysJourneyIdCompareRouteImport } from '
 import { Route as AuthenticatedFlockJourneysJourneyIdFinishedRouteImport } from './routes/_authenticated/flock.journeys.$journeyId.finished'
 import { Route as AuthenticatedFlockJourneysJourneyIdPostRouteImport } from './routes/_authenticated/flock.journeys.$journeyId.post'
 import { Route as AuthenticatedFlockJourneysJourneyIdStoryRouteImport } from './routes/_authenticated/flock.journeys.$journeyId.story'
+import { Route as AuthenticatedFlockPodsPodIdIndexRouteImport } from './routes/_authenticated/flock.pods.$podId.index'
+import { Route as AuthenticatedFlockPodsPodIdPostRouteImport } from './routes/_authenticated/flock.pods.$podId.post'
 import { Route as AuthenticatedFlockPostPostIdIndexRouteImport } from './routes/_authenticated/flock.post.$postId.index'
 import { Route as AuthenticatedFlockPostPostIdEditRouteImport } from './routes/_authenticated/flock.post.$postId.edit'
 import { Route as AuthenticatedFlockReactionsSubjectTypeSubjectIdRouteImport } from './routes/_authenticated/flock.reactions.$subjectType.$subjectId'
@@ -391,6 +395,11 @@ const AuthenticatedAdminGiftsRoute = AuthenticatedAdminGiftsRouteImport.update({
 const AuthenticatedAdminIdeasRoute = AuthenticatedAdminIdeasRouteImport.update({
   id: '/admin/ideas',
   path: '/admin/ideas',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedAdminPodsRoute = AuthenticatedAdminPodsRouteImport.update({
+  id: '/admin/pods',
+  path: '/admin/pods',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedAdminReviewRoute =
@@ -786,6 +795,12 @@ const AuthenticatedFlockMembersUserIdRoute =
     path: '/members/$userId',
     getParentRoute: () => AuthenticatedFlockRoute,
   } as any)
+const AuthenticatedFlockPodsIndexRoute =
+  AuthenticatedFlockPodsIndexRouteImport.update({
+    id: '/pods/',
+    path: '/pods/',
+    getParentRoute: () => AuthenticatedFlockRoute,
+  } as any)
 const AuthenticatedFlockPostNewRoute =
   AuthenticatedFlockPostNewRouteImport.update({
     id: '/post/new',
@@ -993,6 +1008,18 @@ const AuthenticatedFlockJourneysJourneyIdStoryRoute =
     path: '/journeys/$journeyId/story',
     getParentRoute: () => AuthenticatedFlockRoute,
   } as any)
+const AuthenticatedFlockPodsPodIdIndexRoute =
+  AuthenticatedFlockPodsPodIdIndexRouteImport.update({
+    id: '/pods/$podId/',
+    path: '/pods/$podId/',
+    getParentRoute: () => AuthenticatedFlockRoute,
+  } as any)
+const AuthenticatedFlockPodsPodIdPostRoute =
+  AuthenticatedFlockPodsPodIdPostRouteImport.update({
+    id: '/pods/$podId/post',
+    path: '/pods/$podId/post',
+    getParentRoute: () => AuthenticatedFlockRoute,
+  } as any)
 const AuthenticatedFlockPostPostIdIndexRoute =
   AuthenticatedFlockPostPostIdIndexRouteImport.update({
     id: '/post/$postId/',
@@ -1079,6 +1106,7 @@ export interface FileRoutesByFullPath {
   '/admin/founding': typeof AuthenticatedAdminFoundingRoute
   '/admin/gifts': typeof AuthenticatedAdminGiftsRoute
   '/admin/ideas': typeof AuthenticatedAdminIdeasRoute
+  '/admin/pods': typeof AuthenticatedAdminPodsRoute
   '/admin/review': typeof AuthenticatedAdminReviewRoute
   '/birds/$birdId': typeof AuthenticatedBirdsBirdIdRouteWithChildren
   '/birds/new': typeof AuthenticatedBirdsNewRoute
@@ -1171,6 +1199,7 @@ export interface FileRoutesByFullPath {
   '/flock/journeys/': typeof AuthenticatedFlockJourneysIndexRoute
   '/flock/library/': typeof AuthenticatedFlockLibraryIndexRoute
   '/flock/members/': typeof AuthenticatedFlockMembersIndexRoute
+  '/flock/pods/': typeof AuthenticatedFlockPodsIndexRoute
   '/flock/you/': typeof AuthenticatedFlockYouIndexRoute
   '/birds/$birdId/plan/editor': typeof AuthenticatedBirdsBirdIdPlanEditorRoute
   '/birds/$birdId/scans/$scanId': typeof AuthenticatedBirdsBirdIdScansScanIdRoute
@@ -1181,12 +1210,14 @@ export interface FileRoutesByFullPath {
   '/flock/journeys/$journeyId/finished': typeof AuthenticatedFlockJourneysJourneyIdFinishedRoute
   '/flock/journeys/$journeyId/post': typeof AuthenticatedFlockJourneysJourneyIdPostRoute
   '/flock/journeys/$journeyId/story': typeof AuthenticatedFlockJourneysJourneyIdStoryRoute
+  '/flock/pods/$podId/post': typeof AuthenticatedFlockPodsPodIdPostRoute
   '/flock/post/$postId/edit': typeof AuthenticatedFlockPostPostIdEditRoute
   '/flock/reactions/$subjectType/$subjectId': typeof AuthenticatedFlockReactionsSubjectTypeSubjectIdRoute
   '/api/public/bereavement-review/$reviewId/$sig': typeof ApiPublicBereavementReviewReviewIdSigRoute
   '/birds/$birdId/plan/': typeof AuthenticatedBirdsBirdIdPlanIndexRoute
   '/flock/challenges/$challengeId/': typeof AuthenticatedFlockChallengesChallengeIdIndexRoute
   '/flock/journeys/$journeyId/': typeof AuthenticatedFlockJourneysJourneyIdIndexRoute
+  '/flock/pods/$podId/': typeof AuthenticatedFlockPodsPodIdIndexRoute
   '/flock/post/$postId/': typeof AuthenticatedFlockPostPostIdIndexRoute
   '/flock/journeys/$journeyId/milestone/$position': typeof AuthenticatedFlockJourneysJourneyIdMilestonePositionRoute
   '/api/public/chart/$birdId/$month/$sig': typeof ApiPublicChartBirdIdMonthSigRoute
@@ -1230,6 +1261,7 @@ export interface FileRoutesByTo {
   '/admin/founding': typeof AuthenticatedAdminFoundingRoute
   '/admin/gifts': typeof AuthenticatedAdminGiftsRoute
   '/admin/ideas': typeof AuthenticatedAdminIdeasRoute
+  '/admin/pods': typeof AuthenticatedAdminPodsRoute
   '/admin/review': typeof AuthenticatedAdminReviewRoute
   '/birds/new': typeof AuthenticatedBirdsNewRoute
   '/flock/chapter': typeof AuthenticatedFlockChapterRoute
@@ -1320,6 +1352,7 @@ export interface FileRoutesByTo {
   '/flock/journeys': typeof AuthenticatedFlockJourneysIndexRoute
   '/flock/library': typeof AuthenticatedFlockLibraryIndexRoute
   '/flock/members': typeof AuthenticatedFlockMembersIndexRoute
+  '/flock/pods': typeof AuthenticatedFlockPodsIndexRoute
   '/flock/you': typeof AuthenticatedFlockYouIndexRoute
   '/birds/$birdId/plan/editor': typeof AuthenticatedBirdsBirdIdPlanEditorRoute
   '/birds/$birdId/scans/$scanId': typeof AuthenticatedBirdsBirdIdScansScanIdRoute
@@ -1330,12 +1363,14 @@ export interface FileRoutesByTo {
   '/flock/journeys/$journeyId/finished': typeof AuthenticatedFlockJourneysJourneyIdFinishedRoute
   '/flock/journeys/$journeyId/post': typeof AuthenticatedFlockJourneysJourneyIdPostRoute
   '/flock/journeys/$journeyId/story': typeof AuthenticatedFlockJourneysJourneyIdStoryRoute
+  '/flock/pods/$podId/post': typeof AuthenticatedFlockPodsPodIdPostRoute
   '/flock/post/$postId/edit': typeof AuthenticatedFlockPostPostIdEditRoute
   '/flock/reactions/$subjectType/$subjectId': typeof AuthenticatedFlockReactionsSubjectTypeSubjectIdRoute
   '/api/public/bereavement-review/$reviewId/$sig': typeof ApiPublicBereavementReviewReviewIdSigRoute
   '/birds/$birdId/plan': typeof AuthenticatedBirdsBirdIdPlanIndexRoute
   '/flock/challenges/$challengeId': typeof AuthenticatedFlockChallengesChallengeIdIndexRoute
   '/flock/journeys/$journeyId': typeof AuthenticatedFlockJourneysJourneyIdIndexRoute
+  '/flock/pods/$podId': typeof AuthenticatedFlockPodsPodIdIndexRoute
   '/flock/post/$postId': typeof AuthenticatedFlockPostPostIdIndexRoute
   '/flock/journeys/$journeyId/milestone/$position': typeof AuthenticatedFlockJourneysJourneyIdMilestonePositionRoute
   '/api/public/chart/$birdId/$month/$sig': typeof ApiPublicChartBirdIdMonthSigRoute
@@ -1386,6 +1421,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/founding': typeof AuthenticatedAdminFoundingRoute
   '/_authenticated/admin/gifts': typeof AuthenticatedAdminGiftsRoute
   '/_authenticated/admin/ideas': typeof AuthenticatedAdminIdeasRoute
+  '/_authenticated/admin/pods': typeof AuthenticatedAdminPodsRoute
   '/_authenticated/admin/review': typeof AuthenticatedAdminReviewRoute
   '/_authenticated/birds/$birdId': typeof AuthenticatedBirdsBirdIdRouteWithChildren
   '/_authenticated/birds/new': typeof AuthenticatedBirdsNewRoute
@@ -1478,6 +1514,7 @@ export interface FileRoutesById {
   '/_authenticated/flock/journeys/': typeof AuthenticatedFlockJourneysIndexRoute
   '/_authenticated/flock/library/': typeof AuthenticatedFlockLibraryIndexRoute
   '/_authenticated/flock/members/': typeof AuthenticatedFlockMembersIndexRoute
+  '/_authenticated/flock/pods/': typeof AuthenticatedFlockPodsIndexRoute
   '/_authenticated/flock/you/': typeof AuthenticatedFlockYouIndexRoute
   '/_authenticated/birds/$birdId/plan/editor': typeof AuthenticatedBirdsBirdIdPlanEditorRoute
   '/_authenticated/birds/$birdId/scans/$scanId': typeof AuthenticatedBirdsBirdIdScansScanIdRoute
@@ -1488,12 +1525,14 @@ export interface FileRoutesById {
   '/_authenticated/flock/journeys/$journeyId/finished': typeof AuthenticatedFlockJourneysJourneyIdFinishedRoute
   '/_authenticated/flock/journeys/$journeyId/post': typeof AuthenticatedFlockJourneysJourneyIdPostRoute
   '/_authenticated/flock/journeys/$journeyId/story': typeof AuthenticatedFlockJourneysJourneyIdStoryRoute
+  '/_authenticated/flock/pods/$podId/post': typeof AuthenticatedFlockPodsPodIdPostRoute
   '/_authenticated/flock/post/$postId/edit': typeof AuthenticatedFlockPostPostIdEditRoute
   '/_authenticated/flock/reactions/$subjectType/$subjectId': typeof AuthenticatedFlockReactionsSubjectTypeSubjectIdRoute
   '/api/public/bereavement-review/$reviewId/$sig': typeof ApiPublicBereavementReviewReviewIdSigRoute
   '/_authenticated/birds/$birdId/plan/': typeof AuthenticatedBirdsBirdIdPlanIndexRoute
   '/_authenticated/flock/challenges/$challengeId/': typeof AuthenticatedFlockChallengesChallengeIdIndexRoute
   '/_authenticated/flock/journeys/$journeyId/': typeof AuthenticatedFlockJourneysJourneyIdIndexRoute
+  '/_authenticated/flock/pods/$podId/': typeof AuthenticatedFlockPodsPodIdIndexRoute
   '/_authenticated/flock/post/$postId/': typeof AuthenticatedFlockPostPostIdIndexRoute
   '/_authenticated/flock/journeys/$journeyId/milestone/$position': typeof AuthenticatedFlockJourneysJourneyIdMilestonePositionRoute
   '/api/public/chart/$birdId/$month/$sig': typeof ApiPublicChartBirdIdMonthSigRoute
@@ -1544,6 +1583,7 @@ export interface FileRouteTypes {
     | '/admin/founding'
     | '/admin/gifts'
     | '/admin/ideas'
+    | '/admin/pods'
     | '/admin/review'
     | '/birds/$birdId'
     | '/birds/new'
@@ -1636,6 +1676,7 @@ export interface FileRouteTypes {
     | '/flock/journeys/'
     | '/flock/library/'
     | '/flock/members/'
+    | '/flock/pods/'
     | '/flock/you/'
     | '/birds/$birdId/plan/editor'
     | '/birds/$birdId/scans/$scanId'
@@ -1646,12 +1687,14 @@ export interface FileRouteTypes {
     | '/flock/journeys/$journeyId/finished'
     | '/flock/journeys/$journeyId/post'
     | '/flock/journeys/$journeyId/story'
+    | '/flock/pods/$podId/post'
     | '/flock/post/$postId/edit'
     | '/flock/reactions/$subjectType/$subjectId'
     | '/api/public/bereavement-review/$reviewId/$sig'
     | '/birds/$birdId/plan/'
     | '/flock/challenges/$challengeId/'
     | '/flock/journeys/$journeyId/'
+    | '/flock/pods/$podId/'
     | '/flock/post/$postId/'
     | '/flock/journeys/$journeyId/milestone/$position'
     | '/api/public/chart/$birdId/$month/$sig'
@@ -1695,6 +1738,7 @@ export interface FileRouteTypes {
     | '/admin/founding'
     | '/admin/gifts'
     | '/admin/ideas'
+    | '/admin/pods'
     | '/admin/review'
     | '/birds/new'
     | '/flock/chapter'
@@ -1785,6 +1829,7 @@ export interface FileRouteTypes {
     | '/flock/journeys'
     | '/flock/library'
     | '/flock/members'
+    | '/flock/pods'
     | '/flock/you'
     | '/birds/$birdId/plan/editor'
     | '/birds/$birdId/scans/$scanId'
@@ -1795,12 +1840,14 @@ export interface FileRouteTypes {
     | '/flock/journeys/$journeyId/finished'
     | '/flock/journeys/$journeyId/post'
     | '/flock/journeys/$journeyId/story'
+    | '/flock/pods/$podId/post'
     | '/flock/post/$postId/edit'
     | '/flock/reactions/$subjectType/$subjectId'
     | '/api/public/bereavement-review/$reviewId/$sig'
     | '/birds/$birdId/plan'
     | '/flock/challenges/$challengeId'
     | '/flock/journeys/$journeyId'
+    | '/flock/pods/$podId'
     | '/flock/post/$postId'
     | '/flock/journeys/$journeyId/milestone/$position'
     | '/api/public/chart/$birdId/$month/$sig'
@@ -1850,6 +1897,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/founding'
     | '/_authenticated/admin/gifts'
     | '/_authenticated/admin/ideas'
+    | '/_authenticated/admin/pods'
     | '/_authenticated/admin/review'
     | '/_authenticated/birds/$birdId'
     | '/_authenticated/birds/new'
@@ -1942,6 +1990,7 @@ export interface FileRouteTypes {
     | '/_authenticated/flock/journeys/'
     | '/_authenticated/flock/library/'
     | '/_authenticated/flock/members/'
+    | '/_authenticated/flock/pods/'
     | '/_authenticated/flock/you/'
     | '/_authenticated/birds/$birdId/plan/editor'
     | '/_authenticated/birds/$birdId/scans/$scanId'
@@ -1952,12 +2001,14 @@ export interface FileRouteTypes {
     | '/_authenticated/flock/journeys/$journeyId/finished'
     | '/_authenticated/flock/journeys/$journeyId/post'
     | '/_authenticated/flock/journeys/$journeyId/story'
+    | '/_authenticated/flock/pods/$podId/post'
     | '/_authenticated/flock/post/$postId/edit'
     | '/_authenticated/flock/reactions/$subjectType/$subjectId'
     | '/api/public/bereavement-review/$reviewId/$sig'
     | '/_authenticated/birds/$birdId/plan/'
     | '/_authenticated/flock/challenges/$challengeId/'
     | '/_authenticated/flock/journeys/$journeyId/'
+    | '/_authenticated/flock/pods/$podId/'
     | '/_authenticated/flock/post/$postId/'
     | '/_authenticated/flock/journeys/$journeyId/milestone/$position'
     | '/api/public/chart/$birdId/$month/$sig'
@@ -2318,6 +2369,13 @@ declare module '@tanstack/react-router' {
       path: '/admin/ideas'
       fullPath: '/admin/ideas'
       preLoaderRoute: typeof AuthenticatedAdminIdeasRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/admin/pods': {
+      id: '/_authenticated/admin/pods'
+      path: '/admin/pods'
+      fullPath: '/admin/pods'
+      preLoaderRoute: typeof AuthenticatedAdminPodsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/admin/review': {
@@ -2803,6 +2861,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedFlockMembersUserIdRouteImport
       parentRoute: typeof AuthenticatedFlockRoute
     }
+    '/_authenticated/flock/pods/': {
+      id: '/_authenticated/flock/pods/'
+      path: '/pods'
+      fullPath: '/flock/pods/'
+      preLoaderRoute: typeof AuthenticatedFlockPodsIndexRouteImport
+      parentRoute: typeof AuthenticatedFlockRoute
+    }
     '/_authenticated/flock/post/new': {
       id: '/_authenticated/flock/post/new'
       path: '/post/new'
@@ -3048,6 +3113,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedFlockJourneysJourneyIdStoryRouteImport
       parentRoute: typeof AuthenticatedFlockRoute
     }
+    '/_authenticated/flock/pods/$podId/': {
+      id: '/_authenticated/flock/pods/$podId/'
+      path: '/pods/$podId'
+      fullPath: '/flock/pods/$podId/'
+      preLoaderRoute: typeof AuthenticatedFlockPodsPodIdIndexRouteImport
+      parentRoute: typeof AuthenticatedFlockRoute
+    }
+    '/_authenticated/flock/pods/$podId/post': {
+      id: '/_authenticated/flock/pods/$podId/post'
+      path: '/pods/$podId/post'
+      fullPath: '/flock/pods/$podId/post'
+      preLoaderRoute: typeof AuthenticatedFlockPodsPodIdPostRouteImport
+      parentRoute: typeof AuthenticatedFlockRoute
+    }
     '/_authenticated/flock/post/$postId/': {
       id: '/_authenticated/flock/post/$postId/'
       path: '/post/$postId'
@@ -3146,6 +3225,7 @@ interface AuthenticatedFlockRouteChildren {
   AuthenticatedFlockJourneysIndexRoute: typeof AuthenticatedFlockJourneysIndexRoute
   AuthenticatedFlockLibraryIndexRoute: typeof AuthenticatedFlockLibraryIndexRoute
   AuthenticatedFlockMembersIndexRoute: typeof AuthenticatedFlockMembersIndexRoute
+  AuthenticatedFlockPodsIndexRoute: typeof AuthenticatedFlockPodsIndexRoute
   AuthenticatedFlockYouIndexRoute: typeof AuthenticatedFlockYouIndexRoute
   AuthenticatedFlockChallengesChallengeIdEntryRoute: typeof AuthenticatedFlockChallengesChallengeIdEntryRoute
   AuthenticatedFlockCommentsSubjectTypeSubjectIdRoute: typeof AuthenticatedFlockCommentsSubjectTypeSubjectIdRoute
@@ -3154,10 +3234,12 @@ interface AuthenticatedFlockRouteChildren {
   AuthenticatedFlockJourneysJourneyIdFinishedRoute: typeof AuthenticatedFlockJourneysJourneyIdFinishedRoute
   AuthenticatedFlockJourneysJourneyIdPostRoute: typeof AuthenticatedFlockJourneysJourneyIdPostRoute
   AuthenticatedFlockJourneysJourneyIdStoryRoute: typeof AuthenticatedFlockJourneysJourneyIdStoryRoute
+  AuthenticatedFlockPodsPodIdPostRoute: typeof AuthenticatedFlockPodsPodIdPostRoute
   AuthenticatedFlockPostPostIdEditRoute: typeof AuthenticatedFlockPostPostIdEditRoute
   AuthenticatedFlockReactionsSubjectTypeSubjectIdRoute: typeof AuthenticatedFlockReactionsSubjectTypeSubjectIdRoute
   AuthenticatedFlockChallengesChallengeIdIndexRoute: typeof AuthenticatedFlockChallengesChallengeIdIndexRoute
   AuthenticatedFlockJourneysJourneyIdIndexRoute: typeof AuthenticatedFlockJourneysJourneyIdIndexRoute
+  AuthenticatedFlockPodsPodIdIndexRoute: typeof AuthenticatedFlockPodsPodIdIndexRoute
   AuthenticatedFlockPostPostIdIndexRoute: typeof AuthenticatedFlockPostPostIdIndexRoute
   AuthenticatedFlockJourneysJourneyIdMilestonePositionRoute: typeof AuthenticatedFlockJourneysJourneyIdMilestonePositionRoute
 }
@@ -3195,6 +3277,7 @@ const AuthenticatedFlockRouteChildren: AuthenticatedFlockRouteChildren = {
   AuthenticatedFlockJourneysIndexRoute: AuthenticatedFlockJourneysIndexRoute,
   AuthenticatedFlockLibraryIndexRoute: AuthenticatedFlockLibraryIndexRoute,
   AuthenticatedFlockMembersIndexRoute: AuthenticatedFlockMembersIndexRoute,
+  AuthenticatedFlockPodsIndexRoute: AuthenticatedFlockPodsIndexRoute,
   AuthenticatedFlockYouIndexRoute: AuthenticatedFlockYouIndexRoute,
   AuthenticatedFlockChallengesChallengeIdEntryRoute:
     AuthenticatedFlockChallengesChallengeIdEntryRoute,
@@ -3210,6 +3293,7 @@ const AuthenticatedFlockRouteChildren: AuthenticatedFlockRouteChildren = {
     AuthenticatedFlockJourneysJourneyIdPostRoute,
   AuthenticatedFlockJourneysJourneyIdStoryRoute:
     AuthenticatedFlockJourneysJourneyIdStoryRoute,
+  AuthenticatedFlockPodsPodIdPostRoute: AuthenticatedFlockPodsPodIdPostRoute,
   AuthenticatedFlockPostPostIdEditRoute: AuthenticatedFlockPostPostIdEditRoute,
   AuthenticatedFlockReactionsSubjectTypeSubjectIdRoute:
     AuthenticatedFlockReactionsSubjectTypeSubjectIdRoute,
@@ -3217,6 +3301,7 @@ const AuthenticatedFlockRouteChildren: AuthenticatedFlockRouteChildren = {
     AuthenticatedFlockChallengesChallengeIdIndexRoute,
   AuthenticatedFlockJourneysJourneyIdIndexRoute:
     AuthenticatedFlockJourneysJourneyIdIndexRoute,
+  AuthenticatedFlockPodsPodIdIndexRoute: AuthenticatedFlockPodsPodIdIndexRoute,
   AuthenticatedFlockPostPostIdIndexRoute:
     AuthenticatedFlockPostPostIdIndexRoute,
   AuthenticatedFlockJourneysJourneyIdMilestonePositionRoute:
@@ -3350,6 +3435,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAdminFoundingRoute: typeof AuthenticatedAdminFoundingRoute
   AuthenticatedAdminGiftsRoute: typeof AuthenticatedAdminGiftsRoute
   AuthenticatedAdminIdeasRoute: typeof AuthenticatedAdminIdeasRoute
+  AuthenticatedAdminPodsRoute: typeof AuthenticatedAdminPodsRoute
   AuthenticatedAdminReviewRoute: typeof AuthenticatedAdminReviewRoute
   AuthenticatedBirdsBirdIdRoute: typeof AuthenticatedBirdsBirdIdRouteWithChildren
   AuthenticatedBirdsNewRoute: typeof AuthenticatedBirdsNewRoute
@@ -3386,6 +3472,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAdminFoundingRoute: AuthenticatedAdminFoundingRoute,
   AuthenticatedAdminGiftsRoute: AuthenticatedAdminGiftsRoute,
   AuthenticatedAdminIdeasRoute: AuthenticatedAdminIdeasRoute,
+  AuthenticatedAdminPodsRoute: AuthenticatedAdminPodsRoute,
   AuthenticatedAdminReviewRoute: AuthenticatedAdminReviewRoute,
   AuthenticatedBirdsBirdIdRoute: AuthenticatedBirdsBirdIdRouteWithChildren,
   AuthenticatedBirdsNewRoute: AuthenticatedBirdsNewRoute,
