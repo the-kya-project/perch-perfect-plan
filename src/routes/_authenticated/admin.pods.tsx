@@ -31,7 +31,6 @@ export const Route = createFileRoute("/_authenticated/admin/pods")({
 function statusLabel(t: TFunction, s: PodStatus): string {
   switch (s) {
     case "active": return t("flock.podsAdmin.active", "Open");
-    case "asking": return t("flock.podsAdmin.asking", "Asking to keep going");
     case "closed": return t("flock.podsAdmin.closed", "Closed");
     case "dissolved": return t("flock.podsAdmin.dissolved", "Dissolved");
   }
@@ -95,10 +94,10 @@ function PodRow({ row, all, open, onToggle }: { row: AdminPodRow; all: AdminPodR
   const [dissolving, setDissolving] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const live = row.status === "active" || row.status === "asking";
-  // Where a member can go: another open pod of the same kind, on the same journey, with room.
-  const targets = all.filter((p) => p.pod_id !== row.pod_id && p.status === "active" && p.kind === row.kind
-    && (row.kind === "group" || p.template_slug === row.template_slug) && p.member_count < POD_MAX);
+  const live = row.status === "active";
+  // Where a member can go: another open pod on the same journey, with room.
+  const targets = all.filter((p) => p.pod_id !== row.pod_id && p.status === "active"
+    && p.template_slug === row.template_slug && p.member_count < POD_MAX);
   const act = async (fn: () => Promise<unknown>, after?: () => void) => {
     setBusy(true);
     setError(null);
@@ -132,7 +131,8 @@ function PodRow({ row, all, open, onToggle }: { row: AdminPodRow; all: AdminPodR
                   <span className="truncate text-[14px] font-[700]">{m.display_name ?? t("flock.pods.member", "Member")}</span>
                   <span className="truncate text-[12.5px]" style={{ color: K.quiet }}>
                     {[m.region_name, m.left_at ? t("flock.podsAdmin.left", "Left {{day}}", { day: day(m.left_at, i18n.language) }) : t("flock.podsAdmin.joined", "Joined {{day}}", { day: day(m.joined_at, i18n.language) }),
-                      m.journey_status === "finished" ? t("flock.pods.finishedTag", "Finished") : null].filter(Boolean).join(" · ")}
+                      m.journey_status === "finished" ? t("flock.pods.stageLearned", "Learned it")
+                        : m.journey_status === "happy_where_we_are" ? t("flock.pods.stageHappy", "Happy where we are") : null].filter(Boolean).join(" · ")}
                   </span>
                 </span>
                 {live && !m.left_at && targets.length > 0 && (

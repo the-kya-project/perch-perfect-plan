@@ -35,7 +35,7 @@ import { spotLabel } from "@/lib/flockFounders";
 import {
   FINISHER_LEVELS, FLOCK_BADGES, badgeName, badgeTitle, celebrationFor, cleanMyBadges, cleanShownBadges, earnedCount, earnedLine, howToEarn, levelLabel, nextLevel,
 } from "@/lib/flockBadges";
-import { POD_MAX, POD_MIN, PODS_AT_ONCE, cleanPod, podInitial, podOpen, podProgress, podRefusal, podStillNeeded, showWeeklyCard } from "@/lib/flockPods";
+import { POD_MAX, POD_MIN, PODS_AT_ONCE, cleanPod, podInitial, podOpen, podRefusal, podStage, podStillNeeded, showWeeklyCard } from "@/lib/flockPods";
 import { foundingClosedCase } from "@/lib/foundingClosed";
 import {
   CHALLENGE_LIMITS, challengeError, challengeProblems, challengeTemplateAllowed, cleanChallenge, flockTodayIso, nextPrompt, parsePrompts,
@@ -1021,21 +1021,22 @@ check("badges: levels, names and how to earn each one", () => {
   }
 });
 
-check("buddy pods: progress, the weekly card, waiting and refusals", () => {
-  // "Just me" progress comes back as nulls and draws no bar.
-  assert.equal(podProgress({ done: null, total: null, finished: null }), null);
-  assert.equal(podProgress({ done: 2, total: 5, finished: false }), 40);
-  assert.equal(podProgress({ done: 5, total: 5, finished: true }), 100);
-  assert.equal(podProgress({ done: 3, total: 5, finished: true }), 100);
-  assert.equal(podProgress({ done: 0, total: 0, finished: false }), 0);
-  assert.equal(podProgress({ done: 9, total: 5, finished: false }), 100);
+check("buddy pods: stages, the weekly card, waiting and refusals", () => {
+  // Where a member is on the journey; anything else (a "Just me" journey's
+  // null included) stays private. No progress numbers since 1.20a.
+  assert.equal(podStage("working"), "working");
+  assert.equal(podStage("learned"), "learned");
+  assert.equal(podStage("happy"), "happy");
+  assert.equal(podStage(null), null);
+  assert.equal(podStage("finished"), null);
   // Ended pods stay readable but take no posts, and ask nothing weekly.
-  assert.ok(podOpen("active") && podOpen("asking"));
+  // There's no "asking" state any more.
+  assert.ok(podOpen("active"));
   assert.ok(!podOpen("closed") && !podOpen("dissolved"));
-  assert.ok(showWeeklyCard({ status: "active", checked_in_this_week: false, asking_me: false }));
-  assert.ok(!showWeeklyCard({ status: "active", checked_in_this_week: true, asking_me: false }));
-  assert.ok(!showWeeklyCard({ status: "asking", checked_in_this_week: false, asking_me: true }));
-  assert.ok(!showWeeklyCard({ status: "dissolved", checked_in_this_week: false, asking_me: false }));
+  assert.ok(!podOpen("asking" as never));
+  assert.ok(showWeeklyCard({ status: "active", checked_in_this_week: false }));
+  assert.ok(!showWeeklyCard({ status: "active", checked_in_this_week: true }));
+  assert.ok(!showWeeklyCard({ status: "dissolved", checked_in_this_week: false }));
   // "Your pod starts when 3 members are ready. N so far."
   assert.equal(podStillNeeded(1), 2);
   assert.equal(podStillNeeded(2), 1);
@@ -1052,12 +1053,29 @@ check("buddy pods: progress, the weekly card, waiting and refusals", () => {
   assert.equal(p.kind, "journey");
   assert.equal(p.status, "closed");
   assert.equal(p.member_count, 4);
-  assert.equal(p.asking_me, false);
-  assert.equal(cleanPod({ kind: "group", status: "active" }).kind, "group");
+  assert.ok(!("asking_me" in p) && !("my_answer" in p));
+  // No buddy groups, and an old "asking" reads as closed.
+  assert.equal(cleanPod({ kind: "group", status: "active" }).kind, "journey");
+  assert.equal(cleanPod({ status: "asking" }).status, "closed");
 });
 
 check("buddy pods: the app's numbers match the database's", () => {
   const sql = readFileSync("supabase/migrations/20261124070000_flock_buddy_pods.sql", "utf8");
+  // The live placement rules (20261124230000 replaced flock_pod_place).
+  const next = readFileSync("supabase/migrations/20261124230000_flock_pods_no_groups.sql", "utf8");
+  const code = next.replace(/--.*$/gm, "");
+  assert.match(code, /cardinality\(v_users\) >= 6/);
+  assert.match(code, /cardinality\(v_users\) >= 3/);
+  assert.match(code, /flock_pod_size\(p\.id\) between 1 and 5/);
+  // No keep-going or groups left in the functions: 'group' and 'asking' only
+  // in the one-off update that closes old rows and the constraint lookup.
+  assert.match(code, /drop function if exists private\.flock_pod_settle\(uuid\)/);
+  assert.match(code, /drop function if exists public\.flock_pod_keep_going\(uuid, boolean\)/);
+  assert.ok(!/keep_going\s*=|group_since\s*<|asked_at\s*>/.test(code));
+  assert.match(code, /check \(status in \('active', 'closed', 'dissolved'\)\)/);
+  // "Finished" means the journey ended either way.
+  assert.equal((code.match(/not in \('finished', 'happy_where_we_are'\)/g) ?? []).length, 2);
+  assert.match(code, /when 'finished' then 'learned' when 'happy_where_we_are' then 'happy' else 'working'/);
   assert.equal([POD_MIN, POD_MAX, PODS_AT_ONCE].join(), "3,6,2");
   assert.match(sql, /cardinality\(v_users\) >= 6/);
   assert.match(sql, /cardinality\(v_users\) >= 3/);

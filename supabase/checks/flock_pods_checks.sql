@@ -1,13 +1,18 @@
--- Verification for 20261124070000_flock_buddy_pods (backlog 1.11).
+-- Verification for 20261124070000_flock_buddy_pods (backlog 1.11) and
+-- 20261124230000_flock_pods_no_groups (no buddy groups; a stage instead of
+-- progress).
 --
 -- Self-contained and leaves nothing behind: an admin; members a, b, c, d, e
 -- (Great Lakes) and t (Texas); k (has blocked a); a free user. Checks that
 -- nobody outside the Flock reads anything, that a pod forms once 3 are
 -- waiting (never with someone blocked), that later waiters fill a pod with
 -- room, the 2-pod limit, that pod posts reach only the pod (never Today),
--- that "Just me" progress stays in the household, leaving, "Keep going
--- together?", the 3-week rule and its new-pod offer, the admin tools, and
--- account deletion, then rolls back.
+-- each member's stage (never from a "Just me" journey outside the
+-- household; a paused journey shows 'working'), leaving, closing once
+-- everyone has finished (learned it or happy where we are) or left, that no
+-- asking or group state remains, the 3-week rule (finishing counts as
+-- activity) and its new-pod offer, the admin tools, and account deletion,
+-- then rolls back.
 --   "FLOCK PODS CHECKS: n passed, 0 failed"           → all good
 --   "FLOCK PODS CHECKS: n passed, k failed: <names>"  → which ones broke
 -- Run by .github/workflows/db-checks.yml on every PR (scripts/db-checks.sh).
@@ -26,7 +31,7 @@ declare
   bd uuid := gen_random_uuid(); be uuid := gen_random_uuid(); bt uuid := gen_random_uuid(); bk uuid := gen_random_uuid();
   step uuid; recall uuid; wave uuid;
   ja uuid; jb uuid; jc uuid; jd uuid; je uuid; jt uuid; jk uuid; ja2 uuid; ja3 uuid;
-  pod uuid; pod2 uuid; old uuid; post uuid; st text;
+  pod uuid; pod2 uuid; old uuid; old2 uuid; post uuid; st text;
   passed int := 0; failed text[] := '{}';
   ok boolean; denied boolean; n int;
 begin
@@ -58,9 +63,6 @@ begin
   insert into public.journeys (bird_id, created_by, template_id, visibility, rhythm) values (bk, k, step, 'community', 'most_days') returning id into jk;
   insert into public.journeys (bird_id, created_by, template_id, visibility, rhythm) values (ba, a, recall, 'community', 'most_days') returning id into ja2;
   insert into public.journeys (bird_id, created_by, template_id, visibility, rhythm) values (ba, a, wave, 'community', 'most_days') returning id into ja3;
-  insert into public.journey_milestones (journey_id, position, title, state, reached_at) values
-    (ja, 1, 'Steps up from the perch', 'reached', now()), (ja, 2, 'Steps up from the floor', 'todo', null),
-    (jb, 1, 'Steps up from the perch', 'reached', now()), (jb, 2, 'Steps up from the floor', 'todo', null);
 
   -- 1) Free users, visitors and direct access get nothing.
   perform set_config('request.jwt.claims', json_build_object('sub', fr, 'role', 'authenticated')::text, true);
@@ -124,25 +126,33 @@ begin
   reset role;
   if ok then passed := passed + 1; else failed := array_append(failed, 'a pod forms at 3, never with a blocked member'); end if;
 
-  -- 4) What members see: names, a shown bird, community progress; b's
-  --    "Just me" progress and hidden bird stay out (b sees their own).
+  -- 4) What members see: names, a shown bird, a community journey's stage;
+  --    b's "Just me" stage and hidden bird stay out (b sees their own). A
+  --    paused journey (a weight pause, say) shows 'working'.
   perform set_config('request.jwt.claims', json_build_object('sub', a, 'role', 'authenticated')::text, true);
   set local role authenticated;
   ok := (select count(*) from public.flock_pod_members(pod)) = 3
-    and (select is_me and bird_name = 'Kiwi' and done = 1 and total = 2 from public.flock_pod_members(pod) where user_id = a)
-    and (select display_name = 'Blake S.' and bird_name is null and done is null and total is null and finished is null
+    and (select is_me and bird_name = 'Kiwi' and stage = 'working' from public.flock_pod_members(pod) where user_id = a)
+    and (select display_name = 'Blake S.' and bird_name is null and stage is null
          from public.flock_pod_members(pod) where user_id = b)
     and (select member_count = 3 and region_name = 'Great Lakes' and template_slug = 'step-up' and not checked_in_this_week from public.flock_pod(pod));
   reset role;
   perform set_config('request.jwt.claims', json_build_object('sub', b, 'role', 'authenticated')::text, true);
   set local role authenticated;
-  ok := ok and (select done = 1 and total = 2 and bird_name = 'Mango' from public.flock_pod_members(pod) where user_id = b);
+  ok := ok and (select stage = 'working' and bird_name = 'Mango' from public.flock_pod_members(pod) where user_id = b);
   reset role;
+  update public.journeys set status = 'paused', paused_at = now(), paused_reason = 'weight_drop' where id = ja;
+  perform set_config('request.jwt.claims', json_build_object('sub', c, 'role', 'authenticated')::text, true);
+  set local role authenticated;
+  ok := ok and (select stage = 'working' from public.flock_pod_members(pod) where user_id = a)
+    and (select stage is null from public.flock_pod_members(pod) where user_id = b);
+  reset role;
+  update public.journeys set status = 'active', paused_at = null, paused_reason = null where id = ja;
   perform set_config('request.jwt.claims', json_build_object('sub', e, 'role', 'authenticated')::text, true);
   set local role authenticated;
   ok := ok and (select count(*) from public.flock_pod_members(pod)) = 0 and (select count(*) from public.flock_pod(pod)) = 0;
   reset role;
-  if ok then passed := passed + 1; else failed := array_append(failed, 'members see the pod, "Just me" progress stays private, outsiders see nothing'); end if;
+  if ok then passed := passed + 1; else failed := array_append(failed, 'members see the pod and each stage, "Just me" stays private, paused shows working, outsiders see nothing'); end if;
 
   -- 5) A pod post reaches the pod only, never Today; outsiders can't post.
   perform set_config('request.jwt.claims', json_build_object('sub', a, 'role', 'authenticated')::text, true);
@@ -207,9 +217,10 @@ begin
   ok := ok and private.flock_pod_size(pod) = 3 and (select status from public.flock_pods where id = pod) = 'active';
   if ok then passed := passed + 1; else failed := array_append(failed, 'leaving a pod'); end if;
 
-  -- 9) a finishes: "You finished!" for a, the pod stays open. Then b and c
-  --    finish: the pod asks "Keep going together?"; a and b say yes, c no →
-  --    a general buddy group of a and b, not tied to a journey.
+  -- 9) a learns it: "You finished!" for a, the pod stays open. b ends
+  --    "happy where we are": "You finished!" for b too, still open while c
+  --    works on it. c ends happy where we are too: the pod closes, with no
+  --    question, stays readable to its members, and takes no posts.
   update public.journeys set status = 'finished', finished_at = now() where id = ja;
   perform private.flock_pods_tick();
   perform set_config('request.jwt.claims', json_build_object('sub', a, 'role', 'authenticated')::text, true);
@@ -218,28 +229,48 @@ begin
   perform public.flock_pod_finished_seen(pod);
   ok := ok and not (select my_finished from public.flock_pod(pod));
   reset role;
-  update public.journeys set status = 'finished', finished_at = now() where id in (jb, jc);
+  update public.journeys set status = 'happy_where_we_are', finished_at = now() where id = jb;
   perform private.flock_pods_tick();
-  ok := ok and (select status from public.flock_pods where id = pod) = 'asking';
-  perform set_config('request.jwt.claims', json_build_object('sub', a, 'role', 'authenticated')::text, true);
-  set local role authenticated;
-  ok := ok and (select asking_me from public.flock_pod(pod));
-  perform public.flock_pod_keep_going(pod, true);
-  reset role;
+  ok := ok and (select status from public.flock_pods where id = pod) = 'active';
   perform set_config('request.jwt.claims', json_build_object('sub', b, 'role', 'authenticated')::text, true);
   set local role authenticated;
-  perform public.flock_pod_keep_going(pod, true);
+  ok := ok and (select my_finished from public.flock_pod(pod))
+    and (select stage = 'happy' from public.flock_pod_members(pod) where user_id = b);
   reset role;
-  ok := ok and (select status from public.flock_pods where id = pod) = 'asking';
   perform set_config('request.jwt.claims', json_build_object('sub', c, 'role', 'authenticated')::text, true);
   set local role authenticated;
-  perform public.flock_pod_keep_going(pod, false);
+  ok := ok and (select stage = 'learned' from public.flock_pod_members(pod) where user_id = a)
+    and (select stage is null from public.flock_pod_members(pod) where user_id = b);
   reset role;
-  ok := ok and (select kind = 'group' and status = 'active' from public.flock_pods where id = pod)
-    and private.flock_pod_size(pod) = 2
-    and not exists (select 1 from public.flock_pod_members where pod_id = pod and left_at is null and journey_id is not null)
-    and (select left_at is not null from public.flock_pod_members where pod_id = pod and user_id = c);
-  if ok then passed := passed + 1; else failed := array_append(failed, 'finishing, then "Keep going together?"'); end if;
+  update public.journeys set status = 'happy_where_we_are', finished_at = now() where id = jc;
+  perform private.flock_pods_tick();
+  ok := ok and (select status = 'closed' and ended_at is not null and kind = 'journey' from public.flock_pods where id = pod)
+    and private.flock_pod_size(pod) = 3;
+  perform set_config('request.jwt.claims', json_build_object('sub', a, 'role', 'authenticated')::text, true);
+  set local role authenticated;
+  ok := ok and (select status = 'closed' from public.flock_pod(pod))
+    and (select count(*) from public.flock_pod_feed(pod)) = 1
+    and (select count(*) from public.flock_pod_members(pod)) = 3
+    -- A closed pod no longer counts toward the 2-pod limit.
+    and public.flock_pod_can_wait();
+  denied := false; begin perform * from public.flock_pod_post_create(pod, null, 'Still here', '{}', null, false); exception when others then denied := sqlerrm = 'pod_closed'; end; ok := ok and denied;
+  reset role;
+  if ok then passed := passed + 1; else failed := array_append(failed, 'finishing either way, then the pod closes once everyone has'); end if;
+
+  -- 9b) No asking or group state, column or function remains.
+  ok := to_regprocedure('public.flock_pod_keep_going(uuid, boolean)') is null
+    and to_regprocedure('private.flock_pod_keep_going(uuid, boolean)') is null
+    and to_regprocedure('private.flock_pod_settle(uuid)') is null
+    and not exists (select 1 from information_schema.columns
+                    where table_schema = 'public' and ((table_name = 'flock_pods' and column_name in ('asked_at', 'group_since'))
+                       or (table_name = 'flock_pod_members' and column_name = 'keep_going')))
+    and (select 'stage' = any (proargnames) and not proargnames && array['done', 'total', 'finished']
+         from pg_proc where oid = 'public.flock_pod_members(uuid)'::regprocedure)
+    and (select not proargnames && array['asking_me', 'my_answer']
+         from pg_proc where oid = 'public.flock_pod(uuid)'::regprocedure);
+  denied := false; begin update public.flock_pods set status = 'asking' where id = pod; exception when check_violation then denied := true; end; ok := ok and denied;
+  denied := false; begin update public.flock_pods set kind = 'group' where id = pod; exception when check_violation then denied := true; end; ok := ok and denied;
+  if ok then passed := passed + 1; else failed := array_append(failed, 'no asking or group state remains'); end if;
 
   -- 10) The 3-week rule: a pod with fewer than 2 active members over 21 days
   --     is dissolved; e (not finished) is offered a new pod and can ask again.
@@ -248,9 +279,19 @@ begin
     (old, e, je, now() - interval '30 days'), (old, d, jd, now() - interval '30 days');
   -- d posted recently, e didn't: one active member.
   insert into public.flock_posts (author_id, space, pod_id, body, status) values (d, 'pod', old, 'Still here!', 'live');
+  -- Another quiet pod (on recall, so nobody waiting on step up joins it),
+  -- where a finished the journey in the last 3 weeks and d posted:
+  -- finishing counts, so two are active and it stays.
+  update public.journeys set status = 'finished', finished_at = now() where id = ja2;
+  insert into public.flock_pods (template_id, created_at) values (recall, now() - interval '30 days') returning id into old2;
+  insert into public.flock_pod_members (pod_id, user_id, journey_id, joined_at) values
+    (old2, a, ja2, now() - interval '30 days'), (old2, d, jd, now() - interval '30 days');
+  insert into public.flock_posts (author_id, space, pod_id, body, status) values (d, 'pod', old2, 'Going well', 'live');
   perform private.flock_pods_tick();
   ok := (select status from public.flock_pods where id = old) = 'dissolved'
-    and (select offered_new from public.flock_pod_members where pod_id = old and user_id = e);
+    and (select offered_new from public.flock_pod_members where pod_id = old and user_id = e)
+    and (select status from public.flock_pods where id = old2) = 'active'
+    and private.flock_pod_active_member(old2, a, now() - interval '21 days');
   perform set_config('request.jwt.claims', json_build_object('sub', e, 'role', 'authenticated')::text, true);
   set local role authenticated;
   ok := ok and (select x.state = 'offer' and x.can_wait from public.flock_pod_for_journey(je) x)
@@ -260,16 +301,7 @@ begin
   select x.state into st from public.flock_pod_wait(je) x;
   reset role;
   ok := ok and st = 'waiting' and not (select offered_new from public.flock_pod_members where pod_id = old and user_id = e);
-  if ok then passed := passed + 1; else failed := array_append(failed, 'the 3-week rule, and a new pod offered'); end if;
-
-  -- 11) A group that goes quiet for 3 weeks just ends (no new question).
-  update public.flock_pods set group_since = now() - interval '30 days', created_at = now() - interval '60 days' where id = pod;
-  update public.flock_pod_members set joined_at = now() - interval '60 days' where pod_id = pod;
-  update public.flock_posts set created_at = now() - interval '30 days' where pod_id = pod;
-  perform private.flock_pods_tick();
-  ok := (select status from public.flock_pods where id = pod) = 'dissolved'
-    and not exists (select 1 from public.flock_pod_members where pod_id = pod and offered_new);
-  if ok then passed := passed + 1; else failed := array_append(failed, 'a quiet group ends'); end if;
+  if ok then passed := passed + 1; else failed := array_append(failed, 'the 3-week rule (finishing counts), and a new pod offered'); end if;
 
   -- 12) Admins: see pods and the waitlist, move a member (never next to
   --     someone who blocked them), dissolve.
