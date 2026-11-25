@@ -20,7 +20,7 @@ Copy this, fill it in, and put it at the top of "Runs", above the latest entry.
 
 ## Runs
 
-### 2026-11-25 07:30 EST · 1.20d Journeys redesign: Diet conversion rework (Brittany's answers)
+### 2026-11-25 07:06 EST · 1.20d Journeys redesign: Diet conversion rework (Brittany's answers)
 - **Built:** Brittany's answers to #560's two questions. A first week with no weigh-ins still leaves the starting weight unset (no change). The safeguard sentence "For Flock members, this uses the bird's own baseline alerts." is removed; "The template suggests a vet check before starting…" stays. Her decisions are in the review queue. Brought the branch up to date with `main` (only the review queue conflicted: both held entries, #557 and #560, are cleared by her approval). Interactive session, not an hourly run.
 - **PR:** [#560](https://github.com/the-kya-project/perch-perfect-plan/pull/560)
 - **Outcome:** Merged once every required check passed (Brittany approved it in the session). The eclectus alert stays off.
