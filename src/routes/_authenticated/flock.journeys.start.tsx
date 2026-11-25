@@ -13,8 +13,9 @@ import { canStartCustom, groupSkills, type JourneyTemplate, type SkillGroup } fr
 // Pick a skill (journeys redesign, screen 2): one list of all 14, no
 // free/Flock split, grouped Handling and health, Foundations, Food, Tricks.
 // A skill the bird already knows says so and can still be started; one that's
-// going now opens that journey. "Your own skill" at the bottom. With more than
-// one bird, pick the bird first.
+// going now opens that journey. "Your own skill" at the bottom, then, for
+// Flock members, "Skills from the Flock" (1.20c). With more than one bird,
+// pick the bird first.
 export const Route = createFileRoute("/_authenticated/flock/journeys/start")({
   validateSearch: (s: Record<string, unknown>): { bird?: string } => ({ bird: typeof s.bird === "string" ? s.bird : undefined }),
   component: StartJourney,
@@ -112,6 +113,17 @@ function StartJourney() {
         >
           {t("flock.journeys.start.ownSkill", "Your own skill")}
         </button>
+        {access?.can_view_community && (
+          <button
+            type="button"
+            data-testid="from-flock-skills"
+            onClick={() => void navigate({ to: "/flock/journeys/skills", search: bird ? { bird: bird.id } : {} })}
+            className="mt-2 min-h-[48px] w-full rounded-[14px] text-[14.5px] font-[700] active:scale-[0.99]"
+            style={{ border: `1px solid ${K.line}`, background: "#fff", color: K.forest }}
+          >
+            {t("flock.journeys.member.title", "Skills from the Flock")}
+          </button>
+        )}
       </FlowFooter>
       {limitSheet && <CustomLimitSheet onClose={() => setLimitSheet(false)} />}
     </FlockSubPage>

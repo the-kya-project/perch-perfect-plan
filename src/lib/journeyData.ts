@@ -45,6 +45,8 @@ export const journeyKeys = {
   skillJourneys: (slug: string) => ["flock", "journeys", "skill-journeys", slug] as const,
   vetSigns: ["flock", "journeys", "vet-signs"] as const,
   skillVideo: (slug: string) => ["flock", "journeys", "skill-video", slug] as const,
+  memberSkills: (q: string) => ["flock", "journeys", "member-skills", q] as const,
+  customAbout: (id: string) => ["flock", "journeys", "custom-about", id] as const,
 };
 
 export type JourneyBird = { id: string; name: string; species: string | null; sex: string | null; photo_url: string | null; birth_date: string | null };
@@ -146,8 +148,8 @@ export async function startJourney(input: {
   birdId: string;
   templateSlug?: string | null;
   customName?: string | null;
-  /** Ignored by the database since 1.20a; "Your own skill" drops it in 1.20c. */
-  customMilestones?: string[] | null;
+  /** Your own skill's description, in the owner's words (optional). */
+  customDescription?: string | null;
   rhythm: JourneyRhythm;
   visibility: JourneyVisibility;
   dayOneClip?: string | null;
@@ -158,11 +160,12 @@ export async function startJourney(input: {
     p_bird_id: input.birdId,
     p_template_slug: input.templateSlug ?? null,
     p_custom_name: input.customName ?? null,
-    p_custom_milestones: input.customMilestones ?? null,
+    p_custom_milestones: null,
     p_already: null,
     p_rhythm: input.rhythm,
     p_visibility: input.visibility,
     p_day_one_clip: input.dayOneClip ?? null,
+    p_custom_description: input.customDescription?.trim() || null,
   })) as string;
   if (input.vetCheck) await setVetCheck(id, input.vetCheck);
   trackFlock("flock_journey_started", {
@@ -447,6 +450,53 @@ export function useSkillJourneys(slug: string | null | undefined, enabled = true
     staleTime: STALE,
     queryFn: async (): Promise<JourneyCard[]> => must(await sb.rpc("journey_skill_journeys", { p_template_slug: slug, p_limit: 6 })) as JourneyCard[],
   });
+}
+
+// ---- Skills from the Flock (1.20c) ---------------------------------------------------------
+
+/** A member's own skill, shared with the community with at least one update. */
+export type MemberSkill = {
+  journey_id: string; skill: string; description: string | null; bird_id: string; bird_name: string; bird_has_photo: boolean;
+  owner_id: string; owner_name: string | null; status: JourneyStatus; updates: number; started_at: string; last_activity: string;
+};
+
+/** "Skills from the Flock", searched by name and description (Flock members
+ *  only; the database gives anyone else nothing). */
+export function useMemberSkills(q: string, enabled = true) {
+  const query = q.trim();
+  return useQuery({
+    queryKey: journeyKeys.memberSkills(query),
+    enabled,
+    staleTime: STALE,
+    queryFn: async (): Promise<MemberSkill[]> => {
+      const rows = must(await sb.rpc("journey_member_skills", { p_q: query || null, p_limit: 30 }));
+      return Array.isArray(rows) ? (rows as MemberSkill[]) : [];
+    },
+  });
+}
+
+/** A custom journey's description, whether it's a findable member skill, and
+ *  "Started from [bird]'s journey" while the source is visible. */
+export type CustomAbout = { description: string | null; is_member_skill: boolean; source_journey_id: string | null; source_bird_name: string | null };
+export function useCustomAbout(journeyId: string, enabled = true) {
+  return useQuery({
+    queryKey: journeyKeys.customAbout(journeyId),
+    enabled: enabled && !!journeyId,
+    staleTime: STALE,
+    queryFn: async (): Promise<CustomAbout | null> => {
+      const rows = must(await sb.rpc("journey_custom_about", { p_journey_id: journeyId }));
+      return Array.isArray(rows) ? ((rows[0] as CustomAbout | undefined) ?? null) : null;
+    },
+  });
+}
+
+/** "Start this skill": a copy for your bird (or the open copy it already has). */
+export async function startMemberSkill(input: { sourceId: string; birdId: string; rhythm: JourneyRhythm; visibility: JourneyVisibility }): Promise<string> {
+  const id = must(await sb.rpc("journey_start_member_skill", {
+    p_source_id: input.sourceId, p_bird_id: input.birdId, p_rhythm: input.rhythm, p_visibility: input.visibility,
+  })) as string;
+  trackFlock("flock_journey_started", { template: "custom", is_custom: true, visibility: input.visibility, milestone_count: null, already_count: 0 });
+  return id;
 }
 
 /** The vet nudge's phrases for journey captions and questions (free accounts too). */
