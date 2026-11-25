@@ -122,7 +122,8 @@ begin
   if denied then passed := passed + 1; else failed := array_append(failed, 'free: community visibility refused'); end if;
 
   -- 7) Free: one custom journey at a time; a second opens once the first ends.
-  --    (Milestone arrays are still accepted from today's screens, and ignored.)
+  --    (Milestone arrays are still accepted, and ignored, for app builds from
+  --    before the redesign; today's screens send none.)
   perform set_config('request.jwt.claims', json_build_object('sub', fr, 'role', 'authenticated')::text, true);
   set local role authenticated;
   j2 := public.journey_start(bf, null, 'Bath time', array['Near the dish', 'Toes in', 'Splashes'], null, 'weekends', 'private', null);

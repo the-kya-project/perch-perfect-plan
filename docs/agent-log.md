@@ -20,6 +20,12 @@ Copy this, fill it in, and put it at the top of "Runs", above the latest entry.
 
 ## Runs
 
+### 2026-11-25 08:23 EST · 1.20e Journeys redesign: tests and docs
+- **Built:** the last part of the Journeys redesign, and nothing anyone can see changes. A new database check proves the redesign's three promises end to end: a free account can start every one of the 14 skills (privately) but never sees anything from the community, through any screen's data; Diet conversion pauses exactly the same whether or not a journey has the old milestones; and a "Just me" journey never reaches anyone outside the bird's household, admins included. The test copy of the skills now uses the new draft descriptions and safety notes, the app tests no longer pretend milestones exist for new journeys, and the Flock's analytics events describe the new design (a journey started from a member's skill, an update and whether it was a big moment, and which way a journey ended; the milestone event is retired). CLAUDE.md's Journeys section is rewritten for skills, not milestones. Interactive cloud session run the hourly way, at Brittany's request.
+- **PR:** [#562](https://github.com/the-kya-project/perch-perfect-plan/pull/562)
+- **Outcome:** see the PR (merged only if every required check passes; this note is written before they finish).
+- **Problems:** This ran in a cloud container, not on the Mac, so `~/.kya-agent/lock` and `~/.kya-agent/pending-log.md` couldn't be seen; there was no lock here and no open PR on GitHub, so nothing else was running that this could collide with. `prod-read` isn't available here either, so production wasn't read; nothing in this PR depends on production state (it changes tests, docs and analytics properties only). `npm ci` needed `--ignore-scripts` (the PostHog CLI download is blocked here). The database checks were run locally against a throwaway Supabase database (all 49 files pass), and the new check was mutation-tested: leaking a private journey, opening community content to free accounts and changing the pause threshold each make it fail. No open agent PRs at the start.
+
 ### 2026-11-25 07:10 EST · 1.15a Kya's Crew option on the payment screen (backlog move)
 - **Built:** moved 1.15a from "Needs Brittany before work starts" to "Ready to build", below 1.20, at Brittany's request now that the mockup is approved. Docs only; the item is still built to a held PR because it's payments. Interactive session, not an hourly run.
 - **PR:** [#561](https://github.com/the-kya-project/perch-perfect-plan/pull/561)

@@ -54,8 +54,9 @@ begin
   jd := public.journey_start(bd, 'diet-conversion', null, null, null, 'most_days', 'community', null);
   reset role;
 
-  -- 0) New journeys get no milestone rows, even when the old screens still send
-  --    milestones or "already" positions (both are ignored).
+  -- 0) New journeys get no milestone rows, even when an app build from before
+  --    the redesign still sends milestones or "already" positions (both are
+  --    ignored; today's screens send neither).
   if not exists (select 1 from public.journey_milestones where journey_id in (jf, jp, jm, jd))
      and (select custom_name from public.journeys where id = jm) = 'Bath time' then
     passed := passed + 1; else failed := array_append(failed, 'new journeys have no milestones'); end if;
