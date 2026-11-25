@@ -223,17 +223,24 @@ export function youngOrUnknownAge(birthDate: string | null | undefined, now: Dat
   return now < yearOn;
 }
 
-/** "I'll call" journeys get the reminder card from milestone 2 on (milestone 1,
- *  the starting weight, is done), until they say they've talked; "Remind me
- *  later" hides it until vet_remind_after. */
+/** "I'll call" journeys get the reminder card once the starting weight is set
+ *  (the first week's weigh-ins, journey_weight_check's start_set), until they
+ *  say they've talked; "Remind me later" hides it until vet_remind_after. */
 export function showVetReminder(
-  j: { vet_check: VetCheck | null; vet_remind_after: string | null; status: string; milestones: { position: number; state: string }[] },
+  j: { vet_check: VetCheck | null; vet_remind_after: string | null; status: string },
+  startSet: boolean,
   now: Date = new Date(),
 ): boolean {
   if (j.vet_check !== "will_call" || j.status !== "active") return false;
   if (j.vet_remind_after && new Date(j.vet_remind_after) > now) return false;
-  const next = nextMilestone(j.milestones);
-  return !!next && next.position >= 2;
+  return startSet;
+}
+
+/** Eclectus have their own food needs: the alert before the vet card, behind
+ *  the diet_eclectus_alert switch (ECLECTUS_PATTERN in healthRules.ts). No
+ *  species, no alert. */
+export function isEclectus(species: string | null | undefined): boolean {
+  return /eclectus/i.test(species ?? "");
 }
 
 // ---- Diet conversion: smoothed weight rules (the database decides; this draws) ----

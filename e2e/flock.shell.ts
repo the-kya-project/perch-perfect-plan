@@ -499,6 +499,8 @@ type JourneyMockOpts = {
     /** The smoothed rules (journey_weight_check since 20261108160000). */
     avg?: number; pauseKind?: "drop" | "slide" | "sudden"; recheck?: boolean; missed?: boolean;
     excluded?: { grams: number; daysAgo: number; reason: "other_time" | "unconfirmed" }[];
+    /** The starting week is over (diet_starting_weight, 20261125030000); default true. */
+    startSet?: boolean;
   };
   /** Today's "Weigh [Bird] today" list. */
   weighReminders?: { journey_id: string; bird_id: string; bird_name: string; days_since_weigh: number }[];
@@ -747,7 +749,8 @@ async function mockJourneys(context: BrowserContext, opts: JourneyMockOpts, bird
         missed: !!w?.missed, days_since_weigh: w?.missed ? 3 : 1, usual_meal: w?.excluded ? "before_meal" : null,
         excluded: [...(w?.excluded ?? []).map((x) => ({ grams: x.grams, measured_at: dayAt(x.daysAgo), reason: x.reason })),
           ...(w?.recheck ? [{ grams: w.now, measured_at: dayAt(1), reason: "pending" }] : [])],
-        window_from: new Date(Date.now() - 16 * 86_400_000).toISOString(), window_to: new Date(Date.now() - 9 * 86_400_000).toISOString() }]);
+        window_from: new Date(Date.now() - 16 * 86_400_000).toISOString(), window_to: new Date(Date.now() - 9 * 86_400_000).toISOString(),
+        start_set: w ? (w.startSet ?? true) : false, start_set_at: w && (w.startSet ?? true) ? new Date(Date.now() - 9 * 86_400_000).toISOString() : null }]);
     }
     return json(route, null);
   });
@@ -1038,9 +1041,47 @@ test.describe("journeys: start a journey (admin, phone)", () => {
     await context.close();
   });
 
-  test("Diet conversion pages: the milestone-2 vet reminder only for \"I'll call\", and the disclaimer at the bottom", async ({ browser, baseURL }) => {
+  test("the eclectus alert sits above the vet card only when its switch is on; other species never see it", async ({ browser, baseURL }) => {
+    const { context, page } = await open(browser, baseURL!, { admin: true });
+    const row = (id: string, name: string, species: string | null) => ({ id, name, species, sex: null, photo_url: null, birth_date: "2020-05-01", passed_at: null });
+    await context.route(`${MOCK}/rest/v1/birds**`, (route) => route.fulfill({ status: 200, contentType: "application/json", headers: { "access-control-allow-origin": "*" },
+      body: JSON.stringify([row("00000000-0000-4000-8000-0000000071c1", "Ruby", "Eclectus"), row("00000000-0000-4000-8000-0000000071c2", "Rio", null)]) }));
+    let on = false;
+    const asked: string[] = [];
+    await context.route(`${MOCK}/rest/v1/rpc/health_feature_enabled`, (route) => {
+      asked.push(route.request().postDataJSON()?.p_feature);
+      return route.fulfill({ status: 200, contentType: "application/json", headers: { "access-control-allow-origin": "*" }, body: JSON.stringify(on) });
+    });
+    // Off (as it ships): the vet card alone.
+    await page.goto("/flock/journeys/setup?bird=00000000-0000-4000-8000-0000000071c1&template=diet-conversion");
+    await expect(page.getByTestId("diet-vet-card")).toBeVisible();
+    await expect(page.getByTestId("diet-eclectus")).toHaveCount(0);
+    expect(asked).toContain("diet_eclectus_alert");
+    await context.close();
+
+    const o = await open(browser, baseURL!, { admin: true });
+    await o.context.route(`${MOCK}/rest/v1/birds**`, (route) => route.fulfill({ status: 200, contentType: "application/json", headers: { "access-control-allow-origin": "*" },
+      body: JSON.stringify([row("00000000-0000-4000-8000-0000000071c1", "Ruby", "Eclectus"), row("00000000-0000-4000-8000-0000000071c2", "Rio", null)]) }));
+    on = true;
+    await o.context.route(`${MOCK}/rest/v1/rpc/health_feature_enabled`, (route) =>
+      route.fulfill({ status: 200, contentType: "application/json", headers: { "access-control-allow-origin": "*" }, body: JSON.stringify(on) }));
+    // On: the alert comes first, then the vet card.
+    await o.page.goto("/flock/journeys/setup?bird=00000000-0000-4000-8000-0000000071c1&template=diet-conversion");
+    const alert = o.page.getByTestId("diet-eclectus");
+    await expect(alert).toHaveText("Eclectus have specific food needs. They generally do best on plenty of fresh vegetables and fruit, and many avian vets advise caution with heavily fortified pellets and added vitamins. Please make a plan with your avian vet before changing Ruby's food.");
+    const [a, v] = await Promise.all([alert.boundingBox(), o.page.getByTestId("diet-vet-card").boundingBox()]);
+    expect(a!.y).toBeLessThan(v!.y);
+    // Unknown species: no species alert, the general vet card.
+    await o.page.goto("/flock/journeys/setup?bird=00000000-0000-4000-8000-0000000071c2&template=diet-conversion");
+    await expect(o.page.getByTestId("diet-vet-card")).toBeVisible();
+    await expect(o.page.getByTestId("diet-eclectus")).toHaveCount(0);
+    await o.context.close();
+  });
+
+  test("Diet conversion pages: the vet reminder only for \"I'll call\" once the starting weight is set, and the disclaimer at the bottom", async ({ browser, baseURL }) => {
     const id = "00000000-0000-4000-8000-0000000074a2";
-    const diet = { id, birdName: "Willow", slug: "diet-conversion", done: 1, vetCheck: "will_call" as const };
+    // No milestone reached: the reminder follows the starting weight alone.
+    const diet = { id, birdName: "Willow", slug: "diet-conversion", done: 0, vetCheck: "will_call" as const };
     let o = await open(browser, baseURL!, { admin: true, journeys: { seed: [diet], weight: { level: "none", start: 400, now: 401 } } });
     await o.page.goto(`/flock/journeys/${id}`);
     const reminder = o.page.getByTestId("vet-reminder");
@@ -1058,8 +1099,8 @@ test.describe("journeys: start a journey (admin, phone)", () => {
     expect(o.journeys.calls.find((c) => c.fn === "journey_set_vet_check")?.args).toEqual({ p_journey_id: id, p_choice: "talked" });
     await o.context.close();
 
-    // Still on milestone 1, or "I've talked": no reminder. Another journey: no disclaimer.
-    o = await open(browser, baseURL!, { admin: true, journeys: { seed: [{ ...diet, done: 0 }, { ...diet, id: "00000000-0000-4000-8000-0000000074b2", birdName: "Echo", vetCheck: "talked" }, { id: "00000000-0000-4000-8000-0000000074b3", birdName: "Max", slug: "step-up", done: 1 }] } });
+    // Still in the starting week (even with milestone history), or "I've talked": no reminder. Another journey: no disclaimer.
+    o = await open(browser, baseURL!, { admin: true, journeys: { weight: { level: "none", start: 400, now: 401, startSet: false }, seed: [{ ...diet, done: 0 },{ ...diet, id: "00000000-0000-4000-8000-0000000074b2", birdName: "Echo", vetCheck: "talked" }, { id: "00000000-0000-4000-8000-0000000074b3", birdName: "Max", slug: "step-up", done: 1 }] } });
     await o.page.goto(`/flock/journeys/${id}`);
     await expect(o.page.getByTestId("journey-page")).toBeVisible();
     await expect(o.page.getByTestId("vet-reminder")).toHaveCount(0);

@@ -269,6 +269,8 @@ export type WeightCheck = {
   usual_meal: "before_meal" | "after_meal" | null;
   excluded: WeightExcluded[];
   window_from: string | null; window_to: string | null;
+  /** The first week is over and set a starting weight (or a vet-confirmed resume re-based it). */
+  start_set: boolean; start_set_at: string | null;
 };
 
 /** Diet conversion only: where the weight stands (this may pause the journey). */

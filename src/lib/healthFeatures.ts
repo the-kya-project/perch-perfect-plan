@@ -32,4 +32,7 @@ export const HEALTH_FEATURES: readonly HealthFeature[] = [
   // field (backlog D1.2, useHealthFeature). The shadow log runs for every
   // bird whatever the switch says, and shows nothing to anyone.
   { feature: "weight_baseline", startsAt: "off", wired: true },
+  // The eclectus alert before Diet conversion's vet card (backlog 1.20d,
+  // 20261125030000_diet_starting_weight.sql), until a vet approves its wording.
+  { feature: "diet_eclectus_alert", startsAt: "off", wired: true },
 ];
