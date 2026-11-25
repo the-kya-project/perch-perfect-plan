@@ -20,6 +20,12 @@ Copy this, fill it in, and put it at the top of "Runs", above the latest entry.
 
 ## Runs
 
+### 2026-11-25 07:10 EST · 1.15a Kya's Crew option on the payment screen (backlog move)
+- **Built:** moved 1.15a from "Needs Brittany before work starts" to "Ready to build", below 1.20, at Brittany's request now that the mockup is approved. Docs only; the item is still built to a held PR because it's payments. Interactive session, not an hourly run.
+- **PR:** this docs PR (see the review queue)
+- **Outcome:** Merged once its checks passed (Brittany approved it in the session).
+- **Problems:** none.
+
 ### 2026-11-24 19:46 EST · 1.20c Journeys redesign: member skills
 - **Built:** member skills, switched off with the rest of journeys (production has journeys off, and the Flock is closed to members). "Your own skill" now asks only for a name and, if you like, a few lines on what it looks like. There are no steps. If the name is one of the 14 skills, it offers that skill instead. Flock members get "Skills from the Flock" on Pick a skill: other members' own skills that are shared with the community and have at least one update, with a search box. Each one is labeled "Member-supplied journey", with a line saying a member shared it and The Kya Project hasn't reviewed it. The label shows wherever someone else's own skill appears. "Start this skill" copies it for your bird, and the copy says "Started from [bird]'s journey" while the original is still visible. Members can report a member skill. Reports reach the review queue like posts: at the report threshold it's hidden from everyone but its household, and reviewers can keep it, message the member or remove it. Blocked people and lapsed members' skills never show. A migration adds the new reads and the start function, and teaches the existing report, review and notification functions about member skills. It also hides a hidden member skill from the community. Every change is Flock-only and patched from the live definitions.
 - **PR:** [#559](https://github.com/the-kya-project/perch-perfect-plan/pull/559)
