@@ -14,7 +14,7 @@ export function reasonLabel(t: TFunction, r: ReportReason): string {
   }
 }
 
-/** Report a post, comment or journey update: a reason, an optional note.
+/** Report a post, comment, journey update or member skill: a reason, an optional note.
  *  With `alsoBlock` ("Block and report"), the report goes first, then the
  *  block, so the report never depends on the block. */
 export function ReportSheet({ type, id, onClose, alsoBlock, onBlocked }: {
@@ -45,6 +45,7 @@ export function ReportSheet({ type, id, onClose, alsoBlock, onBlocked }: {
   const title = alsoBlock ? t("flock.block.reportTitle", "Block and report")
     : type === "comment" ? t("flock.report.titleComment", "Report this comment")
     : type === "journey_update" ? t("flock.report.titleUpdate", "Report this update")
+    : type === "journey" ? t("flock.report.titleSkill", "Report this skill")
     : t("flock.report.titlePost", "Report this post");
   return (
     <KyaSheet onClose={close} closeLabel={t("flock.region.close", "Close")} title={<KyaHeading size={23}>{done ? t("flock.report.thanksTitle", "Thanks for telling us") : title}</KyaHeading>}>

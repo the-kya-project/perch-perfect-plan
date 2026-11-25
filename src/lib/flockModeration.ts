@@ -13,7 +13,8 @@ function must<T>(r: { data: T; error: unknown }): T {
 }
 const asArray = <T,>(v: unknown): T[] => (Array.isArray(v) ? (v as T[]) : []);
 
-export type ReportSubject = "post" | "comment" | "journey_update";
+/** "journey" is a member skill (another member's own skill, 1.20c). */
+export type ReportSubject = "post" | "comment" | "journey_update" | "journey";
 export type ReportReason = "unkind" | "unsafe" | "spam" | "other";
 export const REPORT_REASONS: ReportReason[] = ["unkind", "unsafe", "spam", "other"];
 
@@ -27,7 +28,7 @@ export type NotificationFilter = "all" | "replies" | "cheers" | "chapter";
 export const NOTIFICATION_FILTERS: NotificationFilter[] = ["all", "replies", "cheers", "chapter"];
 export type FlockNotification = {
   ids: string[]; kind: "reply" | "cheer" | "review" | "clip" | "chapter" | "notice" | "event"; actor_name: string | null; others: number;
-  subject_type: "post" | "comment" | "journey_update" | "journey_milestone" | "event"; subject_id: string; detail: string | null; note: string | null;
+  subject_type: "post" | "comment" | "journey_update" | "journey_milestone" | "journey" | "event"; subject_id: string; detail: string | null; note: string | null;
   post_id: string | null; post_title: string | null; post_space: string | null; journey_id: string | null; bird_name: string | null;
   skill: string | null; milestone_title: string | null; region_name: string | null;
   event_id: string | null; event_title: string | null; event_starts_at: string | null; created_at: string; unread: boolean;

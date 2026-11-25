@@ -21,7 +21,7 @@ declare
   b3 uuid := gen_random_uuid();   -- m3's bird
   bf uuid := gen_random_uuid();   -- fr's bird
   passed int := 0; failed text[] := '{}';
-  ok boolean; n int; st text; skill uuid; quiet uuid; priv uuid; tmpl uuid; copy1 uuid; copy2 uuid;
+  ok boolean; n int; st text; sk uuid; quiet uuid; priv uuid; tmpl uuid; copy1 uuid; copy2 uuid;
   r record;
 begin
   insert into auth.users (instance_id, id, aud, role, email, raw_app_meta_data, raw_user_meta_data, created_at, updated_at)
@@ -43,7 +43,7 @@ begin
   -- skills: a community one with no update, a private one, and a template one.
   perform set_config('request.jwt.claims', json_build_object('sub', m1, 'role', 'authenticated')::text, true);
   set local role authenticated;
-  skill := public.journey_start(b1, null, 'Bell ringing', null, null, 'most_days', 'community', 'cfstream:skillclip001', 'Kiwi rings the bell when it wants out.');
+  sk := public.journey_start(b1, null, 'Bell ringing', null, null, 'most_days', 'community', 'cfstream:skillclip001', 'Kiwi rings the bell when it wants out.');
   quiet := public.journey_start(b1, null, 'Bath time', null, null, 'weekends', 'community', null, null);
   priv  := public.journey_start(b1, null, 'Shower perch', null, null, 'weekends', 'private', 'cfstream:skillclip002', null);
   tmpl  := public.journey_start(b1, 'recall', null, null, null, 'most_days', 'community', 'cfstream:skillclip003');
@@ -55,10 +55,10 @@ begin
   -- 1) Another member finds exactly the shared one, by name or description.
   perform set_config('request.jwt.claims', json_build_object('sub', m2, 'role', 'authenticated')::text, true);
   set local role authenticated;
-  ok := (select array_agg(journey_id) from public.journey_member_skills(null, 60)) = array[skill]
-    and exists (select 1 from public.journey_member_skills('BELL', 60) where journey_id = skill and skill = 'Bell ringing'
+  ok := (select array_agg(journey_id) from public.journey_member_skills(null, 60)) = array[sk]
+    and exists (select 1 from public.journey_member_skills('BELL', 60) where journey_id = sk and skill = 'Bell ringing'
                 and description = 'Kiwi rings the bell when it wants out.' and bird_name = 'Kiwi' and owner_name = 'Alex R.' and updates = 1)
-    and exists (select 1 from public.journey_member_skills('wants out', 60) where journey_id = skill)
+    and exists (select 1 from public.journey_member_skills('wants out', 60) where journey_id = sk)
     and not exists (select 1 from public.journey_member_skills('harness', 60));
   reset role;
   if ok then passed := passed + 1; else failed := array_append(failed, 'search finds member skills only'); end if;
@@ -67,9 +67,9 @@ begin
   perform set_config('request.jwt.claims', json_build_object('sub', fr, 'role', 'authenticated')::text, true);
   set local role authenticated;
   ok := not exists (select 1 from public.journey_member_skills(null, 60))
-    and not exists (select 1 from public.journey_custom_about(skill));
+    and not exists (select 1 from public.journey_custom_about(sk));
   st := null;
-  begin perform public.journey_start_member_skill(skill, bf, 'most_days', 'private');
+  begin perform public.journey_start_member_skill(sk, bf, 'most_days', 'private');
   exception when others then st := sqlstate; end;
   reset role;
   if ok and st = 'P0002' then passed := passed + 1; else failed := array_append(failed, 'free accounts never see member skills'); end if;
@@ -79,25 +79,25 @@ begin
   --    "Started from Kiwi's journey" shows; the non-skills can't be started.
   perform set_config('request.jwt.claims', json_build_object('sub', m2, 'role', 'authenticated')::text, true);
   set local role authenticated;
-  copy1 := public.journey_start_member_skill(skill, b2, 'few_times_week', 'community');
-  copy2 := public.journey_start_member_skill(skill, b2, 'weekends', 'private');
+  copy1 := public.journey_start_member_skill(sk, b2, 'few_times_week', 'community');
+  copy2 := public.journey_start_member_skill(sk, b2, 'weekends', 'private');
   select * into r from public.journey_custom_about(copy1);
-  ok := copy1 = copy2 and r.source_journey_id = skill and r.source_bird_name = 'Kiwi'
+  ok := copy1 = copy2 and r.source_journey_id = sk and r.source_bird_name = 'Kiwi'
     and r.description = 'Kiwi rings the bell when it wants out.' and not r.is_member_skill;
   st := null;
   begin perform public.journey_start_member_skill(quiet, b2, 'most_days', 'private');
   exception when others then st := sqlstate; end;
   ok := ok and st = 'P0002';
   st := null;
-  begin perform public.journey_start_member_skill(skill, b3, 'most_days', 'private');
+  begin perform public.journey_start_member_skill(sk, b3, 'most_days', 'private');
   exception when others then st := sqlstate; end;
   ok := ok and st = '42501';
   reset role;
   ok := ok and (select custom_name = 'Bell ringing' and custom_description = 'Kiwi rings the bell when it wants out.'
-                       and source_journey_id = skill and template_id is null and visibility = 'community' and rhythm = 'few_times_week'
+                       and source_journey_id = sk and template_id is null and visibility = 'community' and rhythm = 'few_times_week'
                 from public.journeys where id = copy1)
     and not exists (select 1 from public.journey_milestones where journey_id = copy1)
-    and (select count(*) from public.journeys where source_journey_id = skill) = 1;
+    and (select count(*) from public.journeys where source_journey_id = sk) = 1;
   if ok then passed := passed + 1; else failed := array_append(failed, 'start this skill'); end if;
 
   -- 4) A block either way hides the skill and the "Started from" link; the
@@ -118,8 +118,8 @@ begin
   reset role;
   perform set_config('request.jwt.claims', json_build_object('sub', m2, 'role', 'authenticated')::text, true);
   set local role authenticated;
-  ok := ok and exists (select 1 from public.journey_member_skills(null, 60) where journey_id = skill)
-    and (select source_journey_id from public.journey_custom_about(copy1)) = skill;
+  ok := ok and exists (select 1 from public.journey_member_skills(null, 60) where journey_id = sk)
+    and (select source_journey_id from public.journey_custom_about(copy1)) = sk;
   reset role;
   if ok then passed := passed + 1; else failed := array_append(failed, 'blocks hide member skills'); end if;
 
@@ -127,7 +127,7 @@ begin
   --    journey and your own skill can't.
   perform set_config('request.jwt.claims', json_build_object('sub', m3, 'role', 'authenticated')::text, true);
   set local role authenticated;
-  perform public.flock_report('journey', skill, 'unsafe', 'Not safe for birds.');
+  perform public.flock_report('journey', sk, 'unsafe', 'Not safe for birds.');
   st := null;
   begin perform public.flock_report('journey', tmpl, 'spam', null);
   exception when others then st := sqlstate; end;
@@ -136,12 +136,12 @@ begin
   perform set_config('request.jwt.claims', json_build_object('sub', m1, 'role', 'authenticated')::text, true);
   set local role authenticated;
   st := null;
-  begin perform public.flock_report('journey', skill, 'spam', null);
+  begin perform public.flock_report('journey', sk, 'spam', null);
   exception when others then st := sqlstate; end;
   reset role;
   ok := ok and st = '22023'
-    and (select count(*) from public.flock_reports where subject_type = 'journey' and subject_id = skill) = 1
-    and not exists (select 1 from public.flock_moderation where subject_type = 'journey' and subject_id = skill);
+    and (select count(*) from public.flock_reports where subject_type = 'journey' and subject_id = sk) = 1
+    and not exists (select 1 from public.flock_moderation where subject_type = 'journey' and subject_id = sk);
   if ok then passed := passed + 1; else failed := array_append(failed, 'reporting a member skill'); end if;
 
   -- 6) At the threshold it's hidden from everyone outside the household
@@ -150,17 +150,17 @@ begin
   update public.flock_moderation_settings set report_threshold = 2;
   perform set_config('request.jwt.claims', json_build_object('sub', m2, 'role', 'authenticated')::text, true);
   set local role authenticated;
-  perform public.flock_report('journey', skill, 'unkind', null);
+  perform public.flock_report('journey', sk, 'unkind', null);
   ok := not exists (select 1 from public.journey_member_skills(null, 60))
-    and not exists (select 1 from public.journey_view(skill))
+    and not exists (select 1 from public.journey_view(sk))
     and (select source_journey_id from public.journey_custom_about(copy1)) is null
     and (select description from public.journey_custom_about(copy1)) = 'Kiwi rings the bell when it wants out.';
   reset role;
   perform set_config('request.jwt.claims', json_build_object('sub', hh, 'role', 'authenticated')::text, true);
   set local role authenticated;
-  ok := ok and exists (select 1 from public.journey_view(skill));
+  ok := ok and exists (select 1 from public.journey_view(sk));
   reset role;
-  ok := ok and exists (select 1 from public.flock_moderation where subject_type = 'journey' and subject_id = skill and state = 'hidden');
+  ok := ok and exists (select 1 from public.flock_moderation where subject_type = 'journey' and subject_id = sk and state = 'hidden');
   if ok then passed := passed + 1; else failed := array_append(failed, 'hidden at the threshold'); end if;
 
   -- 7) The review queue lists it with its name and description; "Keep it"
@@ -169,44 +169,44 @@ begin
   perform set_config('request.jwt.claims', json_build_object('sub', ad, 'role', 'authenticated')::text, true);
   set local role authenticated;
   ok := exists (select 1 from public.flock_review_queue('reports') q
-                where q.item_type = 'report' and q.subject_type = 'journey' and q.subject_id = skill and q.author_id = m1
-                  and q.title = 'Bell ringing' and q.body = 'Kiwi rings the bell when it wants out.' and q.journey_id = skill
+                where q.item_type = 'report' and q.subject_type = 'journey' and q.subject_id = sk and q.author_id = m1
+                  and q.title = 'Bell ringing' and q.body = 'Kiwi rings the bell when it wants out.' and q.journey_id = sk
                   and q.report_count = 2 and q.hidden);
-  perform public.flock_resolve_report('journey', skill, 'keep', null);
+  perform public.flock_resolve_report('journey', sk, 'keep', null);
   reset role;
   perform set_config('request.jwt.claims', json_build_object('sub', m3, 'role', 'authenticated')::text, true);
   set local role authenticated;
-  ok := ok and exists (select 1 from public.journey_member_skills(null, 60) where journey_id = skill);
+  ok := ok and exists (select 1 from public.journey_member_skills(null, 60) where journey_id = sk);
   reset role;
   perform set_config('request.jwt.claims', json_build_object('sub', ad, 'role', 'authenticated')::text, true);
   set local role authenticated;
-  perform public.flock_resolve_report('journey', skill, 'message', 'Please add a safety note.');
+  perform public.flock_resolve_report('journey', sk, 'message', 'Please add a safety note.');
   reset role;
   perform set_config('request.jwt.claims', json_build_object('sub', m1, 'role', 'authenticated')::text, true);
   set local role authenticated;
   ok := ok and exists (select 1 from public.flock_notifications_list('all', 50) x
-                       where x.kind = 'notice' and x.subject_type = 'journey' and x.subject_id = skill and x.journey_id = skill
+                       where x.kind = 'notice' and x.subject_type = 'journey' and x.subject_id = sk and x.journey_id = sk
                          and x.note = 'Please add a safety note.' and x.skill = 'Bell ringing');
   reset role;
   perform set_config('request.jwt.claims', json_build_object('sub', m3, 'role', 'authenticated')::text, true);
   set local role authenticated;
-  perform public.flock_report('journey', skill, 'unsafe', 'Still unsafe.');
+  perform public.flock_report('journey', sk, 'unsafe', 'Still unsafe.');
   reset role;
   perform set_config('request.jwt.claims', json_build_object('sub', ad, 'role', 'authenticated')::text, true);
   set local role authenticated;
-  perform public.flock_resolve_report('journey', skill, 'remove', null);
+  perform public.flock_resolve_report('journey', sk, 'remove', null);
   reset role;
   perform set_config('request.jwt.claims', json_build_object('sub', m3, 'role', 'authenticated')::text, true);
   set local role authenticated;
   ok := ok and not exists (select 1 from public.journey_member_skills(null, 60))
-    and not exists (select 1 from public.journey_view(skill));
+    and not exists (select 1 from public.journey_view(sk));
   reset role;
-  ok := ok and exists (select 1 from public.flock_moderation where subject_type = 'journey' and subject_id = skill and state = 'removed');
+  ok := ok and exists (select 1 from public.flock_moderation where subject_type = 'journey' and subject_id = sk and state = 'removed');
   if ok then passed := passed + 1; else failed := array_append(failed, 'review queue for member skills'); end if;
 
   -- 8) A lapsed membership takes the skill out of the Flock; template
   --    journeys never get a journey moderation row and stay as they were.
-  delete from public.flock_moderation where subject_type = 'journey' and subject_id = skill;
+  delete from public.flock_moderation where subject_type = 'journey' and subject_id = sk;
   delete from public.entitlements where user_id = m1;
   perform set_config('request.jwt.claims', json_build_object('sub', m2, 'role', 'authenticated')::text, true);
   set local role authenticated;

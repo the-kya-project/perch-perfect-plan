@@ -9,7 +9,8 @@ import { ClipTile, JourneyMenuSheet, shortDay } from "@/components/flock/Journey
 import { ActionSheet } from "@/components/flock/PostParts";
 import { BlockSheet } from "@/components/flock/BlockSheet";
 import { blockActions } from "@/lib/flockBlocks";
-import { FinisherTipsCard, SkillAbout } from "@/components/flock/JourneyParts";
+import { FinisherTipsCard, MemberSuppliedNote, SkillAbout, StartedFrom } from "@/components/flock/JourneyParts";
+import { ReportSheet } from "@/components/flock/ReportSheet";
 import { ClipTileState } from "@/components/flock/JourneyClipView";
 import { DietDisclaimer, VetReminderCard, WeighTodayCard } from "@/components/flock/JourneyDiet";
 import { JourneyPodCard } from "@/components/flock/PodParts";
@@ -17,10 +18,10 @@ import { useJourneyPod } from "@/lib/flockPods";
 import { deleteJourney } from "@/lib/journeyMedia.functions";
 import {
   finishJourney, followJourney, resumeAfterVet, setVetCheck, useBigMoments, useFinisherTips, setJourneyStatus, setJourneyVisibility, useBirdWeights,
-  useInvalidateJourneys, useJourney, useJourneyAccess, useJourneyClips, useJourneyTemplates, useJourneyView, useJourneyViewUpdates, useWeightCheck,
+  useCustomAbout, useInvalidateJourneys, useJourney, useJourneyAccess, useJourneyClips, useJourneyTemplates, useJourneyView, useJourneyViewUpdates, useWeightCheck,
   type Journey, type WeightCheck,
 } from "@/lib/journeyData";
-import { canFinishLearned, journeyDay, possessive, rollingAverage, showVetReminder, skillInSentence } from "@/lib/journeys";
+import { canFinishLearned, isMemberSupplied, journeyDay, possessive, rollingAverage, showVetReminder, skillInSentence } from "@/lib/journeys";
 
 // A journey (journeys redesign, screen 4): "[Bird] · [skill]", "Day N · X
 // following", the skill's description and safety notes folded under the
@@ -29,7 +30,10 @@ import { canFinishLearned, journeyDay, possessive, rollingAverage, showVetRemind
 // own journeys get the menu (pause, happy where we are, who sees it, delete)
 // and, for Diet conversion, the weight safeguard; a bird that has passed
 // leaves its journeys read-only;
-// other members' community journeys get Follow (members only). Everything
+// other members' community journeys get Follow (members only); another
+// member's own skill is labeled "Member-supplied journey" and offers "Start
+// this skill" and "Report this skill" (1.20c); a copy shows "Started from
+// [bird]'s journey" while the source is visible. Everything
 // comes through journey_view*, which never shows a "Just me" journey outside
 // the bird's household.
 export const Route = createFileRoute("/_authenticated/flock/journeys/$journeyId/")({
@@ -56,6 +60,11 @@ function JourneyPage() {
   const { data: templates } = useJourneyTemplates();
   const template = card?.template_slug ? templates?.find((x) => x.slug === card.template_slug) : undefined;
   const { data: bigMoments } = useBigMoments(journeyId, !!card);
+  // Your own skill (or another member's): its description, and "Started from".
+  const custom = !!card && !card.template_slug;
+  const { data: about } = useCustomAbout(journeyId, custom);
+  const memberSupplied = !!card && isMemberSupplied(card);
+  const [reporting, setReporting] = useState(false);
   const [vetBusy, setVetBusy] = useState(false);
   const [menu, setMenu] = useState(false);
   const [confirmLearned, setConfirmLearned] = useState(false);
@@ -134,8 +143,19 @@ function JourneyPage() {
       right={right}
     >
       <div data-testid="journey-page" className="flex flex-col gap-3">
+        {memberSupplied && <MemberSuppliedNote />}
         {template && <SkillAbout collapsible description={template.purpose} notes={template.safety_notes} />}
-        {!template && own?.custom_description && <SkillAbout collapsible description={own.custom_description} notes={[]} />}
+        {custom && (about?.description ?? own?.custom_description) && (
+          <SkillAbout collapsible description={about?.description ?? own?.custom_description ?? null} notes={[]} />
+        )}
+        {about?.source_journey_id && about.source_bird_name && <StartedFrom journeyId={about.source_journey_id} birdName={about.source_bird_name} />}
+        {memberSupplied && about?.is_member_skill && (
+          <div data-testid="start-this-skill">
+            <KyaPrimaryButton onClick={() => void navigate({ to: "/flock/journeys/setup", search: { bird: "", from: journeyId } })}>
+              {t("flock.journeys.member.start", "Start this skill")}
+            </KyaPrimaryButton>
+          </div>
+        )}
 
         {mine && podState && <JourneyPodCard journeyId={journeyId} state={podState} />}
 
@@ -199,8 +219,12 @@ function JourneyPage() {
       </div>
       {otherMenu && card && (
         <ActionSheet title={t("flock.journeys.page.menu", "Journey options")} onClose={() => setOtherMenu(false)}
-          actions={blockActions(t, { authorId: card.owner_id, myId: null, name: card.owner_name, onBlock: () => { setOtherMenu(false); setBlocking(true); } })} />
+          actions={[
+            ...(memberSupplied ? [{ key: "report", label: t("flock.report.titleSkill", "Report this skill"), onClick: () => { setOtherMenu(false); setReporting(true); } }] : []),
+            ...blockActions(t, { authorId: card.owner_id, myId: null, name: card.owner_name, onBlock: () => { setOtherMenu(false); setBlocking(true); } }),
+          ]} />
       )}
+      {reporting && <ReportSheet type="journey" id={journeyId} onClose={() => setReporting(false)} />}
       {blocking && card?.owner_id && (
         <BlockSheet userId={card.owner_id} name={card.owner_name} onClose={() => setBlocking(false)}
           onBlocked={() => void navigate({ to: "/flock/journeys", replace: true })} />
