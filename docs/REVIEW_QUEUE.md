@@ -1201,6 +1201,9 @@ No new strings: every line reuses existing wording, in new places (admins only).
 - **Decision:** Journey challenges: finishing already meant "the journey ended as learned it by the end day" (`flock_challenge_done`), so only the progress counts changed (`flock_challenge_rows` returns 0 milestones for a journey challenge, patched from its live definition).
 - **Decision:** Buddy pods (#548, merged during this run) still count milestones for a pod member's progress ("N of M") and as one way to count someone active. Their "Pair me with buddies" box stays on the new setup screen as it was, and the pod card stays at the top of the journey page. New journeys have no milestones, so pods would show no step progress; that isn't changed here (for 1.20e, or a pods follow-up).
 
+### 1.15a Kya's Crew option on the payment screen · Brittany's decision, Nov 25, 2026
+- **Decided:** with the mockup approved, 1.15a moves from "Needs Brittany before work starts" to "Ready to build" (after 1.20 in the list). It's still built to a held PR for her, because it's payments.
+
 ### 1.15a Kya's Crew option on the payment screen · Brittany's decisions, Nov 24, 2026
 - **Approved:** the "Kya's Crew payment option" mockup from Nov 23, 2026: the card step with Kya's Crew and its benefits next to Monthly and Yearly, and the Crew yearly selected state. Saved as `docs/flock/mockups/billing/CrewCardStep.dc.html` and `CrewCardStepYearlySelected.dc.html`. 1.15a is now "Overnight alone: yes (built to a held PR)".
 - **Decided (Brittany, Nov 24, 2026):** the mockup's two rescue-adopter lines ("You sponsor six free months in the Flock for a family who just adopted a rescue parrot" and "Six free months in the Flock for a new rescue adopter, from you") both become "Crew memberships help support free Flock access for rescue adopters", matching #551's legal draft. The saved mockup already shows it.

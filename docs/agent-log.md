@@ -20,6 +20,12 @@ Copy this, fill it in, and put it at the top of "Runs", above the latest entry.
 
 ## Runs
 
+### 2026-11-25 07:10 EST · 1.15a Kya's Crew option on the payment screen (backlog move)
+- **Built:** moved 1.15a from "Needs Brittany before work starts" to "Ready to build", below 1.20, at Brittany's request now that the mockup is approved. Docs only; the item is still built to a held PR because it's payments. Interactive session, not an hourly run.
+- **PR:** [#561](https://github.com/the-kya-project/perch-perfect-plan/pull/561)
+- **Outcome:** Merged once its checks passed (Brittany approved it in the session).
+- **Problems:** none.
+
 ### 2026-11-25 07:06 EST · 1.20d Journeys redesign: Diet conversion rework (Brittany's answers)
 - **Built:** Brittany's answers to #560's two questions. A first week with no weigh-ins still leaves the starting weight unset (no change). The safeguard sentence "For Flock members, this uses the bird's own baseline alerts." is removed; "The template suggests a vet check before starting…" stays. Her decisions are in the review queue. Brought the branch up to date with `main` (only the review queue conflicted: both held entries, #557 and #560, are cleared by her approval). Interactive session, not an hourly run.
 - **PR:** [#560](https://github.com/the-kya-project/perch-perfect-plan/pull/560)
