@@ -5,7 +5,7 @@ import { useState, type ReactNode } from "react";
 import { Link } from "@tanstack/react-router";
 import { Trans, useTranslation } from "react-i18next";
 import { K, SERIF } from "@/components/kya";
-import { billingDay, monthsFree, yearlyPerMonthCents, type BillingChoice, type PaidPlan } from "@/lib/billing";
+import { billingDay, givingRate, isCrewPlan, monthsFree, yearlyPerMonthCents, yearlySavingCents, type CheckoutChoice, type PaidPlan } from "@/lib/billing";
 import { formatCents } from "@/lib/gifts";
 import { pickLocale } from "@/lib/i18n/config";
 
@@ -20,6 +20,10 @@ const Leaf = ({ size = 14, width = 2.4 }: { size?: number; width?: number }) => 
 const Card = ({ size = 14, width = 2.4 }: { size?: number; width?: number }) => <Svg size={size} width={width}><rect x="3" y="6" width="18" height="12" rx="2" /><path d="M3 10h18" /></Svg>;
 const Lock = () => <Svg size={14} width={2}><rect x="5" y="11" width="14" height="10" rx="2" /><path d="M8 11V7a4 4 0 0 1 8 0v4" /></Svg>;
 const Star = () => <Svg size={34}><path d="M12 3l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.4 6.8 19.1l1-5.8L3.5 9.2l5.9-.9z" /></Svg>;
+const CrewStar = () => <Svg size={18}><path d="M12 2l2.9 6.2 6.6.8-4.9 4.6 1.3 6.6L12 16.9 6.1 20.2l1.3-6.6L2.5 9l6.6-.8z" /></Svg>;
+/** The Crew box's soft sunflower background, from the CrewCardStep mockup. */
+const CREW_BG = "#fff7e3";
+const pct = (plan: PaidPlan) => `${Math.round(givingRate(plan) * 100)}%`;
 
 const grid = { display: "grid", placeItems: "center" } as const;
 const h2 = { margin: 0, fontFamily: SERIF, fontSize: 22, fontWeight: 700, color: K.forest } as const;
@@ -60,13 +64,13 @@ const Screen = ({ children }: { children: ReactNode }) => (
 );
 const White = ({ children }: { children: ReactNode }) => <section style={{ background: "#fff", borderRadius: 20, padding: 20 }}>{children}</section>;
 
-function GivingPanel({ founder }: { founder: boolean }) {
+function GivingPanel({ founder, crew = false }: { founder: boolean; crew?: boolean }) {
   const { t } = useTranslation();
   return (
     <section style={{ marginTop: -18, position: "relative", background: K.sunflower, border: `2px solid ${K.forest}`, borderRadius: 22, padding: 20, display: "flex", flexDirection: "column", gap: 14 }}>
-      <p style={{ margin: 0, fontSize: 13, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase" }}>{t("flock.billing.givesBack", "Every membership gives back")}</p>
+      <p style={{ margin: 0, fontSize: 13, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase" }}>{crew ? t("flock.billing.crewGivesBack", "Kya's Crew gives back more") : t("flock.billing.givesBack", "Every membership gives back")}</p>
       <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
-        <span style={{ fontFamily: SERIF, fontSize: 48, fontWeight: 700, lineHeight: 1 }}>20%</span>
+        <span style={{ fontFamily: SERIF, fontSize: 48, fontWeight: 700, lineHeight: 1 }}>{crew ? pct("crew_monthly") : "20%"}</span>
         <span style={{ fontSize: 15, lineHeight: 1.35 }}>{t("flock.billing.givesBackLine", "of what you pay goes to parrot rescue and conservation partners")}</span>
       </div>
       <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 14px", borderRadius: 14, background: "#fff", border: `2px solid ${K.forest}` }}>
@@ -81,10 +85,15 @@ function GivingPanel({ founder }: { founder: boolean }) {
   );
 }
 
-function PlanTiles({ prices, choice, onChoice }: { prices: BillingPricesCents; choice: BillingChoice; onChoice: (c: BillingChoice) => void }) {
+/** Kya's Crew shows only when both its prices are set in this deployment. */
+const crewOffered = (p: BillingPricesCents) => p.crew_annual != null && p.crew_monthly != null;
+
+function PlanTiles({ prices, choice, onChoice }: { prices: BillingPricesCents; choice: CheckoutChoice; onChoice: (c: CheckoutChoice) => void }) {
   const { t } = useTranslation();
   const free = prices.annual != null && prices.monthly != null ? monthsFree(prices.annual, prices.monthly) : null;
-  const tile = (c: BillingChoice, label: string, perMonth: number, small: string, badge?: ReactNode) => {
+  const crew = crewOffered(prices);
+  const crewSave = crew ? yearlySavingCents(prices.crew_annual!, prices.crew_monthly!) : null;
+  const tile = (c: CheckoutChoice, label: string, perMonth: number, small: string, badge?: ReactNode) => {
     const on = choice === c;
     return (
       <label key={c} data-testid={`billing-plan-${c}`} style={{ position: "relative", background: on ? K.forest : "#fff", color: on ? "#fff" : K.forest, borderRadius: 18, padding: "18px 14px 16px", display: "flex", flexDirection: "column", gap: 4, border: `2px solid ${on ? K.forest : K.line}`, cursor: "pointer" }}>
@@ -96,13 +105,41 @@ function PlanTiles({ prices, choice, onChoice }: { prices: BillingPricesCents; c
       </label>
     );
   };
+  const tiles = { display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 10 } as const;
+  const benefit = (key: string, children: ReactNode) => (
+    <div key={key} style={{ display: "flex", gap: 10, alignItems: "flex-start", fontSize: 14, lineHeight: 1.45, color: K.ink }}>
+      <span style={{ ...grid, width: 22, height: 22, flexShrink: 0, borderRadius: 999, background: K.forest, color: K.sunflower }}><Check size={12} /></span>
+      <span>{children}</span>
+    </div>
+  );
   return (
-    <fieldset style={{ margin: "4px 0 0", border: 0, padding: 0 }}>
-      <legend style={{ ...h2, margin: "0 0 10px 4px", padding: 0 }}>{t("flock.billing.pickHow", "Pick how you pay")}</legend>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 10 }}>
+    <fieldset style={{ margin: "4px 0 0", border: 0, padding: 0, display: "flex", flexDirection: "column", gap: 10 }}>
+      <legend style={{ ...h2, margin: "0 0 10px 4px", padding: 0 }}>{crew ? t("flock.billing.pickMembership", "Pick your membership") : t("flock.billing.pickHow", "Pick how you pay")}</legend>
+      {crew && <p style={{ margin: "0 0 0 4px", fontSize: 14, fontWeight: 700, color: K.moss }}>{t("flock.billing.flockMembership", "Flock membership")}</p>}
+      <div style={tiles}>
         {prices.annual != null && tile("annual", t("flock.billing.yearlyLabel", "Yearly"), yearlyPerMonthCents(prices.annual), t("flock.billing.yearlyTotal", "{{price}} once a year", { price: formatCents(prices.annual) }), free ? t("flock.billing.monthsFree", "{{count}} months free", { count: free }) : undefined)}
         {prices.monthly != null && tile("monthly", t("flock.billing.monthlyLabel", "Monthly"), prices.monthly, t("flock.billing.billedMonthly", "Billed monthly"))}
       </div>
+      {crew && (
+        <div data-testid="billing-crew" style={{ marginTop: 8, background: CREW_BG, border: `2px solid ${K.sunflower}`, borderRadius: 22, padding: "18px 14px 16px", display: "flex", flexDirection: "column", gap: 12 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <span style={{ ...grid, width: 36, height: 36, flexShrink: 0, borderRadius: 999, background: K.sunflower, color: K.forest }}><CrewStar /></span>
+            <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+              <span style={{ fontFamily: SERIF, fontSize: 22, fontWeight: 700, lineHeight: 1.1 }}>{t("flock.billing.crewTitle", "Kya's Crew")}</span>
+              <span style={{ fontSize: 14, lineHeight: 1.35, color: K.ink }}>{t("flock.billing.crewLine", "For members who want to give a little more")}</span>
+            </div>
+          </div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+            {benefit("all", t("flock.billing.crewEverything", "Everything in a Flock membership"))}
+            {benefit("give", <Trans i18nKey="flock.billing.crewGives" defaults="<strong>{{pct}}</strong> of what you pay goes to parrot rescue and conservation partners" values={{ pct: pct("crew_monthly") }} components={{ strong: <strong /> }} />)}
+            {benefit("rescue", t("flock.billing.crewRescue", "Crew memberships help support free Flock access for rescue adopters"))}
+          </div>
+          <div style={tiles}>
+            {tile("crew_annual", t("flock.billing.crewYearlyLabel", "Crew yearly"), yearlyPerMonthCents(prices.crew_annual!), t("flock.billing.yearlyTotal", "{{price}} once a year", { price: formatCents(prices.crew_annual!) }), crewSave ? t("flock.billing.crewSave", "Save {{price}}", { price: formatCents(crewSave) }) : undefined)}
+            {tile("crew_monthly", t("flock.billing.crewMonthlyLabel", "Crew monthly"), prices.crew_monthly!, t("flock.billing.billedMonthly", "Billed monthly"))}
+          </div>
+        </div>
+      )}
     </fieldset>
   );
 }
@@ -153,16 +190,19 @@ function Timeline({ today, date, charge, note }: { today: string; date: string; 
   );
 }
 
-function Perks({ title, items }: { title: string; items: string[] }) {
+/** `crew` adds Kya's Crew's line, with a sunflower check, under the rest. */
+function Perks({ title, items, crew }: { title: string; items: string[]; crew?: string }) {
+  const row = (x: string, bg: string) => (
+    <div key={x} style={{ display: "flex", gap: 12, alignItems: "flex-start", fontSize: 15, lineHeight: 1.45, color: K.ink }}>
+      <span style={{ ...grid, width: 24, height: 24, flexShrink: 0, borderRadius: 999, background: bg, color: K.forest }}><Check size={13} /></span>
+      <span>{x}</span>
+    </div>
+  );
   return (
     <section style={{ background: "#fff", borderRadius: 20, padding: 20, display: "flex", flexDirection: "column", gap: 14 }}>
       <h2 style={{ ...h2, marginBottom: 2 }}>{title}</h2>
-      {items.map((x) => (
-        <div key={x} style={{ display: "flex", gap: 12, alignItems: "flex-start", fontSize: 15, lineHeight: 1.45, color: K.ink }}>
-          <span style={{ ...grid, width: 24, height: 24, flexShrink: 0, borderRadius: 999, background: K.lime, color: K.forest }}><Check size={13} /></span>
-          <span>{x}</span>
-        </div>
-      ))}
+      {items.map((x) => row(x, K.lime))}
+      {crew && row(crew, K.sunflower)}
     </section>
   );
 }
@@ -191,15 +231,23 @@ function useMemberPerks() {
   ];
 }
 
-type CardProps = { prices: BillingPricesCents; busy: boolean; failed: boolean; onCheckout: (choice: BillingChoice) => void };
+type CardProps = { prices: BillingPricesCents; busy: boolean; failed: boolean; onCheckout: (choice: CheckoutChoice) => void };
 
-const firstChoice = (p: BillingPricesCents): BillingChoice => (p.annual != null ? "annual" : "monthly");
+const firstChoice = (p: BillingPricesCents): CheckoutChoice => (p.annual != null ? "annual" : "monthly");
 
-/** CardStepSeasonMember: Yearly is picked by default. */
-export function CardStepSeasonMember({ prices, date, busy, failed, onCheckout, initialChoice }: CardProps & { date: string; initialChoice?: BillingChoice }) {
+function useCrewPerk() {
+  const { t } = useTranslation();
+  return t("flock.billing.crewRescue", "Crew memberships help support free Flock access for rescue adopters");
+}
+
+/** CardStepSeasonMember: Yearly is picked by default. Kya's Crew, when its
+ *  prices are set, sits under the Flock tiles (CrewCardStep mockup). */
+export function CardStepSeasonMember({ prices, date, busy, failed, onCheckout, initialChoice }: CardProps & { date: string; initialChoice?: CheckoutChoice }) {
   const { t } = useTranslation();
   const perks = useMemberPerks();
-  const [choice, setChoice] = useState<BillingChoice>(initialChoice ?? firstChoice(prices));
+  const crewPerk = useCrewPerk();
+  const [choice, setChoice] = useState<CheckoutChoice>(initialChoice ?? firstChoice(prices));
+  const crew = isCrewPlan(choice);
   const amount = prices[choice] == null ? "" : formatCents(prices[choice]!);
   return (
     <Screen>
@@ -208,18 +256,18 @@ export function CardStepSeasonMember({ prices, date, busy, failed, onCheckout, i
         line={t("flock.billing.heroSeasonLine", "Add a card now to stay in the Flock after the free season. You won't pay anything until {{date}}.", { date })}
       />
       <Sheet>
-        <GivingPanel founder={false} />
+        <GivingPanel founder={false} crew={crew} />
         <PlanTiles prices={prices} choice={choice} onChoice={setChoice} />
         <Timeline
           today={t("flock.billing.todayLine", "Add your card. $0 due today.")}
           date={date}
-          charge={choice === "annual"
+          charge={choice === "annual" || choice === "crew_annual"
             ? t("flock.billing.chargeYearly", "Your first charge of {{price}}, then once a year. Cancel before this date and you won't be charged.", { price: amount })
             : t("flock.billing.chargeMonthly", "Your first charge of {{price}}, then monthly. Cancel before this date and you won't be charged.", { price: amount })}
         />
-        <Perks title={t("flock.billing.keeps", "What your membership keeps")} items={perks} />
+        <Perks title={t("flock.billing.keeps", "What your membership keeps")} items={perks} crew={crew ? crewPerk : undefined} />
         <div style={{ display: "flex", flexDirection: "column", gap: 10, marginTop: 6 }}>
-          <Primary disabled={busy} onClick={() => onCheckout(choice)}>{t("flock.billing.addMyCard", "Add my card · $0 today")}</Primary>
+          <Primary disabled={busy} onClick={() => onCheckout(choice)}>{crew ? t("flock.billing.joinCrewToday", "Join Kya's Crew · $0 today") : t("flock.billing.addMyCard", "Add my card · $0 today")}</Primary>
           {failed && <ErrorLine />}
           <Secure>{t("flock.billing.secureCancel", "Secure checkout with Stripe · Cancel anytime")}</Secure>
         </div>
@@ -267,11 +315,13 @@ export function CardStepSeasonFounder({ prices, date, spot, busy, failed, onChec
 /** CardStepAfterSeason: no timeline, and no price on the button. A founder
  *  whose price is still open sees the founding card, because that's the price
  *  Checkout will use. */
-export function CardStepAfterSeason({ prices, founding, busy, failed, onCheckout, initialChoice }: CardProps & { founding: boolean; initialChoice?: BillingChoice }) {
+export function CardStepAfterSeason({ prices, founding, busy, failed, onCheckout, initialChoice }: CardProps & { founding: boolean; initialChoice?: CheckoutChoice }) {
   const { t } = useTranslation();
   const perks = useMemberPerks();
-  const [picked, setChoice] = useState<BillingChoice>(initialChoice ?? firstChoice(prices));
-  const choice: BillingChoice = founding ? "monthly" : picked;
+  const crewPerk = useCrewPerk();
+  const [picked, setChoice] = useState<CheckoutChoice>(initialChoice ?? firstChoice(prices));
+  const choice: CheckoutChoice = founding ? "monthly" : picked;
+  const crew = isCrewPlan(choice);
   return (
     <Screen>
       <Hero
@@ -279,14 +329,14 @@ export function CardStepAfterSeason({ prices, founding, busy, failed, onCheckout
         line={t("flock.billing.heroAfterLine", "Join the Flock, and help parrots in rescues and in the wild.")}
       />
       <Sheet>
-        <GivingPanel founder={false} />
+        <GivingPanel founder={false} crew={crew} />
         {founding ? <FoundingPrice prices={prices} /> : <PlanTiles prices={prices} choice={choice} onChoice={setChoice} />}
-        <Perks title={t("flock.billing.includes", "What your membership includes")} items={perks} />
+        <Perks title={t("flock.billing.includes", "What your membership includes")} items={perks} crew={crew ? crewPerk : undefined} />
         <div style={{ display: "flex", flexDirection: "column", gap: 10, marginTop: 6 }}>
-          <Primary disabled={busy} onClick={() => onCheckout(choice)}>{t("flock.billing.joinFlock", "Join the Flock")}</Primary>
+          <Primary disabled={busy} onClick={() => onCheckout(choice)}>{crew ? t("flock.billing.joinCrew", "Join Kya's Crew") : t("flock.billing.joinFlock", "Join the Flock")}</Primary>
           {failed && <ErrorLine />}
           <p style={{ margin: 0, textAlign: "center", fontSize: 14, lineHeight: 1.5, color: K.ink }}>
-            {choice === "annual"
+            {choice === "annual" || choice === "crew_annual"
               ? t("flock.billing.renewsYearly", "Renews once a year. Cancel anytime in Manage billing.")
               : t("flock.billing.renewsMonthly", "Renews every month. Cancel anytime in Manage billing.")}
           </p>
@@ -363,7 +413,11 @@ export function BillingWelcome({ founder, spot, plan, date, last4, onMembership 
         </section>
         <section style={{ display: "flex", gap: 12, alignItems: "center", padding: 16, borderRadius: 18, background: K.sunflower, border: `2px solid ${K.forest}` }}>
           <span style={{ ...grid, width: 36, height: 36, flexShrink: 0, borderRadius: 999, background: K.forest, color: K.sunflower }}><Heart /></span>
-          <span style={{ fontSize: 14, lineHeight: 1.4 }}><Trans i18nKey="flock.billing.thanks" defaults="<strong>Thank you.</strong> 20% of your membership will go to parrot rescue and conservation partners." components={{ strong: <strong /> }} /></span>
+          <span style={{ fontSize: 14, lineHeight: 1.4 }}>
+            {isCrewPlan(plan)
+              ? <Trans i18nKey="flock.billing.thanksCrew" defaults="<strong>Thank you.</strong> {{pct}} of your Crew membership will go to parrot rescue and conservation partners." values={{ pct: pct(plan) }} components={{ strong: <strong /> }} />
+              : <Trans i18nKey="flock.billing.thanks" defaults="<strong>Thank you.</strong> 20% of your membership will go to parrot rescue and conservation partners." components={{ strong: <strong /> }} />}
+          </span>
         </section>
         <div style={{ marginTop: "auto", display: "flex", flexDirection: "column", gap: 8 }}>
           <Link to="/flock" style={{ display: "grid", placeItems: "center", minHeight: 56, borderRadius: 999, border: `2px solid ${K.forest}`, background: K.sunflower, color: K.forest, fontSize: 17, fontWeight: 700 }}>{t("flock.billing.backToFlock", "Back to the Flock")}</Link>
@@ -378,6 +432,8 @@ export function BillingWelcome({ founder, spot, plan, date, last4, onMembership 
 
 function planName(t: ReturnType<typeof useTranslation>["t"], plan: PaidPlan) {
   if (plan === "founding") return t("flock.billing.planFounding", "Founding member");
+  if (plan === "crew_annual") return t("flock.billing.crewYearlyLabel", "Crew yearly");
+  if (plan === "crew_monthly") return t("flock.billing.crewMonthlyLabel", "Crew monthly");
   return plan === "annual" ? t("flock.billing.yearlyLabel", "Yearly") : t("flock.billing.monthlyLabel", "Monthly");
 }
 
@@ -418,7 +474,7 @@ export function BillingMembership({ sub, busy, failed, onManage }: { sub: Member
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
           <span style={{ ...grid, width: 44, height: 44, flexShrink: 0, borderRadius: 14, background: K.lime, color: K.forest }}><Leaf size={20} width={2} /></span>
           <span style={{ flexGrow: 1, display: "flex", flexDirection: "column", gap: 2 }}>
-            <span style={{ fontSize: 17, fontWeight: 700 }}>{sub.plan === "founding" ? t("flock.billing.planFounding", "Founding member") : t("flock.billing.flockMember", "Flock member")}</span>
+            <span style={{ fontSize: 17, fontWeight: 700 }}>{sub.plan === "founding" ? t("flock.billing.planFounding", "Founding member") : isCrewPlan(sub.plan) ? t("flock.billing.crewTitle", "Kya's Crew") : t("flock.billing.flockMember", "Flock member")}</span>
             <span data-testid="billing-on-file" style={{ fontSize: 14, color: K.quiet }}>{line}</span>
           </span>
           <span style={{ padding: "4px 10px", borderRadius: 999, background: K.paleGreen, fontSize: 12, fontWeight: 700, whiteSpace: "nowrap" }}>{t("flock.billing.onFile", "Card on file")}</span>
@@ -434,7 +490,11 @@ export function BillingMembership({ sub, busy, failed, onManage }: { sub: Member
       </section>
       <section style={{ display: "flex", gap: 12, alignItems: "center", padding: 16, borderRadius: 18, background: K.amberBg }}>
         <span style={{ ...grid, width: 36, height: 36, flexShrink: 0, borderRadius: 999, background: K.forest, color: K.sunflower }}><Heart /></span>
-        <span style={{ fontSize: 14, lineHeight: 1.4, color: K.amberText }}><Trans i18nKey="flock.billing.givesBackNote" defaults="<strong>Your membership gives back.</strong> 20% goes to parrot rescue and conservation partners." components={{ strong: <strong style={{ color: K.forest }} /> }} /></span>
+        <span style={{ fontSize: 14, lineHeight: 1.4, color: K.amberText }}>
+          {isCrewPlan(sub.plan)
+            ? <Trans i18nKey="flock.billing.givesBackNoteCrew" defaults="<strong>Your Crew membership gives back more.</strong> {{pct}} goes to parrot rescue and conservation partners." values={{ pct: pct(sub.plan) }} components={{ strong: <strong style={{ color: K.forest }} /> }} />
+            : <Trans i18nKey="flock.billing.givesBackNote" defaults="<strong>Your membership gives back.</strong> 20% goes to parrot rescue and conservation partners." components={{ strong: <strong style={{ color: K.forest }} /> }} />}
+        </span>
       </section>
     </MembershipFrame>
   );

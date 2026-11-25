@@ -27,6 +27,7 @@ import {
   checkoutDesign,
   monthsFree,
   yearlyPerMonthCents,
+  yearlySavingCents,
 } from "@/lib/billing";
 import { handleBillingEvent, subscriptionIdOf, type BillingDeps, type BillingEventLike } from "@/lib/billingWebhook";
 
@@ -365,7 +366,7 @@ await check("no trial for Crew or founders; the card step's choices are unchange
   assert.equal(planGetsTrial("founding"), false);
   assert.equal(planGetsTrial("monthly"), true);
   assert.equal(planGetsTrial("annual"), true);
-  assert.deepEqual([...BILLING_CHOICES], ["monthly", "annual"], "the card step offers no Crew tile yet");
+  assert.deepEqual([...BILLING_CHOICES], ["monthly", "annual"], "the Flock tiles");
   assert.deepEqual([...CHECKOUT_CHOICES], ["monthly", "annual", "crew_monthly", "crew_annual"]);
   assert.ok(isCrewPlan("crew_monthly") && !isCrewPlan("monthly") && !isCrewPlan(null));
 });
@@ -557,6 +558,37 @@ await check("last 49 hours: the page names the price, and closes by the season's
   assert.equal(saveCardExpiry(t + 5 * 3600, now), t + 5 * 3600);
   assert.equal(saveCardExpiry(t + 40 * 3600, now), t + 23 * 3600, "Stripe's 24-hour limit");
   assert.equal(saveCardExpiry(t + 60, now), t + 31 * 60, "Stripe's 30-minute minimum");
+});
+
+// ── Kya's Crew on the card step (backlog 1.15a) ───────────────────────────
+await check("1.15a: a Crew save-the-card page says Kya's Crew and the right period", () => {
+  assert.equal(saveCardNote("crew_annual", "$444", "Mar 1, 2027"), "Kya's Crew, $444 a year. You won't be charged until Mar 1, 2027. Cancel anytime before then from Membership and billing.");
+  assert.equal(saveCardNote("crew_monthly", "$45", "Mar 1, 2027"), "Kya's Crew, $45 a month. You won't be charged until Mar 1, 2027. Cancel anytime before then from Membership and billing.");
+  assert.match(saveCardNote("monthly", "$30", "Mar 1, 2027"), /^The Flock, \$30 a month\./, "the Flock's lines are unchanged");
+});
+await check("1.15a: Crew yearly's badge is the saving on twelve Crew months, and only ever true", () => {
+  assert.equal(yearlySavingCents(44400, 4500), 9600);
+  assert.equal(yearlyPerMonthCents(44400), 3700);
+  assert.equal(yearlySavingCents(54000, 4500), null);
+  assert.equal(yearlySavingCents(60000, 4500), null);
+  assert.equal(yearlySavingCents(44400, 0), null);
+});
+await check("1.15a: the card step offers Crew only when both its prices are set, and checks out with the Crew plan", () => {
+  const src = readFileSync("src/components/flock/BillingScreens.tsx", "utf8");
+  assert.match(src, /crewOffered = \(p: BillingPricesCents\) => p\.crew_annual != null && p\.crew_monthly != null/);
+  assert.match(src, /tile\("crew_annual"/);
+  assert.match(src, /tile\("crew_monthly"/);
+  assert.match(src, /onCheckout\(choice\)/);
+  assert.doesNotMatch(src, /sponsor|six (free )?months/i, "never promises a sponsored seat (Brittany, Nov 24, 2026)");
+  assert.equal((src.match(/Crew memberships help support free Flock access for rescue adopters/g) ?? []).length, 2, "the Crew benefit and the line under the perks share one key");
+  const card = readFileSync("src/components/flock/BillingCardStep.tsx", "utf8");
+  assert.match(card, /choice: CheckoutChoice/);
+});
+await check("1.15a: Crew is named on Membership and its giving is 25%", () => {
+  const src = readFileSync("src/components/flock/BillingScreens.tsx", "utf8");
+  assert.match(src, /isCrewPlan\(sub\.plan\) \? t\("flock\.billing\.crewTitle"/);
+  assert.match(src, /plan === "crew_annual"\) return t\("flock\.billing\.crewYearlyLabel"/);
+  assert.equal(`${Math.round(givingRate("crew_annual") * 100)}%`, "25%");
 });
 
 console.log(`\n${passed} passed${process.exitCode ? ", some FAILED" : ""}`);
