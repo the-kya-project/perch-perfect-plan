@@ -114,6 +114,20 @@ async function main() {
     const out = flockEventProps(member, "flock_journey_started", { template: "Shoulder training with Kiwi", visibility: "private" })!;
     assert.ok(!("template" in out)); assert.equal(out.visibility, "private");
   });
+  await check("journeys (1.20): skills, not milestones", () => {
+    assert.ok(!("flock_journey_milestone_reached" in FLOCK_EVENT_PROPS), "milestone event retired");
+    for (const k of FLOCK_EVENT_PROPS.flock_journey_started as readonly string[]) assert.ok(!/milestone|already/.test(k), k);
+    const started = flockEventProps(member, "flock_journey_started", { template: "custom", is_custom: true, visibility: "community", from_member_skill: true, milestone_count: 3 })!;
+    assert.equal(started.from_member_skill, true); assert.ok(!("milestone_count" in started));
+    const fin = flockEventProps(member, "flock_journey_finished", { how: "happy_where_we_are", total: 5 })!;
+    assert.equal(fin.how, "happy_where_we_are"); assert.ok(!("total" in fin));
+    const upd = flockEventProps(member, "flock_journey_update_posted", { big_moment: true, is_question: false, caption: "Did it!" })!;
+    assert.equal(upd.big_moment, true); assert.equal(upd.is_question, false); assert.ok(!("caption" in upd));
+    const data = readFileSync("src/lib/journeyData.ts", "utf8");
+    assert.ok(data.includes('trackFlock("flock_journey_finished", { how })'), "both endings are tracked");
+    assert.ok(data.includes('trackFlock("flock_journey_update_posted"'), "updates are tracked");
+    assert.ok(!/milestone_count|already_count/.test(data), "no milestone props are sent");
+  });
   await check("the allowlists name no content-shaped key", () => {
     for (const [e, keys] of Object.entries(FLOCK_EVENT_PROPS)) {
       for (const k of keys) assert.ok(!/body|title|text|caption|name|photo_path|url|email|note|bird_id|user/.test(k), `${e}: ${k}`);

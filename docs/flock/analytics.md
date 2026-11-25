@@ -32,17 +32,19 @@ The same facts are set once as person properties: `flock_member`, `flock_members
 | `flock_comment_created` | a comment or reply is created | `subject_type` (post, journey update, milestone), `is_reply`, `has_photo` |
 | `flock_reaction_added` | a reaction is added (not when one is taken back) | `subject_type`, `kind` |
 | `flock_library_resource_opened` | a library resource is opened | `resource_id`, `resource_type`, `vet_reviewed` |
-| `flock_journey_started` | a journey starts | `template` (slug, or `custom`), `is_custom`, `visibility`, `milestone_count` (custom only), `already_count` |
-| `flock_journey_milestone_reached` | a milestone is marked done | `position`, `done`, `total` |
-| `flock_journey_finished` | the last milestone finishes the journey | `total` |
+| `flock_journey_started` | a journey starts (a skill, your own skill, or "Start this skill" on a member skill) | `template` (slug, or `custom`), `is_custom`, `visibility`, `from_member_skill` |
+| `flock_journey_update_posted` | an update is posted on a journey | `big_moment` ("This was a big moment"), `is_question` (the caption has a "?") |
+| `flock_journey_finished` | the owner ends a journey | `how`: `learned` ("[Bird] learned it!") or `happy_where_we_are` |
 | `flock_idea_tried` | "We tried it" on Today's idea | `outcome` (loved / curious / not_for), `has_photo`, `has_bird` |
 | `flock_event_rsvped` | going or maybe on a chapter event (not when an RSVP is cleared) | `answer` |
 
-Library resources are written by admins, so their id is not member content. A custom journey's name and milestones are member writing, so a custom journey sends only `custom` and a count.
+Library resources are written by admins, so their id is not member content. A custom journey's name and description are member writing, so a custom journey sends only `custom`.
+
+**Journeys redesign (backlog 1.20, Nov 2026).** Journeys have no milestones any more, so `flock_journey_milestone_reached` is retired (nothing sends it) and `flock_journey_started` no longer carries `milestone_count` or `already_count`. Events sent before the change still have those properties in PostHog. `flock_journey_finished` used to fire only when the last milestone finished a journey, with `total`; it now fires on either ending, with `how`.
 
 ## Not tracked (deliberately)
 
-- Anything a member wrote: posts, comments, captions, titles, custom journey names and milestones, profile bios, display names, event suggestions.
+- Anything a member wrote: posts, comments, captions, titles, custom journey names and descriptions, profile bios, display names, event suggestions.
 - Photos, bird names, bird ids, member ids of other people, who reacted to whom, who follows whom.
 - Edits, deletes, reports and the review queue (moderation isn't engagement).
 - Where a return visit came from (push, email or direct). The plan's item 6 needs a tag on push links in the service worker and native push code, which is shared code; it's a separate change.

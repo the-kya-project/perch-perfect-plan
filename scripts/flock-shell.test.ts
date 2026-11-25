@@ -468,6 +468,22 @@ check("journeys: no milestone question or step counts on the new screens", () =>
   const browse = readFileSync("src/components/flock/JourneyBrowse.tsx", "utf8");
   assert.ok(!/card\.done|c\.done|c\.total/.test(browse), "cards and rings show no step counts");
 });
+check("journeys: the e2e fixture has the 1.20a skill text, and the app never marks or shares a milestone (1.20e)", () => {
+  const fixture = JSON.parse(readFileSync("e2e/journey-fixture.json", "utf8")) as Record<string, any>[];
+  const migration = readFileSync("supabase/migrations/20261124190000_journeys_skills_data.sql", "utf8");
+  const sqlText = (t: string) => t.replace(/'/g, "''");
+  for (const t of fixture) {
+    for (const gone of ["done_when", "suggested_first", "typical_length", "milestones"]) assert.ok(!(gone in t), `${t.slug}: no ${gone}`);
+    assert.deepEqual(t.tips, [], `${t.slug}: tips cleared`);
+    assert.equal(t.review_status, "draft", `${t.slug}: draft`);
+    assert.ok(migration.includes(`('${t.slug}',\n       '${sqlText(t.purpose)}'`), `${t.slug}: description matches the migration`);
+    for (const line of t.safety_notes) assert.ok(migration.includes(`'${sqlText(line)}'`), `${t.slug}: safety note "${line}" is the migration's`);
+    assert.ok(Array.isArray(t.history_milestones) && t.history_milestones.length > 0, `${t.slug}: old milestones kept only as history`);
+  }
+  const data = readFileSync("src/lib/journeyData.ts", "utf8");
+  assert.ok(!/journey_reach_milestone|journey_share_milestone|journey_milestone_cards/.test(data), "no milestone writes or milestone cards");
+  assert.ok(/p_custom_milestones: null/.test(data) && /p_already: null/.test(data), "journey_start is sent no milestones");
+});
 check("journeys: next milestone (history), days", () => {
   const ms = [{ position: 2, state: "todo" }, { position: 1, state: "already" }, { position: 3, state: "todo" }];
   assert.equal(nextMilestone(ms)?.position, 2);

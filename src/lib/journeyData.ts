@@ -169,8 +169,7 @@ export async function startJourney(input: {
   })) as string;
   if (input.vetCheck) await setVetCheck(id, input.vetCheck);
   trackFlock("flock_journey_started", {
-    template: input.templateSlug ?? "custom", is_custom: !input.templateSlug, visibility: input.visibility,
-    milestone_count: null, already_count: 0,
+    template: input.templateSlug ?? "custom", is_custom: !input.templateSlug, visibility: input.visibility, from_member_skill: false,
   });
   return id;
 }
@@ -317,15 +316,18 @@ export function useClipAllowance(birdId: string | null | undefined, journeyId: s
 }
 
 export async function postJourneyUpdate(journeyId: string, clipRef: string, engagement: Engagement, caption: string, bigMoment = false): Promise<string> {
-  return must(await sb.rpc("journey_post_update", {
+  const id = must(await sb.rpc("journey_post_update", {
     p_journey_id: journeyId, p_clip_ref: clipRef, p_engagement: engagement, p_caption: caption.trim() || null, p_big_moment: bigMoment,
   })) as string;
+  // A "?" makes it a question, the same rule journey_post_update uses.
+  trackFlock("flock_journey_update_posted", { big_moment: bigMoment, is_question: caption.includes("?") });
+  return id;
 }
 /** "[Bird] learned it!" (adds the skill; Diet conversion adds none) or
  *  "We're happy where we are" (adds nothing). Returns the new status. */
 export async function finishJourney(journeyId: string, how: "learned" | "happy_where_we_are"): Promise<JourneyStatus> {
   const status = must(await sb.rpc("journey_finish", { p_journey_id: journeyId, p_how: how })) as JourneyStatus;
-  if (how === "learned") trackFlock("flock_journey_finished", { total: null });
+  trackFlock("flock_journey_finished", { how });
   return status;
 }
 export async function saveFinisherTip(journeyId: string, body: string): Promise<void> {
@@ -497,7 +499,7 @@ export async function startMemberSkill(input: { sourceId: string; birdId: string
   const id = must(await sb.rpc("journey_start_member_skill", {
     p_source_id: input.sourceId, p_bird_id: input.birdId, p_rhythm: input.rhythm, p_visibility: input.visibility,
   })) as string;
-  trackFlock("flock_journey_started", { template: "custom", is_custom: true, visibility: input.visibility, milestone_count: null, already_count: 0 });
+  trackFlock("flock_journey_started", { template: "custom", is_custom: true, visibility: input.visibility, from_member_skill: true });
   return id;
 }
 
