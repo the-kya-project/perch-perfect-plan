@@ -153,7 +153,8 @@ begin
   reset role;
   if ok and denied then passed := passed + 1; else failed := array_append(failed, 'clip references only for viewers'); end if;
 
-  -- 7) Filters, the milestone cards in Today, and update tags.
+  -- 7) Filters, the old milestone cards (history: Today reads journey_moment_cards
+  --    since 1.20b, checked in journeys_screens_checks.sql), and update tags.
   perform set_config('request.jwt.claims', json_build_object('sub', m2, 'role', 'authenticated')::text, true);
   set local role authenticated;
   ok := exists (select 1 from public.journey_feed('basics', 50) where journey_id = jc)

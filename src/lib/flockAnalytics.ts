@@ -40,9 +40,13 @@ export const FLOCK_EVENT_PROPS = {
   /** Only when a reaction is added, not when one is taken back. */
   flock_reaction_added: ["subject_type", "kind"],
   flock_library_resource_opened: ["resource_id", "resource_type", "vet_reviewed"],
-  flock_journey_started: ["template", "is_custom", "visibility", "milestone_count", "already_count"],
-  flock_journey_milestone_reached: ["position", "done", "total"],
-  flock_journey_finished: ["total"],
+  /** Journeys redesign (1.20): skills, not milestones. `from_member_skill` is
+   *  "Start this skill" on another member's skill. */
+  flock_journey_started: ["template", "is_custom", "visibility", "from_member_skill"],
+  /** An update posted on a journey (always a clip). */
+  flock_journey_update_posted: ["big_moment", "is_question"],
+  /** The owner ends a journey: "[Bird] learned it!" or "We're happy where we are". */
+  flock_journey_finished: ["how"],
   flock_idea_tried: ["outcome", "has_photo", "has_bird"],
   flock_event_rsvped: ["answer"],
 } as const satisfies Record<string, readonly string[]>;

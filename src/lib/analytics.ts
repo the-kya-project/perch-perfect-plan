@@ -148,7 +148,7 @@ export type AnalyticsEventName =
   | "flock_reaction_added"
   | "flock_library_resource_opened"
   | "flock_journey_started"
-  | "flock_journey_milestone_reached"
+  | "flock_journey_update_posted"
   | "flock_journey_finished"
   | "flock_idea_tried"
   | "flock_event_rsvped";

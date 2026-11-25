@@ -476,11 +476,17 @@ async function storagePhotos(context: BrowserContext, fx: ReturnType<typeof duoF
 }
 
 // ---- Journeys (step 3) --------------------------------------------------------
-// Six of the fourteen templates, in the doc's own words (e2e/journey-fixture.json).
+// Seven of the fourteen skills, with the 1.20a draft text (e2e/journey-fixture.json):
+// a description (`purpose`), safety notes and no tips. `history_milestones` are
+// the old journey_template_milestones rows, kept only as history: journeys
+// started before the redesign (`done` below) still have milestone rows, and a
+// journey started now gets none (1.20a).
 const JOURNEY_TEMPLATES = JSON.parse(readFileSync(`${process.cwd()}/e2e/journey-fixture.json`, "utf8")) as {
-  id: string; slug: string; name: string; tier: string; milestones: { position: number; title: string; ask: string; done_line: string }[];
+  id: string; slug: string; name: string; tier: string; purpose: string; safety_notes: string[]; tips: string[];
+  history_milestones: { position: number; title: string; ask: string; done_line: string }[];
 }[];
-/** A journey already under way: which template (or custom milestones), how many milestones are done. */
+/** A journey already under way: which template (or your own skill), and, for one
+ *  started before the redesign, how many of its old milestones were done. */
 type SeedJourney = {
   id: string; birdName: string; slug?: string; custom?: { name: string; milestones: string[]; description?: string }; done: number; status?: string; pausedReason?: string;
   /** Diet conversion's vet card answer. */
@@ -522,8 +528,9 @@ async function mockJourneys(context: BrowserContext, opts: JourneyMockOpts, bird
     route.fulfill({ status, contentType: "application/json", headers: { "access-control-allow-origin": "*" }, body: JSON.stringify(body) });
   const journeys = new Map<string, any>();
   const lastPosted = new Map<string, string>();
-  const make = (id: string, birdId: string, tp: (typeof JOURNEY_TEMPLATES)[number] | undefined, custom: { name: string; milestones?: string[] | null; description?: string | null } | null, extra: Record<string, any>) => {
-    const ms = tp ? tp.milestones.map((m) => ({ title: m.title, words: { ask: m.ask, done_line: m.done_line } })) : (custom!.milestones ?? []).map((title) => ({ title, words: null }));
+  /** `history`: a journey started before the redesign, which keeps its milestone rows. */
+  const make = (id: string, birdId: string, tp: (typeof JOURNEY_TEMPLATES)[number] | undefined, custom: { name: string; milestones?: string[] | null; description?: string | null } | null, extra: Record<string, any>, history = false) => {
+    const ms = !history ? [] : tp ? tp.history_milestones.map((m) => ({ title: m.title, words: { ask: m.ask, done_line: m.done_line } })) : (custom!.milestones ?? []).map((title) => ({ title, words: null }));
     return {
       id, bird_id: birdId, template_id: tp?.id ?? null, custom_name: custom?.name ?? null, status: "active", visibility: "community", rhythm: "most_days",
       started_at: new Date(Date.now() - 16 * 86_400_000).toISOString(), finished_at: null as string | null, paused_reason: null, vet_check: null, vet_remind_after: null,
@@ -543,7 +550,7 @@ async function mockJourneys(context: BrowserContext, opts: JourneyMockOpts, bird
   for (const sj of opts.seed ?? []) {
     const bird = birds.find((b) => b.name === sj.birdName) ?? { id: `00000000-0000-4000-8000-0000000075${sj.id.slice(-2)}`, name: sj.birdName };
     const j = make(sj.id, bird.id, JOURNEY_TEMPLATES.find((x) => x.slug === sj.slug), sj.custom ?? null,
-      { status: sj.status ?? "active", paused_reason: sj.pausedReason ?? null, visibility: sj.visibility ?? "community", vet_check: sj.vetCheck ?? null });
+      { status: sj.status ?? "active", paused_reason: sj.pausedReason ?? null, visibility: sj.visibility ?? "community", vet_check: sj.vetCheck ?? null }, sj.done > 0);
     j.milestones.forEach((m: any, i: number) => { if (i < sj.done) m.state = "reached"; });
     if (j.status === "finished") j.finished_at = new Date(Date.now() - 3_600_000).toISOString();
     journeys.set(sj.id, j);
@@ -628,7 +635,6 @@ async function mockJourneys(context: BrowserContext, opts: JourneyMockOpts, bird
       const tp = JOURNEY_TEMPLATES.find((x) => x.slug === args.p_template_slug);
       const jn = make(id, args.p_bird_id, tp, tp ? null : { name: args.p_custom_name, description: args.p_custom_description ?? null },
         { visibility: args.p_visibility, rhythm: args.p_rhythm, started_at: new Date().toISOString() });
-      jn.milestones.forEach((m: any) => { if ((args.p_already ?? []).includes(m.position)) m.state = "already"; });
       journeys.set(id, jn);
       return json(route, id);
     }
@@ -720,19 +726,9 @@ async function mockJourneys(context: BrowserContext, opts: JourneyMockOpts, bird
     if (fn === "journey_follow") { if (args.p_follow) follows.add(args.p_journey_id); else follows.delete(args.p_journey_id); return json(route, (meta.get(args.p_journey_id)?.followers ?? 0) + (args.p_follow ? 1 : 0)); }
     if (fn === "journey_react") return json(route, null);
     if (fn === "journey_set_status" && j) { j.status = args.p_status; return json(route, null); }
-    if (fn === "journey_reach_milestone" && j) {
-      const m = j.milestones.find((x: any) => x.position === args.p_position);
-      m.state = "reached"; m.reached_at = new Date().toISOString();
-      const done = j.milestones.filter((x: any) => x.state !== "todo").length;
-      const finished = done === j.milestones.length;
-      if (finished) { j.status = "finished"; j.finished_at = new Date().toISOString(); }
-      return json(route, [{ finished, done, total: j.milestones.length }]);
-    }
-    if (fn === "journey_share_milestone" && j) {
-      const m = j.milestones.find((x: any) => x.position === args.p_position);
-      if (m) m.shared_at = new Date().toISOString();
-      return json(route, null);
-    }
+    // journey_reach_milestone and journey_share_milestone are gone from the app
+    // (1.20): nothing marks or shares a milestone. Any call is recorded in
+    // state.calls and answered null, and the journeys tests fail on it.
     if (fn === "journey_set_visibility" && j) { j.visibility = args.p_visibility; return json(route, null); }
     if (fn === "journey_set_vet_check" && j) {
       if (args.p_choice === "remind_later") j.vet_remind_after = new Date(Date.now() + 3 * 86_400_000).toISOString();
@@ -940,7 +936,7 @@ test.describe("journeys: start a journey (admin, phone)", () => {
     await expect(list.locator("[data-skill-group='tricks'] [data-template]")).toHaveCount(2);
     // Already knows it: says so, and it can still be started.
     await expect(list.locator("[data-template='target-training']")).toContainText("Echo already knows this");
-    await expect(list.locator("[data-template='step-up']")).toContainText("So your bird steps onto your hand calmly and by choice");
+    await expect(list.locator("[data-template='step-up']")).toContainText("Your bird steps onto your hand calmly and by choice, without biting.");
     await expect(list.locator("[data-locked]")).toHaveCount(0);
     await expect(page.getByTestId("write-own")).toHaveText("Your own skill");
     await list.locator("[data-template='step-up']").click();
@@ -948,7 +944,7 @@ test.describe("journeys: start a journey (admin, phone)", () => {
     await expect(page).toHaveURL(/\/flock\/journeys\/setup\?/);
     const setup = page.getByTestId("journey-setup");
     await expect(page.getByRole("heading", { level: 1 })).toHaveText("Step up");
-    await expect(setup.getByTestId("skill-description")).toContainText("So your bird steps onto your hand calmly and by choice");
+    await expect(setup.getByTestId("skill-description")).toContainText("Your bird steps onto your hand calmly and by choice, without biting.");
     await expect(setup.getByTestId("safety-notes")).toContainText("Never withhold food to make a bird hungrier for training.");
     await expect(setup.getByTestId("skill-video")).toHaveCount(0);
     // No milestone checklist, no "already does", no day-one clip, no tips list.
@@ -967,9 +963,11 @@ test.describe("journeys: start a journey (admin, phone)", () => {
 
     await expect(page).toHaveURL(/\/flock\/journeys\/00000000-0000-4000-8000-000000007201$/);
     expect(journeys.starts).toHaveLength(1);
-    expect(journeys.starts[0]).toMatchObject({ p_template_slug: "step-up", p_custom_name: null, p_already: null, p_rhythm: "most_days", p_visibility: "community", p_day_one_clip: null });
+    expect(journeys.starts[0]).toMatchObject({ p_template_slug: "step-up", p_custom_name: null, p_custom_milestones: null, p_already: null, p_rhythm: "most_days", p_visibility: "community", p_day_one_clip: null });
     await expect(page.getByTestId("journey-page")).toBeVisible();
     await expect(page.getByTestId("progress-bar")).toHaveCount(0);
+    // Skills, not milestones (1.20): nothing marks, shares or reads a milestone.
+    expect(journeys.calls.some((c) => /milestone/.test(c.fn))).toBe(false);
     await context.close();
   });
 
@@ -1453,7 +1451,7 @@ test.describe("journeys: pages, the Journeys tab, following and Today (admin, ph
     const about = page.getByTestId("skill-about");
     await expect(about.getByTestId("skill-description")).toBeHidden();
     await about.locator("summary").click();
-    await expect(about.getByTestId("skill-description")).toContainText("So your bird steps onto your hand calmly and by choice");
+    await expect(about.getByTestId("skill-description")).toContainText("Your bird steps onto your hand calmly and by choice, without biting.");
     await expect(about.getByTestId("safety-notes")).toContainText("Stop at the first sign of stress.");
     await expect(page.getByTestId("post-update")).toBeVisible();
     await expect(page.getByRole("button", { name: "Day one vs. now" })).toBeVisible();
