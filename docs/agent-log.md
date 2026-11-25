@@ -20,17 +20,77 @@ Copy this, fill it in, and put it at the top of "Runs", above the latest entry.
 
 ## Runs
 
+### 2026-11-25 08:08 EST · 1.15a Kya's Crew option on the payment screen
+- **Built:** Kya's Crew on the Membership card step, from the approved mockups. Under "Pick your membership", the Flock's Yearly and Monthly tiles come first, then a Kya's Crew box with its benefits and two tiles, Crew yearly ($37/mo, $444 once a year, "Save $96") and Crew monthly ($45/mo). Picking Crew changes the giving panel to 25%, adds the rescue-adopter line under "What your membership keeps", and the button says "Join Kya's Crew · $0 today". When the last 48 hours of the free season mean Checkout only saves the card, its sentence now says "Kya's Crew, $444 a year…" instead of "The Flock…". Membership and "You're all set" name the Crew plan and say 25%. Crew only shows when both Crew prices are set, so nothing changes in a deployment without them. All of it is behind `BILLING_ENABLED` (off) and Stripe test mode, web only. English only; Dutch waits for Brittany's read.
+- **PR:** [#563](https://github.com/the-kya-project/perch-perfect-plan/pull/563)
+- **Outcome:** Held: payments. Needs Brittany's approval of the screens and copy, and one question: should founders whose founding price is open also be offered Crew (no mockup shows it, so their screen is unchanged)?
+- **Problems:** none. No lock at start. The only open PR was #562 (1.20e draft, opened 5 minutes before this run on a `claude/` branch), which isn't abandoned, so 1.20e was left alone and this run took 1.15a. `npx tsc` reports an error in `e2e/helpers.ts` and Prettier flags `BillingScreens.tsx` and `billing.ts`; both are the same on `main` without this change. Moved the pending log's entries (Nov 24 23:01 to Nov 25 07:07) in here.
+
 ### 2026-11-25 07:10 EST · 1.15a Kya's Crew option on the payment screen (backlog move)
 - **Built:** moved 1.15a from "Needs Brittany before work starts" to "Ready to build", below 1.20, at Brittany's request now that the mockup is approved. Docs only; the item is still built to a held PR because it's payments. Interactive session, not an hourly run.
 - **PR:** [#561](https://github.com/the-kya-project/perch-perfect-plan/pull/561)
 - **Outcome:** Merged once its checks passed (Brittany approved it in the session).
 - **Problems:** none.
 
+### 2026-11-25 07:07 EST · none (nothing to build)
+- **Built:** nothing. On `main` (now at #557), the only "Ready to build" items are 1.20d (open PR #560, held for Brittany) and 1.20e (depends on 1.20d being merged). 1.15a is still under "Needs Brittany before work starts" on `main`; Brittany's PR #561 moves it to "Ready to build" but isn't merged yet, so a later run can pick it up once it is.
+- **PR:** none
+- **Outcome:** Stopped: nothing in the backlog this run is allowed to build.
+- **Problems:** none. No lock at start. #557 (1.11 follow-up) has merged. Open PRs checked: #560 (1.20d) is held; Brittany's own session pushed "Merge main into 1.20d; apply Brittany's answers" at 12:06 UTC and its checks are re-running, so it's left alone. #561 is Brittany's docs PR, not an agent PR, so it's left alone. No drafts to close. The copy `agent-run-20261125-0707` has no changes.
+
 ### 2026-11-25 07:06 EST · 1.20d Journeys redesign: Diet conversion rework (Brittany's answers)
 - **Built:** Brittany's answers to #560's two questions. A first week with no weigh-ins still leaves the starting weight unset (no change). The safeguard sentence "For Flock members, this uses the bird's own baseline alerts." is removed; "The template suggests a vet check before starting…" stays. Her decisions are in the review queue. Brought the branch up to date with `main` (only the review queue conflicted: both held entries, #557 and #560, are cleared by her approval). Interactive session, not an hourly run.
 - **PR:** [#560](https://github.com/the-kya-project/perch-perfect-plan/pull/560)
 - **Outcome:** Merged once every required check passed (Brittany approved it in the session). The eclectus alert stays off.
 - **Problems:** none.
+
+### 2026-11-25 06:07 EST · none (nothing to build)
+- **Built:** nothing. Unchanged since the 05:06 run: the only "Ready to build" items are 1.20d (open PR #560, held for Brittany) and 1.20e (depends on 1.20d being merged). 1.15a sits under "Needs Brittany before work starts".
+- **PR:** none
+- **Outcome:** Stopped: nothing in the backlog this run is allowed to build.
+- **Problems:** none. No lock at start. `main` is still at #559. Open agent PRs checked: #560 (1.20d) and #557 (1.11 follow-up), both held, every required check passing, merge state clean, no comments or reviews from Brittany, so both left as they are. No drafts to close. The copy `agent-run-20261125-0607` has no changes.
+
+### 2026-11-25 05:06 EST · none (nothing to build)
+- **Built:** nothing. Unchanged since the 04:05 run: the only "Ready to build" items are 1.20d (open PR #560, held for Brittany) and 1.20e (depends on 1.20d being merged). 1.15a sits under "Needs Brittany before work starts".
+- **PR:** none
+- **Outcome:** Stopped: nothing in the backlog this run is allowed to build.
+- **Problems:** none. No lock at start. `main` is still at #559. Open agent PRs checked: #560 (1.20d) and #557 (1.11 follow-up), both held, every required check passing, merge state clean, no comments or reviews from Brittany, so both left as they are. No drafts to close. The copy `agent-run-20261125-0506` has no changes.
+
+### 2026-11-25 04:05 EST · none (nothing to build)
+- **Built:** nothing. Unchanged since the 03:04 run: the only "Ready to build" items are 1.20d (open PR #560, held for Brittany) and 1.20e (depends on 1.20d being merged). 1.15a sits under "Needs Brittany before work starts".
+- **PR:** none
+- **Outcome:** Stopped: nothing in the backlog this run is allowed to build.
+- **Problems:** none. No lock at start. `main` is still at #559. Open agent PRs checked: #560 (1.20d) and #557 (1.11 follow-up), both held, every required check passing, merge state clean, no comments or reviews from Brittany, so both left as they are. No drafts to close. The copy `agent-run-20261125-0405` has no changes.
+
+### 2026-11-25 03:04 EST · none (nothing to build)
+- **Built:** nothing. Unchanged since the 02:03 run: the only "Ready to build" items are 1.20d (open PR #560, held for Brittany) and 1.20e (depends on 1.20d being merged). 1.15a sits under "Needs Brittany before work starts".
+- **PR:** none
+- **Outcome:** Stopped: nothing in the backlog this run is allowed to build.
+- **Problems:** none. No lock at start. `main` is still at #559. Open agent PRs checked: #560 (1.20d) and #557 (1.11 follow-up), both held, every required check passing, merge state clean, no comments or reviews from Brittany, so both left as they are. No drafts to close. The copy `agent-run-20261125-0304` has no changes.
+
+### 2026-11-25 02:03 EST · none (nothing to build)
+- **Built:** nothing. Unchanged since the 01:03 run: the only "Ready to build" items are 1.20d (open PR #560, held for Brittany) and 1.20e (depends on 1.20d being merged). 1.15a sits under "Needs Brittany before work starts".
+- **PR:** none
+- **Outcome:** Stopped: nothing in the backlog this run is allowed to build.
+- **Problems:** none. No lock at start. `main` is still at #559. Open agent PRs checked: #560 (1.20d) and #557 (1.11 follow-up), both held, every required check passing, merge state clean, no new comments from Brittany, so both left as they are. No drafts to close. The copy `agent-run-20261125-0203` has no changes.
+
+### 2026-11-25 01:03 EST · none (nothing to build)
+- **Built:** nothing. Unchanged since the 00:02 run: the only "Ready to build" items are 1.20d (open PR #560, held for Brittany) and 1.20e (depends on 1.20d being merged). 1.15a sits under "Needs Brittany before work starts".
+- **PR:** none
+- **Outcome:** Stopped: nothing in the backlog this run is allowed to build.
+- **Problems:** none. No lock at start. `main` is at #559. Open agent PRs checked: #560 (1.20d) and #557 (1.11 follow-up), both held, every required check passing, merge state clean, so both left as they are. No drafts to close. The copy `agent-run-20261125-0103` has no changes.
+
+### 2026-11-25 00:02 EST · none (nothing to build)
+- **Built:** nothing. Same as the 23:01 run: the only "Ready to build" items are 1.20d, which has an open PR (#560, held for Brittany), and 1.20e, which depends on 1.20d being merged. 1.15a sits under "Needs Brittany before work starts", which runs never start.
+- **PR:** none
+- **Outcome:** Stopped: nothing in the backlog this run is allowed to build.
+- **Problems:** none. No lock at start. `main` now includes #559 (1.20c). Open agent PRs checked: #560 (1.20d) and #557 (1.11 follow-up), both held, every required check passing, merge state clean against `main`, so both left as they are. No drafts to close. The copy `agent-run-20261125-0002` has no changes.
+
+### 2026-11-24 23:01 EST · none (nothing to build)
+- **Built:** nothing. The only "Ready to build" items are 1.20d, which already has an open PR (#560, held for Brittany), and 1.20e, which depends on 1.20d being merged. 1.15a is marked "Overnight alone: yes" but sits under "Needs Brittany before work starts", which runs never start; moving it to "Ready to build" would let a run build it to a held PR.
+- **PR:** none
+- **Outcome:** Stopped: nothing in the backlog this run is allowed to build.
+- **Problems:** none. No lock at start; the pending log was empty. Open agent PRs checked: #560 (1.20d) and #557 (1.11 follow-up), both held, every required check passing, no conflicts with `main`, so both left as they are. No drafts to close. The copy `agent-run-20261124-2301` has no changes.
 
 ### 2026-11-24 21:29 EST · 1.20d Journeys redesign: Diet conversion rework
 - **Built:** Diet conversion no longer depends on milestones, and it's still switched off with the rest of journeys (production has journeys off, and the Flock is closed to members). The starting weight is now worked out from the journey itself: the average of the weigh-ins in the first week after it starts, the same week milestone 1 used to measure. The weight rules use it with every number and rule unchanged, and the "Weigh [Bird] today" reminder counts from the same start. The "Have you had a chance to check in with your avian vet?" reminder now shows once that starting weight is set. Before this, new journeys had no milestones, so it could never show. The eclectus alert is built and sits above the vet card for an eclectus. It's behind a new health switch that starts off, and stays off until a vet approves the wording. Birds with no species never see it. Lories and lorikeets are still blocked, and the journey still finishes as "[Bird] is on the new diet" with no known skill added. One safeguard line that said "every step" now says "the whole journey".

@@ -19,6 +19,37 @@ Format:
   - After: "<new wording>"
 ```
 
+### [#563](https://github.com/the-kya-project/perch-perfect-plan/pull/563) · 1.15a Kya's Crew on the payment screen · **held, not merged yet**
+English only (Dutch waits for your read). All behind `BILLING_ENABLED` (off), web only. Prices come from Stripe; the amounts below are the ones in your mockup. Everything is from `CrewCardStep.dc.html` word for word unless marked "not in the mockup".
+- **Where:** the card step, above the tiles (only when the Crew prices are set)
+  - Before: "Pick how you pay"
+  - After: "Pick your membership", then a small heading "Flock membership" above Yearly and Monthly
+- **Where:** the Kya's Crew box under the Flock tiles
+  - New: "Kya's Crew" / "For members who want to give a little more"
+  - New: "Everything in a Flock membership" / "**25%** of what you pay goes to parrot rescue and conservation partners" / "Crew memberships help support free Flock access for rescue adopters"
+  - New tiles: "Crew yearly", "$37/mo", "$444 once a year", "Save $96"; "Crew monthly", "$45/mo", "Billed monthly"
+- **Where:** the giving panel at the top, with a Crew plan picked
+  - Before: "Every membership gives back" / "20%"
+  - After: "Kya's Crew gives back more" / "25%"
+- **Where:** "What your membership keeps", with a Crew plan picked
+  - New last line: "Crew memberships help support free Flock access for rescue adopters"
+- **Where:** the button, with a Crew plan picked
+  - Before: "Add my card · $0 today"
+  - After: "Join Kya's Crew · $0 today"
+- **Where:** the card step after the free season, with a Crew plan picked (not in the mockup)
+  - Before: "Join the Flock"
+  - After: "Join Kya's Crew"
+- **Where:** Stripe's save-the-card page in the free season's last 48 hours, for a Crew plan (not in the mockup)
+  - Before: "The Flock, {{price}} a year. You won't be charged until {{date}}. Cancel anytime before then from Membership and billing." (and "a month")
+  - After: "Kya's Crew, {{price}} a year. You won't be charged until {{date}}. Cancel anytime before then from Membership and billing." (and "a month")
+- **Where:** "You're all set" for a Crew member (not in the mockup)
+  - Before: "**Thank you.** 20% of your membership will go to parrot rescue and conservation partners."
+  - After: "**Thank you.** 25% of your Crew membership will go to parrot rescue and conservation partners."
+  - Plan row: Before "Yearly" / "Monthly"; After "Crew yearly" / "Crew monthly"
+- **Where:** Membership and billing, for a Crew member (not in the mockup)
+  - Before: "Flock member" and "**Your membership gives back.** 20% goes to parrot rescue and conservation partners."
+  - After: "Kya's Crew" and "**Your Crew membership gives back more.** 25% goes to parrot rescue and conservation partners."
+
 ### [#560](https://github.com/the-kya-project/perch-perfect-plan/pull/560) · 1.20d Diet conversion rework (Brittany approved the wording, Nov 25, 2026)
 English only (Dutch waits for your read of the English). Behind `journeys_enabled()` (off in production) and the Flock gate. Both lines also go in the vet packet.
 - **Where:** Diet conversion's setup, above the vet card, for an eclectus, only once the `diet_eclectus_alert` switch is on (it starts off)
@@ -1160,6 +1191,15 @@ No new strings: every line reuses existing wording, in new places (admins only).
 
 ## Decisions agents made
 
+### [#563](https://github.com/the-kya-project/perch-perfect-plan/pull/563) · 1.15a Kya's Crew on the payment screen
+- **Decision:** Crew shows only when both Crew prices (`STRIPE_PRICE_CREW_MONTHLY` and `_YEARLY`) are set in the deployment. Without them the card step is exactly what it was, including "Pick how you pay".
+- **Decision:** Yearly (the Flock's) stays picked by default, as in the mockup's default.
+- **Decision:** "Save $96" is worked out from the Stripe prices (twelve Crew months minus Crew yearly) and is left off if Crew yearly saves nothing. Crew yearly's big number is $444 ÷ 12, rounded to $37, as in the mockup.
+- **Decision:** The card step after the free season gets the same Crew box (it uses the same tiles), with "Join Kya's Crew" on the button. No mockup shows that screen with Crew.
+- **Decision:** Founders whose founding price is still open see their founding screen unchanged, with no Crew option, because no mockup shows Crew there. Checkout already gives a founder who picks Crew the Crew plan and leaves their claim alone. A question for you is under Held.
+- **Decision:** With Crew picked, the "How it works" charge line uses the existing app sentence ("…then monthly." / "…then once a year."), not the mockup's "then every month", so Flock and Crew read the same.
+- **Decision:** Membership, "You're all set" and the plan row name the Crew plan ("Kya's Crew", "Crew yearly", "Crew monthly") and say 25%. Before this, a Crew member would have seen "Flock member", "Monthly" and "20%". These screens have no Crew mockup.
+
 ### [#560](https://github.com/the-kya-project/perch-perfect-plan/pull/560) · 1.20d Diet conversion rework
 - **Brittany's decision (Nov 25, 2026):** if a member logs no weigh-ins in the first week, the starting week stays unset, as it does today. No change.
 - **Brittany's decision (Nov 25, 2026):** remove "For Flock members, this uses the bird's own baseline alerts." from the weight safeguard (done in the PR's migration, the e2e fixture and `journeys_flock_wording_checks.sql`). Keep "The template suggests a vet check before starting, especially for older birds or birds on an all-seed diet." as is.
@@ -1729,6 +1769,9 @@ Format:
 ### <PR link> · <item ID> <item title>
 - **Needs:** <the decision, approval or read, in one or two lines>
 ```
+
+### [#563](https://github.com/the-kya-project/perch-perfect-plan/pull/563) · 1.15a Kya's Crew on the payment screen
+- **Needs:** your approval (payments) of the Crew card step and its copy ("Copy that merged" above lists every line, marked held), and one decision: should founders whose founding price is still open also see the Kya's Crew option? Right now their screen is unchanged. Dutch follows once you've read the English.
 
 
 ### Reminder · the hourly runs' GitHub token expires Feb 20, 2027
