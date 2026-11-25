@@ -10,6 +10,8 @@ import {
   VET_SIGNS_TODAY,
   VET_SIGNS_URGENT,
   NECTAR_EATER_PATTERN,
+  DIET_STARTING_WEEK_DAYS,
+  ECLECTUS_PATTERN,
   FIND_A_VET_URL,
   TRIAGE_RULES,
   CARE_WEIGHT_RULES,
@@ -20,6 +22,7 @@ import {
   type HealthRule,
 } from "@/lib/healthRules";
 import { HEALTH_FEATURES } from "@/lib/healthFeatures";
+import { isEclectus } from "@/lib/journeys";
 import { SCAN_FIELDS, computeTriage, type ScanAnswer, type ScanFieldKey } from "@/lib/triage";
 import { computeWeightTrend, weightTrendPill } from "@/lib/weightTrend";
 import { bigWeightChange } from "@/lib/dailyLog";
@@ -104,10 +107,36 @@ check("the database check holds the file's nectar-eater pattern", () => {
   assert.equal(sqlLiteral("expected_nectar"), NECTAR_EATER_PATTERN.value);
 });
 
-check("the switches: the database check, the migration and healthFeatures.ts agree", () => {
+check("Diet conversion's starting week is the file's number of days", () => {
+  const migration = readFileSync(
+    "supabase/migrations/20261125030000_diet_starting_weight.sql",
+    "utf8",
+  );
+  assert.ok(
+    migration.includes(`v_to := j.started_at + interval '${DIET_STARTING_WEEK_DAYS.value} days';`),
+    "private.diet_starting_weight's week",
+  );
+});
+
+check("the eclectus alert's species match is the file's pattern", () => {
+  const code = readFileSync("src/lib/journeys.ts", "utf8");
+  assert.ok(
+    code.includes(`/${ECLECTUS_PATTERN.value}/i.test(species ?? "")`),
+    "isEclectus uses ECLECTUS_PATTERN",
+  );
+  assert.ok(isEclectus("Eclectus") && isEclectus("Vosmaeri eclectus"));
+  assert.ok(!isEclectus(null) && !isEclectus("") && !isEclectus("Amazon"), "no species, no alert");
+});
+
+check("the switches: the database check, the migrations and healthFeatures.ts agree", () => {
   const file = Object.fromEntries(HEALTH_FEATURES.map((f) => [f.feature, f.startsAt]));
   assert.deepEqual(JSON.parse(sqlLiteral("expected_features")), file);
-  const migration = readFileSync("supabase/migrations/20261122203000_health_features.sql", "utf8");
+  const migration = [
+    "supabase/migrations/20261122203000_health_features.sql",
+    "supabase/migrations/20261125030000_diet_starting_weight.sql",
+  ]
+    .map((f) => readFileSync(f, "utf8"))
+    .join("\n");
   const seeded = Object.fromEntries(
     [...migration.matchAll(/^\s*\('([a-z_]+)', '(off|admins|everyone)',/gm)].map((m) => [
       m[1],

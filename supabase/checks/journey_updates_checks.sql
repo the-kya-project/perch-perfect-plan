@@ -237,9 +237,9 @@ begin
      and not exists (select 1 from public.bird_skills where bird_id = bx) then
     passed := passed + 1; else failed := array_append(failed, 'finish: learned, happy, refusals'); end if;
 
-  -- 9) Diet conversion: starting weight from the first week after the start (new
-  --    journeys have no milestone 1, so journey_weight_check measures started_at
-  --    to started_at + 7 days); 2.5% is a heads-up, 5% pauses.
+  -- 9) Diet conversion: starting weight from the first week after the start
+  --    (private.diet_starting_weight, started_at to started_at + 7 days, with no
+  --    milestones since 20261125030000); 2.5% is a heads-up, 5% pauses.
   --    (Since 20261108160000 these compare the average of the last 3 weigh-ins;
   --    diet_weight_rules_checks.sql covers the rules in detail.)
   update public.journeys set started_at = now() - interval '20 days' where id = jd;

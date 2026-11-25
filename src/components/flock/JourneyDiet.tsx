@@ -5,10 +5,12 @@ import { K, KyaPrimaryButton, KyaSecondaryButton } from "@/components/kya";
 import { AAV_FIND_A_VET_URL } from "@/lib/flockPosts";
 import type { VetCheck } from "@/lib/journeys";
 
-// Diet conversion's vet guidance: the card before setup, the disclaimer at the
-// bottom of every Diet conversion journey page, the "isn't made for" message
-// for lories and lorikeets, "How to make it work", and the milestone-2
-// reminder for "I'll call" journeys. Copy is Brittany's, word for word.
+// Diet conversion's vet guidance: the card before setup, the eclectus alert
+// above it (behind the diet_eclectus_alert switch, off until a vet approves
+// the wording), the disclaimer at the bottom of every Diet conversion journey
+// page, the "isn't made for" message for lories and lorikeets, "How to make it
+// work", and the reminder for "I'll call" journeys once the starting weight is
+// set. Copy is Brittany's, word for word.
 
 /** One catalog string, used on the vet card and at the bottom of journey pages. */
 export function DietDisclaimer({ birdName, className = "" }: { birdName: string; className?: string }) {
@@ -57,6 +59,17 @@ export function DietVetCard({ birdName, young, onChoose }: { birdName: string; y
   );
 }
 
+/** Eclectus, before the vet card. Draft, pending vet review; only shown when
+ *  the diet_eclectus_alert switch is on. */
+export function DietEclectusAlert({ birdName }: { birdName: string }) {
+  const { t } = useTranslation();
+  return (
+    <p className="m-0 rounded-[16px] px-3.5 py-3 text-[15px] leading-[1.5]" style={{ background: K.amberBg, color: K.amberText }} data-testid="diet-eclectus">
+      {t("flock.journeys.diet.eclectus", "Eclectus have specific food needs. They generally do best on plenty of fresh vegetables and fruit, and many avian vets advise caution with heavily fortified pellets and added vitamins. Please make a plan with your avian vet before changing {{name}}'s food.", { name: birdName })}
+    </p>
+  );
+}
+
 /** Lories and lorikeets: Diet conversion can't start. */
 export function DietNotForBird({ birdName }: { birdName: string }) {
   const { t } = useTranslation();
@@ -84,7 +97,7 @@ export function HowToMakeItWork({ tips }: { tips: string[] }) {
   );
 }
 
-/** "I'll call" journeys, from milestone 2 until they say they've talked. */
+/** "I'll call" journeys, once the starting weight is set, until they say they've talked. */
 export function VetReminderCard({ onTalked, onLater, busy }: { onTalked: () => void; onLater: () => void; busy: boolean }) {
   const { t } = useTranslation();
   return (

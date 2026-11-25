@@ -15,9 +15,10 @@ export async function fetchHealthFeatureEnabled(feature: string): Promise<boolea
 }
 
 /** Five minutes: a switch only changes when someone flips it in the SQL editor. */
-export function useHealthFeature(feature: string): boolean | undefined {
+export function useHealthFeature(feature: string, enabled = true): boolean | undefined {
   const { data } = useQuery({
     queryKey: ["health-feature", feature],
+    enabled,
     staleTime: 5 * 60_000,
     queryFn: () => fetchHealthFeatureEnabled(feature),
   });

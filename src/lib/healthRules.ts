@@ -82,6 +82,22 @@ export const NECTAR_EATER_PATTERN = draft(
   "private.is_nectar_eater (20261108150000_diet_conversion_vet_guidance.sql)",
 );
 
+/** The starting weight: the average of the weigh-ins in this many days after
+ *  the journey starts (the same week milestone 1 used to measure). */
+export const DIET_STARTING_WEEK_DAYS = draft(
+  7,
+  `${OUR_START}. Open question for the vet: is one week enough for a starting weight?`,
+  "private.diet_starting_weight (20261125030000_diet_starting_weight.sql)",
+);
+
+/** Birds that see the eclectus alert before the vet card (a species match,
+ *  case-insensitive), once the diet_eclectus_alert switch is on. */
+export const ECLECTUS_PATTERN = draft(
+  "eclectus",
+  `${OUR_START}. Open question for the vet: which other species need a diet alert or a block?`,
+  "isEclectus (src/lib/journeys.ts); wording flock.journeys.diet.eclectus",
+);
+
 // ---------------------------------------------------------------------------
 // 2. The vet nudge on Flock posts (public.flock_vet_signs, review_status
 // 'draft'). 'today' shows the "call your vet today" card; 'urgent' shows

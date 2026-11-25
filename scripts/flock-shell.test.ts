@@ -48,7 +48,7 @@ import { QUEUE_FILTERS, queueItemPlace, type QueueItem } from "@/lib/flockModera
 import { PLACE_KINDS, PLACE_LIMITS, groupPlaces, telHref, updatedDay, websiteHref, type Place } from "@/lib/flockPlaces";
 import { VOTE_GUARANTEED_PCT, VOTE_LIMITS, choiceColor, cleanVote, emptyVoteDraft, isDonationVote, openProblems, rankedChoices, toLocalInput, topNames, voteDay, votesFor, type Vote } from "@/lib/flockVotes";
 import {
-  birdPronoun, canStartCustom, customProblem, daysSince, clipPhase, flockSheetTitle, isNectarEater, rollingAverage, showVetReminder, youngOrUnknownAge, defaultVisibility, groupSkills, journeyDay, journeyDays,
+  birdPronoun, canStartCustom, customProblem, daysSince, clipPhase, flockSheetTitle, isEclectus, isNectarEater, rollingAverage, showVetReminder, youngOrUnknownAge, defaultVisibility, groupSkills, journeyDay, journeyDays,
   SKILL_GROUPS, askFlock, canFinishLearned, isOpenJourney, sortYourJourneys, CUSTOM_DESCRIPTION_MAX, CUSTOM_NAME_MAX, isMemberSupplied, matchingSkill,
   nextMilestone, possessive, skillInSentence, vetCheckLine, visibilityChoices, wantsTip,
   type JourneyTemplate,
@@ -664,7 +664,7 @@ check("Chapter tabs: Posts, Events, Resources, Members; old members links read a
   assert.equal(destForPath("/flock/events/abc"), "chapter");
 });
 
-check("Diet conversion: lories and lorikeets, young birds, the milestone-2 vet reminder", () => {
+check("Diet conversion: lories and lorikeets, eclectus, young birds, the vet reminder once the starting weight is set", () => {
   assert.ok(isNectarEater("Rainbow lorikeet") && isNectarEater("Chattering Lory") && isNectarEater("lories"));
   assert.ok(!isNectarEater("Cockatiel") && !isNectarEater(null) && !isNectarEater("Galah"));
   const now = new Date("2026-11-08T12:00:00");
@@ -672,15 +672,16 @@ check("Diet conversion: lories and lorikeets, young birds, the milestone-2 vet r
   assert.ok(youngOrUnknownAge("2026-03-01", now));
   assert.ok(!youngOrUnknownAge("2025-11-07", now));
   assert.ok(youngOrUnknownAge("2025-11-09", now), "a day short of a year");
-  const ms = (done: number) => [1, 2, 3].map((p) => ({ position: p, state: p <= done ? "reached" : "todo" }));
-  const j = { vet_check: "will_call" as const, vet_remind_after: null, status: "active", milestones: ms(1) };
-  assert.ok(showVetReminder(j, now), "I'll call, at milestone 2");
-  assert.ok(!showVetReminder({ ...j, milestones: ms(0) }, now), "not during milestone 1");
-  assert.ok(!showVetReminder({ ...j, vet_check: "talked" }, now), "not after they've talked");
-  assert.ok(!showVetReminder({ ...j, vet_check: null }, now), "not without an answer");
-  assert.ok(!showVetReminder({ ...j, vet_remind_after: "2026-11-10T00:00:00Z" }, now), "remind me later");
-  assert.ok(showVetReminder({ ...j, vet_remind_after: "2026-11-01T00:00:00Z" }, now), "back after the snooze");
-  assert.ok(!showVetReminder({ ...j, status: "paused" }, now));
+  assert.ok(isEclectus("Eclectus") && isEclectus("Red-sided eclectus"));
+  assert.ok(!isEclectus(null) && !isEclectus("Cockatiel"), "unknown species: no species alert");
+  const j = { vet_check: "will_call" as const, vet_remind_after: null, status: "active" };
+  assert.ok(showVetReminder(j, true, now), "I'll call, once the starting weight is set");
+  assert.ok(!showVetReminder(j, false, now), "not during the starting week");
+  assert.ok(!showVetReminder({ ...j, vet_check: "talked" }, true, now), "not after they've talked");
+  assert.ok(!showVetReminder({ ...j, vet_check: null }, true, now), "not without an answer");
+  assert.ok(!showVetReminder({ ...j, vet_remind_after: "2026-11-10T00:00:00Z" }, true, now), "remind me later");
+  assert.ok(showVetReminder({ ...j, vet_remind_after: "2026-11-01T00:00:00Z" }, true, now), "back after the snooze");
+  assert.ok(!showVetReminder({ ...j, status: "paused" }, true, now));
 });
 
 check("Diet conversion's weight line: the average of the last 3 counted weigh-ins", () => {
