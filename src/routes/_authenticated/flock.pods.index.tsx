@@ -30,7 +30,7 @@ function MyPods() {
         <div className="grid min-h-[120px] place-items-center" role="status" aria-label="Loading"><Loader2 className="size-7 animate-spin" style={{ color: K.moss }} /></div>
       ) : (rows ?? []).length === 0 ? (
         <FlockEmpty icon={<Users className="size-6" />} title={t("flock.pods.listEmptyTitle", "No pods yet")}>
-          {t("flock.pods.listEmpty", "When you start a journey, tick \"Pair me with buddies working on this too\" to join a small group on the same journey.")}
+          {t("flock.pods.listEmpty", "When you start a skill, tick \"Pair me with buddies working on this too\" to join a small group working on the same one.")}
         </FlockEmpty>
       ) : (
         <ul className="m-0 flex list-none flex-col gap-2 p-0" data-testid="my-pods">
@@ -58,7 +58,7 @@ function PodRow({ row }: { row: MyPodRow }) {
       ? <Link to="/flock/journeys/$journeyId" params={{ journeyId: row.journey_id }} className={cls} style={{ color: K.forest }} data-pod-state="waiting">{body}</Link>
       : <div className={cls} style={{ color: K.forest }} data-pod-state="waiting">{body}</div>;
   }
-  const pod = { kind: row.kind === "group" ? "group" as const : "journey" as const, template_name: row.template_name, member_count: row.member_count, region_name: row.region_name };
+  const pod = { template_name: row.template_name, member_count: row.member_count, region_name: row.region_name };
   const ended = row.status === "closed" || row.status === "dissolved";
   return (
     <Link to="/flock/pods/$podId" params={{ podId: row.pod_id }} className={cls} style={{ color: K.forest }} data-pod-state={row.status}>

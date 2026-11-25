@@ -1,6 +1,7 @@
 // Buddy pods (backlog 1.11). Data and the pure helpers
 // scripts/flock-shell.test.ts pins. Reads and writes go through database
-// functions (20261124070000_flock_buddy_pods.sql), which decide who's in a
+// functions (20261124070000_flock_buddy_pods.sql, changed by
+// 20261124235900_flock_pods_no_groups.sql), which decide who's in a
 // pod, what members see of each other (never progress from a "Just me"
 // journey outside the household) and when a pod forms, closes or ends.
 // Flock code only.
@@ -23,19 +24,21 @@ export const POD_MIN = 3;
 export const POD_MAX = 6;
 export const PODS_AT_ONCE = 2;
 
-export type PodKind = "journey" | "group";
-export type PodStatus = "active" | "asking" | "closed" | "dissolved";
+/** Always "journey": buddy groups were dropped (Nov 24, 2026). */
+export type PodKind = "journey";
+export type PodStatus = "active" | "closed" | "dissolved";
+/** Where a member is on the journey; null when it's "Just me" and you're not in its household. */
+export type PodStage = "working" | "learned" | "happy";
 export type JourneyPodState = { state: "pod" | "waiting" | "offer" | "none"; pod_id: string | null; waiting: number; can_wait: boolean };
 export type Pod = {
   pod_id: string; kind: PodKind; status: PodStatus; template_slug: string; template_name: string; region_name: string | null;
-  member_count: number; my_journey_id: string | null; my_finished: boolean; asking_me: boolean; my_answer: boolean | null;
+  member_count: number; my_journey_id: string | null; my_finished: boolean;
   checked_in_this_week: boolean; offered_new: boolean; created_at: string;
 };
 export type PodMember = {
   user_id: string; display_name: string | null; photo_path: string | null; is_me: boolean;
   bird_id: string | null; bird_name: string | null; bird_has_photo: boolean;
-  /** Null when the member's journey is "Just me" and you're not in its household. */
-  done: number | null; total: number | null; finished: boolean | null;
+  stage: PodStage | null;
 };
 export type MyPodRow = {
   pod_id: string | null; journey_id: string | null; kind: PodKind | "waiting"; status: PodStatus | "waiting";
@@ -63,22 +66,19 @@ export const podKeys = {
 
 // ---- Pure helpers ---------------------------------------------------------------------
 
-/** A member's progress bar, 0–100, or null when it isn't shown. */
-export function podProgress(m: Pick<PodMember, "done" | "total" | "finished">): number | null {
-  if (m.done == null || m.total == null) return null;
-  if (m.finished) return 100;
-  if (m.total <= 0) return 0;
-  return Math.max(0, Math.min(100, Math.round((m.done / m.total) * 100)));
+/** A stage from the database, or null for anything else (kept private). */
+export function podStage(v: unknown): PodStage | null {
+  return v === "working" || v === "learned" || v === "happy" ? v : null;
 }
 
 /** Can you post in this pod? Ended pods stay readable but take no posts. */
 export function podOpen(status: PodStatus): boolean {
-  return status === "active" || status === "asking";
+  return status === "active";
 }
 
 /** Show the weekly "How did … go?" card: an open pod you haven't posted in this week. */
-export function showWeeklyCard(pod: Pick<Pod, "status" | "checked_in_this_week" | "asking_me">): boolean {
-  return podOpen(pod.status) && !pod.checked_in_this_week && !pod.asking_me;
+export function showWeeklyCard(pod: Pick<Pod, "status" | "checked_in_this_week">): boolean {
+  return podOpen(pod.status) && !pod.checked_in_this_week;
 }
 
 /** Waiting for buddies: how many more are needed before a pod starts. */
@@ -96,16 +96,14 @@ const asBool = (v: unknown) => v === true;
 export function cleanPod(row: any): Pod {
   return {
     pod_id: String(row?.pod_id ?? ""),
-    kind: row?.kind === "group" ? "group" : "journey",
-    status: (["active", "asking", "closed", "dissolved"] as const).includes(row?.status) ? row.status : "closed",
+    kind: "journey",
+    status: (["active", "closed", "dissolved"] as const).includes(row?.status) ? row.status : "closed",
     template_slug: String(row?.template_slug ?? ""),
     template_name: String(row?.template_name ?? ""),
     region_name: row?.region_name ? String(row.region_name) : null,
     member_count: Number(row?.member_count ?? 0),
     my_journey_id: row?.my_journey_id ? String(row.my_journey_id) : null,
     my_finished: asBool(row?.my_finished),
-    asking_me: asBool(row?.asking_me),
-    my_answer: row?.my_answer === true ? true : row?.my_answer === false ? false : null,
     checked_in_this_week: asBool(row?.checked_in_this_week),
     offered_new: asBool(row?.offered_new),
     created_at: String(row?.created_at ?? ""),
@@ -168,7 +166,8 @@ export function usePodMembers(podId: string, enabled: boolean) {
     queryKey: podKeys.members(podId),
     enabled: enabled && !!podId,
     staleTime: STALE,
-    queryFn: async (): Promise<PodMember[]> => asArray<PodMember>(must(await sb.rpc("flock_pod_members", { p_pod_id: podId }))),
+    queryFn: async (): Promise<PodMember[]> =>
+      asArray<PodMember>(must(await sb.rpc("flock_pod_members", { p_pod_id: podId }))).map((m) => ({ ...m, stage: podStage(m.stage) })),
   });
 }
 
@@ -238,10 +237,6 @@ export async function leavePod(podId: string): Promise<void> {
 
 export async function podFinishedSeen(podId: string): Promise<void> {
   must(await sb.rpc("flock_pod_finished_seen", { p_pod_id: podId }));
-}
-
-export async function podKeepGoing(podId: string, yes: boolean): Promise<void> {
-  must(await sb.rpc("flock_pod_keep_going", { p_pod_id: podId, p_yes: yes }));
 }
 
 export async function adminMovePodMember(userId: string, from: string, to: string): Promise<void> {

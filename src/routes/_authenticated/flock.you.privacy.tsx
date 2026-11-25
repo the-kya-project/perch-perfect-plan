@@ -40,7 +40,7 @@ function FlockPrivacy() {
             t("flock.privacy.see.photo", "Your profile photo"),
             t("flock.privacy.see.birds", "The birds you choose to show: their name, species, and photo"),
             t("flock.privacy.see.badges", "Your Flock badges, unless you hide them. Badges from \"Just me\" journeys stay with you."),
-            t("flock.privacy.see.pods", "In a buddy pod you joined: that you're on the journey, and your progress unless the journey is \"Just me\""),
+            t("flock.privacy.see.pods", "In a buddy pod you joined: that you're on the journey, and where you are on it (working on it, learned it, or happy where we are) unless the journey is \"Just me\""),
           ]} />
         </div>
       </KyaCard>

@@ -198,7 +198,7 @@ A buddy pod is a small group of 3 to 6 members working on the same journey, who 
 
 **What members see**
 
-- A pod page with the members' names, profile photos, birds, and journey progress.
+- A pod page with the members' names, profile photos, birds, and where each one is on the journey: a pill saying "Working on it", "Learned it" or "Happy where we are". For a "Just me" journey outside the household it says "Journey kept private". (No progress bar: journeys have no milestones since the redesign, 1.20.)
 - A pod feed for short check-ins and photos, visible only to the pod.
 - A weekly gentle in-app card asking how the week went. Not a push or email.
 - A Leave pod button. Leaving is quiet, and the others see only that the pod has one fewer member.
@@ -213,13 +213,13 @@ A buddy pod is a small group of 3 to 6 members working on the same journey, who 
 - A member can be in up to 2 pods at once.
 - Members who have blocked each other are never placed in the same pod.
 - Pod posts are private to the pod, and reporting works the same as anywhere in the Flock.
-- A "keep going" group counts toward the 2-pods-at-once limit.
+- The 2-pods-at-once limit counts open pods and waitlist places.
 
 **When a pod ends (decided Nov 22)**
 
-- When a member finishes the journey, they stay in the pod to cheer the others on. They see a short "You finished!" message with an option to leave the pod.
-- The pod stays open until every member has finished or left, or until the existing rule closes it (fewer than 2 active members for 3 weeks).
-- When the pod closes, each remaining member is asked "Keep going together?" If at least 2 say yes, the pod continues as a general buddy group that isn't tied to a journey, with the same weekly in-app check-in. Members who say no or don't answer leave quietly.
+- When a member finishes the journey, either "learned it" or "we're happy where we are", they stay in the pod to cheer the others on. They see a short "You finished!" message with an option to leave the pod.
+- The pod stays open until every member has finished or left, or until the existing rule closes it (fewer than 2 active members for 3 weeks; finishing the journey counts as activity).
+- Once every member has finished or left, the pod closes. There's no "Keep going together?" and no buddy group (Brittany, Nov 24, 2026: too many groups would pile up). A closed pod stays readable to the members who were in it, like any ended pod.
 
 **Out of scope**
 

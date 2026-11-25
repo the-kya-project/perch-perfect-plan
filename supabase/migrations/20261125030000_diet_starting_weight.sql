@@ -299,17 +299,24 @@ revoke all on function private.journey_weigh_reminders() from public, anon;
 grant execute on function private.journey_weigh_reminders() to authenticated, service_role;
 
 
--- 4) The safeguard that still spoke of steps (draft template text only) --------------------
+-- 4) Safeguard wording (draft template text only) -------------------------------------------
+-- "every step" → "the whole journey", and the out-of-date sentence about
+-- baseline alerts is removed (Brittany, Nov 25, 2026: the weight safeguard is
+-- the same for everyone and doesn't use the weight baseline).
 
 update public.journey_templates
 set safeguards = array(
-  select replace(s, 'Daily weigh-ins are part of every step,', 'Daily weigh-ins are part of the whole journey,')
+  select replace(
+           replace(s, 'Daily weigh-ins are part of every step,', 'Daily weigh-ins are part of the whole journey,'),
+           ' For Flock members, this uses the bird''s own baseline alerts.', '')
   from unnest(safeguards) with ordinality as x(s, ord)
   order by ord
 ), updated_at = now()
 where slug = 'diet-conversion'
   and review_status = 'draft'
-  and exists (select 1 from unnest(safeguards) s where s like 'Daily weigh-ins are part of every step,%');
+  and exists (select 1 from unnest(safeguards) s
+              where s like 'Daily weigh-ins are part of every step,%'
+                 or s like '%For Flock members, this uses the bird''s own baseline alerts.%');
 
 
 -- 5) The eclectus alert's switch (off until an avian vet approves the wording) -----------
