@@ -374,7 +374,6 @@ async function mockFlock(context: BrowserContext, userId: string, opts: { setupD
       return json(route, [{ post_id: post.post_id, status: "live" }]);
     }
     if (fn === "flock_pod_finished_seen") { if (state.pods.pod) state.pods.pod.my_finished = false; return json(route, null); }
-    if (fn === "flock_pod_keep_going") { if (state.pods.pod) { state.pods.pod.asking_me = false; state.pods.pod.my_answer = args.p_yes; } return json(route, null); }
     if (fn === "flock_pod_leave") return json(route, null);
     if (fn === "flock_challenges_current") return json(route, state.challenges.filter((c) => c.state === "open"));
     if (fn === "flock_challenge") return json(route, state.challenges.filter((c) => c.challenge_id === args.p_id));
@@ -3448,15 +3447,15 @@ test.describe("buddy pods (admin, phone)", () => {
   const STARTED = "00000000-0000-4000-8000-000000007201";
   const pod = (over: Record<string, unknown> = {}) => ({
     pod_id: POD, kind: "journey", status: "active", template_slug: "step-up", template_name: "Step up", region_name: "Great Lakes",
-    member_count: 4, my_journey_id: JOURNEY, my_finished: false, asking_me: false, my_answer: null, checked_in_this_week: false,
+    member_count: 4, my_journey_id: JOURNEY, my_finished: false, checked_in_this_week: false,
     offered_new: false, created_at: new Date().toISOString(), ...over,
   });
   const members = [
-    { user_id: "00000000-0000-4000-8000-00000000c009", display_name: "Brittany K.", photo_path: null, is_me: true, bird_id: null, bird_name: "Echo", bird_has_photo: false, done: 2, total: 5, finished: false },
-    { user_id: "00000000-0000-4000-8000-00000000c001", display_name: "Ana", photo_path: null, is_me: false, bird_id: null, bird_name: "Kiwi", bird_has_photo: false, done: 3, total: 5, finished: false },
-    // A "Just me" journey: the database sends no progress and no hidden bird.
-    { user_id: "00000000-0000-4000-8000-00000000c002", display_name: "Marcus", photo_path: null, is_me: false, bird_id: null, bird_name: null, bird_has_photo: false, done: null, total: null, finished: null },
-    { user_id: "00000000-0000-4000-8000-00000000c003", display_name: "Jen", photo_path: null, is_me: false, bird_id: null, bird_name: "Biscuit", bird_has_photo: false, done: 5, total: 5, finished: true },
+    { user_id: "00000000-0000-4000-8000-00000000c009", display_name: "Brittany K.", photo_path: null, is_me: true, bird_id: null, bird_name: "Echo", bird_has_photo: false, stage: "working" },
+    { user_id: "00000000-0000-4000-8000-00000000c001", display_name: "Ana", photo_path: null, is_me: false, bird_id: null, bird_name: "Kiwi", bird_has_photo: false, stage: "happy" },
+    // A "Just me" journey: the database sends no stage and no hidden bird.
+    { user_id: "00000000-0000-4000-8000-00000000c002", display_name: "Marcus", photo_path: null, is_me: false, bird_id: null, bird_name: null, bird_has_photo: false, stage: null },
+    { user_id: "00000000-0000-4000-8000-00000000c003", display_name: "Jen", photo_path: null, is_me: false, bird_id: null, bird_name: "Biscuit", bird_has_photo: false, stage: "learned" },
   ];
 
   test("starting a journey: Pair me with buddies, and the journey goes on the waitlist", async ({ browser, baseURL }) => {
@@ -3467,13 +3466,13 @@ test.describe("buddy pods (admin, phone)", () => {
     const setup = page.getByTestId("journey-setup");
     const optIn = setup.getByTestId("pod-opt-in");
     await expect(optIn).toContainText("Pair me with buddies working on this too");
-    await expect(optIn).toContainText("A small group of 3 to 6 members on the same journey, from your chapter when possible. You can leave anytime.");
+    await expect(optIn).toContainText("A small group of 3 to 6 members on the same skill, from your chapter when possible. You can leave anytime.");
     await expect(optIn).toHaveAttribute("aria-checked", "false");
     await optIn.click();
     await expect(optIn).toHaveAttribute("aria-checked", "true");
     // Just me: a line about what buddies see.
     await setup.getByTestId("visibility").getByRole("radio", { name: "Just me" }).click();
-    await expect(setup.getByTestId("pod-just-me")).toContainText("Your progress stays private while the journey is Just me.");
+    await expect(setup.getByTestId("pod-just-me")).toContainText("Your buddies see your name and that you're on this skill, but not where you are on it.");
     await page.getByRole("button", { name: "Start Echo's journey" }).click();
     await expect(page).toHaveURL(new RegExp(`/flock/journeys/${STARTED}$`));
     expect(journeys.starts).toHaveLength(1);
@@ -3485,6 +3484,16 @@ test.describe("buddy pods (admin, phone)", () => {
     await waiting.getByTestId("pod-leave-waitlist").click();
     await expect(page.getByTestId("pod-waiting")).toHaveCount(0);
     expect(state.calls.some((c) => c.fn === "flock_pod_unwait" && c.args.p_journey_id === STARTED)).toBe(true);
+    // A pod that went quiet: offer new buddies, and a way back to read the old one.
+    state.pods.journey[STARTED] = { state: "offer", pod_id: POD, waiting: 0, can_wait: true };
+    state.pods.pod = pod({ status: "dissolved" });
+    await page.reload();
+    const offer = page.getByTestId("pod-offer");
+    await expect(offer).toContainText("Your buddy pod has closed");
+    await expect(offer.getByRole("button", { name: "Find new buddies" })).toBeVisible();
+    await offer.getByTestId("pod-read-old").click();
+    await expect(page).toHaveURL(new RegExp(`/flock/pods/${POD}$`));
+    await expect(page.getByTestId("pod-ended")).toContainText("This pod has closed because it got quiet.");
     await context.close();
   });
 
@@ -3503,7 +3512,7 @@ test.describe("buddy pods (admin, phone)", () => {
     await context.close();
   });
 
-  test("the pod page: members with progress (none from Just me), the weekly check-in, the pod's feed and Leave pod", async ({ browser, baseURL }) => {
+  test("the pod page: members with their stage (none from Just me), the weekly check-in, the pod's feed and Leave pod", async ({ browser, baseURL }) => {
     const { context, page, state } = await open(browser, baseURL!, { admin: true });
     state.pods.pod = pod();
     state.pods.members = members;
@@ -3515,10 +3524,16 @@ test.describe("buddy pods (admin, phone)", () => {
     const list = page.getByTestId("pod-members");
     await expect(list.locator("[data-member]")).toHaveCount(4);
     await expect(list.locator("[data-member]").first()).toContainText("You · Echo");
-    await expect(list.getByRole("progressbar")).toHaveCount(3);
-    await expect(list.getByRole("progressbar").first()).toHaveAttribute("aria-valuenow", "40");
-    await expect(list.locator("[data-member='00000000-0000-4000-8000-00000000c002']")).toContainText("Progress kept private");
-    await expect(list.locator("[data-member='00000000-0000-4000-8000-00000000c003']")).toContainText("Finished");
+    // One pill each, no progress bar (journeys have no milestones since 1.20a).
+    await expect(page.getByRole("progressbar")).toHaveCount(0);
+    await expect(list.getByTestId("pod-stage")).toHaveCount(3);
+    await expect(list.locator("[data-member]").first().getByTestId("pod-stage")).toHaveText("Working on it");
+    await expect(list.locator("[data-member='00000000-0000-4000-8000-00000000c001']").getByTestId("pod-stage")).toHaveText("Happy where we are");
+    await expect(list.locator("[data-member='00000000-0000-4000-8000-00000000c003']").getByTestId("pod-stage")).toHaveText("Learned it");
+    await expect(list.locator("[data-member='00000000-0000-4000-8000-00000000c003']").getByTestId("pod-stage")).toHaveCSS("color", "rgb(255, 255, 255)");
+    const hidden = list.locator("[data-member='00000000-0000-4000-8000-00000000c002']");
+    await expect(hidden.getByTestId("stage-private")).toHaveText("Journey kept private");
+    await expect(hidden.getByTestId("pod-stage")).toHaveCount(0);
     await expect(page.getByTestId("pod-feed")).toContainText("Kiwi follows the stick across the perch now.");
     await expect(page.getByTestId("pod-feed")).toContainText("Buddy pod");
     const weekly = page.getByTestId("pod-weekly");
@@ -3543,7 +3558,7 @@ test.describe("buddy pods (admin, phone)", () => {
     await context.close();
   });
 
-  test("You finished! and Keep going together?", async ({ browser, baseURL }) => {
+  test("You finished! (either ending), and a closed pod stays readable with no Keep going card", async ({ browser, baseURL }) => {
     const { context, page, state } = await open(browser, baseURL!, { admin: true });
     state.pods.pod = pod({ my_finished: true });
     state.pods.members = members;
@@ -3551,18 +3566,21 @@ test.describe("buddy pods (admin, phone)", () => {
     const done = page.getByTestId("pod-finished");
     await expect(done).toContainText("You finished!");
     await expect(done).toContainText("Stay in the pod to cheer the others on, or leave whenever you like.");
+    await expect(page.getByTestId("pod-keep-going")).toHaveCount(0);
     await done.getByRole("button", { name: "Stay and cheer" }).click();
     await expect(page.getByTestId("pod-finished")).toHaveCount(0);
     expect(state.calls.some((c) => c.fn === "flock_pod_finished_seen")).toBe(true);
 
-    state.pods.pod = pod({ status: "asking", asking_me: true });
+    // Everyone has finished or left: the pod is closed, readable, and asks nothing.
+    state.pods.pod = pod({ status: "closed" });
     await page.reload();
-    const ask = page.getByTestId("pod-keep-going");
-    await expect(ask).toContainText("Keep going together?");
-    await expect(page.getByTestId("pod-weekly")).toHaveCount(0);
-    await ask.getByRole("button", { name: "Yes, keep going" }).click();
+    await expect(page.getByTestId("pod-ended")).toContainText("This pod has closed. You can still read what everyone shared.");
+    await expect(page.getByTestId("pod-members")).toBeVisible();
     await expect(page.getByTestId("pod-keep-going")).toHaveCount(0);
-    expect(state.calls.find((c) => c.fn === "flock_pod_keep_going")!.args).toEqual({ p_pod_id: POD, p_yes: true });
+    await expect(page.getByTestId("pod-weekly")).toHaveCount(0);
+    await expect(page.getByTestId("pod-post")).toHaveCount(0);
+    await expect(page.getByText("Keep going together?")).toHaveCount(0);
+    expect(state.calls.some((c) => c.fn === "flock_pod_keep_going")).toBe(false);
     await context.close();
   });
 

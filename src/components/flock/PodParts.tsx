@@ -7,15 +7,16 @@ import { K, KyaHeading, KyaPrimaryButton, KyaSecondaryButton, KyaSheet } from "@
 import { FlockAvatar } from "@/components/flock/FlockPeople";
 import { useAvatarUrls } from "@/lib/flockData";
 import {
-  podProgress, podRefusal, podStillNeeded, podUnwait, podWait, useInvalidatePods,
-  type JourneyPodState, type Pod, type PodMember, type PodRefusal,
+  podRefusal, podStillNeeded, podUnwait, podWait, useInvalidatePods,
+  type JourneyPodState, type Pod, type PodMember, type PodRefusal, type PodStage,
 } from "@/lib/flockPods";
 
 // Buddy pods (backlog 1.11; mockup SpecPods.dc.html): the opt-in on the
 // journey setup screen (screen 1), the waiting card on your journey (screen
-// 2), and the pod page's members, weekly check-in, "You finished!" and "Keep
-// going together?" cards (screen 3; the last two aren't in the mockup and are
-// built from the same cards).
+// 2), and the pod page's members with their stage, the weekly check-in and
+// "You finished!" (screen 3; the last isn't in the mockup and is built from
+// the same cards). No "Keep going together?" and no buddy groups: a pod just
+// closes when everyone has finished or left (Brittany, Nov 24, 2026).
 
 const AVATAR_TINTS = [K.sunflower, K.teal, "#c7a7d9", "#d9a07b", K.lime, "#f6c9c4"];
 
@@ -34,11 +35,9 @@ export function podLine(t: TFunction, pod: Pick<Pod, "member_count" | "region_na
   return [t("flock.pods.members", "{{count}} members", { count: pod.member_count }), pod.region_name].filter(Boolean).join(" · ");
 }
 
-/** "Target training pod", or "Buddy group" once it keeps going together. */
-export function podTitle(t: TFunction, pod: Pick<Pod, "kind" | "template_name">): string {
-  return pod.kind === "group"
-    ? t("flock.pods.groupTitle", "Buddy group")
-    : t("flock.pods.title", "{{journey}} pod", { journey: pod.template_name });
+/** "Target training pod". */
+export function podTitle(t: TFunction, pod: Pick<Pod, "template_name">): string {
+  return t("flock.pods.title", "{{journey}} pod", { journey: pod.template_name });
 }
 
 /** Screen 1: "Pair me with buddies working on this too". */
@@ -57,11 +56,11 @@ export function PodOptIn({ on, onChange, disabled, justMe }: { on: boolean; onCh
         <span className="text-[12.5px] leading-[1.45]" style={{ color: "#4f6b60" }}>
           {disabled
             ? t("flock.pods.optInLimit", "You're in two buddy pods already, the most at once.")
-            : t("flock.pods.optInLine", "A small group of 3 to 6 members on the same journey, from your chapter when possible. You can leave anytime.")}
+            : t("flock.pods.optInLine", "A small group of 3 to 6 members on the same skill, from your chapter when possible. You can leave anytime.")}
         </span>
         {on && justMe && (
           <span className="text-[12.5px] leading-[1.45]" style={{ color: "#4f6b60" }} data-testid="pod-just-me">
-            {t("flock.pods.optInJustMe", "Your buddies see your name and that you're on this journey. Your progress stays private while the journey is Just me.")}
+            {t("flock.pods.optInJustMe", "Your buddies see your name and that you're on this skill, but not where you are on it.")}
           </span>
         )}
       </span>
@@ -122,6 +121,12 @@ export function JourneyPodCard({ journeyId, state }: { journeyId: string; state:
         <span className="text-[13.5px] leading-[1.45]" style={{ color: "#4f6b60" }}>{t("flock.pods.offerLine", "It got quiet, so we closed it. Want to be paired with new buddies on this journey?")}</span>
         <KyaPrimaryButton disabled={busy || !state.can_wait} onClick={() => void act(() => podWait(journeyId))}>{t("flock.pods.offerCta", "Find new buddies")}</KyaPrimaryButton>
         {!state.can_wait && <span className="text-[12.5px]" style={{ color: K.quiet }}>{t("flock.pods.optInLimit", "You're in two buddy pods already, the most at once.")}</span>}
+        {state.pod_id && (
+          <Link to="/flock/pods/$podId" params={{ podId: state.pod_id }} data-testid="pod-read-old"
+            className="self-center text-[13px] font-[700]" style={{ color: K.moss }}>
+            {t("flock.pods.readOldPod", "Read the old pod")}
+          </Link>
+        )}
         {error && <p role="alert" className="m-0 text-[13.5px]" style={{ color: K.red }}>{error}</p>}
       </section>
     );
@@ -129,34 +134,48 @@ export function JourneyPodCard({ journeyId, state }: { journeyId: string; state:
   return null;
 }
 
-/** Screen 3: each member with their bird and progress (when it may show). */
+/** One pill per stage (light gray-green, forest, pale sunflower). */
+const STAGE_PILL: Record<PodStage, { background: string; color: string }> = {
+  working: { background: K.paleGreen, color: K.forest },
+  learned: { background: K.forest, color: "#ffffff" },
+  happy: { background: K.amberBg, color: K.forest },
+};
+
+export function podStageLabel(t: TFunction, stage: PodStage): string {
+  switch (stage) {
+    case "working": return t("flock.pods.stageWorking", "Working on it");
+    case "learned": return t("flock.pods.stageLearned", "Learned it");
+    case "happy": return t("flock.pods.stageHappy", "Happy where we are");
+  }
+}
+
+/** Screen 3: each member with their bird and where they are on the journey
+ *  (when it may show). */
 export function PodMembersCard({ members }: { members: PodMember[] }) {
   const { t } = useTranslation();
   const { data: avatars } = useAvatarUrls(members.map((m) => m.photo_path));
   return (
     <section className="flex flex-col gap-2.5 rounded-[18px] bg-white px-4 py-3.5" data-testid="pod-members">
       {members.map((m, i) => {
-        const pct = podProgress(m);
         const name = m.is_me ? t("flock.pods.you", "You") : (m.display_name ?? t("flock.pods.member", "Member"));
         return (
           <div key={m.user_id} className="flex items-center gap-2.5" data-member={m.user_id}>
             <span className="shrink-0 rounded-full" style={{ background: AVATAR_TINTS[i % AVATAR_TINTS.length] }}>
               <FlockAvatar name={m.display_name ?? "?"} url={m.photo_path ? avatars?.get(m.photo_path) : null} size={36} />
             </span>
-            <div className="flex min-w-0 flex-1 flex-col gap-1.5">
-              <span className="truncate text-[13.5px] font-[700] leading-[1.25]" style={{ color: K.forest }}>
-                {[name, m.bird_name].filter(Boolean).join(" · ")}
-                {m.finished && <span className="ml-1.5 font-[500]" style={{ color: K.moss }}>{t("flock.pods.finishedTag", "Finished")}</span>}
+            <span className="min-w-0 flex-1 truncate text-[13.5px] font-[700] leading-[1.25]" style={{ color: K.forest }}>
+              {[name, m.bird_name].filter(Boolean).join(" · ")}
+            </span>
+            {m.stage == null ? (
+              <span className="shrink-0 text-[12px]" style={{ color: K.quiet }} data-testid="stage-private">
+                {t("flock.pods.stagePrivate", "Journey kept private")}
               </span>
-              {pct == null ? (
-                <span className="text-[12px]" style={{ color: K.quiet }} data-testid="progress-private">{t("flock.pods.progressPrivate", "Progress kept private")}</span>
-              ) : (
-                <div className="h-2 overflow-hidden rounded-full" style={{ background: "#dbe3da" }} role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={pct}
-                  aria-label={t("flock.pods.progressAria", "{{name}}'s progress", { name })}>
-                  <div className="h-full" style={{ width: `${pct}%`, background: K.moss }} />
-                </div>
-              )}
-            </div>
+            ) : (
+              <span className="shrink-0 rounded-full px-2.5 py-1 text-[12px] font-[700]" style={STAGE_PILL[m.stage]}
+                data-testid="pod-stage" data-stage={m.stage}>
+                {podStageLabel(t, m.stage)}
+              </span>
+            )}
           </div>
         );
       })}
@@ -179,13 +198,12 @@ export function PodWeeklyCard({ pod, onCheckIn }: { pod: Pod; onCheckIn: () => v
   );
 }
 
-export function weeklyQuestion(t: TFunction, pod: Pick<Pod, "kind" | "template_name">): string {
-  return pod.kind === "group"
-    ? t("flock.pods.weeklyGroup", "How did your week go?")
-    : t("flock.pods.weekly", "How did {{journey}} go?", { journey: pod.template_name.toLowerCase() });
+export function weeklyQuestion(t: TFunction, pod: Pick<Pod, "template_name">): string {
+  return t("flock.pods.weekly", "How did {{journey}} go?", { journey: pod.template_name.toLowerCase() });
 }
 
-/** Not in the mockup: shown once you've finished, until you stay or leave. */
+/** Not in the mockup: shown once your journey has ended (learned it or happy
+ *  where you are), until you stay or leave. */
 export function PodFinishedCard({ busy, onStay, onLeave }: { busy: boolean; onStay: () => void; onLeave: () => void }) {
   const { t } = useTranslation();
   return (
@@ -200,23 +218,6 @@ export function PodFinishedCard({ busy, onStay, onLeave }: { busy: boolean; onSt
       <div className="flex gap-2.5">
         <div className="flex-1"><KyaPrimaryButton disabled={busy} onClick={onStay}>{t("flock.pods.stay", "Stay and cheer")}</KyaPrimaryButton></div>
         <KyaSecondaryButton className="flex-1" disabled={busy} onClick={onLeave}>{t("flock.pods.leave", "Leave pod")}</KyaSecondaryButton>
-      </div>
-    </section>
-  );
-}
-
-/** Not in the mockup: everyone has finished or left, so the pod asks. */
-export function PodKeepGoingCard({ busy, onAnswer }: { busy: boolean; onAnswer: (yes: boolean) => void }) {
-  const { t } = useTranslation();
-  return (
-    <section className="flex flex-col gap-2.5 rounded-[18px] px-4 py-3.5" style={{ background: K.lime, color: K.forest }} data-testid="pod-keep-going">
-      <span className="text-[16px] font-[700] leading-[1.25]">{t("flock.pods.keepGoingTitle", "Keep going together?")}</span>
-      <span className="text-[13.5px] leading-[1.45]" style={{ color: "#4f6b60" }}>
-        {t("flock.pods.keepGoingLine", "Everyone has finished the journey. If at least two of you say yes, the pod carries on as a buddy group with the same weekly check-in. If you say no, you'll leave quietly.")}
-      </span>
-      <div className="flex gap-2.5">
-        <div className="flex-1"><KyaPrimaryButton disabled={busy} onClick={() => onAnswer(true)}>{t("flock.pods.keepGoingYes", "Yes, keep going")}</KyaPrimaryButton></div>
-        <KyaSecondaryButton className="flex-1" disabled={busy} onClick={() => onAnswer(false)}>{t("flock.pods.keepGoingNo", "No, thanks")}</KyaSecondaryButton>
       </div>
     </section>
   );
