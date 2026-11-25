@@ -482,7 +482,7 @@ const JOURNEY_TEMPLATES = JSON.parse(readFileSync(`${process.cwd()}/e2e/journey-
 }[];
 /** A journey already under way: which template (or custom milestones), how many milestones are done. */
 type SeedJourney = {
-  id: string; birdName: string; slug?: string; custom?: { name: string; milestones: string[] }; done: number; status?: string; pausedReason?: string;
+  id: string; birdName: string; slug?: string; custom?: { name: string; milestones: string[]; description?: string }; done: number; status?: string; pausedReason?: string;
   /** Diet conversion's vet card answer. */
   vetCheck?: "talked" | "will_call";
   lastPostedDaysAgo?: number; visibility?: string;
@@ -520,12 +520,12 @@ async function mockJourneys(context: BrowserContext, opts: JourneyMockOpts, bird
     route.fulfill({ status, contentType: "application/json", headers: { "access-control-allow-origin": "*" }, body: JSON.stringify(body) });
   const journeys = new Map<string, any>();
   const lastPosted = new Map<string, string>();
-  const make = (id: string, birdId: string, tp: (typeof JOURNEY_TEMPLATES)[number] | undefined, custom: { name: string; milestones: string[] } | null, extra: Record<string, any>) => {
-    const ms = tp ? tp.milestones.map((m) => ({ title: m.title, words: { ask: m.ask, done_line: m.done_line } })) : custom!.milestones.map((title) => ({ title, words: null }));
+  const make = (id: string, birdId: string, tp: (typeof JOURNEY_TEMPLATES)[number] | undefined, custom: { name: string; milestones?: string[] | null; description?: string | null } | null, extra: Record<string, any>) => {
+    const ms = tp ? tp.milestones.map((m) => ({ title: m.title, words: { ask: m.ask, done_line: m.done_line } })) : (custom!.milestones ?? []).map((title) => ({ title, words: null }));
     return {
       id, bird_id: birdId, template_id: tp?.id ?? null, custom_name: custom?.name ?? null, status: "active", visibility: "community", rhythm: "most_days",
       started_at: new Date(Date.now() - 16 * 86_400_000).toISOString(), finished_at: null as string | null, paused_reason: null, vet_check: null, vet_remind_after: null,
-      custom_description: null,
+      custom_description: custom?.description ?? null, source_journey_id: null as string | null,
       template: tp ? { name: tp.name, slug: tp.slug } : null, bird: { name: birds.find((b) => b.id === birdId)?.name ?? "", passed_at: null },
       milestones: ms.map((m, i) => ({ id: `${id}-m${i + 1}`, position: i + 1, title: m.title, state: "todo", reached_at: null, shared_at: null, words: m.words })),
       ...extra,
@@ -624,9 +624,32 @@ async function mockJourneys(context: BrowserContext, opts: JourneyMockOpts, bird
       state.starts.push(args);
       const id = `00000000-0000-4000-8000-0000000072${String(state.starts.length).padStart(2, "0")}`;
       const tp = JOURNEY_TEMPLATES.find((x) => x.slug === args.p_template_slug);
-      const jn = make(id, args.p_bird_id, tp, tp ? null : { name: args.p_custom_name, milestones: args.p_custom_milestones },
+      const jn = make(id, args.p_bird_id, tp, tp ? null : { name: args.p_custom_name, description: args.p_custom_description ?? null },
         { visibility: args.p_visibility, rhythm: args.p_rhythm, started_at: new Date().toISOString() });
       jn.milestones.forEach((m: any) => { if ((args.p_already ?? []).includes(m.position)) m.state = "already"; });
+      journeys.set(id, jn);
+      return json(route, id);
+    }
+    // Skills from the Flock (1.20c): other members' own community journeys with an update.
+    const memberSkill = (x: any) => !x.template_id && x.visibility === "community" && !(meta.get(x.id)?.mine ?? true) && (updates.get(x.id) ?? []).length > 0;
+    if (fn === "journey_member_skills") {
+      if (tier === "free") return json(route, []);
+      const q = String(args.p_q ?? "").toLowerCase();
+      return json(route, [...journeys.values()].filter(memberSkill)
+        .filter((x) => !q || `${x.custom_name} ${x.custom_description ?? ""}`.toLowerCase().includes(q))
+        .map((x) => ({ ...card(x), skill: x.custom_name, description: x.custom_description, updates: (updates.get(x.id) ?? []).length })));
+    }
+    if (fn === "journey_custom_about") {
+      if (!j || j.template_id) return json(route, []);
+      const src = j.source_journey_id ? journeys.get(j.source_journey_id) : undefined;
+      return json(route, [{ description: j.custom_description, is_member_skill: memberSkill(j), source_journey_id: src?.id ?? null, source_bird_name: src?.bird?.name ?? null }]);
+    }
+    if (fn === "journey_start_member_skill") {
+      const src = journeys.get(args.p_source_id);
+      state.starts.push(args);
+      const id = `00000000-0000-4000-8000-0000000072${String(state.starts.length).padStart(2, "0")}`;
+      const jn = make(id, args.p_bird_id, undefined, { name: src.custom_name, description: src.custom_description },
+        { visibility: args.p_visibility, rhythm: args.p_rhythm, started_at: new Date().toISOString(), source_journey_id: src.id });
       journeys.set(id, jn);
       return json(route, id);
     }
@@ -1050,24 +1073,80 @@ test.describe("journeys: start a journey (admin, phone)", () => {
     await o.context.close();
   });
 
-  test("your own skill: a name and 3 steps, privately (1.20c reworks this screen)", async ({ browser, baseURL }) => {
+  test("your own skill: a name and a description, no steps; one of the 14's names suggests that skill", async ({ browser, baseURL }) => {
     const { context, page, journeys } = await open(browser, baseURL!, { admin: true });
     await page.goto("/flock/journeys/start");
     await page.getByTestId("pick-bird").locator("[data-bird]", { hasText: "Max" }).click();
     await page.getByTestId("write-own").click();
     await expect(page.getByRole("heading", { level: 1 })).toHaveText("Your own skill");
+    await expect(page.getByTestId("custom-milestones")).toHaveCount(0);
     const start = page.getByRole("button", { name: "Start Max's journey" });
     await expect(start).toBeDisabled();
+    await page.getByTestId("custom-name").fill("step up");
+    await expect(page.getByTestId("skill-suggestion")).toContainText("Step up is one of our skills, with its description and safety notes.");
+    await expect(page.getByTestId("skill-suggestion").getByRole("button", { name: "Start Step up instead" })).toBeVisible();
     await page.getByTestId("custom-name").fill("Bath time");
-    const rows = page.getByTestId("custom-milestones").locator("input");
-    await rows.nth(0).fill("Calm near the dish");
-    await rows.nth(1).fill("Toes in the water");
-    await expect(start).toBeDisabled();
-    await rows.nth(2).fill("A full splash");
+    await expect(page.getByTestId("skill-suggestion")).toHaveCount(0);
+    await expect(start).toBeEnabled();
+    await page.getByTestId("custom-description").fill("Splashing in a shallow dish.");
+    await expect(page.getByTestId("custom-description-count")).toHaveText("28 of 500");
     await page.getByTestId("visibility").getByRole("radio", { name: "Just me" }).click();
     await start.click();
     await expect(page).toHaveURL(/\/flock\/journeys\/0000/);
-    expect(journeys.starts[0]).toMatchObject({ p_template_slug: null, p_custom_name: "Bath time", p_custom_milestones: ["Calm near the dish", "Toes in the water", "A full splash"], p_visibility: "private" });
+    expect(journeys.starts[0]).toMatchObject({ p_template_slug: null, p_custom_name: "Bath time", p_custom_milestones: null, p_custom_description: "Splashing in a shallow dish.", p_visibility: "private" });
+    await expect(page.getByTestId("journey-page")).toBeVisible();
+    await expect(page.getByTestId("member-supplied")).toHaveCount(0);
+    await context.close();
+  });
+
+  test("skills from the Flock: search, the member-supplied label, start this skill, report it", async ({ browser, baseURL }) => {
+    const SOURCE = "00000000-0000-4000-8000-0000000074c1";
+    const { context, page, journeys, state } = await open(browser, baseURL!, { admin: true, journeys: { seed: [
+      { id: SOURCE, birdName: "Sunny", custom: { name: "Bell ringing", milestones: [], description: "Rings the bell when it wants out." }, done: 0, owner: "Robin P.", clips: 1 },
+      { id: "00000000-0000-4000-8000-0000000074c2", birdName: "Pip", custom: { name: "Quiet mornings", milestones: [] }, done: 0, owner: "Robin P.", clips: 0 },
+    ] } });
+    await page.goto("/flock/journeys/start");
+    await page.getByTestId("pick-bird").locator("[data-bird]", { hasText: "Max" }).click();
+    await page.getByTestId("from-flock-skills").click();
+    await expect(page.getByRole("heading", { level: 1 })).toHaveText("Skills from the Flock");
+    await expect(page.getByTestId("member-supplied-note")).toContainText("A member shared this skill. It hasn't been reviewed by The Kya Project.");
+    // Only a skill with an update is findable.
+    const rows = page.locator("[data-member-skill]");
+    await expect(rows).toHaveCount(1);
+    await expect(rows).toContainText("Bell ringing");
+    await expect(rows).toContainText("From Sunny's journey · Robin P.");
+    await expect(rows.getByTestId("member-supplied")).toHaveText("Member-supplied journey");
+    await page.getByTestId("member-skills-search").fill("harness");
+    await expect(page.getByTestId("member-skills-empty")).toHaveText("No shared skills match that yet.");
+    await page.getByTestId("member-skills-search").fill("wants out");
+    await expect(rows).toHaveCount(1);
+    await rows.click();
+    await expect(page.getByRole("heading", { level: 1 })).toHaveText("Bell ringing");
+    await expect(page.getByTestId("member-supplied-note")).toBeVisible();
+    await expect(page.getByTestId("skill-description")).toHaveText("Rings the bell when it wants out.");
+    await expect(page.getByTestId("see-source")).toHaveText("See Sunny's journey");
+    await page.getByRole("button", { name: "Start this skill" }).click();
+    await expect(page).toHaveURL(/\/flock\/journeys\/0000/);
+    expect(journeys.starts.at(-1)).toMatchObject({ p_source_id: SOURCE, p_visibility: "community" });
+    expect(journeys.starts.at(-1)!.p_bird_id).toBeTruthy();
+    // The copy is yours: no label, and "Started from Sunny's journey" links back.
+    await expect(page.getByTestId("member-supplied")).toHaveCount(0);
+    await expect(page.getByTestId("started-from")).toHaveText("Started from Sunny's journey");
+    await page.getByTestId("started-from").click();
+    await expect(page).toHaveURL(new RegExp(`/flock/journeys/${SOURCE}`));
+    // The source journey: labeled, "Start this skill", and "Report this skill" in its menu.
+    await expect(page.getByTestId("member-supplied-note")).toBeVisible();
+    await expect(page.getByTestId("start-this-skill")).toBeVisible();
+    await page.getByTestId("journey-other-menu").click();
+    await page.getByRole("button", { name: "Report this skill" }).click();
+    const sheet = page.getByTestId("report-sheet");
+    await sheet.locator("[data-reason='unsafe']").click();
+    await sheet.getByRole("button", { name: "Send report" }).click();
+    await expect(page.getByTestId("report-done")).toBeVisible();
+    expect(state.calls.find((c) => c.fn === "flock_report")!.args).toMatchObject({ p_subject_type: "journey", p_subject_id: SOURCE, p_reason: "unsafe" });
+    // The Journeys tab labels it too.
+    await page.goto("/flock/journeys");
+    await expect(page.locator(`[data-journey-card='${SOURCE}']`).getByTestId("member-supplied")).toBeVisible();
     await context.close();
   });
 
@@ -1568,6 +1647,10 @@ test.describe("journeys: what a free account sees", () => {
 
     await page.goto("/flock/journeys/start");
     await page.getByTestId("pick-bird").locator("[data-bird]", { hasText: "Buzz" }).click();
+    // No "Skills from the Flock" for a free account (1.20c), and no call for them.
+    await expect(page.getByTestId("write-own")).toBeVisible();
+    await expect(page.getByTestId("from-flock-skills")).toHaveCount(0);
+    expect(journeys.calls.some((c) => c.fn === "journey_member_skills")).toBe(false);
     await page.getByTestId("write-own").click();
     await expect(page.getByTestId("custom-limit-sheet")).toHaveText(
       "Free accounts can have one custom journey going at a time. Flock members can start as many as they like.Got it");

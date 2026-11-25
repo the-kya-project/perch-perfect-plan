@@ -46,10 +46,9 @@ export type JourneyTemplate = {
 };
 
 export const RHYTHMS: JourneyRhythm[] = ["most_days", "few_times_week", "weekends"];
-export const CUSTOM_MIN = 3;
-export const CUSTOM_MAX = 8;
 export const CUSTOM_NAME_MAX = 60;
-export const MILESTONE_MAX = 300;
+/** Your own skill's description, in the owner's words (the database allows 500). */
+export const CUSTOM_DESCRIPTION_MAX = 500;
 
 /** Pick a skill's groups, in this order. */
 export type SkillGroup = JourneyTemplate["category"];
@@ -96,23 +95,32 @@ export function canFinishLearned(j: { status: JourneyStatus; paused_reason: stri
   return j.status === "active" || (j.status === "paused" && j.paused_reason !== "weight_drop");
 }
 
-export type CustomProblem = "name" | "tooFew" | "tooMany" | "blank" | "long";
-/** What's wrong with a custom journey, or null when it can start. Blank rows
- *  at the end are ignored (the editor keeps one empty row to type into). */
-export function customProblem(name: string, milestones: string[]): CustomProblem | null {
+export type CustomProblem = "name" | "long";
+/** What's wrong with your own skill, or null when it can start: a name of
+ *  1 to 60 characters, and a description (optional) of up to 500. No steps. */
+export function customProblem(name: string, description: string): CustomProblem | null {
   const n = name.trim();
   if (n.length < 1 || n.length > CUSTOM_NAME_MAX) return "name";
-  const rows = trimTrailingBlanks(milestones);
-  if (rows.some((m) => m.trim().length === 0)) return "blank";
-  if (rows.some((m) => m.trim().length > MILESTONE_MAX)) return "long";
-  if (rows.length < CUSTOM_MIN) return "tooFew";
-  if (rows.length > CUSTOM_MAX) return "tooMany";
+  if (description.trim().length > CUSTOM_DESCRIPTION_MAX) return "long";
   return null;
 }
-export function trimTrailingBlanks(rows: string[]): string[] {
-  const out = [...rows];
-  while (out.length && out[out.length - 1].trim() === "") out.pop();
-  return out;
+
+/** "Step-up!" → "step up": for comparing a typed name with the skills. */
+function skillKey(s: string): string {
+  return s.toLowerCase().replace(/[^\p{L}\p{N}]+/gu, " ").trim();
+}
+/** Your own skill's name matches one of the 14 (by name or slug, ignoring
+ *  case, spacing and punctuation): the skill to suggest instead, or null. */
+export function matchingSkill<T extends Pick<JourneyTemplate, "name" | "slug">>(name: string, templates: readonly T[]): T | null {
+  const k = skillKey(name);
+  if (!k) return null;
+  return templates.find((tp) => skillKey(tp.name) === k || skillKey(tp.slug) === k) ?? null;
+}
+
+/** A member's own skill seen by someone outside its bird's household: labeled
+ *  "Member-supplied journey" wherever it appears. */
+export function isMemberSupplied(c: { template_slug: string | null; is_mine?: boolean }): boolean {
+  return c.template_slug == null && !c.is_mine;
 }
 
 /** Which pronoun to use for a bird, from the care app's sex field. */

@@ -3,7 +3,7 @@ import { Link, useNavigate } from "@tanstack/react-router";
 import { Check, ChevronRight } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { K, KyaHeading, KyaPrimaryButton, KyaSheet } from "@/components/kya";
-import { flockSheetTitle, journeyDay, journeyDays, skillInSentence, type FlockSheetReason } from "@/lib/journeys";
+import { flockSheetTitle, journeyDay, journeyDays, possessive, skillInSentence, type FlockSheetReason } from "@/lib/journeys";
 
 const CHIP_ON_BG = "#cdeab0";
 const CHIP_OFF_BORDER = "#c9d3c8";
@@ -209,6 +209,41 @@ export function WhichJourneySheet({ journeys, onPick, onStartNew, onClose }: {
         </button>
       </div>
     </KyaSheet>
+  );
+}
+
+/** "Member-supplied journey": the label on a member's own skill wherever it
+ *  appears outside its bird's household (journeys redesign, screen 8). */
+export function MemberSuppliedTag({ className }: { className?: string }) {
+  const { t } = useTranslation();
+  return (
+    <span className={`self-start rounded-full px-2 py-[3px] text-[11px] font-[700] ${className ?? ""}`} style={{ background: K.amberBg, color: K.amberText }} data-testid="member-supplied">
+      {t("flock.journeys.member.label", "Member-supplied journey")}
+    </span>
+  );
+}
+
+/** The label with its line: shared by a member, not reviewed by The Kya Project. */
+export function MemberSuppliedNote() {
+  const { t } = useTranslation();
+  return (
+    <div className="flex flex-col gap-1.5 rounded-[14px] px-3.5 py-2.5" style={{ background: "#fbf6e8" }} data-testid="member-supplied-note">
+      <MemberSuppliedTag />
+      <p className="m-0 text-[13px] leading-[1.45]" style={{ color: K.ink }}>
+        {t("flock.journeys.member.line", "A member shared this skill. It hasn't been reviewed by The Kya Project.")}
+      </p>
+    </div>
+  );
+}
+
+/** "Started from [bird]'s journey", linking to it while it's visible. */
+export function StartedFrom({ journeyId, birdName }: { journeyId: string; birdName: string }) {
+  const { t } = useTranslation();
+  return (
+    <Link to="/flock/journeys/$journeyId" params={{ journeyId }} data-testid="started-from"
+      className="self-start text-[14px] font-[700] underline underline-offset-4" style={{ color: K.moss }}>
+      {t("flock.journeys.member.startedFrom", "Started from {{name}} journey", { name: possessive(birdName) })}
+    </Link>
   );
 }
 

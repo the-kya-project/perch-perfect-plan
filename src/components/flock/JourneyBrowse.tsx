@@ -5,10 +5,10 @@ import { useTranslation } from "react-i18next";
 import type { TFunction } from "i18next";
 import { K, KyaHeading, KyaPrimaryButton, KyaSheet } from "@/components/kya";
 import { BirdThumb } from "@/components/flock/FlockPeople";
-import { ChoiceChips } from "@/components/flock/JourneyParts";
+import { ChoiceChips, MemberSuppliedTag } from "@/components/flock/JourneyParts";
 import { useBirdPhotoUrls, useOwnBirdPhotoUrls, type FlockPhotoSrc } from "@/lib/flockData";
 import { REACTIONS, useJourneyBirds, useJourneyClips, type JourneyCard, type ReactionKind } from "@/lib/journeyData";
-import { journeyDay, journeyDays, visibilityChoices, type JourneyStatus, type JourneyVisibility } from "@/lib/journeys";
+import { isMemberSupplied, journeyDay, journeyDays, visibilityChoices, type JourneyStatus, type JourneyVisibility } from "@/lib/journeys";
 
 /** Bird photos for journey cards: your own birds signed as usual; other
  *  members' only when the database says the bird is shown (bird_has_photo). */
@@ -89,6 +89,7 @@ export function JourneyBigCard({ card, photo }: { card: JourneyCard; photo: Floc
       </div>
       <div className="flex flex-col gap-1.5 p-4">
         <span className="text-[17px] font-[700]">{card.bird_name} · {card.skill}</span>
+        {isMemberSupplied(card) && <MemberSuppliedTag />}
         <span className="text-[13px]" style={{ color: K.quiet }} data-testid="journey-card-line">
           {journeyCardLine(t, card)}
           {card.owner_name ? ` · ${card.owner_name}` : ""}

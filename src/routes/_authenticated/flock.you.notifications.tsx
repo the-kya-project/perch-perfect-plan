@@ -40,6 +40,7 @@ function aboutWhat(t: TFunction, n: FlockNotification): string {
       : t("flock.notif.aboutMilestoneShort", "{{bird}} milestone", { bird: possessive(n.bird_name) });
   }
   if (n.subject_type === "journey_update" && n.bird_name) return t("flock.notif.aboutClip", "{{bird}} clip", { bird: possessive(n.bird_name) });
+  if (n.subject_type === "journey") return t("flock.notif.aboutSkill", "your skill {{skill}}", { skill: n.skill ?? "" });
   if (n.subject_type === "comment") return t("flock.notif.aboutComment", "your comment");
   return t("flock.notif.aboutPost", "your post");
 }

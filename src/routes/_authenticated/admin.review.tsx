@@ -10,7 +10,7 @@ import { reasonLabel } from "@/components/flock/ReportSheet";
 import { FLOCK_ENABLED_QUERY } from "@/lib/flock";
 import {
   QUEUE_FILTERS, queueItemPlace, resolveReport, reviewEvent, reviewPost, useCanReview, useInvalidateModeration, useReviewCounts,
-  useReviewPostSpaces, useReviewQueue, type QueueFilter, type QueueItem, type QueuePlace,
+  useReviewPostSpaces, useReviewQueue, type QueueFilter, type QueueItem, type QueuePlace, type ReportSubject,
 } from "@/lib/flockModeration";
 import { pickOptional } from "@/lib/flockNav";
 import { longWhen } from "@/lib/flockEvents";
@@ -44,6 +44,7 @@ function subjectLabel(t: TFunction, q: QueueItem): string {
     case "post": return t("flock.review.reportPost", "Report · post");
     case "comment": return t("flock.review.reportComment", "Report · comment");
     case "journey_update": return t("flock.review.reportUpdate", "Report · journey update");
+    case "journey": return t("flock.review.reportSkill", "Report · member skill");
     default: return t("flock.review.event", "Event suggestion");
   }
 }
@@ -156,7 +157,9 @@ function ReviewQueue() {
                   </span>
                 )}
                 <p className="m-0 line-clamp-6 whitespace-pre-wrap text-[15px] leading-[1.45]">
-                  {q.item_type === "report" ? `“${q.body ?? t("flock.review.clipOnly", "(a clip with no caption)")}”` : q.body}
+                  {q.item_type === "report"
+                    ? `“${q.body ?? (q.subject_type === "journey" ? t("flock.review.noDescription", "(no description)") : t("flock.review.clipOnly", "(a clip with no caption)"))}”`
+                    : q.body}
                 </p>
                 {q.item_type === "report" && (
                   <div className="flex flex-col gap-1 text-[13.5px]" style={{ color: K.ink }} data-testid="report-reasons">
@@ -193,7 +196,7 @@ function ReviewQueue() {
                     <button type="button" className={btn} style={{ background: K.mist }} disabled={!!busy} data-act="message"
                       onClick={() => setDecision({ kind: "message", item: q })}>{t("flock.review.message", "Message them")}</button>
                     <button type="button" className={btn} style={{ background: K.mist }} disabled={!!busy} data-act="keep"
-                      onClick={() => void act(key, () => resolveReport(q.subject_type as "post" | "comment" | "journey_update", q.subject_id, "keep", ""))}>{t("flock.review.keep", "Keep it")}</button>
+                      onClick={() => void act(key, () => resolveReport(q.subject_type as ReportSubject, q.subject_id, "keep", ""))}>{t("flock.review.keep", "Keep it")}</button>
                   </div>
                 )}
               </article>
@@ -209,7 +212,7 @@ function ReviewQueue() {
             if (decision.kind === "changes" || decision.kind === "decline") {
               const k = decision.kind;
               void act(key, () => (q.item_type === "event" ? reviewEvent(q.subject_id, k, note) : reviewPost(q.subject_id, k, note)));
-            } else void act(key, () => resolveReport(q.subject_type as "post" | "comment" | "journey_update", q.subject_id, decision.kind as "message" | "remove", note));
+            } else void act(key, () => resolveReport(q.subject_type as ReportSubject, q.subject_id, decision.kind as "message" | "remove", note));
           }} />
       )}
     </KyaPage>

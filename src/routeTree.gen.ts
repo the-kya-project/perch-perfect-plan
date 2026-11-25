@@ -118,6 +118,7 @@ import { Route as AuthenticatedFlockEventsNewRouteImport } from './routes/_authe
 import { Route as AuthenticatedFlockJourneysIndexRouteImport } from './routes/_authenticated/flock.journeys.index'
 import { Route as AuthenticatedFlockJourneysKnownRouteImport } from './routes/_authenticated/flock.journeys.known'
 import { Route as AuthenticatedFlockJourneysSetupRouteImport } from './routes/_authenticated/flock.journeys.setup'
+import { Route as AuthenticatedFlockJourneysSkillsRouteImport } from './routes/_authenticated/flock.journeys.skills'
 import { Route as AuthenticatedFlockJourneysStartRouteImport } from './routes/_authenticated/flock.journeys.start'
 import { Route as AuthenticatedFlockLibraryIndexRouteImport } from './routes/_authenticated/flock.library.index'
 import { Route as AuthenticatedFlockLibraryResourceIdRouteImport } from './routes/_authenticated/flock.library.$resourceId'
@@ -764,6 +765,12 @@ const AuthenticatedFlockJourneysSetupRoute =
     path: '/journeys/setup',
     getParentRoute: () => AuthenticatedFlockRoute,
   } as any)
+const AuthenticatedFlockJourneysSkillsRoute =
+  AuthenticatedFlockJourneysSkillsRouteImport.update({
+    id: '/journeys/skills',
+    path: '/journeys/skills',
+    getParentRoute: () => AuthenticatedFlockRoute,
+  } as any)
 const AuthenticatedFlockJourneysStartRoute =
   AuthenticatedFlockJourneysStartRouteImport.update({
     id: '/journeys/start',
@@ -1160,6 +1167,7 @@ export interface FileRoutesByFullPath {
   '/flock/events/new': typeof AuthenticatedFlockEventsNewRoute
   '/flock/journeys/known': typeof AuthenticatedFlockJourneysKnownRoute
   '/flock/journeys/setup': typeof AuthenticatedFlockJourneysSetupRoute
+  '/flock/journeys/skills': typeof AuthenticatedFlockJourneysSkillsRoute
   '/flock/journeys/start': typeof AuthenticatedFlockJourneysStartRoute
   '/flock/library/$resourceId': typeof AuthenticatedFlockLibraryResourceIdRoute
   '/flock/members/$userId': typeof AuthenticatedFlockMembersUserIdRoute
@@ -1312,6 +1320,7 @@ export interface FileRoutesByTo {
   '/flock/events/new': typeof AuthenticatedFlockEventsNewRoute
   '/flock/journeys/known': typeof AuthenticatedFlockJourneysKnownRoute
   '/flock/journeys/setup': typeof AuthenticatedFlockJourneysSetupRoute
+  '/flock/journeys/skills': typeof AuthenticatedFlockJourneysSkillsRoute
   '/flock/journeys/start': typeof AuthenticatedFlockJourneysStartRoute
   '/flock/library/$resourceId': typeof AuthenticatedFlockLibraryResourceIdRoute
   '/flock/members/$userId': typeof AuthenticatedFlockMembersUserIdRoute
@@ -1473,6 +1482,7 @@ export interface FileRoutesById {
   '/_authenticated/flock/events/new': typeof AuthenticatedFlockEventsNewRoute
   '/_authenticated/flock/journeys/known': typeof AuthenticatedFlockJourneysKnownRoute
   '/_authenticated/flock/journeys/setup': typeof AuthenticatedFlockJourneysSetupRoute
+  '/_authenticated/flock/journeys/skills': typeof AuthenticatedFlockJourneysSkillsRoute
   '/_authenticated/flock/journeys/start': typeof AuthenticatedFlockJourneysStartRoute
   '/_authenticated/flock/library/$resourceId': typeof AuthenticatedFlockLibraryResourceIdRoute
   '/_authenticated/flock/members/$userId': typeof AuthenticatedFlockMembersUserIdRoute
@@ -1634,6 +1644,7 @@ export interface FileRouteTypes {
     | '/flock/events/new'
     | '/flock/journeys/known'
     | '/flock/journeys/setup'
+    | '/flock/journeys/skills'
     | '/flock/journeys/start'
     | '/flock/library/$resourceId'
     | '/flock/members/$userId'
@@ -1786,6 +1797,7 @@ export interface FileRouteTypes {
     | '/flock/events/new'
     | '/flock/journeys/known'
     | '/flock/journeys/setup'
+    | '/flock/journeys/skills'
     | '/flock/journeys/start'
     | '/flock/library/$resourceId'
     | '/flock/members/$userId'
@@ -1946,6 +1958,7 @@ export interface FileRouteTypes {
     | '/_authenticated/flock/events/new'
     | '/_authenticated/flock/journeys/known'
     | '/_authenticated/flock/journeys/setup'
+    | '/_authenticated/flock/journeys/skills'
     | '/_authenticated/flock/journeys/start'
     | '/_authenticated/flock/library/$resourceId'
     | '/_authenticated/flock/members/$userId'
@@ -2813,6 +2826,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedFlockJourneysSetupRouteImport
       parentRoute: typeof AuthenticatedFlockRoute
     }
+    '/_authenticated/flock/journeys/skills': {
+      id: '/_authenticated/flock/journeys/skills'
+      path: '/journeys/skills'
+      fullPath: '/flock/journeys/skills'
+      preLoaderRoute: typeof AuthenticatedFlockJourneysSkillsRouteImport
+      parentRoute: typeof AuthenticatedFlockRoute
+    }
     '/_authenticated/flock/journeys/start': {
       id: '/_authenticated/flock/journeys/start'
       path: '/journeys/start'
@@ -3191,6 +3211,7 @@ interface AuthenticatedFlockRouteChildren {
   AuthenticatedFlockEventsNewRoute: typeof AuthenticatedFlockEventsNewRoute
   AuthenticatedFlockJourneysKnownRoute: typeof AuthenticatedFlockJourneysKnownRoute
   AuthenticatedFlockJourneysSetupRoute: typeof AuthenticatedFlockJourneysSetupRoute
+  AuthenticatedFlockJourneysSkillsRoute: typeof AuthenticatedFlockJourneysSkillsRoute
   AuthenticatedFlockJourneysStartRoute: typeof AuthenticatedFlockJourneysStartRoute
   AuthenticatedFlockLibraryResourceIdRoute: typeof AuthenticatedFlockLibraryResourceIdRoute
   AuthenticatedFlockMembersUserIdRoute: typeof AuthenticatedFlockMembersUserIdRoute
@@ -3240,6 +3261,7 @@ const AuthenticatedFlockRouteChildren: AuthenticatedFlockRouteChildren = {
   AuthenticatedFlockEventsNewRoute: AuthenticatedFlockEventsNewRoute,
   AuthenticatedFlockJourneysKnownRoute: AuthenticatedFlockJourneysKnownRoute,
   AuthenticatedFlockJourneysSetupRoute: AuthenticatedFlockJourneysSetupRoute,
+  AuthenticatedFlockJourneysSkillsRoute: AuthenticatedFlockJourneysSkillsRoute,
   AuthenticatedFlockJourneysStartRoute: AuthenticatedFlockJourneysStartRoute,
   AuthenticatedFlockLibraryResourceIdRoute:
     AuthenticatedFlockLibraryResourceIdRoute,

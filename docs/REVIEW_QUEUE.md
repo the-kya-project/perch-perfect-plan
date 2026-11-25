@@ -19,6 +19,25 @@ Format:
   - After: "<new wording>"
 ```
 
+### [#559](https://github.com/the-kya-project/perch-perfect-plan/pull/559) · 1.20c Member skills
+English only (Dutch waits for your read of the English). Behind `journeys_enabled()` (off in production) and the Flock gate, so nobody sees these yet. Keys in `src/locales/en.jsonc`. **Please read the "Member-supplied journey" line especially.**
+- **Where:** everywhere another member's own skill appears (journey page, Journeys tab cards, Today's cards, Skills from the Flock, its setup)
+  - New: "Member-supplied journey"
+  - New: "A member shared this skill. It hasn't been reviewed by The Kya Project."
+- **Where:** Your own skill
+  - Removed: "Milestones", "3 to 8 small steps, in order.", "Milestone {{n}}", "Remove milestone {{n}}", "Add a milestone"
+  - Kept: "What's the goal?", "Bath time, harness, quieter mornings…"
+  - New: "What does it look like?", "Optional", "In your own words: what will your bird do when it's learned?", "{{used}} of {{max}}" (the counter, e.g. "28 of 500")
+  - New, when the name is one of the 14: "{{skill}} is one of our skills, with its description and safety notes." and "Start {{skill}} instead"
+- **Where:** Pick a skill (members only)
+  - New button: "Skills from the Flock"
+- **Where:** Skills from the Flock
+  - New: "Skills from the Flock" (title), "Search skills" (screen readers), "Bath time, harness, ringing a bell…" (search placeholder), "From {{name}} journey" (e.g. "From Sunny's journey · Robin P."), "No shared skills match that yet.", "No member skills shared yet.", "Skills from the Flock come with Flock membership." (a free account opening the link)
+- **Where:** a member skill's setup and journey page
+  - New: "See {{name}} journey", "Report this skill", "Start this skill", "Started from {{name}} journey", "Skill not available", "This skill isn't shared any more."
+- **Where:** the report sheet, review queue and notifications
+  - New: "Report this skill" (sheet title), "Report · member skill", "(no description)" (a reported skill with no description), "your skill {{skill}}" (a reviewer's notice)
+
 ### [#557](https://github.com/the-kya-project/perch-perfect-plan/pull/557) · 1.11 Buddy pods follow-up (#548): no buddy groups, stage pills · **for Brittany's copy read**
 Held, not merged yet. English only (pods have no Dutch yet).
 - **Where:** setup screen, "Pair me with buddies" box (`flock.pods.optInLine`)
@@ -1129,6 +1148,17 @@ No new strings: every line reuses existing wording, in new places (admins only).
 ---
 
 ## Decisions agents made
+
+### [#559](https://github.com/the-kya-project/perch-perfect-plan/pull/559) · 1.20c Member skills
+- **Decision:** A member skill is a custom journey shared with the community that has at least one update the reviewers haven't hidden (`private.journey_is_member_skill`). It's findable through `journey_viewable`, so blocks, a lapsed membership and "Just me" leave it out, and your own bird's journeys never show in your own search.
+- **Decision:** "Member-supplied journey" shows on every custom journey seen from outside its bird's household: the journey page (with the line, at the top), Journeys tab cards, Today's big-moment and "learned it" cards, the "Skills from the Flock" list and the member skill's setup. Today's followed rings are too small for it and don't have it. Your own copy of someone's skill isn't labeled for you.
+- **Decision:** The line reads "A member shared this skill. It hasn't been reviewed by The Kya Project." It's on the journey page, at the top of "Skills from the Flock" and on the member skill's setup. Cards carry only the label.
+- **Decision:** "Skills from the Flock" is a button under "Your own skill" on Pick a skill (members only). It opens a list with a search box, newest activity first, up to 30. Tapping one opens the setup screen (`?from=<journey>`): the note, the skill's description and the three safety lines every skill shares, "See [bird]'s journey", "Report this skill", then how often and who sees it, and "Start this skill". It asks which bird only when the member has more than one and came from the journey page.
+- **Decision:** "Start this skill" copies the name and description into a new journey of your own (through `journey_start`, so the usual rules apply) and records where it came from. Starting it again for the same bird, while the first copy is going, opens that copy. The copy keeps its own text when the source changes, disappears or is blocked; "Started from [bird]'s journey" shows only while you can still see the source.
+- **Decision:** Reports on a member skill use subject type `journey` (the skill's name and description) in `flock_reports`, `flock_moderation` and `flock_notifications`. `flock_report`, `flock_resolve_report`, `flock_subject_visible`, `flock_subject_owner`, the review queue ("Report · member skill") and the notifications list were patched from their live definitions to know it. Only custom community journeys can be reported this way; template journeys can't. At the report threshold, or once removed, the whole journey leaves the community (`journey_viewable`) and stays for its household, the same rule reported posts follow. Removed member skills are kept, not purged after 180 days, the same as removed journey updates.
+- **Decision:** "Your own skill": a name (60) and an optional description (500, with a counter), no steps. When the name matches one of the 14 (ignoring case, spaces and punctuation, or the slug, e.g. "step-up"), it suggests "Start [skill] instead", which opens that skill's setup. It doesn't block starting your own.
+- **Decision:** Starting a member skill is counted as `flock_journey_started` with `template: "custom"`, like any custom journey. No new analytics keys; 1.20e updates the events.
+- **Decision:** The CLAUDE.md Journeys section isn't rewritten here; 1.20e does it with the rest of the docs.
 
 ### [#554](https://github.com/the-kya-project/perch-perfect-plan/pull/554) · 1.20b Journeys redesign: screens
 - **Decision:** "[Bird] learned it!" asks once before finishing (a small sheet: "Finish the journey" / "Not yet"), because finishing can't be undone from the app. "We're happy where we are" stays in the journey's menu, now through `journey_finish`.

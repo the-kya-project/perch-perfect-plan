@@ -6,9 +6,10 @@ import { K } from "@/components/kya";
 import { BirdThumb } from "@/components/flock/FlockPeople";
 import { ReactionChips } from "@/components/flock/JourneyBrowse";
 import { ClipTileState } from "@/components/flock/JourneyClipView";
+import { MemberSuppliedTag } from "@/components/flock/JourneyParts";
 import type { FlockPhotoSrc } from "@/lib/flockData";
 import { reactTo, useInvalidateJourneys, useJourneyAccess, useJourneyClips, type MomentCard, type ReactionKind } from "@/lib/journeyData";
-import { DIET_SLUG, possessive, skillInSentence } from "@/lib/journeys";
+import { DIET_SLUG, isMemberSupplied, possessive, skillInSentence } from "@/lib/journeys";
 
 /** A journey card in Today from a journey you follow (journeys redesign,
  *  screen 1): a "This was a big moment" update (who and when, "Big moment ·
@@ -36,6 +37,8 @@ export function JourneyMomentCard({ card, photo, comments = 0 }: { card: MomentC
       <span className="text-[12.5px]" style={{ color: K.quiet }}>
         {[card.owner_name, card.owner_region, when].filter(Boolean).join(" · ")}
       </span>
+      {/* Cards come from other members' journeys you follow. */}
+      {isMemberSupplied(card) && <MemberSuppliedTag className="ml-auto" />}
     </div>
   );
 

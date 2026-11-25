@@ -49,8 +49,8 @@ import { PLACE_KINDS, PLACE_LIMITS, groupPlaces, telHref, updatedDay, websiteHre
 import { VOTE_GUARANTEED_PCT, VOTE_LIMITS, choiceColor, cleanVote, emptyVoteDraft, isDonationVote, openProblems, rankedChoices, toLocalInput, topNames, voteDay, votesFor, type Vote } from "@/lib/flockVotes";
 import {
   birdPronoun, canStartCustom, customProblem, daysSince, clipPhase, flockSheetTitle, isNectarEater, rollingAverage, showVetReminder, youngOrUnknownAge, defaultVisibility, groupSkills, journeyDay, journeyDays,
-  SKILL_GROUPS, askFlock, canFinishLearned, isOpenJourney, sortYourJourneys,
-  nextMilestone, possessive, skillInSentence, trimTrailingBlanks, vetCheckLine, visibilityChoices, wantsTip,
+  SKILL_GROUPS, askFlock, canFinishLearned, isOpenJourney, sortYourJourneys, CUSTOM_DESCRIPTION_MAX, CUSTOM_NAME_MAX, isMemberSupplied, matchingSkill,
+  nextMilestone, possessive, skillInSentence, vetCheckLine, visibilityChoices, wantsTip,
   type JourneyTemplate,
 } from "@/lib/journeys";
 
@@ -414,14 +414,34 @@ check("journeys: only Flock members can choose the community", () => {
   assert.equal(defaultVisibility({ can_share: true }), "community");
   assert.equal(defaultVisibility({ can_share: false }), "private");
 });
-check("journeys: a custom journey needs a name and 3 to 8 milestones", () => {
-  assert.equal(customProblem("Bath time", ["a", "b", "c"]), null);
-  assert.equal(customProblem("Bath time", ["a", "b", "c", ""]), null);
-  assert.equal(customProblem("  ", ["a", "b", "c"]), "name");
-  assert.equal(customProblem("Bath", ["a", "b"]), "tooFew");
-  assert.equal(customProblem("Bath", ["1", "2", "3", "4", "5", "6", "7", "8", "9"]), "tooMany");
-  assert.equal(customProblem("Bath", ["a", "", "c"]), "blank");
-  assert.deepEqual(trimTrailingBlanks(["a", "", " "]), ["a"]);
+check("journeys: your own skill needs only a name (up to 60) and takes a description up to 500, no steps", () => {
+  assert.equal(customProblem("Bath time", ""), null);
+  assert.equal(customProblem("Bath time", "Splashing in a shallow dish."), null);
+  assert.equal(customProblem("  ", "Splashing"), "name");
+  assert.equal(customProblem("x".repeat(60), ""), null);
+  assert.equal(customProblem("x".repeat(61), ""), "name");
+  assert.equal(customProblem("Bath", "y".repeat(500)), null);
+  assert.equal(customProblem("Bath", "y".repeat(501)), "long");
+  assert.equal(CUSTOM_NAME_MAX, 60);
+  assert.equal(CUSTOM_DESCRIPTION_MAX, 500);
+  const src = readFileSync("src/lib/journeys.ts", "utf8");
+  assert.ok(!/CUSTOM_MIN|CUSTOM_MAX\b|MILESTONE_MAX|tooFew|tooMany/.test(src), "the step rules are gone");
+});
+check("journeys: your own skill named like one of the 14 suggests that skill", () => {
+  const tps = [{ name: "Step up", slug: "step-up" }, { name: "High five", slug: "high-five" }, { name: "Scale training", slug: "scale-training" }];
+  assert.equal(matchingSkill("Step up", tps)?.slug, "step-up");
+  assert.equal(matchingSkill("  step-UP! ", tps)?.slug, "step-up");
+  assert.equal(matchingSkill("high five", tps)?.slug, "high-five");
+  assert.equal(matchingSkill("scale-training", tps)?.slug, "scale-training");
+  assert.equal(matchingSkill("Step up onto the perch", tps), null);
+  assert.equal(matchingSkill("Bath time", tps), null);
+  assert.equal(matchingSkill("", tps), null);
+});
+check("journeys: another member's own skill is labeled Member-supplied journey, never a template or your own", () => {
+  assert.equal(isMemberSupplied({ template_slug: null, is_mine: false }), true);
+  assert.equal(isMemberSupplied({ template_slug: null }), true);
+  assert.equal(isMemberSupplied({ template_slug: null, is_mine: true }), false);
+  assert.equal(isMemberSupplied({ template_slug: "recall", is_mine: false }), false);
 });
 check("journeys: pronouns, possessives and the vet check line", () => {
   assert.equal(birdPronoun("Female"), "she");
