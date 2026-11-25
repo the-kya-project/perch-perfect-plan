@@ -19,6 +19,17 @@ Format:
   - After: "<new wording>"
 ```
 
+### [#560](https://github.com/the-kya-project/perch-perfect-plan/pull/560) · 1.20d Diet conversion rework (Brittany approved the wording, Nov 25, 2026)
+English only (Dutch waits for your read of the English). Behind `journeys_enabled()` (off in production) and the Flock gate. Both lines also go in the vet packet.
+- **Where:** Diet conversion's setup, above the vet card, for an eclectus, only once the `diet_eclectus_alert` switch is on (it starts off)
+  - New (the spec's draft, word for word): "Eclectus have specific food needs. They generally do best on plenty of fresh vegetables and fruit, and many avian vets advise caution with heavily fortified pellets and added vitamins. Please make a plan with your avian vet before changing {{name}}'s food."
+- **Where:** Diet conversion's setup, "Safeguards built into this journey" (template text, draft)
+  - Before: "Daily weigh-ins are part of every step, and the journey shows the weight trend right on its page."
+  - After: "Daily weigh-ins are part of the whole journey, and the journey shows the weight trend right on its page."
+- **Where:** the same "Safeguards built into this journey" list (template text, draft). Removed at Brittany's request (Nov 25, 2026).
+  - Before: "If weight drops, the journey pauses with a clear message to call your avian vet. For Flock members, this uses the bird's own baseline alerts."
+  - After: "If weight drops, the journey pauses with a clear message to call your avian vet."
+
 ### [#559](https://github.com/the-kya-project/perch-perfect-plan/pull/559) · 1.20c Member skills
 English only (Dutch waits for your read of the English). Behind `journeys_enabled()` (off in production) and the Flock gate, so nobody sees these yet. Keys in `src/locales/en.jsonc`. **Please read the "Member-supplied journey" line especially.**
 - **Where:** everywhere another member's own skill appears (journey page, Journeys tab cards, Today's cards, Skills from the Flock, its setup)
@@ -1149,6 +1160,17 @@ No new strings: every line reuses existing wording, in new places (admins only).
 
 ## Decisions agents made
 
+### [#560](https://github.com/the-kya-project/perch-perfect-plan/pull/560) · 1.20d Diet conversion rework
+- **Brittany's decision (Nov 25, 2026):** if a member logs no weigh-ins in the first week, the starting week stays unset, as it does today. No change.
+- **Brittany's decision (Nov 25, 2026):** remove "For Flock members, this uses the bird's own baseline alerts." from the weight safeguard (done in the PR's migration, the e2e fixture and `journeys_flock_wording_checks.sql`). Keep "The template suggests a vet check before starting, especially for older birds or birds on an all-seed diet." as is.
+- **Brittany's decision (Nov 25, 2026):** merge once every required check passes. The eclectus alert stays off (`diet_eclectus_alert`) until an avian vet approves it.
+- **Decision:** The starting week is always the 7 days after the journey starts. The old "already" answer on milestone 1 (the week *before* the start) and reaching milestone 1 early no longer move it. Production has no Diet conversion journey (checked read-only), so no real journey changes. The 7 days is in `DIET_STARTING_WEEK_DAYS` (draft) rather than a new `journey_settings` column, because the item said to leave every setting unchanged.
+- **Decision:** "Set" means the week is over and had at least one weigh-in at the bird's usual time, or a vet-confirmed resume re-based it. A week with no weigh-ins leaves the starting weight unset, exactly as before: no weight rules apply, the card keeps saying "Weigh [Bird] every day this first week…", and "Weigh [Bird] today" keeps showing. It doesn't start a fresh week. (A question for you below.)
+- **Decision:** The vet reminder card shows once the starting weight is set. Before this, new journeys had no milestones, so the reminder ("from milestone 2") could never show at all.
+- **Decision:** The eclectus alert is on the vet card's screen, directly above the card, not on a screen of its own. That way it needs no new "Continue" button or copy. It shows for any species name containing "eclectus" (`ECLECTUS_PATTERN`, draft). It sits behind a new health switch, `diet_eclectus_alert`, which starts off. The app asks for that switch only on Diet conversion for an eclectus.
+- **Decision:** Two other safeguard lines are still out of date, and I left them alone because they need your call (see Held): "For Flock members, this uses the bird's own baseline alerts." (the weight safeguard is the same for everyone, and doesn't use the weight baseline), and "The template suggests a vet check before starting…" (that's the vet card now).
+- **Decision:** CLAUDE.md's diet lines were brought in step (starting week, reminder, eclectus switch, the finish). The full Journeys rewrite is still 1.20e's.
+
 ### [#559](https://github.com/the-kya-project/perch-perfect-plan/pull/559) · 1.20c Member skills
 - **Decision:** A member skill is a custom journey shared with the community that has at least one update the reviewers haven't hidden (`private.journey_is_member_skill`). It's findable through `journey_viewable`, so blocks, a lapsed membership and "Just me" leave it out, and your own bird's journeys never show in your own search.
 - **Decision:** "Member-supplied journey" shows on every custom journey seen from outside its bird's household: the journey page (with the line, at the top), Journeys tab cards, Today's big-moment and "learned it" cards, the "Skills from the Flock" list and the member skill's setup. Today's followed rings are too small for it and don't have it. Your own copy of someone's skill isn't labeled for you.
@@ -1708,8 +1730,6 @@ Format:
 - **Needs:** <the decision, approval or read, in one or two lines>
 ```
 
-### [#557](https://github.com/the-kya-project/perch-perfect-plan/pull/557) · 1.11 Buddy pods follow-up (#548 merged)
-- **Needs:** only your copy read (under "Copy that merged") and your merge.
 
 ### Reminder · the hourly runs' GitHub token expires Feb 20, 2027
 - **Needs:** a new token before **Feb 20, 2027**. That's 90 days from Nov 22, 2026; GitHub → Settings → Developer settings → Fine-grained tokens shows the exact date. When it expires, runs can still build and test but can't push or open PRs, and each run's note in `~/.kya-agent/job.log` says so.

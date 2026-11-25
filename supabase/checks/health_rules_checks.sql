@@ -22,7 +22,7 @@ declare
   -- NECTAR_EATER_PATTERN
   expected_nectar text := '(lory|lories|lorikeet)';
   -- HEALTH_FEATURES (startsAt)
-  expected_features jsonb := '{"daily_health_check": "everyone", "care_weight_trend": "everyone", "emergency_guides": "everyone", "passing_guidance": "everyone", "diet_conversion": "everyone", "vet_nudge": "everyone", "weight_baseline": "off"}';
+  expected_features jsonb := '{"daily_health_check": "everyone", "care_weight_trend": "everyone", "emergency_guides": "everyone", "passing_guidance": "everyone", "diet_conversion": "everyone", "vet_nudge": "everyone", "weight_baseline": "off", "diet_eclectus_alert": "off"}';
 
   adm uuid := gen_random_uuid();
   usr uuid := gen_random_uuid();

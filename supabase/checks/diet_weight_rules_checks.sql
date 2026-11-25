@@ -1,4 +1,5 @@
--- Verification for 20261108160000_diet_weight_rules.
+-- Verification for 20261108160000_diet_weight_rules and the starting-weight
+-- state that replaced milestone 1 (20261125030000_diet_starting_weight).
 --
 -- Self-contained and leaves nothing behind. Each scenario is its own bird on
 -- its own Diet conversion journey (started 20 days ago, so the first week's
@@ -195,7 +196,68 @@ begin
   reset role;
   ok := not r.paused and r.pause_kind is null and r.start_grams = 362 and r.level = 'none'
     and (select status = 'active' and weight_pause_kind is null from public.journeys where id = jids[6]);
+  ok := ok and r.start_set;
   if ok then passed := passed + 1; else failed := array_append(failed, 'resume after a sudden-drop pause'); end if;
+
+  -- 12) The scenarios above have no milestone rows at all, and paused exactly as
+  --     before (crossing 5% and the slow slide are still paused; the sudden drop
+  --     was resumed in 11).
+  ok := not exists (select 1 from public.journey_milestones m where m.journey_id = any (jids))
+    and (select array_agg(id order by id) from public.journeys where id = any (jids) and status = 'paused')
+        = (select array_agg(x order by x) from unnest(array[jids[3], jids[4]]) x);
+  if ok then passed := passed + 1; else failed := array_append(failed, 'pauses without milestones'); end if;
+
+  -- 13) The starting-weight state (20261125030000): the first week after the start, set once it's over.
+  b := gen_random_uuid();
+  insert into public.birds (id, owner_id, name, species) values (b, fm, 'Bird starting week', 'Amazon');
+  perform set_config('request.jwt.claims', json_build_object('sub', fm, 'role', 'authenticated')::text, true);
+  set local role authenticated;
+  jj := public.journey_start(b, 'diet-conversion', null, null, null, 'most_days', 'private', null);
+  reset role;
+  update public.journeys set started_at = now() - interval '3 days' where id = jj;
+  insert into public.weight_entries (bird_id, grams, measured_at) values
+    (b, 400, now() - interval '50 hours'), (b, 396, now() - interval '26 hours'), (b, 380, now() - interval '2 hours');
+  perform set_config('request.jwt.claims', json_build_object('sub', fm, 'role', 'authenticated')::text, true);
+  set local role authenticated;
+  select * into r from public.journey_weight_check(jj);
+  reset role;
+  -- During the week: every reading is part of the starting weight, no rules yet, and not set.
+  ok := not r.start_set and r.start_set_at is null and r.level = 'none' and not r.paused and not r.recheck
+    and r.start_grams = 392 and r.window_to - r.window_from = interval '7 days'
+    and r.window_from = (select started_at from public.journeys where id = jj);
+  update public.journeys set started_at = now() - interval '8 days' where id = jj;
+  perform set_config('request.jwt.claims', json_build_object('sub', fm, 'role', 'authenticated')::text, true);
+  set local role authenticated;
+  select * into r from public.journey_weight_check(jj);
+  reset role;
+  -- Started 8 days ago: the week is over and set at its end. It's still the
+  -- week after the start, so the latest reading now falls after it and is
+  -- measured against the first two.
+  ok := ok and r.start_set and r.start_set_at = r.window_to and r.start_grams = 398 and r.current_grams = 380 and r.level = 'none';
+  if ok then passed := passed + 1; else failed := array_append(failed, 'starting-weight state'); end if;
+
+  -- 14) A week with no weigh-ins sets nothing, and Today counts days from the start.
+  b := gen_random_uuid();
+  insert into public.birds (id, owner_id, name, species) values (b, fm, 'Bird no week', 'Amazon');
+  perform set_config('request.jwt.claims', json_build_object('sub', fm, 'role', 'authenticated')::text, true);
+  set local role authenticated;
+  jj := public.journey_start(b, 'diet-conversion', null, null, null, 'most_days', 'private', null);
+  reset role;
+  update public.journeys set started_at = now() - interval '9 days 1 hour' where id = jj;
+  perform set_config('request.jwt.claims', json_build_object('sub', fm, 'role', 'authenticated')::text, true);
+  set local role authenticated;
+  select * into r from public.journey_weight_check(jj);
+  ok := not r.start_set and r.start_grams is null and r.missed and r.days_since_weigh = 9
+    and exists (select 1 from public.journey_weigh_reminders() x where x.journey_id = jj and x.days_since_weigh = 9);
+  reset role;
+  if ok then passed := passed + 1; else failed := array_append(failed, 'a week with no weigh-ins'); end if;
+
+  -- 15) The helper is the database's own: app users can't call it directly.
+  perform set_config('request.jwt.claims', json_build_object('sub', fm, 'role', 'authenticated')::text, true);
+  set local role authenticated;
+  denied := false; begin perform private.diet_starting_weight(jj); exception when insufficient_privilege then denied := true; end;
+  reset role;
+  if denied then passed := passed + 1; else failed := array_append(failed, 'diet_starting_weight is internal'); end if;
 
   raise exception 'DIET WEIGHT RULES CHECKS: % passed, % failed%', passed, coalesce(array_length(failed, 1), 0),
     case when array_length(failed, 1) > 0 then ': ' || array_to_string(failed, ', ') else '' end;

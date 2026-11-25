@@ -166,7 +166,7 @@ function JourneyPage() {
           </p>
         )}
 
-        {mine && own && diet && showVetReminder(own) && (
+        {mine && own && diet && showVetReminder(own, weight?.start_set === true) && (
           <VetReminderCard busy={vetBusy}
             onTalked={() => { setVetBusy(true); void act(() => setVetCheck(journeyId, "talked")).finally(() => setVetBusy(false)); }}
             onLater={() => { setVetBusy(true); void act(() => setVetCheck(journeyId, "remind_later")).finally(() => setVetBusy(false)); }} />

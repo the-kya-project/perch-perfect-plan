@@ -7,16 +7,17 @@ import { K, KyaLink, KyaPrimaryButton } from "@/components/kya";
 import { ClipPlayer } from "@/components/ClipPlayer";
 import { FlockSubPage } from "@/components/flock/FlockSubPage";
 import { ChoiceChips, FlockOnlySheet, FlowFooter, HowOthersDidIt, JourneyEyebrow, MemberSuppliedNote, SkillAbout } from "@/components/flock/JourneyParts";
-import { DietNotForBird, DietVetCard } from "@/components/flock/JourneyDiet";
+import { DietEclectusAlert, DietNotForBird, DietVetCard } from "@/components/flock/JourneyDiet";
 import { PodOptIn } from "@/components/flock/PodParts";
 import { ReportSheet } from "@/components/flock/ReportSheet";
 import { podWait, usePodCanWait, useInvalidatePods } from "@/lib/flockPods";
+import { useHealthFeature } from "@/lib/useHealthFeature";
 import {
   startJourney, startMemberSkill, useCustomAbout, useFinisherTips, useInvalidateJourneys, useJourneyAccess, useJourneyBirds, useJourneyTemplates,
   useJourneyView, useSkillJourneys, useSkillVideo,
 } from "@/lib/journeyData";
 import {
-  CUSTOM_DESCRIPTION_MAX, CUSTOM_NAME_MAX, DIET_SLUG, RHYTHMS, customProblem, defaultVisibility, isNectarEater, matchingSkill, possessive,
+  CUSTOM_DESCRIPTION_MAX, CUSTOM_NAME_MAX, DIET_SLUG, RHYTHMS, customProblem, defaultVisibility, isEclectus, isNectarEater, matchingSkill, possessive,
   vetCheckLine, visibilityChoices, youngOrUnknownAge, type JourneyRhythm, type JourneyVisibility, type VetCheck,
 } from "@/lib/journeys";
 
@@ -26,8 +27,9 @@ import {
 // "Part of the Flock" sheet instead). Setup asks only how often and who sees
 // it (Flock: the community by default; free: just me); the bird was picked
 // on the way in. Diet conversion first shows the vet card (both answers
-// continue; the answer is saved on the journey) and isn't offered to lories
-// and lorikeets; its safeguards stay (1.20d reworks its screens). A skill
+// continue; the answer is saved on the journey), with the eclectus alert above
+// it for an eclectus once its switch is on, and isn't offered to lories and
+// lorikeets; its safeguards stay. A skill
 // also offers "Pair me with buddies working on this too" (buddy pods, 1.11).
 // "Your own skill" (?custom, screen 7): a name and a short description in the
 // owner's words, no steps, and the matching skill suggested when the name is
@@ -95,9 +97,11 @@ function SetupJourney() {
   // Your own skill named like one of the 14: suggest that skill instead.
   const suggestion = custom && templates ? matchingSkill(name, templates) : null;
   const diet = !custom && !from && template?.slug === DIET_SLUG;
+  // The eclectus alert's switch is asked only on Diet conversion for an eclectus.
+  const eclectusAlert = useHealthFeature("diet_eclectus_alert", diet && isEclectus(bird?.species)) === true;
   const vetLine = template ? vetCheckLine(template) : null;
   // Diet conversion's vet card replaces the one-line vet suggestion; its
-  // safeguards stay as they are until 1.20d.
+  // safeguards stay.
   const vet = diet ? null : vetLine;
   const safeguards = diet ? (template?.safeguards.filter((s) => s !== vetLine) ?? []) : [];
   // Your own skill and member skills show the safety lines every skill shares.
@@ -151,7 +155,10 @@ function SetupJourney() {
       <FlockSubPage title={title} line={line} fallback="/flock/journeys/start">
         {isNectarEater(bird.species)
           ? <DietNotForBird birdName={bird.name} />
-          : <DietVetCard birdName={bird.name} young={youngOrUnknownAge(bird.birth_date)} onChoose={(c) => { setVetChoice(c); window.scrollTo(0, 0); }} />}
+          : <>
+            {eclectusAlert && isEclectus(bird.species) && <DietEclectusAlert birdName={bird.name} />}
+            <DietVetCard birdName={bird.name} young={youngOrUnknownAge(bird.birth_date)} onChoose={(c) => { setVetChoice(c); window.scrollTo(0, 0); }} />
+          </>}
       </FlockSubPage>
     );
   }

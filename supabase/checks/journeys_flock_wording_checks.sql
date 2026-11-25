@@ -13,13 +13,16 @@ declare
   passed int := 0; failed text[] := '{}';
   st text; msg text; ok boolean;
 begin
-  -- 1) Diet conversion's safeguard says Flock members, and no template text
-  --    anywhere mentions app premium.
+  -- 1) Diet conversion's weight safeguard ends at "call your avian vet." (the
+  --    baseline-alerts sentence was removed by 20261125030000), and no
+  --    template text anywhere mentions app premium.
   ok := exists (select 1 from public.journey_templates t, unnest(t.safeguards) s
-                where t.slug = 'diet-conversion' and s like '%For Flock members, this uses the bird''s own baseline alerts.%')
+                where t.slug = 'diet-conversion' and s = 'If weight drops, the journey pauses with a clear message to call your avian vet.')
+    and not exists (select 1 from public.journey_templates t, unnest(t.safeguards) s
+                    where s like '%baseline alerts%')
     and not exists (select 1 from public.journey_templates t, lateral jsonb_each_text(to_jsonb(t)) x
                     where x.value ilike '%app premium%');
-  if ok then passed := passed + 1; else failed := array_append(failed, 'diet conversion safeguard says Flock members'); end if;
+  if ok then passed := passed + 1; else failed := array_append(failed, 'diet conversion safeguard has no baseline-alerts sentence'); end if;
 
   -- 2) journey_start's source no longer says app premium, and keeps the
   --    sharing refusal (the Flock-only template refusal is gone since
