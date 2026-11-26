@@ -22,7 +22,16 @@ Where these items came from, with the detail behind each: `docs/flock/opening-sc
 
 ## Ready to build
 
-Nothing right now.
+### 1.20f Co-carers read comments on their bird's journeys
+- **Why:** Brittany's answer to #562's question (Nov 26, 2026). A free household member on someone's bird sees and posts on that bird's journeys but today can't read the comments on them, because comments are Flock members only.
+- **Done means:**
+  - A household member (owner or co-carer) who isn't a Flock member can read the comments and replies on their own bird's journeys (updates and reached milestones), with the same visibility rules as everyone else (moderation, blocks, "Just me" stays in the household).
+  - They still can't write, edit, react to or report comments; the comment box isn't shown to them. Nobody outside the household gains anything.
+  - A `supabase/checks/*_checks.sql` block proves both, and `e2e/flock.shell.ts` covers the free co-carer's view.
+- **Size:** S
+- **Depends on:** 1.20e (merged, #562)
+- **Overnight alone:** yes. Journeys are off in production (`journeys_enabled()`), so current users see nothing different.
+- **Needs Brittany:** merge only. Rewrite changed functions from their live definitions and keep their `flock_blocked` lines.
 
 ---
 
