@@ -23,9 +23,9 @@ import { useFormInProgress } from "@/lib/formsInProgress";
 
 /** One comment: bubble, photo, time, its reaction and Reply. Press and hold
  *  (or the ⋯ menu) for Edit / Delete on your own, Reply on someone else's. */
-function CommentItem({ c, reply, avatar, photo, highlighted, onReply, onMenu, canReact }: {
+function CommentItem({ c, reply, avatar, photo, highlighted, onReply, onMenu, canReact, hasMenu }: {
   c: FlockComment; reply: boolean; avatar: FlockPhotoSrc; photo: PostPhoto | undefined; highlighted: boolean;
-  onReply: () => void; onMenu: () => void; canReact: boolean;
+  onReply: () => void; onMenu: () => void; canReact: boolean; hasMenu: boolean;
 }) {
   const { t, i18n } = useTranslation();
   const { counts, toggle } = useReactionState("comment", c.comment_id, c);
@@ -62,7 +62,9 @@ function CommentItem({ c, reply, avatar, photo, highlighted, onReply, onMenu, ca
             </button>
           ) : n > 0 ? <span>{reactionLabel(t, shown)} · {n}</span> : null}
           {canReact && <button type="button" onClick={onReply} className="min-h-[32px] font-[700]" style={{ color: K.forest }} data-testid="comment-reply">{t("flock.posts.reply", "Reply")}</button>}
-          <button type="button" onClick={onMenu} className="min-h-[32px] px-1 font-[700]" aria-label={t("flock.posts.more", "More options")} data-testid="comment-more">···</button>
+          {hasMenu && (
+            <button type="button" onClick={onMenu} className="min-h-[32px] px-1 font-[700]" aria-label={t("flock.posts.more", "More options")} data-testid="comment-more">···</button>
+          )}
         </div>
       </div>
       {picking && (
@@ -75,9 +77,11 @@ function CommentItem({ c, reply, avatar, photo, highlighted, onReply, onMenu, ca
 
 /** Comments on a post, journey update or milestone (Batch 3, screens 2–4):
  *  threaded one level deep, "Replying to [name]" with their name added, a photo
- *  button, and the box focused when `focus` (the keyboard comes up). */
-export function CommentThread({ type, id, ownerName, focus, canComment, top }: {
-  type: CommentSubject; id: string; ownerName: string | null; focus: boolean; canComment: boolean; top: ReactNode;
+ *  button, and the box focused when `focus` (the keyboard comes up).
+ *  `canReport` false (a bird's household outside the Flock, reading only)
+ *  leaves out the menu on other people's comments. */
+export function CommentThread({ type, id, ownerName, focus, canComment, canReport = true, top }: {
+  type: CommentSubject; id: string; ownerName: string | null; focus: boolean; canComment: boolean; canReport?: boolean; top: ReactNode;
 }) {
   const { t } = useTranslation();
   const invalidate = useInvalidatePosts();
@@ -168,7 +172,8 @@ export function CommentThread({ type, id, ownerName, focus, canComment, top }: {
                 avatar={c.author_photo_path ? avatars?.get(c.author_photo_path) : null}
                 photo={photos?.[`comment:${c.comment_id}`]?.[0]}
                 highlighted={replyTo?.comment_id === c.comment_id || editing?.comment_id === c.comment_id}
-                onReply={() => startReply(c)} onMenu={() => setMenuFor(c)} />
+                hasMenu={canReport || c.is_mine}
+                onReply={() => startReply(c)} onMenu={() => { if (canReport || c.is_mine) setMenuFor(c); }} />
             ))}
           </div>
         ))}

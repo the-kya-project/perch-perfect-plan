@@ -1191,6 +1191,13 @@ No new strings: every line reuses existing wording, in new places (admins only).
 
 ## Decisions agents made
 
+### [#567](https://github.com/the-kya-project/perch-perfect-plan/pull/567) · 1.20f Co-carers read comments on their bird's journeys
+- **Decision:** "Household" means anyone with access to the bird (owner or co-carer, `has_bird_access`), the same group that already sees and posts on its journeys. Leaving the household ends it at once. Admins get nothing extra through this path.
+- **Decision:** Comment photos are included (a co-carer sees a member's photo on a comment), because a photo is part of the comment. Commenters' profile photos aren't: a free co-carer sees their initials instead, since showing them would mean opening the private `flock-avatars` bucket's read rule to non-members. Say if you want the photos too.
+- **Decision:** On the clip viewer a free co-carer sees "N comments" only when there's at least one comment. With none, there's no link, because the screen behind it would only say "No comments yet. Say something kind." to someone who can't comment.
+- **Decision:** On the comments screen a free co-carer gets no ⋯ menu or press-and-hold menu on other people's comments, because everything in it (Reply, Report, Block) is for members. Members' menus on posts and journeys are unchanged.
+- **Decision:** The comment count a co-carer sees follows the members' count rule as it is today (live comments, minus anyone blocked either way). That count can include a comment moderation has hidden, which the list then leaves out. This is the same for members and wasn't changed here.
+
 ### [#563](https://github.com/the-kya-project/perch-perfect-plan/pull/563) · 1.15a Kya's Crew on the payment screen
 - **Brittany's decision (Nov 26, 2026):** the screens and wording are approved as written in "Copy that merged", including the lines marked "not in the mockup".
 - **Brittany's decision (Nov 26, 2026):** founders whose founding price is still open keep their current screen, with no Crew option, for now.

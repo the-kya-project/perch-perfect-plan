@@ -1700,6 +1700,44 @@ test.describe("journeys: what a free account sees", () => {
     await expect(page.getByTestId("from-the-flock")).toHaveCount(0);
     await context.close();
   });
+
+  test("a free co-carer reads the comments on their bird's journey, read only (1.20f)", async ({ browser, baseURL }) => {
+    const id = "00000000-0000-4000-8000-0000000074a1";
+    const commented = "00000000-0000-4000-8000-000000009001";
+    const { context, page, state } = await open(browser, baseURL!, { admin: true, journeys: { tier: "free", seed: [{ id, birdName: "Buzz", slug: "step-up", done: 0, clips: 2, visibility: "private" }] } });
+    state.comments.push({ comment_id: "00000000-0000-4000-8000-0000000079c2", subject_type: "journey_update", subject_id: commented, author_id: "00000000-0000-4000-8000-00000000e002",
+      author_name: "Priya S.", body: "Buzz looks so relaxed!", created_at: new Date(Date.now() - 60 * 60_000).toISOString(), great_job: 2, mine: [] });
+
+    // The update with a comment: "1 comment" opens the thread; no Go button or report.
+    await page.goto(`/flock/journeys/${id}/story?u=${commented}`);
+    await expect(page.getByTestId("story-comment")).toContainText("1 comment");
+    await expect(page.getByTestId("go-bird")).toHaveCount(0);
+    await expect(page.getByTestId("story-report")).toHaveCount(0);
+    await page.getByTestId("story-comment").click();
+    await expect(page).toHaveURL(new RegExp(`/flock/comments/journey_update/${commented}\\?j=${id}$`));
+    const comment = page.locator("[data-comment='00000000-0000-4000-8000-0000000079c2']");
+    await expect(comment).toContainText("Priya S.");
+    await expect(comment).toContainText("Buzz looks so relaxed!");
+    await expect(comment).toContainText("Great job · 2");
+    // Read only: no box, no reacting, replying, reporting or blocking.
+    await expect(page.getByTestId("comment-composer")).toHaveCount(0);
+    await expect(page.getByTestId("comment-react")).toHaveCount(0);
+    await expect(page.getByTestId("comment-reply")).toHaveCount(0);
+    await expect(page.getByTestId("comment-more")).toHaveCount(0);
+    const b = (await comment.getByTestId("comment-bubble").boundingBox())!;
+    await page.mouse.move(b.x + b.width / 2, b.y + b.height / 2);
+    await page.mouse.down();
+    await page.waitForTimeout(700);
+    await page.mouse.up();
+    await expect(page.getByTestId("action-sheet")).toHaveCount(0);
+
+    // An update nobody has commented on shows no comment link at all.
+    await page.goto(`/flock/journeys/${id}/story?u=00000000-0000-4000-8000-000000009000`);
+    await expect(page.getByTestId("story-clip")).toHaveAttribute("data-update", "00000000-0000-4000-8000-000000009000");
+    await expect(page.getByTestId("story-comment")).toHaveCount(0);
+    expect(state.calls.filter((c) => ["flock_comment_create", "flock_react", "flock_report", "flock_block"].includes(c.fn))).toEqual([]);
+    await context.close();
+  });
 });
 
 test("everyone else: every /flock URL sends them Home and no Community code loads", async ({ browser, baseURL }) => {

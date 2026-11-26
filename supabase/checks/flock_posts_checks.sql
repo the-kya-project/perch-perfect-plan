@@ -222,10 +222,13 @@ begin
   denied := false; begin perform * from public.flock_reactors('journey_update', up); exception when no_data_found then denied := true; end; ok := ok and denied;
   ok := ok and not exists (select 1 from public.flock_comment_counts('journey_update', array[up]));
   reset role;
-  -- The household member (free tier) can't use the Flock at all.
+  -- The household member (free tier) reads the comment on their bird's
+  -- journey (1.20f) but can't comment, react or report.
   perform set_config('request.jwt.claims', json_build_object('sub', hh, 'role', 'authenticated')::text, true);
   set local role authenticated;
-  denied := false; begin perform * from public.flock_comments_for('journey_update', up); exception when insufficient_privilege then denied := true; end; ok := ok and denied;
+  ok := ok and (select count(*) from public.flock_comments_for('journey_update', up)) = 1;
+  denied := false; begin perform public.flock_comment_create('journey_update', up, null, 'Hi', null, false); exception when insufficient_privilege or no_data_found then denied := true; end; ok := ok and denied;
+  denied := false; begin perform public.flock_react('comment', c4, 'great_job', true); exception when insufficient_privilege or no_data_found then denied := true; end; ok := ok and denied;
   reset role;
   if ok then passed := passed + 1; else failed := array_append(failed, 'Just me stays private'); end if;
 

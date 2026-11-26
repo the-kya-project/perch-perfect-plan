@@ -20,6 +20,12 @@ Copy this, fill it in, and put it at the top of "Runs", above the latest entry.
 
 ## Runs
 
+### 2026-11-26 13:09 EST · 1.20f Co-carers read comments on their bird's journeys
+- **Built:** someone who helps care for a bird (in its household) but isn't in the Flock can now read what members said on that bird's journey clips, as Brittany asked on #562. They see the comments and replies by the same rules as everyone (nothing hidden by moderation, nothing from someone blocked), with photos and counts, but can't comment, react, reply, report or block. On the clip viewer they get a "1 comment" link only when there's something to read; the comments screen has no box and no menus on other people's comments. Nobody outside the household can see anything new. All behind the journeys switch and the Flock gate, both off for current users.
+- **PR:** [#567](https://github.com/the-kya-project/perch-perfect-plan/pull/567)
+- **Outcome:** see the PR. Merge rules: hidden (production has `members_open` false and journeys `off`, read with `prod-read`), and the migration only adds a read path to Flock functions that free users can't reach today.
+- **Problems:** No lock at start; pending log empty. #565 (an "In progress" draft for 1.16, opened 20 minutes before this run, last commit 6 minutes before) isn't abandoned, so it was left alone. #566 (held for Brittany) needed nothing. Chromium won't start inside this run's sandbox, so the Flock e2e tests ran only in CI. `npx tsc` reports the same two errors in `e2e/helpers.ts` as on `main`. `prod-read` once answered "the read-only connection file is missing" and worked again on the next call.
+
 ### 2026-11-25 09:42 EST · Housekeeping: #563 brought up to date with `main`
 - **Built:** nothing new. The only item in "Ready to build", 1.15a, already has its held PR (#563), so there was nothing else this run may build. #563 conflicted with `main` only in the three record files (after #562 merged), so this run merged `main` into its branch and kept both sides: 1.15a and 1.20e both stay in "Done" (and "Ready to build" is now empty), both runs' log entries, and both PRs' decisions in the review queue. No code changed.
 - **PR:** [#563](https://github.com/the-kya-project/perch-perfect-plan/pull/563) (pushed to its branch; still held)

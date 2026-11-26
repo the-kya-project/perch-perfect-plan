@@ -38,7 +38,7 @@ function JourneyComments() {
       .filter(Boolean).join(" · ")
     : null;
   return (
-    <CommentThread type={type} id={subjectId} ownerName={card && !card.is_mine ? card.owner_name : null} focus={!!focus} canComment={!!access?.can_share}
+    <CommentThread type={type} id={subjectId} ownerName={card && !card.is_mine ? card.owner_name : null} focus={!!focus} canComment={!!access?.can_share} canReport={!!access?.can_share}
       top={<ThreadHeader title={t("flock.posts.commentsTitle", "Comments")} onBack={back}>{line && <span data-testid="thread-line">{line}</span>}</ThreadHeader>} />
   );
 }

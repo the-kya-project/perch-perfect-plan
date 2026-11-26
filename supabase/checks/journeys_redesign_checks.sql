@@ -324,11 +324,19 @@ begin
   set local role authenticated;
   ok := ok and public.journey_post_update(jp, 'cfstream:kiwiclip0009', 'distracted', 'Co-carer here.') is not null;
   reset role;
-  -- Comments are a Flock feature: the owner (a member) reads the one on it.
+  -- The owner (a member) reads the comment on it, and so does the free
+  -- co-carer (1.20f), who still can't comment.
   perform set_config('request.jwt.claims', json_build_object('sub', m1, 'role', 'authenticated')::text, true);
   set local role authenticated;
   ok := ok and exists (select 1 from public.flock_comments_for('journey_update', up) where comment_id = cp);
   reset role;
+  perform set_config('request.jwt.claims', json_build_object('sub', hh, 'role', 'authenticated')::text, true);
+  set local role authenticated;
+  ok := ok and exists (select 1 from public.flock_comments_for('journey_update', up) where comment_id = cp);
+  n := 0;
+  begin perform public.flock_comment_create('journey_update', up, null, 'Co-carer comment.'); exception when others then n := n + 1; end;
+  reset role;
+  ok := ok and n = 1 and not exists (select 1 from public.flock_comments where author_id = hh);
   if ok then passed := passed + 1; else failed := array_append(failed, 'Just me: the household sees and posts'); end if;
 
   -- C4) Making it a community journey later is the owner's choice, and only
