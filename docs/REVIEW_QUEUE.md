@@ -1198,6 +1198,15 @@ No new strings: every line reuses existing wording, in new places (admins only).
 - **Decision:** On the comments screen a free co-carer gets no ⋯ menu or press-and-hold menu on other people's comments, because everything in it (Reply, Report, Block) is for members. Members' menus on posts and journeys are unchanged.
 - **Decision:** The comment count a co-carer sees follows the members' count rule as it is today (live comments, minus anyone blocked either way). That count can include a comment moderation has hidden, which the list then leaves out. This is the same for members and wasn't changed here.
 
+### [#566](https://github.com/the-kya-project/perch-perfect-plan/pull/566) · Badge art (final art for 1.13a, stored for 1.13b)
+- **Decision:** Your art replaces the whole round tile, not just the icon inside it. The lime circle and forest ring were dropped, since each design has its own frame. Earned badges show your color file; unearned ones show your gray file. Nothing is cropped, recolored or redrawn.
+- **Decision:** Journey finisher shows the design for the level reached (1, 3 or 10). An unearned Journey finisher shows the gray level-1 design. Your gray versions of levels 3 and 10 (and of Steady scale 12/52 and Daily check-in 30) are stored but nothing shows them yet.
+- **Decision:** Two sizes, resized from your 512px files: 192px for the circles (sharp at 3x on a phone) and 64px for the pills. Stored in `public/badges/<flock|care>/<earned|unearned>/`. They aren't added to the app's offline download, so free users' installs don't grow.
+- **Decision:** The pill icon grew from 14px to 20px so the art can be read; the pill's height stays about the same (its top and bottom padding shrank by a pixel). The "Badge earned" card keeps its 52px badge.
+- **Decision:** Each image's screen-reader text is the badge's name ("Journey finisher"), as you asked. On the Badges screen and in the celebrations the name is also written under the art, so a screen reader says it twice there.
+- **Decision:** Your README suggests 72px on a collection screen. The Badges screen stays at 64px, as you asked in the prompt.
+- **To change it:** file names and levels are `src/lib/badgeArt.ts`; how the art is drawn is `BadgeCircle` in `src/components/flock/BadgeParts.tsx`.
+
 ### [#563](https://github.com/the-kya-project/perch-perfect-plan/pull/563) · 1.15a Kya's Crew on the payment screen
 - **Brittany's decision (Nov 26, 2026):** the screens and wording are approved as written in "Copy that merged", including the lines marked "not in the mockup".
 - **Brittany's decision (Nov 26, 2026):** founders whose founding price is still open keep their current screen, with no Crew option, for now.
@@ -1788,6 +1797,9 @@ Format:
 
 ### [#567](https://github.com/the-kya-project/perch-perfect-plan/pull/567) · 1.20f Co-carers read comments on their bird's journeys (two PRs for one item)
 - **Needs:** pick #567 or [#569](https://github.com/the-kya-project/perch-perfect-plan/pull/569). Both build 1.20f and rewrite the same three functions (`flock_comments_for`, `flock_comment_counts`, `flock_media_refs`), so only one should merge: whichever merges second would replace the first one's definitions. #569 was opened 18 minutes after #567's "In progress" draft, by another session. The main differences: #569 also requires `journey_viewable` (so the household path works only while journeys are on for that person), while #567 counts anyone with access to the bird. #567 also shows a read-only "N comments" link on the clip viewer, which is the only way into a journey's comments from a journey page. Close the one you don't want and say so in the other.
+
+### [#566](https://github.com/the-kya-project/perch-perfect-plan/pull/566) · Badge art (final art for 1.13a, stored for 1.13b)
+- **Needs:** a look at the screenshots in the PR, then your OK in the PR to merge. It changes what admins see on the Badges screen, the celebrations and profiles (nobody else sees badges yet). Also say whether the pill-size notes in the PR are fine.
 
 ### Reminder · the hourly runs' GitHub token expires Feb 20, 2027
 - **Needs:** a new token before **Feb 20, 2027**. That's 90 days from Nov 22, 2026; GitHub → Settings → Developer settings → Fine-grained tokens shows the exact date. When it expires, runs can still build and test but can't push or open PRs, and each run's note in `~/.kya-agent/job.log` says so.

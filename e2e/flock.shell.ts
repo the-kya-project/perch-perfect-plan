@@ -2639,6 +2639,12 @@ test.describe("badges (admin, phone)", () => {
     await expect(grid.locator("[data-badge]")).toHaveCount(6);
     await expect(grid.locator("[data-earned='true']")).toHaveCount(2);
     await expect(grid.locator("[data-badge]")).toHaveText([/First steps/, /Journey finisher/, /Trick star/, /Good neighbor/, /Voice of the Flock/, /Challenge champ/]);
+    // Brittany's art: color when earned (at the level reached), gray when not,
+    // named for screen readers, and every file really loads.
+    await expect(grid.locator("[data-badge='journey_finisher'] img")).toHaveAttribute("src", "/badges/flock/earned/journey-finisher-3-192.png");
+    await expect(grid.locator("[data-badge='trick_star'] img")).toHaveAttribute("src", "/badges/flock/unearned/trick-star-192.png");
+    await expect(grid.getByRole("img", { name: "Voice of the Flock" })).toBeVisible();
+    await expect.poll(() => grid.locator("img").evaluateAll((imgs) => imgs.filter((i) => (i as HTMLImageElement).naturalWidth === 192).length)).toBe(6);
     // The first one not earned yet is picked to start, with how to earn it.
     await expect(page.getByTestId("badge-how")).toHaveText("Trick star: finish any tricks journey.");
     await grid.locator("[data-badge='good_neighbor']").click();
@@ -2663,6 +2669,7 @@ test.describe("badges (admin, phone)", () => {
     await page.goto(`/flock/members/${ADA}`);
     const pills = page.getByTestId("member-badges").locator("li");
     await expect(pills).toHaveText(["First steps", "Journey finisher · 10 journeys"]);
+    await expect(pills.nth(1).getByRole("img", { name: "Journey finisher" })).toHaveAttribute("src", "/badges/flock/earned/journey-finisher-10-64.png");
     await expect(page.getByTestId("member-founder-link")).toBeVisible();
     expect(state.calls.filter((c) => c.fn === "flock_member_badges").at(-1)!.args).toEqual({ p_user_id: ADA });
     // None (hidden, blocked or not earned): no badge row at all.

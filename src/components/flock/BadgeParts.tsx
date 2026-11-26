@@ -2,38 +2,26 @@ import { useState } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
 import { K, KyaCard, SERIF } from "@/components/kya";
+import { flockBadgeArt } from "@/lib/badgeArt";
 import {
   badgeName, badgeTitle, celebrationFor, earnedLine, levelLabel, markBadgesSeen, useInvalidateBadges, useMyBadges,
   type FlockBadge, type MyBadge, type ShownBadge,
 } from "@/lib/flockBadges";
 
-// Flock badges (1.13a), drawn as in SpecBadges.dc.html: simple stroke icons in
-// a round tile, lime with a forest ring when earned, gray when not. Final art
-// can replace the icons later.
+// Flock badges (1.13a) with Brittany's final art (src/lib/badgeArt.ts): her
+// color art when earned, her gray version when not, and Journey finisher's
+// design for the level reached. The art carries its own frame, so nothing is
+// drawn around it. Each image's text for screen readers is the badge's name.
 
-const GRAY = { bg: "#e6ebe7", ring: "#cfd8d2", ink: "#8a9a92" };
+const GRAY = { ink: "#8a9a92" };
 
-/** Each badge's own icon, from the mockup. */
-export function BadgeIcon({ badge, size = 26, color = K.forest }: { badge: FlockBadge; size?: number; color?: string }) {
+/** The badge's art: 64px in the grid and celebrations. */
+export function BadgeCircle({ badge, earned, level = 1, size = 64 }: { badge: FlockBadge; earned: boolean; level?: number; size?: number }) {
+  const { t } = useTranslation();
   return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      {badge === "first_steps" && <><path d="M20 4c-8 0-14 6-14 14v2" /><path d="M20 4c0 8-6 13-13 13" /><path d="M6 20l5-5" /></>}
-      {badge === "journey_finisher" && <path d="M5 21V4h11l-1.5 4L16 12H5" />}
-      {badge === "trick_star" && <path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z" />}
-      {badge === "good_neighbor" && <><path d="M3 13l5-4 4 3 4-3 5 4" /><path d="M3 13v3l9 5 9-5v-3" /></>}
-      {badge === "voice_of_the_flock" && <><rect x="4" y="10" width="16" height="10" rx="2" /><path d="M8 10V4h8v6" /><path d="M10 7l1.5 1.5L14 6" /></>}
-      {badge === "challenge_champ" && <><path d="M8 4h8v5a4 4 0 0 1-8 0z" /><path d="M8 6H5a3 3 0 0 0 3 4M16 6h3a3 3 0 0 1-3 4" /><path d="M12 13v4M8 21h8M9 17h6" /></>}
-    </svg>
-  );
-}
-
-/** The round tile: 64px in the grid and celebrations. */
-export function BadgeCircle({ badge, earned, size = 64 }: { badge: FlockBadge; earned: boolean; size?: number }) {
-  return (
-    <span className="inline-flex shrink-0 items-center justify-center rounded-full"
-      style={{ width: size, height: size, background: earned ? K.lime : GRAY.bg, border: `2px solid ${earned ? K.forest : GRAY.ring}` }}>
-      <BadgeIcon badge={badge} size={Math.round(size * 0.4)} color={earned ? K.forest : GRAY.ink} />
-    </span>
+    <img src={flockBadgeArt(badge, earned ? Math.max(level, 1) : 0, size > 32 ? "lg" : "sm")} alt={badgeName(t, badge)}
+      width={size} height={size} decoding="async" draggable={false} className="block shrink-0 select-none object-contain"
+      style={{ width: size, height: size }} data-badge-art={badge} />
   );
 }
 
@@ -44,7 +32,7 @@ export function BadgeTile({ badge, level, selected, onSelect }: { badge: FlockBa
   const label = levelLabel(t, badge, level);
   const body = (
     <>
-      <BadgeCircle badge={badge} earned={earned} />
+      <BadgeCircle badge={badge} earned={earned} level={level} />
       <span className="text-[12.5px] font-[700]" style={{ color: earned ? K.forest : GRAY.ink }}>{badgeName(t, badge)}</span>
       {label && <span className="text-[10.5px] font-[700]" style={{ color: K.moss }}>{label}</span>}
     </>
@@ -66,9 +54,9 @@ export function BadgePills({ badges }: { badges: ShownBadge[] }) {
   return (
     <ul className="m-0 mt-3 flex list-none flex-wrap justify-center gap-2 p-0" data-testid="member-badges" aria-label={t("flock.badges.title", "Badges")}>
       {badges.map((b) => (
-        <li key={b.badge} data-badge={b.badge} className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[12.5px] font-[700]"
+        <li key={b.badge} data-badge={b.badge} className="inline-flex items-center gap-1.5 rounded-full py-[3px] pl-1 pr-2.5 text-[12.5px] font-[700]"
           style={{ background: K.lime, color: K.forest }}>
-          <BadgeIcon badge={b.badge} size={14} />
+          <BadgeCircle badge={b.badge} earned level={b.level} size={20} />
           {badgeTitle(t, b.badge, b.level)}
         </li>
       ))}
@@ -129,7 +117,7 @@ function BadgeEarnedCard({ badge, onDone }: { badge: MyBadge; onDone: () => void
     <div data-testid="badge-earned" data-badge={badge.badge}>
       <KyaCard className="flex flex-col gap-3 px-4 py-3.5" style={{ border: `2px solid ${K.sunflower}` }}>
         <div className="flex items-center gap-3">
-          <BadgeCircle badge={badge.badge} earned size={52} />
+          <BadgeCircle badge={badge.badge} earned level={badge.level} size={52} />
           <div className="flex min-w-0 flex-1 flex-col gap-1.5">
             <span className="text-[11.5px] font-[700] uppercase tracking-[.06em]" style={{ color: K.moss }}>{t("flock.badges.earnedLabel", "Badge earned")}</span>
             <span className="text-[16px] font-[700] leading-[1.25]" style={{ color: K.forest }}>{badgeTitle(t, badge.badge, badge.level)}</span>
