@@ -99,7 +99,7 @@ create table if not exists public.rescue_code_attempts (
 create index if not exists rescue_code_attempts_user_idx on public.rescue_code_attempts (user_id, created_at);
 alter table public.rescue_code_attempts enable row level security;
 revoke all on public.rescue_code_attempts from anon, authenticated;
-grant select, insert, delete on public.rescue_code_attempts to service_role;
+grant select, insert, update, delete on public.rescue_code_attempts to service_role;
 drop policy if exists "rescue_code_attempts no direct access" on public.rescue_code_attempts;
 create policy "rescue_code_attempts no direct access" on public.rescue_code_attempts for select to authenticated using (false);
 
