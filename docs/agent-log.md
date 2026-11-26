@@ -20,6 +20,12 @@ Copy this, fill it in, and put it at the top of "Runs", above the latest entry.
 
 ## Runs
 
+### 2026-11-26 13:29 EST · 1.20f Co-carers read comments on their bird's journeys (Brittany asked, in a session)
+- **Built:** a bird's household (owner or co-carer) can now read the comments on that bird's journeys without being in the Flock, and still can't write, react to or report them. The database change lets them read the comment list, the counts and comment photos; the comment screen shows no box, reaction button, Reply or menu for them. Nobody outside the household gains anything.
+- **PR:** [#569](https://github.com/the-kya-project/perch-perfect-plan/pull/569)
+- **Outcome:** see the PR.
+- **Problems:** none. No local Postgres, so the new SQL check runs only in CI. Free accounts can't reach journey screens in the app yet (noted in the review queue).
+
 ### 2026-11-26 13:05 EST · Badge art: final art in place of the stroke icons
 - **Built:** Brittany's final badge art now shows wherever Flock badges appear: the Badges screen (color when earned, her gray versions when not), the "Here's what you've already earned" and "Badge earned" cards on Today, and the small pills on member profiles. Journey finisher shows the design for the level reached. The care badges' art (1.13b) is stored in the app, ready for when 1.13b is built; 1.13b itself wasn't started. Badge names, rules, wording and who sees them are unchanged. Interactive session at Brittany's request, in a separate copy (`~/.kya-agent/work/badge-art`), with the lock held for the session.
 - **PR:** [#566](https://github.com/the-kya-project/perch-perfect-plan/pull/566); screenshots on the unmerged branch `badge-art-screenshots`

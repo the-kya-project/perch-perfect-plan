@@ -22,7 +22,9 @@ import { REACTIONS } from "@/lib/journeyData";
 import { useFormInProgress } from "@/lib/formsInProgress";
 
 /** One comment: bubble, photo, time, its reaction and Reply. Press and hold
- *  (or the ⋯ menu) for Edit / Delete on your own, Reply on someone else's. */
+ *  (or the ⋯ menu) for Edit / Delete on your own, Reply on someone else's.
+ *  Without `canReact` it's read-only: no reaction button, Reply or menu (a
+ *  bird's household reading its journeys' comments without the Flock, 1.20f). */
 function CommentItem({ c, reply, avatar, photo, highlighted, onReply, onMenu, canReact }: {
   c: FlockComment; reply: boolean; avatar: FlockPhotoSrc; photo: PostPhoto | undefined; highlighted: boolean;
   onReply: () => void; onMenu: () => void; canReact: boolean;
@@ -31,7 +33,7 @@ function CommentItem({ c, reply, avatar, photo, highlighted, onReply, onMenu, ca
   const { counts, toggle } = useReactionState("comment", c.comment_id, c);
   const [picking, setPicking] = useState(false);
   const [viewing, setViewing] = useState(false);
-  const hold = useLongPress(onMenu);
+  const hold = useLongPress(() => { if (canReact) onMenu(); });
   const reactHold = useLongPress(() => setPicking(true));
   const current = REACTIONS.find((k) => counts.mine.includes(k));
   const shown = current ?? REACTIONS.find((k) => counts[k] > 0) ?? "great_job";
@@ -62,7 +64,7 @@ function CommentItem({ c, reply, avatar, photo, highlighted, onReply, onMenu, ca
             </button>
           ) : n > 0 ? <span>{reactionLabel(t, shown)} · {n}</span> : null}
           {canReact && <button type="button" onClick={onReply} className="min-h-[32px] font-[700]" style={{ color: K.forest }} data-testid="comment-reply">{t("flock.posts.reply", "Reply")}</button>}
-          <button type="button" onClick={onMenu} className="min-h-[32px] px-1 font-[700]" aria-label={t("flock.posts.more", "More options")} data-testid="comment-more">···</button>
+          {canReact && <button type="button" onClick={onMenu} className="min-h-[32px] px-1 font-[700]" aria-label={t("flock.posts.more", "More options")} data-testid="comment-more">···</button>}
         </div>
       </div>
       {picking && (
