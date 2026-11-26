@@ -12,12 +12,12 @@
  *  Crew (backlog 1.15) is a Flock plan too. */
 export type PaidPlan = "founding" | "monthly" | "annual" | "crew_monthly" | "crew_annual";
 export const PAID_PLANS = ["founding", "monthly", "annual", "crew_monthly", "crew_annual"] as const satisfies readonly PaidPlan[];
-/** What a member who isn't a founder picks on the card step. */
+/** The Flock membership tiles a member who isn't a founder picks from. */
 export const BILLING_CHOICES = ["monthly", "annual"] as const;
 export type BillingChoice = (typeof BILLING_CHOICES)[number];
 
-/** Kya's Crew: $45 a month or $444 a year (prices come from Stripe). No card
- *  step offers it yet; checkout accepts it. */
+/** Kya's Crew: $45 a month or $444 a year (prices come from Stripe). The card
+ *  step offers it under the Flock tiles when its prices are set (backlog 1.15a). */
 export const CREW_CHOICES = ["crew_monthly", "crew_annual"] as const;
 export type CrewChoice = (typeof CREW_CHOICES)[number];
 export const CHECKOUT_CHOICES = [...BILLING_CHOICES, ...CREW_CHOICES] as const;
@@ -279,6 +279,13 @@ export function monthsFree(annualCents: number, monthlyCents: number): number | 
   return Number.isInteger(months) && months > 0 ? months : null;
 }
 
+/** What Crew yearly saves on twelve months of Crew monthly, for its "Save"
+ *  badge. Null when it saves nothing. */
+export function yearlySavingCents(annualCents: number, monthlyCents: number): number | null {
+  const saving = monthlyCents * 12 - annualCents;
+  return monthlyCents > 0 && saving > 0 ? saving : null;
+}
+
 export type BillingScreen = "season_member" | "season_founder" | "after_season" | "confirming" | "welcome" | "membership" | "past_due";
 
 /** Which billing screen shows. `returned` means just back from Checkout. */
@@ -308,7 +315,12 @@ export function checkoutNote(date: string, t: NoteT = plainNote): string {
 /** The same line when Checkout only saves the card. Stripe shows no plan or
  *  price on that page, so the sentence has to say what will be charged. */
 export function saveCardNote(plan: PaidPlan, price: string, date: string, t: NoteT = plainNote): string {
-  return plan === "annual" || plan === "crew_annual"
+  if (isCrewPlan(plan)) {
+    return plan === "crew_annual"
+      ? t("flock.billing.saveCardNoteCrewYearly", "Kya's Crew, {{price}} a year. You won't be charged until {{date}}. Cancel anytime before then from Membership and billing.", { price, date })
+      : t("flock.billing.saveCardNoteCrewMonthly", "Kya's Crew, {{price}} a month. You won't be charged until {{date}}. Cancel anytime before then from Membership and billing.", { price, date });
+  }
+  return plan === "annual"
     ? t("flock.billing.saveCardNoteYearly", "The Flock, {{price}} a year. You won't be charged until {{date}}. Cancel anytime before then from Membership and billing.", { price, date })
     : t("flock.billing.saveCardNoteMonthly", "The Flock, {{price}} a month. You won't be charged until {{date}}. Cancel anytime before then from Membership and billing.", { price, date });
 }

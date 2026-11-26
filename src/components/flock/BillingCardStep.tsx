@@ -13,7 +13,7 @@ import {
   CardStepAfterSeason, CardStepSeasonFounder, CardStepSeasonMember, type MembershipSub,
 } from "@/components/flock/BillingScreens";
 import { getBillingState, openBillingPortal, startBillingCheckout } from "@/lib/billing.functions";
-import { billingDay, billingScreen, CONFIRM_WAIT_MS, cardStep, type BillingChoice } from "@/lib/billing";
+import { billingDay, billingScreen, CONFIRM_WAIT_MS, cardStep, type CheckoutChoice } from "@/lib/billing";
 import { pickLocale } from "@/lib/i18n/config";
 import { isNativeApp } from "@/lib/nativeApp";
 
@@ -74,7 +74,7 @@ export function BillingCardStep({ returned, page, soon }: {
     if (res.ok) window.location.assign(res.url);
     else { setFailed(true); setBusy(false); }
   };
-  const checkout = (choice: BillingChoice) => go(() => checkoutFn({ data: { choice, locale } }));
+  const checkout = (choice: CheckoutChoice) => go(() => checkoutFn({ data: { choice, locale } }));
   const manage = () => go(() => portalFn({ data: { locale } }));
   const shared = { prices: data.prices, busy, failed, onCheckout: checkout };
 
