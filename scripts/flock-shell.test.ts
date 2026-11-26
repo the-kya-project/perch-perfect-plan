@@ -13,7 +13,7 @@
  * failure so it can gate a merge.
  */
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { rememberMode, rememberedMode } from "@/lib/flock";
 import { avatarInitial } from "@/lib/accountInitial";
 import {
@@ -35,6 +35,7 @@ import { spotLabel } from "@/lib/flockFounders";
 import {
   FINISHER_LEVELS, FLOCK_BADGES, badgeName, badgeTitle, celebrationFor, cleanMyBadges, cleanShownBadges, earnedCount, earnedLine, howToEarn, levelLabel, nextLevel,
 } from "@/lib/flockBadges";
+import { CARE_ART_LEVELS, FLOCK_ART_LEVELS, artLevel, careBadgeArt, flockBadgeArt, type CareBadgeId } from "@/lib/badgeArt";
 import { POD_MAX, POD_MIN, PODS_AT_ONCE, cleanPod, podInitial, podOpen, podRefusal, podStage, podStillNeeded, showWeeklyCard } from "@/lib/flockPods";
 import { foundingClosedCase } from "@/lib/foundingClosed";
 import {
@@ -1075,6 +1076,32 @@ check("badges: levels, names and how to earn each one", () => {
       assert.ok(!/\b(points?|rank|leaderboard|weight|healthy)\b/i.test(s), s);
     }
   }
+});
+
+check("badges: Brittany's art for every badge, level and state, at both sizes", () => {
+  // Journey finisher's art levels are its real levels.
+  assert.deepEqual(FLOCK_ART_LEVELS.journey_finisher, [...FINISHER_LEVELS]);
+  assert.equal(artLevel([1, 3, 10], 0), 1);
+  assert.equal(artLevel([1, 3, 10], 5), 3);
+  assert.equal(artLevel([1, 3, 10], 12), 10);
+  assert.equal(flockBadgeArt("journey_finisher", 3), "/badges/flock/earned/journey-finisher-3-192.png");
+  assert.equal(flockBadgeArt("journey_finisher", 0, "sm"), "/badges/flock/unearned/journey-finisher-1-64.png");
+  assert.equal(flockBadgeArt("trick_star", 1), "/badges/flock/earned/trick-star-192.png");
+  assert.equal(careBadgeArt("steady_scale", 12), "/badges/care/earned/steady-scale-12-weeks-192.png");
+  assert.equal(careBadgeArt("daily_check_in", 0), "/badges/care/unearned/daily-check-in-7-days-192.png");
+  assert.equal(careBadgeArt("plan_ready", 1, "sm"), "/badges/care/earned/plan-ready-64.png");
+  const files: string[] = [];
+  for (const size of ["lg", "sm"] as const) {
+    for (const b of FLOCK_BADGES) for (const lvl of [0, ...(FLOCK_ART_LEVELS[b] ?? [1])]) files.push(flockBadgeArt(b, lvl, size));
+    for (const b of ["steady_scale", "daily_check_in", "plan_ready", "sitter_ready"] as CareBadgeId[]) {
+      for (const lvl of [0, ...(CARE_ART_LEVELS[b] ?? [1])]) files.push(careBadgeArt(b, lvl, size));
+    }
+  }
+  for (const f of files) assert.ok(existsSync(`public${f}`), `missing ${f}`);
+  // 15 earned designs, plus the gray version of each badge's first level
+  // (what an unearned badge shows), at two sizes. The gray higher levels are
+  // stored too, unused for now.
+  assert.equal(new Set(files).size, (15 + 10) * 2);
 });
 
 check("buddy pods: stages, the weekly card, waiting and refusals", () => {
