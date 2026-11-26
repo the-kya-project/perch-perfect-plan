@@ -19,7 +19,7 @@ Format:
   - After: "<new wording>"
 ```
 
-### [#563](https://github.com/the-kya-project/perch-perfect-plan/pull/563) · 1.15a Kya's Crew on the payment screen · **held, not merged yet**
+### [#563](https://github.com/the-kya-project/perch-perfect-plan/pull/563) · 1.15a Kya's Crew on the payment screen · **approved by Brittany (Nov 26, 2026)**
 English only (Dutch waits for your read). All behind `BILLING_ENABLED` (off), web only. Prices come from Stripe; the amounts below are the ones in your mockup. Everything is from `CrewCardStep.dc.html` word for word unless marked "not in the mockup".
 - **Where:** the card step, above the tiles (only when the Crew prices are set)
   - Before: "Pick how you pay"
@@ -1192,11 +1192,13 @@ No new strings: every line reuses existing wording, in new places (admins only).
 ## Decisions agents made
 
 ### [#563](https://github.com/the-kya-project/perch-perfect-plan/pull/563) · 1.15a Kya's Crew on the payment screen
+- **Brittany's decision (Nov 26, 2026):** the screens and wording are approved as written in "Copy that merged", including the lines marked "not in the mockup".
+- **Brittany's decision (Nov 26, 2026):** founders whose founding price is still open keep their current screen, with no Crew option, for now.
 - **Decision:** Crew shows only when both Crew prices (`STRIPE_PRICE_CREW_MONTHLY` and `_YEARLY`) are set in the deployment. Without them the card step is exactly what it was, including "Pick how you pay".
 - **Decision:** Yearly (the Flock's) stays picked by default, as in the mockup's default.
 - **Decision:** "Save $96" is worked out from the Stripe prices (twelve Crew months minus Crew yearly) and is left off if Crew yearly saves nothing. Crew yearly's big number is $444 ÷ 12, rounded to $37, as in the mockup.
 - **Decision:** The card step after the free season gets the same Crew box (it uses the same tiles), with "Join Kya's Crew" on the button. No mockup shows that screen with Crew.
-- **Decision:** Founders whose founding price is still open see their founding screen unchanged, with no Crew option, because no mockup shows Crew there. Checkout already gives a founder who picks Crew the Crew plan and leaves their claim alone. A question for you is under Held.
+- **Decision:** Founders whose founding price is still open see their founding screen unchanged, with no Crew option, because no mockup shows Crew there. Checkout already gives a founder who picks Crew the Crew plan and leaves their claim alone. (Brittany confirmed this on Nov 26, 2026, above.)
 - **Decision:** With Crew picked, the "How it works" charge line uses the existing app sentence ("…then monthly." / "…then once a year."), not the mockup's "then every month", so Flock and Crew read the same.
 - **Decision:** Membership, "You're all set" and the plan row name the Crew plan ("Kya's Crew", "Crew yearly", "Crew monthly") and say 25%. Before this, a Crew member would have seen "Flock member", "Monthly" and "20%". These screens have no Crew mockup.
 
@@ -1775,10 +1777,6 @@ Format:
 ### <PR link> · <item ID> <item title>
 - **Needs:** <the decision, approval or read, in one or two lines>
 ```
-
-### [#563](https://github.com/the-kya-project/perch-perfect-plan/pull/563) · 1.15a Kya's Crew on the payment screen
-- **Needs:** your approval (payments) of the Crew card step and its copy ("Copy that merged" above lists every line, marked held), and one decision: should founders whose founding price is still open also see the Kya's Crew option? Right now their screen is unchanged. Dutch follows once you've read the English.
-
 
 ### Reminder · the hourly runs' GitHub token expires Feb 20, 2027
 - **Needs:** a new token before **Feb 20, 2027**. That's 90 days from Nov 22, 2026; GitHub → Settings → Developer settings → Fine-grained tokens shows the exact date. When it expires, runs can still build and test but can't push or open PRs, and each run's note in `~/.kya-agent/job.log` says so.
