@@ -80,8 +80,8 @@ English only (Dutch waits for your read of the English). Behind `journeys_enable
 - **Where:** the report sheet, review queue and notifications
   - New: "Report this skill" (sheet title), "Report · member skill", "(no description)" (a reported skill with no description), "your skill {{skill}}" (a reviewer's notice)
 
-### [#557](https://github.com/the-kya-project/perch-perfect-plan/pull/557) · 1.11 Buddy pods follow-up (#548): no buddy groups, stage pills · **for Brittany's copy read**
-Held, not merged yet. English only (pods have no Dutch yet).
+### [#557](https://github.com/the-kya-project/perch-perfect-plan/pull/557) · 1.11 Buddy pods follow-up (#548): no buddy groups, stage pills · **merged Nov 25, 2026**
+Merged with Brittany's go-ahead. English only (pods have no Dutch yet).
 - **Where:** setup screen, "Pair me with buddies" box (`flock.pods.optInLine`)
   - Before: "A small group of 3 to 6 members on the same journey, from your chapter when possible. You can leave anytime."
   - After: "A small group of 3 to 6 members on the same skill, from your chapter when possible. You can leave anytime."
@@ -152,7 +152,7 @@ English only (Dutch waits for your read of the English, as 1.20 says). Behind `j
   - Before: "{{n}} milestones" in the summary, "{{done}} of {{total}} milestones" on the page. After: no step count; "Learned it" / "In progress" in the progress line; on the page "Finish the journey with “learned it” by the last day to complete the challenge." or "{{name}} learned it. You finished the challenge!"
 
 ### [#552](https://github.com/the-kya-project/perch-perfect-plan/pull/552) · 1.20a Journeys redesign: data and migration
-Held, not merged yet. All of it is template text in the database (`journey_templates`), still `review_status = 'draft'`, written by `20261124190000_journeys_skills_data.sql` through `admin_update_journey_template`. Every "After" is the spec's "Skill content" word for word; nothing is shown to anyone but admins (journeys are off for everyone else). No app strings changed, so no Dutch.
+Merged Nov 24, 2026. All of it is template text in the database (`journey_templates`), still `review_status = 'draft'`, written by `20261124190000_journeys_skills_data.sql` through `admin_update_journey_template`. Every "After" is the spec's "Skill content" word for word; nothing is shown to anyone but admins (journeys are off for everyone else). No app strings changed, so no Dutch.
 - **Where:** each skill's description (`purpose`, shown on the skill page and the journey page from 1.20b)
   - Scale training. Before: "So your bird steps onto the scale calmly and stays still long enough for an accurate daily weight." After: "Your bird steps onto the scale calmly and stays still long enough for an accurate weight, so daily weigh-ins become easy."
   - Target training. Before: "So your bird learns to touch the tip of a stick for a reward, a simple tool that can guide them almost anywhere." After: "Your bird touches the tip of a stick and follows it, which gives you a gentle way to guide your bird almost anywhere."
@@ -1191,6 +1191,15 @@ No new strings: every line reuses existing wording, in new places (admins only).
 
 ## Decisions agents made
 
+### [#566](https://github.com/the-kya-project/perch-perfect-plan/pull/566) · Badge art (final art for 1.13a, stored for 1.13b)
+- **Decision:** Your art replaces the whole round tile, not just the icon inside it. The lime circle and forest ring were dropped, since each design has its own frame. Earned badges show your color file; unearned ones show your gray file. Nothing is cropped, recolored or redrawn.
+- **Decision:** Journey finisher shows the design for the level reached (1, 3 or 10). An unearned Journey finisher shows the gray level-1 design. Your gray versions of levels 3 and 10 (and of Steady scale 12/52 and Daily check-in 30) are stored but nothing shows them yet.
+- **Decision:** Two sizes, resized from your 512px files: 192px for the circles (sharp at 3x on a phone) and 64px for the pills. Stored in `public/badges/<flock|care>/<earned|unearned>/`. They aren't added to the app's offline download, so free users' installs don't grow.
+- **Decision:** The pill icon grew from 14px to 20px so the art can be read; the pill's height stays about the same (its top and bottom padding shrank by a pixel). The "Badge earned" card keeps its 52px badge.
+- **Decision:** Each image's screen-reader text is the badge's name ("Journey finisher"), as you asked. On the Badges screen and in the celebrations the name is also written under the art, so a screen reader says it twice there.
+- **Decision:** Your README suggests 72px on a collection screen. The Badges screen stays at 64px, as you asked in the prompt.
+- **To change it:** file names and levels are `src/lib/badgeArt.ts`; how the art is drawn is `BadgeCircle` in `src/components/flock/BadgeParts.tsx`.
+
 ### [#563](https://github.com/the-kya-project/perch-perfect-plan/pull/563) · 1.15a Kya's Crew on the payment screen
 - **Brittany's decision (Nov 26, 2026):** the screens and wording are approved as written in "Copy that merged", including the lines marked "not in the mockup".
 - **Brittany's decision (Nov 26, 2026):** founders whose founding price is still open keep their current screen, with no Crew option, for now.
@@ -1207,16 +1216,17 @@ No new strings: every line reuses existing wording, in new places (admins only).
 - **One new check file** (`journeys_redesign_checks.sql`) for the three promises in the spec, instead of spreading them across the five existing files, so the guarantees read in one place. The five named files were already updated part by part (1.20a–d); this PR only refreshes their out-of-date comments.
 - **The e2e skill fixture** keeps each skill's old milestones under `history_milestones` (only journeys started before the redesign use them, like the 2 in production), and a unit test fails if the fixture's text drifts from the 1.20a migration.
 - **Noticed, not changed:** a free household member on someone's bird sees and posts on that bird's journeys but can't read the comments on them ("flock members only"), because comments are a Flock feature. That matches the rules as written. Say if co-carers should read them.
+- **Brittany's decision (Nov 26, 2026):** free household co-carers should be able to read, but not write, comments on their own bird's journeys. Added to `docs/BACKLOG.md` as 1.20f.
 
 ### [#560](https://github.com/the-kya-project/perch-perfect-plan/pull/560) · 1.20d Diet conversion rework
 - **Brittany's decision (Nov 25, 2026):** if a member logs no weigh-ins in the first week, the starting week stays unset, as it does today. No change.
 - **Brittany's decision (Nov 25, 2026):** remove "For Flock members, this uses the bird's own baseline alerts." from the weight safeguard (done in the PR's migration, the e2e fixture and `journeys_flock_wording_checks.sql`). Keep "The template suggests a vet check before starting, especially for older birds or birds on an all-seed diet." as is.
 - **Brittany's decision (Nov 25, 2026):** merge once every required check passes. The eclectus alert stays off (`diet_eclectus_alert`) until an avian vet approves it.
 - **Decision:** The starting week is always the 7 days after the journey starts. The old "already" answer on milestone 1 (the week *before* the start) and reaching milestone 1 early no longer move it. Production has no Diet conversion journey (checked read-only), so no real journey changes. The 7 days is in `DIET_STARTING_WEEK_DAYS` (draft) rather than a new `journey_settings` column, because the item said to leave every setting unchanged.
-- **Decision:** "Set" means the week is over and had at least one weigh-in at the bird's usual time, or a vet-confirmed resume re-based it. A week with no weigh-ins leaves the starting weight unset, exactly as before: no weight rules apply, the card keeps saying "Weigh [Bird] every day this first week…", and "Weigh [Bird] today" keeps showing. It doesn't start a fresh week. (A question for you below.)
+- **Decision:** "Set" means the week is over and had at least one weigh-in at the bird's usual time, or a vet-confirmed resume re-based it. A week with no weigh-ins leaves the starting weight unset, exactly as before: no weight rules apply, the card keeps saying "Weigh [Bird] every day this first week…", and "Weigh [Bird] today" keeps showing. It doesn't start a fresh week. (Brittany answered on Nov 25, 2026, above: no change.)
 - **Decision:** The vet reminder card shows once the starting weight is set. Before this, new journeys had no milestones, so the reminder ("from milestone 2") could never show at all.
 - **Decision:** The eclectus alert is on the vet card's screen, directly above the card, not on a screen of its own. That way it needs no new "Continue" button or copy. It shows for any species name containing "eclectus" (`ECLECTUS_PATTERN`, draft). It sits behind a new health switch, `diet_eclectus_alert`, which starts off. The app asks for that switch only on Diet conversion for an eclectus.
-- **Decision:** Two other safeguard lines are still out of date, and I left them alone because they need your call (see Held): "For Flock members, this uses the bird's own baseline alerts." (the weight safeguard is the same for everyone, and doesn't use the weight baseline), and "The template suggests a vet check before starting…" (that's the vet card now).
+- **Decision:** Two other safeguard lines are still out of date, and I left them alone for your call (Brittany answered on Nov 25, 2026, above: remove the first, keep the second): "For Flock members, this uses the bird's own baseline alerts." (the weight safeguard is the same for everyone, and doesn't use the weight baseline), and "The template suggests a vet check before starting…" (that's the vet card now).
 - **Decision:** CLAUDE.md's diet lines were brought in step (starting week, reminder, eclectus switch, the finish). The full Journeys rewrite is still 1.20e's.
 
 ### [#559](https://github.com/the-kya-project/perch-perfect-plan/pull/559) · 1.20c Member skills
@@ -1777,6 +1787,9 @@ Format:
 ### <PR link> · <item ID> <item title>
 - **Needs:** <the decision, approval or read, in one or two lines>
 ```
+
+### [#566](https://github.com/the-kya-project/perch-perfect-plan/pull/566) · Badge art (final art for 1.13a, stored for 1.13b)
+- **Needs:** a look at the screenshots in the PR, then your OK in the PR to merge. It changes what admins see on the Badges screen, the celebrations and profiles (nobody else sees badges yet). Also say whether the pill-size notes in the PR are fine.
 
 ### Reminder · the hourly runs' GitHub token expires Feb 20, 2027
 - **Needs:** a new token before **Feb 20, 2027**. That's 90 days from Nov 22, 2026; GitHub → Settings → Developer settings → Fine-grained tokens shows the exact date. When it expires, runs can still build and test but can't push or open PRs, and each run's note in `~/.kya-agent/job.log` says so.

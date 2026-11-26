@@ -153,7 +153,7 @@ Badges reward the habits that make birds' lives better. There are two sets. Floc
 
 **Art**
 
-- Use simple stroke icons in the app's style (as in the mockup) until Brittany supplies final badge art.
+- Brittany's final art (badge collection v1), in `public/badges/` and named in `src/lib/badgeArt.ts`: a color and a gray version of every badge, and a design for each level. The care badges' art is stored there for 1.13b.
 
 ## Challenges (1.10)
 
