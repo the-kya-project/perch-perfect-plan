@@ -1401,6 +1401,29 @@ test.describe("journeys: posting updates and milestones (admin, phone)", () => {
     await context.close();
   });
 
+  test("free co-carers read their bird's journey comments, read-only (1.20f)", async ({ browser, baseURL }) => {
+    const { context, page, state } = await open(browser, baseURL!, { admin: true, journeys: { tier: "free", seed: [stepUp] } });
+    const UPDATE = "00000000-0000-4000-8000-0000000074f1";
+    state.comments.push({ comment_id: "00000000-0000-4000-8000-0000000074f2", subject_type: "journey_update", subject_id: UPDATE,
+      author_id: "00000000-0000-4000-8000-0000000074f3", author_name: "Alex R.", body: "Try the perch next.", created_at: new Date(Date.now() - 3_600_000).toISOString() });
+    await page.goto(`/flock/comments/journey_update/${UPDATE}`);
+    const comment = page.locator("[data-comment='00000000-0000-4000-8000-0000000074f2']");
+    await expect(comment).toContainText("Alex R.");
+    await expect(comment).toContainText("Try the perch next.");
+    // No writing: no box, no reaction button, no Reply, no menu (Report, Block).
+    await expect(page.getByTestId("comment-composer")).toHaveCount(0);
+    await expect(page.getByTestId("comment-react")).toHaveCount(0);
+    await expect(page.getByTestId("comment-reply")).toHaveCount(0);
+    await expect(page.getByTestId("comment-more")).toHaveCount(0);
+    const b = (await comment.getByTestId("comment-bubble").boundingBox())!;
+    await page.mouse.move(b.x + b.width / 2, b.y + b.height / 2);
+    await page.mouse.down();
+    await page.waitForTimeout(700);
+    await page.mouse.up();
+    await expect(page.getByTestId("action-sheet")).toHaveCount(0);
+    await context.close();
+  });
+
   test("Diet conversion: a heads-up at the amber trend; a weight pause lifts only after confirming the vet call", async ({ browser, baseURL }) => {
     const diet = { id: "00000000-0000-4000-8000-0000000074a2", birdName: "Willow", slug: "diet-conversion", done: 1 };
     let o = await open(browser, baseURL!, { admin: true, journeys: { seed: [diet], weight: { level: "notice", start: 400, now: 389 } } });

@@ -19,7 +19,7 @@ Format:
   - After: "<new wording>"
 ```
 
-### [#565](https://github.com/the-kya-project/perch-perfect-plan/pull/565) · 1.16 Rescue partner codes · **held, not merged**
+### [#565](https://github.com/the-kya-project/perch-perfect-plan/pull/565) · 1.16 Rescue partner codes · **merged on Brittany's OK (Nov 26, 2026)**
 English only (Dutch comes after you approve the English). Everything is behind `flock_enabled()` (admins only). All new: there was no wording here before. Lines marked "mockup" are word for word from `SpecRescueCodes.dc.html`.
 - **Where:** the Join screen's "Join the Flock" sheet, under "Join the Flock free", and at the bottom of the Join step; the redeem page under "Redeem my gift"
   - New: "Have a rescue code?" (mockup)
@@ -1266,6 +1266,12 @@ No new strings: every line reuses existing wording, in new places (admins only).
 - **Decision:** Approvals happen on both `/admin/rescues` (as in the mockup) and `/admin/review` → Rescues (as in the spec). Chapter leads who can review don't see Rescues; it's admins only. `/admin/rescues` is reached from Flock settings, under "Review queue".
 - **Decision:** No delete for a partner: pause it instead (adoptions point at it).
 
+### [#569](https://github.com/the-kya-project/perch-perfect-plan/pull/569) · 1.20f Co-carers read comments on their bird's journeys
+- **Decision:** "Household" means anyone with access to the bird (owner or co-carer), on journeys they may already view (`journey_viewable`, so only while journeys are on for them). A free account with no access to the bird gains nothing, and neither does a co-carer on someone else's bird.
+- **Decision:** They read comment photos too (the comment's own photo is part of the comment). Commenters' profile photos stay Flock-only, as the `flock-avatars` bucket rules are, so a free co-carer sees each commenter's initials instead. Changing that would mean changing the bucket's read policy, which I left alone.
+- **Decision:** Read-only on screen means no comment box, no reaction button, no Reply and no ··· menu or press-and-hold menu (so no Report or Block either). Reaction counts still show as plain text, as they already did for anyone who can't react.
+- **Noticed, not changed:** today a free account can't reach any journey screen in the app (every journey page is under `/flock`, which is admins only while the Flock is closed, and sends non-members to the join step once it opens). So this is ready for when free journeys get their own way in; until then only the database and the test cover it.
+
 ### [#566](https://github.com/the-kya-project/perch-perfect-plan/pull/566) · Badge art (final art for 1.13a, stored for 1.13b)
 - **Decision:** Your art replaces the whole round tile, not just the icon inside it. The lime circle and forest ring were dropped, since each design has its own frame. Earned badges show your color file; unearned ones show your gray file. Nothing is cropped, recolored or redrawn.
 - **Decision:** Journey finisher shows the design for the level reached (1, 3 or 10). An unearned Journey finisher shows the gray level-1 design. Your gray versions of levels 3 and 10 (and of Steady scale 12/52 and Daily check-in 30) are stored but nothing shows them yet.
@@ -1862,13 +1868,6 @@ Format:
 ### <PR link> · <item ID> <item title>
 - **Needs:** <the decision, approval or read, in one or two lines>
 ```
-
-### [#565](https://github.com/the-kya-project/perch-perfect-plan/pull/565) · 1.16 Rescue partner codes
-- **Needs:** your review and OK in the PR. It grants access (six months in the Flock) and adds a migration that applies to production on merge (new tables and functions; the `entitlements` source check gains `rescue`; `reschedule_pending_grants` gains a rescue loop). Behind `flock_enabled()`, so only admins see it.
-- **Also:** read the new wording (in "Copy that merged"); and say whether `/admin/crew`'s seat parts should go. They aren't in the code: `/admin/crew` and `crew_seat_uses` were removed from #535 before it merged, so there's nothing to remove.
-
-### [#566](https://github.com/the-kya-project/perch-perfect-plan/pull/566) · Badge art (final art for 1.13a, stored for 1.13b)
-- **Needs:** a look at the screenshots in the PR, then your OK in the PR to merge. It changes what admins see on the Badges screen, the celebrations and profiles (nobody else sees badges yet). Also say whether the pill-size notes in the PR are fine.
 
 ### Reminder · the hourly runs' GitHub token expires Feb 20, 2027
 - **Needs:** a new token before **Feb 20, 2027**. That's 90 days from Nov 22, 2026; GitHub → Settings → Developer settings → Fine-grained tokens shows the exact date. When it expires, runs can still build and test but can't push or open PRs, and each run's note in `~/.kya-agent/job.log` says so.
