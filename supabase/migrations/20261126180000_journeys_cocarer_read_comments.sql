@@ -141,8 +141,10 @@ create or replace function private.flock_media_refs(p_post_ids uuid[], p_comment
  SET search_path TO ''
 AS $function$
 begin
-  -- 1.20f: comment photos for a bird's household, without the Flock.
-  if not private.can_use_flock(auth.uid()) and not private.can_use_journeys(auth.uid()) then
+  -- 1.20f: comment photos for a bird's household, without the Flock. Asking
+  -- for any post's photos without the Flock is still refused, as before.
+  if not private.can_use_flock(auth.uid())
+     and (coalesce(cardinality(p_post_ids), 0) > 0 or not private.can_use_journeys(auth.uid())) then
     raise exception 'flock members only' using errcode = '42501';
   end if;
   return query
