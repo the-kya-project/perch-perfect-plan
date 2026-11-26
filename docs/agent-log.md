@@ -26,6 +26,18 @@ Copy this, fill it in, and put it at the top of "Runs", above the latest entry.
 - **Outcome:** see the PR.
 - **Problems:** none. No local Postgres, so the new SQL check runs only in CI. Free accounts can't reach journey screens in the app yet (noted in the review queue).
 
+### 2026-11-26 13:05 EST · Badge art: final art in place of the stroke icons
+- **Built:** Brittany's final badge art now shows wherever Flock badges appear: the Badges screen (color when earned, her gray versions when not), the "Here's what you've already earned" and "Badge earned" cards on Today, and the small pills on member profiles. Journey finisher shows the design for the level reached. The care badges' art (1.13b) is stored in the app, ready for when 1.13b is built; 1.13b itself wasn't started. Badge names, rules, wording and who sees them are unchanged. Interactive session at Brittany's request, in a separate copy (`~/.kya-agent/work/badge-art`), with the lock held for the session.
+- **PR:** [#566](https://github.com/the-kya-project/perch-perfect-plan/pull/566); screenshots on the unmerged branch `badge-art-screenshots`
+- **Outcome:** Held: Brittany asked to see it before it merges.
+- **Problems:** none. All 30 files matched their badges by name and picture. Moved one pending entry (Nov 26, 06:34) in from `~/.kya-agent/pending-log.md`.
+
+### 2026-11-26 06:34 EST · none (nothing to build)
+- **Built:** nothing. The only item in "Ready to build" (1.15a Kya's Crew option on the payment screen) already has its held PR, #563; every other item is "Overnight alone: no", waiting on Brittany's spec, or for opening.
+- **PR:** none
+- **Outcome:** Stopped: nothing this run is allowed to build. Open agent PR check: #563 (held for Brittany, payments) merges cleanly with main and every check passes, so it needed no update; it stays held. No abandoned "In progress" drafts.
+- **Problems:** GitHub was unreliable at the start: the first clone and `gh pr list` timed out after 10 minutes, and a second full clone failed partway ("RPC failed; curl 18"). A shallow clone (`--depth 50`) worked. The first, failed clone left an empty copy at `~/.kya-agent/work/agent-run-20261126-0634` (only a `.git` folder, no work in it). The working copy is `~/.kya-agent/work/agent-run-20261126-0705`, unchanged. Neither one holds any work.
+
 ### 2026-11-25 09:42 EST · Housekeeping: #563 brought up to date with `main`
 - **Built:** nothing new. The only item in "Ready to build", 1.15a, already has its held PR (#563), so there was nothing else this run may build. #563 conflicted with `main` only in the three record files (after #562 merged), so this run merged `main` into its branch and kept both sides: 1.15a and 1.20e both stay in "Done" (and "Ready to build" is now empty), both runs' log entries, and both PRs' decisions in the review queue. No code changed.
 - **PR:** [#563](https://github.com/the-kya-project/perch-perfect-plan/pull/563) (pushed to its branch; still held)
