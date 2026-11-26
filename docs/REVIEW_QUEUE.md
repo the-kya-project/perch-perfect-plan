@@ -80,8 +80,8 @@ English only (Dutch waits for your read of the English). Behind `journeys_enable
 - **Where:** the report sheet, review queue and notifications
   - New: "Report this skill" (sheet title), "Report · member skill", "(no description)" (a reported skill with no description), "your skill {{skill}}" (a reviewer's notice)
 
-### [#557](https://github.com/the-kya-project/perch-perfect-plan/pull/557) · 1.11 Buddy pods follow-up (#548): no buddy groups, stage pills · **for Brittany's copy read**
-Held, not merged yet. English only (pods have no Dutch yet).
+### [#557](https://github.com/the-kya-project/perch-perfect-plan/pull/557) · 1.11 Buddy pods follow-up (#548): no buddy groups, stage pills · **merged Nov 25, 2026**
+Merged with Brittany's go-ahead. English only (pods have no Dutch yet).
 - **Where:** setup screen, "Pair me with buddies" box (`flock.pods.optInLine`)
   - Before: "A small group of 3 to 6 members on the same journey, from your chapter when possible. You can leave anytime."
   - After: "A small group of 3 to 6 members on the same skill, from your chapter when possible. You can leave anytime."
@@ -1207,16 +1207,17 @@ No new strings: every line reuses existing wording, in new places (admins only).
 - **One new check file** (`journeys_redesign_checks.sql`) for the three promises in the spec, instead of spreading them across the five existing files, so the guarantees read in one place. The five named files were already updated part by part (1.20a–d); this PR only refreshes their out-of-date comments.
 - **The e2e skill fixture** keeps each skill's old milestones under `history_milestones` (only journeys started before the redesign use them, like the 2 in production), and a unit test fails if the fixture's text drifts from the 1.20a migration.
 - **Noticed, not changed:** a free household member on someone's bird sees and posts on that bird's journeys but can't read the comments on them ("flock members only"), because comments are a Flock feature. That matches the rules as written. Say if co-carers should read them.
+- **Brittany's decision (Nov 26, 2026):** free household co-carers should be able to read, but not write, comments on their own bird's journeys. Added to `docs/BACKLOG.md` as 1.20f.
 
 ### [#560](https://github.com/the-kya-project/perch-perfect-plan/pull/560) · 1.20d Diet conversion rework
 - **Brittany's decision (Nov 25, 2026):** if a member logs no weigh-ins in the first week, the starting week stays unset, as it does today. No change.
 - **Brittany's decision (Nov 25, 2026):** remove "For Flock members, this uses the bird's own baseline alerts." from the weight safeguard (done in the PR's migration, the e2e fixture and `journeys_flock_wording_checks.sql`). Keep "The template suggests a vet check before starting, especially for older birds or birds on an all-seed diet." as is.
 - **Brittany's decision (Nov 25, 2026):** merge once every required check passes. The eclectus alert stays off (`diet_eclectus_alert`) until an avian vet approves it.
 - **Decision:** The starting week is always the 7 days after the journey starts. The old "already" answer on milestone 1 (the week *before* the start) and reaching milestone 1 early no longer move it. Production has no Diet conversion journey (checked read-only), so no real journey changes. The 7 days is in `DIET_STARTING_WEEK_DAYS` (draft) rather than a new `journey_settings` column, because the item said to leave every setting unchanged.
-- **Decision:** "Set" means the week is over and had at least one weigh-in at the bird's usual time, or a vet-confirmed resume re-based it. A week with no weigh-ins leaves the starting weight unset, exactly as before: no weight rules apply, the card keeps saying "Weigh [Bird] every day this first week…", and "Weigh [Bird] today" keeps showing. It doesn't start a fresh week. (A question for you below.)
+- **Decision:** "Set" means the week is over and had at least one weigh-in at the bird's usual time, or a vet-confirmed resume re-based it. A week with no weigh-ins leaves the starting weight unset, exactly as before: no weight rules apply, the card keeps saying "Weigh [Bird] every day this first week…", and "Weigh [Bird] today" keeps showing. It doesn't start a fresh week. (Brittany answered on Nov 25, 2026, above: no change.)
 - **Decision:** The vet reminder card shows once the starting weight is set. Before this, new journeys had no milestones, so the reminder ("from milestone 2") could never show at all.
 - **Decision:** The eclectus alert is on the vet card's screen, directly above the card, not on a screen of its own. That way it needs no new "Continue" button or copy. It shows for any species name containing "eclectus" (`ECLECTUS_PATTERN`, draft). It sits behind a new health switch, `diet_eclectus_alert`, which starts off. The app asks for that switch only on Diet conversion for an eclectus.
-- **Decision:** Two other safeguard lines are still out of date, and I left them alone because they need your call (see Held): "For Flock members, this uses the bird's own baseline alerts." (the weight safeguard is the same for everyone, and doesn't use the weight baseline), and "The template suggests a vet check before starting…" (that's the vet card now).
+- **Decision:** Two other safeguard lines are still out of date, and I left them alone for your call (Brittany answered on Nov 25, 2026, above: remove the first, keep the second): "For Flock members, this uses the bird's own baseline alerts." (the weight safeguard is the same for everyone, and doesn't use the weight baseline), and "The template suggests a vet check before starting…" (that's the vet card now).
 - **Decision:** CLAUDE.md's diet lines were brought in step (starting week, reminder, eclectus switch, the finish). The full Journeys rewrite is still 1.20e's.
 
 ### [#559](https://github.com/the-kya-project/perch-perfect-plan/pull/559) · 1.20c Member skills
