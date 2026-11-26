@@ -1256,6 +1256,7 @@ No new strings: every line reuses existing wording, in new places (admins only).
 - **Why:** the spec says "one redemption per adopter account"; a decline gives nothing, so it shouldn't lock someone out. Easy to make stricter: drop `'declined'`-is-free in `rescue_redemptions_one_per_account` and `rescue_find_code`.
 - **Decision:** "Can't be combined with a founding spot" is enforced from the rescue side only: someone holding a founding spot (not forfeited) can't use a code, and an approval is refused if they've claimed a spot while waiting. The founding claim itself wasn't changed, so an adopter who's already approved could still claim a founding spot. Asked in the PR.
 - **Why:** changing `claim_founding_spot()` would change a live, public flow; that's yours to decide.
+- **Brittany's decision (Nov 26, 2026):** leave it. Claiming a founding spot stays open to someone already approved for a rescue code; `claim_founding_spot()` isn't changed.
 - **Decision:** The six months queue behind a gift that has already started, and gifts that haven't started queue behind the six months (gift rows already treat every non-gift grant as first). A rescue membership is plan `comp`, source `rescue`, never a trial and never billed (`entitlements_rescue_shape`).
 - **Why:** "overlaps never take time away", as for gifts. `private.place_grant` wasn't touched; rescue rows have their own `private.place_rescue_grant`, called first by `reschedule_pending_grants`.
 - **Decision:** The use limit counts adoptions waiting and approved. Wrong, paused and full codes all get the same message. Ten wrong codes an hour per account, then a pause, like gift codes.
@@ -1864,7 +1865,7 @@ Format:
 
 ### [#565](https://github.com/the-kya-project/perch-perfect-plan/pull/565) · 1.16 Rescue partner codes
 - **Needs:** your review and OK in the PR. It grants access (six months in the Flock) and adds a migration that applies to production on merge (new tables and functions; the `entitlements` source check gains `rescue`; `reschedule_pending_grants` gains a rescue loop). Behind `flock_enabled()`, so only admins see it.
-- **Also:** read the new wording (in "Copy that merged"); say whether a founding spot should also be refused to someone with an approved rescue adoption (the founding claim isn't changed); and whether `/admin/crew`'s seat parts should go. They aren't in the code: `/admin/crew` and `crew_seat_uses` were removed from #535 before it merged, so there's nothing to remove.
+- **Also:** read the new wording (in "Copy that merged"); and say whether `/admin/crew`'s seat parts should go. They aren't in the code: `/admin/crew` and `crew_seat_uses` were removed from #535 before it merged, so there's nothing to remove.
 
 ### [#566](https://github.com/the-kya-project/perch-perfect-plan/pull/566) · Badge art (final art for 1.13a, stored for 1.13b)
 - **Needs:** a look at the screenshots in the PR, then your OK in the PR to merge. It changes what admins see on the Badges screen, the celebrations and profiles (nobody else sees badges yet). Also say whether the pill-size notes in the PR are fine.
