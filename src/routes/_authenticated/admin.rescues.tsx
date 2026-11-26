@@ -2,7 +2,7 @@ import { useState } from "react";
 import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
 import { Loader2, Plus } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import { K, KyaBackRow, KyaBody, KyaField, KyaGroupLabel, KyaHeader, KyaPage, KyaPrimaryButton, KyaSheet, KyaSwitch, KyaTitle } from "@/components/kya";
+import { K, KyaBackRow, KyaBody, KyaField, KyaGroupLabel, KyaHeader, KyaHeading, KyaPage, KyaPrimaryButton, KyaSheet, KyaSwitch, KyaTitle } from "@/components/kya";
 import { AdminOnly } from "@/components/flock/AdminOnly";
 import { RescueAdoptionCard } from "@/components/flock/RescueParts";
 import { FLOCK_ENABLED_QUERY } from "@/lib/flock";
@@ -167,7 +167,7 @@ function PartnerSheet({ draft: start, onClose, onSaved }: { draft: Draft; onClos
 
   return (
     <KyaSheet onClose={onClose} closeLabel={t("flock.region.close", "Close")}
-      title={d.id ? t("flock.rescueAdmin.editTitle", "Edit partner rescue") : t("flock.rescueAdmin.addTitle", "Add a partner rescue")}>
+      title={<KyaHeading size={23}>{d.id ? t("flock.rescueAdmin.editTitle", "Edit partner rescue") : t("flock.rescueAdmin.addTitle", "Add a partner rescue")}</KyaHeading>}>
       <div className="flex flex-col gap-4" data-testid="partner-sheet">
         <KyaField id="partner-name" label={t("flock.rescueAdmin.name", "Rescue name")} value={d.name} maxLength={RESCUE_LIMITS.partnerName}
           onChange={(e) => setD({ ...d, name: e.target.value })} data-testid="partner-name" autoComplete="off" />
@@ -178,7 +178,8 @@ function PartnerSheet({ draft: start, onClose, onSaved }: { draft: Draft; onClos
         <KyaField id="partner-limit" label={t("flock.rescueAdmin.limit", "Limit on uses (optional)")} value={d.limit} inputMode="numeric"
           onChange={(e) => setD({ ...d, limit: e.target.value })} data-testid="partner-limit" autoComplete="off"
           hint={t("flock.rescueAdmin.limitHint", "Leave blank for no limit. Adoptions waiting and approved both count.")} />
-        <div className="rounded-[16px] bg-white px-4 py-1">
+        <div className="flex min-h-[56px] items-center justify-between gap-3 rounded-[16px] bg-white px-4 py-2" data-testid="partner-pause">
+          <span className="text-[15.5px] font-[700]" style={{ color: K.forest }}>{t("flock.rescueAdmin.pause", "Pause this code")}</span>
           <KyaSwitch checked={d.paused} onChange={(v) => void togglePause(v)} disabled={saving} label={t("flock.rescueAdmin.pause", "Pause this code")} />
         </div>
         <p className="m-0 text-[13.5px] leading-[1.45]" style={{ color: K.quiet }}>
