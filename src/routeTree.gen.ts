@@ -54,6 +54,7 @@ import { Route as AuthenticatedAdminFoundingRouteImport } from './routes/_authen
 import { Route as AuthenticatedAdminGiftsRouteImport } from './routes/_authenticated/admin.gifts'
 import { Route as AuthenticatedAdminIdeasRouteImport } from './routes/_authenticated/admin.ideas'
 import { Route as AuthenticatedAdminPodsRouteImport } from './routes/_authenticated/admin.pods'
+import { Route as AuthenticatedAdminRescuesRouteImport } from './routes/_authenticated/admin.rescues'
 import { Route as AuthenticatedAdminReviewRouteImport } from './routes/_authenticated/admin.review'
 import { Route as AuthenticatedBirdsBirdIdRouteImport } from './routes/_authenticated/birds/$birdId'
 import { Route as AuthenticatedBirdsNewRouteImport } from './routes/_authenticated/birds/new'
@@ -65,6 +66,7 @@ import { Route as AuthenticatedFlockIdeaRouteImport } from './routes/_authentica
 import { Route as AuthenticatedFlockJoinRouteImport } from './routes/_authenticated/flock.join'
 import { Route as AuthenticatedFlockLearnRouteImport } from './routes/_authenticated/flock.learn'
 import { Route as AuthenticatedFlockPlacesRouteImport } from './routes/_authenticated/flock.places'
+import { Route as AuthenticatedFlockRescueRouteImport } from './routes/_authenticated/flock.rescue'
 import { Route as AuthenticatedFlockSetupRouteImport } from './routes/_authenticated/flock.setup'
 import { Route as AuthenticatedFlockSpacesRouteImport } from './routes/_authenticated/flock.spaces'
 import { Route as AuthenticatedFlockWelcomeRouteImport } from './routes/_authenticated/flock.welcome'
@@ -402,6 +404,12 @@ const AuthenticatedAdminPodsRoute = AuthenticatedAdminPodsRouteImport.update({
   path: '/admin/pods',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedAdminRescuesRoute =
+  AuthenticatedAdminRescuesRouteImport.update({
+    id: '/admin/rescues',
+    path: '/admin/rescues',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedAdminReviewRoute =
   AuthenticatedAdminReviewRouteImport.update({
     id: '/admin/review',
@@ -461,6 +469,12 @@ const AuthenticatedFlockPlacesRoute =
   AuthenticatedFlockPlacesRouteImport.update({
     id: '/places',
     path: '/places',
+    getParentRoute: () => AuthenticatedFlockRoute,
+  } as any)
+const AuthenticatedFlockRescueRoute =
+  AuthenticatedFlockRescueRouteImport.update({
+    id: '/rescue',
+    path: '/rescue',
     getParentRoute: () => AuthenticatedFlockRoute,
   } as any)
 const AuthenticatedFlockSetupRoute = AuthenticatedFlockSetupRouteImport.update({
@@ -1107,6 +1121,7 @@ export interface FileRoutesByFullPath {
   '/admin/gifts': typeof AuthenticatedAdminGiftsRoute
   '/admin/ideas': typeof AuthenticatedAdminIdeasRoute
   '/admin/pods': typeof AuthenticatedAdminPodsRoute
+  '/admin/rescues': typeof AuthenticatedAdminRescuesRoute
   '/admin/review': typeof AuthenticatedAdminReviewRoute
   '/birds/$birdId': typeof AuthenticatedBirdsBirdIdRouteWithChildren
   '/birds/new': typeof AuthenticatedBirdsNewRoute
@@ -1117,6 +1132,7 @@ export interface FileRoutesByFullPath {
   '/flock/join': typeof AuthenticatedFlockJoinRoute
   '/flock/learn': typeof AuthenticatedFlockLearnRoute
   '/flock/places': typeof AuthenticatedFlockPlacesRoute
+  '/flock/rescue': typeof AuthenticatedFlockRescueRoute
   '/flock/setup': typeof AuthenticatedFlockSetupRoute
   '/flock/spaces': typeof AuthenticatedFlockSpacesRoute
   '/flock/welcome': typeof AuthenticatedFlockWelcomeRoute
@@ -1262,6 +1278,7 @@ export interface FileRoutesByTo {
   '/admin/gifts': typeof AuthenticatedAdminGiftsRoute
   '/admin/ideas': typeof AuthenticatedAdminIdeasRoute
   '/admin/pods': typeof AuthenticatedAdminPodsRoute
+  '/admin/rescues': typeof AuthenticatedAdminRescuesRoute
   '/admin/review': typeof AuthenticatedAdminReviewRoute
   '/birds/new': typeof AuthenticatedBirdsNewRoute
   '/flock/chapter': typeof AuthenticatedFlockChapterRoute
@@ -1271,6 +1288,7 @@ export interface FileRoutesByTo {
   '/flock/join': typeof AuthenticatedFlockJoinRoute
   '/flock/learn': typeof AuthenticatedFlockLearnRoute
   '/flock/places': typeof AuthenticatedFlockPlacesRoute
+  '/flock/rescue': typeof AuthenticatedFlockRescueRoute
   '/flock/setup': typeof AuthenticatedFlockSetupRoute
   '/flock/spaces': typeof AuthenticatedFlockSpacesRoute
   '/flock/welcome': typeof AuthenticatedFlockWelcomeRoute
@@ -1422,6 +1440,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/gifts': typeof AuthenticatedAdminGiftsRoute
   '/_authenticated/admin/ideas': typeof AuthenticatedAdminIdeasRoute
   '/_authenticated/admin/pods': typeof AuthenticatedAdminPodsRoute
+  '/_authenticated/admin/rescues': typeof AuthenticatedAdminRescuesRoute
   '/_authenticated/admin/review': typeof AuthenticatedAdminReviewRoute
   '/_authenticated/birds/$birdId': typeof AuthenticatedBirdsBirdIdRouteWithChildren
   '/_authenticated/birds/new': typeof AuthenticatedBirdsNewRoute
@@ -1432,6 +1451,7 @@ export interface FileRoutesById {
   '/_authenticated/flock/join': typeof AuthenticatedFlockJoinRoute
   '/_authenticated/flock/learn': typeof AuthenticatedFlockLearnRoute
   '/_authenticated/flock/places': typeof AuthenticatedFlockPlacesRoute
+  '/_authenticated/flock/rescue': typeof AuthenticatedFlockRescueRoute
   '/_authenticated/flock/setup': typeof AuthenticatedFlockSetupRoute
   '/_authenticated/flock/spaces': typeof AuthenticatedFlockSpacesRoute
   '/_authenticated/flock/welcome': typeof AuthenticatedFlockWelcomeRoute
@@ -1584,6 +1604,7 @@ export interface FileRouteTypes {
     | '/admin/gifts'
     | '/admin/ideas'
     | '/admin/pods'
+    | '/admin/rescues'
     | '/admin/review'
     | '/birds/$birdId'
     | '/birds/new'
@@ -1594,6 +1615,7 @@ export interface FileRouteTypes {
     | '/flock/join'
     | '/flock/learn'
     | '/flock/places'
+    | '/flock/rescue'
     | '/flock/setup'
     | '/flock/spaces'
     | '/flock/welcome'
@@ -1739,6 +1761,7 @@ export interface FileRouteTypes {
     | '/admin/gifts'
     | '/admin/ideas'
     | '/admin/pods'
+    | '/admin/rescues'
     | '/admin/review'
     | '/birds/new'
     | '/flock/chapter'
@@ -1748,6 +1771,7 @@ export interface FileRouteTypes {
     | '/flock/join'
     | '/flock/learn'
     | '/flock/places'
+    | '/flock/rescue'
     | '/flock/setup'
     | '/flock/spaces'
     | '/flock/welcome'
@@ -1898,6 +1922,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/gifts'
     | '/_authenticated/admin/ideas'
     | '/_authenticated/admin/pods'
+    | '/_authenticated/admin/rescues'
     | '/_authenticated/admin/review'
     | '/_authenticated/birds/$birdId'
     | '/_authenticated/birds/new'
@@ -1908,6 +1933,7 @@ export interface FileRouteTypes {
     | '/_authenticated/flock/join'
     | '/_authenticated/flock/learn'
     | '/_authenticated/flock/places'
+    | '/_authenticated/flock/rescue'
     | '/_authenticated/flock/setup'
     | '/_authenticated/flock/spaces'
     | '/_authenticated/flock/welcome'
@@ -2378,6 +2404,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminPodsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/admin/rescues': {
+      id: '/_authenticated/admin/rescues'
+      path: '/admin/rescues'
+      fullPath: '/admin/rescues'
+      preLoaderRoute: typeof AuthenticatedAdminRescuesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/admin/review': {
       id: '/_authenticated/admin/review'
       path: '/admin/review'
@@ -2453,6 +2486,13 @@ declare module '@tanstack/react-router' {
       path: '/places'
       fullPath: '/flock/places'
       preLoaderRoute: typeof AuthenticatedFlockPlacesRouteImport
+      parentRoute: typeof AuthenticatedFlockRoute
+    }
+    '/_authenticated/flock/rescue': {
+      id: '/_authenticated/flock/rescue'
+      path: '/rescue'
+      fullPath: '/flock/rescue'
+      preLoaderRoute: typeof AuthenticatedFlockRescueRouteImport
       parentRoute: typeof AuthenticatedFlockRoute
     }
     '/_authenticated/flock/setup': {
@@ -3202,6 +3242,7 @@ interface AuthenticatedFlockRouteChildren {
   AuthenticatedFlockJoinRoute: typeof AuthenticatedFlockJoinRoute
   AuthenticatedFlockLearnRoute: typeof AuthenticatedFlockLearnRoute
   AuthenticatedFlockPlacesRoute: typeof AuthenticatedFlockPlacesRoute
+  AuthenticatedFlockRescueRoute: typeof AuthenticatedFlockRescueRoute
   AuthenticatedFlockSetupRoute: typeof AuthenticatedFlockSetupRoute
   AuthenticatedFlockSpacesRoute: typeof AuthenticatedFlockSpacesRoute
   AuthenticatedFlockWelcomeRoute: typeof AuthenticatedFlockWelcomeRoute
@@ -3252,6 +3293,7 @@ const AuthenticatedFlockRouteChildren: AuthenticatedFlockRouteChildren = {
   AuthenticatedFlockJoinRoute: AuthenticatedFlockJoinRoute,
   AuthenticatedFlockLearnRoute: AuthenticatedFlockLearnRoute,
   AuthenticatedFlockPlacesRoute: AuthenticatedFlockPlacesRoute,
+  AuthenticatedFlockRescueRoute: AuthenticatedFlockRescueRoute,
   AuthenticatedFlockSetupRoute: AuthenticatedFlockSetupRoute,
   AuthenticatedFlockSpacesRoute: AuthenticatedFlockSpacesRoute,
   AuthenticatedFlockWelcomeRoute: AuthenticatedFlockWelcomeRoute,
@@ -3435,6 +3477,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAdminGiftsRoute: typeof AuthenticatedAdminGiftsRoute
   AuthenticatedAdminIdeasRoute: typeof AuthenticatedAdminIdeasRoute
   AuthenticatedAdminPodsRoute: typeof AuthenticatedAdminPodsRoute
+  AuthenticatedAdminRescuesRoute: typeof AuthenticatedAdminRescuesRoute
   AuthenticatedAdminReviewRoute: typeof AuthenticatedAdminReviewRoute
   AuthenticatedBirdsBirdIdRoute: typeof AuthenticatedBirdsBirdIdRouteWithChildren
   AuthenticatedBirdsNewRoute: typeof AuthenticatedBirdsNewRoute
@@ -3472,6 +3515,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAdminGiftsRoute: AuthenticatedAdminGiftsRoute,
   AuthenticatedAdminIdeasRoute: AuthenticatedAdminIdeasRoute,
   AuthenticatedAdminPodsRoute: AuthenticatedAdminPodsRoute,
+  AuthenticatedAdminRescuesRoute: AuthenticatedAdminRescuesRoute,
   AuthenticatedAdminReviewRoute: AuthenticatedAdminReviewRoute,
   AuthenticatedBirdsBirdIdRoute: AuthenticatedBirdsBirdIdRouteWithChildren,
   AuthenticatedBirdsNewRoute: AuthenticatedBirdsNewRoute,

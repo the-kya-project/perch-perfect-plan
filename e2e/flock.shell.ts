@@ -74,6 +74,8 @@ type FlockState = {
   /** Build C: where this account stands (flock_my_access), and its join calls. */
   access: { member_now: boolean; has_membership: boolean; agreed: boolean; is_admin: boolean; guidelines_version: string; opens_at: string | null; season_ends_at: string | null };
   joinResult: string;
+  /** Backlog 1.16: this account's rescue redemption (flock_rescue_status), the partners and adoptions admins see. */
+  rescue: { mine: Record<string, any> | null; partners: Record<string, any>[]; pending: Record<string, any>[] };
   /** Backlog 1.11: buddy pods, as the flock_pod* functions return them. */
   pods: {
     canWait: boolean;
@@ -119,6 +121,7 @@ async function mockFlock(context: BrowserContext, userId: string, opts: { setupD
     challengeEntries: [],
     access: { member_now: true, has_membership: true, agreed: true, is_admin: true, guidelines_version: "2026-12", opens_at: null, season_ends_at: "2027-07-06T04:00:00Z" },
     joinResult: "joined",
+    rescue: { mine: null, partners: [], pending: [] },
     pods: { canWait: true, journey: {}, pod: null, members: [], feed: [], mine: [], admin: [], adminMembers: [] },
   };
   const blocked = (id: string) => state.blocks.some((b) => b.user_id === id);
@@ -175,6 +178,19 @@ async function mockFlock(context: BrowserContext, userId: string, opts: { setupD
     if (fn === "admin_pod_members") return json(route, state.pods.adminMembers);
     if (fn === "admin_pod_waitlist") return json(route, [{ template_slug: "step-up", template_name: "Step up", waiting: 2, oldest: new Date().toISOString() }]);
     if (fn === "admin_save_idea") return json(route, "00000000-0000-4000-8000-0000000082aa");
+    if (fn === "admin_rescue_partners") return json(route, state.rescue.partners);
+    if (fn === "admin_rescue_redemptions") return json(route, args.p_status === "pending" ? state.rescue.pending : []);
+    if (fn === "admin_rescue_partner_save") {
+      if (state.rescue.partners.some((p) => p.code === args.p_code && p.partner_id !== args.p_id)) return json(route, { code: "P0001", message: "code_taken" }, 400);
+      const id = args.p_id ?? "00000000-0000-4000-8000-00000000a1a9";
+      const row = { partner_id: id, name: args.p_name, code: args.p_code, use_limit: args.p_use_limit, paused: args.p_paused, approved: 0, pending: 0, created_at: new Date().toISOString() };
+      state.rescue.partners = [...state.rescue.partners.filter((p) => p.partner_id !== id), row];
+      return json(route, id);
+    }
+    if (fn === "admin_rescue_review") {
+      state.rescue.pending = state.rescue.pending.filter((r) => r.redemption_id !== args.p_id);
+      return json(route, null);
+    }
     if (fn === "admin_challenges") {
       return json(route, state.challenges.map((c) => ({ challenge_id: c.challenge_id, kind: c.kind, title: c.title, region_slug: c.region_slug, region_name: c.region_name,
         state: c.state, starts_on: c.starts_on, ends_on: c.ends_on, member_count: c.member_count, entry_count: 0, updated_at: new Date().toISOString() })));
@@ -191,6 +207,17 @@ async function mockFlock(context: BrowserContext, userId: string, opts: { setupD
     const fn = new URL(route.request().url()).pathname.split("/").pop();
     const args = (route.request().postDataJSON() ?? {}) as Record<string, any>;
     if (fn === "flock_my_access") return json(route, [state.access]);
+    if (fn === "flock_rescue_status") return json(route, state.rescue.mine ? [state.rescue.mine] : []);
+    if (fn === "flock_rescue_check" || fn === "flock_rescue_redeem") {
+      state.calls.push({ fn, args });
+      if (args.p_code !== "BIRDSANDBEAKS") return json(route, [{ ok: false, partner_name: null, redemption_id: null, reason: "invalid" }]);
+      if (fn === "flock_rescue_redeem") {
+        state.rescue.mine = { redemption_id: "00000000-0000-4000-8000-00000000a1b1", status: "pending", partner_name: "Birds and Beaks", bird_name: args.p_bird_name,
+          species: args.p_species, adopted_on: args.p_adopted_on, created_at: new Date().toISOString(), starts_at: null, ends_at: null, seen: false, has_founding: false };
+      }
+      return json(route, [{ ok: true, partner_name: "Birds and Beaks", redemption_id: "00000000-0000-4000-8000-00000000a1b1", reason: null }]);
+    }
+    if (fn === "flock_rescue_seen") { state.calls.push({ fn, args }); if (state.rescue.mine) state.rescue.mine.seen = true; return json(route, null); }
     if (fn === "flock_agree") {
       state.calls.push({ fn, args });
       if (args.p_adult !== true) return json(route, { code: "22023", message: "adult_required" }, 400);
@@ -1739,7 +1766,7 @@ test("everyone else: every /flock URL sends them Home and no Community code load
       "/flock/library/00000000-0000-4000-8000-0000000090a1", "/flock/library?type=guides&subject=foraging&q=cups", "/admin/library", "/admin/library/new",
       "/admin/library/00000000-0000-4000-8000-0000000090a1",
       "/flock/votes/00000000-0000-4000-8000-0000000095a1", "/admin/votes", "/admin/votes/new", "/admin/votes/00000000-0000-4000-8000-0000000095a1",
-      "/flock/events/00000000-0000-4000-8000-0000000083a1"]) {
+      "/flock/events/00000000-0000-4000-8000-0000000083a1", "/flock/rescue", "/flock/rescue?code=BIRDSANDBEAKS", "/admin/rescues"]) {
       await page.goto(path);
       await expect(page, `${size} ${path}`).toHaveURL(/\/dashboard/);
     }
@@ -2103,7 +2130,7 @@ test.describe("reporting, the review queue and notifications (admin, phone)", ()
     await entry.getByRole("button", { name: /Review queue/ }).click();
     await expect(page).toHaveURL(/\/admin\/review$/);
     await expect(page.getByRole("heading", { level: 1, name: "Review queue" })).toBeVisible();
-    await expect(page.getByTestId("queue-chips").getByRole("button")).toHaveText(["All 3", "Do good 2", "Events 0", "Places 0", "Reports 1"]);
+    await expect(page.getByTestId("queue-chips").getByRole("button")).toHaveText(["All 3", "Do good 2", "Events 0", "Places 0", "Rescues 0", "Reports 1"]);
     const roof = page.locator("[data-subject='00000000-0000-4000-8000-0000000079d1']");
     await expect(roof).toContainText("Help Midwest Avian Rescue replace its aviary roof");
     // Each item names its author, space and date.
@@ -2115,7 +2142,7 @@ test.describe("reporting, the review queue and notifications (admin, phone)", ()
     expect(state.calls.find((c) => c.fn === "flock_review_post_spaces")!.args).toMatchObject({ p_post_ids: [POST] });
     await roof.locator("[data-act='approve']").click();
     expect(state.calls.find((c) => c.fn === "flock_review_post")!.args).toMatchObject({ p_post_id: "00000000-0000-4000-8000-0000000079d1", p_decision: "approve" });
-    await expect(page.getByTestId("queue-chips").getByRole("button")).toHaveText(["All 2", "Do good 1", "Events 0", "Places 0", "Reports 1"]);
+    await expect(page.getByTestId("queue-chips").getByRole("button")).toHaveText(["All 2", "Do good 1", "Events 0", "Places 0", "Rescues 0", "Reports 1"]);
 
     await page.locator("[data-subject='00000000-0000-4000-8000-0000000079d2'] [data-act='changes']").click();
     const send = page.getByRole("button", { name: "Send to the author" });
@@ -2326,7 +2353,7 @@ test.describe("chapter events (admin, phone)", () => {
       { ...item, item_type: "event", subject_type: "event", subject_id: "00000000-0000-4000-8000-0000000083b2", author_name: "Sam T.", title: "Picnic", body: null, event_mode: "in_person", event_place: "Fort Wayne park", event_starts_at: new Date(Date.now() + 9 * 86_400_000).toISOString() },
     );
     await page.goto("/admin/review");
-    await expect(page.getByTestId("queue-chips").getByRole("button")).toHaveText(["All 2", "Do good 0", "Events 2", "Places 0", "Reports 0"]);
+    await expect(page.getByTestId("queue-chips").getByRole("button")).toHaveText(["All 2", "Do good 0", "Events 2", "Places 0", "Rescues 0", "Reports 0"]);
     const photo = page.locator("[data-subject='00000000-0000-4000-8000-0000000083b1']");
     await expect(photo).toContainText("Event suggestion");
     await expect(photo.getByTestId("queue-event-when")).toContainText("Online");
@@ -2415,7 +2442,7 @@ test.describe("chapter members and leads (admin, phone)", () => {
     // The chapter's managers see it waiting and approve it in the review queue.
     state.placeManage = true;
     await page.goto("/admin/review?filter=places");
-    await expect(page.getByTestId("queue-chips").getByRole("button")).toHaveText(["All 1", "Do good 0", "Events 0", "Places 1", "Reports 0"]);
+    await expect(page.getByTestId("queue-chips").getByRole("button")).toHaveText(["All 1", "Do good 0", "Events 0", "Places 1", "Rescues 0", "Reports 0"]);
     const item = page.locator("[data-queue-item='place']");
     await expect(item.getByTestId("queue-item-label")).toHaveText("Place suggestion · Shop or service · Great Lakes chapter");
     await expect(item).toContainText("Feather & Perch");
@@ -3397,6 +3424,115 @@ test.describe("the library (admin, phone)", () => {
     await expect(page.getByTestId("editor-notice")).toHaveText("Published. Members can find it in the Library.");
     expect(lib.writes.at(-1)!.body).toMatchObject({ status: "published", external_url: "https://youtube.com/watch?v=abc" });
     await context.close();
+  });
+});
+
+test.describe("rescue partner codes (backlog 1.16)", () => {
+  const NOT_JOINED = { member_now: false, has_membership: false, agreed: false, is_admin: false, guidelines_version: "2026-12", opens_at: null, season_ends_at: "2027-07-06T04:00:00Z" };
+
+  test("an adopter: Have a rescue code? on the Join sheet, the code, the adoption form, then being confirmed", async ({ browser, baseURL }) => {
+    const { context, page, state } = await open(browser, baseURL!, { admin: false, membersOpen: true, setupDone: false });
+    state.access = { ...NOT_JOINED };
+    await page.goto("/flock/join");
+    const card = page.getByTestId("join-flock-sheet").getByTestId("join-rescue");
+    await expect(card).toContainText("Have a rescue code?");
+    await expect(card).toContainText("Adopted from a partner rescue? Your code gives you six months in the Flock.");
+    await card.click();
+    await expect(page).toHaveURL(/\/flock\/rescue$/);
+    await expect(page.locator("[data-flock-tab]")).toHaveCount(0);
+    await page.getByTestId("rescue-code").fill("nope-nope");
+    await page.getByTestId("rescue-code-submit").click();
+    await expect(page.getByRole("alert")).toHaveText("That code didn't work. Check it with your rescue and try again.");
+    await page.getByTestId("rescue-code").fill("birds and beaks");
+    await page.getByTestId("rescue-code-submit").click();
+    await expect(page.getByTestId("flock-rescue-details")).toBeVisible();
+    await expect(page.getByTestId("rescue-partner")).toHaveText("Birds and Beaks");
+    expect(state.calls.filter((c) => c.fn === "flock_rescue_check").map((c) => c.args.p_code)).toEqual(["NOPENOPE", "BIRDSANDBEAKS"]);
+    await page.getByTestId("rescue-send").click();
+    await expect(page.getByRole("alert")).toHaveText("Add your bird's name.");
+    await page.getByTestId("rescue-bird").fill("Sunny");
+    await page.getByTestId("rescue-species").fill("Sun conure");
+    await page.getByTestId("rescue-date").fill("2026-11-15");
+    await page.getByTestId("rescue-send").click();
+    await expect(page.getByTestId("rescue-pending")).toContainText("We're confirming Sunny's adoption with Birds and Beaks.");
+    expect(state.calls.find((c) => c.fn === "flock_rescue_redeem")!.args).toMatchObject({ p_code: "BIRDSANDBEAKS", p_bird_name: "Sunny", p_species: "Sun conure", p_adopted_on: "2026-11-15" });
+    // No prices anywhere.
+    expect(await page.locator("body").innerText()).not.toMatch(/\$\s?\d/);
+    // Back on the Join screen, the card says where it stands.
+    await page.goto("/flock/join");
+    await expect(page.getByTestId("join-flock-sheet").getByTestId("join-rescue")).toHaveAttribute("data-rescue-step", "pending");
+    await context.close();
+  });
+
+  test("approved: the welcome with its dates, then on to the Join screen", async ({ browser, baseURL }) => {
+    const { context, page, state } = await open(browser, baseURL!, { admin: false, membersOpen: true, setupDone: false });
+    state.access = { ...NOT_JOINED, has_membership: true };
+    state.rescue.mine = { redemption_id: "00000000-0000-4000-8000-00000000a1b1", status: "approved", partner_name: "Birds and Beaks", bird_name: "Sunny", species: "Sun conure",
+      adopted_on: "2026-11-15", created_at: "2026-11-16T12:00:00Z", starts_at: "2027-07-06T04:00:00Z", ends_at: "2028-01-06T05:00:00Z", seen: false, has_founding: false };
+    await page.goto("/flock/rescue");
+    const w = page.getByTestId("rescue-welcome");
+    await expect(w.getByRole("heading", { name: "Welcome to the Flock" })).toBeVisible();
+    await expect(w).toContainText("Birds and Beaks confirmed Sunny's adoption. You have six months in the Flock, free.");
+    await expect(page.getByTestId("rescue-dates")).toHaveText("Your six months: July 6, 2027 to January 6, 2028.");
+    await page.getByTestId("rescue-welcome-continue").click();
+    await expect(page).toHaveURL(/\/flock\/join/);
+    expect(state.calls.some((c) => c.fn === "flock_rescue_seen")).toBe(true);
+    await context.close();
+  });
+
+  test("a founder is told codes can't be combined", async ({ browser, baseURL }) => {
+    const { context, page, state } = await open(browser, baseURL!, { admin: false, membersOpen: true, setupDone: true });
+    state.access = { ...NOT_JOINED, member_now: true, has_membership: true };
+    state.rescue.mine = { redemption_id: null, status: null, partner_name: null, bird_name: null, species: null, adopted_on: null, created_at: null, starts_at: null, ends_at: null, seen: false, has_founding: true };
+    await page.goto("/flock/rescue");
+    await expect(page.getByTestId("rescue-founder")).toContainText("Rescue codes can't be combined with a founding spot");
+    await page.goto("/flock/join");
+    await expect(page.getByTestId("join-rescue")).toHaveCount(0);
+    await context.close();
+  });
+
+  test("admin: waiting adoptions, partners, add a partner; Rescues in the review queue", async ({ browser, baseURL }) => {
+    const { context, page, state } = await open(browser, baseURL!, { admin: true });
+    state.rescue.partners = [{ partner_id: "00000000-0000-4000-8000-00000000a1a1", name: "Birds and Beaks", code: "BIRDSANDBEAKS", use_limit: null, paused: false, approved: 4, pending: 1, created_at: "2026-11-01T12:00:00Z" }];
+    state.rescue.pending = [{ redemption_id: "00000000-0000-4000-8000-00000000a1b2", partner_id: "00000000-0000-4000-8000-00000000a1a1", partner_name: "Birds and Beaks",
+      bird_name: "Sunny", species: "Sun conure", adopted_on: `${new Date().getUTCFullYear()}-11-15`, account_name: "Sam Rivera", status: "pending",
+      created_at: new Date(Date.now() - 2 * 3_600_000).toISOString(), reviewed_at: null, has_founding: false }];
+    await page.goto("/admin/rescues");
+    const card = page.locator('[data-queue-item="rescue"]');
+    await expect(card).toContainText("Sunny · Sun conure");
+    await expect(card).toContainText("Birds and Beaks · adopted Nov 15");
+    await expect(card).toContainText("From Sam Rivera");
+    await expect(page.getByTestId("partner-line")).toHaveText("BIRDSANDBEAKS · 4 redeemed · 1 waiting");
+    await expect(page.getByText(/Sponsored seats/)).toHaveCount(0);
+    await page.getByTestId("rescue-add").click();
+    const sheet = page.getByTestId("partner-sheet");
+    await sheet.getByTestId("partner-name").fill("Feathered Friends");
+    await sheet.getByTestId("partner-code").fill("birdsandbeaks");
+    await sheet.getByRole("button", { name: "Add partner" }).click();
+    await expect(sheet.getByRole("alert")).toHaveText("Another partner already uses that code.");
+    await sheet.getByTestId("partner-code").fill("feathered-friends");
+    await sheet.getByTestId("partner-limit").fill("25");
+    await sheet.getByRole("button", { name: "Add partner" }).click();
+    await expect(sheet).toHaveCount(0);
+    expect(state.calls.filter((c) => c.fn === "admin_rescue_partner_save").at(-1)!.args).toMatchObject({ p_id: null, p_name: "Feathered Friends", p_code: "FEATHEREDFRIENDS", p_use_limit: 25, p_paused: false });
+    await expect(page.locator("[data-partner]")).toHaveCount(2);
+
+    await page.goto("/admin/review");
+    await expect(page.getByTestId("queue-chips").getByRole("button").filter({ hasText: "Rescues" })).toHaveText("Rescues 1");
+    await page.locator('[data-queue-item="rescue"] [data-act="approve"]').click();
+    await expect(page.locator('[data-queue-item="rescue"]')).toHaveCount(0);
+    expect(state.calls.find((c) => c.fn === "admin_rescue_review")!.args).toMatchObject({ p_id: "00000000-0000-4000-8000-00000000a1b2", p_decision: "approve" });
+    await context.close();
+  });
+
+  test("the redeem page: the rescue link only behind the Flock gate", async ({ browser, baseURL }) => {
+    for (const admin of [true, false]) {
+      const { context, page } = await open(browser, baseURL!, { admin });
+      await page.goto("/redeem");
+      await expect(page.getByLabel("Gift code")).toBeVisible();
+      await expect(page.getByTestId("redeem-rescue"), admin ? "admin" : "everyone else").toHaveCount(admin ? 1 : 0);
+      await context.close();
+    }
   });
 });
 

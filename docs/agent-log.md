@@ -20,6 +20,11 @@ Copy this, fill it in, and put it at the top of "Runs", above the latest entry.
 
 ## Runs
 
+### 2026-11-26 13:20 EST · 1.16 Rescue partner codes (started by Brittany in a session, not an hourly run)
+- **Built:** partner rescues each get one reusable code, with an optional limit. "Have a rescue code?" on the Join screen and the redeem page leads to the code, then the bird's name, species and adoption date, then "being confirmed". An admin approves or declines it on the new Rescue partners page or in the review queue; an approved adopter sees a welcome and gets six months in the Flock, free, from the free season's end (or right away once it has ended). One per account, never with a founding spot, never a payment, no seat counting. Admins add and edit partners and pause codes. All behind the Flock gate (admins only).
+- **PR:** [#565](https://github.com/the-kya-project/perch-perfect-plan/pull/565)
+- **Outcome:** Held, then merged on Brittany's OK in the session (Nov 26, 2026). Her answer: founding claims stay as they are.
+- **Problems:** one existing Flock browser test ("a free account: Community opens the Part of the Flock sheet…") fails on this Mac on a clean `main` too (Today's calls get recorded after joining). This change doesn't cause it; CI is the judge. Docker isn't installed here, so the SQL checks ran in CI ("Database checks").
 ### 2026-11-26 13:29 EST · 1.20f Co-carers read comments on their bird's journeys (Brittany asked, in a session)
 - **Built:** a bird's household (owner or co-carer) can now read the comments on that bird's journeys without being in the Flock, and still can't write, react to or report them. The database change lets them read the comment list, the counts and comment photos; the comment screen shows no box, reaction button, Reply or menu for them. Nobody outside the household gains anything.
 - **PR:** [#569](https://github.com/the-kya-project/perch-perfect-plan/pull/569)
