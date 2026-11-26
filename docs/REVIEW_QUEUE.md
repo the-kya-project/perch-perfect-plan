@@ -19,6 +19,66 @@ Format:
   - After: "<new wording>"
 ```
 
+### [#565](https://github.com/the-kya-project/perch-perfect-plan/pull/565) · 1.16 Rescue partner codes · **held, not merged**
+English only (Dutch comes after you approve the English). Everything is behind `flock_enabled()` (admins only). All new: there was no wording here before. Lines marked "mockup" are word for word from `SpecRescueCodes.dc.html`.
+- **Where:** the Join screen's "Join the Flock" sheet, under "Join the Flock free", and at the bottom of the Join step; the redeem page under "Redeem my gift"
+  - New: "Have a rescue code?" (mockup)
+  - New: "Adopted from a partner rescue? Your code gives you six months in the Flock." (mockup)
+- **Where:** the same card on the Join screen, once a code is sent
+  - New: "Your adoption is being confirmed" / "We'll send a welcome message once it's confirmed, usually within a day or two."
+  - New: "Your rescue adoption is confirmed" / "You have six months in the Flock, free."
+  - New: "We couldn't confirm your adoption" / "See what happened and try again."
+- **Where:** the code screen (`/flock/rescue`)
+  - New: "Back to Join the Flock" (header link)
+  - New: "Have a rescue code?" (title), "Rescue code" (field, mockup), placeholder "BIRDSANDBEAKS" (mockup), "Continue", "Checking…"
+  - New: "Enter the code your rescue gave you."
+  - New: "That code didn't work. Check it with your rescue and try again." (wrong, paused and full codes all get this)
+  - New: "This account has already used a rescue code."
+  - Reused: "That's a lot of tries in a short time. Please wait an hour, then try again." (the gift page's line)
+- **Where:** the adoption form (mockup screen 2)
+  - New: "Back" (header link), "Rescue code" (title) with the rescue's name under it (mockup)
+  - New: "Congratulations on your new bird. Tell us a little about the adoption so we can confirm it." (mockup)
+  - New: "Bird's name", "Species", "Adoption date" (mockup)
+  - New: "Send for confirmation" (mockup), "Sending…"
+  - New: "You'll get a welcome message once it's confirmed, usually within a day or two." (mockup)
+  - New: "Add your bird's name." / "Add your bird's species." / "Choose the adoption date. It can't be in the future."
+- **Where:** after sending
+  - New: "Your adoption is being confirmed" (title)
+  - New: "We're confirming {bird}'s adoption with {rescue}."
+  - New: "You'll get a welcome message here once it's confirmed, usually within a day or two."
+  - Reused: "Back to my birds"
+- **Where:** the welcome, once you approve it
+  - New: "Welcome to the Flock"
+  - New: "{rescue} confirmed {bird}'s adoption. You have six months in the Flock, free."
+  - New: "Your six months: {start} to {end}." (once the dates are set) or "Your six months start when the free season ends." (before opening day is set)
+  - New: "Continue" (goes on to the Join screen's chapter and guidelines)
+- **Where:** if you decline it
+  - New: "We couldn't confirm this adoption"
+  - New: "{rescue} couldn't confirm {bird}'s adoption. If you think that's a mistake, check with your rescue and try again, or email us at brittany@thekyaproject.com."
+  - New: "Try again", "Back to Join the Flock"
+- **Where:** a founder who opens the code screen
+  - New: "You already have a founding spot"
+  - New: "Rescue codes can't be combined with a founding spot, and your founding membership already includes the Flock."
+- **Where:** `/admin/rescues` (admins only; mockup screen 3 without "Sponsored seats")
+  - New: "Rescue partners" (title, mockup), "Admin · each adoption gives six months in the Flock, free"
+  - New: "Waiting for confirmation", "Partners" (mockup)
+  - New card: "Rescue adoption", "{bird} · {species}" (mockup), "{rescue} · adopted {date}" (mockup), "From {name}" (the adopter's name on their care account), "Approve" / "Decline" (mockup)
+  - New: "This account has a founding spot, so it can't use a rescue code. Decline it."
+  - New partner line: "{code} · {count} redeemed" (mockup) or "{count} of {limit} redeemed", plus "{count} waiting"; "Paused"; "Edit" (mockup)
+  - New: "Add a partner rescue" (mockup)
+  - New: "No partner rescues yet. Add one to give it a code for its adopters." / "We couldn't load the partners. Try again."
+- **Where:** the add/edit sheet on `/admin/rescues`
+  - New: "Add a partner rescue" / "Edit partner rescue"
+  - New: "Rescue name", "Code", "One code the rescue shares with every adopter. Letters and numbers only."
+  - New: "Limit on uses (optional)", "Leave blank for no limit. Adoptions waiting and approved both count."
+  - New: "Pause this code", "While it's paused, adopters can't use the code. Adoptions already sent can still be approved."
+  - New: "Add partner" / "Save changes" / "Saving…"
+  - New: "Add the rescue's name." / "Codes are 4 to 30 letters or numbers." / "Leave the limit blank, or use a whole number." / "Another partner already uses that code."
+- **Where:** `/admin/review`
+  - New chip: "Rescues {count}" (admins only)
+- **Where:** Flock settings, under "Review queue" (admins only)
+  - New row: "Rescue partners" / "Partner rescues and their codes"
+
 ### [#563](https://github.com/the-kya-project/perch-perfect-plan/pull/563) · 1.15a Kya's Crew on the payment screen · **approved by Brittany (Nov 26, 2026)**
 English only (Dutch waits for your read). All behind `BILLING_ENABLED` (off), web only. Prices come from Stripe; the amounts below are the ones in your mockup. Everything is from `CrewCardStep.dc.html` word for word unless marked "not in the mockup".
 - **Where:** the card step, above the tiles (only when the Crew prices are set)
@@ -1191,6 +1251,20 @@ No new strings: every line reuses existing wording, in new places (admins only).
 
 ## Decisions agents made
 
+### [#565](https://github.com/the-kya-project/perch-perfect-plan/pull/565) · 1.16 Rescue partner codes
+- **Decision:** One redemption per account counts waiting and approved ones. A declined one doesn't use it up: the adopter sees why and can try again (say, after a typo in the bird's name).
+- **Why:** the spec says "one redemption per adopter account"; a decline gives nothing, so it shouldn't lock someone out. Easy to make stricter: drop `'declined'`-is-free in `rescue_redemptions_one_per_account` and `rescue_find_code`.
+- **Decision:** "Can't be combined with a founding spot" is enforced from the rescue side only: someone holding a founding spot (not forfeited) can't use a code, and an approval is refused if they've claimed a spot while waiting. The founding claim itself wasn't changed, so an adopter who's already approved could still claim a founding spot. Asked in the PR.
+- **Why:** changing `claim_founding_spot()` would change a live, public flow; that's yours to decide.
+- **Decision:** The six months queue behind a gift that has already started, and gifts that haven't started queue behind the six months (gift rows already treat every non-gift grant as first). A rescue membership is plan `comp`, source `rescue`, never a trial and never billed (`entitlements_rescue_shape`).
+- **Why:** "overlaps never take time away", as for gifts. `private.place_grant` wasn't touched; rescue rows have their own `private.place_rescue_grant`, called first by `reschedule_pending_grants`.
+- **Decision:** The use limit counts adoptions waiting and approved. Wrong, paused and full codes all get the same message. Ten wrong codes an hour per account, then a pause, like gift codes.
+- **Decision:** The admin card adds a line the mockup doesn't have: "From {name}" (the adopter's name on their care account), so you can check the adoption with the rescue. No email address is shown.
+- **Decision:** The "welcome message" is in the app: the code screen and the Join screen's card switch to the welcome once you approve. No email or push.
+- **Why:** no automatic emails, and pushes are only for things that need action.
+- **Decision:** Approvals happen on both `/admin/rescues` (as in the mockup) and `/admin/review` → Rescues (as in the spec). Chapter leads who can review don't see Rescues; it's admins only. `/admin/rescues` is reached from Flock settings, under "Review queue".
+- **Decision:** No delete for a partner: pause it instead (adoptions point at it).
+
 ### [#566](https://github.com/the-kya-project/perch-perfect-plan/pull/566) · Badge art (final art for 1.13a, stored for 1.13b)
 - **Decision:** Your art replaces the whole round tile, not just the icon inside it. The lime circle and forest ring were dropped, since each design has its own frame. Earned badges show your color file; unearned ones show your gray file. Nothing is cropped, recolored or redrawn.
 - **Decision:** Journey finisher shows the design for the level reached (1, 3 or 10). An unearned Journey finisher shows the gray level-1 design. Your gray versions of levels 3 and 10 (and of Steady scale 12/52 and Daily check-in 30) are stored but nothing shows them yet.
@@ -1787,6 +1861,10 @@ Format:
 ### <PR link> · <item ID> <item title>
 - **Needs:** <the decision, approval or read, in one or two lines>
 ```
+
+### [#565](https://github.com/the-kya-project/perch-perfect-plan/pull/565) · 1.16 Rescue partner codes
+- **Needs:** your review and OK in the PR. It grants access (six months in the Flock) and adds a migration that applies to production on merge (new tables and functions; the `entitlements` source check gains `rescue`; `reschedule_pending_grants` gains a rescue loop). Behind `flock_enabled()`, so only admins see it.
+- **Also:** read the new wording (in "Copy that merged"); say whether a founding spot should also be refused to someone with an approved rescue adoption (the founding claim isn't changed); and whether `/admin/crew`'s seat parts should go. They aren't in the code: `/admin/crew` and `crew_seat_uses` were removed from #535 before it merged, so there's nothing to remove.
 
 ### [#566](https://github.com/the-kya-project/perch-perfect-plan/pull/566) · Badge art (final art for 1.13a, stored for 1.13b)
 - **Needs:** a look at the screenshots in the PR, then your OK in the PR to merge. It changes what admins see on the Badges screen, the celebrations and profiles (nobody else sees badges yet). Also say whether the pill-size notes in the PR are fine.

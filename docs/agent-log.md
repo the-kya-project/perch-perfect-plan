@@ -20,6 +20,12 @@ Copy this, fill it in, and put it at the top of "Runs", above the latest entry.
 
 ## Runs
 
+### 2026-11-26 13:20 EST · 1.16 Rescue partner codes (started by Brittany in a session, not an hourly run)
+- **Built:** partner rescues each get one reusable code, with an optional limit. "Have a rescue code?" on the Join screen and the redeem page leads to the code, then the bird's name, species and adoption date, then "being confirmed". An admin approves or declines it on the new Rescue partners page or in the review queue; an approved adopter sees a welcome and gets six months in the Flock, free, from the free season's end (or right away once it has ended). One per account, never with a founding spot, never a payment, no seat counting. Admins add and edit partners and pause codes. All behind the Flock gate (admins only).
+- **PR:** [#565](https://github.com/the-kya-project/perch-perfect-plan/pull/565)
+- **Outcome:** Held: Brittany asked for it to be held (it grants access and changes the database). She also needs to read the wording and answer two questions in the PR.
+- **Problems:** one existing Flock browser test ("a free account: Community opens the Part of the Flock sheet…") fails on this Mac on a clean `main` too (Today's calls get recorded after joining). This change doesn't cause it; CI is the judge. Docker isn't installed here, so the SQL checks ran in CI ("Database checks").
+
 ### 2026-11-26 13:05 EST · Badge art: final art in place of the stroke icons
 - **Built:** Brittany's final badge art now shows wherever Flock badges appear: the Badges screen (color when earned, her gray versions when not), the "Here's what you've already earned" and "Badge earned" cards on Today, and the small pills on member profiles. Journey finisher shows the design for the level reached. The care badges' art (1.13b) is stored in the app, ready for when 1.13b is built; 1.13b itself wasn't started. Badge names, rules, wording and who sees them are unchanged. Interactive session at Brittany's request, in a separate copy (`~/.kya-agent/work/badge-art`), with the lock held for the session.
 - **PR:** [#566](https://github.com/the-kya-project/perch-perfect-plan/pull/566); screenshots on the unmerged branch `badge-art-screenshots`
