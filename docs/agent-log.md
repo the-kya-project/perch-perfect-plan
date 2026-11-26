@@ -20,6 +20,12 @@ Copy this, fill it in, and put it at the top of "Runs", above the latest entry.
 
 ## Runs
 
+### 2026-11-26 13:29 EST · 1.20f Co-carers read comments on their bird's journeys (Brittany asked, in a session)
+- **Built:** a bird's household (owner or co-carer) can now read the comments on that bird's journeys without being in the Flock, and still can't write, react to or report them. The database change lets them read the comment list, the counts and comment photos; the comment screen shows no box, reaction button, Reply or menu for them. Nobody outside the household gains anything.
+- **PR:** [#569](https://github.com/the-kya-project/perch-perfect-plan/pull/569)
+- **Outcome:** see the PR.
+- **Problems:** none. No local Postgres, so the new SQL check runs only in CI. Free accounts can't reach journey screens in the app yet (noted in the review queue).
+
 ### 2026-11-25 09:42 EST · Housekeeping: #563 brought up to date with `main`
 - **Built:** nothing new. The only item in "Ready to build", 1.15a, already has its held PR (#563), so there was nothing else this run may build. #563 conflicted with `main` only in the three record files (after #562 merged), so this run merged `main` into its branch and kept both sides: 1.15a and 1.20e both stay in "Done" (and "Ready to build" is now empty), both runs' log entries, and both PRs' decisions in the review queue. No code changed.
 - **PR:** [#563](https://github.com/the-kya-project/perch-perfect-plan/pull/563) (pushed to its branch; still held)

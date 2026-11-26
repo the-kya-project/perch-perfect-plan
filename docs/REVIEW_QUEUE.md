@@ -1191,6 +1191,12 @@ No new strings: every line reuses existing wording, in new places (admins only).
 
 ## Decisions agents made
 
+### [#569](https://github.com/the-kya-project/perch-perfect-plan/pull/569) · 1.20f Co-carers read comments on their bird's journeys
+- **Decision:** "Household" means anyone with access to the bird (owner or co-carer), on journeys they may already view (`journey_viewable`, so only while journeys are on for them). A free account with no access to the bird gains nothing, and neither does a co-carer on someone else's bird.
+- **Decision:** They read comment photos too (the comment's own photo is part of the comment). Commenters' profile photos stay Flock-only, as the `flock-avatars` bucket rules are, so a free co-carer sees each commenter's initials instead. Changing that would mean changing the bucket's read policy, which I left alone.
+- **Decision:** Read-only on screen means no comment box, no reaction button, no Reply and no ··· menu or press-and-hold menu (so no Report or Block either). Reaction counts still show as plain text, as they already did for anyone who can't react.
+- **Noticed, not changed:** today a free account can't reach any journey screen in the app (every journey page is under `/flock`, which is admins only while the Flock is closed, and sends non-members to the join step once it opens). So this is ready for when free journeys get their own way in; until then only the database and the test cover it.
+
 ### [#563](https://github.com/the-kya-project/perch-perfect-plan/pull/563) · 1.15a Kya's Crew on the payment screen
 - **Brittany's decision (Nov 26, 2026):** the screens and wording are approved as written in "Copy that merged", including the lines marked "not in the mockup".
 - **Brittany's decision (Nov 26, 2026):** founders whose founding price is still open keep their current screen, with no Crew option, for now.
