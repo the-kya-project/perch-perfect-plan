@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Loader2, Star } from "lucide-react";
+import { ChevronRight, Gift, Loader2, Star } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { K, KyaHeading, KyaLink, KyaPrimaryButton, KyaSheet } from "@/components/kya";
 import { FlockSection, RegionSheet } from "@/components/flock/FlockPeople";
@@ -11,6 +11,7 @@ import { defaultDisplayName } from "@/lib/flockProfile";
 import { useCareName, useRegions } from "@/lib/flockData";
 import { FLOCK_ACCESS_QUERY, agreeAndJoin, joinErrorKind } from "@/lib/flockJoin";
 import { joinSource } from "@/lib/flockAnalytics";
+import { rescueStep, useMyRescue, type MyRescue } from "@/lib/flockRescue";
 
 // Join the Flock (payments plan build C). Reached from the care app's
 // Community button, the Flock layout (anyone who hasn't joined, or hasn't
@@ -23,6 +24,10 @@ import { joinSource } from "@/lib/flockAnalytics";
 // records the agreement and calls flock_join(). Founders, chapter leads and
 // members who already have a membership go through the same step and get
 // nothing new. Someone who joins before opening day sees when it opens.
+//
+// "Have a rescue code?" (backlog 1.16) sits under the sheet's button and at
+// the bottom of the step, and opens /flock/rescue. Once a code is sent, the
+// card says where it stands instead. Founders don't see it.
 type Search = { source?: string };
 
 export const Route = createFileRoute("/_authenticated/flock/join")({
@@ -38,6 +43,7 @@ function FlockJoin() {
   const { data: access, isLoading } = useQuery(FLOCK_ACCESS_QUERY);
   const { data: regions } = useRegions();
   const { data: care } = useCareName();
+  const { data: rescue } = useMyRescue();
 
   const [intro, setIntro] = useState(true);
   const [region, setRegion] = useState<string | null>(null);
@@ -146,6 +152,7 @@ function FlockJoin() {
         >
           {saving ? t("flock.join.saving", "Joining…") : t("flock.join.cta", "Join the Flock")}
         </button>
+        <RescueCard rescue={rescue} hidden={access.has_membership && !rescue?.status} />
       </main>
 
       {intro && (
@@ -167,6 +174,7 @@ function FlockJoin() {
               {t("flock.journeys.flockOnly.free", "Join the Flock early, while it's free for everyone.")}
             </p>
             <KyaPrimaryButton onClick={() => setIntro(false)}>{t("flock.join.sheetCta", "Join the Flock free")}</KyaPrimaryButton>
+            <RescueCard rescue={rescue} />
           </div>
         </KyaSheet>
       )}
@@ -174,6 +182,32 @@ function FlockJoin() {
         <RegionSheet regions={regions} value={region} onClose={() => setPicking(false)} onPick={(s) => { setRegion(s); setPicking(false); }} />
       )}
     </div>
+  );
+}
+
+/** "Have a rescue code?", or where a sent code stands. */
+function RescueCard({ rescue, hidden }: { rescue: MyRescue | null | undefined; hidden?: boolean }) {
+  const { t } = useTranslation();
+  const step = rescueStep(rescue);
+  if (hidden || step === "founder" || rescue === undefined) return null;
+  const title = step === "pending" ? t("flock.join.rescuePending", "Your adoption is being confirmed")
+    : step === "welcome" ? t("flock.join.rescueApproved", "Your rescue adoption is confirmed")
+    : step === "declined" ? t("flock.join.rescueDeclined", "We couldn't confirm your adoption")
+    : t("flock.join.rescueTitle", "Have a rescue code?");
+  const line = step === "pending" ? t("flock.join.rescuePendingLine", "We'll send a welcome message once it's confirmed, usually within a day or two.")
+    : step === "welcome" ? t("flock.join.rescueApprovedLine", "You have six months in the Flock, free.")
+    : step === "declined" ? t("flock.join.rescueDeclinedLine", "See what happened and try again.")
+    : t("flock.rescue.about", "Adopted from a partner rescue? Your code gives you six months in the Flock.");
+  return (
+    <Link to="/flock/rescue" data-testid="join-rescue" data-rescue-step={step}
+      className="flex min-h-[44px] items-center gap-3 rounded-[18px] px-4 py-3.5 no-underline" style={{ background: K.lime, color: K.forest }}>
+      <Gift className="size-5 shrink-0" aria-hidden="true" />
+      <span className="flex min-w-0 flex-1 flex-col gap-1">
+        <span className="text-[15.5px] font-[700] leading-[1.25]">{title}</span>
+        <span className="text-[13.5px] leading-[1.45]" style={{ color: K.ink }}>{line}</span>
+      </span>
+      <ChevronRight className="size-5 shrink-0" aria-hidden="true" />
+    </Link>
   );
 }
 

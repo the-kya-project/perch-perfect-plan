@@ -36,9 +36,15 @@ export const FLOCK_ACCESS_QUERY = {
   },
 };
 
-/** Paths a person who hasn't finished joining may open inside /flock. */
+/** Paths a person who hasn't finished joining may open inside /flock: the
+ *  join step, the guidelines and the rescue code form (backlog 1.16). */
 export function isJoinPath(pathname: string): boolean {
-  return pathname === "/flock/join" || pathname.startsWith("/flock/join/") || pathname === "/flock/guidelines";
+  return pathname === "/flock/join" || pathname.startsWith("/flock/join/") || pathname === "/flock/guidelines" || isRescuePath(pathname);
+}
+
+/** The rescue code form, which always renders without the member chrome. */
+export function isRescuePath(pathname: string): boolean {
+  return pathname === "/flock/rescue" || pathname.startsWith("/flock/rescue/");
 }
 
 /** Where the layout sends someone: null to let them in. Admins are never

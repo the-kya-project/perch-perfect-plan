@@ -43,7 +43,11 @@ import {
 import { challengeDay, challengeEyebrow, challengeProgress, challengeSummary } from "@/components/flock/ChallengeParts";
 import { formatFlockDay, freeSeasonEndLabel, NO_FLOCK_DATES } from "@/lib/flockDates";
 import { FLOCK_CONTACT_EMAIL, FLOCK_GUIDELINES_VERSION, contactLine, guidelineSections, guidelinesClosing, guidelinesIntro } from "@/lib/flockGuidelines";
-import { isJoinPath, joinErrorKind, joinRedirect, type FlockAccess } from "@/lib/flockJoin";
+import { isJoinPath, isRescuePath, joinErrorKind, joinRedirect, type FlockAccess } from "@/lib/flockJoin";
+import {
+  RESCUE_LIMITS, RESCUE_MONTHS, adoptedLabel, adoptionProblem, cleanRescueCode, flockTodayIso as rescueToday, parseUseLimit, rescueCodeLooksValid,
+  rescueErrorKind, rescueStep, type MyRescue,
+} from "@/lib/flockRescue";
 import { QUEUE_FILTERS, queueItemPlace, type QueueItem } from "@/lib/flockModeration";
 import { PLACE_KINDS, PLACE_LIMITS, groupPlaces, telHref, updatedDay, websiteHref, type Place } from "@/lib/flockPlaces";
 import { VOTE_GUARANTEED_PCT, VOTE_LIMITS, choiceColor, cleanVote, emptyVoteDraft, isDonationVote, openProblems, rankedChoices, toLocalInput, topNames, voteDay, votesFor, type Vote } from "@/lib/flockVotes";
@@ -1208,6 +1212,82 @@ check("challenges: the database's refusals are recognised", () => {
 check("challenges: the migration's food rule matches the app's", () => {
   const sql = readFileSync("supabase/migrations/20261124033000_flock_challenges.sql", "utf8");
   assert.ok(sql.includes("t.slug <> 'diet-conversion' and t.category <> 'food'"));
+});
+
+
+// ---- Rescue partner codes (backlog 1.16) ------------------------------------------------
+
+check("rescue codes: cleaned like the database (capitals, letters and digits)", () => {
+  assert.equal(cleanRescueCode("birds and-beaks!"), "BIRDSANDBEAKS");
+  assert.ok(rescueCodeLooksValid("Birds and Beaks"));
+  assert.ok(!rescueCodeLooksValid("ab-c"), "under four letters");
+  assert.ok(!rescueCodeLooksValid("x".repeat(31)), "over thirty");
+  const sql = readFileSync("supabase/migrations/20261126130000_flock_rescue_codes.sql", "utf8");
+  assert.ok(sql.includes("regexp_replace(upper(coalesce(p_code, '')), '[^A-Z0-9]', '', 'g')"), "the database cleans codes the same way");
+  assert.ok(sql.includes(`'^[A-Z0-9]{${RESCUE_LIMITS.codeMin},${RESCUE_LIMITS.codeMax}}$'`), "the same length limits");
+  assert.ok(sql.includes(`select ${RESCUE_MONTHS} $$`), "six months, in both places");
+  assert.ok(sql.includes(`length(btrim(bird_name)) between 1 and ${RESCUE_LIMITS.birdName}`));
+  assert.ok(sql.includes(`length(btrim(species)) between 1 and ${RESCUE_LIMITS.species}`));
+  assert.ok(sql.includes(`length(btrim(name)) between 1 and ${RESCUE_LIMITS.partnerName}`));
+});
+
+check("rescue codes: never a payment, never seats", () => {
+  const sql = readFileSync("supabase/migrations/20261126130000_flock_rescue_codes.sql", "utf8");
+  assert.ok(/source <> 'rescue' or \(\s*plan = 'comp'/.test(sql), "a rescue membership is a free comp");
+  assert.ok(sql.includes("free_until is null"), "with no billing start");
+  assert.doesNotMatch(sql, /crew_seat|sponsor(ed|ship)_?seat|insert into public\.crew/i, "no seat counting");
+  for (const f of ["src/routes/_authenticated/flock.rescue.tsx", "src/routes/_authenticated/admin.rescues.tsx", "src/components/flock/RescueParts.tsx"]) {
+    // What the screen says, not the comments explaining it.
+    const src = readFileSync(f, "utf8").split("\n").filter((l) => !/^\s*(\/\/|\/\*|\*)/.test(l)).join("\n");
+    assert.doesNotMatch(src, /\$\s?\d|[Ss]ponsored seats|[Ss]eats/, `${f}: no prices or seats`);
+  }
+});
+
+check("rescue codes: the adoption form's checks", () => {
+  const ok = { birdName: "Sunny", species: "Sun conure", adoptedOn: "2026-11-15" };
+  assert.equal(adoptionProblem(ok, "2026-11-26"), null);
+  assert.equal(adoptionProblem({ ...ok, birdName: "  " }, "2026-11-26"), "bird_name");
+  assert.equal(adoptionProblem({ ...ok, species: "" }, "2026-11-26"), "species");
+  assert.equal(adoptionProblem({ ...ok, adoptedOn: "2026-11-27" }, "2026-11-26"), "adopted_on", "not in the future");
+  assert.equal(adoptionProblem({ ...ok, adoptedOn: "" }, "2026-11-26"), "adopted_on");
+  assert.equal(adoptionProblem(ok, "2026-11-15"), null, "today is fine");
+  assert.equal(rescueToday(new Date("2026-11-27T03:00:00Z")), "2026-11-26", "today is Eastern time");
+});
+
+check("rescue codes: which screen an adopter sees", () => {
+  const base: MyRescue = { redemption_id: "r", status: null, partner_name: "Birds and Beaks", bird_name: "Sunny", species: "Sun conure",
+    adopted_on: "2026-11-15", created_at: null, starts_at: null, ends_at: null, seen: false, has_founding: false };
+  assert.equal(rescueStep(null), "code");
+  assert.equal(rescueStep({ ...base, redemption_id: null }), "code");
+  assert.equal(rescueStep({ ...base, status: "pending" }), "pending");
+  assert.equal(rescueStep({ ...base, status: "approved" }), "welcome");
+  assert.equal(rescueStep({ ...base, status: "declined" }), "declined");
+  assert.equal(rescueStep({ ...base, status: "declined", seen: true }), "code", "after seeing a decline, they can try again");
+  assert.equal(rescueStep({ ...base, redemption_id: null, has_founding: true }), "founder");
+});
+
+check("rescue codes: the form is open before joining, without the member chrome", () => {
+  assert.ok(isJoinPath("/flock/rescue") && isRescuePath("/flock/rescue"));
+  const base: FlockAccess = { member_now: false, has_membership: false, agreed: false, is_admin: false, guidelines_version: FLOCK_GUIDELINES_VERSION, opens_at: null, season_ends_at: null };
+  assert.equal(joinRedirect(base, "/flock/rescue"), null, "not joined yet: may open the form");
+  assert.equal(joinRedirect(null, "/flock/rescue"), "/dashboard");
+  assert.ok(QUEUE_FILTERS.includes("rescues"), "the review queue has a Rescues filter");
+});
+
+check("rescue codes: admin helpers", () => {
+  assert.equal(parseUseLimit(""), null);
+  assert.equal(parseUseLimit(" 25 "), 25);
+  assert.equal(parseUseLimit("0"), "bad");
+  assert.equal(parseUseLimit("2.5"), "bad");
+  assert.equal(rescueErrorKind({ message: "code_taken" }), "code_taken");
+  assert.equal(rescueErrorKind({ message: "founder" }), "founder");
+  assert.equal(adoptedLabel("2026-11-15", "en-US").startsWith("Nov 15"), true);
+});
+
+check("rescue codes: the redeem page shows the link only behind the Flock gate", () => {
+  const src = readFileSync("src/routes/redeem.tsx", "utf8");
+  assert.ok(src.includes("flockOpen === true &&"), "the link waits for flock_enabled()");
+  assert.doesNotMatch(src, /from "@\/lib\/flockRescue"/, "shared code doesn't import Flock code");
 });
 
 console.log(`\n${passed} passed${process.exitCode ? ", some FAILED" : ""}`);

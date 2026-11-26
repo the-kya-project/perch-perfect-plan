@@ -5,7 +5,7 @@ import { useMySetup } from "@/lib/flockData";
 import { isFlockOnboardingPath } from "@/lib/flockNav";
 import { FlockShell } from "@/components/FlockShell";
 import { FLOCK_ENABLED_QUERY, rememberMode } from "@/lib/flock";
-import { FLOCK_ACCESS_QUERY, isJoinPath, joinRedirect } from "@/lib/flockJoin";
+import { FLOCK_ACCESS_QUERY, isJoinPath, isRescuePath, joinRedirect } from "@/lib/flockJoin";
 
 // The Flock: a separate mode of the app, admins only until launch.
 //
@@ -38,10 +38,10 @@ export const Route = createFileRoute("/_authenticated/flock")({
 function FlockLayout() {
   const pathname = useLocation({ select: (l) => l.pathname });
   const { data: access } = useQuery(FLOCK_ACCESS_QUERY);
-  // The join step, and the guidelines before you're a member, render without
-  // the member chrome (which reads member-only data).
+  // The join step and the rescue code form, and the guidelines before you're
+  // a member, render without the member chrome (which reads member-only data).
   const inside = !!access && (access.is_admin || (access.agreed && access.member_now));
-  if (pathname.startsWith("/flock/join") || (isJoinPath(pathname) && !inside)) return <JoinFrame />;
+  if (pathname.startsWith("/flock/join") || isRescuePath(pathname) || (isJoinPath(pathname) && !inside)) return <JoinFrame />;
   return <MemberFlock pathname={pathname} />;
 }
 

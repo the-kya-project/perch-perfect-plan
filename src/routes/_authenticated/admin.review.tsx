@@ -16,10 +16,14 @@ import { pickOptional } from "@/lib/flockNav";
 import { longWhen } from "@/lib/flockEvents";
 import { reviewPlace, usePlaceSuggestions, type PlaceSuggestion } from "@/lib/flockPlaces";
 import { placeKindLabel } from "@/components/flock/PlaceParts";
+import { RescueAdoptionCard } from "@/components/flock/RescueParts";
+import { useIsAdmin } from "@/lib/flockData";
+import { reviewRescue, useRescueRedemptions } from "@/lib/flockRescue";
 
 // The review queue (Batch 8, screen 4): Do good posts waiting to go live,
 // event and place suggestions (place suggestions come from their own
-// function, flock_place_suggestions, backlog 1.6), and reported content. Behind the Flock gate like every Community screen (anyone
+// function, flock_place_suggestions, backlog 1.6), rescue adoptions waiting
+// for confirmation (admins only, admin_rescue_redemptions, backlog 1.16), and reported content. Behind the Flock gate like every Community screen (anyone
 // the gate turns away is sent Home before anything here loads), then
 // flock_can_review(): admins today; chapter leads later through
 // flock_reviewers, which the database already honours.
@@ -63,8 +67,10 @@ function ReviewQueue() {
   const current: QueueFilter = filter ?? "all";
   const { data: canReview, isLoading: checking } = useCanReview();
   const { data: counts } = useReviewCounts(canReview === true);
-  const { data: items, isLoading } = useReviewQueue(current, canReview === true && current !== "places");
+  const { data: items, isLoading } = useReviewQueue(current, canReview === true && current !== "places" && current !== "rescues");
   const { data: placeItems } = usePlaceSuggestions(canReview === true);
+  const { data: isAdmin } = useIsAdmin();
+  const { data: rescueItems } = useRescueRedemptions("pending", canReview === true && isAdmin === true);
   const { data: spaces } = useReviewPostSpaces(items, canReview === true);
   const invalidate = useInvalidateModeration();
   const [decision, setDecision] = useState<Decision | null>(null);
@@ -97,9 +103,11 @@ function ReviewQueue() {
   const reports = counts?.reports ?? 0;
   const events = counts?.events ?? 0;
   const places = placeItems?.length ?? 0;
-  const total = good + reports + events + places;
+  const rescues = rescueItems?.length ?? 0;
+  const total = good + reports + events + places + rescues;
   const shownPlaces = current === "all" || current === "places" ? placeItems ?? [] : [];
-  const shownItems = current === "places" ? [] : items ?? [];
+  const shownRescues = current === "all" || current === "rescues" ? rescueItems ?? [] : [];
+  const shownItems = current === "places" || current === "rescues" ? [] : items ?? [];
   const act = async (key: string, fn: () => Promise<void>) => {
     setBusy(key); setError(null);
     try { await fn(); await invalidate(); setDecision(null); }
@@ -123,6 +131,7 @@ function ReviewQueue() {
               { value: "good" as const, label: t("flock.review.good", "Do good {{count}}", { count: good }) },
               { value: "events" as const, label: t("flock.review.events", "Events {{count}}", { count: events }) },
               { value: "places" as const, label: t("flock.review.places", "Places {{count}}", { count: places }) },
+              ...(isAdmin ? [{ value: "rescues" as const, label: t("flock.review.rescues", "Rescues {{count}}", { count: rescues }) }] : []),
               { value: "reports" as const, label: t("flock.review.reports", "Reports {{count}}", { count: reports }) },
             ]} />
           {error && <p role="alert" className="m-0 text-[15px]" style={{ color: K.red }}>{error}</p>}
@@ -131,7 +140,12 @@ function ReviewQueue() {
               onApprove={() => void act(`place:${p.place_id}`, () => reviewPlace(p.place_id, "approve"))}
               onDecline={() => void act(`place:${p.place_id}`, () => reviewPlace(p.place_id, "decline"))} />
           ))}
-          {isLoading && current !== "places" ? null : shownItems.length === 0 ? (shownPlaces.length > 0 ? null : (
+          {shownRescues.map((r) => (
+            <RescueAdoptionCard key={r.redemption_id} r={r} busy={!!busy}
+              onApprove={() => void act(`rescue:${r.redemption_id}`, () => reviewRescue(r.redemption_id, "approve"))}
+              onDecline={() => void act(`rescue:${r.redemption_id}`, () => reviewRescue(r.redemption_id, "decline"))} />
+          ))}
+          {isLoading && current !== "places" && current !== "rescues" ? null : shownItems.length === 0 ? (shownPlaces.length + shownRescues.length > 0 ? null : (
             <p className="m-0 rounded-[18px] bg-white p-5 text-center text-[15px]" style={{ color: K.quiet }} data-testid="queue-empty">
               {t("flock.review.empty", "Nothing waiting. Nice.")}
             </p>

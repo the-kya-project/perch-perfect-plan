@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { Award, Bell, BookOpen, ClipboardCheck, CreditCard, ShieldCheck, Star, UserX, Users } from "lucide-react";
+import { Award, Bell, BookOpen, ClipboardCheck, CreditCard, Gift, ShieldCheck, Star, UserX, Users } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { K, KyaCard, KyaHeading, KyaIconTile, KyaRow } from "@/components/kya";
 import { FlockAvatar } from "@/components/flock/FlockPeople";
@@ -8,6 +8,7 @@ import { membershipSummary } from "@/lib/flockProfile";
 import { useAvatarUrls, useIsAdmin, useMyEntitlements, useMyProfile, useMySetup, useRegions } from "@/lib/flockData";
 import { useCanReview, useReviewCounts } from "@/lib/flockModeration";
 import { usePlaceSuggestions } from "@/lib/flockPlaces";
+import { useRescueRedemptions } from "@/lib/flockRescue";
 import { FLOCK_BADGES, earnedCount, useMyBadges } from "@/lib/flockBadges";
 
 // You: your Community profile and settings, from the header avatar.
@@ -27,8 +28,9 @@ function FlockYou() {
   const { data: canReview } = useCanReview();
   const { data: counts } = useReviewCounts(canReview === true);
   const { data: placeSuggestions } = usePlaceSuggestions(canReview === true);
+  const { data: rescues } = useRescueRedemptions("pending", canReview === true && isAdmin === true);
   const { data: badges } = useMyBadges();
-  const waiting = (counts?.good ?? 0) + (counts?.reports ?? 0) + (counts?.events ?? 0) + (placeSuggestions?.length ?? 0);
+  const waiting = (counts?.good ?? 0) + (counts?.reports ?? 0) + (counts?.events ?? 0) + (placeSuggestions?.length ?? 0) + (rescues?.length ?? 0);
   const region = regions?.find((r) => r.slug === me?.region_slug);
   const founder = !!setup?.founding_spot;
   const membership = membershipSummary(ents ?? [], !!isAdmin);
@@ -75,8 +77,18 @@ function FlockYou() {
                 title={t("flock.review.title", "Review queue")}
                 detail={t("flock.review.line", "Admin · {{count}} waiting", { count: waiting })}
                 onClick={() => void navigate({ to: "/admin/review" })}
-                last
+                last={!isAdmin}
               />
+              {/* Admins only (backlog 1.16). */}
+              {isAdmin && (
+                <KyaRow
+                  leading={<KyaIconTile tone="mist"><Gift className="size-5" /></KyaIconTile>}
+                  title={t("flock.rescueAdmin.title", "Rescue partners")}
+                  detail={t("flock.rescueAdmin.rowLine", "Partner rescues and their codes")}
+                  onClick={() => void navigate({ to: "/admin/rescues" })}
+                  last
+                />
+              )}
             </KyaCard>
           </div>
         )}

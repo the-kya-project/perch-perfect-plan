@@ -1,13 +1,14 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { z } from "zod";
-import { Loader2 } from "lucide-react";
+import { ChevronRight, Gift, Loader2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import i18next from "i18next";
 import { supabase } from "@/integrations/supabase/client";
 import { getReadySession } from "@/lib/authReady";
 import { track } from "@/lib/analytics";
+import { FLOCK_ENABLED_QUERY } from "@/lib/flock";
 import { isGiftPlan, type GiftPlan } from "@/lib/gifts";
 import { freeSeasonEndLabel } from "@/lib/flockDates";
 import { useFlockPublicDates } from "@/lib/useFlockPublicDates";
@@ -19,6 +20,10 @@ import { FrontDoorBody, FrontDoorHeader, FrontDoorPage, LegalLinks } from "@/com
 // visitor is sent to sign up (or in) and brought straight back, code intact.
 // redeem_gift() does the work and the rate limiting; every bad code gets the
 // same answer so codes can't be probed.
+//
+// "Have a rescue code?" (backlog 1.16) shows under the form only when the
+// Flock gate (flock_enabled(), admins only until the members switch is on)
+// says yes for the signed-in account; it links to /flock/rescue.
 const search = z.object({ code: z.string().max(40).optional().catch(undefined) });
 
 export const Route = createFileRoute("/redeem")({
@@ -52,6 +57,9 @@ function RedeemPage() {
       return s ? { userId: s.user.id } : null;
     },
   });
+
+  // The Flock gate, for the rescue code link. Signed-in only.
+  const { data: flockOpen } = useQuery({ ...FLOCK_ENABLED_QUERY, enabled: !!session });
 
   useEffect(() => { if (redeemed) doneRef.current?.focus(); }, [redeemed]);
 
@@ -162,6 +170,19 @@ function RedeemPage() {
             >
               {submitting ? t("redeem.redeeming", "Redeeming…") : t("redeem.submit", "Redeem my gift")}
             </button>
+            {flockOpen === true && (
+              <Link to="/flock/rescue" data-testid="redeem-rescue"
+                className="flex min-h-[44px] items-center gap-3 rounded-[18px] px-4 py-3.5 no-underline" style={{ background: K.lime, color: K.forest }}>
+                <Gift className="size-5 shrink-0" aria-hidden="true" />
+                <span className="flex min-w-0 flex-1 flex-col gap-1">
+                  <span className="text-[15.5px] font-[700] leading-[1.25]">{t("flock.join.rescueTitle", "Have a rescue code?")}</span>
+                  <span className="text-[13.5px] leading-[1.45]" style={{ color: K.ink }}>
+                    {t("flock.rescue.about", "Adopted from a partner rescue? Your code gives you six months in the Flock.")}
+                  </span>
+                </span>
+                <ChevronRight className="size-5 shrink-0" aria-hidden="true" />
+              </Link>
+            )}
           </form>
         )}
         <div className="mt-auto pt-2"><LegalLinks /></div>
