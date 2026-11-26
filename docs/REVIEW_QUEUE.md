@@ -1786,6 +1786,9 @@ Format:
 - **Needs:** <the decision, approval or read, in one or two lines>
 ```
 
+### [#567](https://github.com/the-kya-project/perch-perfect-plan/pull/567) · 1.20f Co-carers read comments on their bird's journeys (two PRs for one item)
+- **Needs:** pick #567 or [#569](https://github.com/the-kya-project/perch-perfect-plan/pull/569). Both build 1.20f and rewrite the same three functions (`flock_comments_for`, `flock_comment_counts`, `flock_media_refs`), so only one should merge: whichever merges second would replace the first one's definitions. #569 was opened 18 minutes after #567's "In progress" draft, by another session. The main differences: #569 also requires `journey_viewable` (so the household path works only while journeys are on for that person), while #567 counts anyone with access to the bird. #567 also shows a read-only "N comments" link on the clip viewer, which is the only way into a journey's comments from a journey page. Close the one you don't want and say so in the other.
+
 ### Reminder · the hourly runs' GitHub token expires Feb 20, 2027
 - **Needs:** a new token before **Feb 20, 2027**. That's 90 days from Nov 22, 2026; GitHub → Settings → Developer settings → Fine-grained tokens shows the exact date. When it expires, runs can still build and test but can't push or open PRs, and each run's note in `~/.kya-agent/job.log` says so.
 - **To replace it:** make a new fine-grained token for `the-kya-project/perch-perfect-plan` only, with the same permissions as the old one (Contents and Pull requests: read and write; Actions, Commit statuses and Checks: read). Then run the save command again in Terminal (it asks you to paste the token and doesn't show it). It overwrites `~/.config/kya-agent/github-token`, readable only by you. Delete the old token on GitHub after that. Clear this item and add a new one with the new date.
