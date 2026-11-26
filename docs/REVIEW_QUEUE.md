@@ -1788,9 +1788,6 @@ Format:
 - **Needs:** <the decision, approval or read, in one or two lines>
 ```
 
-### [#566](https://github.com/the-kya-project/perch-perfect-plan/pull/566) · Badge art (final art for 1.13a, stored for 1.13b)
-- **Needs:** a look at the screenshots in the PR, then your OK in the PR to merge. It changes what admins see on the Badges screen, the celebrations and profiles (nobody else sees badges yet). Also say whether the pill-size notes in the PR are fine.
-
 ### Reminder · the hourly runs' GitHub token expires Feb 20, 2027
 - **Needs:** a new token before **Feb 20, 2027**. That's 90 days from Nov 22, 2026; GitHub → Settings → Developer settings → Fine-grained tokens shows the exact date. When it expires, runs can still build and test but can't push or open PRs, and each run's note in `~/.kya-agent/job.log` says so.
 - **To replace it:** make a new fine-grained token for `the-kya-project/perch-perfect-plan` only, with the same permissions as the old one (Contents and Pull requests: read and write; Actions, Commit statuses and Checks: read). Then run the save command again in Terminal (it asks you to paste the token and doesn't show it). It overwrites `~/.config/kya-agent/github-token`, readable only by you. Delete the old token on GitHub after that. Clear this item and add a new one with the new date.
