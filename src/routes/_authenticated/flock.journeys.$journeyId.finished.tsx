@@ -16,7 +16,7 @@ export const Route = createFileRoute("/_authenticated/flock/journeys/$journeyId/
 });
 
 function Finished() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const invalidate = useInvalidateJourneys();
   const tipId = useId();
@@ -65,7 +65,7 @@ function Finished() {
         </h1>
         {!diet && (
           <p className="m-0 text-[15px] leading-[1.45]" style={{ color: K.ink }}>
-            {t("flock.journeys.finished.line", "{{skill}} is now on {{name}} skill list.", { skill, name: possessive(bird.name) })}
+            {t("flock.journeys.finished.line", "{{skill}} is now on {{name}} skill list.", { skill, name: possessive(bird.name, i18n.language) })}
           </p>
         )}
         {askTip && (

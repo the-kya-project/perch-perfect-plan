@@ -44,6 +44,18 @@ English only; behind the Flock gate (admins only). Dutch for these waits for CR1
   - After: "…Flock talk is for questions, setups, and what you're working on.…" (only the space's name changed; the guidelines version wasn't bumped, see "Decisions agents made")
 - **Where:** the Spaces sheet's "Community guidelines" row (from #584): still in the code, but nothing opens the sheet now, so the row isn't shown until CR2's menu row replaces it.
 
+### [#586](https://github.com/the-kya-project/perch-perfect-plan/pull/586) · Dutch wording gaps from #582 · **merged on Brittany's OK (Nov 28, 2026)**
+English is unchanged everywhere. New Dutch:
+- **Where:** a bird's name in journey and notification lines ("Started from Max' journey")
+  - Before: always the English form ("Max's")
+  - After: Dutch rules in Dutch: "Kiwi's", "Mango's", "Sunny's"; "Max'", "Iris'"; "Pieters", "Charlies"
+- **Where:** `/admin/library`, "Add … before publishing" (admins only)
+  - Before: the missing items were always English ("a title, at least one topic")
+  - After: "een titel", "een korte samenvatting", "minstens één onderwerp", "de weblink (video's en links hebben er een nodig)"
+- **Where:** Community notifications, when several people cheer
+  - Before: "3 mensen moedigde … aan" (singular verb)
+  - After: "3 mensen moedigden … aan"
+
 ### [#584](https://github.com/the-kya-project/perch-perfect-plan/pull/584) · Community guidelines walk-through and guidelines page · **merged on Brittany's OK (Nov 28, 2026)**
 All new member-facing wording, word for word from the approved mockups and the prompt (source: `src/flock/guidelines/content.ts`). English only so far: Dutch shows the English until the next translation pass.
 - **Where:** walk-through screen 1 (`/flock/agree`)
@@ -1552,6 +1564,10 @@ No new strings: every line reuses existing wording, in new places (admins only).
 - **Decision:** In the Duo and wide-window column, the center item is a 52px gold circle inside a tab-sized slot with no label, so the column's fit rules (`useTabFit`, now counting five items) work unchanged.
 - **Decision:** #584 merged while this run was working, so the branch took in `main` and the guidelines line now says "Flock talk", as #584's own code comment expected. The guidelines version (`current_guidelines_version()` = 1) wasn't bumped: only the space's name changed, the Flock isn't open, and bumping needs a migration that would ask everyone to agree again. **Brittany, say if you'd rather bump it.**
 - **Decision:** #584 put the guidelines link at the top of the Spaces sheet "until CR2's drawer". CR1 removes the Spaces button, so until CR2 lands the guidelines page has no link from the Feed's header. It still opens from the walk-through ("Read the full guidelines"), the join step ("Read the community guidelines") and by URL, and only admins can reach the Flock today. CR2 is next in the build order and puts the row at the top of the menu. The e2e test that opened the guidelines from the Spaces sheet now opens the page directly.
+
+### [#586](https://github.com/the-kya-project/perch-perfect-plan/pull/586) · Dutch wording gaps from #582
+- **Decision:** No change for `dashboard.yourBirds` / `dashboard.yourFlock` (both "Je vogels vandaag" in Dutch). They're alternatives for the same title on Home (with or without a household), never shown together, so reading the same is fine.
+- **Decision:** The Dutch possessive rule lives in `possessive(name, lang)` in `src/lib/journeys.ts`, with tests in `npm run test:flock-shell`.
 
 ### [#581](https://github.com/the-kya-project/perch-perfect-plan/pull/581) · D2.2 Weather cards
 - **Decision:** The ZIP lives in its own table, `home_postcodes` (one row per account, own row only), not as columns on `profiles`, so no existing policy that lets others read a profile can ever reach it. The weather card's "Got it" is a column on that row (`weather_dismissed_on`), not the seasonal card's `today_card_dismissals` row, which holds one card per account: sharing it would have brought back a seasonal card you'd already hidden.

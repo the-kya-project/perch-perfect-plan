@@ -188,7 +188,7 @@ function ShareCard() {
               : failed && <p role="alert" className="m-0 p-4 text-[14px] text-white">{t("flock.journeys.shareCard.failed", "We couldn't make the card. Try again in a moment.")}</p>}
           </div>
           <KyaCard>
-            {toggle(t("flock.journeys.shareCard.showBird", "Show {{name}} name", { name: possessive(birdName) }), showBird, setShowBird, "card-show-bird")}
+            {toggle(t("flock.journeys.shareCard.showBird", "Show {{name}} name", { name: possessive(birdName, i18n.language) }), showBird, setShowBird, "card-show-bird")}
             {profile?.display_name && (
               <div style={{ borderTop: `1px solid ${K.line}` }}>{toggle(t("flock.journeys.shareCard.addMe", "Add my name"), showMe, setShowMe, "card-add-me")}</div>
             )}

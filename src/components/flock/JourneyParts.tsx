@@ -238,11 +238,11 @@ export function MemberSuppliedNote() {
 
 /** "Started from [bird]'s journey", linking to it while it's visible. */
 export function StartedFrom({ journeyId, birdName }: { journeyId: string; birdName: string }) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   return (
     <Link to="/flock/journeys/$journeyId" params={{ journeyId }} data-testid="started-from"
       className="self-start text-[14px] font-[700] underline underline-offset-4" style={{ color: K.moss }}>
-      {t("flock.journeys.member.startedFrom", "Started from {{name}} journey", { name: possessive(birdName) })}
+      {t("flock.journeys.member.startedFrom", "Started from {{name}} journey", { name: possessive(birdName, i18n.language) })}
     </Link>
   );
 }

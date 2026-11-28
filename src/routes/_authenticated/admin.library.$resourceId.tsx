@@ -15,6 +15,7 @@ import {
 } from "@/lib/flockLibrary";
 import { LIBRARY_RESOURCE_TYPES, LIBRARY_SUBJECTS } from "@/lib/flockNav";
 import { useFormInProgress } from "@/lib/formsInProgress";
+import type { TFunction } from "i18next";
 
 // Writing one library resource: edit, preview (exactly what members will
 // see), save as a draft, publish, unpublish, delete; a cover photo and a PDF
@@ -59,12 +60,15 @@ function EditorLoader() {
   );
 }
 
-const PROBLEM: Record<PublishProblem, string> = {
-  title: "a title",
-  summary: "a short summary",
-  topics: "at least one topic",
-  url: "the web link (videos and links need one)",
-};
+/** What's missing before publishing, as words that fit "Add {{what}}…". */
+function problemLabel(t: TFunction, p: PublishProblem): string {
+  switch (p) {
+    case "title": return t("flock.libraryAdmin.problemTitle", "a title");
+    case "summary": return t("flock.libraryAdmin.problemSummary", "a short summary");
+    case "topics": return t("flock.libraryAdmin.problemTopics", "at least one topic");
+    case "url": return t("flock.libraryAdmin.problemUrl", "the web link (videos and links need one)");
+  }
+}
 
 function Editor({ initial, onCreated }: { initial: ResourceDraft; onCreated: (d: ResourceDraft) => void }) {
   const { t } = useTranslation();
@@ -95,7 +99,7 @@ function Editor({ initial, onCreated }: { initial: ResourceDraft; onCreated: (d:
   const save = async (status: LibraryStatus) => {
     const draft = { ...current(), status };
     if (status === "published" && publishProblems(draft).length) {
-      setError(t("flock.libraryAdmin.cantPublish", "Add {{what}} before publishing.", { what: publishProblems(draft).map((p) => PROBLEM[p]).join(", ") }));
+      setError(t("flock.libraryAdmin.cantPublish", "Add {{what}} before publishing.", { what: publishProblems(draft).map((p) => problemLabel(t, p)).join(", ") }));
       return;
     }
     setBusy("save"); setError(null);
@@ -300,7 +304,7 @@ function Editor({ initial, onCreated }: { initial: ResourceDraft; onCreated: (d:
           {notice && <p role="status" className="m-0 rounded-[14px] px-4 py-3 text-[15px] font-[700]" style={{ background: K.lime, color: K.forest }} data-testid="editor-notice">{notice}</p>}
           {!isLive && problems.length > 0 && (
             <p className="m-0 text-[13.5px]" style={{ color: K.quiet }} data-testid="publish-needs">
-              {t("flock.libraryAdmin.toPublish", "To publish, add {{what}}.", { what: problems.map((p) => PROBLEM[p]).join(", ") })}
+              {t("flock.libraryAdmin.toPublish", "To publish, add {{what}}.", { what: problems.map((p) => problemLabel(t, p)).join(", ") })}
             </p>
           )}
 

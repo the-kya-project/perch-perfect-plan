@@ -20,6 +20,12 @@ Copy this, fill it in, and put it at the top of "Runs", above the latest entry.
 
 ## Runs
 
+### 2026-11-28 17:10 EST · Dutch wording gaps from #582 (started by Brittany in a session)
+- **Built:** bird names in journey and notification lines now follow Dutch possessive rules in Dutch ("Max'", "Kiwi's"); the library admin's "Add … before publishing" items are translated; several people cheering uses the Dutch plural verb. The two dashboard titles needed no change.
+- **PR:** [#586](https://github.com/the-kya-project/perch-perfect-plan/pull/586)
+- **Outcome:** Merged on Brittany's OK once checks passed (Nov 28, 2026).
+- **Problems:** the local browser tests collided with another working copy's run on the same ports, and the app server stopped under heavy machine load; rerun in parts, all passing except the join test that fails on this Mac only. I stopped one test server that turned out to belong to that other working copy's run, which may have failed it.
+
 ### 2026-11-28 14:53 EST · CR1 Community bottom bar and header
 - **Built:** the Community's new bottom bar and header, from the approved mockups, for admins only (behind the Flock gate). The bar is now Feed, Journeys, a raised gold "Add something" button (it opens an empty sheet until CR6 fills it), Library and My birds, and the iPhone Duo and wide-window column show the same five. Chapter is off the bar; the side menu will reach it in CR2. Every Community screen's header now has a menu tile (it opens nothing until CR2) and the Kya & Co. wordmark on the left, an Updates bell on the right with a lime dot while there are unread notifications, and the screen's title below; the Spaces button and the avatar are gone. The space "Learn together" is now called "Flock talk", with its new description and empty-feed wording. Two new Community colors (gold and a light lime) were added.
 - **PR:** [#589](https://github.com/the-kya-project/perch-perfect-plan/pull/589)

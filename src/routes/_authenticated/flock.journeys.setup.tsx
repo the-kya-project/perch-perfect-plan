@@ -56,7 +56,7 @@ function rhythmLabel(t: TFunction, r: JourneyRhythm): string {
 }
 
 function SetupJourney() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const invalidate = useInvalidateJourneys();
   const invalidatePods = useInvalidatePods();
@@ -173,7 +173,7 @@ function SetupJourney() {
             <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
               <Link to="/flock/journeys/$journeyId" params={{ journeyId: from }} data-testid="see-source"
                 className="text-[14px] font-[700] underline underline-offset-4" style={{ color: K.moss }}>
-                {t("flock.journeys.member.seeJourney", "See {{name}} journey", { name: possessive(source.bird_name) })}
+                {t("flock.journeys.member.seeJourney", "See {{name}} journey", { name: possessive(source.bird_name, i18n.language) })}
               </Link>
               <KyaLink onClick={() => setReporting(true)}>{t("flock.report.titleSkill", "Report this skill")}</KyaLink>
             </div>
@@ -278,7 +278,7 @@ function SetupJourney() {
         <KyaPrimaryButton onClick={() => void start()} disabled={!ready}>
           {saving ? t("flock.setup.saving", "Saving…")
             : from ? t("flock.journeys.member.start", "Start this skill")
-            : t("flock.journeys.setup.cta", "Start {{name}} journey", { name: bird ? possessive(bird.name) : "" })}
+            : t("flock.journeys.setup.cta", "Start {{name}} journey", { name: bird ? possessive(bird.name, i18n.language) : "" })}
         </KyaPrimaryButton>
       </FlowFooter>
       {flockSheet && template && <FlockOnlySheet reason="how_others" skill={template.name} onClose={() => setFlockSheet(false)} />}

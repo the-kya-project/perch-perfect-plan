@@ -132,9 +132,18 @@ export function birdPronoun(sex: string | null | undefined): BirdPronoun {
   return "they";
 }
 
-/** "Juno's", "Iris'": the possessive for an English name. */
-export function possessive(name: string): string {
+/** A bird's name in possessive form, for the app's language.
+ *  English: "Juno's", "Iris'". Dutch: "Kiwi's", "Mango's", "Sunny's" after a
+ *  vowel sound (a, i, o, u, y, é); "Max'", "Iris'" after a sibilant (s, x, z,
+ *  ce, sch); otherwise a plain "s": "Pieters", "Charlies", "Annes". */
+export function possessive(name: string, lang = "en"): string {
   const n = name.trim();
+  if (lang.toLowerCase().startsWith("nl")) {
+    if (/(s|x|z|ce|sch)$/i.test(n)) return `${n}'`;
+    if (/(ie|ee|oe|ue)$/i.test(n)) return `${n}s`;
+    if (/[aiouyé]$/i.test(n)) return `${n}'s`;
+    return `${n}s`;
+  }
   return /s$/i.test(n) ? `${n}'` : `${n}'s`;
 }
 

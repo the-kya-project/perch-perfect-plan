@@ -34,13 +34,13 @@ function filterLabel(t: TFunction, f: NotificationFilter): string {
 }
 
 /** What it was about, in a few words: "your post", "Kiwi's milestone: flies to you". */
-function aboutWhat(t: TFunction, n: FlockNotification): string {
+function aboutWhat(t: TFunction, n: FlockNotification, lang = "en"): string {
   if (n.subject_type === "journey_milestone" && n.bird_name) {
     return n.milestone_title
-      ? t("flock.notif.aboutMilestone", "{{bird}} milestone: {{title}}", { bird: possessive(n.bird_name), title: n.milestone_title.replace(/\.$/, "").toLowerCase() })
-      : t("flock.notif.aboutMilestoneShort", "{{bird}} milestone", { bird: possessive(n.bird_name) });
+      ? t("flock.notif.aboutMilestone", "{{bird}} milestone: {{title}}", { bird: possessive(n.bird_name, lang), title: n.milestone_title.replace(/\.$/, "").toLowerCase() })
+      : t("flock.notif.aboutMilestoneShort", "{{bird}} milestone", { bird: possessive(n.bird_name, lang) });
   }
-  if (n.subject_type === "journey_update" && n.bird_name) return t("flock.notif.aboutClip", "{{bird}} clip", { bird: possessive(n.bird_name) });
+  if (n.subject_type === "journey_update" && n.bird_name) return t("flock.notif.aboutClip", "{{bird}} clip", { bird: possessive(n.bird_name, lang) });
   if (n.subject_type === "journey") return t("flock.notif.aboutSkill", "your skill {{skill}}", { skill: n.skill ?? "" });
   if (n.subject_type === "comment") return t("flock.notif.aboutComment", "your comment");
   return t("flock.notif.aboutPost", "your post");
@@ -55,13 +55,13 @@ function NotificationText({ n }: { n: FlockNotification }) {
   switch (n.kind) {
     case "reply": {
       if (n.detail === "reply") return parts(b(who), t("flock.notif.repliedToYou", "replied to your comment"));
-      if (n.journey_id && n.bird_name) return parts(b(who), t("flock.notif.commentedJourney", "commented on {{bird}} {{skill}}", { bird: possessive(n.bird_name), skill: (n.skill ?? "").toLowerCase() }));
+      if (n.journey_id && n.bird_name) return parts(b(who), t("flock.notif.commentedJourney", "commented on {{bird}} {{skill}}", { bird: possessive(n.bird_name, i18n.language), skill: (n.skill ?? "").toLowerCase() }));
       return parts(b(who), t("flock.notif.commentedPost", "commented on your post"));
     }
     case "cheer":
       return n.others > 0
-        ? parts(b(t("flock.notif.people", "{{count}} people", { count: n.others + 1 })), t("flock.notif.cheered", "cheered {{what}}", { what: aboutWhat(t, n) }))
-        : parts(b(who), t("flock.notif.cheered", "cheered {{what}}", { what: aboutWhat(t, n) }));
+        ? parts(b(t("flock.notif.people", "{{count}} people", { count: n.others + 1 })), t("flock.notif.cheeredMany", "cheered {{what}}", { what: aboutWhat(t, n, i18n.language) }))
+        : parts(b(who), t("flock.notif.cheered", "cheered {{what}}", { what: aboutWhat(t, n, i18n.language) }));
     case "event": {
       const title = n.event_title ?? "";
       if (n.detail === "reminder") return <>{b(t("flock.notif.eventTomorrow", "Tomorrow:"))} {t("flock.notif.eventReminder", "{{title}}. You said you're going.", { title })}</>;
