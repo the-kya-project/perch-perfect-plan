@@ -1,19 +1,23 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { GuidelinesWalkthrough } from "@/components/flock/GuidelinesWalkthrough";
 import { GUIDELINES_VERSION, WALKTHROUGH_STEPS } from "@/flock/guidelines/version";
 import { GUIDELINES_AGREED_QUERY, agreeToGuidelines, setWalkthroughOpen } from "@/flock/guidelines/agreement";
 import { trackFlockWalkthrough } from "@/lib/flockAnalytics";
 import { rememberMode } from "@/lib/flock";
+import { FLOCK_ACCESS_QUERY, joinRedirect } from "@/lib/flockJoin";
 
 // The community guidelines walk-through. The /flock layout sends everyone here
 // who hasn't agreed to the current version (GUIDELINES_VERSION), from any way
 // in: the Community button, a link, a notification. The step is in the URL
 // (?step=1–3, replaced, never pushed), so a reload stays on the same screen and
 // the system Back leaves the walk-through for the care page it came from.
-// Agreeing saves the row, then opens the feed (the layout then sends a
-// non-member on to the join step).
+// Agreeing saves the row, then opens the join step for someone who hasn't
+// joined yet, or the feed for a member. It goes there directly, once: two
+// navigations to /flock at the same moment (the button and the "already
+// agreed" check below) lost the layout's redirect to the join step, so a
+// non-member got the member Flock and then Home (Nov 28, 2026).
 type Search = { step?: number };
 
 export const Route = createFileRoute("/_authenticated/flock/agree")({
@@ -30,10 +34,13 @@ function FlockAgree() {
   const navigate = useNavigate();
   const qc = useQueryClient();
   const { data: agreed } = useQuery(GUIDELINES_AGREED_QUERY);
+  // Set while "I agree" is saving and moving on, so the check below doesn't
+  // navigate as well.
+  const agreeing = useRef(false);
 
   // Already agreed (another tab, or a stale link): straight to the feed.
   useEffect(() => {
-    if (agreed === true) void navigate({ to: "/flock", replace: true });
+    if (agreed === true && !agreeing.current) void navigate({ to: "/flock", replace: true });
   }, [agreed, navigate]);
 
   // Not in the Flock until they agree: the device stays in care mode, so
@@ -68,10 +75,18 @@ function FlockAgree() {
       onReadFull={() => void navigate({ to: "/flock/guidelines" })}
       onClose={leave}
       onAgree={async () => {
-        await agreeToGuidelines(qc);
+        agreeing.current = true;
+        try {
+          await agreeToGuidelines(qc);
+        } catch (e) {
+          agreeing.current = false;
+          throw e;
+        }
         setWalkthroughOpen(false);
         void trackFlockWalkthrough("flock_guidelines_agreed", { version: GUIDELINES_VERSION });
-        await navigate({ to: "/flock", replace: true });
+        const access = await qc.fetchQuery(FLOCK_ACCESS_QUERY).catch(() => null);
+        const to = joinRedirect(access, "/flock") === "/flock/join" ? "/flock/join" : "/flock";
+        await navigate({ to, replace: true });
       }}
     />
   );
