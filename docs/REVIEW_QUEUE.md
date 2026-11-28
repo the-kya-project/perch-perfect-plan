@@ -19,6 +19,22 @@ Format:
   - After: "<new wording>"
 ```
 
+### [#581](https://github.com/the-kya-project/perch-perfect-plan/pull/581) · D2.2 Weather cards · **held, not merged; switched off**
+English only (Dutch after you approve the English). All of it is new and behind the `weather_cards` switch (off). Lines marked "spec" are word for word from the item.
+- **Where:** Home, the weather card
+  - New: "Hot day ahead: {temp}" (spec) / "Cold night ahead: {temp}" (spec)
+  - New: "Keep {bird}'s cage out of direct sun and away from windows, and check the water more often today. A cool shower or misting helps on a hot afternoon." (spec)
+  - New: "Keep your birds' cages out of direct sun and away from windows, and check the water more often today. A cool shower or misting helps on a hot afternoon." (the spec's several-birds rule applied)
+  - New: "Move the cage away from drafty windows and outside doors tonight. A cover over part of the cage helps hold in warmth, and space heaters stay well away from it." (spec)
+  - New: "Forecast for {ZIP}. Change it in Account." (spec) / "Got it" (the seasonal card's existing line)
+- **Where:** Home, with no ZIP saved
+  - New: "Want a heads-up on very hot or cold days? Add your home ZIP or postcode in Account." (spec)
+- **Where:** Account → Home ZIP or postcode
+  - New: "Home ZIP or postcode" (spec; the row, the sheet's title and the field label)
+  - New: "Optional. We use it only to show heat and cold reminders on Home. We never use your phone's location." (spec)
+  - New: "That doesn't look like a ZIP or postcode. Check it and try again." (spec)
+  - New: "Remove" (not in the spec). The row reuses "Not set yet", and the sheet reuses "Save changes" / "Saving…".
+
 ### [#579](https://github.com/the-kya-project/perch-perfect-plan/pull/579) · Chapter names in Dutch · **merged on Brittany's OK (Nov 28, 2026), not yet read by a native speaker**
 Chapter names were rows in the regions table, so they stayed English. The app now shows them in the reader's language wherever the Flock names a chapter (the picker, the Chapter tab, profiles, posts, events, pods, challenges, notifications, the review queue). State codes stay as they are. Not changed: the public `/founding` page (nothing else on it is Dutch yet) and the English-only `/admin/founding`.
 - **Where:** every chapter name in the Flock
@@ -1430,6 +1446,18 @@ No new strings: every line reuses existing wording, in new places (admins only).
 
 ## Decisions agents made
 
+### [#581](https://github.com/the-kya-project/perch-perfect-plan/pull/581) · D2.2 Weather cards
+- **Decision:** The ZIP lives in its own table, `home_postcodes` (one row per account, own row only), not as columns on `profiles`, so no existing policy that lets others read a profile can ever reach it. The weather card's "Got it" is a column on that row (`weather_dismissed_on`), not the seasonal card's `today_card_dismissals` row, which holds one card per account: sharing it would have brought back a seasonal card you'd already hidden.
+- **Decision:** After "Got it" on the weather card, the seasonal card shows again that day if you haven't hidden it. The spec says the weather card takes the seasonal card's spot; it doesn't say the spot stays empty once you've hidden the weather card.
+- **Decision:** On a day that's both hot and cold, the heat card shows. Thresholds compare the rounded number the card shows, so a 89.6°F high shows "Hot day ahead: 90°F".
+- **Decision:** "Tonight's low" is WeatherKit's overnight low (7 PM to 7 AM) when it sends one, otherwise the next day's low.
+- **Decision:** "At most once a day" means once per area per UTC day. A failed WeatherKit call counts as that day's call, so a failing service isn't asked again on every Home visit. A US area's days follow the time zone of the first account that asks that day (its saved time zone, else the phone's, else Eastern). A Dutch area always uses Amsterdam time.
+- **Decision:** Input: "12345-6789" is saved as 12345, and "1234 AB" as 1234. Anything else gets the error line. Account shows the saved code in the row ("Not set yet" when there isn't one), and the sheet has "Save changes" and a red "Remove".
+- **Decision:** The no-ZIP prompt is a small tappable line in the Today card's spot that opens Account. It shows under the seasonal card when there is one. It can't be dismissed, since the spec doesn't mention that. **Brittany, please say if it should go away after a while or get its own "Got it".**
+- **Decision:** The weather card has no picture band and no label pill: a sun or snowflake icon, then the title, body and footer, in warm or cool colours. There's no mockup, and a label would have been copy the spec didn't give.
+- **Decision:** One bird → "Keep Kiwi's cage…", and two or more → "Keep your birds' cages…". An account with no birds of its own (a co-carer only) also gets the "your birds'" line. The birds counted are the owner's own on Home (fosters included).
+- **Decision:** The ZIP files can't be downloaded inside the hourly job's sandbox, so they ship empty and `npm run weather:postcodes` builds them. US comes from the Census ZCTA Gazetteer. For the Netherlands, any CSV with a 4-digit postcode and the middle's lat/lon works; the run didn't pick a Dutch source.
+
 ### [#579](https://github.com/the-kya-project/perch-perfect-plan/pull/579) · Chapter names in Dutch
 - **Decision:** The names are translated in the app, not the database: `chapterName(t, name)` in `src/lib/flockNav.ts` looks up the English name the regions table stores. A renamed or new region shows as stored until a line is added there; `npm run test:flock-shell` fails if the regions seeded in the database and that list drift apart.
 - **Why:** the database name is also what emails, exports and `/admin/founding` read; a table of names per language would be a migration for ten words.
@@ -2068,6 +2096,13 @@ Format:
 ### <PR link> · <item ID> <item title>
 - **Needs:** <the decision, approval or read, in one or two lines>
 ```
+
+### [#581](https://github.com/the-kya-project/perch-perfect-plan/pull/581) · D2.2 Weather cards
+- **Needs:** your review of the copy and the build, as the item says, plus three things the run couldn't do:
+  1. **Build the ZIP and postcode files** on your Mac (the sandbox can't download them). Download the Census ZCTA Gazetteer (`https://www2.census.gov/geo/docs/maps-data/data/gazetteer/2024_Gazetteer/2024_Gaz_zcta_national.zip`, unzip it) and a Dutch 4-digit postcode file with each area's middle as lat/lon (pick the source). Then, in a copy of the branch, run `npm run weather:postcodes -- --us <the .txt> --nl <the .csv>` and commit the two files under `src/data/postcode-centroids/`. Until then no weather card can show, even with the switch on.
+  2. **Add `npm run test:weather-cards`** to `.github/workflows/hydration.yml`, after `test:today-card`. The runs' token can't push workflow changes.
+  3. **Try it once in production as admin.** `select public.admin_set_care_feature('weather_cards', 'admins');`, add a ZIP on Account, and check Home. Nothing has called WeatherKit with the real key yet, and previews have no key.
+- **Also:** the switch stays at off or admins until 1.5 is live with the weather privacy line (#580). The no-ZIP prompt question is under "Decisions agents made".
 
 ### [#572](https://github.com/the-kya-project/perch-perfect-plan/pull/572) · 1.13b Badges: care badges free users can earn
 - **Needs:** your approval of the PR, after looking at the before-and-after screenshots. The run couldn't take them: Chromium won't start inside the hourly job's sandbox. On your Mac, in a copy of this branch: `npm run test:care-badges:screens` (builds, then saves them to `test-results/care-badges/`). "before-switch-off" is what free users get when this merges (no change); the "after-…" ones and "badges-screen" are what you'd see with `select public.admin_set_care_feature('care_badges', 'admins');`.

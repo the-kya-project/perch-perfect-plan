@@ -338,9 +338,10 @@ function Dashboard() {
 
             <TodayPanel items={todayPanelItems} onNavigate={onTodayNavigate} />
 
-            {/* The day's seasonal or holiday card, behind its own switch (off
-                until Brittany turns it on); see SeasonalTodayCard. */}
-            {!demo && <SeasonalTodayCard userId={me?.id} homeTimeZone={me?.timeZone} />}
+            {/* The day's seasonal or holiday card, or on a heat or cold day the
+                weather card, each behind its own switch (off until Brittany
+                turns it on); see SeasonalTodayCard. */}
+            {!demo && <SeasonalTodayCard userId={me?.id} homeTimeZone={me?.timeZone} birdNames={ownedBirds.map((b) => b.name)} />}
 
             {/* A sit you're covering (any account): the sitter-style "Birds in
                 your care" cards (per-bird progress; tap a bird to open its
