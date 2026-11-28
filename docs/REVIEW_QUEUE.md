@@ -19,7 +19,7 @@ Format:
   - After: "<new wording>"
 ```
 
-### [#PRNUM](https://github.com/the-kya-project/perch-perfect-plan/pull/PRNUM) · Community guidelines walk-through and guidelines page · **held for Brittany**
+### [#584](https://github.com/the-kya-project/perch-perfect-plan/pull/584) · Community guidelines walk-through and guidelines page · **held for Brittany**
 All new member-facing wording, word for word from the approved mockups and the prompt (source: `src/flock/guidelines/content.ts`). English only so far: Dutch shows the English until a translation pass.
 - **Where:** walk-through screen 1 (`/flock/agree`)
   - New: "1 of 3" (and "2 of 3", "3 of 3"); "Welcome to the Flock"; "Before you join, here's a quick look at what we're all about."
@@ -1707,7 +1707,7 @@ Format:
 - **To change it:** <what would need to change>
 ```
 
-### [#PRNUM](https://github.com/the-kya-project/perch-perfect-plan/pull/PRNUM) · Community guidelines walk-through
+### [#584](https://github.com/the-kya-project/perch-perfect-plan/pull/584) · Community guidelines walk-through
 - **The walk-through and the join step's own checkbox both stay.** The join step (build C) already records "I agree to the community guidelines" in `flock_agreements` at version "2026-12". This PR adds the walk-through's separate record (`flock_guideline_agreements`, version 1) as specified, shows it first, and puts the new full text in the join step's guidelines box. So a new member agrees twice (walk-through, then the join step's checkbox). Retiring the join step's checkbox would change build C's database rule (`flock_join()` needs `flock_agreements`), so it's left for you to decide. The join version wasn't bumped: only admins have agreed so far.
 - **Posting is blocked by a trigger, not an INSERT policy.** App users have no write grant on posts, comments or journey updates; they write through SECURITY DEFINER functions that RLS never sees, so an INSERT policy would block nothing. A BEFORE INSERT trigger on `flock_posts` (every space, pod posts and challenge entries), `flock_comments` and `journey_updates` blocks every path instead. Sharing a journey with the Flock (`journeys.visibility` → community) needs it too, or updates posted while it was "Just me" would reach the Flock unagreed.
 - **"Just me" journeys and free co-carers are never checked,** so the care app's journeys work exactly as before for anyone outside the Flock. A household co-carer who isn't a Flock member can still post to a journey its owner shared (they can't agree: the Flock is closed to them).
@@ -2105,7 +2105,7 @@ Format:
 - **Needs:** <the decision, approval or read, in one or two lines>
 ```
 
-### [#PRNUM](https://github.com/the-kya-project/perch-perfect-plan/pull/PRNUM) · Community guidelines walk-through and guidelines page
+### [#584](https://github.com/the-kya-project/perch-perfect-plan/pull/584) · Community guidelines walk-through and guidelines page
 - **Needs:** your approval to merge. It's behind the Flock gate (admins only today) and free users see nothing new, but it's a production database change (new table, new triggers on posts, comments and journeys), it replaces the guidelines' text, and you'll see the walk-through yourself once after it merges. Also decide: keep or retire the join step's own "I agree to the community guidelines" checkbox now that the walk-through records agreement (see Decisions).
 
 ### [#572](https://github.com/the-kya-project/perch-perfect-plan/pull/572) · 1.13b Badges: care badges free users can earn
