@@ -20,6 +20,12 @@ Copy this, fill it in, and put it at the top of "Runs", above the latest entry.
 
 ## Runs
 
+### 2026-11-28 18:20 EST · Load each language only when it's needed (started by Brittany in a session)
+- **Built:** the app's main file now carries English only; Dutch is a separate file the browser fetches the first time Dutch is needed. The main file is 26% smaller (2.24 MB to 1.66 MB). A Dutch sitter sees the loading skeleton until Dutch arrives, never English first. The temporary 3 MB caching limit from #582 is back to 2 MB.
+- **PR:** [#587](https://github.com/the-kya-project/perch-perfect-plan/pull/587)
+- **Outcome:** Held: for Brittany's OK (changes how the live app loads).
+- **Problems:** none; the known join test fails on this Mac only.
+
 ### 2026-11-28 15:40 EST · Dutch for everything still in English (started by Brittany in a session)
 - **Built:** Dutch for the 1,535 lines that were still English: the whole Flock, the founding page, care badges, weight-baseline lines, a few care-app lines, and the sign-in and gift emails. Written in nine batches against one glossary and run through the repo's translation script; nothing is left untranslated in any catalog. The founding page's chapter names are Dutch too. The app's main file passed the service worker's 2 MB caching limit, which broke the build, so the limit is now 3 MB.
 - **PR:** [#582](https://github.com/the-kya-project/perch-perfect-plan/pull/582)

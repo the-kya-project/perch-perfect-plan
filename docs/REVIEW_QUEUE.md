@@ -1471,6 +1471,12 @@ No new strings: every line reuses existing wording, in new places (admins only).
 
 ## Decisions agents made
 
+### [#587](https://github.com/the-kya-project/perch-perfect-plan/pull/587) · Load each language only when it's needed
+- **Decision:** English stays in the main bundle; Dutch is fetched the first time it's needed (`loadLocale` in `src/lib/i18n`). The main file drops from 2.24 MB to 1.66 MB for everyone.
+- **Decision:** A Dutch sitter sees the usual loading skeleton until the Dutch file arrives (a moment on first open; the service worker caches it after), never English first. If the fetch fails, the sitter page carries on in English rather than staying blank. The owner app shows English until the file arrives, then switches, as it already did after its first paint.
+- **Decision:** The 3 MiB precache limit from #582 goes back to Workbox's 2 MiB default, so a growing bundle shows up as a build failure again.
+- **Why:** the server only ever renders English, so nothing here can cause a hydration mismatch; the only new thing is a short wait before Dutch appears.
+
 ### [#582](https://github.com/the-kya-project/perch-perfect-plan/pull/582) · Dutch for everything still in English
 - **Decision:** The 1,535 lines are listed in their own file (`docs/translations/nl-2026-11-28.md`) rather than in "Copy that merged", with a short summary there.
 - **Why:** the list is longer than the rest of this file.
@@ -2117,6 +2123,9 @@ Format:
 ### <PR link> · <item ID> <item title>
 - **Needs:** <the decision, approval or read, in one or two lines>
 ```
+
+### [#587](https://github.com/the-kya-project/perch-perfect-plan/pull/587) · Load each language only when it's needed
+- **Needs:** your OK in the PR to merge. It changes how the live app loads its language for everyone (English users download 26% less; Dutch users fetch Dutch on first use, and a Dutch sitter sees a loading skeleton a moment longer the first time).
 
 ### Reminder · the hourly runs' GitHub token expires Feb 20, 2027
 - **Needs:** a new token before **Feb 20, 2027**. That's 90 days from Nov 22, 2026; GitHub → Settings → Developer settings → Fine-grained tokens shows the exact date. When it expires, runs can still build and test but can't push or open PRs, and each run's note in `~/.kya-agent/job.log` says so.
