@@ -27,6 +27,10 @@ begin
   insert into auth.users (instance_id, id, aud, role, email, raw_app_meta_data, raw_user_meta_data, created_at, updated_at)
   select '00000000-0000-0000-0000-000000000000', u, 'authenticated', 'authenticated', u::text || '@checks.invalid', '{}', '{}', now(), now()
   from unnest(array[adm, ga, gb, gc, ha, hb, hc]) as u;
+  -- Test members have agreed to the community guidelines (20261128180000).
+  insert into public.flock_guideline_agreements (user_id, version)
+  select u.id, public.current_guidelines_version() from auth.users u where u.email like '%@checks.invalid'
+  on conflict do nothing;
   insert into public.user_roles (user_id, role) values (adm, 'admin');
   insert into public.gift_purchases (plan, buyer_email, recipient_name, amount_paid_cents, stripe_checkout_session_id, gift_code)
   values ('flock_year', 'b@checks.invalid', 'A', 30000, 'cs_gya_' || tag, private.new_gift_code()) returning id into pa;

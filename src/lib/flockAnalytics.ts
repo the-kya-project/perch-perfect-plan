@@ -35,6 +35,10 @@ export const FLOCK_EVENT_PROPS = {
   flock_active: [],
   /** The join step succeeded. Defined now; build C calls it from the join screen. */
   flock_joined: ["source"],
+  /** A screen of the community guidelines walk-through was shown (step 1–3). */
+  flock_walkthrough_viewed: ["step"],
+  /** "I agree, take me to the Flock" saved the agreement. `version`: the guidelines version. */
+  flock_guidelines_agreed: ["version"],
   flock_post_created: ["space", "status", "has_photo", "photo_count", "has_bird"],
   flock_comment_created: ["subject_type", "is_reply", "has_photo"],
   /** Only when a reaction is added, not when one is taken back. */
@@ -242,6 +246,14 @@ export function trackFlockJoined(source: string): Promise<void> {
   resetFlockAnalytics();
   const load = deps.loadContext({ allowPending: true }).catch(() => null);
   return sendWith(load, "flock_joined", { source: joinSource(source) });
+}
+
+/** The guidelines walk-through's events. It comes before the join step, so
+ *  like `flock_joined` it also counts someone whose membership starts on
+ *  opening day. Someone with no membership at all sends nothing. */
+export function trackFlockWalkthrough(name: "flock_walkthrough_viewed" | "flock_guidelines_agreed", props: FlockEventProps): Promise<void> {
+  const load = deps.loadContext({ allowPending: true }).catch(() => null);
+  return sendWith(load, name, props);
 }
 
 /** Where someone came from to join; anything else is the care app. */

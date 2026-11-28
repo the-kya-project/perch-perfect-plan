@@ -5,7 +5,6 @@ import { ChevronRight, Gift, Loader2, Star } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { K, KyaHeading, KyaLink, KyaPrimaryButton, KyaSheet } from "@/components/kya";
 import { FlockSection, RegionSheet } from "@/components/flock/FlockPeople";
-import { FlockGuidelinesText } from "@/components/flock/FlockGuidelines";
 import { chapterLine } from "@/lib/flockNav";
 import { defaultDisplayName } from "@/lib/flockProfile";
 import { useCareName, useRegions } from "@/lib/flockData";
@@ -19,9 +18,11 @@ import { rescueStep, useMyRescue, type MyRescue } from "@/lib/flockRescue";
 // the founding page and after redeeming a gift (?source=…).
 //
 // It opens with the "Part of the Flock" sheet (the locked-journey pattern, no
-// prices), then one screen: your chapter, the community guidelines word for
-// word, "I'm 18 or older" and "I agree to the community guidelines". Join
-// records the agreement and calls flock_join(). Founders, chapter leads and
+// prices), then one screen: your chapter and "I'm 18 or older". The community
+// guidelines are agreed in the walk-through (/flock/agree), which the layout
+// shows before this step; there's no second checkbox here (Brittany, Nov 28,
+// 2026; 20261128210000). Join records the chapter and 18+ and calls
+// flock_join(), which needs both that record and the walk-through agreement. Founders, chapter leads and
 // members who already have a membership go through the same step and get
 // nothing new. Someone who joins before opening day sees when it opens.
 //
@@ -49,7 +50,6 @@ function FlockJoin() {
   const [region, setRegion] = useState<string | null>(null);
   const [picking, setPicking] = useState(false);
   const [adult, setAdult] = useState(false);
-  const [agreed, setAgreed] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -61,15 +61,15 @@ function FlockJoin() {
   useEffect(() => { if (access?.has_membership) setIntro(false); }, [access?.has_membership]);
 
   const r = regions?.find((x) => x.slug === region);
-  const ready = !!region && adult && agreed && !saving;
+  const ready = !!region && adult && !saving;
 
   const join = async () => {
     if (!region) { setError(t("flock.join.needRegion", "Choose your chapter first.")); return; }
-    if (!adult || !agreed) { setError(t("flock.join.needBoth", "Please confirm you're 18 or older and agree to the guidelines.")); return; }
+    if (!adult) { setError(t("flock.join.needAdult", "Please confirm you're 18 or older.")); return; }
     setSaving(true);
     setError(null);
     try {
-      await agreeAndJoin({ region, displayName: defaultDisplayName(care?.first_name, care?.full_name), adult, agreed, source });
+      await agreeAndJoin({ region, displayName: defaultDisplayName(care?.first_name, care?.full_name), adult, source });
       await qc.invalidateQueries({ queryKey: ["flock"] });
       const next = await qc.fetchQuery({ ...FLOCK_ACCESS_QUERY, staleTime: 0 });
       if (next?.member_now) void navigate({ to: "/flock", replace: true });
@@ -107,7 +107,7 @@ function FlockJoin() {
             {access.has_membership ? t("flock.join.titleMember", "Before you go in") : t("flock.join.title", "Join the Flock")}
           </KyaHeading>
           <p className="m-0 mt-2 text-[15px] leading-[1.5]" style={{ color: K.paleGreen }}>
-            {t("flock.join.line", "Choose your chapter, read the community guidelines, and you're in.")}
+            {t("flock.join.lineChapter", "Choose your chapter, confirm you're 18 or older, and you're in.")}
           </p>
         </div>
       </header>
@@ -121,25 +121,17 @@ function FlockJoin() {
           </div>
         </FlockSection>
 
-        <FlockSection title={t("flock.guidelines.title", "Community guidelines")} hint={t("flock.join.guidelinesHint", "Please read them before you join.")}>
-          <div className="max-h-[50vh] overflow-y-auto rounded-[14px] border px-4 py-3" style={{ borderColor: K.line }} tabIndex={0}
-            aria-label={t("flock.guidelines.title", "Community guidelines")}>
-            <FlockGuidelinesText />
-          </div>
-        </FlockSection>
-
         <div className="flex flex-col gap-2 rounded-[20px] bg-white px-4 py-3">
           <label className="flex min-h-[44px] cursor-pointer items-center gap-3 text-[15.5px] font-[700]" style={{ color: K.forest }}>
             <input type="checkbox" checked={adult} onChange={(e) => setAdult(e.target.checked)} data-testid="join-adult"
               className="size-5 shrink-0" style={{ accentColor: K.forest }} />
             {t("flock.join.adult", "I'm 18 or older")}
           </label>
-          <label className="flex min-h-[44px] cursor-pointer items-center gap-3 text-[15.5px] font-[700]" style={{ color: K.forest }}>
-            <input type="checkbox" checked={agreed} onChange={(e) => setAgreed(e.target.checked)} data-testid="join-agree"
-              className="size-5 shrink-0" style={{ accentColor: K.forest }} />
-            {t("flock.join.agree", "I agree to the community guidelines")}
-          </label>
         </div>
+        <Link to="/flock/guidelines" data-testid="join-guidelines-link"
+          className="inline-flex min-h-[44px] items-center text-[15px] font-[700]" style={{ color: K.moss }}>
+          {t("flock.join.readGuidelines", "Read the community guidelines →")}
+        </Link>
 
         {error && <p role="alert" className="m-0 text-[15px]" style={{ color: K.red }}>{error}</p>}
         <button

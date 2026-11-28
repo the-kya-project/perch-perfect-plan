@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Flag a post: pick a reason</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&amp;family=Newsreader:opsz,wght@6..72,600;6..72,700&amp;display=swap" rel="stylesheet">
+<style>body{margin:0}textarea::placeholder{color:#5f5e5a}</style>
+</head>
+<body style="background:#e6ebe6;display:flex;justify-content:center;padding:24px 0">
+<div style="width: 390px; height: 844px; position: relative; overflow: hidden; background: rgba(20, 40, 38, 0.45); font-family: 'DM Sans', sans-serif; color: #1a3d2e">
+  <div style="position: absolute; left: 0; right: 0; bottom: 0; top: 48px; background: #ffffff; border-radius: 28px 28px 0 0; padding: 12px 20px 28px; display: flex; flex-direction: column; gap: 14px">
+    <div style="align-self: center; width: 40px; height: 5px; border-radius: 999px; background: #d5dfd5"></div>
+    <div style="display: flex; align-items: flex-start; gap: 12px">
+      <div style="flex: 1; display: flex; flex-direction: column; gap: 6px">
+        <h2 style="margin: 0; font-family: Newsreader, Georgia, serif; font-weight: 700; font-size: 26px; line-height: 1.1">What's going on?</h2>
+        <p style="margin: 0; font-size: 14px; line-height: 1.5; color: #3d4f45">The Kya team reviews every flag. Dana won't know who flagged it.</p>
+      </div>
+      <button aria-label="Close" style="flex: none; width: 44px; height: 44px; border-radius: 999px; border: none; background: #f1f5f0">&#10005;</button>
+    </div>
+    <!-- Send button stays greyed out (mist background, 60% opacity) until a reason is picked. Shown here with "Goes against Kya care standards" picked. -->
+    <div role="radiogroup" aria-label="Reason" style="display: flex; flex-direction: column; gap: 8px">
+        <button role="radio" aria-checked="false" style="display:flex;align-items:flex-start;gap:12px;padding:12px 14px;border-radius:14px;text-align:left;font-family:inherit;color:#1a3d2e;background:#ffffff;border:2px solid #d5dfd5">
+          <span style="flex:none;margin-top:2px;width:20px;height:20px;border-radius:999px;border:2px solid #1a3d2e;display:flex;align-items:center;justify-content:center;box-sizing:border-box"><span style="width:10px;height:10px;border-radius:999px;background:transparent"></span></span>
+          <span style="display:flex;flex-direction:column;gap:2px"><span style="font-size:15px;font-weight:700">Harmful or unkind</span><span style="font-size:13px;line-height:1.4;color:#3d4f45">Harassment, hateful content, or harm to an animal.</span></span>
+        </button>
+        <button role="radio" aria-checked="true" style="display:flex;align-items:flex-start;gap:12px;padding:12px 14px;border-radius:14px;text-align:left;font-family:inherit;color:#1a3d2e;background:#f1f5f0;border:2px solid #1a3d2e">
+          <span style="flex:none;margin-top:2px;width:20px;height:20px;border-radius:999px;border:2px solid #1a3d2e;display:flex;align-items:center;justify-content:center;box-sizing:border-box"><span style="width:10px;height:10px;border-radius:999px;background:#1a3d2e"></span></span>
+          <span style="display:flex;flex-direction:column;gap:2px"><span style="font-size:15px;font-weight:700">Goes against Kya care standards</span><span style="font-size:13px;line-height:1.4;color:#3d4f45">Like a seed-only diet, clipping, a cage that looks too small, or punishment-based training.</span></span>
+        </button>
+        <button role="radio" aria-checked="false" style="display:flex;align-items:flex-start;gap:12px;padding:12px 14px;border-radius:14px;text-align:left;font-family:inherit;color:#1a3d2e;background:#ffffff;border:2px solid #d5dfd5">
+          <span style="flex:none;margin-top:2px;width:20px;height:20px;border-radius:999px;border:2px solid #1a3d2e;display:flex;align-items:center;justify-content:center;box-sizing:border-box"><span style="width:10px;height:10px;border-radius:999px;background:transparent"></span></span>
+          <span style="display:flex;flex-direction:column;gap:2px"><span style="font-size:15px;font-weight:700">Spam or selling</span><span style="font-size:13px;line-height:1.4;color:#3d4f45">Ads, affiliate links, or selling or trading birds.</span></span>
+        </button>
+        <button role="radio" aria-checked="false" style="display:flex;align-items:flex-start;gap:12px;padding:12px 14px;border-radius:14px;text-align:left;font-family:inherit;color:#1a3d2e;background:#ffffff;border:2px solid #d5dfd5">
+          <span style="flex:none;margin-top:2px;width:20px;height:20px;border-radius:999px;border:2px solid #1a3d2e;display:flex;align-items:center;justify-content:center;box-sizing:border-box"><span style="width:10px;height:10px;border-radius:999px;background:transparent"></span></span>
+          <span style="display:flex;flex-direction:column;gap:2px"><span style="font-size:15px;font-weight:700">Something else</span><span style="font-size:13px;line-height:1.4;color:#3d4f45">Tell us a little in the note below.</span></span>
+        </button>
+    </div>
+    <label style="display: flex; flex-direction: column; gap: 6px; font-size: 14px; font-weight: 700">Add a note (optional)
+      <textarea rows="3" placeholder="For example, I think this cage may be too small for a macaw." style="resize: none; border: 2px solid #1a3d2e; border-radius: 14px; padding: 12px 14px; font-family: 'DM Sans', sans-serif; font-size: 14px; line-height: 1.45; color: #1a3d2e"></textarea>
+    </label>
+    <div style="flex: 1"></div>
+    <a href="06-flag-sent.html" style="height:54px;box-sizing:border-box;border-radius:999px;border:2px solid #1a3d2e;background:#f2b33d;color:#1a3d2e;font-size:16px;font-weight:700;text-decoration:none;display:flex;align-items:center;justify-content:center">Send to the Kya team</a>
+  </div>
+</div>
+</body>
+</html>
