@@ -89,6 +89,9 @@ function Story() {
     ? t("flock.journeys.tag.bigMoment", "Big moment")
     : cur.is_question ? t("flock.journeys.tag.question", "Question") : cur.is_day_one ? t("flock.journeys.tag.dayOne", "Day one") : "";
   const isCheered = !!cur && (cheered.has(cur.update_id) || cur.mine.includes("great_job"));
+  const commentCount = cur ? (comments?.[cur.update_id] ?? 0) : 0;
+  // Members comment; the bird's household reads the comments either way (1.20f).
+  const showComments = !!cur && (!!access?.can_share || (!!card?.is_mine && commentCount > 0));
 
   return (
     <div className="fixed inset-0 z-30 flex flex-col" style={{ background: "#0f1f18", color: "#fff" }} data-testid="story"
@@ -133,13 +136,13 @@ function Story() {
       </div>
       <div className="flex items-center gap-2.5 px-3 pb-[max(14px,env(safe-area-inset-bottom))] pt-3">
         <div className="flex-1" data-testid="comments-slot">
-          {access?.can_share && cur && (
+          {showComments && cur && (
             <Link to="/flock/comments/$subjectType/$subjectId" params={{ subjectType: "journey_update", subjectId: cur.update_id }}
-              search={{ j: journeyId, ...((comments?.[cur.update_id] ?? 0) > 0 ? {} : { focus: 1 as const }) }} data-testid="story-comment"
+              search={{ j: journeyId, ...(commentCount > 0 ? {} : { focus: 1 as const }) }} data-testid="story-comment"
               className="flex min-h-[46px] items-center rounded-full border px-4 text-[14px]" style={{ borderColor: "rgba(255,255,255,0.35)", color: "#fff" }}>
               <span className="truncate">
-                {(comments?.[cur.update_id] ?? 0) > 0
-                  ? t("flock.posts.commentCount", "{{count}} comments", { count: comments![cur.update_id] })
+                {commentCount > 0
+                  ? t("flock.posts.commentCount", "{{count}} comments", { count: commentCount })
                   : card?.is_mine ? t("flock.posts.addComment", "Add a comment") : t("flock.posts.saySomething", "Say something to {{name}}", { name: (card?.owner_name ?? "").split(/\s+/)[0] || name })}
               </span>
             </Link>

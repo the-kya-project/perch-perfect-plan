@@ -1424,6 +1424,32 @@ test.describe("journeys: posting updates and milestones (admin, phone)", () => {
     await context.close();
   });
 
+  test("free co-carers reach the comments from the clip viewer, only when there are some (1.20f)", async ({ browser, baseURL }) => {
+    const id = stepUp.id;
+    const commented = "00000000-0000-4000-8000-000000009001";
+    const empty = "00000000-0000-4000-8000-000000009000";
+    const { context, page, state } = await open(browser, baseURL!, { admin: true, journeys: { tier: "free", seed: [{ ...stepUp, clips: 2, visibility: "private" }] } });
+    state.comments.push({ comment_id: "00000000-0000-4000-8000-0000000079c2", subject_type: "journey_update", subject_id: commented,
+      author_id: "00000000-0000-4000-8000-00000000e002", author_name: "Priya S.", body: "Echo looks so relaxed!", created_at: new Date(Date.now() - 3_600_000).toISOString() });
+
+    // "1 comment" opens the read-only thread; no Go button or report.
+    await page.goto(`/flock/journeys/${id}/story?u=${commented}`);
+    await expect(page.getByTestId("story-comment")).toContainText("1 comment");
+    await expect(page.getByTestId("go-bird")).toHaveCount(0);
+    await expect(page.getByTestId("story-report")).toHaveCount(0);
+    await page.getByTestId("story-comment").click();
+    await expect(page).toHaveURL(new RegExp(`/flock/comments/journey_update/${commented}\\?j=${id}$`));
+    await expect(page.locator("[data-comment='00000000-0000-4000-8000-0000000079c2']")).toContainText("Echo looks so relaxed!");
+    await expect(page.getByTestId("comment-composer")).toHaveCount(0);
+
+    // An update nobody has commented on shows no comment link at all.
+    await page.goto(`/flock/journeys/${id}/story?u=${empty}`);
+    await expect(page.getByTestId("story-clip")).toHaveAttribute("data-update", empty);
+    await expect(page.getByTestId("story-comment")).toHaveCount(0);
+    expect(state.calls.filter((c) => ["flock_comment_create", "flock_react", "flock_report", "flock_block"].includes(c.fn))).toEqual([]);
+    await context.close();
+  });
+
   test("Diet conversion: a heads-up at the amber trend; a weight pause lifts only after confirming the vet call", async ({ browser, baseURL }) => {
     const diet = { id: "00000000-0000-4000-8000-0000000074a2", birdName: "Willow", slug: "diet-conversion", done: 1 };
     let o = await open(browser, baseURL!, { admin: true, journeys: { seed: [diet], weight: { level: "notice", start: 400, now: 389 } } });
