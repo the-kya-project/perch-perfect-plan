@@ -46,7 +46,7 @@ Where these items came from, with the detail behind each: `docs/flock/opening-sc
   - ZIP field error: "That doesn't look like a ZIP or postcode. Check it and try again."
   - Prompt when no ZIP is saved: "Want a heads-up on very hot or cold days? Add your home ZIP or postcode in Account."
   - With several birds, {bird}'s becomes "your birds'", so the heat card reads "Keep your birds' cages out of direct sun".
-- **Privacy line (legal text: the agent does not edit the privacy page; Brittany publishes it, with or before the legal update, 1.5).** Matches the policy's current plain style, and the "Last updated" date changes to the day it goes live:
+- **Privacy line (legal text: the agent does not edit the privacy page; it goes out with the legal update, 1.5, Brittany decided Nov 28, 2026).** Matches the policy's current plain style, and the "Last updated" date changes to the day it goes live:
   1. Add to "What we collect", after "bird profiles and care plans you create,": "your home ZIP or postcode if you choose to add one,"
   2. A new short section, "Weather reminders", after "How we use it": "If you add a home ZIP or postcode, we use it to show heat and cold reminders on Home. Our server looks up the forecast for the middle of that ZIP or postcode area from Apple WeatherKit and shares the result with everyone in the same area. Apple never receives your ZIP or postcode, your name, your email address or your account. We never use your phone's location. You can remove your ZIP or postcode in Account at any time, and it's deleted with your account."
   3. A new row in "Services that help us run Kya & Co.": "**Apple WeatherKit**: provides the weather forecast for heat and cold reminders, if you add a home ZIP or postcode. Handles the approximate location of a ZIP or postcode area."
@@ -56,7 +56,7 @@ Where these items came from, with the detail behind each: `docs/flock/opening-sc
 - **Size:** M
 - **Depends on:** D2.1 (done, #523)
 - **Overnight alone:** yes, held for Brittany
-- **Needs Brittany:** hold the PR. She reviews the copy and the build, publishes the privacy line before the switch goes past admins, and turns the switch on.
+- **Needs Brittany:** hold the PR. She reviews the copy and the build, and turns the switch on. The switch stays at off or admins until 1.5 is live with the weather privacy line.
 
 ---
 
@@ -108,7 +108,7 @@ The launch PR itself (1.18) is already merged dark. What's left before opening i
 - **Needs Brittany:** switching it on is the launch decision.
 
 ### 1.5 Legal pages
-- **Done means:** `/terms` and `/privacy` carry Brittany's approved community, billing and age text (from `docs/legal/drafts/2026-11-flock-legal-update.md`). The post-deletion wording goes live only once 1.3 has.
+- **Done means:** `/terms` and `/privacy` carry Brittany's approved community, billing and age text (from `docs/legal/drafts/2026-11-flock-legal-update.md`), plus D2.2's three weather-reminder changes to `/privacy` (Brittany, Nov 28, 2026: they go out with this update, not on their own). The post-deletion wording goes live only once 1.3 has.
 - **Size:** M
 - **Depends on:** the final legal text, 1.3
 - **Overnight alone:** no
