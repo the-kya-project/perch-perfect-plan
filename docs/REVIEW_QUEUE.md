@@ -89,6 +89,40 @@ Dutch ("je") for the rest of the Join screen, after #574. Chapter is "afdeling",
   - "Questions or a problem?" → "Vragen of een probleem?"
   - "Email the Kya team at {{email}}." → "Mail het Kya-team op {{email}}."
 
+### [#578](https://github.com/the-kya-project/perch-perfect-plan/pull/578) · CR1–CR14 Community navigation redesign (spec and mockups only)
+- **Needs:** merge, once you've read the copy below. All nine answers (Nov 28) are recorded in the spec's "Decisions". Merging puts CR1–CR14 at the top of "Ready to build" for the hourly runs.
+- **Space renamed** (your call, Nov 28; built in CR1):
+  - "Learn together" → "Flock talk" (sentence case: "Flock" is the community's name, "talk" lowercase)
+  - "Questions, guides, and what members are working out with their birds." (Spaces sheet) and "Questions and what's working" (mockups) → "Questions, wins, and everyday life with your bird"
+  - Feed empty state for the space: "No questions yet" / "When members ask, answer, and share what's working with their birds, it will gather here." → "Nothing here yet" / "Questions, wins, and everyday life with members' birds will gather here." (proposed)
+- **Placeholder copy for your review** (from the approved mockups; you'll supply the final text, and it must be final before opening, step 6 of the opening checklist):
+  - **Guidelines page (Final-10):**
+    - Intro: "The Flock is a place to get better at caring for our birds, together. These guidelines keep it kind, useful, and safe for everyone."
+    - What we believe: "Every bird deserves a good life, and most mistakes come from not knowing, not from not caring." / "We share what we've learned so the next bird, and the next person, has an easier time."
+    - How we treat each other: "Kindness first, no shaming, and assume good intent."
+    - Health questions go to your vet: "We share experiences, but we never diagnose."
+    - Posting and sharing: "What belongs where, and how Do good posts are reviewed."
+    - How moderation works: "How the Kya team handles reports and removals."
+    - Button: "Report something"; its sheet: "Report a post or comment", "Report a member", "Email the Kya team"
+  - **Agreement screen (Final-11):**
+    - "Welcome to the Flock" / "Before you join in, take a minute to read how we take care of each other here."
+    - "Be kind" · "No shaming. Assume everyone here loves their birds."
+    - "Health questions go to your vet" · "We share experiences, never diagnoses."
+    - "Share what's yours" · "Your own photos, stories, and questions."
+    - "Zero tolerance for abuse" · "Harassment or harmful content is removed, and the person may be removed too." (keep this line in the final version: Apple 1.2)
+    - "Read the full guidelines" / "I agree, take me to the Flock" / "You'll see this again if the guidelines change."
+- **Other new copy** (from the mockups; each item lists its exact lines again when it's built):
+  - Bottom bar: "Today" → "Feed"; "Add something" (center button, screen readers)
+  - Header: "Menu", "Menu, new activity", "Updates"
+  - Menu: "Community guidelines" · "How we take care of each other"; "Spaces"; space lines (changed from the Spaces sheet's longer ones) "Introductions and first questions", "Questions, wins, and everyday life with your bird", "Rescue, conservation, ways to help"; "[Chapter] chapter"; "Events"; "My birds"; "Home"; "Sits"; "Your profile and posts"; "Notifications"; "Settings"; page "Events are coming soon"
+  - Feed: "Journeys", "See all", "Your journey", "Start a new journey", "Try today", "Tried it", "See how everyone did", "From the spaces", "(you)"
+  - Add sheet: "Add something"; "Weigh & check your flock" · "Opens your daily check for all your birds"; "Post to the community" · "Share a win, ask a question, or say hello"; "Post a journey update" · "[Bird] · [skill]"; "Start a journey"
+  - New post: tile lines "Questions, wins, and everyday life with your bird", "Say hi and ask first questions", "Rescue needs and causes", "Members near you"; "Remove"; "Save to [bird]'s moments too"; "Saved to [bird]'s moments"; "Your post is up. We couldn't save it to [bird]'s moments."
+  - Post options: "Post options", "Report this post", "Report this comment", "Report this member", "Block this member", "Reports go to the Kya team. Blocking hides their posts and comments from you.", "Edit", "Delete", "Report [name]"
+  - Library: "Search the library", "Filters", "Newest first", "TYPE · pick as many as you like", "Subject", "Sort", "Newest", "Oldest", "A to Z", "Clear all", "Show N resources"
+  - Moments (care side, Flock members only): "Also share with the community" · "Posts to the community Feed with [bird]'s photo"
+  - Join: the "I agree to the community guidelines" checkbox and "Join the Flock" give way to "Continue" (chapter and 18+ screen) and the agreement screen's button
+
 ### [#572](https://github.com/the-kya-project/perch-perfect-plan/pull/572) · 1.13b Care badges · **merged on Brittany's OK (Nov 28, 2026), switched off**
 English only (Dutch after you approve the English). Everything is behind the `care_badges` switch (off). All new. Lines marked "mockup" are word for word from `SpecBadges.dc.html`.
 - **Where:** the bird page's record list
