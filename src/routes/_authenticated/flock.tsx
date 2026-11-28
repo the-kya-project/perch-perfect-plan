@@ -76,12 +76,22 @@ function FlockLayout() {
     const inFlock = pathname === "/flock" || pathname.startsWith("/flock/");
     if (agreed === false && inFlock && !isWalkthroughPath(pathname)) void navigate({ to: "/flock/agree", replace: true });
   }, [agreed, pathname, navigate]);
+  // Backstop: someone who hasn't joined never gets the member Flock, even if a
+  // navigation slipped past beforeLoad's redirect (two at once can). Same rule
+  // as beforeLoad (joinRedirect); only on Flock screens, like the check above.
+  const notJoined =
+    agreed === true && !!access && joinRedirect(access, pathname) === "/flock/join" && !isWalkthroughPath(pathname);
+  useEffect(() => {
+    const inFlock = pathname === "/flock" || pathname.startsWith("/flock/");
+    if (notJoined && inFlock) void navigate({ to: "/flock/join", replace: true });
+  }, [notJoined, pathname, navigate]);
   // The walk-through, and the full guidelines before agreeing, render alone.
   if (pathname.startsWith("/flock/agree") || (pathname === "/flock/guidelines" && agreed !== true)) return <JoinFrame />;
   // The join step and the rescue code form, and the guidelines before you're
   // a member, render without the member chrome (which reads member-only data).
   const inside = !!access && (access.is_admin || (access.agreed && access.member_now));
   if (pathname.startsWith("/flock/join") || isRescuePath(pathname) || (isJoinPath(pathname) && !inside)) return <JoinFrame />;
+  if (notJoined) return null;
   return <MemberFlock pathname={pathname} />;
 }
 

@@ -6,14 +6,20 @@ import { GUIDELINES_VERSION, WALKTHROUGH_STEPS } from "@/flock/guidelines/versio
 import { agreeToGuidelines, setWalkthroughOpen } from "@/flock/guidelines/agreement";
 import { trackFlockWalkthrough } from "@/lib/flockAnalytics";
 import { rememberMode } from "@/lib/flock";
+import { FLOCK_ACCESS_QUERY, joinRedirect } from "@/lib/flockJoin";
 
 // The community guidelines walk-through. The /flock layout sends everyone here
 // who hasn't agreed to the current version (GUIDELINES_VERSION), from any way
 // in: the Community button, a link, a notification. The step is in the URL
 // (?step=1–3, replaced, never pushed), so a reload stays on the same screen and
 // the system Back leaves the walk-through for the care page it came from.
-// Agreeing saves the row, then opens the feed (the layout then sends a
-// non-member on to the join step).
+// Agreeing saves the row, then opens the join step for someone who hasn't
+// joined yet, or the feed for a member. It goes there directly, once: two
+// navigations to /flock at the same moment (the button and an "already
+// agreed" effect this page used to have) lost the layout's redirect to the
+// join step, so a non-member got the member Flock and then Home, or looped
+// between /flock and /flock/join (Nov 28, 2026; #592, #591). "Already agreed"
+// is now the layout's beforeLoad.
 type Search = { step?: number };
 
 export const Route = createFileRoute("/_authenticated/flock/agree")({
@@ -69,7 +75,9 @@ function FlockAgree() {
         await agreeToGuidelines(qc);
         setWalkthroughOpen(false);
         void trackFlockWalkthrough("flock_guidelines_agreed", { version: GUIDELINES_VERSION });
-        await navigate({ to: "/flock", replace: true });
+        const access = await qc.fetchQuery(FLOCK_ACCESS_QUERY).catch(() => null);
+        const to = joinRedirect(access, "/flock") === "/flock/join" ? "/flock/join" : "/flock";
+        await navigate({ to, replace: true });
       }}
     />
   );
