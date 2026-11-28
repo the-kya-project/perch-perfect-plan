@@ -2061,6 +2061,70 @@
   "capabilities.presetViewer": "Kijker",
   // Record health
   "capabilities.recordHealth": "Gezondheid bijhouden",
+  // {{name}}'s care badges
+  "careBadges.careSet": "Verzorgingsbadges van {{name}}",
+  // {{earned}} of {{total}} earned
+  "careBadges.count": "{{earned}} van {{total}} behaald",
+  // {{n}} days
+  "careBadges.daysN": "{{n}} dagen",
+  // You've checked on {{name}} {{n}} days in a row.
+  "careBadges.earned.dailyCheckIn": "Je hebt {{n}} dagen op rij naar {{name}} gekeken.",
+  // {{name}}'s care plan is ready for anyone who looks after {{name}}.
+  "careBadges.earned.planReady": "Het verzorgingsplan van {{name}} is klaar voor iedereen die voor {{name}} zorgt.",
+  // You sent a pet sitter link for {{name}}.
+  "careBadges.earned.sitterReady": "Je hebt een oppaslink voor {{name}} gestuurd.",
+  // You've weighed {{name}} {{n}} weeks in a row.
+  "careBadges.earned.steadyScale": "Je hebt {{name}} {{n}} weken op rij gewogen.",
+  // Badge earned
+  "careBadges.earnedLabel": "Badge behaald",
+  // Earned {{date}}.
+  "careBadges.earnedOn": "Behaald op {{date}}.",
+  // {{level}} reached {{date}}.
+  "careBadges.earnedOnLevel": "{{level}} bereikt op {{date}}.",
+  // Badges reward the care you keep up, never a weight, a trend or a health result.
+  "careBadges.footer": "Badges belonen de zorg die je volhoudt, nooit een gewicht, een trend of een gezondheidsuitslag.",
+  // Got it
+  "careBadges.gotIt": "Begrepen",
+  // Daily check-in: do {{name}}'s daily health check 7 days in a row. There's a level at 30 days.
+  "careBadges.how.dailyCheckIn": "Dagelijkse check: doe 7 dagen op rij de dagelijkse gezondheidscheck van {{name}}. Bij 30 dagen is er een volgend niveau.",
+  // Plan ready: finish every section of {{name}}'s care plan.
+  "careBadges.how.planReady": "Plan klaar: vul elk onderdeel van het verzorgingsplan van {{name}} in.",
+  // Sitter ready: send a pet sitter link for {{name}}.
+  "careBadges.how.sitterReady": "Klaar voor de oppas: stuur een oppaslink voor {{name}}.",
+  // Steady scale: weigh {{name}} at least once a week, 4 weeks in a row. There are levels at 12 and 52 weeks.
+  "careBadges.how.steadyScale": "Vaste weger: weeg {{name}} minstens één keer per week, 4 weken op rij. Bij 12 en 52 weken zijn er volgende niveaus.",
+  // New: badges
+  "careBadges.launchLabel": "Nieuw: badges",
+  // You've been caring for {{name}} for a while. These count.
+  "careBadges.launchLine": "Je zorgt al een tijdje voor {{name}}. Dat telt mee.",
+  // Here's what you've already earned
+  "careBadges.launchTitle": "Dit heb je al behaald",
+  // Loading badges
+  "careBadges.loading": "Badges laden",
+  // Badges — Kya & Co.
+  "careBadges.metaTitle": "Badges — Kya & Co.",
+  // Daily check-in
+  "careBadges.name.dailyCheckIn": "Dagelijkse check",
+  // Plan ready
+  "careBadges.name.planReady": "Plan klaar",
+  // Sitter ready
+  "careBadges.name.sitterReady": "Klaar voor de oppas",
+  // Steady scale
+  "careBadges.name.steadyScale": "Vaste weger",
+  // Next level at {{n}} days.
+  "careBadges.nextDays": "Volgend niveau bij {{n}} dagen.",
+  // Next level at {{n}} weeks.
+  "careBadges.nextWeeks": "Volgend niveau bij {{n}} weken.",
+  // Not now
+  "careBadges.notNow": "Niet nu",
+  // See all badges
+  "careBadges.seeAll": "Alle badges bekijken",
+  // Badges
+  "careBadges.title": "Badges",
+  // {{n}} weeks
+  "careBadges.weeksN": "{{n}} weken",
+  // your bird
+  "careBadges.yourBird": "je vogel",
   // Free-fed
   "careCards.freeFed": "Vrij voeren",
   // Step up
@@ -2420,7 +2484,7 @@
   // All normal
   "checkReference.allNormal": "Alles normaal",
   // Concern flagged
-  "checkReference.concern": "Zorg gemeld",
+  "checkReference.concern": "Aandachtspunt gemeld",
   // Daily check
   "checkReference.dailyCheck": "Dagelijkse check",
   // For reference
@@ -2906,11 +2970,11 @@
   // You help here
   "dashboard.youHelpHere": "Je helpt hier",
   // Your birds today
-  "dashboard.yourBirds": "Je vogels",
+  "dashboard.yourBirds": "Je vogels vandaag",
   // your birds
   "dashboard.yourBirdsLower": "je vogels",
   // Your flock today
-  "dashboard.yourFlock": "Je vogels",
+  "dashboard.yourFlock": "Je vogels vandaag",
   // That already exists.
   "dbError.alreadyExists": "Dat bestaat al.",
   // Something required was missing.
@@ -3369,6 +3433,86 @@
   "farewell.you": "jij",
   // your bird
   "farewell.yourBird": "je vogel",
+  // {{earned}} of {{total}} earned
+  "flock.badges.count": "{{earned}} van {{total}} behaald",
+  // You completed a challenge.
+  "flock.badges.earned.challengeChamp": "Je hebt een uitdaging voltooid.",
+  // You finished your Flock profile and joined your chapter.
+  "flock.badges.earned.firstSteps": "Je hebt je Flock-profiel afgemaakt en bent lid geworden van je afdeling.",
+  // Something you shared to help other birds was approved.
+  "flock.badges.earned.goodNeighbor": "Iets wat je deelde om andere vogels te helpen, is goedgekeurd.",
+  // You finished your first journey.
+  "flock.badges.earned.journeyFirst": "Je hebt je eerste traject afgerond.",
+  // You've finished {{n}} journeys.
+  "flock.badges.earned.journeysMany": "Je hebt {{n}} trajecten afgerond.",
+  // You finished a tricks journey.
+  "flock.badges.earned.trickStar": "Je hebt een trucjestraject afgerond.",
+  // You voted in a Do good vote.
+  "flock.badges.earned.voice": "Je hebt gestemd in een Do good-stemming.",
+  // Badge earned
+  "flock.badges.earnedLabel": "Badge behaald",
+  // Earned {{date}}.
+  "flock.badges.earnedOn": "Behaald op {{date}}.",
+  // {{level}} reached {{date}}.
+  "flock.badges.earnedOnLevel": "{{level}} bereikt op {{date}}.",
+  // Flock badges
+  "flock.badges.flockSet": "Flock-badges",
+  // Badges show on your Flock profile. A badge from "Just me" journeys stays here, for you. You can hide your badges on Edit profile.
+  "flock.badges.footer": "Badges staan op je Flock-profiel. Een badge van trajecten die op \"Alleen ik\" staan, blijft hier, voor jou. Je kunt je badges verbergen via Profiel bewerken.",
+  // Got it
+  "flock.badges.gotIt": "Begrepen",
+  // Challenge champ: complete a Flock challenge.
+  "flock.badges.how.challengeChamp": "Uitdagingskampioen: voltooi een Flock-uitdaging.",
+  // First steps: finish your Flock profile and join your chapter.
+  "flock.badges.how.firstSteps": "Eerste stappen: maak je Flock-profiel af en word lid van je afdeling.",
+  // Good neighbor: have a Do good post approved, or a place you suggested added to your chapter.
+  "flock.badges.how.goodNeighbor": "Goede buur: laat een Do good-bericht goedkeuren, of een plek die je voorstelde toevoegen aan je afdeling.",
+  // Journey finisher: finish a journey. There are levels at 3 and 10 finished journeys.
+  "flock.badges.how.journeyFinisher": "Trajectafronder: rond een traject af. Bij 3 en 10 afgeronde trajecten zijn er volgende niveaus.",
+  // Trick star: finish any tricks journey.
+  "flock.badges.how.trickStar": "Trucjesster: rond een trucjestraject af.",
+  // Voice of the Flock: vote in a Do good vote.
+  "flock.badges.how.voice": "Stem van de Flock: stem in een Do good-stemming.",
+  // {{n}} journeys
+  "flock.badges.journeysN": "{{n}} trajecten",
+  // New: badges
+  "flock.badges.launchLabel": "Nieuw: badges",
+  // You've already done a lot in the Flock. These count.
+  "flock.badges.launchLine": "Je hebt al veel gedaan in de Flock. Dat telt mee.",
+  // Here's what you've already earned
+  "flock.badges.launchTitle": "Dit heb je al behaald",
+  // Loading your badges
+  "flock.badges.loading": "Je badges laden",
+  // Challenge champ
+  "flock.badges.name.challengeChamp": "Uitdagingskampioen",
+  // First steps
+  "flock.badges.name.firstSteps": "Eerste stappen",
+  // Good neighbor
+  "flock.badges.name.goodNeighbor": "Goede buur",
+  // Journey finisher
+  "flock.badges.name.journeyFinisher": "Trajectafronder",
+  // Trick star
+  "flock.badges.name.trickStar": "Trucjesster",
+  // Voice of the Flock
+  "flock.badges.name.voice": "Stem van de Flock",
+  // Next level at {{n}} journeys.
+  "flock.badges.nextLevel": "Volgend niveau bij {{n}} trajecten.",
+  // Not now
+  "flock.badges.notNow": "Niet nu",
+  // 1 journey
+  "flock.badges.oneJourney": "1 traject",
+  // See your badges
+  "flock.badges.see": "Je badges bekijken",
+  // See all badges
+  "flock.badges.seeAll": "Alle badges bekijken",
+  // Badges
+  "flock.badges.title": "Badges",
+  // That didn't save. Try again.
+  "flock.badges.toggleError": "Dat is niet opgeslagen. Probeer het opnieuw.",
+  // Members see the Flock badges you've earned on your profile. You can change this any time.
+  "flock.badges.toggleHint": "Leden zien de Flock-badges die je hebt behaald op je profiel. Je kunt dit altijd wijzigen.",
+  // Show my badges on my profile.
+  "flock.badges.toggleLabel": "Toon mijn badges op mijn profiel.",
   // Access until
   "flock.billing.accessUntil": "Toegang tot",
   // Add my card · $0 today
@@ -3399,6 +3543,24 @@
   "flock.billing.confirmingSlow": "Dit duurt langer dan normaal. Je kaart is veilig bij Stripe, dus je hoeft hem niet opnieuw toe te voegen. Kijk over een paar minuten bij Lidmaatschap en betaling.",
   // Confirming your card
   "flock.billing.confirmingTitle": "Je kaart wordt bevestigd",
+  // Everything in a Flock membership
+  "flock.billing.crewEverything": "Alles uit een Flock-lidmaatschap",
+  // <strong>{{pct}}</strong> of what you pay goes to parrot rescue and conservation partners
+  "flock.billing.crewGives": "<strong>{{pct}}</strong> van wat je betaalt gaat naar partners in papegaaienopvang en natuurbehoud",
+  // Kya's Crew gives back more
+  "flock.billing.crewGivesBack": "Kya's Crew geeft meer terug",
+  // For members who want to give a little more
+  "flock.billing.crewLine": "Voor leden die net iets meer willen geven",
+  // Crew monthly
+  "flock.billing.crewMonthlyLabel": "Crew maandelijks",
+  // Crew memberships help support free Flock access for rescue adopters
+  "flock.billing.crewRescue": "Crew-lidmaatschappen helpen gratis toegang tot de Flock mogelijk te maken voor mensen die een vogel uit de opvang adopteren",
+  // Save {{price}}
+  "flock.billing.crewSave": "Bespaar {{price}}",
+  // Kya's Crew
+  "flock.billing.crewTitle": "Kya's Crew",
+  // Crew yearly
+  "flock.billing.crewYearlyLabel": "Crew jaarlijks",
   // Your membership won't renew.
   "flock.billing.ends": "Je lidmaatschap wordt niet verlengd.",
   // That didn't work. Try again in a moment.
@@ -3407,6 +3569,8 @@
   "flock.billing.firstCharge": "Eerste betaling",
   // Flock member
   "flock.billing.flockMember": "Lid van de Flock",
+  // Flock membership
+  "flock.billing.flockMembership": "Flock-lidmaatschap",
   // Founding price: {{price}} a month, locked in for as long as you stay a member.
   "flock.billing.founding": "Oprichtersprijs: {{price}} per maand, vast zolang je lid blijft.",
   // Founding 50
@@ -3429,6 +3593,8 @@
   "flock.billing.givesBackLine": "van wat je betaalt gaat naar partners in papegaaienopvang en natuurbehoud",
   // <strong>Your membership gives back.</strong> 20% goes to parrot rescue and conservation partners.
   "flock.billing.givesBackNote": "<strong>Je lidmaatschap geeft iets terug.</strong> 20% gaat naar partners in papegaaienopvang en natuurbehoud.",
+  // <strong>Your Crew membership gives back more.</strong> {{pct}} goes to parrot rescue and conservation partners.
+  "flock.billing.givesBackNoteCrew": "<strong>Je Crew-lidmaatschap geeft meer terug.</strong> {{pct}} gaat naar partners in papegaaienopvang en natuurbehoud.",
   // Join the Flock, and help parrots in rescues and in the wild.
   "flock.billing.heroAfterLine": "Word lid van de Flock en help papegaaien in de opvang en in het wild.",
   // You helped <em>start this</em>. Keep your {{price}}.
@@ -3443,6 +3609,10 @@
   "flock.billing.howItWorks": "Zo werkt het",
   // What your membership includes
   "flock.billing.includes": "Dit zit in je lidmaatschap",
+  // Join Kya's Crew
+  "flock.billing.joinCrew": "Word lid van Kya's Crew",
+  // Join Kya's Crew · $0 today
+  "flock.billing.joinCrewToday": "Word lid van Kya's Crew · vandaag $0",
   // Join the Flock
   "flock.billing.joinFlock": "Word lid van de Flock",
   // What your membership keeps
@@ -3489,6 +3659,8 @@
   "flock.billing.perMonth": "/mnd",
   // Pick how you pay
   "flock.billing.pickHow": "Kies hoe je betaalt",
+  // Pick your membership
+  "flock.billing.pickMembership": "Kies je lidmaatschap",
   // Founding member
   "flock.billing.planFounding": "Oprichtend lid",
   // Plan
@@ -3499,6 +3671,10 @@
   "flock.billing.renewsMonthly": "Wordt elke maand verlengd. Opzeggen kan altijd via Betaling beheren.",
   // Renews once a year. Cancel anytime in Manage billing.
   "flock.billing.renewsYearly": "Wordt eens per jaar verlengd. Opzeggen kan altijd via Betaling beheren.",
+  // Kya's Crew, {{price}} a month. You won't be charged until {{date}}. Cancel anytime before then from Membership and billing.
+  "flock.billing.saveCardNoteCrewMonthly": "Kya's Crew, {{price}} per maand. Je betaalt niets tot {{date}}. Je kunt tot die tijd altijd opzeggen via Lidmaatschap en betaling.",
+  // Kya's Crew, {{price}} a year. You won't be charged until {{date}}. Cancel anytime before then from Membership and billing.
+  "flock.billing.saveCardNoteCrewYearly": "Kya's Crew, {{price}} per jaar. Je betaalt niets tot {{date}}. Je kunt tot die tijd altijd opzeggen via Lidmaatschap en betaling.",
   // The Flock, {{price}} a month. You won't be charged until {{date}}. Cancel anytime before then from Membership and billing.
   "flock.billing.saveCardNoteMonthly": "De Flock, {{price}} per maand. Je betaalt niets tot {{date}}. Je kunt tot die tijd altijd opzeggen via Lidmaatschap en betaling.",
   // The Flock, {{price}} a year. You won't be charged until {{date}}. Cancel anytime before then from Membership and billing.
@@ -3517,6 +3693,8 @@
   "flock.billing.staysFree": "Alles in de Flock blijft gratis, net als nu.",
   // <strong>Thank you.</strong> 20% of your membership will go to parrot rescue and conservation partners.
   "flock.billing.thanks": "<strong>Dankjewel.</strong> 20% van je lidmaatschap gaat naar partners in papegaaienopvang en natuurbehoud.",
+  // <strong>Thank you.</strong> {{pct}} of your Crew membership will go to parrot rescue and conservation partners.
+  "flock.billing.thanksCrew": "<strong>Dankjewel.</strong> {{pct}} van je Crew-lidmaatschap gaat naar partners in papegaaienopvang en natuurbehoud.",
   // Today
   "flock.billing.today": "Vandaag",
   // Add your card. Your founding spot is safe. $0 due today.
@@ -3535,6 +3713,348 @@
   "flock.billing.yearlyLabel": "Jaarlijks",
   // {{price}} once a year
   "flock.billing.yearlyTotal": "{{price}} eens per jaar",
+  // This bird isn't shown in the Community.
+  "flock.bird.missing": "Deze vogel wordt niet getoond in de community.",
+  // Bird not found
+  "flock.bird.missingTitle": "Vogel niet gevonden",
+  // See profile
+  "flock.bird.seeProfile": "Bekijk profiel",
+  // {{name}}'s bird
+  "flock.bird.whose": "Vogel van {{name}}",
+  // Birds members can meet
+  "flock.birds.groupAria": "Vogels die leden kunnen ontmoeten",
+  // No birds on your account yet. You can choose them later in your profile.
+  "flock.birds.none": "Er staan nog geen vogels op je account. Je kunt ze later in je profiel kiezen.",
+  // Block {{name}}
+  "flock.block.action": "{{name}} blokkeren",
+  // Block and report
+  "flock.block.andReport": "Blokkeren en melden",
+  // Block
+  "flock.block.confirm": "Blokkeren",
+  // That didn't go through. Try again.
+  "flock.block.error": "Dat is niet gelukt. Probeer het opnieuw.",
+  // You won't see each other's posts, comments, journeys or profile in the Flock. They won't be told. You can unblock them any time in Flock settings.
+  "flock.block.line": "Jullie zien elkaars berichten, reacties, trajecten en profiel niet meer in de Flock. Zij krijgen dat niet te horen. Je kunt ze altijd weer deblokkeren in de Flock-instellingen.",
+  // Report and block
+  "flock.block.reportSend": "Melden en blokkeren",
+  // We'll take a look. You've also blocked {{name}}, so you won't see each other in the Flock. Neither the report nor the block is shown to them.
+  "flock.block.reportThanks": "We gaan het bekijken. Je hebt {{name}} ook geblokkeerd, dus jullie zien elkaar niet meer in de Flock. De melding en de blokkering worden niet aan diegene getoond.",
+  // Block and report
+  "flock.block.reportTitle": "Blokkeren en melden",
+  // this member
+  "flock.block.thisMember": "dit lid",
+  // Block {{name}}?
+  "flock.block.title": "{{name}} blokkeren?",
+  // You'll see each other's posts, comments and journeys in the Flock again, unless they've blocked you too. They won't be told.
+  "flock.blocked.confirmLine": "Jullie zien elkaars berichten, reacties en trajecten weer in de Flock, tenzij diegene jou ook heeft geblokkeerd. Zij krijgen dat niet te horen.",
+  // Unblock {{name}}?
+  "flock.blocked.confirmTitle": "{{name}} deblokkeren?",
+  // You can block someone from the menu on their post, comment, journey or profile.
+  "flock.blocked.empty": "Je kunt iemand blokkeren via het menu bij hun bericht, reactie, traject of profiel.",
+  // No one is blocked
+  "flock.blocked.emptyTitle": "Niemand geblokkeerd",
+  // You and the people you block don't see each other's posts, comments, journeys or profile in the Flock. They aren't told.
+  "flock.blocked.line": "Jij en de mensen die je blokkeert zien elkaars berichten, reacties, trajecten en profiel niet in de Flock. Zij krijgen dat niet te horen.",
+  // Blocked members
+  "flock.blocked.title": "Geblokkeerde leden",
+  // Unblock
+  "flock.blocked.unblock": "Deblokkeren",
+  // You've posted for every prompt. Nicely done.
+  "flock.challenges.allPosted": "Je hebt voor elke opdracht iets geplaatst. Goed gedaan.",
+  // You've already posted for this prompt.
+  "flock.challenges.alreadyPosted": "Je hebt voor deze opdracht al iets geplaatst.",
+  // This challenge has closed, so it isn't taking new entries.
+  "flock.challenges.closedError": "Deze uitdaging is gesloten en neemt geen nieuwe inzendingen meer aan.",
+  // This challenge has closed.
+  "flock.challenges.closedJoin": "Deze uitdaging is gesloten.",
+  // This challenge has closed. Its entries stay here to read.
+  "flock.challenges.closedLine": "Deze uitdaging is gesloten. De inzendingen blijven hier staan om te lezen.",
+  // Challenge · closed
+  "flock.challenges.closedTag": "Uitdaging · gesloten",
+  // Challenge · {{n}} days left
+  "flock.challenges.daysLeft": "Uitdaging · nog {{n}} dagen",
+  // Done: 
+  "flock.challenges.doneSr": "Klaar: ",
+  // Entries
+  "flock.challenges.entries": "Inzendingen",
+  // How is {{journey}} going?
+  "flock.challenges.entryJourney": "Hoe gaat {{journey}}?",
+  // Your entry
+  "flock.challenges.entryLabel": "Jouw inzending",
+  // A few sentences about how it went. Add a photo if you have one.
+  "flock.challenges.entryPlaceholder": "Een paar zinnen over hoe het ging. Voeg een foto toe als je er een hebt.",
+  // {{n}}. {{prompt}}
+  "flock.challenges.entryPrompt": "{{n}}. {{prompt}}",
+  // New entry
+  "flock.challenges.entryTitle": "Nieuwe inzending",
+  // Featured entries
+  "flock.challenges.featured": "Uitgelichte inzendingen",
+  // It's OK to feature my entries in the wrap-up.
+  "flock.challenges.featureOk": "Mijn inzendingen mogen worden uitgelicht in de terugblik.",
+  // You and {{bird}} finished {{title}}. That earns the Challenge champ badge.
+  "flock.challenges.finishedLine": "Jij en {{bird}} hebben {{title}} afgerond. Daarmee verdien je de badge Uitdagingskampioen.",
+  // You finished {{title}}. That earns the Challenge champ badge.
+  "flock.challenges.finishedLineNoBird": "Je hebt {{title}} afgerond. Daarmee verdien je de badge Uitdagingskampioen.",
+  // You finished!
+  "flock.challenges.finishedTitle": "Je hebt het gehaald!",
+  // Join the challenge
+  "flock.challenges.join": "Doe mee met de uitdaging",
+  // {{n}} members joined
+  "flock.challenges.joined": "{{n}} leden doen mee",
+  // We couldn't join you up. Try again.
+  "flock.challenges.joinError": "We konden je niet aanmelden. Probeer het opnieuw.",
+  // Join the challenge first, then post your entries.
+  "flock.challenges.joinFirst": "Doe eerst mee met de uitdaging en plaats dan je inzendingen.",
+  // Joining…
+  "flock.challenges.joining": "Aanmelden…",
+  // {{name}} learned it. You finished the challenge!
+  "flock.challenges.journeyDone": "{{name}} kan het. Je hebt de uitdaging afgerond!",
+  // In progress
+  "flock.challenges.journeyGoing": "Bezig",
+  // Finish the journey with “learned it” by the last day to complete the challenge.
+  "flock.challenges.journeyHow": "Rond het traject af met “kan het” vóór de laatste dag om de uitdaging te voltooien.",
+  // Journey challenge · {{name}}
+  "flock.challenges.journeyKind": "Trajectuitdaging · {{name}}",
+  // Learned it
+  "flock.challenges.journeyLearned": "Kan het",
+  // Keep going
+  "flock.challenges.keepGoing": "Ga door",
+  // Challenge · last day
+  "flock.challenges.lastDay": "Uitdaging · laatste dag",
+  // Manage this challenge
+  "flock.challenges.manage": "Deze uitdaging beheren",
+  // Manage challenges
+  "flock.challenges.manageAll": "Uitdagingen beheren",
+  // It may have ended a while ago, or it's for another chapter.
+  "flock.challenges.missing": "Misschien is hij al een tijd geleden afgelopen, of hij is voor een andere afdeling.",
+  // This challenge isn't here
+  "flock.challenges.missingTitle": "Deze uitdaging is er niet",
+  // {{n}} more after this
+  "flock.challenges.moreAfter": "Hierna nog {{n}}",
+  // Add a bird in the care app to join a challenge.
+  "flock.challenges.noBirds": "Voeg een vogel toe in de verzorgingsapp om mee te doen met een uitdaging.",
+  // No entries yet. Yours could be the first.
+  "flock.challenges.noEntries": "Nog geen inzendingen. Die van jou kan de eerste zijn.",
+  // Nobody posted an entry this time.
+  "flock.challenges.noEntriesClosed": "Niemand heeft deze keer een inzending geplaatst.",
+  // Nothing to post here
+  "flock.challenges.noEntryTitle": "Hier valt niets te plaatsen",
+  // Only admins see this challenge until it starts.
+  "flock.challenges.notStarted": "Alleen beheerders zien deze uitdaging tot hij begint.",
+  // Challenge · 1 day left
+  "flock.challenges.oneDayLeft": "Uitdaging · nog 1 dag",
+  // 1 member joined
+  "flock.challenges.oneJoined": "1 lid doet mee",
+  // 1 more after this
+  "flock.challenges.oneMore": "Hierna nog 1",
+  // 1 prompt
+  "flock.challenges.onePrompt": "1 opdracht",
+  // Open the journey
+  "flock.challenges.openJourney": "Open het traject",
+  // Pinned entry
+  "flock.challenges.pinned": "Vastgezette inzending",
+  // Post today's entry
+  "flock.challenges.postEntry": "Plaats de inzending van vandaag",
+  // Post an entry
+  "flock.challenges.postJourneyEntry": "Plaats een inzending",
+  // {{done}} of {{total}} done
+  "flock.challenges.progress": "{{done}} van {{total}} klaar",
+  // {{n}} prompts
+  "flock.challenges.prompts": "{{n}} opdrachten",
+  // See your badges
+  "flock.challenges.seeBadges": "Bekijk je badges",
+  // See the challenge
+  "flock.challenges.seeYours": "Bekijk de uitdaging",
+  // Standalone challenge
+  "flock.challenges.standaloneKind": "Losse uitdaging",
+  // Start the journey
+  "flock.challenges.startJourney": "Begin het traject",
+  // Challenge
+  "flock.challenges.title": "Uitdaging",
+  // Who's taking part?
+  "flock.challenges.whichBird": "Wie doet er mee?",
+  // Wrap-up
+  "flock.challenges.wrapUp": "Terugblik",
+  // Who it's for
+  "flock.challengesAdmin.audienceLabel": "Voor wie",
+  // Add {{what}} before scheduling.
+  "flock.challengesAdmin.cantSchedule": "Voeg {{what}} toe voordat je inplant.",
+  // Something in the form isn't allowed. Check the title, the prompts and the days, then try again.
+  "flock.challengesAdmin.checkError": "Iets in het formulier is niet toegestaan. Controleer de titel, de opdrachten en de dagen en probeer het opnieuw.",
+  // Closed
+  "flock.challengesAdmin.closed": "Gesloten",
+  // {{members}} joined · {{entries}} entries
+  "flock.challengesAdmin.counts": "{{members}} doen mee · {{entries}} inzendingen",
+  // Days in Eastern time, the Flock's day. Both days count.
+  "flock.challengesAdmin.daysHint": "Dagen in Amerikaanse oostkusttijd, de dag van de Flock. Beide dagen tellen mee.",
+  // Delete draft
+  "flock.challengesAdmin.delete": "Concept verwijderen",
+  // Delete draft
+  "flock.challengesAdmin.deleteConfirm": "Concept verwijderen",
+  // Delete this draft? This can't be undone.
+  "flock.challengesAdmin.deleteConfirmLine": "Dit concept verwijderen? Dit kan niet ongedaan worden gemaakt.",
+  // Short description (optional)
+  "flock.challengesAdmin.descriptionLabel": "Korte beschrijving (optioneel)",
+  // Draft
+  "flock.challengesAdmin.draft": "Concept",
+  // A draft. Only admins can see it.
+  "flock.challengesAdmin.draftLine": "Een concept. Alleen beheerders kunnen het zien.",
+  // Edit challenge
+  "flock.challengesAdmin.edit": "Uitdaging bewerken",
+  // No challenges yet. Tap New challenge to write one. Members see it only once it's scheduled and its start day arrives.
+  "flock.challengesAdmin.empty": "Nog geen uitdagingen. Tik op Nieuwe uitdaging om er een te schrijven. Leden zien hem pas als hij is ingepland en de startdag is aangebroken.",
+  // Ends
+  "flock.challengesAdmin.ends": "Eindigt",
+  // Only entries whose authors said "It's OK to feature my entries." Pin one for everyone to see first.
+  "flock.challengesAdmin.entriesHint": "Alleen inzendingen waarvan de maker zei: \"Mijn inzendingen mogen worden uitgelicht.\" Zet er een vast zodat iedereen die als eerste ziet.",
+  // Entries you may feature
+  "flock.challengesAdmin.entriesLabel": "Inzendingen die je mag uitlichten",
+  // Feature in the wrap-up
+  "flock.challengesAdmin.feature": "Uitlichten in de terugblik",
+  // In the wrap-up
+  "flock.challengesAdmin.featuredOn": "In de terugblik",
+  // Journey
+  "flock.challengesAdmin.journey": "Traject",
+  // Starts a journey template
+  "flock.challengesAdmin.journeyLine": "Start een trajectsjabloon",
+  // Keep it
+  "flock.challengesAdmin.keep": "Behouden",
+  // What kind of challenge?
+  "flock.challengesAdmin.kindLabel": "Wat voor uitdaging?",
+  // Admin · one at a time for the whole Flock, plus one per chapter
+  "flock.challengesAdmin.line": "Beheer · één tegelijk voor de hele Flock, plus één per afdeling",
+  // We couldn't load the challenges. Try again.
+  "flock.challengesAdmin.loadError": "We konden de uitdagingen niet laden. Probeer het opnieuw.",
+  // Challenge not found
+  "flock.challengesAdmin.missing": "Uitdaging niet gevonden",
+  // It may have been deleted.
+  "flock.challengesAdmin.missingLine": "Misschien is hij verwijderd.",
+  // a start day and an end day on or after it
+  "flock.challengesAdmin.needDates": "een startdag en een einddag op of na de startdag",
+  // Pick a start day and an end day on or after it.
+  "flock.challengesAdmin.needDatesFirst": "Kies een startdag en een einddag op of na de startdag.",
+  // a start day that's today or later
+  "flock.challengesAdmin.needFuture": "een startdag vandaag of later",
+  // at least one prompt
+  "flock.challengesAdmin.needPrompts": "minstens één opdracht",
+  // prompts of 140 characters or fewer
+  "flock.challengesAdmin.needShortPrompts": "opdrachten van maximaal 140 tekens",
+  // Only entries whose authors said yes to being featured can be pinned or featured.
+  "flock.challengesAdmin.needsPermission": "Alleen inzendingen waarvan de maker ja zei tegen uitlichten kunnen worden vastgezet of uitgelicht.",
+  // a journey
+  "flock.challengesAdmin.needTemplate": "een traject",
+  // a title
+  "flock.challengesAdmin.needTitle": "een titel",
+  // Add a title first.
+  "flock.challengesAdmin.needTitleFirst": "Voeg eerst een titel toe.",
+  // New challenge
+  "flock.challengesAdmin.new": "Nieuwe uitdaging",
+  // No entries to feature yet.
+  "flock.challengesAdmin.noFeaturable": "Nog geen inzendingen om uit te lichten.",
+  // Challenges can't be about food or diet. Pick another journey.
+  "flock.challengesAdmin.noFood": "Uitdagingen mogen niet over voeding of dieet gaan. Kies een ander traject.",
+  // Open
+  "flock.challengesAdmin.open": "Open",
+  // Open the challenge page
+  "flock.challengesAdmin.openPage": "Open de uitdagingspagina",
+  // Another challenge for the same group runs on some of those days. Pick other days, or move that one.
+  "flock.challengesAdmin.overlap": "Op een paar van die dagen loopt al een andere uitdaging voor dezelfde groep. Kies andere dagen of verplaats die andere.",
+  // Pin
+  "flock.challengesAdmin.pin": "Vastzetten",
+  // Pinned.
+  "flock.challengesAdmin.pinnedDone": "Vastgezet.",
+  // One per line, up to 30. Members finish by posting an entry for each.
+  "flock.challengesAdmin.promptsHint": "Eén per regel, maximaal 30. Leden ronden af door voor elke opdracht een inzending te plaatsen.",
+  // Prompts
+  "flock.challengesAdmin.promptsLabel": "Opdrachten",
+  // One prompt per line, in order
+  "flock.challengesAdmin.promptsPlaceholder": "Eén opdracht per regel, op volgorde",
+  // Save changes
+  "flock.challengesAdmin.saveChanges": "Wijzigingen opslaan",
+  // Draft saved. Only admins can see it.
+  "flock.challengesAdmin.savedDraft": "Concept opgeslagen. Alleen beheerders kunnen het zien.",
+  // Save draft
+  "flock.challengesAdmin.saveDraft": "Concept opslaan",
+  // Saved. It's still scheduled.
+  "flock.challengesAdmin.savedScheduled": "Opgeslagen. Hij staat nog steeds ingepland.",
+  // Save the wrap-up
+  "flock.challengesAdmin.saveWrapUp": "Terugblik opslaan",
+  // Saving…
+  "flock.challengesAdmin.saving": "Opslaan…",
+  // Schedule challenge
+  "flock.challengesAdmin.schedule": "Uitdaging inplannen",
+  // Scheduled. Members see it on its start day.
+  "flock.challengesAdmin.scheduledLine": "Ingepland. Leden zien hem op de startdag.",
+  // Scheduling…
+  "flock.challengesAdmin.scheduling": "Inplannen…",
+  // Standalone
+  "flock.challengesAdmin.standalone": "Los",
+  // Your own list of prompts
+  "flock.challengesAdmin.standaloneLine": "Je eigen lijst met opdrachten",
+  // This challenge has started, so it can't be changed now.
+  "flock.challengesAdmin.started": "Deze uitdaging is begonnen en kan nu niet meer worden gewijzigd.",
+  // Starts
+  "flock.challengesAdmin.starts": "Begint",
+  // Diet conversion and other food journeys can't be challenges.
+  "flock.challengesAdmin.templateHint": "Dieetomschakeling en andere voedingstrajecten kunnen geen uitdaging zijn.",
+  // Journey
+  "flock.challengesAdmin.templateLabel": "Traject",
+  // Challenges
+  "flock.challengesAdmin.title": "Uitdagingen",
+  // Title
+  "flock.challengesAdmin.titleLabel": "Titel",
+  // Foraging week: a new idea every day
+  "flock.challengesAdmin.titlePlaceholder": "Foerageerweek: elke dag een nieuw idee",
+  // Unpin
+  "flock.challengesAdmin.unpin": "Losmaken",
+  // Unpinned.
+  "flock.challengesAdmin.unpinned": "Losgemaakt.",
+  // Move back to draft
+  "flock.challengesAdmin.unschedule": "Terugzetten naar concept",
+  // Scheduled
+  "flock.challengesAdmin.upcoming": "Ingepland",
+  // The whole Flock
+  "flock.challengesAdmin.wholeFlock": "De hele Flock",
+  // Wrap-up
+  "flock.challengesAdmin.wrapUpLabel": "Terugblik",
+  // You can write the wrap-up once the challenge closes.
+  "flock.challengesAdmin.wrapUpLater": "Je kunt de terugblik schrijven zodra de uitdaging is gesloten.",
+  // A note for everyone who took part. It shows at the top of the challenge page.
+  "flock.challengesAdmin.wrapUpPlaceholder": "Een bericht voor iedereen die heeft meegedaan. Het staat bovenaan de uitdagingspagina.",
+  // Wrap-up saved.
+  "flock.challengesAdmin.wrapUpSaved": "Terugblik opgeslagen.",
+  // Local meetups and online get-togethers for your chapter will be listed here.
+  "flock.chapter.empty.events": "Bijeenkomsten in de buurt en online samenkomsten van je afdeling verschijnen hier.",
+  // No events yet
+  "flock.chapter.empty.eventsTitle": "Nog geen evenementen",
+  // Once you choose your region, the members near you will show up here.
+  "flock.chapter.empty.noChapter": "Zodra je je regio kiest, verschijnen de leden bij jou in de buurt hier.",
+  // No chapter yet
+  "flock.chapter.empty.noChapterTitle": "Nog geen afdeling",
+  // Your chapter is the Flock members near you. Their posts will show up here.
+  "flock.chapter.empty.posts": "Je afdeling bestaat uit de leden van de Flock bij jou in de buurt. Hun berichten verschijnen hier.",
+  // Your chapter is gathering
+  "flock.chapter.empty.postsTitle": "Je afdeling komt samen",
+  // Events
+  "flock.chapter.events": "Evenementen",
+  // Members
+  "flock.chapter.members": "Leden",
+  // No chapter yet
+  "flock.chapter.noChapterLine": "Nog geen afdeling",
+  // Choose your region
+  "flock.chapter.pickRegion": "Kies je regio",
+  // Post to the {{name}} chapter
+  "flock.chapter.postPrompt": "Plaats een bericht in afdeling {{name}}",
+  // Posts
+  "flock.chapter.posts": "Berichten",
+  // Resources
+  "flock.chapter.resources": "Bronnen",
+  // See members
+  "flock.chapter.seeMembers": "Bekijk leden",
+  // Chapter sections
+  "flock.chapter.tabsAria": "Onderdelen van de afdeling",
+  // Chapter
+  "flock.chapter.title": "Afdeling",
   // California
   "flock.chapters.california": "Californië",
   // Florida
@@ -3555,6 +4075,190 @@
   "flock.chapters.southwest": "Zuidwesten",
   // Texas
   "flock.chapters.texas": "Texas",
+  // About you
+  "flock.edit.bio": "Over jou",
+  // {{n}} of {{max}} characters
+  "flock.edit.bioCount": "{{n}} van {{max}} tekens",
+  // A line or two: your birds, what you're working on, what you'd love to learn.
+  "flock.edit.bioPlaceholder": "Een regel of twee: je vogels, waar je mee bezig bent, wat je graag zou leren.",
+  // We couldn't save your profile. Check your connection and try again.
+  "flock.edit.error": "We konden je profiel niet opslaan. Controleer je verbinding en probeer het opnieuw.",
+  // Display name
+  "flock.edit.name": "Weergavenaam",
+  // How members see you. First name and last initial works well.
+  "flock.edit.nameHint": "Zo zien leden je. Voornaam en eerste letter van je achternaam werkt goed.",
+  // Photo
+  "flock.edit.photo": "Foto",
+  // We couldn't read that photo. Try a JPEG or PNG.
+  "flock.edit.photoError": "We konden die foto niet lezen. Probeer een JPEG of PNG.",
+  // We remove location and camera details from photos before saving them.
+  "flock.edit.photoHint": "We verwijderen locatie- en cameragegevens uit foto's voordat we ze opslaan.",
+  // Choose a photo
+  "flock.edit.photoPick": "Kies een foto",
+  // Remove photo
+  "flock.edit.photoRemove": "Foto verwijderen",
+  // Save profile
+  "flock.edit.save": "Profiel opslaan",
+  // Edit profile
+  "flock.edit.title": "Profiel bewerken",
+  // Tell people about it
+  "flock.events.about": "Vertel er iets over",
+  // Address (optional)
+  "flock.events.address": "Adres (optioneel)",
+  // Add to calendar
+  "flock.events.addToCalendar": "Zet in je agenda",
+  // Cancel event
+  "flock.events.cancel": "Evenement afzeggen",
+  // Cancel event
+  "flock.events.cancelConfirm": "Evenement afzeggen",
+  // This event was cancelled.
+  "flock.events.cancelledLine": "Dit evenement is afgezegd.",
+  // Everyone who said they're going (or maybe) gets a notice.
+  "flock.events.cancelLine": "Iedereen die zei te gaan (of misschien) krijgt een bericht.",
+  // A note for everyone going (optional)
+  "flock.events.cancelNote": "Een berichtje voor iedereen die gaat (optioneel)",
+  // Cancel this event?
+  "flock.events.cancelTitle": "Dit evenement afzeggen?",
+  // {{name}} chapter
+  "flock.events.chapterLine": "Afdeling {{name}}",
+  // Coming up
+  "flock.events.comingUp": "Binnenkort",
+  // Edit
+  "flock.events.edit": "Bewerken",
+  // Edit event
+  "flock.events.editTitle": "Evenement bewerken",
+  // This one's full
+  "flock.events.full": "Dit evenement is vol",
+  // {{name}} is going
+  "flock.events.goersOne": "{{name}} gaat",
+  // {{names}}, and {{count}} other going
+  "flock.events.goersOthers_one": "{{names}} en nog {{count}} ander gaan",
+  // {{names}}, and {{count}} others going
+  "flock.events.goersOthers_other": "{{names}} en nog {{count}} anderen gaan",
+  // {{a}} and {{b}} going
+  "flock.events.goersTwo": "{{a}} en {{b}} gaan",
+  // {{count}} going
+  "flock.events.going_one": "{{count}} gaat",
+  // {{count}} going
+  "flock.events.going_other": "{{count}} gaan",
+  // Adds it to your calendar and sends a reminder the day before.
+  "flock.events.goingHint": "Zet het in je agenda en stuurt een herinnering de dag ervoor.",
+  // Hosted by {{name}}
+  "flock.events.hosted": "Georganiseerd door {{name}}",
+  // Hosted by {{name}}, chapter lead
+  "flock.events.hostedLead": "Georganiseerd door {{name}}, afdelingsleider",
+  // I'll host it
+  "flock.events.iHost": "Ik organiseer het",
+  // I'm going
+  "flock.events.imGoing": "Ik ga",
+  // In person
+  "flock.events.inPerson": "Op locatie",
+  // Join online
+  "flock.events.join": "Online meedoen",
+  // Kind of event
+  "flock.events.kindLabel": "Soort evenement",
+  // Get-together
+  "flock.events.kindMeetup": "Bijeenkomst",
+  // Volunteer day (Do good)
+  "flock.events.kindVolunteer": "Vrijwilligersdag (Do good)",
+  // Link for the get-together (optional)
+  "flock.events.link": "Link voor de bijeenkomst (optioneel)",
+  // Only people who say they're going see the link.
+  "flock.events.linkHint": "Alleen wie zegt te gaan ziet de link.",
+  // The link appears once you say you're going.
+  "flock.events.linkLater": "De link verschijnt zodra je zegt dat je gaat.",
+  // In-person meetups open once {{chapter}} has {{count}} members. Online get-togethers are welcome anytime.
+  "flock.events.locked_one": "Bijeenkomsten op locatie kunnen zodra {{chapter}} {{count}} lid heeft. Online bijeenkomsten zijn altijd welkom.",
+  // In-person meetups open once {{chapter}} has {{count}} members. Online get-togethers are welcome anytime.
+  "flock.events.locked_other": "Bijeenkomsten op locatie kunnen zodra {{chapter}} {{count}} leden heeft. Online bijeenkomsten zijn altijd welkom.",
+  // Maybe
+  "flock.events.maybe": "Misschien",
+  // It may have been moved, or it's for another chapter.
+  "flock.events.missing": "Het is misschien verplaatst, of het is voor een andere afdeling.",
+  // Event not found
+  "flock.events.missingTitle": "Evenement niet gevonden",
+  // In person or online
+  "flock.events.modeLabel": "Op locatie of online",
+  // New event
+  "flock.events.new": "Nieuw evenement",
+  // Online
+  "flock.events.online": "Online",
+  // Past
+  "flock.events.past": "Geweest",
+  // Pick a time that hasn't passed.
+  "flock.events.pastTime": "Kies een tijd die nog niet voorbij is.",
+  // Add a photo (optional)
+  "flock.events.photo": "Voeg een foto toe (optioneel)",
+  // We'll remind you the day before.
+  "flock.events.reminderLine": "We herinneren je er de dag ervoor aan.",
+  // Your chapter lead looks it over before it goes up. Usually within a day.
+  "flock.events.reviewHint": "Je afdelingsleider bekijkt het voordat het online komt. Meestal binnen een dag.",
+  // We couldn't save that. Try again.
+  "flock.events.rsvpError": "Dat konden we niet opslaan. Probeer het opnieuw.",
+  // Please meet in public places, and leave birds at home unless the host says they're welcome.
+  "flock.events.safety": "Spreek af op openbare plekken, en laat je vogels thuis tenzij de organisator zegt dat ze welkom zijn.",
+  // Save event
+  "flock.events.save": "Evenement opslaan",
+  // We couldn't save that. Check the details and try again.
+  "flock.events.saveError": "Dat konden we niet opslaan. Controleer de gegevens en probeer het opnieuw.",
+  // Send for review
+  "flock.events.send": "Ter beoordeling sturen",
+  // Spot limit (optional)
+  "flock.events.spotLimit": "Maximaal aantal plekken (optioneel)",
+  // {{going}} of {{limit}} spots
+  "flock.events.spots": "{{going}} van {{limit}} plekken",
+  // Cancelled
+  "flock.events.status.cancelled": "Afgezegd",
+  // Changes requested
+  "flock.events.status.changes": "Wijzigingen gevraagd",
+  // Not approved
+  "flock.events.status.declined": "Niet goedgekeurd",
+  // Waiting for review
+  "flock.events.status.pending": "Wacht op beoordeling",
+  // Suggest an event
+  "flock.events.suggest": "Stel een evenement voor",
+  // Ends (optional)
+  "flock.events.until": "Eindigt (optioneel)",
+  // {{count}} went
+  "flock.events.went_one": "{{count}} ging",
+  // {{count}} went
+  "flock.events.went_other": "{{count}} gingen",
+  // What is it?
+  "flock.events.what": "Wat is het?",
+  // When
+  "flock.events.when": "Wanneer",
+  // Where
+  "flock.events.where": "Waar",
+  // A library, a park, a café
+  "flock.events.wherePlaceholder": "Een bibliotheek, een park, een café",
+  // Founding member: see the founding members
+  "flock.founders.badgeLink": "Oprichtend lid: bekijk de oprichtende leden",
+  // Founding members can choose to appear here. When the first one does, you'll find them on this page.
+  "flock.founders.empty": "Oprichtende leden kunnen kiezen of ze hier verschijnen. Zodra de eerste dat doet, vind je ze op deze pagina.",
+  // No one here yet
+  "flock.founders.emptyTitle": "Nog niemand hier",
+  // Founders choose whether to appear here, and can change it any time on their profile.
+  "flock.founders.footer": "Oprichters kiezen zelf of ze hier verschijnen, en kunnen dat altijd wijzigen in hun profiel.",
+  // Thank you to the first 50, who helped start the Flock.
+  "flock.founders.line": "Dank aan de eerste 50, die de Flock mee hebben opgericht.",
+  // Loading the founding members
+  "flock.founders.loading": "De oprichtende leden worden geladen",
+  // Meet the founding members
+  "flock.founders.meet": "Maak kennis met de oprichtende leden",
+  // See the page
+  "flock.founders.see": "Bekijk de pagina",
+  // Founding spot {{n}}
+  "flock.founders.spotAria": "Oprichtersplek {{n}}",
+  // Founding members
+  "flock.founders.title": "Oprichtende leden",
+  // That didn't save. Try again.
+  "flock.founders.toggleError": "Dat is niet opgeslagen. Probeer het opnieuw.",
+  // Members see your display name, photo, chapter and founding spot there. You can change this any time.
+  "flock.founders.toggleHint": "Leden zien daar je weergavenaam, foto, afdeling en oprichtersplek. Je kunt dit altijd wijzigen.",
+  // Show me on the founding members page.
+  "flock.founders.toggleLabel": "Toon mij op de pagina met oprichtende leden.",
+  // Founding members page
+  "flock.founders.toggleTitle": "Pagina met oprichtende leden",
   // Share what keeps parrots safe and healthy. Posts that encourage harmful care, or the sale of wild-caught birds, will be removed.
   "flock.guidelines.birds": "Deel wat papegaaien veilig en gezond houdt. Berichten die schadelijke verzorging aanmoedigen, of de verkoop van in het wild gevangen vogels, worden verwijderd.",
   // Put the birds first.
@@ -3573,6 +4277,8 @@
   "flock.guidelines.kind": "Iedereen hier is aan het leren, ook mensen die al tientallen jaren vogels hebben. Je mag het oneens zijn met ideeën, nooit met mensen, en ga uit van het beste in elkaar.",
   // Be kind.
   "flock.guidelines.kindTitle": "Wees vriendelijk.",
+  // What everyone in the Flock agrees to.
+  "flock.guidelines.line": "Waar iedereen in de Flock mee akkoord gaat.",
   // Chapter events happen in public places, and you're never obligated to share where you live.
   "flock.guidelines.meetups": "Afdelingsevenementen vinden plaats op openbare plekken, en je hoeft nooit te vertellen waar je woont.",
   // Meet up safely.
@@ -3591,6 +4297,122 @@
   "flock.guidelines.yours": "Plaats je eigen foto's, video's en verhalen, en deel niets wat een ander lid je privé heeft verteld.",
   // Share only what's yours.
   "flock.guidelines.yoursTitle": "Deel alleen wat van jou is.",
+  // Add a photo (optional)
+  "flock.idea.addPhoto": "Voeg een foto toe (optioneel)",
+  // Conservation
+  "flock.idea.cat.conservation": "Natuurbehoud",
+  // Did you know
+  "flock.idea.cat.didYouKnow": "Wist je dat",
+  // Enrichment
+  "flock.idea.cat.enrichment": "Verrijking",
+  // Project
+  "flock.idea.cat.project": "Project",
+  // Training
+  "flock.idea.cat.training": "Training",
+  // Curious
+  "flock.idea.curious": "Nieuwsgierig",
+  // How did {{bird}} do?
+  "flock.idea.howDid": "Hoe deed {{bird}} het?",
+  // How it went
+  "flock.idea.howDidAria": "Hoe het ging",
+  // Today's idea · {{category}}
+  "flock.idea.label": "Idee van de dag · {{category}}",
+  // Today's idea
+  "flock.idea.labelShort": "Idee van de dag",
+  // Loved it
+  "flock.idea.loved": "Vond het geweldig",
+  // {{pct}}% loved it.
+  "flock.idea.lovedPct": "{{pct}}% vond het geweldig.",
+  // Check back tomorrow for something new to try with your bird.
+  "flock.idea.none": "Kijk morgen weer voor iets nieuws om met je vogel te proberen.",
+  // No idea today
+  "flock.idea.noneTitle": "Vandaag geen idee",
+  // Not for her
+  "flock.idea.notForHer": "Niets voor haar",
+  // Not for him
+  "flock.idea.notForHim": "Niets voor hem",
+  // Not for them
+  "flock.idea.notForThem": "Niets voor hen",
+  // Most popular with {{species}}.
+  "flock.idea.popular": "Het populairst bij {{species}}.",
+  // Share how it went
+  "flock.idea.save": "Deel hoe het ging",
+  // We couldn't save that. Try again.
+  "flock.idea.saveError": "We konden dat niet opslaan. Probeer het opnieuw.",
+  // Saving…
+  "flock.idea.saving": "Opslaan…",
+  // You tried it · See how everyone did
+  "flock.idea.seeHow": "Je hebt het geprobeerd · Bekijk hoe iedereen het deed",
+  // Once five birds have tried it, you'll see how everyone did.
+  "flock.idea.tallySoon": "Zodra vijf vogels het hebben geprobeerd, zie je hoe iedereen het deed.",
+  // Today's idea
+  "flock.idea.title": "Idee van de dag",
+  // {{count}} bird tried it today
+  "flock.idea.tried_one": "{{count}} vogel heeft het vandaag geprobeerd",
+  // {{count}} birds tried it today
+  "flock.idea.tried_other": "{{count}} vogels hebben het vandaag geprobeerd",
+  // We tried it
+  "flock.idea.weTried": "Uitgeprobeerd",
+  // Which bird?
+  "flock.idea.whichBird": "Welke vogel?",
+  // {{bird}}: {{outcome}}
+  "flock.idea.yourAnswer": "{{bird}}: {{outcome}}",
+  // Today's idea · you tried it
+  "flock.idea.youTried": "Idee van de dag · je hebt het geprobeerd",
+  // This page is only for Kya & Co. admins.
+  "flock.ideasAdmin.adminOnly": "Deze pagina is alleen voor beheerders van Kya & Co.",
+  // A few lines
+  "flock.ideasAdmin.bodyLabel": "Een paar regels",
+  // Category
+  "flock.ideasAdmin.category": "Categorie",
+  // Day
+  "flock.ideasAdmin.day": "Dag",
+  // That day already has an idea. Pick another day or move that one first.
+  "flock.ideasAdmin.dayTaken": "Die dag heeft al een idee. Kies een andere dag of verplaats dat idee eerst.",
+  // Delete idea
+  "flock.ideasAdmin.delete": "Idee verwijderen",
+  // Draft
+  "flock.ideasAdmin.draft": "Concept",
+  // Move earlier
+  "flock.ideasAdmin.earlier": "Eerder zetten",
+  // Edit idea
+  "flock.ideasAdmin.edit": "Idee bewerken",
+  // Empty · needs one
+  "flock.ideasAdmin.empty": "Leeg · heeft er een nodig",
+  // Favorite
+  "flock.ideasAdmin.favorite": "Favoriet",
+  // Favorite (can be reused on an empty day)
+  "flock.ideasAdmin.favoriteLabel": "Favoriet (kan op een lege dag opnieuw worden gebruikt)",
+  // Drafts don't publish until marked ready. An empty day reuses a favorite from the archive.
+  "flock.ideasAdmin.help": "Concepten worden pas gepubliceerd als ze op klaar staan. Een lege dag gebruikt opnieuw een favoriet uit het archief.",
+  // Move later
+  "flock.ideasAdmin.later": "Later zetten",
+  // Admin · next two weeks
+  "flock.ideasAdmin.line": "Beheer · komende twee weken",
+  // New idea
+  "flock.ideasAdmin.new": "Nieuw idee",
+  // No day
+  "flock.ideasAdmin.noDay": "Geen dag",
+  // No favorite to reuse yet, so Today shows no idea
+  "flock.ideasAdmin.noFavorite": "Nog geen favoriet om opnieuw te gebruiken, dus Vandaag toont geen idee",
+  // Not on a day, and the archive
+  "flock.ideasAdmin.notScheduled": "Niet ingepland, en het archief",
+  // Add a photo (optional)
+  "flock.ideasAdmin.photo": "Voeg een foto toe (optioneel)",
+  // Photo added
+  "flock.ideasAdmin.photoAdded": "Foto toegevoegd",
+  // Ready
+  "flock.ideasAdmin.ready": "Klaar",
+  // Reuses a favorite: {{title}}
+  "flock.ideasAdmin.reuses": "Gebruikt een favoriet opnieuw: {{title}}",
+  // Save idea
+  "flock.ideasAdmin.save": "Idee opslaan",
+  // Status
+  "flock.ideasAdmin.statusLabel": "Status",
+  // Today's ideas
+  "flock.ideasAdmin.title": "Ideeën van de dag",
+  // Title
+  "flock.ideasAdmin.titleLabel": "Titel",
   // I'm 18 or older
   "flock.join.adult": "Ik ben 18 jaar of ouder",
   // I agree to the community guidelines
@@ -3651,22 +4473,1432 @@
   "flock.join.waitingSoon": "De Flock gaat binnenkort open. Tot dan!",
   // You're in
   "flock.join.waitingTitle": "Je bent binnen",
+  // Basics
+  "flock.journeys.basics": "Basis",
+  // Day {{day}}
+  "flock.journeys.card.day": "Dag {{day}}",
+  // {{count}} following
+  "flock.journeys.card.following_one": "{{count}} volger",
+  // {{count}} following
+  "flock.journeys.card.following_other": "{{count}} volgers",
+  // Happy where we are
+  "flock.journeys.card.happy": "Tevreden met waar we zijn",
+  // Learned it · {{count}} day
+  "flock.journeys.card.learned_one": "Geleerd · {{count}} dag",
+  // Learned it · {{count}} days
+  "flock.journeys.card.learned_other": "Geleerd · {{count}} dagen",
+  // Learned it
+  "flock.journeys.card.learnedPill": "Geleerd",
+  // We couldn't play this clip. Try again in a moment.
+  "flock.journeys.clip.failed": "We konden deze clip niet afspelen. Probeer het zo nog eens.",
+  // Couldn't load
+  "flock.journeys.clip.failedShort": "Laden mislukt",
+  // Loading the clip…
+  "flock.journeys.clip.loading": "Clip laden…",
+  // Getting the clip ready…
+  "flock.journeys.clip.processing": "Clip wordt klaargemaakt…",
+  // Getting ready…
+  "flock.journeys.clip.processingShort": "Bijna klaar…",
+  // Try again
+  "flock.journeys.clip.retry": "Opnieuw proberen",
+  // This clip is still processing. Check back in a minute.
+  "flock.journeys.clip.stalled": "Deze clip wordt nog verwerkt. Kijk over een minuutje nog eens.",
+  // {{date}} · day one
+  "flock.journeys.compare.dayOne": "{{date}} · dag één",
+  // {{date}}
+  "flock.journeys.compare.on": "{{date}}",
+  // Pick clips
+  "flock.journeys.compare.pick": "Kies clips",
+  // Pick the first clip
+  "flock.journeys.compare.pickLeft": "Kies de eerste clip",
+  // Pick the second clip
+  "flock.journeys.compare.pickRight": "Kies de tweede clip",
+  // Play both
+  "flock.journeys.compare.playBoth": "Speel beide af",
+  // Slow motion
+  "flock.journeys.compare.slow": "Slow motion",
+  // {{days}} days, {{sessions}} sessions.
+  "flock.journeys.compare.summaryDays": "{{days}} dagen, {{sessions}} sessies.",
+  // {{days}} days, {{sessions}} sessions, {{count}} big moment.
+  "flock.journeys.compare.summaryMoments_one": "{{days}} dagen, {{sessions}} sessies, {{count}} groot moment.",
+  // {{days}} days, {{sessions}} sessions, {{count}} big moments.
+  "flock.journeys.compare.summaryMoments_other": "{{days}} dagen, {{sessions}} sessies, {{count}} grote momenten.",
+  // Day one vs. now
+  "flock.journeys.compare.title": "Dag één vs. nu",
+  // Free accounts can have one custom journey going at a time. Flock members can start as many as they like.
+  "flock.journeys.customLimit.line": "Met een gratis account heb je één eigen traject tegelijk. Leden van de Flock kunnen er zoveel starten als ze willen.",
+  // Got it
+  "flock.journeys.customLimit.ok": "Begrepen",
+  // One custom journey at a time
+  "flock.journeys.customLimit.title": "Eén eigen traject tegelijk",
+  // Day
+  "flock.journeys.dayShort": "Dag",
+  // Kya & Co. helps you keep track of {{name}}'s weight and progress during the switch, but it isn't a substitute for your avian vet. The tips and alerts here are general guidance, not medical advice, so please lean on your vet for decisions about {{name}}'s health and diet.
+  "flock.journeys.diet.disclaimer": "Kya & Co. helpt je het gewicht en de voortgang van {{name}} bij te houden tijdens de overstap, maar is geen vervanging voor je vogeldierenarts. De tips en waarschuwingen hier zijn algemene richtlijnen, geen medisch advies. Vertrouw dus op je dierenarts voor beslissingen over de gezondheid en het dieet van {{name}}.",
+  // Eclectus have specific food needs. They generally do best on plenty of fresh vegetables and fruit, and many avian vets advise caution with heavily fortified pellets and added vitamins. Please make a plan with your avian vet before changing {{name}}'s food.
+  "flock.journeys.diet.eclectus": "Edelpapegaaien hebben specifieke voedingsbehoeften. Ze doen het meestal het best met veel verse groente en fruit, en veel vogeldierenartsen raden voorzichtigheid aan met sterk verrijkte pellets en extra vitamines. Maak een plan met je vogeldierenarts voordat je het voer van {{name}} verandert.",
+  // Find an avian vet
+  "flock.journeys.diet.findVet": "Vind een vogeldierenarts",
+  // How to make it work
+  "flock.journeys.diet.howTo": "Zo pak je het aan",
+  // This journey isn't made for {{name}}. Lories and lorikeets eat a nectar-based diet, so their food needs are different. Your avian vet is the best guide for any changes.
+  "flock.journeys.diet.nectar": "Dit traject is niet bedoeld voor {{name}}. Lori's eten een dieet op basis van nectar, dus hun voedingsbehoeften zijn anders. Je vogeldierenarts is de beste gids bij elke verandering.",
+  // Have you had a chance to check in with your avian vet? It's worth doing before the new food becomes a bigger share.
+  "flock.journeys.diet.reminder": "Heb je al met je vogeldierenarts kunnen overleggen? Dat is de moeite waard voordat het nieuwe voer een groter deel wordt.",
+  // Remind me later
+  "flock.journeys.diet.reminderLater": "Herinner me later",
+  // Yes, we've talked
+  "flock.journeys.diet.reminderYes": "Ja, we hebben overlegd",
+  // I've talked with our avian vet
+  "flock.journeys.diet.talked": "Ik heb met onze vogeldierenarts overlegd",
+  // Changing your bird's diet is one of the best things you can do for them. It's also something to take slowly, with their health as the top priority the whole way. Before you start, check in with your avian vet to make sure your bird is healthy enough for a diet change. They can make sure the new diet gives your bird the nutrition it needs, tell you how much to feed, and help you spot trouble early. Some species also have specific dietary needs, which is another great reason to talk with your vet first.
+  "flock.journeys.diet.vetBody": "Het dieet van je vogel veranderen is een van de beste dingen die je voor hem kunt doen. Het is ook iets om rustig aan te pakken, met zijn gezondheid de hele weg als hoogste prioriteit. Overleg voordat je begint met je vogeldierenarts of je vogel gezond genoeg is voor een dieetverandering. Je dierenarts kan ervoor zorgen dat het nieuwe dieet je vogel de voeding geeft die hij nodig heeft, je vertellen hoeveel je moet voeren en je helpen problemen vroeg te herkennen. Sommige soorten hebben ook specifieke voedingsbehoeften, nog een goede reden om eerst met je dierenarts te praten.",
+  // Bring your avian vet in on this one
+  "flock.journeys.diet.vetTitle": "Betrek je vogeldierenarts hierbij",
+  // I'll call before we go further
+  "flock.journeys.diet.willCall": "Ik bel voordat we verdergaan",
+  // Young birds still learning to eat on their own need food available all day, so please talk with your vet before changing anything.
+  "flock.journeys.diet.young": "Jonge vogels die nog leren zelf te eten, moeten de hele dag voer beschikbaar hebben. Overleg dus met je dierenarts voordat je iets verandert.",
+  // Stories about the everyday foundations, like diet changes, sleep, and stepping up, will collect here.
+  "flock.journeys.empty.basics": "Verhalen over de dagelijkse basis, zoals dieetveranderingen, slaap en opstappen, komen hier te staan.",
+  // No basics journeys yet
+  "flock.journeys.empty.basicsTitle": "Nog geen basistrajecten",
+  // Not following anyone yet
+  "flock.journeys.empty.followingTitle": "Je volgt nog niemand",
+  // Follow a member's journey and each update they share will show up here.
+  "flock.journeys.empty.followingUpdates": "Volg het traject van een lid, dan verschijnt elke update die diegene deelt hier.",
+  // Journeys are members' stories of teaching their birds: a new trick, a calmer vet visit, a better diet. The first ones will appear here.
+  "flock.journeys.empty.forYouSkills": "Trajecten zijn verhalen van leden over het trainen van hun vogels: een nieuw trucje, een rustiger bezoek aan de dierenarts, een beter dieet. De eerste verschijnen hier.",
+  // No journeys yet
+  "flock.journeys.empty.forYouTitle": "Nog geen trajecten",
+  // Training stories, from a first target touch to a reliable recall, will collect here.
+  "flock.journeys.empty.tricks": "Trainingsverhalen, van een eerste targettik tot een betrouwbare recall, komen hier te staan.",
+  // No trick journeys yet
+  "flock.journeys.empty.tricksTitle": "Nog geen trucjestrajecten",
+  // Filter journeys
+  "flock.journeys.filterAria": "Trajecten filteren",
+  // Start another journey with {{name}}
+  "flock.journeys.finished.another": "Start nog een traject met {{name}}",
+  // {{name}} is on the new diet
+  "flock.journeys.finished.dietTitle": "{{name}} eet het nieuwe dieet",
+  // Done
+  "flock.journeys.finished.done": "Klaar",
+  // We couldn't save that. Check your connection and try again.
+  "flock.journeys.finished.error": "We konden dat niet opslaan. Controleer je verbinding en probeer het opnieuw.",
+  // Journey complete · {{count}} day
+  "flock.journeys.finished.eyebrow_one": "Traject voltooid · {{count}} dag",
+  // Journey complete · {{count}} days
+  "flock.journeys.finished.eyebrow_other": "Traject voltooid · {{count}} dagen",
+  // {{name}} learned {{skill}}!
+  "flock.journeys.finished.learnedTitle": "{{name}} heeft {{skill}} geleerd!",
+  // {{skill}} is now on {{name}} skill list.
+  "flock.journeys.finished.line": "{{skill}} staat nu op {{name}} lijst met vaardigheden.",
+  // Shown to members who start {{skill}} later.
+  "flock.journeys.finished.tipHint": "Wordt getoond aan leden die later met {{skill}} beginnen.",
+  // What would you tell someone just starting?
+  "flock.journeys.finished.tipQ": "Wat zou je tegen iemand zeggen die net begint?",
   // The Flock is The Kya Project's community, where you'll find your local chapter, a library of guides and recordings, and every training journey, including tricks, nail trims, and stationing.
   "flock.journeys.flockOnly.about": "De Flock is de community van The Kya Project. Je vindt er je eigen afdeling bij jou in de buurt, een bibliotheek met gidsen en opnames, en elk trainingstraject, ook trucjes, nagels knippen en stationing.",
+  // The Flock is The Kya Project's community, where you'll find your local chapter, a library of guides and recordings, and other members' journeys.
+  "flock.journeys.flockOnly.aboutCommunity": "De Flock is de community van The Kya Project. Je vindt er je eigen afdeling, een bibliotheek met gidsen en opnames, en de trajecten van andere leden.",
+  // In the Flock, you can ask other members about your journey and hear from people who've been there.
+  "flock.journeys.flockOnly.askLine": "In de Flock kun je andere leden vragen stellen over je traject en horen van mensen die het al hebben meegemaakt.",
   // Part of the Flock
   "flock.journeys.flockOnly.eyebrow": "Onderdeel van de Flock",
   // Join the Flock early, while it's free for everyone.
   "flock.journeys.flockOnly.free": "Word nu al lid van de Flock, nu het nog gratis is voor iedereen.",
+  // In the Flock, members share their journeys and what helped them, so you can see how other birds learned {{skill}}.
+  "flock.journeys.flockOnly.howOthersLine": "In de Flock delen leden hun trajecten en wat hen hielp, zodat je kunt zien hoe andere vogels {{skill}} leerden.",
+  // In the Flock, members share their journeys and what helped them, so you can see how other birds learned.
+  "flock.journeys.flockOnly.howOthersLineNoSkill": "In de Flock delen leden hun trajecten en wat hen hielp, zodat je kunt zien hoe andere vogels het leerden.",
+  // Join the Flock free
+  "flock.journeys.flockOnly.join": "Word gratis lid van de Flock",
+  // Ask the Flock
+  "flock.journeys.flockOnly.title.ask": "Vraag het de Flock",
+  // See how others did it
+  "flock.journeys.flockOnly.title.howOthers": "Kijk hoe anderen het deden",
+  // Following
+  "flock.journeys.following": "Gevolgd",
+  // For you
+  "flock.journeys.forYou": "Voor jou",
+  // From the Flock
+  "flock.journeys.fromFlock": "Uit de Flock",
+  // We couldn't save that. Check your connection and try again.
+  "flock.journeys.known.error": "We konden dat niet opslaan. Controleer je verbinding en probeer het opnieuw.",
+  // Tap anything {{name}} can already do. It goes on his skill list, and those journeys start as finished.
+  "flock.journeys.known.lineHe": "Tik aan wat {{name}} al kan. Het komt op zijn lijst met vaardigheden, en die trajecten beginnen als voltooid.",
+  // Tap anything {{name}} can already do. It goes on her skill list, and those journeys start as finished.
+  "flock.journeys.known.lineShe": "Tik aan wat {{name}} al kan. Het komt op haar lijst met vaardigheden, en die trajecten beginnen als voltooid.",
+  // Tap anything {{name}} can already do. It goes on their skill list, and those journeys start as finished.
+  "flock.journeys.known.lineThey": "Tik aan wat {{name}} al kan. Het komt op de lijst met vaardigheden, en die trajecten beginnen als voltooid.",
+  // Save {{count}} skill
+  "flock.journeys.known.save_one": "{{count}} vaardigheid opslaan",
+  // Save {{count}} skills
+  "flock.journeys.known.save_other": "{{count}} vaardigheden opslaan",
+  // What does {{name}} already know?
+  "flock.journeys.known.title": "Wat kan {{name}} al?",
+  // Compare with Flock membership
+  "flock.journeys.limit.compare": "Vergelijk met lidmaatschap van de Flock",
+  // That's as many as this plan keeps on one journey. Flock members can add as many clips as they like, up to 20 minutes each.
+  "flock.journeys.limit.line": "Meer houdt dit abonnement niet bij op één traject. Leden van de Flock kunnen zoveel clips toevoegen als ze willen, tot 20 minuten per clip.",
+  // This journey has reached its clip limit.
+  "flock.journeys.limit.reached": "Dit traject heeft het maximum aantal clips bereikt.",
+  // This journey has {{count}} clip
+  "flock.journeys.limit.title_one": "Dit traject heeft {{count}} clip",
+  // This journey has {{count}} clips
+  "flock.journeys.limit.title_other": "Dit traject heeft {{count}} clips",
+  // From {{name}} journey
+  "flock.journeys.member.fromJourney": "Uit {{name}} traject",
+  // This skill isn't shared any more.
+  "flock.journeys.member.gone": "Deze vaardigheid wordt niet meer gedeeld.",
+  // Skill not available
+  "flock.journeys.member.goneTitle": "Vaardigheid niet beschikbaar",
+  // Member-supplied journey
+  "flock.journeys.member.label": "Traject gedeeld door een lid",
+  // A member shared this skill. It hasn't been reviewed by The Kya Project.
+  "flock.journeys.member.line": "Een lid heeft deze vaardigheid gedeeld. The Kya Project heeft hem niet beoordeeld.",
+  // Skills from the Flock come with Flock membership.
+  "flock.journeys.member.locked": "Vaardigheden uit de Flock horen bij het lidmaatschap van de Flock.",
+  // No shared skills match that yet.
+  "flock.journeys.member.noMatch": "Nog geen gedeelde vaardigheden die hierbij passen.",
+  // No member skills shared yet.
+  "flock.journeys.member.none": "Nog geen vaardigheden gedeeld door leden.",
+  // Search skills
+  "flock.journeys.member.search": "Zoek vaardigheden",
+  // Bath time, harness, ringing a bell…
+  "flock.journeys.member.searchPlaceholder": "Badderen, tuigje, een belletje luiden…",
+  // See {{name}} journey
+  "flock.journeys.member.seeJourney": "Bekijk {{name}} traject",
+  // Start this skill
+  "flock.journeys.member.start": "Start deze vaardigheid",
+  // Started from {{name}} journey
+  "flock.journeys.member.startedFrom": "Gestart vanuit {{name}} traject",
+  // Skills from the Flock
+  "flock.journeys.member.title": "Vaardigheden uit de Flock",
+  // Delete journey
+  "flock.journeys.menu.delete": "Traject verwijderen",
+  // Delete journey
+  "flock.journeys.menu.deleteConfirm": "Traject verwijderen",
+  // Removes the journey and its clips
+  "flock.journeys.menu.deleteLine": "Verwijdert het traject en de clips",
+  // This removes the journey and its one clip for good. It can't be undone.
+  "flock.journeys.menu.deleteLineClips_one": "Hiermee verwijder je het traject en de ene clip voorgoed. Dit kan niet ongedaan worden gemaakt.",
+  // This removes the journey and its {{count}} clips for good. It can't be undone.
+  "flock.journeys.menu.deleteLineClips_other": "Hiermee verwijder je het traject en de {{count}} clips voorgoed. Dit kan niet ongedaan worden gemaakt.",
+  // Delete this journey?
+  "flock.journeys.menu.deleteTitle": "Dit traject verwijderen?",
+  // We're happy where we are
+  "flock.journeys.menu.happy": "We zijn tevreden met waar we zijn",
+  // Ends it gently. No badge, no judgment.
+  "flock.journeys.menu.happyLine": "Rondt het rustig af. Geen badge, geen oordeel.",
+  // Keep it
+  "flock.journeys.menu.keep": "Behouden",
+  // Pause this journey
+  "flock.journeys.menu.pause": "Pauzeer dit traject",
+  // Keeps everything. Drops out of the callout until you resume.
+  "flock.journeys.menu.pauseLine": "Alles blijft bewaard. Verdwijnt uit de melding tot je verdergaat.",
+  // Resume this journey
+  "flock.journeys.menu.resume": "Ga verder met dit traject",
+  // Picks up where you left off.
+  "flock.journeys.menu.resumeLine": "Gaat verder waar je gebleven was.",
+  // Change who sees it
+  "flock.journeys.menu.who": "Wijzig wie het ziet",
+  // Community or just me
+  "flock.journeys.menu.whoLine": "Community of alleen ik",
+  // Day one vs. now
+  "flock.journeys.page.compare": "Dag één vs. nu",
+  // We couldn't delete this journey. Try again in a moment.
+  "flock.journeys.page.deleteError": "We konden dit traject niet verwijderen. Probeer het zo nog eens.",
+  // We couldn't save that. Check your connection and try again.
+  "flock.journeys.page.error": "We konden dat niet opslaan. Controleer je verbinding en probeer het opnieuw.",
+  // Follow
+  "flock.journeys.page.follow": "Volgen",
+  // Following
+  "flock.journeys.page.following": "Gevolgd",
+  // {{name}} learned it!
+  "flock.journeys.page.learnedIt": "{{name}} heeft het geleerd!",
+  // This finishes the journey and adds {{skill}} to {{name}} skills.
+  "flock.journeys.page.learnedLine": "Hiermee rond je het traject af en komt {{skill}} bij {{name}} vaardigheden.",
+  // Finish the journey
+  "flock.journeys.page.learnedYes": "Traject afronden",
+  // Day {{day}} · {{count}} following
+  "flock.journeys.page.line_one": "Dag {{day}} · {{count}} volger",
+  // Day {{day}} · {{count}} following
+  "flock.journeys.page.line_other": "Dag {{day}} · {{count}} volgers",
+  // Journey options
+  "flock.journeys.page.menu": "Opties voor traject",
+  // This journey isn't available.
+  "flock.journeys.page.missing": "Dit traject is niet beschikbaar.",
+  // Journey not found
+  "flock.journeys.page.missingTitle": "Traject niet gevonden",
+  // No clips yet. Each update adds one here.
+  "flock.journeys.page.noClips": "Nog geen clips. Elke update voegt er hier een toe.",
+  // Not yet
+  "flock.journeys.page.notYet": "Nog niet",
+  // {{name}} is on the new diet
+  "flock.journeys.page.onNewDiet": "{{name}} eet het nieuwe dieet",
+  // This finishes the journey. Keep weighing {{name}} as usual.
+  "flock.journeys.page.onNewDietLine": "Hiermee rond je het traject af. Blijf {{name}} wegen zoals altijd.",
+  // This journey is paused.
+  "flock.journeys.page.paused": "Dit traject is gepauzeerd.",
+  // Post an update
+  "flock.journeys.page.post": "Plaats een update",
+  // All in
+  "flock.journeys.post.allIn": "Helemaal erbij",
+  // Your question will show to the Flock too, so members can answer.
+  "flock.journeys.post.askCommunity": "Je vraag is ook zichtbaar voor de Flock, zodat leden kunnen antwoorden.",
+  // Ask the Flock
+  "flock.journeys.post.askFlock": "Vraag het de Flock",
+  // Only you can see this journey, so only you will see the question.
+  "flock.journeys.post.askPrivate": "Alleen jij ziet dit traject, dus alleen jij ziet de vraag.",
+  // Back to the journey
+  "flock.journeys.post.backToJourney": "Terug naar het traject",
+  // This was a big moment
+  "flock.journeys.post.bigMoment": "Dit was een groot moment",
+  // What a moment for {{name}}!
+  "flock.journeys.post.bigMomentDone": "Wat een moment voor {{name}}!",
+  // A first, a breakthrough, or a day worth remembering. Followers see it on Today, and you can make a share card.
+  "flock.journeys.post.bigMomentHint": "Een eerste keer, een doorbraak of een dag om te onthouden. Volgers zien het bij Vandaag, en je kunt er een deelkaart van maken.",
+  // Close
+  "flock.journeys.post.close": "Sluiten",
+  // Distracted
+  "flock.journeys.post.distracted": "Afgeleid",
+  // We couldn't post that. Check your connection and try again.
+  "flock.journeys.post.error": "We konden dat niet plaatsen. Controleer je verbinding en probeer het opnieuw.",
+  // How into it was {{name}}?
+  "flock.journeys.post.howInto": "Hoe enthousiast was {{name}}?",
+  // This journey is paused or finished, so there's nothing to post to right now.
+  "flock.journeys.post.notActive": "Dit traject is gepauzeerd of afgerond, dus je kunt er nu niets in plaatsen.",
+  // Not today
+  "flock.journeys.post.notToday": "Niet vandaag",
+  // Post
+  "flock.journeys.post.post": "Plaatsen",
+  // Posted to {{name}} journey
+  "flock.journeys.post.posted": "Geplaatst in {{name}} traject",
+  // Posting…
+  "flock.journeys.post.posting": "Plaatsen…",
+  // Your clip
+  "flock.journeys.post.preview": "Je clip",
+  // Record a different clip
+  "flock.journeys.post.retake": "Neem een andere clip op",
+  // Say something
+  "flock.journeys.post.say": "Zeg iets",
+  // or ask a question (optional)
+  "flock.journeys.post.sayHint": "of stel een vraag (optioneel)",
+  // A tip for next time
+  "flock.journeys.post.tipEyebrow": "Een tip voor de volgende keer",
+  // Post an update
+  "flock.journeys.post.title": "Een update plaatsen",
+  // your followers and the community
+  "flock.journeys.post.toCommunity": "je volgers en de community",
+  // just you
+  "flock.journeys.post.toJustMe": "alleen jou",
+  // Posting to
+  "flock.journeys.post.toLead": "Plaatsen voor",
+  // Trim
+  "flock.journeys.post.trim": "Inkorten",
+  // Been there
+  "flock.journeys.react.beenThere": "Herkenbaar",
+  // Great job
+  "flock.journeys.react.greatJob": "Goed gedaan",
+  // Love this
+  "flock.journeys.react.love": "Geweldig",
+  // Rooting for you
+  "flock.journeys.react.rooting": "Ik duim voor je",
+  // A few times a week
+  "flock.journeys.rhythm.fewTimes": "Een paar keer per week",
+  // Most days
+  "flock.journeys.rhythm.mostDays": "Bijna elke dag",
+  // Weekends
+  "flock.journeys.rhythm.weekends": "In het weekend",
+  // The community
+  "flock.journeys.setup.community": "De community",
+  // Start {{name}} journey
+  "flock.journeys.setup.cta": "Begin {{name}} traject",
+  // {{used}} of {{max}}
+  "flock.journeys.setup.descriptionCount": "{{used}} van {{max}}",
+  // What does it look like?
+  "flock.journeys.setup.descriptionLabel": "Hoe ziet het eruit?",
+  // In your own words: what will your bird do when it's learned?
+  "flock.journeys.setup.descriptionPlaceholder": "In je eigen woorden: wat doet je vogel als hij het geleerd heeft?",
+  // This bird already has this journey going.
+  "flock.journeys.setup.errGoing": "Deze vogel heeft dit traject al lopen.",
+  // This journey isn't made for lories and lorikeets. Your avian vet is the best guide for any changes.
+  "flock.journeys.setup.errNectar": "Dit traject is niet bedoeld voor lori's. Je vogeldierenarts is de beste gids voor elke verandering.",
+  // We couldn't start the journey. Check your connection and try again.
+  "flock.journeys.setup.error": "We konden het traject niet starten. Controleer je verbinding en probeer het opnieuw.",
+  // Sharing with the community comes with Flock membership.
+  "flock.journeys.setup.errShare": "Delen met de community hoort bij het lidmaatschap van de Flock.",
+  // for {{name}}
+  "flock.journeys.setup.forBird": "voor {{name}}",
+  // Just me
+  "flock.journeys.setup.justMe": "Alleen ik",
+  // What's the goal?
+  "flock.journeys.setup.nameLabel": "Wat is het doel?",
+  // Bath time, harness, quieter mornings…
+  "flock.journeys.setup.namePlaceholder": "Badderen, tuigje, rustigere ochtenden…",
+  // Optional
+  "flock.journeys.setup.optional": "Optioneel",
+  // How often will you practice?
+  "flock.journeys.setup.rhythm": "Hoe vaak ga je oefenen?",
+  // Safeguards built into this journey
+  "flock.journeys.setup.safeguards": "Ingebouwde veiligheidsmaatregelen in dit traject",
+  // Every session
+  "flock.journeys.setup.safety": "Bij elke sessie",
+  // Set it up
+  "flock.journeys.setup.setUp": "Instellen",
+  // Sharing journeys with the community comes with Flock membership.
+  "flock.journeys.setup.shareNote": "Trajecten delen met de community hoort bij het lidmaatschap van de Flock.",
+  // {{skill}} is one of our skills, with its description and safety notes.
+  "flock.journeys.setup.suggestion": "{{skill}} is een van onze vaardigheden, met een beschrijving en veiligheidstips.",
+  // Start {{skill}} instead
+  "flock.journeys.setup.useSuggestion": "Begin liever met {{skill}}",
+  // Who sees it?
+  "flock.journeys.setup.who": "Wie ziet het?",
+  // Add my name
+  "flock.journeys.shareCard.addMe": "Mijn naam toevoegen",
+  // {{skill}} · finished
+  "flock.journeys.shareCard.compareEyebrowFinished": "{{skill}} · afgerond",
+  // {{name}}, day one and now
+  "flock.journeys.shareCard.compareTitle": "{{name}}, dag één en nu",
+  // Day one and now
+  "flock.journeys.shareCard.compareTitleNoName": "Dag één en nu",
+  // We couldn't make the card. Try again in a moment.
+  "flock.journeys.shareCard.failed": "We konden de kaart niet maken. Probeer het zo opnieuw.",
+  // {{skill}} · Finished!
+  "flock.journeys.shareCard.finishedEyebrow": "{{skill}} · Afgerond!",
+  // Finished {{date}}
+  "flock.journeys.shareCard.finishedOn": "Afgerond op {{date}}",
+  // {{name}} learned {{skill}}
+  "flock.journeys.shareCard.finishedTitle": "{{name}} heeft {{skill}} geleerd",
+  // Learned {{skill}}
+  "flock.journeys.shareCard.finishedTitleNoName": "{{skill}} geleerd",
+  // From {{name}}
+  "flock.journeys.shareCard.from": "Van {{name}}",
+  // Make a share card
+  "flock.journeys.shareCard.make": "Maak een deelkaart",
+  // {{skill}} · big moment
+  "flock.journeys.shareCard.momentEyebrow": "{{skill}} · groot moment",
+  // A big moment for {{name}}!
+  "flock.journeys.shareCard.momentTitle": "Een groot moment voor {{name}}!",
+  // A big moment!
+  "flock.journeys.shareCard.momentTitleNoName": "Een groot moment!",
+  // Post
+  "flock.journeys.shareCard.post": "Bericht",
+  // The card is in your downloads, ready to post.
+  "flock.journeys.shareCard.saved": "De kaart staat in je downloads, klaar om te plaatsen.",
+  // Share
+  "flock.journeys.shareCard.share": "Delen",
+  // Show {{name}} name
+  "flock.journeys.shareCard.showBird": "Toon {{name}} naam",
+  // Story
+  "flock.journeys.shareCard.story": "Story",
+  // Share card
+  "flock.journeys.shareCard.title": "Deelkaart",
+  // A share card can be made only for your own birds' journeys.
+  "flock.journeys.shareCard.unavailable": "Je kunt alleen een deelkaart maken voor trajecten van je eigen vogels.",
+  // On the web, this downloads the image so you can post it.
+  "flock.journeys.shareCard.webHint": "Op het web download je hiermee de afbeelding, zodat je hem kunt plaatsen.",
+  // About this skill
+  "flock.journeys.skill.about": "Over deze vaardigheid",
+  // How others did it
+  "flock.journeys.skill.howOthers": "Hoe anderen het deden",
+  // No one has shared a journey for this skill yet. Yours could be the first.
+  "flock.journeys.skill.howOthersEmpty": "Nog niemand heeft een traject voor deze vaardigheid gedeeld. Dat van jou kan de eerste zijn.",
+  // Journeys and tips from Flock members
+  "flock.journeys.skill.howOthersLocked": "Trajecten en tips van leden van de Flock",
+  // Learned it in {{count}} day
+  "flock.journeys.skill.learnedIn_one": "Geleerd in {{count}} dag",
+  // Learned it in {{count}} days
+  "flock.journeys.skill.learnedIn_other": "Geleerd in {{count}} dagen",
+  // Day {{day}}
+  "flock.journeys.skill.onDay": "Dag {{day}}",
+  // Safety notes
+  "flock.journeys.skill.safety": "Veiligheidstips",
+  // {{skill}} video
+  "flock.journeys.skill.video": "Video: {{skill}}",
+  // {{name}} already knows this
+  "flock.journeys.start.alreadyKnows": "{{name}} kan dit al",
+  // for {{name}}
+  "flock.journeys.start.for": "voor {{name}}",
+  // Going now
+  "flock.journeys.start.going": "Nu bezig",
+  // Food
+  "flock.journeys.start.groupFood": "Voeding",
+  // Foundations
+  "flock.journeys.start.groupFoundations": "Basis",
+  // Handling and health
+  "flock.journeys.start.groupHusbandry": "Hanteren en gezondheid",
+  // Tricks
+  "flock.journeys.start.groupTricks": "Trucjes",
+  // Mark what {{name}} already knows
+  "flock.journeys.start.markKnown": "Geef aan wat {{name}} al kan",
+  // Add a bird in My birds first, then start a journey for them here.
+  "flock.journeys.start.noBirds": "Voeg eerst een vogel toe in Mijn vogels en begin hier dan een traject.",
+  // Your own skill
+  "flock.journeys.start.ownSkill": "Je eigen vaardigheid",
+  // Pick a skill
+  "flock.journeys.start.pickTitle": "Kies een vaardigheid",
+  // Which bird?
+  "flock.journeys.start.whichBird": "Welke vogel?",
+  // Start something new
+  "flock.journeys.startSomething": "Begin iets nieuws",
+  // Cheered
+  "flock.journeys.story.cheered": "Aangemoedigd",
+  // {{name}}'s clip
+  "flock.journeys.story.clip": "Clip van {{name}}",
+  // Go {{name}}
+  "flock.journeys.story.go": "Zet 'm op, {{name}}",
+  // {{count}}h
+  "flock.journeys.story.hours_one": "{{count}} u",
+  // {{count}}h
+  "flock.journeys.story.hours_other": "{{count}} u",
+  // Milestone {{n}} of {{total}}
+  "flock.journeys.story.milestone": "Mijlpaal {{n}} van {{total}}",
+  // {{count}}m
+  "flock.journeys.story.minutes_one": "{{count}} min",
+  // {{count}}m
+  "flock.journeys.story.minutes_other": "{{count}} min",
+  // Next clip
+  "flock.journeys.story.next": "Volgende clip",
+  // No clips yet.
+  "flock.journeys.story.none": "Nog geen clips.",
+  // Previous clip
+  "flock.journeys.story.prev": "Vorige clip",
+  // Big moment
+  "flock.journeys.tag.bigMoment": "Groot moment",
+  // Day one
+  "flock.journeys.tag.dayOne": "Dag één",
+  // Question
+  "flock.journeys.tag.question": "Vraag",
+  // From members who've done {{skill}}
+  "flock.journeys.tips.eyebrow": "Van leden die {{skill}} hebben gedaan",
+  // Next tip
+  "flock.journeys.tips.next": "Volgende tip",
+  // Shared by {{count}} member who finished
+  "flock.journeys.tips.shared_one": "Gedeeld door {{count}} lid dat het afrondde",
+  // Shared by {{count}} members who finished
+  "flock.journeys.tips.shared_other": "Gedeeld door {{count}} leden die het afrondden",
+  // Journeys
+  "flock.journeys.title": "Trajecten",
+  // Today
+  "flock.journeys.today": "Vandaag",
+  // Tricks
+  "flock.journeys.tricks": "Trucjes",
+  // End at {{time}}
+  "flock.journeys.trim.end": "Einde op {{time}}",
+  // We couldn't trim that clip. Post it as it is, or try again.
+  "flock.journeys.trim.error": "We konden die clip niet inkorten. Plaats hem zoals hij is, of probeer het opnieuw.",
+  // Getting the clip ready…
+  "flock.journeys.trim.loading": "De clip wordt klaargemaakt…",
+  // The clip is still processing. Try trimming again in a moment.
+  "flock.journeys.trim.notReady": "De clip wordt nog verwerkt. Probeer hem zo opnieuw in te korten.",
+  // Use this part
+  "flock.journeys.trim.save": "Dit stuk gebruiken",
+  // Trimming…
+  "flock.journeys.trim.saving": "Inkorten…",
+  // Start at {{time}}
+  "flock.journeys.trim.start": "Begin op {{time}}",
+  // Trim the clip
+  "flock.journeys.trim.title": "Clip inkorten",
+  // 3-day average
+  "flock.journeys.weight.avgKey": "Gemiddelde over 3 dagen",
+  // I've put the usual food back and called our avian vet.
+  "flock.journeys.weight.confirm": "Ik heb het gewone voer teruggezet en onze vogeldierenarts gebeld.",
+  // We couldn't resume the journey. Check your connection and try again.
+  "flock.journeys.weight.error": "We konden het traject niet hervatten. Controleer je verbinding en probeer het opnieuw.",
+  // Starting weight {{start}} g · 3-day average {{avg}} g
+  "flock.journeys.weight.lineAvg": "Startgewicht {{start}} g · gemiddelde over 3 dagen {{avg}} g",
+  // Log a weight
+  "flock.journeys.weight.logWeight": "Gewicht invoeren",
+  // Weigh {{name}} today so we can keep an eye on things during the switch.
+  "flock.journeys.weight.missed": "Weeg {{name}} vandaag, zodat we tijdens de omschakeling een oogje in het zeil kunnen houden.",
+  // Weigh {{name}} every day this first week. The average becomes the starting weight.
+  "flock.journeys.weight.noStart": "Weeg {{name}} deze eerste week elke dag. Het gemiddelde wordt het startgewicht.",
+  // {{day}} · {{grams}} g · Not counted: weighed at a different time than usual.
+  "flock.journeys.weight.notCountedAt": "{{day}} · {{grams}} g · Niet meegeteld: op een ander tijdstip gewogen dan normaal.",
+  // {{name}}'s weight is down a little from the start. Keep weighing every day, and go slower if it keeps dropping.
+  "flock.journeys.weight.notice": "Het gewicht van {{name}} is iets lager dan bij de start. Blijf elke dag wegen en ga langzamer als het blijft dalen.",
+  // {{name}}'s weight has dropped. Put the usual food back and call your avian vet before going further.
+  "flock.journeys.weight.paused": "Het gewicht van {{name}} is gedaald. Zet het gewone voer terug en bel je vogeldierenarts voordat je verdergaat.",
+  // {{name}}'s weight dropped quickly. Put the usual food back and call your avian vet today.
+  "flock.journeys.weight.pausedSudden": "Het gewicht van {{name}} is snel gedaald. Zet het gewone voer terug en bel vandaag je vogeldierenarts.",
+  // That's a big change from last time. Weigh {{name}} again to double-check?
+  "flock.journeys.weight.recheck": "Dat is een grote verandering sinds de vorige keer. Weeg {{name}} nog een keer om het te controleren?",
+  // Resume the journey
+  "flock.journeys.weight.resume": "Traject hervatten",
+  // Starting weight {{start}} g
+  "flock.journeys.weight.startOnly": "Startgewicht {{start}} g",
+  // Weight
+  "flock.journeys.weight.title": "Gewicht",
+  // Weigh {{name}} again
+  "flock.journeys.weight.weighAgain": "Weeg {{name}} opnieuw",
+  // Last posted {{count}} day ago
+  "flock.journeys.which.days_one": "Laatst geplaatst {{count}} dag geleden",
+  // Last posted {{count}} days ago
+  "flock.journeys.which.days_other": "Laatst geplaatst {{count}} dagen geleden",
+  // Last posted last week
+  "flock.journeys.which.lastWeek": "Laatst geplaatst vorige week",
+  // Nothing posted yet
+  "flock.journeys.which.never": "Nog niets geplaatst",
+  // Or start a new journey
+  "flock.journeys.which.startNew": "Of begin een nieuw traject",
+  // Post an update for…
+  "flock.journeys.which.title": "Een update plaatsen voor…",
+  // Last posted today
+  "flock.journeys.which.today": "Laatst geplaatst vandaag",
+  // Last posted {{count}} week ago
+  "flock.journeys.which.weeks_one": "Laatst geplaatst {{count}} week geleden",
+  // Last posted {{count}} weeks ago
+  "flock.journeys.which.weeks_other": "Laatst geplaatst {{count}} weken geleden",
+  // Last posted yesterday
+  "flock.journeys.which.yesterday": "Laatst geplaatst gisteren",
+  // Paused
+  "flock.journeys.yours.paused": "Gepauzeerd",
+  // Your journeys
+  "flock.journeys.yours.title": "Je trajecten",
+  // All
+  "flock.library.all": "Alles",
+  // Checklists
+  "flock.library.checklists": "Checklists",
+  // Conservation
+  "flock.library.conservation": "Natuurbehoud",
+  // Diet
+  "flock.library.diet": "Voeding",
+  // Nothing in the library matches that yet. New guides and recordings are on the way.
+  "flock.library.empty.filtered": "Nog niets in de bibliotheek past hierbij. Er komen nieuwe gidsen en opnames aan.",
+  // Nothing matches yet
+  "flock.library.empty.filteredTitle": "Nog niets gevonden",
+  // Guides, recordings, and podcast episodes will live here, ready to search by subject.
+  "flock.library.empty.line": "Gidsen, opnames en podcastafleveringen komen hier te staan, doorzoekbaar per onderwerp.",
+  // The shelves are filling
+  "flock.library.empty.title": "De planken raken gevuld",
+  // We couldn't load the library just now.
+  "flock.library.error": "We konden de bibliotheek nu niet laden.",
+  // Foraging
+  "flock.library.foraging": "Foerageren",
+  // Guides
+  "flock.library.guides": "Gidsen",
+  // Hormones
+  "flock.library.hormones": "Hormonen",
+  // Links
+  "flock.library.links": "Links",
+  // Loading the library
+  "flock.library.loading": "Bibliotheek laden",
+  // Manage library
+  "flock.library.manage": "Bibliotheek beheren",
+  // It may have been taken down for an update. Everything else is still on the shelves.
+  "flock.library.notFound": "Misschien is het offline gehaald voor een update. Al het andere staat nog op de planken.",
+  // This isn't in the library
+  "flock.library.notFoundTitle": "Dit staat niet in de bibliotheek",
+  // Open the link
+  "flock.library.open": "Open de link",
+  // Open the PDF
+  "flock.library.pdf": "Open de pdf",
+  // Getting the PDF ready…
+  "flock.library.pdfLoading": "De pdf wordt klaargezet…",
+  // Library resources
+  "flock.library.results": "Bronnen in de bibliotheek",
+  // Try again
+  "flock.library.retry": "Probeer opnieuw",
+  // Search the library
+  "flock.library.searchLabel": "Zoek in de bibliotheek",
+  // Search guides, recordings, and episodes
+  "flock.library.searchPlaceholder": "Zoek gidsen, opnames en afleveringen",
+  // Subject
+  "flock.library.subjectAria": "Onderwerp",
+  // Tags
+  "flock.library.tags": "Tags",
+  // Library
+  "flock.library.title": "Bibliotheek",
+  // Training
+  "flock.library.training": "Training",
+  // Checklist
+  "flock.library.type.checklist": "Checklist",
+  // Guide
+  "flock.library.type.guide": "Gids",
+  // Link
+  "flock.library.type.link": "Link",
+  // Video
+  "flock.library.type.video": "Video",
+  // Type
+  "flock.library.typeAria": "Soort",
+  // Untitled
+  "flock.library.untitled": "Zonder titel",
+  // Reviewed by an avian vet
+  "flock.library.vetReviewed": "Beoordeeld door een vogeldierenarts",
+  // Vet reviewed
+  "flock.library.vetShort": "Beoordeeld door dierenarts",
+  // Videos
+  "flock.library.videos": "Video's",
+  // Watch the video
+  "flock.library.watch": "Bekijk de video",
+  // Add
+  "flock.libraryAdmin.add": "Toevoegen",
+  // # Heading, ## Smaller heading, - bullet, 1. numbered, - [ ] checklist item, > tip box, **bold**, *italics*, [words](https://link). A blank line starts a new paragraph. Use Preview to check it.
+  "flock.libraryAdmin.bodyHint": "# Kop, ## Kleinere kop, - opsommingsteken, 1. genummerd, - [ ] checklistpunt, > tipvak, **vet**, *cursief*, [woorden](https://link). Een lege regel begint een nieuwe alinea. Controleer het met Voorbeeld.",
+  // Body
+  "flock.libraryAdmin.bodyLabel": "Tekst",
+  // Add {{what}} before publishing.
+  "flock.libraryAdmin.cantPublish": "Voeg {{what}} toe voordat je publiceert.",
+  // Something in the form isn't allowed. Check the link and the topics, then try again.
+  "flock.libraryAdmin.checkError": "Iets in het formulier is niet toegestaan. Controleer de link en de onderwerpen en probeer het opnieuw.",
+  // Cover photo added
+  "flock.libraryAdmin.coverAdded": "Omslagfoto toegevoegd",
+  // Delete resource
+  "flock.libraryAdmin.delete": "Bron verwijderen",
+  // Delete this resource?
+  "flock.libraryAdmin.deleteConfirm": "Deze bron verwijderen?",
+  // Delete it for good, with its cover and PDF? This can't be undone.
+  "flock.libraryAdmin.deleteConfirmLine": "Definitief verwijderen, met de omslagfoto en pdf? Dit kan niet ongedaan worden gemaakt.",
+  // Delete
+  "flock.libraryAdmin.deleteYes": "Verwijderen",
+  // Deleting…
+  "flock.libraryAdmin.deleting": "Verwijderen…",
+  // Draft
+  "flock.libraryAdmin.draft": "Concept",
+  // A draft. Only admins can see it.
+  "flock.libraryAdmin.draftLine": "Een concept. Alleen beheerders kunnen het zien.",
+  // Edit resource
+  "flock.libraryAdmin.edit": "Bron bewerken",
+  // Edited {{day}}
+  "flock.libraryAdmin.edited": "Bewerkt {{day}}",
+  // Edit
+  "flock.libraryAdmin.editTab": "Bewerken",
+  // Nothing here yet. Tap New resource to write your first guide. It stays a draft, visible only to admins, until you publish it.
+  "flock.libraryAdmin.empty": "Hier staat nog niets. Tik op Nieuwe bron om je eerste gids te schrijven. Het blijft een concept, alleen zichtbaar voor beheerders, tot je het publiceert.",
+  // Files stay private: only people who can open the resource can open them.
+  "flock.libraryAdmin.filesHint": "Bestanden blijven privé: alleen wie de bron kan openen, kan ze openen.",
+  // Cover photo and PDF (optional)
+  "flock.libraryAdmin.filesLabel": "Omslagfoto en pdf (optioneel)",
+  // Keep it
+  "flock.libraryAdmin.keep": "Bewaren",
+  // Admin · drafts stay hidden until you publish
+  "flock.libraryAdmin.line": "Beheer · concepten blijven verborgen tot je publiceert",
+  // Live in the Library. Saving updates it for members.
+  "flock.libraryAdmin.liveLine": "Staat in de Bibliotheek. Opslaan werkt het bij voor leden.",
+  // We couldn't load the library. Try again.
+  "flock.libraryAdmin.loadError": "We konden de bibliotheek niet laden. Probeer het opnieuw.",
+  // Resource not found
+  "flock.libraryAdmin.missing": "Bron niet gevonden",
+  // It may have been deleted.
+  "flock.libraryAdmin.missingLine": "Misschien is deze verwijderd.",
+  // Edit or preview
+  "flock.libraryAdmin.modeLabel": "Bewerken of voorbeeld",
+  // New resource
+  "flock.libraryAdmin.new": "Nieuwe bron",
+  // No cover photo
+  "flock.libraryAdmin.noCover": "Geen omslagfoto",
+  // No PDF
+  "flock.libraryAdmin.noPdf": "Geen pdf",
+  // PDF attached
+  "flock.libraryAdmin.pdfAdded": "Pdf bijgevoegd",
+  // This is how members will see it, including anything you haven't saved yet.
+  "flock.libraryAdmin.previewNote": "Zo zien leden het, inclusief alles wat je nog niet hebt opgeslagen.",
+  // Preview
+  "flock.libraryAdmin.previewTab": "Voorbeeld",
+  // Publish
+  "flock.libraryAdmin.publish": "Publiceren",
+  // Published
+  "flock.libraryAdmin.published": "Gepubliceerd",
+  // Published. Members can find it in the Library.
+  "flock.libraryAdmin.publishedNow": "Gepubliceerd. Leden kunnen het vinden in de Bibliotheek.",
+  // Remove
+  "flock.libraryAdmin.remove": "Verwijderen",
+  // Replace
+  "flock.libraryAdmin.replace": "Vervangen",
+  // Date reviewed (optional)
+  "flock.libraryAdmin.reviewedOnLabel": "Datum van beoordeling (optioneel)",
+  // Reviewer's name (optional)
+  "flock.libraryAdmin.reviewerLabel": "Naam van de beoordelaar (optioneel)",
+  // Dr. Jane Smith, DVM
+  "flock.libraryAdmin.reviewerPlaceholder": "Dr. Jane Smith, DVM",
+  // Draft saved. Only admins can see it.
+  "flock.libraryAdmin.savedDraft": "Concept opgeslagen. Alleen beheerders kunnen het zien.",
+  // Saved. Members see the new version.
+  "flock.libraryAdmin.savedLive": "Opgeslagen. Leden zien de nieuwe versie.",
+  // Save draft
+  "flock.libraryAdmin.saveDraft": "Concept opslaan",
+  // Save changes
+  "flock.libraryAdmin.saveLive": "Wijzigingen opslaan",
+  // Separate with commas. Leave empty if it's for every bird.
+  "flock.libraryAdmin.speciesHint": "Scheid met komma's. Laat leeg als het voor elke vogel is.",
+  // Species (optional)
+  "flock.libraryAdmin.speciesLabel": "Soorten (optioneel)",
+  // Sun conure, African grey
+  "flock.libraryAdmin.speciesPlaceholder": "Zonparkiet, grijze roodstaart",
+  // One or two sentences. Shows in the list and under the title.
+  "flock.libraryAdmin.summaryHint": "Een of twee zinnen. Staat in de lijst en onder de titel.",
+  // Short summary
+  "flock.libraryAdmin.summaryLabel": "Korte samenvatting",
+  // Library
+  "flock.libraryAdmin.title": "Bibliotheek",
+  // Title
+  "flock.libraryAdmin.titleLabel": "Titel",
+  // These are the Library's subject filters. Pick at least one before publishing.
+  "flock.libraryAdmin.topicsHint": "Dit zijn de onderwerpfilters van de Bibliotheek. Kies er minstens één voordat je publiceert.",
+  // Topics
+  "flock.libraryAdmin.topicsLabel": "Onderwerpen",
+  // To publish, add {{what}}.
+  "flock.libraryAdmin.toPublish": "Voeg {{what}} toe om te publiceren.",
+  // Type
+  "flock.libraryAdmin.typeLabel": "Soort",
+  // Unpublish
+  "flock.libraryAdmin.unpublish": "Publicatie intrekken",
+  // Unpublished. It's a draft again, hidden from members.
+  "flock.libraryAdmin.unpublished": "Publicatie ingetrokken. Het is weer een concept, verborgen voor leden.",
+  // Uploading…
+  "flock.libraryAdmin.uploading": "Uploaden…",
+  // For a video, its YouTube or Vimeo page. For a link, the page to open.
+  "flock.libraryAdmin.urlHint": "Voor een video de YouTube- of Vimeo-pagina. Voor een link de pagina die moet openen.",
+  // Web link (optional)
+  "flock.libraryAdmin.urlLabel": "Weblink (optioneel)",
+  // Web link
+  "flock.libraryAdmin.urlRequired": "Weblink",
+  // Members see the badge only when this is on.
+  "flock.libraryAdmin.vetHint": "Leden zien de badge alleen als dit aan staat.",
+  // Reviewed by an avian vet
+  "flock.libraryAdmin.vetLabel": "Beoordeeld door een vogeldierenarts",
+  // Their birds
+  "flock.member.birds": "Hun vogels",
+  // This profile isn't available.
+  "flock.member.missing": "Dit profiel is niet beschikbaar.",
+  // Member not found
+  "flock.member.missingTitle": "Lid niet gevonden",
+  // and
+  "flock.members.and": "en",
+  // When members join your chapter, you'll find them here.
+  "flock.members.empty": "Als er leden bij je afdeling komen, vind je ze hier.",
+  // No members here yet
+  "flock.members.emptyTitle": "Hier zijn nog geen leden",
+  // Everyone
+  "flock.members.everyone": "Iedereen",
+  // Only first names and birds show here. Members choose what else to share.
+  "flock.members.footer": "Hier staan alleen voornamen en vogels. Leden kiezen zelf wat ze verder delen.",
+  // Filter by species
+  "flock.members.groupsAria": "Filter op soort",
+  // Chapter lead
+  "flock.members.lead": "Afdelingsleider",
+  // {{name}} leads the {{chapter}} chapter: they review its event suggestions and can add and edit its events.
+  "flock.members.leadAdminIs": "{{name}} leidt afdeling {{chapter}}: beoordeelt de voorgestelde evenementen en kan evenementen toevoegen en bewerken.",
+  // A chapter lead reviews event suggestions for their own chapter and can add and edit its events. It also gives them a Flock membership.
+  "flock.members.leadAdminNot": "Een afdelingsleider beoordeelt voorgestelde evenementen voor de eigen afdeling en kan er evenementen toevoegen en bewerken. Het geeft ook een lidmaatschap van de Flock.",
+  // Chapter lead (admins only)
+  "flock.members.leadAdminTitle": "Afdelingsleider (alleen beheerders)",
+  // Make chapter lead of {{chapter}}
+  "flock.members.makeLead": "Maak afdelingsleider van {{chapter}}",
+  // They'll review {{chapter}} event suggestions and can add and edit its events.
+  "flock.members.makeLeadLine": "Diegene beoordeelt de voorgestelde evenementen van {{chapter}} en kan evenementen toevoegen en bewerken.",
+  // Make chapter lead
+  "flock.members.makeLeadShort": "Maak afdelingsleider",
+  // Make {{name}} the chapter lead?
+  "flock.members.makeLeadTitle": "{{name}} afdelingsleider maken?",
+  // No birds shown
+  "flock.members.noBirds": "Geen vogels zichtbaar",
+  // No one matches that yet.
+  "flock.members.noMatch": "Nog niemand gevonden.",
+  // Options for {{name}}
+  "flock.members.options": "Opties voor {{name}}",
+  // Remove as chapter lead
+  "flock.members.removeLead": "Verwijderen als afdelingsleider",
+  // They stop reviewing and editing {{chapter}} events right away, and the membership that came with the role ends.
+  "flock.members.removeLeadLine": "Diegene stopt meteen met het beoordelen en bewerken van evenementen van {{chapter}}, en het lidmaatschap dat bij de rol hoorde, stopt.",
+  // Remove {{name}} as chapter lead?
+  "flock.members.removeLeadTitle": "{{name}} verwijderen als afdelingsleider?",
+  // Search by name or species
+  "flock.members.search": "Zoek op naam of soort",
+  // Billing details and changes will live here once payments open.
+  "flock.membership.billingSoon": "Betaalgegevens en wijzigingen vind je hier zodra betalingen starten.",
   // Community
   "flock.nav.aria": "Community",
   // My birds
   "flock.nav.care": "Mijn vogels",
+  // Chapter
+  "flock.nav.chapter": "Afdeling",
+  // Journeys
+  "flock.nav.journeys": "Trajecten",
+  // Library
+  "flock.nav.library": "Bibliotheek",
+  // Today
+  "flock.nav.today": "Vandaag",
+  // {{bird}} clip
+  "flock.notif.aboutClip": "{{bird}} clip",
+  // your comment
+  "flock.notif.aboutComment": "je reactie",
+  // {{bird}} milestone: {{title}}
+  "flock.notif.aboutMilestone": "{{bird}} mijlpaal: {{title}}",
+  // {{bird}} milestone
+  "flock.notif.aboutMilestoneShort": "{{bird}} mijlpaal",
+  // your post
+  "flock.notif.aboutPost": "je bericht",
+  // your skill {{skill}}
+  "flock.notif.aboutSkill": "je vaardigheid {{skill}}",
+  // All
+  "flock.notif.all": "Alles",
+  // My chapter
+  "flock.notif.chapter": "Mijn afdeling",
+  // {{title}} is on the calendar for {{date}}
+  "flock.notif.chapterEvent": "{{title}} staat op de agenda voor {{date}}",
+  // {{name}} posted in your chapter
+  "flock.notif.chapterPost": "{{name}} plaatste een bericht in je afdeling",
+  // cheered {{what}}
+  "flock.notif.cheered": "moedigde {{what}} aan",
+  // Cheers
+  "flock.notif.cheers": "Aanmoedigingen",
+  // commented on {{bird}} {{skill}}
+  "flock.notif.commentedJourney": "reageerde op {{bird}} {{skill}}",
+  // commented on your post
+  "flock.notif.commentedPost": "reageerde op je bericht",
+  // Earlier
+  "flock.notif.earlier": "Eerder",
+  // Replies, cheers, and news from your chapter and the journeys you follow will show up here.
+  "flock.notif.empty": "Antwoorden, aanmoedigingen en nieuws uit je afdeling en de trajecten die je volgt komen hier te staan.",
+  // Nothing new
+  "flock.notif.emptyTitle": "Niets nieuws",
+  // We couldn't load your notifications.
+  "flock.notif.error": "We konden je meldingen niet laden.",
+  // Your event {{title}} is on the calendar.
+  "flock.notif.eventApproved": "Je evenement {{title}} staat op de agenda.",
+  // {{title}} was cancelled.
+  "flock.notif.eventCancelled": "{{title}} is afgelast.",
+  // Your event needs a few changes:
+  "flock.notif.eventChanges": "Je evenement heeft een paar aanpassingen nodig:",
+  // Your event wasn't approved this time.
+  "flock.notif.eventDeclined": "Je evenement is deze keer niet goedgekeurd.",
+  // {{title}}. You said you're going.
+  "flock.notif.eventReminder": "{{title}}. Je hebt gezegd dat je gaat.",
+  // Tomorrow:
+  "flock.notif.eventTomorrow": "Morgen:",
+  // Filter notifications
+  "flock.notif.filterAria": "Meldingen filteren",
+  // posted a new clip in a journey you follow
+  "flock.notif.newClip": "plaatste een nieuwe clip in een traject dat je volgt",
+  // A note from The Kya Project:
+  "flock.notif.notice": "Een bericht van The Kya Project:",
+  // {{count}} people
+  "flock.notif.people_one": "{{count}} persoon",
+  // {{count}} people
+  "flock.notif.people_other": "{{count}} mensen",
+  // We removed something you posted.
+  "flock.notif.removed": "We hebben iets verwijderd dat je had geplaatst.",
+  // replied to your comment
+  "flock.notif.repliedToYou": "antwoordde op je reactie",
+  // Replies
+  "flock.notif.replies": "Antwoorden",
+  // Your Do good post needs a few changes:
+  "flock.notif.reviewChanges": "Je Do good-bericht heeft een paar aanpassingen nodig:",
+  // Your Do good post wasn't approved this time.
+  "flock.notif.reviewDeclined": "Je Do good-bericht is deze keer niet goedgekeurd.",
+  // live
+  "flock.notif.reviewLive": "live",
+  // . Thanks for sharing it.
+  "flock.notif.reviewLiveEnd": ". Bedankt voor het delen.",
+  // Your Do good post is
+  "flock.notif.reviewLiveLead": "Je Do good-bericht staat",
+  // Push notifications and email for the Community are coming. For now, updates live here. Your care reminders are separate and won't change.
+  "flock.notif.settings": "Pushmeldingen en e-mail voor de community komen eraan. Voor nu staan updates hier. Je verzorgingsherinneringen staan daar los van en veranderen niet.",
+  // Push and email
+  "flock.notif.settingsTitle": "Push en e-mail",
+  // Today
+  "flock.notif.today": "Vandaag",
+  // New
+  "flock.notif.unread": "Nieuw",
+  // Founding member
+  "flock.people.founder": "Oprichtend lid",
+  // Add a listing
+  "flock.places.add": "Voeg een vermelding toe",
+  // Add listing
+  "flock.places.addSave": "Vermelding toevoegen",
+  // City or area
+  "flock.places.area": "Plaats of regio",
+  // Call
+  "flock.places.call": "Bellen",
+  // Call {{name}}, {{phone}}
+  "flock.places.callAria": "{{name}} bellen, {{phone}}",
+  // Chapter
+  "flock.places.chapterPick": "Afdeling",
+  // Places members in your chapter recommend. These are community picks, not endorsements.
+  "flock.places.disclaimer": "Plekken die leden van je afdeling aanraden. Dit zijn tips uit de community, geen aanbevelingen van ons.",
+  // Edit
+  "flock.places.edit": "Bewerken",
+  // Edit listing
+  "flock.places.editTitle": "Vermelding bewerken",
+  // Rescues
+  "flock.places.group.rescue": "Opvangen",
+  // Shops and services
+  "flock.places.group.shop": "Winkels en diensten",
+  // Avian vets
+  "flock.places.group.vet": "Vogeldierenartsen",
+  // Know a good one nearby? Suggest it, and your chapter lead will add it.
+  "flock.places.groupEmpty": "Ken je een goede in de buurt? Stel hem voor, dan voegt je afdelingsleider hem toe.",
+  // Rescue
+  "flock.places.kind.rescue": "Opvang",
+  // Shop or service
+  "flock.places.kind.shop": "Winkel of dienst",
+  // Avian vet
+  "flock.places.kind.vet": "Vogeldierenarts",
+  // Kind of place
+  "flock.places.kindLabel": "Soort plek",
+  // {{chapter}} · you lead this chapter
+  "flock.places.leadLine": "{{chapter}} · jij leidt deze afdeling",
+  // Manage listings
+  "flock.places.manage": "Vermeldingen beheren",
+  // Move {{name}} down
+  "flock.places.moveDown": "{{name}} omlaag zetten",
+  // Move {{name}} up
+  "flock.places.moveUp": "{{name}} omhoog zetten",
+  // Name
+  "flock.places.name": "Naam",
+  // None listed yet.
+  "flock.places.noneYet": "Nog niets vermeld.",
+  // Why members recommend it
+  "flock.places.noteField": "Waarom leden het aanraden",
+  // Chapter leads and admins look after a chapter's listings. You can suggest a place from your chapter's Resources tab.
+  "flock.places.notManager": "Afdelingsleiders en beheerders zorgen voor de vermeldingen van een afdeling. Je kunt een plek voorstellen via het tabblad Bronnen van je afdeling.",
+  // For chapter leads
+  "flock.places.notManagerTitle": "Voor afdelingsleiders",
+  // Phone (optional)
+  "flock.places.phone": "Telefoon (optioneel)",
+  // Remove listing
+  "flock.places.remove": "Vermelding verwijderen",
+  // {{name}} comes off your chapter's Resources for everyone.
+  "flock.places.removeLine": "{{name}} verdwijnt voor iedereen uit de Bronnen van je afdeling.",
+  // Remove this listing?
+  "flock.places.removeTitle": "Deze vermelding verwijderen?",
+  // Review
+  "flock.places.review": "Beoordelen",
+  // Your chapter lead will look it over before it shows.
+  "flock.places.reviewHint": "Je afdelingsleider bekijkt het voordat het zichtbaar wordt.",
+  // Save changes
+  "flock.places.saveChanges": "Wijzigingen opslaan",
+  // We couldn't save that. Check the details and try again.
+  "flock.places.saveError": "Dat konden we niet opslaan. Controleer de gegevens en probeer het opnieuw.",
+  // Send suggestion
+  "flock.places.send": "Voorstel versturen",
+  // We couldn't send that. Try again.
+  "flock.places.sendError": "Dat konden we niet versturen. Probeer het opnieuw.",
+  // Thanks! Your suggestion will show once your chapter lead has looked it over.
+  "flock.places.sent": "Bedankt! Je voorstel verschijnt zodra je afdelingsleider het heeft bekeken.",
+  // Suggest a place
+  "flock.places.suggest": "Stel een plek voor",
+  // You have a few suggestions waiting already. Try again once they've been looked at.
+  "flock.places.tooMany": "Er wachten al een paar voorstellen van je. Probeer het opnieuw zodra die bekeken zijn.",
+  // Updated {{day}}
+  "flock.places.updated": "Bijgewerkt {{day}}",
+  // {{count}} suggestion waiting
+  "flock.places.waiting_one": "{{count}} voorstel wacht",
+  // {{count}} suggestions waiting
+  "flock.places.waiting_other": "{{count}} voorstellen wachten",
+  // Review them before they show to members.
+  "flock.places.waitingLine": "Beoordeel ze voordat leden ze zien.",
+  // Website
+  "flock.places.website": "Website",
+  // {{name}}'s website
+  "flock.places.websiteAria": "Website van {{name}}",
+  // Website (optional)
+  "flock.places.websiteField": "Website (optioneel)",
+  // Use a web address, like example.com.
+  "flock.places.websiteHint": "Gebruik een webadres, zoals example.com.",
+  // Why do you recommend it?
+  "flock.places.why": "Waarom raad je het aan?",
+  // Check in
+  "flock.pods.checkIn": "Laat van je horen",
+  // Closed
+  "flock.pods.closedTag": "Gesloten",
+  // This pod has closed. You can still read what everyone shared.
+  "flock.pods.ended": "Deze buddygroep is gesloten. Je kunt nog lezen wat iedereen heeft gedeeld.",
+  // This pod has closed because it got quiet. You can still read what everyone shared.
+  "flock.pods.endedQuiet": "Deze buddygroep is gesloten omdat het stil werd. Je kunt nog lezen wat iedereen heeft gedeeld.",
+  // Someone in that pod has a block with this member.
+  "flock.pods.errBlocked": "Iemand in die buddygroep heeft een blokkering met dit lid.",
+  // This pod has ended, so it can't take new posts.
+  "flock.pods.errClosed": "Deze buddygroep is afgelopen, dus er kunnen geen nieuwe berichten bij.",
+  // That pod is full.
+  "flock.pods.errFull": "Die buddygroep is vol.",
+  // You're in two buddy pods already, the most at once. Leave one to join another.
+  "flock.pods.errLimit": "Je zit al in twee buddygroepen, het maximum tegelijk. Verlaat er een om een andere te kiezen.",
+  // We couldn't save that. Check your connection and try again.
+  "flock.pods.error": "Dat konden we niet opslaan. Controleer je verbinding en probeer het opnieuw.",
+  // Nothing here yet. Check in to tell your buddies how it's going.
+  "flock.pods.feedEmpty": "Hier staat nog niets. Laat je buddy's weten hoe het gaat.",
+  // Nobody posted in this pod.
+  "flock.pods.feedEmptyEnded": "Niemand heeft iets geplaatst in deze buddygroep.",
+  // We're finding your buddies
+  "flock.pods.finding": "We zoeken je buddy's",
+  // Your pod starts when 3 members are ready. {{count}} so far.
+  "flock.pods.findingLine_one": "Je buddygroep begint zodra 3 leden klaar zijn. Tot nu toe {{count}}.",
+  // Your pod starts when 3 members are ready. {{count}} so far.
+  "flock.pods.findingLine_other": "Je buddygroep begint zodra 3 leden klaar zijn. Tot nu toe {{count}}.",
+  // Your pod starts as soon as we can match you.
+  "flock.pods.findingSoon": "Je buddygroep begint zodra we je kunnen koppelen.",
+  // Stay in the pod to cheer the others on, or leave whenever you like.
+  "flock.pods.finishedLine": "Blijf in de groep om de anderen aan te moedigen, of ga weg wanneer je wilt.",
+  // You finished!
+  "flock.pods.finishedTitle": "Je bent klaar!",
+  // Leave pod
+  "flock.pods.leave": "Groep verlaten",
+  // The others won't be told. They'll just see one fewer member. Your journey keeps going as it is.
+  "flock.pods.leaveLine": "De anderen krijgen geen bericht. Ze zien alleen een lid minder. Je traject loopt gewoon door.",
+  // Leave this pod?
+  "flock.pods.leaveTitle": "Deze buddygroep verlaten?",
+  // Leave the waitlist
+  "flock.pods.leaveWaitlist": "Wachtlijst verlaten",
+  // When you start a skill, tick "Pair me with buddies working on this too" to join a small group working on the same one.
+  "flock.pods.listEmpty": "Vink bij het starten van een vaardigheid \"Koppel me aan buddy's die hier ook aan werken\" aan om in een kleine groep met dezelfde vaardigheid te komen.",
+  // No pods yet
+  "flock.pods.listEmptyTitle": "Nog geen buddygroepen",
+  // Small groups on the same journey
+  "flock.pods.listLine": "Kleine groepen met hetzelfde traject",
+  // Buddy pods
+  "flock.pods.listTitle": "Buddygroepen",
+  // Manage pods
+  "flock.pods.manage": "Buddygroepen beheren",
+  // Member
+  "flock.pods.member": "Lid",
+  // {{count}} member
+  "flock.pods.members_one": "{{count}} lid",
+  // {{count}} members
+  "flock.pods.members_other": "{{count}} leden",
+  // This pod isn't available.
+  "flock.pods.missing": "Deze buddygroep is niet beschikbaar.",
+  // Pod not found
+  "flock.pods.missingTitle": "Buddygroep niet gevonden",
+  // Find new buddies
+  "flock.pods.offerCta": "Zoek nieuwe buddy's",
+  // It got quiet, so we closed it. Want to be paired with new buddies on this journey?
+  "flock.pods.offerLine": "Het werd stil, dus we hebben hem gesloten. Wil je nieuwe buddy's voor dit traject?",
+  // Your buddy pod has closed
+  "flock.pods.offerTitle": "Je buddygroep is gesloten",
+  // Open
+  "flock.pods.open": "Openen",
+  // Pair me with buddies working on this too
+  "flock.pods.optIn": "Koppel me aan buddy's die hier ook aan werken",
+  // Your buddies see your name and that you're on this skill, but not where you are on it.
+  "flock.pods.optInJustMe": "Je buddy's zien je naam en dat je aan deze vaardigheid werkt, maar niet hoe ver je bent.",
+  // You're in two buddy pods already, the most at once.
+  "flock.pods.optInLimit": "Je zit al in twee buddygroepen, het maximum tegelijk.",
+  // A small group of 3 to 6 members on the same skill, from your chapter when possible. You can leave anytime.
+  "flock.pods.optInLine": "Een kleine groep van 3 tot 6 leden met dezelfde vaardigheid, waar mogelijk uit je afdeling. Je kunt altijd weggaan.",
+  // Post to the pod
+  "flock.pods.post": "Plaats in de groep",
+  // Read the old pod
+  "flock.pods.readOldPod": "Lees de oude groep",
+  // Buddy pod
+  "flock.pods.space": "Buddygroep",
+  // Happy where we are
+  "flock.pods.stageHappy": "Tevreden zo",
+  // Learned it
+  "flock.pods.stageLearned": "Geleerd",
+  // Journey kept private
+  "flock.pods.stagePrivate": "Traject privé gehouden",
+  // Working on it
+  "flock.pods.stageWorking": "Mee bezig",
+  // Stay and cheer
+  "flock.pods.stay": "Blijf en moedig aan",
+  // This week
+  "flock.pods.thisWeek": "Deze week",
+  // {{journey}} pod
+  "flock.pods.title": "Buddygroep {{journey}}",
+  // How did {{journey}} go?
+  "flock.pods.weekly": "Hoe ging {{journey}}?",
+  // You
+  "flock.pods.you": "Jij",
+  // Your buddy pod
+  "flock.pods.yourPod": "Je buddygroep",
+  // Open
+  "flock.podsAdmin.active": "Open",
+  // Closed
+  "flock.podsAdmin.closed": "Gesloten",
+  // Dissolve pod
+  "flock.podsAdmin.dissolve": "Groep opheffen",
+  // Dissolved
+  "flock.podsAdmin.dissolved": "Opgeheven",
+  // It closes for everyone. Members can still read it, and anyone who hasn't finished is offered a new pod.
+  "flock.podsAdmin.dissolveLine": "Hij sluit voor iedereen. Leden kunnen hem nog lezen, en wie nog niet klaar is krijgt een nieuwe groep aangeboden.",
+  // Dissolve this pod?
+  "flock.podsAdmin.dissolveTitle": "Deze buddygroep opheffen?",
+  // No pods yet. They form on their own once 3 members on the same journey ask for buddies.
+  "flock.podsAdmin.empty": "Nog geen buddygroepen. Ze ontstaan vanzelf zodra 3 leden met hetzelfde traject om buddy's vragen.",
+  // Joined {{day}}
+  "flock.podsAdmin.joined": "Lid sinds {{day}}",
+  // Last post {{day}}
+  "flock.podsAdmin.lastPost": "Laatste bericht {{day}}",
+  // Left {{day}}
+  "flock.podsAdmin.left": "Vertrokken {{day}}",
+  // Admin · every pod and who's waiting
+  "flock.podsAdmin.line": "Beheer · alle buddygroepen en wie er wacht",
+  // We couldn't load the pods. Try again.
+  "flock.podsAdmin.loadError": "We konden de buddygroepen niet laden. Probeer het opnieuw.",
+  // Move
+  "flock.podsAdmin.move": "Verplaatsen",
+  // Move to
+  "flock.podsAdmin.moveTo": "Verplaatsen naar",
+  // Started {{day}}
+  "flock.podsAdmin.started": "Gestart {{day}}",
+  // Buddy pods
+  "flock.podsAdmin.title": "Buddygroepen",
+  // Waiting for buddies
+  "flock.podsAdmin.waiting": "Wacht op buddy's",
+  // {{journey}}: {{count}} waiting
+  "flock.podsAdmin.waitingRow_one": "{{journey}}: {{count}} wacht",
+  // {{journey}}: {{count}} waiting
+  "flock.podsAdmin.waitingRow_other": "{{journey}}: {{count}} wachten",
+  // Add a comment
+  "flock.posts.addComment": "Reactie toevoegen",
+  // Add a photo
+  "flock.posts.addPhoto": "Foto toevoegen",
+  // Add photos
+  "flock.posts.addPhotos": "Foto's toevoegen",
+  // All {{count}}
+  "flock.posts.allCount_one": "Alle {{count}}",
+  // All {{count}}
+  "flock.posts.allCount_other": "Alle {{count}}",
+  // Attach a bird
+  "flock.posts.attachBird": "Een vogel toevoegen",
+  // Members see your bird's name and photo. Nothing from the care plan.
+  "flock.posts.attachLine": "Leden zien de naam en foto van je vogel. Niets uit het verzorgingsplan.",
+  // name and photo only
+  "flock.posts.birdNamePhoto": "alleen naam en foto",
+  // Your post
+  "flock.posts.bodyLabel": "Je bericht",
+  // Ask a question, share what worked, or say hello.
+  "flock.posts.bodyPlaceholder": "Stel een vraag, deel wat werkte of zeg hallo.",
+  // Cancel
+  "flock.posts.cancel": "Annuleren",
+  // Challenge
+  "flock.posts.challengeSpace": "Uitdaging",
+  // Change
+  "flock.posts.change": "Wijzigen",
+  // {{name}} chapter
+  "flock.posts.chapterSpace": "Afdeling {{name}}",
+  // Comment
+  "flock.posts.comment": "Reageren",
+  // {{count}} comment
+  "flock.posts.commentCount_one": "{{count}} reactie",
+  // {{count}} comments
+  "flock.posts.commentCount_other": "{{count}} reacties",
+  // We couldn't post that comment. Try again.
+  "flock.posts.commentError": "We konden die reactie niet plaatsen. Probeer het opnieuw.",
+  // Add a comment for {{name}}
+  "flock.posts.commentFor": "Reageer op {{name}}",
+  // Comment options
+  "flock.posts.commentMenu": "Opties voor reactie",
+  // We couldn't load the comments.
+  "flock.posts.commentsError": "We konden de reacties niet laden.",
+  // Comments
+  "flock.posts.commentsTitle": "Reacties",
+  // Delete
+  "flock.posts.delete": "Verwijderen",
+  // Delete comment
+  "flock.posts.deleteCommentConfirm": "Reactie verwijderen",
+  // Replies to it go too. This can't be undone.
+  "flock.posts.deleteCommentLine": "Antwoorden erop gaan ook weg. Dit kan niet ongedaan worden gemaakt.",
+  // Delete this comment?
+  "flock.posts.deleteCommentTitle": "Deze reactie verwijderen?",
+  // Delete post
+  "flock.posts.deleteConfirm": "Bericht verwijderen",
+  // We couldn't delete that. Try again.
+  "flock.posts.deleteError": "We konden dat niet verwijderen. Probeer het opnieuw.",
+  // Its photos, comments and reactions go with it. This can't be undone.
+  "flock.posts.deleteLine": "De foto's, reacties en aanmoedigingen gaan mee. Dit kan niet ongedaan worden gemaakt.",
+  // This can't be undone.
+  "flock.posts.deleteReplyLine": "Dit kan niet ongedaan worden gemaakt.",
+  // Delete this post?
+  "flock.posts.deleteTitle": "Dit bericht verwijderen?",
+  // Edit
+  "flock.posts.edit": "Bewerken",
+  // edited
+  "flock.posts.edited": "bewerkt",
+  // Editing your comment
+  "flock.posts.editingComment": "Je reactie bewerken",
+  // Do good posts go back for a quick review after an edit.
+  "flock.posts.editReviewHint": "Do good-berichten gaan na een bewerking terug voor een korte beoordeling.",
+  // Edit post
+  "flock.posts.editTitle": "Bericht bewerken",
+  // Photos lose their location data when you post.
+  "flock.posts.gpsNote": "Foto's verliezen hun locatiegegevens als je ze plaatst.",
+  // Press and hold for more reactions
+  "flock.posts.holdForMore": "Houd ingedrukt voor meer aanmoedigingen",
+  // Just now
+  "flock.posts.justNow": "Zojuist",
+  // Loading…
+  "flock.posts.loading": "Laden…",
+  // A member
+  "flock.posts.member": "Een lid",
+  // Post options
+  "flock.posts.menuTitle": "Opties voor bericht",
+  // More options
+  "flock.posts.more": "Meer opties",
+  // New post
+  "flock.posts.newTitle": "Nieuw bericht",
+  // Don't attach a bird
+  "flock.posts.noBird": "Geen vogel toevoegen",
+  // No comments yet. Say something kind.
+  "flock.posts.noComments": "Nog geen reacties. Zeg iets aardigs.",
+  // This post isn't available.
+  "flock.posts.notFound": "Dit bericht is niet beschikbaar.",
+  // Photo from {{name}}
+  "flock.posts.photoAlt": "Foto van {{name}}",
+  // We couldn't add that photo. Try again.
+  "flock.posts.photoError": "We konden die foto niet toevoegen. Probeer het opnieuw.",
+  // Up to four photos in a post.
+  "flock.posts.photoMax": "Maximaal vier foto's per bericht.",
+  // {{n}} of {{total}}
+  "flock.posts.photoOf": "{{n}} van {{total}}",
+  // Post
+  "flock.posts.post": "Plaatsen",
+  // Posting…
+  "flock.posts.posting": "Plaatsen…",
+  // Post to
+  "flock.posts.postTo": "Plaatsen in",
+  // Share something with the Flock
+  "flock.posts.prompt": "Deel iets met de Flock",
+  // You've commented a lot this hour. Try again a little later.
+  "flock.posts.rate.comments": "Je hebt dit uur veel gereageerd. Probeer het straks nog eens.",
+  // That's the most photos for this hour. Post without them, or try again a little later.
+  "flock.posts.rate.photos": "Dat is het maximum aantal foto's voor dit uur. Plaats je bericht zonder foto's, of probeer het straks nog eens.",
+  // You've shared a lot this hour. Take a breather and post again a little later.
+  "flock.posts.rate.posts": "Je hebt dit uur veel gedeeld. Neem even pauze en plaats straks weer iets.",
+  // {{count}} reaction
+  "flock.posts.reactionCount_one": "{{count}} aanmoediging",
+  // {{count}} reactions
+  "flock.posts.reactionCount_other": "{{count}} aanmoedigingen",
+  // Filter reactions
+  "flock.posts.reactionsFilter": "Aanmoedigingen filteren",
+  // Reactions
+  "flock.posts.reactionsTitle": "Aanmoedigingen",
+  // We couldn't load who reacted.
+  "flock.posts.reactorsError": "We konden niet laden wie er aanmoedigde.",
+  // React
+  "flock.posts.reactTitle": "Aanmoedigen",
+  // Remove photo
+  "flock.posts.removePhoto": "Foto verwijderen",
+  // Reply
+  "flock.posts.reply": "Antwoorden",
+  // Replying to
+  "flock.posts.replyingTo": "Antwoord aan",
+  // We review Do good posts before they go live, usually within a day, so everything here is something members can trust.
+  "flock.posts.reviewHint": "We beoordelen Do good-berichten voordat ze live gaan, meestal binnen een dag, zodat leden alles hier kunnen vertrouwen.",
+  // Save
+  "flock.posts.save": "Opslaan",
+  // We couldn't post that. Check your connection and try again.
+  "flock.posts.saveError": "We konden dat niet plaatsen. Controleer je verbinding en probeer het opnieuw.",
+  // Say something to {{name}}
+  "flock.posts.saySomething": "Zeg iets tegen {{name}}",
+  // Send
+  "flock.posts.send": "Versturen",
+  // Send for review
+  "flock.posts.sendForReview": "Ter beoordeling sturen",
+  // Show more
+  "flock.posts.showMore": "Meer tonen",
+  // Changes requested
+  "flock.posts.status.changes": "Aanpassingen gevraagd",
+  // Not approved
+  "flock.posts.status.declined": "Niet goedgekeurd",
+  // Waiting for review
+  "flock.posts.status.pending": "Wacht op beoordeling",
+  // Removed
+  "flock.posts.status.removed": "Verwijderd",
+  // Title (optional)
+  "flock.posts.titleLabel": "Titel (optioneel)",
+  // Post anyway, after I've called
+  "flock.posts.vet.anyway": "Toch plaatsen, nadat ik heb gebeld",
+  // Changes like these can be early signs a bird is unwell. Birds hide illness, so it's worth calling today rather than waiting on replies.
+  "flock.posts.vet.body": "Veranderingen als deze kunnen vroege tekenen zijn dat een vogel ziek is. Vogels verbergen ziekte, dus het is de moeite waard om vandaag te bellen in plaats van op antwoorden te wachten.",
+  // Find an avian vet near me
+  "flock.posts.vet.find": "Vind een vogeldierenarts bij mij in de buurt",
+  // This sounds like something for your avian vet
+  "flock.posts.vet.title": "Dit klinkt als iets voor je vogeldierenarts",
+  // Call your avian vet or an emergency vet now. Please don't wait for replies here.
+  "flock.posts.vet.urgentBody": "Bel nu je vogeldierenarts of een spoeddierenarts. Wacht alsjeblieft niet op antwoorden hier.",
+  // Find an emergency vet
+  "flock.posts.vet.urgentFind": "Vind een spoeddierenarts",
+  // This could be an emergency
+  "flock.posts.vet.urgentTitle": "Dit kan een noodgeval zijn",
+  // Who reacted
+  "flock.posts.whoReacted": "Wie moedigde aan",
+  // See who reacted ({{count}})
+  "flock.posts.whoReactedAria_one": "Bekijk wie er aanmoedigde ({{count}})",
+  // See who reacted ({{count}})
+  "flock.posts.whoReactedAria_other": "Bekijk wie er aanmoedigden ({{count}})",
+  // (you)
+  "flock.posts.you": "(jij)",
+  // What other members can see, and what they never see.
+  "flock.privacy.line": "Wat andere leden kunnen zien, en wat ze nooit zien.",
+  // Choose which birds members meet
+  "flock.privacy.manage": "Kies welke vogels leden te zien krijgen",
+  // Your address
+  "flock.privacy.never.address": "Je adres",
+  // Anything of yours, if you've blocked them or they've blocked you
+  "flock.privacy.never.blocked": "Niets van jou, als je hen hebt geblokkeerd of zij jou",
+  // Your birds' care records and care plans
+  "flock.privacy.never.care": "De verzorgingsgegevens en verzorgingsplannen van je vogels",
+  // Your email
+  "flock.privacy.never.email": "Je e-mailadres",
+  // Health checks and health notes
+  "flock.privacy.never.health": "Gezondheidschecks en gezondheidsnotities",
+  // Your sits and sitters
+  "flock.privacy.never.sits": "Je oppasperiodes en oppassen",
+  // Weights
+  "flock.privacy.never.weights": "Gewichten",
+  // Members never see
+  "flock.privacy.neverTitle": "Leden zien nooit",
+  // Your Flock badges, unless you hide them. Badges from "Just me" journeys stay with you.
+  "flock.privacy.see.badges": "Je badges in de Flock, tenzij je ze verbergt. Badges van trajecten op \"Alleen ik\" blijven bij jou.",
+  // Your bio
+  "flock.privacy.see.bio": "Je bio",
+  // The birds you choose to show: their name, species, and photo
+  "flock.privacy.see.birds": "De vogels die je kiest te laten zien: hun naam, soort en foto",
+  // Your display name
+  "flock.privacy.see.name": "Je weergavenaam",
+  // Your profile photo
+  "flock.privacy.see.photo": "Je profielfoto",
+  // In a buddy pod you joined: that you're on the journey, and where you are on it (working on it, learned it, or happy where we are) unless the journey is "Just me"
+  "flock.privacy.see.pods": "In een buddygroep waar je bij zit: dat je met het traject bezig bent, en waar je staat (mee bezig, geleerd, of tevreden zo), tenzij het traject op \"Alleen ik\" staat",
+  // Your region (your chapter)
+  "flock.privacy.see.region": "Je regio (je afdeling)",
+  // Members can see
+  "flock.privacy.seeTitle": "Leden kunnen zien",
   // Close
   "flock.region.close": "Sluiten",
   // Your chapter is the members near you. Members see your region, never your address.
   "flock.region.line": "Je afdeling bestaat uit de leden bij jou in de buurt. Leden zien je regio, nooit je adres.",
   // Choose your chapter
   "flock.region.title": "Kies je afdeling",
+  // Report
+  "flock.report.action": "Melden",
+  // Done
+  "flock.report.close": "Klaar",
+  // We couldn't send that. Try again.
+  "flock.report.error": "We konden dat niet versturen. Probeer het opnieuw.",
+  // Anything we should know? (optional)
+  "flock.report.noteLabel": "Moeten we nog iets weten? (optioneel)",
+  // Something else
+  "flock.report.other": "Iets anders",
+  // Send report
+  "flock.report.send": "Melding versturen",
+  // Sending…
+  "flock.report.sending": "Versturen…",
+  // Spam or selling
+  "flock.report.spam": "Spam of verkoop",
+  // We'll take a look. Your report is private: the person who posted it won't know it was you.
+  "flock.report.thanks": "We gaan het bekijken. Je melding is privé: degene die het plaatste weet niet dat jij het was.",
+  // Thanks for telling us
+  "flock.report.thanksTitle": "Bedankt dat je het laat weten",
+  // Report this comment
+  "flock.report.titleComment": "Deze reactie melden",
+  // Report this post
+  "flock.report.titlePost": "Dit bericht melden",
+  // Report this skill
+  "flock.report.titleSkill": "Deze vaardigheid melden",
+  // Report this update
+  "flock.report.titleUpdate": "Deze update melden",
+  // Unkind or harassing
+  "flock.report.unkind": "Onaardig of intimiderend",
+  // Unsafe advice for birds
+  "flock.report.unsafe": "Onveilig advies voor vogels",
+  // What's wrong with it?
+  "flock.report.why": "Wat is er mis mee?",
   // Adopted from a partner rescue? Your code gives you six months in the Flock.
   "flock.rescue.about": "Geadopteerd via een partneropvang? Met je code krijg je zes maanden in de Flock.",
   // Adoption date
@@ -3807,20 +6039,482 @@
   "flock.rescueAdmin.title": "Partneropvangen",
   // Waiting for confirmation
   "flock.rescueAdmin.waiting": "Wacht op bevestiging",
+  // All {{count}}
+  "flock.review.all_one": "Alle {{count}}",
+  // All {{count}}
+  "flock.review.all_other": "Alle {{count}}",
+  // Approve
+  "flock.review.approve": "Goedkeuren",
+  // By {{name}}
+  "flock.review.by": "Door {{name}}",
+  // Ask for changes
+  "flock.review.changes": "Om aanpassingen vragen",
+  // What should they change? They'll see this.
+  "flock.review.changesLabel": "Wat moeten ze aanpassen? Ze zien dit.",
+  // Send to the author
+  "flock.review.changesSend": "Naar de auteur sturen",
+  // Ask for changes
+  "flock.review.changesTitle": "Om aanpassingen vragen",
+  // (a clip with no caption)
+  "flock.review.clipOnly": "(een clip zonder onderschrift)",
+  // Decline
+  "flock.review.decline": "Afwijzen",
+  // Decline this event
+  "flock.review.declineEventTitle": "Dit evenement afwijzen",
+  // A note for the author (optional)
+  "flock.review.declineLabel": "Een notitie voor de auteur (optioneel)",
+  // Decline
+  "flock.review.declineSend": "Afwijzen",
+  // Decline this post
+  "flock.review.declineTitle": "Dit bericht afwijzen",
+  // Do good
+  "flock.review.doGood": "Do good",
+  // Nothing waiting. Nice.
+  "flock.review.empty": "Niets in de wacht. Mooi zo.",
+  // That didn't save. Try again.
+  "flock.review.error": "Dat is niet opgeslagen. Probeer het opnieuw.",
+  // Event suggestion
+  "flock.review.event": "Evenementvoorstel",
+  // Events {{count}}
+  "flock.review.events_one": "Evenementen {{count}}",
+  // Events {{count}}
+  "flock.review.events_other": "Evenementen {{count}}",
+  // Event · volunteer day
+  "flock.review.eventVolunteer": "Evenement · vrijwilligersdag",
+  // Filter the queue
+  "flock.review.filterAria": "De lijst filteren",
+  // Do good {{count}}
+  "flock.review.good_one": "Do good {{count}}",
+  // Do good {{count}}
+  "flock.review.good_other": "Do good {{count}}",
+  // Hidden until you review it
+  "flock.review.hidden": "Verborgen tot je het beoordeelt",
+  // Go to Home
+  "flock.review.home": "Naar Home",
+  // Keep it
+  "flock.review.keep": "Laten staan",
+  // Admin · {{count}} waiting
+  "flock.review.line_one": "Beheer · {{count}} wacht",
+  // Admin · {{count}} waiting
+  "flock.review.line_other": "Beheer · {{count}} wachten",
+  // Message them
+  "flock.review.message": "Stuur een bericht",
+  // Messaged
+  "flock.review.messaged": "Bericht gestuurd",
+  // Your note appears in their notifications. The post stays as it is.
+  "flock.review.messageLabel": "Je notitie verschijnt in hun meldingen. Het bericht blijft zoals het is.",
+  // Send message
+  "flock.review.messageSend": "Bericht versturen",
+  // Message them
+  "flock.review.messageTitle": "Stuur een bericht",
+  // (no description)
+  "flock.review.noDescription": "(geen beschrijving)",
+  // Page not available
+  "flock.review.notAvailable": "Pagina niet beschikbaar",
+  // This page is for Community reviewers.
+  "flock.review.notAvailableLine": "Deze pagina is voor beoordelaars van de community.",
+  // Open it
+  "flock.review.open": "Openen",
+  // Place suggestion
+  "flock.review.place": "Plekvoorstel",
+  // See the chapter's listings
+  "flock.review.placeListings": "Bekijk de vermeldingen van de afdeling",
+  // Places {{count}}
+  "flock.review.places_one": "Plekken {{count}}",
+  // Places {{count}}
+  "flock.review.places_other": "Plekken {{count}}",
+  // Remove it
+  "flock.review.remove": "Verwijderen",
+  // A note for the author (optional)
+  "flock.review.removeLabel": "Een notitie voor de auteur (optioneel)",
+  // Remove it
+  "flock.review.removeSend": "Verwijderen",
+  // Remove it
+  "flock.review.removeTitle": "Verwijderen",
+  // Report · comment
+  "flock.review.reportComment": "Melding · reactie",
+  // Reported by {{count}} member
+  "flock.review.reportedBy_one": "Gemeld door {{count}} lid",
+  // Reported by {{count}} members
+  "flock.review.reportedBy_other": "Gemeld door {{count}} leden",
+  // Report · post
+  "flock.review.reportPost": "Melding · bericht",
+  // Reports {{count}}
+  "flock.review.reports_one": "Meldingen {{count}}",
+  // Reports {{count}}
+  "flock.review.reports_other": "Meldingen {{count}}",
+  // Report · member skill
+  "flock.review.reportSkill": "Melding · vaardigheid van lid",
+  // Report · journey update
+  "flock.review.reportUpdate": "Melding · trajectupdate",
   // Rescues {{count}}
   "flock.review.rescues_one": "Opvang {{count}}",
   // Rescues {{count}}
   "flock.review.rescues_other": "Opvang {{count}}",
+  // Review queue
+  "flock.review.title": "Beoordelingslijst",
+  // Which birds should members meet?
+  "flock.setup.birds": "Welke vogels mogen leden ontmoeten?",
+  // Only their name, species, and photo. Care records stay private.
+  "flock.setup.birdsHint": "Alleen hun naam, soort en foto. Verzorgingsgegevens blijven privé.",
   // Change
   "flock.setup.change": "Wijzigen",
   // Your chapter
   "flock.setup.chapter": "Je afdeling",
   // Members see your region, never your address.
   "flock.setup.chapterHint": "Leden zien je regio, nooit je adres.",
+  // Go to the community
+  "flock.setup.cta": "Naar de community",
+  // We couldn't save that. Check your connection and try again.
+  "flock.setup.error": "We konden dat niet opslaan. Controleer je verbinding en probeer het opnieuw.",
+  // Two quick choices, and you can change both any time.
+  "flock.setup.line": "Twee snelle keuzes, en je kunt ze allebei altijd wijzigen.",
+  // Setup progress
+  "flock.setup.progressAria": "Voortgang van het instellen",
+  // Saving…
+  "flock.setup.saving": "Opslaan…",
+  // A minute to set up
+  "flock.setup.title": "Even instellen",
+  // Do good
+  "flock.space.good": "Do good",
+  // Rescue, conservation, and ways to help parrots beyond your own home.
+  "flock.space.goodLine": "Opvang, natuurbehoud en manieren om papegaaien te helpen buiten je eigen huis.",
+  // Learn together
+  "flock.space.learn": "Samen leren",
+  // Questions, guides, and what members are working out with their birds.
+  "flock.space.learnLine": "Vragen, gidsen en waar leden met hun vogels mee bezig zijn.",
+  // Start here
+  "flock.space.start": "Begin hier",
+  // New to the Flock? Introductions, first questions, and finding your feet.
+  "flock.space.startLine": "Nieuw in de Flock? Kennismaken, eerste vragen en je weg vinden.",
+  // Spaces
+  "flock.spaces.button": "Ruimtes",
+  // Close
+  "flock.spaces.close": "Sluiten",
+  // Pick a space and Today shows just that corner of the Flock.
+  "flock.spaces.intro": "Kies een ruimte en Vandaag toont alleen dat hoekje van de Flock.",
   // Spaces
   "flock.spaces.title": "Ruimtes",
+  // Big moment · {{name}} {{skill}}
+  "flock.today.bigMomentPill": "Groot moment · {{name}} {{skill}}",
+  // This is where the Flock's days come together. Posts, journeys, and today's idea will show up here.
+  "flock.today.empty.everything": "Hier komen de dagen van de Flock samen. Berichten, trajecten en het idee van de dag verschijnen hier.",
+  // Quiet for now
+  "flock.today.empty.everythingTitle": "Nog even stil",
+  // Rescue stories, conservation news, and ways to pitch in for parrots will gather here.
+  "flock.today.empty.good": "Opvangverhalen, nieuws over natuurbehoud en manieren om papegaaien te helpen komen hier samen.",
+  // Nothing here yet
+  "flock.today.empty.goodTitle": "Hier staat nog niets",
+  // When members ask, answer, and share what's working with their birds, it will gather here.
+  "flock.today.empty.learn": "Als leden vragen stellen, antwoorden en delen wat werkt bij hun vogels, komt dat hier samen.",
+  // No questions yet
+  "flock.today.empty.learnTitle": "Nog geen vragen",
+  // Introductions and first questions land here. It's the easiest place to begin once the Flock opens.
+  "flock.today.empty.start": "Kennismakingen en eerste vragen komen hier terecht. Het is de makkelijkste plek om te beginnen zodra de Flock opengaat.",
+  // Say hello soon
+  "flock.today.empty.startTitle": "Zeg straks hallo",
+  // Everything
+  "flock.today.everything": "Alles",
+  // Filter Today
+  "flock.today.filterAria": "Filter Vandaag",
+  // Journeys you follow
+  "flock.today.following": "Trajecten die je volgt",
+  // {{name}} learned {{skill}}!
+  "flock.today.learnedLine": "{{name}} heeft {{skill}} geleerd!",
+  // Learned it · {{name}} {{skill}}
+  "flock.today.learnedPill": "Geleerd · {{name}} {{skill}}",
+  // {{name}} is on the new diet!
+  "flock.today.onNewDiet": "{{name}} is over op het nieuwe dieet!",
+  // Play {{name}}'s clip
+  "flock.today.playClip": "Speel de clip van {{name}} af",
+  // {{name}}'s {{skill}}, {{day}}
+  "flock.today.ringAriaDay": "{{skill}} van {{name}}, {{day}}",
+  // Learned it
+  "flock.today.ringLearned": "Geleerd",
+  // Today
+  "flock.today.title": "Vandaag",
+  // Counts (admins only) · {{count}} vote
+  "flock.votes.adminCounts_one": "Aantallen (alleen beheer) · {{count}} stem",
+  // Counts (admins only) · {{count}} votes
+  "flock.votes.adminCounts_other": "Aantallen (alleen beheer) · {{count}} stemmen",
+  // Back to Do good
+  "flock.votes.backToGood": "Terug naar Do good",
+  // This vote has closed, so it can't take new votes.
+  "flock.votes.closedError": "Deze stemming is gesloten, dus er kan niet meer worden gestemd.",
+  // Do good vote · closed {{day}} · {{count}} vote
+  "flock.votes.closedEyebrow_one": "Do good-stemming · gesloten {{day}} · {{count}} stem",
+  // Do good vote · closed {{day}} · {{count}} votes
+  "flock.votes.closedEyebrow_other": "Do good-stemming · gesloten {{day}} · {{count}} stemmen",
+  // Vote closed
+  "flock.votes.closedTag": "Stemming gesloten",
+  // Draft · only admins can see it
+  "flock.votes.draftLine": "Concept · alleen beheerders kunnen het zien",
+  // Your vote didn't save. Try again.
+  "flock.votes.error": "Je stem is niet opgeslagen. Probeer het opnieuw.",
+  // Your vote is final once you tap the button.
+  "flock.votes.finalNote": "Je stem is definitief zodra je op de knop tikt.",
+  // Founders
+  "flock.votes.founders": "Oprichters",
+  // Founders chose {{names}}.
+  "flock.votes.foundersChose": "De oprichters kozen {{names}}.",
+  // Founders chose
+  "flock.votes.foundersChoseTag": "Keuze van de oprichters",
+  // Founders vote · closed {{day}} · {{count}} vote
+  "flock.votes.foundersClosedEyebrow_one": "Oprichtersstemming · gesloten {{day}} · {{count}} stem",
+  // Founders vote · closed {{day}} · {{count}} votes
+  "flock.votes.foundersClosedEyebrow_other": "Oprichtersstemming · gesloten {{day}} · {{count}} stemmen",
+  // Founders vote · closes {{day}}
+  "flock.votes.foundersOpenEyebrow": "Oprichtersstemming · sluit {{day}}",
+  // Every partner gets at least 10%. Your vote decides how the rest is shared. You can vote once.
+  "flock.votes.howItWorks": "Elke partner krijgt minstens 10%. Jouw stem bepaalt hoe de rest wordt verdeeld. Je kunt één keer stemmen.",
+  // You can vote once. Results show when the vote closes.
+  "flock.votes.howItWorksFounders": "Je kunt één keer stemmen. De uitslag verschijnt als de stemming sluit.",
+  // Manage this vote
+  "flock.votes.manage": "Deze stemming beheren",
+  // Manage votes
+  "flock.votes.manageAll": "Stemmingen beheren",
+  // It may have been removed, or it's only for founding members.
+  "flock.votes.missing": "Misschien is ze verwijderd, of is ze alleen voor oprichtende leden.",
+  // This vote isn't here
+  "flock.votes.missingTitle": "Deze stemming is er niet",
+  // No votes were cast.
+  "flock.votes.noResult": "Er is niet gestemd.",
+  // A note from Brittany
+  "flock.votes.note": "Een bericht van Brittany",
+  // The Kya Project
+  "flock.votes.noteFrom": "The Kya Project",
+  // {{percent}}% of the votes
+  "flock.votes.ofVotes": "{{percent}}% van de stemmen",
+  // Do good vote · closes {{day}}
+  "flock.votes.openEyebrow": "Do good-stemming · sluit {{day}}",
+  // Vote open · closes {{day}}
+  "flock.votes.openTag": "Stemming open · sluit {{day}}",
+  // partners
+  "flock.votes.partners": "partners",
+  // Pick one to vote
+  "flock.votes.pickOne": "Kies er één om te stemmen",
+  // How this quarter's donation is <em>handled</em>
+  "flock.votes.resultsTitle": "Zo wordt de donatie van dit kwartaal <em>verdeeld</em>",
+  // Results show when the vote closes on {{day}}.
+  "flock.votes.resultsWhen": "De uitslag verschijnt als de stemming sluit op {{day}}.",
+  // Donation shares: {{shares}}
+  "flock.votes.ringLabel": "Verdeling van de donatie: {{shares}}",
+  // See the results
+  "flock.votes.seeResults": "Bekijk de uitslag",
+  // See your vote
+  "flock.votes.seeYourVote": "Bekijk je stem",
+  // No votes were cast, so the donation is shared evenly.
+  "flock.votes.sharedEvenly": "Er is niet gestemd, dus de donatie wordt gelijk verdeeld.",
+  // Every partner gets at least 10%. Your votes decided the rest.
+  "flock.votes.sharedOutcome": "Elke partner krijgt minstens 10%. Jullie stemmen bepaalden de rest.",
+  // {{guaranteed}}% guaranteed + {{fromVotes}}% from votes
+  "flock.votes.shareSplit": "{{guaranteed}}% gegarandeerd + {{fromVotes}}% uit stemmen",
+  // Every partner gets at least 10%, and the votes share out the rest.
+  "flock.votes.tenPercentLine": "Elke partner krijgt minstens 10%, en de stemmen verdelen de rest.",
+  // Thanks for voting
+  "flock.votes.thanks": "Bedankt voor je stem",
+  // You've helped decide where this quarter's donation goes.
+  "flock.votes.thanksLine": "Je hebt meebepaald waar de donatie van dit kwartaal naartoe gaat.",
+  // You've helped decide what the Flock does first.
+  "flock.votes.thanksLineFounders": "Je hebt meebepaald wat de Flock als eerste doet.",
+  // Vote
+  "flock.votes.title": "Stemming",
+  // {{count}} member has voted
+  "flock.votes.voted_one": "{{count}} lid heeft gestemd",
+  // {{count}} members have voted
+  "flock.votes.voted_other": "{{count}} leden hebben gestemd",
+  // {{count}} member has voted so far.
+  "flock.votes.votedSoFar_one": "Tot nu toe heeft {{count}} lid gestemd.",
+  // {{count}} members have voted so far.
+  "flock.votes.votedSoFar_other": "Tot nu toe hebben {{count}} leden gestemd.",
+  // Vote for {{name}}
+  "flock.votes.voteFor": "Stem op {{name}}",
+  // Vote now
+  "flock.votes.voteNow": "Stem nu",
+  // Your vote
+  "flock.votes.yourVote": "Jouw stem",
+  // You voted · {{count}} member has voted
+  "flock.votes.youVoted_one": "Je hebt gestemd · {{count}} lid heeft gestemd",
+  // You voted · {{count}} members have voted
+  "flock.votes.youVoted_other": "Je hebt gestemd · {{count}} leden hebben gestemd",
+  // Add a choice
+  "flock.votesAdmin.addChoice": "Keuze toevoegen",
+  // Add logo or photo
+  "flock.votesAdmin.addLogo": "Logo of foto toevoegen",
+  // All members
+  "flock.votesAdmin.allMembers": "Alle leden",
+  // Who votes
+  "flock.votesAdmin.audienceLabel": "Wie stemt",
+  // Add {{what}} before opening.
+  "flock.votesAdmin.cantOpen": "Voeg {{what}} toe voordat je opent.",
+  // Something in the form isn't allowed. Check the question, the choices and the date, then try again.
+  "flock.votesAdmin.checkError": "Iets in het formulier is niet toegestaan. Controleer de vraag, de keuzes en de datum en probeer het opnieuw.",
+  // Choice {{n}} description
+  "flock.votesAdmin.choiceBlurb": "Beschrijving keuze {{n}}",
+  // A sentence or two
+  "flock.votesAdmin.choiceBlurbPlaceholder": "Een zin of twee",
+  // {{count}} choice
+  "flock.votesAdmin.choiceCount_one": "{{count}} keuze",
+  // {{count}} choices
+  "flock.votesAdmin.choiceCount_other": "{{count}} keuzes",
+  // Choice {{n}} name
+  "flock.votesAdmin.choiceName": "Naam keuze {{n}}",
+  // Name
+  "flock.votesAdmin.choiceNamePlaceholder": "Naam",
+  // Two to eight. Each has a name, a sentence or two, and the partner's logo or a photo. Every choice gets at least 10% of the donation, and the votes share out the rest.
+  "flock.votesAdmin.choicesHint": "Twee tot acht. Elke keuze heeft een naam, een zin of twee en het logo van de partner of een foto. Elke keuze krijgt minstens 10% van de donatie, en de stemmen verdelen de rest.",
+  // Choices
+  "flock.votesAdmin.choicesLabel": "Keuzes",
+  // Close this vote now?
+  "flock.votesAdmin.closeConfirm": "Deze stemming nu sluiten?",
+  // Voting stops now and everyone sees the results. This can't be undone.
+  "flock.votesAdmin.closeConfirmLine": "Het stemmen stopt nu en iedereen ziet de uitslag. Dit kan niet ongedaan worden gemaakt.",
+  // Closed
+  "flock.votesAdmin.closed": "Gesloten",
+  // Closed {{day}} · {{count}} vote
+  "flock.votesAdmin.closedLine_one": "Gesloten {{day}} · {{count}} stem",
+  // Closed {{day}} · {{count}} votes
+  "flock.votesAdmin.closedLine_other": "Gesloten {{day}} · {{count}} stemmen",
+  // Closed. Members now see the results.
+  "flock.votesAdmin.closedNow": "Gesloten. Leden zien nu de uitslag.",
+  // Closed {{day}}
+  "flock.votesAdmin.closedOn": "Gesloten {{day}}",
+  // Close early
+  "flock.votesAdmin.closeEarly": "Eerder sluiten",
+  // Your local time. You can close it early or extend it once it's open.
+  "flock.votesAdmin.closesHint": "Jouw lokale tijd. Als de stemming open is, kun je haar eerder sluiten of verlengen.",
+  // Closes
+  "flock.votesAdmin.closesLabel": "Sluit",
+  // Closes {{day}}
+  "flock.votesAdmin.closesOn": "Sluit {{day}}",
+  // Close now
+  "flock.votesAdmin.closeYes": "Nu sluiten",
+  // Delete draft
+  "flock.votesAdmin.delete": "Concept verwijderen",
+  // Delete this draft?
+  "flock.votesAdmin.deleteConfirm": "Dit concept verwijderen?",
+  // Delete it for good, with its photos? This can't be undone.
+  "flock.votesAdmin.deleteConfirmLine": "Definitief verwijderen, met de foto's? Dit kan niet ongedaan worden gemaakt.",
+  // Short description (optional)
+  "flock.votesAdmin.descriptionLabel": "Korte beschrijving (optioneel)",
+  // Draft
+  "flock.votesAdmin.draft": "Concept",
+  // A draft. Only admins can see it.
+  "flock.votesAdmin.draftLine": "Een concept. Alleen beheerders kunnen het zien.",
+  // Edit vote
+  "flock.votesAdmin.edit": "Stemming bewerken",
+  // No votes yet. Tap New vote to write one. It stays a draft, visible only to admins, until you open it.
+  "flock.votesAdmin.empty": "Nog geen stemmingen. Tik op Nieuwe stemming om er een te maken. Het blijft een concept, alleen zichtbaar voor beheerders, tot je het opent.",
+  // Extend the vote
+  "flock.votesAdmin.extend": "Stemming verlengen",
+  // Extended. Members see the new close date.
+  "flock.votesAdmin.extended": "Verlengd. Leden zien de nieuwe sluitingsdatum.",
+  // Pick a later close date than the current one.
+  "flock.votesAdmin.extendError": "Kies een latere sluitingsdatum dan de huidige.",
+  // Extend to
+  "flock.votesAdmin.extendLabel": "Verlengen tot",
+  // Founders only
+  "flock.votesAdmin.foundersOnly": "Alleen oprichters",
+  // Keep it open
+  "flock.votesAdmin.keepOpen": "Open laten",
+  // Admin · drafts stay hidden until you open them
+  "flock.votesAdmin.line": "Beheer · concepten blijven verborgen tot je ze opent",
+  // We couldn't load the votes. Try again.
+  "flock.votesAdmin.loadError": "We konden de stemmingen niet laden. Probeer het opnieuw.",
+  // See what members see
+  "flock.votesAdmin.memberView": "Bekijk wat leden zien",
+  // Vote not found
+  "flock.votesAdmin.missing": "Stemming niet gevonden",
+  // It may have been deleted.
+  "flock.votesAdmin.missingLine": "Misschien is ze verwijderd.",
+  // Move choice {{n}} down
+  "flock.votesAdmin.moveDown": "Keuze {{n}} omlaag",
+  // Move choice {{n}} up
+  "flock.votesAdmin.moveUp": "Keuze {{n}} omhoog",
+  // Add the question first.
+  "flock.votesAdmin.needQuestion": "Voeg eerst de vraag toe.",
+  // New vote
+  "flock.votesAdmin.new": "Nieuwe stemming",
+  // Shows with the results as "A note from Brittany" once the vote closes.
+  "flock.votesAdmin.noteHint": "Verschijnt bij de uitslag als \"Een bericht van Brittany\" zodra de stemming sluit.",
+  // Announcement
+  "flock.votesAdmin.noteLabel": "Aankondiging",
+  // Announcement saved.
+  "flock.votesAdmin.noteSaved": "Aankondiging opgeslagen.",
+  // Open
+  "flock.votesAdmin.open": "Open",
+  // Open · closes {{day}} · {{count}} vote
+  "flock.votesAdmin.openLine_one": "Open · sluit {{day}} · {{count}} stem",
+  // Open · closes {{day}} · {{count}} votes
+  "flock.votesAdmin.openLine_other": "Open · sluit {{day}} · {{count}} stemmen",
+  // Open the vote
+  "flock.votesAdmin.openVote": "Stemming openen",
+  // Question
+  "flock.votesAdmin.questionLabel": "Vraag",
+  // Where should this quarter's donation go?
+  "flock.votesAdmin.questionPlaceholder": "Waar moet de donatie van dit kwartaal naartoe?",
+  // Remove choice {{n}}
+  "flock.votesAdmin.removeChoice": "Keuze {{n}} verwijderen",
+  // Remove
+  "flock.votesAdmin.removeLogo": "Verwijderen",
+  // Replace logo
+  "flock.votesAdmin.replaceLogo": "Logo vervangen",
+  // Draft saved. Only admins can see it.
+  "flock.votesAdmin.savedDraft": "Concept opgeslagen. Alleen beheerders kunnen het zien.",
+  // Save announcement
+  "flock.votesAdmin.saveNote": "Aankondiging opslaan",
+  // 10% guaranteed to each partner, the rest by votes. Use these shares when you send the donation.
+  "flock.votesAdmin.sharesHint": "10% gegarandeerd voor elke partner, de rest via de stemmen. Gebruik deze verdeling als je de donatie overmaakt.",
+  // How the donation is shared
+  "flock.votesAdmin.sharesTitle": "Zo wordt de donatie verdeeld",
+  // Votes
+  "flock.votesAdmin.title": "Stemmingen",
+  // To open it, add {{what}}.
+  "flock.votesAdmin.toOpen": "Voeg {{what}} toe om haar te openen.",
+  // {{count}} vote
+  "flock.votesAdmin.voteCount_one": "{{count}} stem",
+  // {{count}} votes
+  "flock.votesAdmin.voteCount_other": "{{count}} stemmen",
+  // Let's get you set up
+  "flock.welcome.cta": "Laten we beginnen",
+  // Founding member · {{n}} of 50
+  "flock.welcome.founding": "Oprichtend lid · {{n}} van 50",
+  // This is a place to learn alongside other bird people, share how your birds are doing, and do some good together.
+  "flock.welcome.line": "Hier leer je samen met andere vogelmensen, deel je hoe het met je vogels gaat en doen we samen iets goeds.",
+  // Member
+  "flock.welcome.member": "Lid",
+  // Takes about a minute
+  "flock.welcome.time": "Duurt ongeveer een minuut",
+  // Welcome to the Flock, {{name}}
+  "flock.welcome.title": "Welkom in de Flock, {{name}}",
+  // Welcome to the Flock
+  "flock.welcome.titleNoName": "Welkom in de Flock",
+  // Blocked members
+  "flock.you.blocked": "Geblokkeerde leden",
+  // See who you've blocked, and unblock
+  "flock.you.blockedLine": "Zie wie je hebt geblokkeerd, en deblokkeer",
+  // Edit profile
+  "flock.you.edit": "Profiel bewerken",
+  // The first 50, who helped start the Flock
+  "flock.you.foundersLine": "De eerste 50, die de Flock mee hebben opgericht",
+  // Founding member
+  "flock.you.founding": "Oprichtend lid",
+  // What everyone in the Flock agrees to
+  "flock.you.guidelinesLine": "Waar iedereen in de Flock mee akkoord gaat",
+  // Member
+  "flock.you.member": "Lid",
   // Membership and billing
   "flock.you.membership": "Lidmaatschap en betaling",
+  // Notifications
+  "flock.you.notifications": "Meldingen",
+  // Community is separate from care reminders
+  "flock.you.notificationsLine": "Community staat los van verzorgingsherinneringen",
+  // You
+  "flock.you.open": "Jij",
+  // Privacy
+  "flock.you.privacy": "Privacy",
+  // What members can see
+  "flock.you.privacyLine": "Wat leden kunnen zien",
   // Add weight
   "flockCheck.addWeight": "Gewicht toevoegen",
   // Back to home
@@ -4243,6 +6937,102 @@
   "foodEditor.whatsInIt": "Wat zit erin",
   // When?
   "foodEditor.when": "Wanneer?",
+  // Back
+  "founding.back": "Terug",
+  // Claim my founding spot
+  "founding.claimButton": "Claim mijn oprichtersplek",
+  // We couldn't save your spot just now. Please try again.
+  "founding.claimError": "We konden je plek nu niet opslaan. Probeer het opnieuw.",
+  // Saving your spot…
+  "founding.claiming": "Je plek wordt opgeslagen…",
+  // Confirm my founding spot
+  "founding.confirm": "Bevestig mijn oprichtersplek",
+  // {{claimed}} of {{cap}} spots claimed
+  "founding.counter": "{{claimed}} van {{cap}} plekken geclaimd",
+  // You're one of the Founding 50.
+  "founding.doneTitle": "Je hoort bij de Founding 50.",
+  // All 50 founding spots have been claimed. The Flock is free for everyone while we're getting started. Leave your email and we'll let you know when it opens.
+  "founding.fullBody": "Alle 50 oprichtersplekken zijn geclaimd. De Flock is gratis voor iedereen zolang we nog aan het opstarten zijn. Laat je e-mailadres achter, dan laten we je weten wanneer hij opengaat.",
+  // All 50 founding spots have been claimed. The Flock is free for everyone until {{date}}. Leave your email and we'll let you know when it opens.
+  "founding.fullBodyDated": "Alle 50 oprichtersplekken zijn geclaimd. De Flock is gratis voor iedereen tot {{date}}. Laat je e-mailadres achter, dan laten we je weten wanneer hij opengaat.",
+  // All 50 founding spots have been claimed. The Flock is open now, and it's free for everyone while we're getting started.
+  "founding.fullOpenBody": "Alle 50 oprichtersplekken zijn geclaimd. De Flock is nu open, en gratis voor iedereen zolang we nog aan het opstarten zijn.",
+  // All 50 founding spots have been claimed, and the Flock is open now. The Flock is free for everyone until {{date}}.
+  "founding.fullOpenBodyDated": "Alle 50 oprichtersplekken zijn geclaimd, en de Flock is nu open. De Flock is gratis voor iedereen tot {{date}}.",
+  // The Founding 50 is full
+  "founding.fullTitle": "De Founding 50 is vol",
+  // Founding spots have closed.
+  "founding.justClosed": "De oprichtersplekken zijn gesloten.",
+  // The last founding spot was claimed just before yours. Thank you for wanting in.
+  "founding.justFilled": "De laatste oprichtersplek werd net voor de jouwe geclaimd. Bedankt dat je erbij wilde zijn.",
+  // Get launch news
+  "founding.launchNews": "Ontvang lanceringsnieuws",
+  // The Flock is The Kya Project's community for parrot people, and we're getting it ready now. Its first 50 members get our lowest price and a hand in shaping what it becomes.
+  "founding.line": "De Flock is de community van The Kya Project voor papegaaienmensen, en we maken hem nu klaar. De eerste 50 leden krijgen onze laagste prijs en helpen bepalen wat hij wordt.",
+  // Loading
+  "founding.loading": "Laden",
+  // The Flock is free for everyone while we're getting started, and we'll tell you well before billing begins. When it does, your founding price stays at $15 a month for life. If your membership ends, the founding price ends with it.
+  "founding.locked": "De Flock is gratis voor iedereen zolang we nog aan het opstarten zijn, en we laten het je ruim van tevoren weten voordat betalen begint. Daarna blijft je oprichtersprijs levenslang $15 per maand. Stopt je lidmaatschap, dan vervalt ook de oprichtersprijs.",
+  // The Flock is free for everyone until {{date}}. After that, your founding price stays at $15 a month for life. If your membership ends, the founding price ends with it.
+  "founding.lockedDated": "De Flock is gratis voor iedereen tot {{date}}. Daarna blijft je oprichtersprijs levenslang $15 per maand. Stopt je lidmaatschap, dan vervalt ook de oprichtersprijs.",
+  // Be one of the first 50 members of the Flock. It's free for everyone while we're getting started, and founding members then keep $15 a month for life.
+  "founding.metaDescription": "Word een van de eerste 50 leden van de Flock. Hij is gratis voor iedereen zolang we nog aan het opstarten zijn, en oprichtende leden houden daarna levenslang $15 per maand.",
+  // We'll email you before the Flock opens. It's free for everyone while we're getting started, and we'll tell you well before billing begins.
+  "founding.next": "We mailen je voordat de Flock opengaat. Hij is gratis voor iedereen zolang we nog aan het opstarten zijn, en we laten het je ruim van tevoren weten voordat betalen begint.",
+  // We'll email you before the Flock opens. The Flock is free for everyone until {{date}}.
+  "founding.nextDated": "We mailen je voordat de Flock opengaat. De Flock is gratis voor iedereen tot {{date}}.",
+  // When billing starts, your price is $15 a month, locked in for life. If your membership ends, the founding price ends with it.
+  "founding.nextPrice": "Zodra betalen begint, is je prijs $15 per maand, levenslang vast. Stopt je lidmaatschap, dan vervalt ook de oprichtersprijs.",
+  // What happens next
+  "founding.nextTitle": "Wat er nu gebeurt",
+  // You'll create a free Kya & Co. account, or sign in, to hold your spot.
+  "founding.noCard": "Je maakt een gratis Kya & Co.-account aan, of logt in, om je plek vast te houden.",
+  // Founding price
+  "founding.offerLabel": "Oprichtersprijs",
+  // Be one of the Founding 50 — The Kya Project
+  "founding.pageTitle": "Word een van de Founding 50 — The Kya Project",
+  // A founding badge on your Flock profile
+  "founding.perkBadge": "Een oprichtersbadge op je Flock-profiel",
+  // An invitation to the founders' kickoff call
+  "founding.perkCall": "Een uitnodiging voor de kick-offcall van de oprichters",
+  // Early access to new features, journeys, and library guides
+  "founding.perkEarly": "Vroege toegang tot nieuwe functies, trajecten en gidsen in de bibliotheek",
+  // A monthly founders' call with Brittany
+  "founding.perkMonthly": "Elke maand een oprichterscall met Brittany",
+  // A place on the founding members page, if you'd like one
+  "founding.perkPage": "Een plek op de pagina met oprichtende leden, als je dat wilt",
+  // What founding members get
+  "founding.perksTitle": "Wat oprichtende leden krijgen",
+  // A vote on the first expert Q&As and the first chapters
+  "founding.perkVote": "Een stem over de eerste expert-Q&A's en de eerste afdelingen",
+  // Choose your region to continue.
+  "founding.pickRegion": "Kies je regio om verder te gaan.",
+  // $15 a month
+  "founding.price": "$15 per maand",
+  // We'll place you in your local chapter when the Flock opens.
+  "founding.regionHint": "We plaatsen je in je lokale afdeling zodra de Flock opengaat.",
+  // Which region are you in?
+  "founding.regionQ": "In welke regio woon je?",
+  // We couldn't load the regions. Refresh the page to try again.
+  "founding.regionsError": "We konden de regio's niet laden. Vernieuw de pagina om het opnieuw te proberen.",
+  // Loading regions…
+  "founding.regionsLoading": "Regio's laden…",
+  // Regular price $25 a month billed annually, or $30 month to month.
+  "founding.regular": "Normale prijs $25 per maand bij jaarlijkse betaling, of $30 per maand bij maandelijkse betaling.",
+  // Select your region
+  "founding.selectRegion": "Selecteer je regio",
+  // Show me on the founding members page.
+  "founding.showOnPage": "Toon mij op de pagina met oprichtende leden.",
+  // Flock members would see your name, photo, chapter and spot number. You can change this any time.
+  "founding.showOnPageHint": "Leden van de Flock zien dan je naam, foto, afdeling en plaatsnummer. Je kunt dit altijd wijzigen.",
+  // #{{n}} of {{cap}}
+  "founding.spotNumber": "#{{n}} van {{cap}}",
+  // Be one of the Founding 50
+  "founding.title": "Word een van de Founding 50",
+  // Go to Kya & Co.
+  "founding.toApp": "Naar Kya & Co.",
+  // Your founding spot
+  "founding.yourSpot": "Je oprichtersplek",
   // Back
   "frontDoor.back": "Terug",
   // Delete account
@@ -8273,6 +11063,80 @@
   "waitlist.whereLocated": "Waar woon je?",
   // Yes
   "waitlist.yes": "Ja",
+  // Got it
+  "weightBaseline.gotIt": "Begrepen",
+  // We've noticed {{name}}'s weight has shifted. {{name}} is about {{pct}}% below the last few weeks. Have you noticed any changes in eating or energy? It can help to notice whether {{name}} is eating less, quieter than usual, or fluffed up.
+  "weightBaseline.hardLossBody": "We zien dat het gewicht van {{name}} is veranderd. {{name}} zit ongeveer {{pct}}% onder het gewicht van de afgelopen weken. Heb je veranderingen gemerkt in eten of energie? Het kan helpen om erop te letten of {{name}} minder eet, stiller is dan normaal of met opgezette veren zit.",
+  // Add
+  "weightBaseline.idealAdd": "Toevoegen",
+  // Cancel
+  "weightBaseline.idealCancel": "Annuleren",
+  // To (g)
+  "weightBaseline.idealHigh": "Tot (g)",
+  // Private to you. It isn't shown to sitters or anywhere else.
+  "weightBaseline.idealHint": "Alleen voor jou. Het wordt niet getoond aan oppassen of ergens anders.",
+  // Enter two weights between {{min}} and {{max}} grams, the lower one first.
+  "weightBaseline.idealInvalid": "Vul twee gewichten in tussen {{min}} en {{max}} gram, het laagste eerst.",
+  // From (g)
+  "weightBaseline.idealLow": "Van (g)",
+  // Remove
+  "weightBaseline.idealRemove": "Verwijderen",
+  // Removed.
+  "weightBaseline.idealRemoved": "Verwijderd.",
+  // Save
+  "weightBaseline.idealSave": "Opslaan",
+  // Saved.
+  "weightBaseline.idealSaved": "Opgeslagen.",
+  // Couldn't save the range.
+  "weightBaseline.idealSaveFailed": "Het bereik kon niet worden opgeslagen.",
+  // Saving…
+  "weightBaseline.idealSaving": "Opslaan…",
+  // Ideal weight range (optional)
+  "weightBaseline.idealTitle": "Ideaal gewichtsbereik (optioneel)",
+  // {{low}}–{{high}} g
+  "weightBaseline.idealValue": "{{low}}–{{high}} g",
+  // {{name}} has been about {{pct}}% below usual for a while. Take note of how {{name}} is eating and acting over the next few days.
+  "weightBaseline.keepAnEyeBody": "{{name}} zit al een tijdje ongeveer {{pct}}% onder het gebruikelijke gewicht. Let de komende dagen goed op hoe {{name}} eet en zich gedraagt.",
+  // Keep an eye on this
+  "weightBaseline.keepAnEyeTitle": "Houd dit in de gaten",
+  // Thanks for weighing {{name}} so regularly. From now on, each weigh-in is compared with what's usual for {{name}}.
+  "weightBaseline.learnedBody": "Bedankt dat je {{name}} zo regelmatig weegt. Vanaf nu wordt elke weging vergeleken met wat gebruikelijk is voor {{name}}.",
+  // We've learned {{name}}'s usual weight
+  "weightBaseline.learnedTitle": "We kennen nu het gebruikelijke gewicht van {{name}}",
+  // We're still learning {{name}}'s usual weight: {{done}} of {{need}} weigh-ins so far, over at least {{days}} days.
+  "weightBaseline.learning": "We leren nog wat het gebruikelijke gewicht van {{name}} is: tot nu toe {{done}} van {{need}} wegingen, over minstens {{days}} dagen.",
+  // We're still learning {{name}}'s usual weight after a meal: {{done}} of {{need}} weigh-ins so far, over at least {{days}} days.
+  "weightBaseline.learningAfter": "We leren nog wat het gebruikelijke gewicht van {{name}} na een maaltijd is: tot nu toe {{done}} van {{need}} wegingen, over minstens {{days}} dagen.",
+  // We're still learning {{name}}'s usual weight before a meal: {{done}} of {{need}} weigh-ins so far, over at least {{days}} days.
+  "weightBaseline.learningBefore": "We leren nog wat het gebruikelijke gewicht van {{name}} voor een maaltijd is: tot nu toe {{done}} van {{need}} wegingen, over minstens {{days}} dagen.",
+  // Still learning
+  "weightBaseline.learningTitle": "Nog aan het leren",
+  // This weigh-in is lower than usual for {{name}}. Weigh {{name}} again to check the reading.
+  "weightBaseline.reweighBody": "Deze weging is lager dan gebruikelijk voor {{name}}. Weeg {{name}} opnieuw om de meting te controleren.",
+  // Weigh again
+  "weightBaseline.reweighTitle": "Weeg opnieuw",
+  // We've noticed {{name}}'s weight has shifted. {{name}} is about {{pct}}% below usual. Have you noticed any changes in eating or energy? It can help to notice whether {{name}} is eating less, quieter than usual, or fluffed up.
+  "weightBaseline.shiftedBody": "We zien dat het gewicht van {{name}} is veranderd. {{name}} zit ongeveer {{pct}}% onder het gebruikelijke gewicht. Heb je veranderingen gemerkt in eten of energie? Het kan helpen om erop te letten of {{name}} minder eet, stiller is dan normaal of met opgezette veren zit.",
+  // Weight has shifted
+  "weightBaseline.shiftedTitle": "Gewicht is veranderd",
+  // A second weigh-in shows the same change: {{name}} is about {{pct}}% lighter than a few days ago. This is a big change in a short time. Remember, birds are excellent at hiding illness. Take note of how {{name}} is eating and acting today.
+  "weightBaseline.suddenConfirmedBody": "Een tweede weging laat dezelfde verandering zien: {{name}} is ongeveer {{pct}}% lichter dan een paar dagen geleden. Dit is een grote verandering in korte tijd. Onthoud dat vogels heel goed zijn in het verbergen van ziekte. Let vandaag goed op hoe {{name}} eet en zich gedraagt.",
+  // Weight dropped quickly
+  "weightBaseline.suddenConfirmedTitle": "Gewicht snel gedaald",
+  // {{name}}'s weight is about {{pct}}% lower than the last few days. Weigh {{name}} again to check the reading.
+  "weightBaseline.suddenReweighBody": "Het gewicht van {{name}} is ongeveer {{pct}}% lager dan de afgelopen dagen. Weeg {{name}} opnieuw om de meting te controleren.",
+  // {{name}} usually weighs {{low}}–{{high}} g.
+  "weightBaseline.usual": "{{name}} weegt meestal {{low}}–{{high}} g.",
+  // After a meal, {{name}} usually weighs {{low}}–{{high}} g.
+  "weightBaseline.usualAfter": "Na een maaltijd weegt {{name}} meestal {{low}}–{{high}} g.",
+  // Before a meal, {{name}} usually weighs {{low}}–{{high}} g.
+  "weightBaseline.usualBefore": "Voor een maaltijd weegt {{name}} meestal {{low}}–{{high}} g.",
+  // Usual weight
+  "weightBaseline.usualTitle": "Gebruikelijk gewicht",
+  // {{name}} is about {{pct}}% below usual. Keep weighing as you normally do.
+  "weightBaseline.worthWatchingBody": "{{name}} zit ongeveer {{pct}}% onder het gebruikelijke gewicht. Blijf wegen zoals je normaal doet.",
+  // Worth watching
+  "weightBaseline.worthWatchingTitle": "Het volgen waard",
   // Down {{delta}} g
   "weightPill.down": "{{delta}} g eraf",
   // First weight

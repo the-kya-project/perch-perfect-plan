@@ -1172,5 +1172,85 @@
   // {{heading}}  {{body}}  {{link}}  {{foot}}
   "email.auth.text": "{{heading}}\n\n{{body}}\n\n{{link}}\n\n{{foot}}",
   // {{heading}}  {{body}}  {{code}}  {{foot}}
-  "email.auth.textCode": "{{heading}}\n\n{{body}}\n\n{{code}}\n\n{{foot}}"
+  "email.auth.textCode": "{{heading}}\n\n{{body}}\n\n{{code}}\n\n{{foot}}",
+  // a year in the Flock
+  "email.gift.planFlock": "een jaar in de Flock",
+  // A year in the Flock
+  "email.gift.giftFlock": "Een jaar in de Flock",
+  // Six months in the Flock
+  "email.gift.giftFlockHalf": "Zes maanden in de Flock",
+  // six months in the Flock
+  "email.gift.planFlockHalf": "zes maanden in de Flock",
+  // The Flock &middot; 1 year
+  "email.gift.badgeFlock": "De Flock &middot; 1 jaar",
+  // The Flock &middot; 6 months
+  "email.gift.badgeFlockHalf": "De Flock &middot; 6 maanden",
+  // A gift membership starts the day it's redeemed and runs for a year. If it's redeemed while the Flock is still free for everyone, it starts when the free season ends, so none of it goes unused. Gifts never expire.
+  "email.gift.timingFlock": "Een cadeaulidmaatschap begint op de dag dat het wordt ingewisseld en loopt een jaar. Wordt het ingewisseld terwijl de Flock nog gratis is voor iedereen, dan begint het als de gratis periode afloopt, zodat er niets verloren gaat. Cadeaus verlopen nooit.",
+  // A gift membership starts the day it's redeemed and runs for six months. If it's redeemed while the Flock is still free for everyone, it starts when the free season ends, so none of it goes unused. Gifts never expire.
+  "email.gift.timingFlockHalf": "Een cadeaulidmaatschap begint op de dag dat het wordt ingewisseld en loopt zes maanden. Wordt het ingewisseld terwijl de Flock nog gratis is voor iedereen, dan begint het als de gratis periode afloopt, zodat er niets verloren gaat. Cadeaus verlopen nooit.",
+  // Gift
+  "email.gift.rowGift": "Cadeau",
+  // Gift code
+  "email.gift.codeLabel": "Cadeaucode",
+  // Hi {{first}},
+  "email.gift.hi": "Hoi {{first}},",
+  // Hi there,
+  "email.gift.hiNoName": "Hoi,",
+  // Your gift is ready
+  "email.gift.receipt.headline": "Je cadeau staat klaar",
+  // Here's the gift code for {{recipient}}, and a few things to know.
+  "email.gift.receipt.preview": "Hier is de cadeaucode voor {{recipient}}, en een paar dingen om te weten.",
+  // Gift receipt
+  "email.gift.receipt.pill": "Aankoopbewijs",
+  // Thank you for giving {{recipient}} {{plan}}. We'll email the gift to {{recipient}} on {{date}}. The code is below too, in case you'd like to share it yourself.
+  "email.gift.receipt.introEmail": "Bedankt dat je {{recipient}} {{plan}} geeft. We mailen het cadeau op {{date}} naar {{recipient}}. De code staat hieronder ook, voor het geval je hem zelf wilt delen.",
+  // Thank you for giving {{recipient}} {{plan}}. The gift code is below, so you can print this email, forward it, or copy the code into a card of your own.
+  "email.gift.receipt.introSelf": "Bedankt dat je {{recipient}} {{plan}} geeft. De cadeaucode staat hieronder, zodat je deze e-mail kunt printen of doorsturen, of de code in een eigen kaart kunt schrijven.",
+  // A gift for {{recipient}}
+  "email.gift.receipt.cardTitle": "Een cadeau voor {{recipient}}",
+  // Paid
+  "email.gift.receipt.rowPaid": "Betaald",
+  // Promo code
+  "email.gift.receipt.rowPromo": "Kortingscode",
+  // Emailed to them
+  "email.gift.receipt.rowDelivery": "Naar hen gemaild",
+  // Your note
+  "email.gift.receipt.noteTitle": "Je bericht",
+  // To redeem it, {{recipient}} goes to <a href="{{link}}">app.thekyaproject.com/redeem</a>, signs in or creates a free account, and enters the code.
+  "email.gift.receipt.redeem": "Om het in te wisselen gaat {{recipient}} naar <a href=\"{{link}}\">app.thekyaproject.com/redeem</a>, logt in of maakt een gratis account aan, en vult de code in.",
+  // {{percent}}% of what you paid goes to parrot rescue and conservation. Thank you for that, too.
+  "email.gift.receipt.giving": "{{percent}}% van wat je hebt betaald gaat naar papegaaienopvang en natuurbescherming. Ook daarvoor bedankt.",
+  // If {{recipient}} hasn't redeemed it yet, you can get a full refund within 30 days of buying it. Just reply to this email. Gifts never expire, so there's no rush otherwise.
+  "email.gift.receipt.refund": "Heeft {{recipient}} het nog niet ingewisseld, dan krijg je binnen 30 dagen na aankoop je geld volledig terug. Beantwoord gewoon deze e-mail. Cadeaus verlopen nooit, dus verder is er geen haast.",
+  // If anything about your gift isn't right, reply to this email and I'll sort it out.
+  "email.gift.receipt.reply": "Klopt er iets niet aan je cadeau? Beantwoord deze e-mail, dan los ik het op.",
+  // You're getting this because you bought a gift membership from The Kya Project.
+  "email.gift.receipt.foot": "Je krijgt dit omdat je een cadeaulidmaatschap van The Kya Project hebt gekocht.",
+  // You've been given a gift
+  "email.gift.recipient.headline": "Je hebt een cadeau gekregen",
+  // {{from}} gave you {{plan}} from The Kya Project.
+  "email.gift.recipient.preview": "{{from}} heeft je {{plan}} gegeven van The Kya Project.",
+  // A gift for you
+  "email.gift.recipient.pill": "Een cadeau voor jou",
+  // {{from}} gave you {{plan}} from The Kya Project.
+  "email.gift.recipient.intro": "{{from}} heeft je {{plan}} gegeven van The Kya Project.",
+  // Someone who cares about you and your bird
+  "email.gift.recipient.fromNobody": "Iemand die om jou en je vogel geeft",
+  // The Flock is The Kya Project's community for parrot people, with expert Q&amp;As, local chapters, and 20% of every membership going to parrot rescue and conservation. It's free for everyone while we're getting started.
+  "email.gift.recipient.aboutFlock": "De Flock is de community van The Kya Project voor papegaaienliefhebbers, met vragenrondes met experts, lokale afdelingen, en 20% van elk lidmaatschap gaat naar papegaaienopvang en natuurbescherming. Hij is gratis voor iedereen zolang we nog aan het opstarten zijn.",
+  // A note from {{from}}
+  "email.gift.recipient.noteTitle": "Een bericht van {{from}}",
+  // A note for you
+  "email.gift.recipient.noteTitleNobody": "Een bericht voor jou",
+  // Your gift
+  "email.gift.recipient.cardTitle": "Je cadeau",
+  // Redeem your gift &rarr;
+  "email.gift.recipient.cta": "Wissel je cadeau in &rarr;",
+  // Redeeming takes a minute: sign in or create a free account, then enter the code. Your gift is saved to your account from then on.
+  "email.gift.recipient.howTo": "Inwisselen duurt een minuutje: log in of maak een gratis account aan en vul dan de code in. Vanaf dan staat je cadeau in je account.",
+  // You're getting this because {{from}} sent you a gift membership from The Kya Project.
+  "email.gift.recipient.foot": "Je krijgt dit omdat {{from}} je een cadeaulidmaatschap van The Kya Project heeft gestuurd.",
+  // You're getting this because someone sent you a gift membership from The Kya Project.
+  "email.gift.recipient.footNobody": "Je krijgt dit omdat iemand je een cadeaulidmaatschap van The Kya Project heeft gestuurd."
 }
