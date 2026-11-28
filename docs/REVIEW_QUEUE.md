@@ -19,6 +19,29 @@ Format:
   - After: "<new wording>"
 ```
 
+### [#572](https://github.com/the-kya-project/perch-perfect-plan/pull/572) · 1.13b Care badges · **held, not merged yet**
+English only (Dutch after you approve the English). Everything is behind the `care_badges` switch (off). All new. Lines marked "mockup" are word for word from `SpecBadges.dc.html`.
+- **Where:** the bird page's record list
+  - New: "Badges" / "{n} of 4 earned"
+- **Where:** the launch pop-up on the bird page
+  - New: "New: badges" (mockup) / "Here's what you've already earned" (mockup) / "See all badges" (mockup) / "Not now" (mockup)
+  - New: "You've been caring for {name} for a while. These count." (the mockup has "You've been caring for Juno and the flock for a long time. These count."; "the flock" left out for free users)
+- **Where:** the "Badge earned" card on the bird page
+  - New: "Badge earned" (mockup) / "Got it" / "See all badges"
+  - New: "You've weighed {name} {n} weeks in a row." (mockup)
+  - New: "You've checked on {name} {n} days in a row."
+  - New: "{name}'s care plan is ready for anyone who looks after {name}."
+  - New: "You sent a pet sitter link for {name}."
+- **Where:** the bird's Badges screen
+  - New: "Badges" / "{n} of 4 earned" / "{name}'s care badges"
+  - New: "Steady scale", "Daily check-in", "Plan ready", "Sitter ready" (mockup), "{n} weeks", "{n} days"
+  - New: "Steady scale: weigh {name} at least once a week, 4 weeks in a row. There are levels at 12 and 52 weeks."
+  - New: "Daily check-in: do {name}'s daily health check 7 days in a row. There's a level at 30 days."
+  - New: "Plan ready: finish every section of {name}'s care plan."
+  - New: "Sitter ready: send a pet sitter link for {name}."
+  - New: "Earned {date}." / "{level} reached {date}." / "Next level at {n} weeks." / "Next level at {n} days."
+  - New: "Badges reward the care you keep up, never a weight, a trend or a health result." (the mockup's line is "Badges reward the habit of weighing, never a weight or a trend.")
+
 ### [#565](https://github.com/the-kya-project/perch-perfect-plan/pull/565) · 1.16 Rescue partner codes · **merged on Brittany's OK (Nov 26, 2026)**
 English only (Dutch comes after you approve the English). Everything is behind `flock_enabled()` (admins only). All new: there was no wording here before. Lines marked "mockup" are word for word from `SpecRescueCodes.dc.html`.
 - **Where:** the Join screen's "Join the Flock" sheet, under "Join the Flock free", and at the bottom of the Join step; the redeem page under "Redeem my gift"
@@ -1251,6 +1274,17 @@ No new strings: every line reuses existing wording, in new places (admins only).
 
 ## Decisions agents made
 
+### [#572](https://github.com/the-kya-project/perch-perfect-plan/pull/572) · 1.13b Care badges
+- **Decision:** Care badges belong to a bird: each bird has its own four, on its own page and its own Badges screen (`/birds/<bird>/badges`). Each person with access to the bird (owner or co-carer) gets their own celebration and their own "seen".
+- **Why:** the spec's rules are per bird ("weighing a bird", "a bird's full care plan") and the mockup's card says "You've weighed Juno 12 weeks in a row".
+- **Decision:** It counts everyone's care for the bird: weigh-ins and checks logged by a co-carer or a sitter during a sit count toward the streak.
+- **Decision:** A "week" is Monday to Sunday in the bird owner's time zone (UTC if none is saved). The streak is the longest run ever, so a badge stays earned once earned. Daily check-in counts the daily check and the full health check alike.
+- **Decision:** Sitter ready = any pet sit with a sitter link that includes the bird (a household member covering a sit isn't a sitter link). Plan ready = the bird page's "Ready" tag (every care-plan section done, walkthrough finished); the app works that out and tells the database, so the rule isn't written twice.
+- **Decision:** Past activity: everything earned in the first 10 minutes after someone's badges for a bird are first worked out joins one "Here's what you've already earned" (two or more badges; one alone gets a "Badge earned" card). The window lets Plan ready, which the app reports once the plan has loaded, join the same celebration.
+- **Decision:** Where things show: the launch celebration is a pop-up over the bird page (the mockup's frame 1 is the Flock's Today, which free users don't have); a new badge is the mockup's gold-bordered card at the top of the bird page; the badge itself is a "Badges · 3 of 4 earned" row with the earned art, at the end of the bird's record list. No celebrations on a bird marked as passed (the row stays).
+- **Decision:** The switch is a care-app switch (`care_features.care_badges`, like the Today card), not a health switch: badges don't tell anyone anything about the bird's health.
+- **Decision:** The Flock's Badges screen still shows only the Flock set. The mockup's frame 2 shows care badges above the Flock ones; since care badges are per bird, I left that for you (asked in the PR).
+
 ### [#565](https://github.com/the-kya-project/perch-perfect-plan/pull/565) · 1.16 Rescue partner codes
 - **Decision:** One redemption per account counts waiting and approved ones. A declined one doesn't use it up: the adopter sees why and can try again (say, after a typo in the bird's name).
 - **Why:** the spec says "one redemption per adopter account"; a decline gives nothing, so it shouldn't lock someone out. Easy to make stricter: drop `'declined'`-is-free in `rescue_redemptions_one_per_account` and `rescue_find_code`.
@@ -1870,6 +1904,10 @@ Format:
 ### <PR link> · <item ID> <item title>
 - **Needs:** <the decision, approval or read, in one or two lines>
 ```
+
+### [#572](https://github.com/the-kya-project/perch-perfect-plan/pull/572) · 1.13b Badges: care badges free users can earn
+- **Needs:** your approval of the PR, after looking at the before-and-after screenshots. The run couldn't take them: Chromium won't start inside the hourly job's sandbox. On your Mac, in a copy of this branch: `npm run test:care-badges:screens` (builds, then saves them to `test-results/care-badges/`). "before-switch-off" is what free users get when this merges (no change); the "after-…" ones and "badges-screen" are what you'd see with `select public.admin_set_care_feature('care_badges', 'admins');`.
+- **Also needs:** a read of the new wording (below, under "Copy that merged" once it merges), the answers to the four questions in the PR's "Needs Brittany", and one line added to `.github/workflows/hydration.yml` (`npm run test:care-badges`, after `test:today-card`), which the runs' token can't push. The two habit badges (Steady scale, Daily check-in) go in the vet packet: they reward weighing and checking, never a weight or a result.
 
 ### Reminder · the hourly runs' GitHub token expires Feb 20, 2027
 - **Needs:** a new token before **Feb 20, 2027**. That's 90 days from Nov 22, 2026; GitHub → Settings → Developer settings → Fine-grained tokens shows the exact date. When it expires, runs can still build and test but can't push or open PRs, and each run's note in `~/.kya-agent/job.log` says so.

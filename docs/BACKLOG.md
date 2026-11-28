@@ -22,17 +22,7 @@ Where these items came from, with the detail behind each: `docs/flock/opening-sc
 
 ## Ready to build
 
-### 1.13b Badges: care badges free users can earn
-- **Spec:** [Badges](flock/specs/feature-specs.md#badges-113a-and-113b) · **Mockup:** [`SpecBadges.dc.html`](flock/mockups/SpecBadges.dc.html)
-- **Done means:**
-  - Behind its own off switch, care badges are earned in the care app: Steady scale (4, 12 and 52 weeks in a row), Daily check-in (7 and 30 days), Plan ready and Sitter ready.
-  - A small celebration, then the badge on the bird's page, and a Badges screen with earned and unearned badges. Free users see no Flock badges or Flock navigation while the Flock is closed to them.
-  - Past activity counts, shown once as a single "Here's what you've already earned" celebration.
-  - Badges reward the habit, never a weight, trend or health outcome. No points, leaderboards or rankings.
-- **Size:** L
-- **Depends on:** 1.13a
-- **Overnight alone:** yes, held for Brittany. It changes what free users see, so the PR is never merged by an agent.
-- **Needs Brittany:** approval of the finished PR, with before-and-after screenshots of what free users see. Any health-related badge rule also goes in the vet packet. (Approved to start: Brittany, Nov 28, 2026.)
+Nothing right now.
 
 ---
 
@@ -200,6 +190,7 @@ The launch PR itself (1.18) is already merged dark. What's left before opening i
 
 ## Done
 
+- **1.13b** Care badges free users can earn, behind their own switch (`care_features.care_badges`, off; `select public.admin_set_care_feature('care_badges', 'admins');`): Steady scale (a weigh-in on 4, 12 or 52 weeks in a row), Daily check-in (7 or 30 days in a row), Plan ready and Sitter ready, each per bird and counting past care. The bird page gets a "Badges" row, a one-time "Here's what you've already earned" and a "Badge earned" card for each new one; `/birds/<bird>/badges` shows earned and unearned with how to earn each. Rewards the habit only; no Flock code or navigation for free users. `20261128160000_care_badges.sql`, `supabase/checks/care_badges_checks.sql`, `npm run test:care-badges`, `npm run test:care-badges:screens`. Held for Brittany's approval (screenshots, wording, vet packet): [#572](https://github.com/the-kya-project/perch-perfect-plan/pull/572)
 - **1.20f** Co-carers read comments on their bird's journeys (Brittany's answer to #562's question, Nov 26, 2026): a bird's household (owner or co-carer) reads the comments, replies and comment photos on that bird's journeys without a Flock membership, with the same moderation, block and "Just me" rules; they can't comment, reply, react, report or block, and the comment screen shows no box, reaction button, Reply or menu for them. `20261126180000_journeys_cocarer_read_comments.sql` (`private.flock_household_reads`; `flock_comments_for`, `flock_comment_counts` and `flock_media_refs` rewritten from their live definitions), `supabase/checks/journeys_cocarer_comments_checks.sql`, `e2e/flock.shell.ts`. [#569](https://github.com/the-kya-project/perch-perfect-plan/pull/569)
 - **1.16** Rescue partner codes, behind `flock_enabled()`: one reusable code per partner rescue with an optional use limit (`rescue_partners`), the adopter's form (bird's name, species, adoption date; `rescue_redemptions`), "being confirmed", then a welcome once an admin approves. An approval gives six months in the Flock, free (source `rescue`, plan `comp`, never billed), from the free season's end or at once if it has ended, queued with gifts. One per account (a declined one can try again), never with a founding spot, no payment, no seat counting. "Have a rescue code?" on the Join screen and the redeem page; `/flock/rescue`; admins add, edit and pause partners on `/admin/rescues` and approve or decline there or in `/admin/review` → Rescues. `20261126130000_flock_rescue_codes.sql`, `supabase/checks/flock_rescue_codes_checks.sql`, `npm run test:flock-shell`, `e2e/flock.shell.ts`. Merged on Brittany's OK (Nov 26, 2026): #565.
 - **1.15a** Kya's Crew on the Membership card step, switched off with billing (`BILLING_ENABLED`) and Stripe test mode only, from the approved mockups (`CrewCardStep.dc.html`, `CrewCardStepYearlySelected.dc.html`): "Pick your membership", the Flock's Yearly and Monthly tiles, then a Kya's Crew box (its benefits, "Crew memberships help support free Flock access for rescue adopters", Crew yearly with "Save $96" worked out from the prices, Crew monthly). Picking Crew turns the giving panel to "Kya's Crew gives back more" and 25%, adds the rescue-adopter line under "What your membership keeps", and makes the button "Join Kya's Crew · $0 today". The save-the-card sentence has its own Crew lines ("Kya's Crew, {{price}} a year/month…"). Crew shows only when both Crew prices are set; otherwise the card step is exactly as before. Membership and "You're all set" name Crew and say 25%. English only. Pinned by `npm run test:billing`. Held for Brittany (payments): #563.
