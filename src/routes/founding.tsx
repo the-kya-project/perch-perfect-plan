@@ -16,6 +16,7 @@ import { WaitlistModal } from "@/components/WaitlistCard";
 import { foundingClosedCase } from "@/lib/foundingClosed";
 import { freeSeasonEndLabel } from "@/lib/flockDates";
 import { useFlockPublicDates } from "@/lib/useFlockPublicDates";
+import { chapterName } from "@/lib/chapterNames";
 
 // The Founding 50: public offer page for the first Flock members. Anyone can
 // view it; claiming needs an account. The Flock itself stays hidden behind
@@ -353,7 +354,7 @@ function RegionStep({ source, onBack, onClaimed, onRefused }: {
           <option value="">{isLoading ? t("founding.regionsLoading", "Loading regions…") : t("founding.selectRegion", "Select your region")}</option>
           {(regions ?? []).map((r) => (
             <option key={r.slug} value={r.slug}>
-              {r.states.length ? `${r.name} (${r.states.join(", ")})` : r.name}
+              {r.states.length ? `${chapterName(t, r.name)} (${r.states.join(", ")})` : chapterName(t, r.name)}
             </option>
           ))}
         </select>

@@ -22,7 +22,120 @@ Where these items came from, with the detail behind each: `docs/flock/opening-sc
 
 ## Ready to build
 
-Nothing right now.
+**Community navigation redesign (CR1–CR14).**
+
+Spec: [`docs/specs/community-navigation-redesign.md`](specs/community-navigation-redesign.md). Approved mockups: [`docs/specs/mockups/community-redesign-mockups.html`](specs/mockups/community-redesign-mockups.html) (screens Final-01 to Final-11). Build in this order. Match the mockups visually but build with the existing components and `K` tokens, never the mockup HTML; names, counts and bracketed titles in them are samples. Each PR shows its screen next to the mockup. Everything is behind `flock_enabled()` (admins only) except CR10, which adds one switch to the care side's moment sheet under the shared-code rule. Every item lists its new copy in the review queue; the guidelines and agreement copy is placeholder for Brittany.
+
+### CR1 Community bottom bar and header
+- **Mockup:** Final-01-Feed (header and bar), Final-06-Library (header)
+- **Done means:** the community bar is Feed, Journeys, a raised gold "Add something" button (an empty placeholder sheet until CR6), Library, My birds; Chapter is off the bar; the Duo and wide-window column match. Every `FlockHeader` screen has the menu tile (opening nothing until CR2) and wordmark on the left, the Updates bell with its unread dot on the right, and the title below; Spaces and the avatar button are gone. `K.gold` and `K.limeLight` added. "Learn together" renamed **Flock talk** everywhere it's shown (`flock.space.learn`; the slug stays `learn`), with its new line and empty state, and the tests and CLAUDE.md updated to match. Spec §1, §2, "Flock talk, the catch-all space".
+- **Size:** M
+- **Depends on:** nothing
+- **Overnight alone:** yes
+- **Needs Brittany:** merge only.
+
+### CR2 Side menu
+- **Mockup:** Final-02-Menu
+- **Done means:** the forest drawer in exactly the mockup's order (Community guidelines, Feed, the Spaces box, the Journeys / chapter / Events tiles, My birds with Home and Sits, the account section), without badges yet; "Events are coming soon" at `/flock/events` for anyone with no chapter; member profiles list posts (`flock_member_posts`). Spec §3.
+- **Size:** M
+- **Depends on:** CR1
+- **Overnight alone:** yes
+- **Needs Brittany:** merge only.
+
+### CR3 Menu badges and the header dot
+- **Mockup:** Final-02-Menu (badges), Final-01-Feed (the dot on the menu tile)
+- **Done means:** `flock_seen` and `flock_mark_seen` (additive), `flock_menu_counts()` for the three spaces, Journeys and the chapter, the menu's badges (hidden at zero, "9+"), and the lime dot on the menu tile. Pinned by a `supabase/checks/*_checks.sql` block (blocks and visibility respected, your own posts never counted). Spec §3 "Counts".
+- **Size:** M
+- **Depends on:** CR2
+- **Overnight alone:** yes
+- **Needs Brittany:** merge only.
+
+### CR4 Feed: Journeys row and Try today
+- **Mockup:** Final-01-Feed (top)
+- **Done means:** the Journeys heading with See all; story circles with "Your journey" first, then journeys you follow, then community journeys to fill the row, rings for unseen clips, opening the story viewer; the amber Try today card in place of today's idea card; the other Feed cards kept below it. Spec §4.1, §4.2.
+- **Size:** M
+- **Depends on:** CR1
+- **Overnight alone:** yes
+- **Needs Brittany:** merge only.
+
+### CR5 Feed: From the spaces
+- **Mockup:** Final-01-Feed (cards)
+- **Done means:** Feed's space chips and the compose prompt are gone; a selected space shows as the title; "From the spaces" with compact cards ("[Space] · [time]", 3-line body, 92px thumbnail with "+N", Great job and Comment, a ··· button that opens today's menu until CR13). Spec §2 (space title), §4.3.
+- **Size:** M
+- **Depends on:** CR2 (the menu is how a space is picked once the chips go)
+- **Overnight alone:** yes
+- **Needs Brittany:** merge only.
+
+### CR6 Add something sheet
+- **Mockup:** Final-03-Add
+- **Done means:** the center button opens the sheet: Weigh & check your flock (to `/check`, staying in the care app), Post to the community, Post a journey update (your open journeys, straight to the update flow; "Start a journey" when there are none). Spec §5.
+- **Size:** S
+- **Depends on:** CR1
+- **Overnight alone:** yes
+- **Needs Brittany:** merge only.
+
+### CR7 New post screen
+- **Mockup:** Final-04-Post, Final-05-PostFilled
+- **Done means:** `PostCompose` redesigned (forest header with gold Post, POST TO 2×2 tiles including your chapter, one writing card with photo thumbnails, the attached-bird box with Remove, side-by-side Add photos / Attach a bird, the lock note), every current behavior kept, including editing, Do good review, challenge and pod posts. Spec §6 (everything but saving to moments).
+- **Size:** M
+- **Depends on:** CR1
+- **Overnight alone:** yes
+- **Needs Brittany:** merge only.
+
+### CR8 Save a post to the bird's moments
+- **Mockup:** Final-05-PostFilled (the checkbox)
+- **Done means:** "Save to [bird]'s moments too" (owners only, on by default) adds a custom moment with the post's title or opening words, today's date and its first photo (copied server-side), linked by the new nullable `moments.flock_post_id`; a failure leaves the post up and records a `save_errors` row. Spec §6 "Saving to moments".
+- **Size:** M
+- **Depends on:** CR7
+- **Overnight alone:** yes
+- **Needs Brittany:** merge (it adds a column to a care table, `moments`), plus a check that the Moments page looks the same for a free account.
+
+### CR9 Library search and filters
+- **Mockup:** Final-06-Library, Final-07-Filters
+- **Done means:** search plus a Filters button with a count; the sort line; the filters sheet (multi-select Type and Subject, Sort, Clear all, "Show N resources"); removable active chips with Clear all; the two-column card grid; `flock_library_search_many` (SECURITY INVOKER, the old function kept); old `?type=` / `?subject=` links still work. Spec §7.
+- **Size:** M
+- **Depends on:** CR1
+- **Overnight alone:** yes
+- **Needs Brittany:** merge only.
+
+### CR10 Share a moment with the community (care side)
+- **Mockup:** Final-09-Moment (the switch only; the sheet itself stays as it is)
+- **Done means:** the existing add-milestone sheet shows "Also share with the community" (off by default) only to an owner who can use the Flock, for a bird shown in the Flock, while the gate is on, and posts the moment to Flock talk; free accounts see and fetch nothing new (before/after screenshots as the free staging account; the free-user regression passing). Spec §8.
+- **Size:** M
+- **Depends on:** CR7
+- **Overnight alone:** yes
+- **Needs Brittany:** merge (it touches shared care code).
+
+### CR11 Community guidelines page
+- **Mockup:** Final-10-Guidelines
+- **Done means:** `/flock/guidelines` as a back-arrow page with the intro, five expandable cards, Report something and the contact line, words from `src/lib/flockGuidelines.ts`: the mockup's placeholder text, or Brittany's final text if it has landed (then with the version bumped in both places). Spec §9.
+- **Size:** S
+- **Depends on:** CR1; CR13 for the "Report a member" row (until then the sheet has the other two rows)
+- **Overnight alone:** yes
+- **Needs Brittany:** merge, and the placeholder copy read in the review queue. Placeholder must be replaced before opening (opening checklist).
+
+### CR12 Guidelines agreement screen
+- **Mockup:** Final-11-Agreement
+- **Done means:** first-time joiners pick a chapter and confirm 18+, then see the agreement screen; re-agreeing after a version bump goes straight to it; its one button, "I agree, take me to the Flock", records the agreement (version and time, already stored) and opens the Flock; nothing in the community is reachable before it; the zero-tolerance line is there; admins can preview both screens at `/flock/join?preview=1` without recording anything. Spec §10.
+- **Size:** M
+- **Depends on:** CR11
+- **Overnight alone:** yes
+- **Needs Brittany:** merge (it's the join flow), and the placeholder copy read.
+
+### CR13 Post options: report and block, and report a member
+- **Mockup:** Final-08-PostOptions
+- **Done means:** a ··· button on every post and comment opens one Post options sheet: Report this post (or comment), Report this member, Block this member (red), and the line under them; on your own, Edit and Delete instead; admin tools kept below for admins. `flock_report` accepts subject type `member` (constraint and allowed list rebuilt from their live definitions); "Report [name]" also on member profiles and chapter Members rows; member reports appear in `/admin/review` → Reports and never hide anything on their own. Pinned in `supabase/checks/flock_moderation_checks.sql` and `e2e/flock.shell.ts`. Spec §6b.
+- **Size:** M
+- **Depends on:** nothing (the Feed's ··· from CR5 switches to this sheet when both are in)
+- **Overnight alone:** yes
+- **Needs Brittany:** merge only.
+
+### CR14 Dutch for the redesign
+- **Done means:** every string added by CR1–CR13 has Dutch in `src/locales/nl.jsonc`, in the same voice as the Join screen's Dutch (#575). Placeholder guidelines copy waits for the final English.
+- **Size:** S
+- **Depends on:** CR1–CR13
+- **Overnight alone:** yes
+- **Needs Brittany:** a native speaker's read; merge on her OK.
 
 ---
 
@@ -74,7 +187,7 @@ The launch PR itself (1.18) is already merged dark. What's left before opening i
 - **Needs Brittany:** switching it on is the launch decision.
 
 ### 1.5 Legal pages
-- **Done means:** `/terms` and `/privacy` carry Brittany's approved community, billing and age text (from `docs/legal/drafts/2026-11-flock-legal-update.md`). The post-deletion wording goes live only once 1.3 has.
+- **Done means:** `/terms` and `/privacy` carry Brittany's approved community, billing and age text (from `docs/legal/drafts/2026-11-flock-legal-update.md`), plus D2.2's three weather-reminder changes to `/privacy` (Brittany, Nov 28, 2026: they go out with this update, not on their own). The post-deletion wording goes live only once 1.3 has.
 - **Size:** M
 - **Depends on:** the final legal text, 1.3
 - **Overnight alone:** no
@@ -109,10 +222,11 @@ The launch PR itself (1.18) is already merged dark. What's left before opening i
 3. Check that the founding, gift and redeem pages now say "The Flock is free for everyone until {date}.", that the membership screen shows the end date, and that the founding page's "all 50 claimed" box follows opening day. Emails don't read the settings: check their wording by hand.
 4. **Dry run on production** with admin accounts: join → post → journey → report → block → kill switch, on web, iPhone, iPad and Duo.
 5. **Name reviewers** for `/admin/review`.
-6. **Code freeze:** no merges for the days around opening, apart from fixes Brittany approves.
-7. Brittany drafts the opening emails in Brevo and updates the website (Webflow). Nothing is scheduled to send on its own.
-8. **Open:** switch on 1.18 with `select public.admin_set_flock_members_open(true);` (opening day from step 2 must be set first; `false` turns it off again and members keep their memberships). Then check the free-user regression check and save-error alerts that morning.
-9. Health features without vet approval stay switched off. Everything else opens.
+6. **Final community guidelines in place:** the placeholder guidelines and agreement copy (CR11, CR12) replaced with Brittany's final text, and `FLOCK_GUIDELINES_VERSION` and `private.flock_guidelines_version()` bumped together.
+7. **Code freeze:** no merges for the days around opening, apart from fixes Brittany approves.
+8. Brittany drafts the opening emails in Brevo and updates the website (Webflow). Nothing is scheduled to send on its own.
+9. **Open:** switch on 1.18 with `select public.admin_set_flock_members_open(true);` (opening day from step 2 must be set first; `false` turns it off again and members keep their memberships). Then check the free-user regression check and save-error alerts that morning.
+10. Health features without vet approval stay switched off. Everything else opens.
 
 ---
 

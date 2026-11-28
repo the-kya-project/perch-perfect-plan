@@ -1649,6 +1649,231 @@
     },
     "push.scan.clearBody": {
       "stamp": "afbbf0e87d2153b9"
+    },
+    "email.auth.kicker": {
+      "stamp": "30a6131b937401bd"
+    },
+    "email.auth.foot": {
+      "stamp": "b57d470f3cf8506d"
+    },
+    "email.auth.linkFallback": {
+      "stamp": "c8b5fd59519377cd"
+    },
+    "email.auth.codeLabel": {
+      "stamp": "050252a594716330"
+    },
+    "email.auth.signup.subject": {
+      "stamp": "f30918e4d1e52967"
+    },
+    "email.auth.signup.kicker": {
+      "stamp": "bea68d620f679811"
+    },
+    "email.auth.signup.heading": {
+      "stamp": "f30918e4d1e52967"
+    },
+    "email.auth.signup.body": {
+      "stamp": "feeb9d5ef40ec941"
+    },
+    "email.auth.signup.cta": {
+      "stamp": "ff03f287edc7e0b6"
+    },
+    "email.auth.recovery.subject": {
+      "stamp": "636cdfe8e9d916c1"
+    },
+    "email.auth.recovery.heading": {
+      "stamp": "636cdfe8e9d916c1"
+    },
+    "email.auth.recovery.body": {
+      "stamp": "647a755482e85194"
+    },
+    "email.auth.recovery.cta": {
+      "stamp": "b9c8790869a1c91b"
+    },
+    "email.auth.magiclink.subject": {
+      "stamp": "c0a9639d8addee46"
+    },
+    "email.auth.magiclink.heading": {
+      "stamp": "c0a9639d8addee46"
+    },
+    "email.auth.magiclink.body": {
+      "stamp": "37a9d0ba40280a80"
+    },
+    "email.auth.magiclink.cta": {
+      "stamp": "dc9922893e139658"
+    },
+    "email.auth.invite.subject": {
+      "stamp": "5f92b1fd4fdd2297"
+    },
+    "email.auth.invite.heading": {
+      "stamp": "b09a472f50ccbef8"
+    },
+    "email.auth.invite.body": {
+      "stamp": "b7dcb90babf7733d"
+    },
+    "email.auth.invite.cta": {
+      "stamp": "829223e2971df0aa"
+    },
+    "email.auth.emailChangeNew.subject": {
+      "stamp": "e7aec0cf8e7d07bd"
+    },
+    "email.auth.emailChangeNew.heading": {
+      "stamp": "e7aec0cf8e7d07bd"
+    },
+    "email.auth.emailChangeNew.body": {
+      "stamp": "145be6faddd4e035"
+    },
+    "email.auth.emailChangeNew.cta": {
+      "stamp": "6ef1385dcc82c506"
+    },
+    "email.auth.emailChangeCurrent.subject": {
+      "stamp": "3de1eeea5f05599f"
+    },
+    "email.auth.emailChangeCurrent.heading": {
+      "stamp": "3de1eeea5f05599f"
+    },
+    "email.auth.emailChangeCurrent.body": {
+      "stamp": "9a0e1aa4e61d3094"
+    },
+    "email.auth.emailChangeCurrent.cta": {
+      "stamp": "5be96e5d3a465c63"
+    },
+    "email.auth.emailChangeCurrent.foot": {
+      "stamp": "69a21f7917c7eb62"
+    },
+    "email.auth.reauthentication.subject": {
+      "stamp": "aef1dc817da7eb2c"
+    },
+    "email.auth.reauthentication.heading": {
+      "stamp": "69daa601e6095a83"
+    },
+    "email.auth.reauthentication.body": {
+      "stamp": "1fc1d0a38b63882c"
+    },
+    "email.auth.text": {
+      "stamp": "61cba9c25794516e"
+    },
+    "email.auth.textCode": {
+      "stamp": "14e8272967bea272"
+    },
+    "email.gift.planFlock": {
+      "stamp": "13b895326ead8fec"
+    },
+    "email.gift.giftFlock": {
+      "stamp": "cef26316fd834bad"
+    },
+    "email.gift.giftFlockHalf": {
+      "stamp": "c5611e5c75389e39"
+    },
+    "email.gift.planFlockHalf": {
+      "stamp": "2d3e69023a28d096"
+    },
+    "email.gift.badgeFlock": {
+      "stamp": "5344ff94d2101c5b"
+    },
+    "email.gift.badgeFlockHalf": {
+      "stamp": "3e7b876804658a8a"
+    },
+    "email.gift.timingFlock": {
+      "stamp": "3ba1e4ea62ad4b18"
+    },
+    "email.gift.timingFlockHalf": {
+      "stamp": "a693e4ba984eeb4c"
+    },
+    "email.gift.rowGift": {
+      "stamp": "c0f70bcd1e74f561"
+    },
+    "email.gift.codeLabel": {
+      "stamp": "d6d693d380139c78"
+    },
+    "email.gift.hi": {
+      "stamp": "d89841a3773e933b"
+    },
+    "email.gift.hiNoName": {
+      "stamp": "6650fe4f7cb57639"
+    },
+    "email.gift.receipt.headline": {
+      "stamp": "0ae38cf45a42e707"
+    },
+    "email.gift.receipt.preview": {
+      "stamp": "36f0b23588830553"
+    },
+    "email.gift.receipt.pill": {
+      "stamp": "6a654bfee9d38ec7"
+    },
+    "email.gift.receipt.introEmail": {
+      "stamp": "60ec68f1e1d8c4ab"
+    },
+    "email.gift.receipt.introSelf": {
+      "stamp": "b71d21e37050b076"
+    },
+    "email.gift.receipt.cardTitle": {
+      "stamp": "5e54bea283c4fe9e"
+    },
+    "email.gift.receipt.rowPaid": {
+      "stamp": "84756f93a5b5068f"
+    },
+    "email.gift.receipt.rowPromo": {
+      "stamp": "aaf145b2fa48f5fc"
+    },
+    "email.gift.receipt.rowDelivery": {
+      "stamp": "bb2f1fbbbe37cdd5"
+    },
+    "email.gift.receipt.noteTitle": {
+      "stamp": "38d5304a260b9b47"
+    },
+    "email.gift.receipt.redeem": {
+      "stamp": "1c8697136283b45f"
+    },
+    "email.gift.receipt.giving": {
+      "stamp": "df3f5cd5e46a9ce9"
+    },
+    "email.gift.receipt.refund": {
+      "stamp": "cc29fe5864d732e5"
+    },
+    "email.gift.receipt.reply": {
+      "stamp": "d0bdb6f85ae3c55a"
+    },
+    "email.gift.receipt.foot": {
+      "stamp": "eb20485228b574ca"
+    },
+    "email.gift.recipient.headline": {
+      "stamp": "a635f00634057963"
+    },
+    "email.gift.recipient.preview": {
+      "stamp": "cc3482e3277f792f"
+    },
+    "email.gift.recipient.pill": {
+      "stamp": "b3ba3fe03822c31c"
+    },
+    "email.gift.recipient.intro": {
+      "stamp": "cc3482e3277f792f"
+    },
+    "email.gift.recipient.fromNobody": {
+      "stamp": "620570ed673054f5"
+    },
+    "email.gift.recipient.aboutFlock": {
+      "stamp": "bf8c40933d7ce894"
+    },
+    "email.gift.recipient.noteTitle": {
+      "stamp": "4af74d04d85c8ed8"
+    },
+    "email.gift.recipient.noteTitleNobody": {
+      "stamp": "82d0d8d7dbc5c3d6"
+    },
+    "email.gift.recipient.cardTitle": {
+      "stamp": "360aa0c478fff9e3"
+    },
+    "email.gift.recipient.cta": {
+      "stamp": "524c870bbee96ecc"
+    },
+    "email.gift.recipient.howTo": {
+      "stamp": "eb5ebe3c868af5db"
+    },
+    "email.gift.recipient.foot": {
+      "stamp": "808cf354cd366201"
+    },
+    "email.gift.recipient.footNobody": {
+      "stamp": "2c6e103a30f1eae4"
     }
   }
 }
