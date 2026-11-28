@@ -2147,14 +2147,6 @@ Format:
 - **Needs:** <the decision, approval or read, in one or two lines>
 ```
 
-### [#581](https://github.com/the-kya-project/perch-perfect-plan/pull/581) · D2.2 Weather cards
-- **Needs:** your review of the copy and the build, as the item says, plus three things the run couldn't do:
-  1. **Build the ZIP and postcode files** on your Mac (the sandbox can't download them). Download the Census ZCTA Gazetteer (`https://www2.census.gov/geo/docs/maps-data/data/gazetteer/2024_Gazetteer/2024_Gaz_zcta_national.zip`, unzip it) and a Dutch 4-digit postcode file with each area's middle as lat/lon (pick the source). Then, in a copy of the branch, run `npm run weather:postcodes -- --us <the .txt> --nl <the .csv>` and commit the two files under `src/data/postcode-centroids/`. Until then no weather card can show, even with the switch on.
-  2. **Add `npm run test:weather-cards`** to `.github/workflows/hydration.yml`, after `test:today-card`. The runs' token can't push workflow changes.
-  3. **Try it once in production as admin.** `select public.admin_set_care_feature('weather_cards', 'admins');`, add a ZIP on Account, and check Home. Nothing has called WeatherKit with the real key yet, and previews have no key.
-- **Also:** the switch stays at off or admins until 1.5 is live with the weather privacy line (#580). The no-ZIP prompt question is answered: dismissible (Brittany, Nov 28, 2026).
-- **Done (Nov 28, 2026):** Brittany approved the wording. The ZIP and postcode files are built (US: 33,791 ZIPs from the Census 2024 ZCTA Gazetteer; Netherlands: 4,086 postcodes from GeoNames, geonames.org, CC BY 4.0, with codes GeoNames lists more than once averaged), and `npm run test:weather-cards` is in `.github/workflows/hydration.yml`. Still open: step 3, the admin try in production.
-
 ### Reminder · the hourly runs' GitHub token expires Feb 20, 2027
 - **Needs:** a new token before **Feb 20, 2027**. That's 90 days from Nov 22, 2026; GitHub → Settings → Developer settings → Fine-grained tokens shows the exact date. When it expires, runs can still build and test but can't push or open PRs, and each run's note in `~/.kya-agent/job.log` says so.
 - **To replace it:** make a new fine-grained token for `the-kya-project/perch-perfect-plan` only, with the same permissions as the old one (Contents and Pull requests: read and write; Actions, Commit statuses and Checks: read). Then run the save command again in Terminal (it asks you to paste the token and doesn't show it). It overwrites `~/.config/kya-agent/github-token`, readable only by you. Delete the old token on GitHub after that. Clear this item and add a new one with the new date.
