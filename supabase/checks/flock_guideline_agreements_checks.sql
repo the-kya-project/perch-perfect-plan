@@ -48,8 +48,10 @@ begin
     and not has_column_privilege('authenticated', 'public.flock_guideline_agreements', 'agreed_at', 'INSERT')
     and has_column_privilege('authenticated', 'public.flock_guideline_agreements', 'version', 'INSERT')
     and not has_function_privilege('anon', 'public.has_agreed_to_guidelines(uuid)', 'EXECUTE')
+    and not has_function_privilege('anon', 'private.has_agreed_to_guidelines(uuid)', 'EXECUTE')
     and (select p.prosecdef and p.proconfig @> array['search_path=""']
-         from pg_proc p where p.oid = 'public.has_agreed_to_guidelines(uuid)'::regprocedure);
+         from pg_proc p where p.oid = 'private.has_agreed_to_guidelines(uuid)'::regprocedure)
+    and (select not p.prosecdef from pg_proc p where p.oid = 'public.has_agreed_to_guidelines(uuid)'::regprocedure);
   if ok then passed := passed + 1; else failed := array_append(failed, 'rls on, no update/delete, locked-down function'); end if;
 
   -- 3) While the Flock is closed to members, nobody but an admin can write a row.

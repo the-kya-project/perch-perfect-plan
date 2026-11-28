@@ -17,7 +17,8 @@
 --      agreed_at is always the server's time (insert is granted on user_id and
 --      version only). Admins read every row. Nobody updates or deletes a row
 --      through the API; account deletion removes them by the cascade.
---   3. public.has_agreed_to_guidelines(uid): true when uid has a row at the
+--   3. public.has_agreed_to_guidelines(uid) (an invoker wrapper over the
+--      SECURITY DEFINER private.has_agreed_to_guidelines): true when uid has a row at the
 --      current version. Answers only about yourself (or anyone, for an admin
 --      or the server); asking about someone else returns false.
 --   4. Defense in depth: nobody who hasn't agreed can post, even by calling
@@ -93,7 +94,10 @@ create policy "flock_guideline_agreements own insert" on public.flock_guideline_
 
 -- 3) Has this person agreed? ------------------------------------------------------------------
 
-create or replace function public.has_agreed_to_guidelines(uid uuid)
+-- The check itself is SECURITY DEFINER in private (it reads every row);
+-- public.has_agreed_to_guidelines is the invoker wrapper the app calls, the
+-- repo's usual pattern, so nothing definer is exposed in the API.
+create or replace function private.has_agreed_to_guidelines(uid uuid)
 returns boolean
 language sql
 stable
@@ -111,6 +115,16 @@ as $$
       where a.user_id = uid and a.version = public.current_guidelines_version()
     );
 $$;
+revoke all on function private.has_agreed_to_guidelines(uuid) from public, anon;
+grant execute on function private.has_agreed_to_guidelines(uuid) to authenticated, service_role;
+
+create or replace function public.has_agreed_to_guidelines(uid uuid)
+returns boolean
+language sql
+stable
+security invoker
+set search_path = ''
+as $$ select private.has_agreed_to_guidelines(uid); $$;
 revoke all on function public.has_agreed_to_guidelines(uuid) from public, anon;
 grant execute on function public.has_agreed_to_guidelines(uuid) to authenticated, service_role;
 
@@ -141,7 +155,7 @@ begin
     if tg_op = 'UPDATE' and old.visibility = 'community' then return new; end if;
   end if;
 
-  if not public.has_agreed_to_guidelines(v_user) then
+  if not private.has_agreed_to_guidelines(v_user) then
     raise exception 'guidelines_required' using errcode = '42501',
       hint = 'Agree to the community guidelines first.';
   end if;
