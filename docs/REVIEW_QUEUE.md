@@ -31,6 +31,36 @@ English is unchanged everywhere. New Dutch:
   - Before: "3 mensen moedigde … aan" (singular verb)
   - After: "3 mensen moedigden … aan"
 
+### [#584](https://github.com/the-kya-project/perch-perfect-plan/pull/584) · Community guidelines walk-through and guidelines page · **merged on Brittany's OK (Nov 28, 2026)**
+All new member-facing wording, word for word from the approved mockups and the prompt (source: `src/flock/guidelines/content.ts`). English only so far: Dutch shows the English until the next translation pass.
+- **Where:** walk-through screen 1 (`/flock/agree`)
+  - New: "1 of 3" (and "2 of 3", "3 of 3"); "Welcome to the Flock"; "Before you join, here's a quick look at what we're all about."
+  - New: "Bridging research and life with birds"; "Researchers"; "Conservationists"; "Parrot owners"; "The Flock brings these communities together. Our care recommendations come from avian research and veterinary science, and our mission is a place where all of us collaborate."
+  - New: "What we advocate for"; "A varied, fresh diet" / "We advocate for fresh foods and a quality pellet."; "Fully flighted birds" / "Research shows how beneficial flight is for birds, so we advocate for keeping them flighted whenever possible."; "Good husbandry" / "That means an appropriately sized cage, daily enrichment, plenty of foraging, and time out of the cage."; "Positive reinforcement training" / "Research shows it's the best way to train and bond with a bird. We don't advocate for dominance or punishment-based methods."
+  - New: "Most importantly, we're building a bigger table" / "We separate the issue from the person. We're all still learning, so wherever you and your bird are today, you're welcome here."; "Next"
+- **Where:** walk-through screen 2 (`/flock/agree?step=2`)
+  - New: "How we look after each other"; "This is what makes the Flock different."; "Back" (the arrow's label)
+  - New: "We give feedback only when it's asked for" / "If someone asks, "What do you think of my setup?", share kind, honest ideas. If someone just shares a photo of their bird, celebrate the bird, and please don't pile on in the comments."
+  - New: "We flag it instead of calling it out" / "If something someone shares worries you, tap flag. The Kya team reviews every single one and reaches out privately, so nobody gets corrected in front of everyone."
+  - New: "Health questions go to your vet" / "We never give medical advice here. You're welcome to share what's worked for you, but none of us are avian vets, and posts that give medical advice will be taken down."
+  - New: "What you share stays here" / "We never feature your posts or photos anywhere else without asking you first."
+- **Where:** walk-through screen 3 (`/flock/agree?step=3`)
+  - New: "Our promises to each other"; "This is what every member agrees to before coming in."
+  - New, the six promises: "I'll be kind, and I'll give feedback only when someone asks for it." · "I'll flag anything that worries me instead of calling someone out." · "I'll follow science-based care and positive reinforcement training when I share." · "I'll take health questions to an avian vet." · "I won't sell, trade, or breed birds here." · "I understand that harassment and harmful content mean removal from the Flock."
+  - New: "Read the full guidelines →"; "I agree, take me to the Flock"; "Saving…"; "Questions? Write to brittany@thekyaproject.com"
+  - New (not in the mockups; the error when saving fails): "We couldn't save that just now. Check your connection and tap the button again."
+- **Where:** the Community guidelines page (`/flock/guidelines`) and the guidelines box on the join step
+  - Before: the six short guidelines ("Welcome to the Flock", "Be kind.", "Put the birds first.", "The Flock isn't your vet.", "No selling or spam.", "Share only what's yours.", "Meet up safely.", and the closing "If something feels wrong, you can report or block anyone…")
+  - After: the full text from the prompt, in four sections: "What we believe", "How the Flock works", "How we treat each other", "The rules" (every line in `fullGuidelines()`), with "Questions? Write to brittany@thekyaproject.com" as the footer.
+- **Where:** the Spaces sheet
+  - New: a "Community guidelines" row at the top, above the three spaces.
+- **Where:** walk-through screen 1 (not in the mockup; added at your request)
+  - New: a close button (an ×, labelled "Close" for screen readers) where screens 2 and 3 have Back
+- **Where:** the join step (`/flock/join`): the guidelines box and the "I agree to the community guidelines" checkbox are gone (agreed in the walk-through)
+  - Before: "Choose your chapter, read the community guidelines, and you're in." · After: "Choose your chapter, confirm you're 18 or older, and you're in."
+  - Before: "Please confirm you're 18 or older and agree to the guidelines." · After: "Please confirm you're 18 or older."
+  - New: "Read the community guidelines →" (a link under "I'm 18 or older")
+
 ### [#581](https://github.com/the-kya-project/perch-perfect-plan/pull/581) · D2.2 Weather cards · **held, not merged; switched off**
 English only (Dutch after you approve the English). All of it is new and behind the `weather_cards` switch (off). Lines marked "spec" are word for word from the item.
 - **Where:** Home, the weather card
@@ -1777,6 +1807,19 @@ Format:
 - **To change it:** <what would need to change>
 ```
 
+### [#584](https://github.com/the-kya-project/perch-perfect-plan/pull/584) · Community guidelines walk-through
+- **One agreement (your call, Nov 28):** the join step's "I agree to the community guidelines" checkbox is retired. The walk-through's record is the only guidelines agreement and `current_guidelines_version()` the only version to bump. The join step keeps its chapter and "I'm 18 or older" (still `flock_agree()`, whose version "2026-12" is now frozen), and `flock_join()` needs both that record and the walk-through agreement (`20261128210000_flock_join_uses_walkthrough.sql`).
+- **Posting is blocked by a trigger, not an INSERT policy.** App users have no write grant on posts, comments or journey updates; they write through SECURITY DEFINER functions that RLS never sees, so an INSERT policy would block nothing. A BEFORE INSERT trigger on `flock_posts` (every space, pod posts and challenge entries), `flock_comments` and `journey_updates` blocks every path instead. Sharing a journey with the Flock (`journeys.visibility` → community) needs it too, or updates posted while it was "Just me" would reach the Flock unagreed.
+- **"Just me" journeys and free co-carers are never checked,** so the care app's journeys work exactly as before for anyone outside the Flock. A household co-carer who isn't a Flock member can still post to a journey its owner shared (they can't agree: the Flock is closed to them).
+- **Admins see the walk-through too** (once, at version 1), since they're members. The server, SQL editor, seeds and scheduled jobs aren't blocked.
+- **Events are named `flock_walkthrough_viewed` (`step`) and `flock_guidelines_agreed` (`version`),** with the `flock_` prefix every Flock event has, so the "Flock stickiness" dashboard and its `internal` filter pick them up. Like every Flock event, they send only for members, admins and people whose membership starts on opening day; someone with no membership at all sends nothing.
+- **Screen 1 has a close button** (your call, Nov 28): an × where screens 2 and 3 have Back; closing, the system Back and Escape all return to Home.
+- **Mockup vs. prompt:** section headings on screen 1 follow the mockup (no full stop: "Bridging research and life with birds", "What we advocate for", "Most importantly, we're building a bigger table"); the prompt wrote them with one.
+- **Before the migration reaches a database** (a preview on staging before merge), the app finds no agreement function and lets people through as before, rather than showing a button that can't save. The database then has no rule to enforce either; production gets both within a minute of merging.
+- **"Learn together" in "How the Flock works"** stays as written for now; backlog CR1 renames the space "Flock talk" and updates that line (`flock.rules.works.spaces` in `content.ts`) when it lands.
+- **Dutch:** the walk-through and the new guidelines are in the English catalog like every other string, so the next Dutch pass picks them up. Until then Dutch readers see these screens, and the join step's guidelines box (which #582 had translated), in English. The old six guidelines' Dutch lines are no longer used.
+- **The guidelines link sits at the top of the Spaces sheet for now.** The side-menu drawer from the new navigation isn't built yet; the link moves to the top of the drawer, above Feed, when it is.
+
 ### [#543](https://github.com/the-kya-project/perch-perfect-plan/pull/543) · 1.17 Promo codes for memberships
 - **Decision:** Codes are entered in Stripe Checkout's own "Add promotion code" field. No code box was added to the card step, and nothing in the app creates or lists codes; they're made in the Stripe Dashboard.
 - **Why:** gift Checkout already works this way, and an app field would need a new design.
@@ -2162,14 +2205,6 @@ Format:
 ### <PR link> · <item ID> <item title>
 - **Needs:** <the decision, approval or read, in one or two lines>
 ```
-
-### [#581](https://github.com/the-kya-project/perch-perfect-plan/pull/581) · D2.2 Weather cards
-- **Needs:** your review of the copy and the build, as the item says, plus three things the run couldn't do:
-  1. **Build the ZIP and postcode files** on your Mac (the sandbox can't download them). Download the Census ZCTA Gazetteer (`https://www2.census.gov/geo/docs/maps-data/data/gazetteer/2024_Gazetteer/2024_Gaz_zcta_national.zip`, unzip it) and a Dutch 4-digit postcode file with each area's middle as lat/lon (pick the source). Then, in a copy of the branch, run `npm run weather:postcodes -- --us <the .txt> --nl <the .csv>` and commit the two files under `src/data/postcode-centroids/`. Until then no weather card can show, even with the switch on.
-  2. **Add `npm run test:weather-cards`** to `.github/workflows/hydration.yml`, after `test:today-card`. The runs' token can't push workflow changes.
-  3. **Try it once in production as admin.** `select public.admin_set_care_feature('weather_cards', 'admins');`, add a ZIP on Account, and check Home. Nothing has called WeatherKit with the real key yet, and previews have no key.
-- **Also:** the switch stays at off or admins until 1.5 is live with the weather privacy line (#580). The no-ZIP prompt question is answered: dismissible (Brittany, Nov 28, 2026).
-- **Done (Nov 28, 2026):** Brittany approved the wording. The ZIP and postcode files are built (US: 33,791 ZIPs from the Census 2024 ZCTA Gazetteer; Netherlands: 4,086 postcodes from GeoNames, geonames.org, CC BY 4.0, with codes GeoNames lists more than once averaged), and `npm run test:weather-cards` is in `.github/workflows/hydration.yml`. Still open: step 3, the admin try in production.
 
 ### Reminder · the hourly runs' GitHub token expires Feb 20, 2027
 - **Needs:** a new token before **Feb 20, 2027**. That's 90 days from Nov 22, 2026; GitHub → Settings → Developer settings → Fine-grained tokens shows the exact date. When it expires, runs can still build and test but can't push or open PRs, and each run's note in `~/.kya-agent/job.log` says so.
