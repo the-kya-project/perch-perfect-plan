@@ -63,6 +63,7 @@ jobs:
           npm run test:bird-age
           npm run test:bird-names
           npm run test:blog-feed
+          npm run test:care-badges
           npm run test:check-kind
           npm run test:chop-ingredients
           npm run test:confirm-links
