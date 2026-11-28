@@ -190,7 +190,8 @@ begin
   -- 10) Weeks are counted in the owner's time zone: a Sunday-night weigh-in in
   -- Los Angeles is that week, though it's Monday in UTC. Four weeks in a row
   -- there (two Sunday nights, then two Monday mornings) are only three in UTC.
-  -- An unknown time zone falls back to UTC instead of failing.
+  -- No saved time zone counts weeks in UTC. (profiles refuses an unknown zone,
+  -- and the rule falls back to UTC for one anyway.)
   update public.profiles set time_zone = 'America/Los_Angeles' where id = o;
   insert into public.weight_entries (bird_id, grams, measured_at)
   select mango, 300, (date_trunc('week', now() at time zone 'America/Los_Angeles') - make_interval(weeks => k)
@@ -198,9 +199,6 @@ begin
   from generate_series(1, 4) k;
   select level into n from private.care_badge_levels(mango, false) where badge = 'steady_scale';
   ok := n = 4;
-  update public.profiles set time_zone = 'Not/AZone' where id = o;
-  select level into n from private.care_badge_levels(mango, false) where badge = 'steady_scale';
-  ok := ok and n = 0;
   update public.profiles set time_zone = null where id = o;
   select level into n from private.care_badge_levels(mango, false) where badge = 'steady_scale';
   ok := ok and n = 0;
