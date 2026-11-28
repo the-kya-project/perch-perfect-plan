@@ -3535,6 +3535,70 @@
   "flock.billing.yearlyLabel": "Jaarlijks",
   // {{price}} once a year
   "flock.billing.yearlyTotal": "{{price}} eens per jaar",
+  // Share what keeps parrots safe and healthy. Posts that encourage harmful care, or the sale of wild-caught birds, will be removed.
+  "flock.guidelines.birds": "Deel wat papegaaien veilig en gezond houdt. Berichten die schadelijke verzorging aanmoedigen, of de verkoop van in het wild gevangen vogels, worden verwijderd.",
+  // Put the birds first.
+  "flock.guidelines.birdsTitle": "De vogels komen eerst.",
+  // If something feels wrong, you can report or block anyone, and the Kya team reviews every report. Members who break these guidelines may have posts removed or lose access to the Flock.
+  "flock.guidelines.closing": "Voelt er iets niet goed? Je kunt iedereen melden of blokkeren, en het Kya-team bekijkt elke melding. Bij leden die zich niet aan deze richtlijnen houden, kunnen berichten worden verwijderd of kan hun toegang tot de Flock worden ingetrokken.",
+  // Email the Kya team at {{email}}.
+  "flock.guidelines.contact": "Mail het Kya-team op {{email}}.",
+  // Questions or a problem?
+  "flock.guidelines.contactTitle": "Vragen of een probleem?",
+  // We're a community of people who love parrots and want to give them good lives. These are the few things we ask of everyone here.
+  "flock.guidelines.intro": "We zijn een community van mensen die van papegaaien houden en ze een goed leven willen geven. Dit zijn de paar dingen die we van iedereen hier vragen.",
+  // Welcome to the Flock
+  "flock.guidelines.introTitle": "Welkom in de Flock",
+  // Everyone here is learning, including the people who've had birds for decades. Disagree with ideas, never with people, and assume the best of each other.
+  "flock.guidelines.kind": "Iedereen hier is aan het leren, ook mensen die al tientallen jaren vogels hebben. Je mag het oneens zijn met ideeën, nooit met mensen, en ga uit van het beste in elkaar.",
+  // Be kind.
+  "flock.guidelines.kindTitle": "Wees vriendelijk.",
+  // Chapter events happen in public places, and you're never obligated to share where you live.
+  "flock.guidelines.meetups": "Afdelingsevenementen vinden plaats op openbare plekken, en je hoeft nooit te vertellen waar je woont.",
+  // Meet up safely.
+  "flock.guidelines.meetupsTitle": "Spreek veilig af.",
+  // Please don't advertise products, services, or birds for sale. Sharing a rescue that needs help is always welcome.
+  "flock.guidelines.selling": "Maak geen reclame voor producten, diensten of vogels die te koop zijn. Een opvang delen die hulp nodig heeft, is altijd welkom.",
+  // No selling or spam.
+  "flock.guidelines.sellingTitle": "Geen verkoop of spam.",
+  // Community guidelines
+  "flock.guidelines.title": "Communityrichtlijnen",
+  // Members share experience, not medical advice. If your bird seems unwell, please call an avian vet before posting.
+  "flock.guidelines.vet": "Leden delen ervaring, geen medisch advies. Lijkt je vogel ziek? Bel dan eerst een vogeldierenarts voordat je iets plaatst.",
+  // The Flock isn't your vet.
+  "flock.guidelines.vetTitle": "De Flock is niet je dierenarts.",
+  // Post your own photos, videos, and stories, and don't share anything another member told you privately.
+  "flock.guidelines.yours": "Plaats je eigen foto's, video's en verhalen, en deel niets wat een ander lid je privé heeft verteld.",
+  // Share only what's yours.
+  "flock.guidelines.yoursTitle": "Deel alleen wat van jou is.",
+  // I'm 18 or older
+  "flock.join.adult": "Ik ben 18 jaar of ouder",
+  // I agree to the community guidelines
+  "flock.join.agree": "Ik ga akkoord met de communityrichtlijnen",
+  // Back to my birds
+  "flock.join.back": "Terug naar mijn vogels",
+  // Choose
+  "flock.join.choose": "Kiezen",
+  // Join the Flock
+  "flock.join.cta": "Word lid van de Flock",
+  // We couldn't save that. Check your connection and try again.
+  "flock.join.error": "We konden dat niet opslaan. Controleer je verbinding en probeer het opnieuw.",
+  // Please read them before you join.
+  "flock.join.guidelinesHint": "Lees ze voordat je lid wordt.",
+  // Choose your chapter, read the community guidelines, and you're in.
+  "flock.join.line": "Kies je afdeling, lees de communityrichtlijnen en je bent binnen.",
+  // Loading
+  "flock.join.loading": "Laden",
+  // Please confirm you're 18 or older and agree to the guidelines.
+  "flock.join.needBoth": "Bevestig dat je 18 jaar of ouder bent en ga akkoord met de richtlijnen.",
+  // Choose your chapter first.
+  "flock.join.needRegion": "Kies eerst je afdeling.",
+  // Not chosen yet
+  "flock.join.noRegion": "Nog niet gekozen",
+  // The Flock isn't open to new members yet.
+  "flock.join.notOpen": "De Flock is nog niet open voor nieuwe leden.",
+  // The guidelines have just changed. Reload the page to read the new version.
+  "flock.join.outdated": "De richtlijnen zijn net gewijzigd. Laad de pagina opnieuw om de nieuwe versie te lezen.",
   // Your rescue adoption is confirmed
   "flock.join.rescueApproved": "Je adoptie via de opvang is bevestigd",
   // You have six months in the Flock, free.
@@ -3549,10 +3613,40 @@
   "flock.join.rescuePendingLine": "We sturen je een welkomstbericht zodra die bevestigd is, meestal binnen een dag of twee.",
   // Have a rescue code?
   "flock.join.rescueTitle": "Heb je een opvangcode?",
+  // Joining…
+  "flock.join.saving": "Lid worden…",
+  // Joining for the free season has closed.
+  "flock.join.seasonOver": "Lid worden tijdens de gratis periode kan niet meer.",
+  // Join the Flock free
+  "flock.join.sheetCta": "Word gratis lid van de Flock",
+  // Join the Flock
+  "flock.join.sheetTitle": "Word lid van de Flock",
+  // Join the Flock
+  "flock.join.title": "Word lid van de Flock",
+  // Before you go in
+  "flock.join.titleMember": "Voordat je naar binnen gaat",
+  // The Flock opens on {{date}}. We'll see you there.
+  "flock.join.waitingLine": "De Flock gaat open op {{date}}. Tot dan!",
+  // The Flock opens soon. We'll see you there.
+  "flock.join.waitingSoon": "De Flock gaat binnenkort open. Tot dan!",
+  // You're in
+  "flock.join.waitingTitle": "Je bent binnen",
+  // The Flock is The Kya Project's community, where you'll find your local chapter, a library of guides and recordings, and every training journey, including tricks, nail trims, and stationing.
+  "flock.journeys.flockOnly.about": "De Flock is de community van The Kya Project. Je vindt er je eigen afdeling bij jou in de buurt, een bibliotheek met gidsen en opnames, en elk trainingstraject, ook trucjes, nagels knippen en stationing.",
+  // Part of the Flock
+  "flock.journeys.flockOnly.eyebrow": "Onderdeel van de Flock",
+  // Join the Flock early, while it's free for everyone.
+  "flock.journeys.flockOnly.free": "Word nu al lid van de Flock, nu het nog gratis is voor iedereen.",
   // Community
   "flock.nav.aria": "Community",
   // My birds
   "flock.nav.care": "Mijn vogels",
+  // Close
+  "flock.region.close": "Sluiten",
+  // Your chapter is the members near you. Members see your region, never your address.
+  "flock.region.line": "Je afdeling bestaat uit de leden bij jou in de buurt. Leden zien je regio, nooit je adres.",
+  // Choose your chapter
+  "flock.region.title": "Kies je afdeling",
   // Adopted from a partner rescue? Your code gives you six months in the Flock.
   "flock.rescue.about": "Geadopteerd via een partneropvang? Met je code krijg je zes maanden in de Flock.",
   // Adoption date
@@ -3697,6 +3791,12 @@
   "flock.review.rescues_one": "Opvang {{count}}",
   // Rescues {{count}}
   "flock.review.rescues_other": "Opvang {{count}}",
+  // Change
+  "flock.setup.change": "Wijzigen",
+  // Your chapter
+  "flock.setup.chapter": "Je afdeling",
+  // Members see your region, never your address.
+  "flock.setup.chapterHint": "Leden zien je regio, nooit je adres.",
   // Spaces
   "flock.spaces.title": "Ruimtes",
   // Membership and billing
