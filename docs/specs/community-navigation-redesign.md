@@ -5,6 +5,8 @@
 **Written:** Nov 28, 2026, from Brittany's brief and mockups, after a read of the code on `main`. Brittany's answers to all the planning questions are recorded under "Decisions" at the end.
 **Scope:** the community side only (everything under `/flock`, plus one switch on the care side's moment sheet in section 8). The care app's Home, Sits, Health, Explore and its bottom bar with the Community button stay exactly as they are.
 
+> **Update, Nov 28, 2026 (Brittany):** the guidelines page and the agreement are being built separately, as a three-screen walk-through with her final guidelines text (mockups in `docs/mockups/flock-guidelines-agreement/`, branch `flock-guidelines-walkthrough`). That work **replaces sections 9 and 10** (Final-10 and Final-11, backlog CR11 and CR12): don't build them from this spec. Section 6b (post options, CR13) is **replaced too**: Brittany chose **flag** (Nov 28), so posts and comments get that work's post options, flag sheet and flag sent (04–06: "Flag this post", "Block [name]"; your own posts keep Edit and Delete), built in its next step. Final-08 and the "report a member" type described in 6b and the Apple table aren't built; Apple 1.2 is met by flagging content and blocking members. The Community guidelines row at the top of the menu (section 3) stays and opens the walk-through's guidelines page.
+
 ## How to use the mockups
 
 - **Match them visually:** layout, hierarchy, spacing, colors. The notes beside each screen describe behavior; where this spec and a mockup disagree about how something looks, the mockup wins, and where they disagree about behavior, this spec wins (it was checked against the code).
@@ -145,7 +147,7 @@ From the center plus. A bottom sheet (white, 26px top corners, handle, serif tit
 - If the moment fails, the post stands: "Your post is up. We couldn't save it to [bird]'s moments.", and a `save_errors` row.
 - Not on edit, challenge entries or pod posts.
 
-## 6b. Post options: report and block · See Final-08-PostOptions
+## 6b. Post options: report and block · See Final-08-PostOptions (replaced by flagging: see the update at the top)
 
 Every post and comment (Feed cards, the post page, comment threads, Chapter posts, pod and challenge posts) has a **···** button that opens one **Post options** sheet (white, serif title, round Close), replacing today's separate menus in `PostMenus`:
 
@@ -179,7 +181,7 @@ The mockup shows the moment sheet redrawn ("Add a moment for Echo", "Add a photo
 - Not on editing a moment, and never on the automatic anchors (gotcha day, birthday, years together).
 - **Shared-code rule:** the switch lives in Flock code and is lazy-loaded; the moments page imports only the gate helper from `src/lib/flock.ts`. The PR shows before/after screenshots of the sheet as the free staging account (identical) and runs the free-user regression.
 
-## 9. Community guidelines page · See Final-10-Guidelines
+## 9. Community guidelines page · See Final-10-Guidelines (replaced: see the update at the top)
 
 `/flock/guidelines`, a sub-page: forest header with **Back**, the serif title "Community guidelines" and a short intro under it; then **expandable cards** (white, 18px radius, serif title, chevron, a one-line summary visible when closed, the full text when open): **What we believe**, **How we treat each other**, **Health questions go to your vet**, **Posting and sharing**, **How moderation works**; then an outlined **Report something** button; then the contact line (`contactLine`, unchanged).
 
@@ -188,7 +190,7 @@ The mockup shows the moment sheet redrawn ("Add a moment for Echo", "Add a photo
 - **Version:** when the words change, `FLOCK_GUIDELINES_VERSION` and `private.flock_guidelines_version()` change together (the existing test checks they match). The Flock isn't open, so no member has agreed yet; bump the version when Brittany's final text replaces the placeholder. **The placeholder must be replaced before opening** (added to the opening checklist in `docs/BACKLOG.md`).
 - **Report something** opens a small sheet: "Report a post or comment" (explains the ··· on every post), "Report a member" (opens member search, then the member report), "Email the Kya team" (`FLOCK_CONTACT_EMAIL`).
 
-## 10. Guidelines agreement screen · See Final-11-Agreement
+## 10. Guidelines agreement screen · See Final-11-Agreement (replaced: see the update at the top)
 
 **Mostly built:** `flock_agreements` already stores who agreed, when and to which version; the `/flock` layout already sends anyone who hasn't agreed to the current version to `/flock/join` before anything else renders; a version bump already asks everyone again. Nothing else in the community is reachable before agreeing. No new columns are needed.
 

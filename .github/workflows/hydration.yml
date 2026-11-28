@@ -101,6 +101,7 @@ jobs:
           npm run test:sit-time-zone
           npm run test:supabase-env
           npm run test:today-card
+          npm run test:weather-cards
           npm run test:together-since
           npm run test:url-scrub
           npm run test:utm-carry

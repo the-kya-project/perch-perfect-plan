@@ -38,11 +38,23 @@ Copy this, fill it in, and put it at the top of "Runs", above the latest entry.
 - **Outcome:** Merged on Brittany's OK once checks passed (Nov 28, 2026).
 - **Problems:** the known join test still fails on this Mac only (it fails on a clean `main` too).
 
+### 2026-11-28 13:25 EST · D2.2 Weather cards
+- **Built:** heat and cold cards on Home, behind their own switch (`weather_cards`, off). An owner can add an optional home ZIP or postcode on Account (US or the Netherlands). The server turns it into the middle of its area using files in the app, asks Apple WeatherKit for that area's forecast at most once a day, and shares it with everyone in the area; WeatherKit never sees the ZIP or the account. On a day with a high of 90°F (32°C) or more, or a night with a low of 32°F (0°C) or less, the weather card takes the seasonal card's place on Home with the approved wording and its own "Got it" for the day. Anything missing or failing shows the seasonal card exactly as before. With the switch off, nobody sees or loads anything new.
+- **PR:** [#581](https://github.com/the-kya-project/perch-perfect-plan/pull/581)
+- **Outcome:** Held: Brittany reviews the copy and the build, builds the ZIP and postcode files (the run's sandbox can't download them, so they ship empty and no card can show until they're built), adds `npm run test:weather-cards` to `hydration.yml`, and turns the switch on (off or admins until 1.5 is live with the privacy line).
+- **Problems:** downloading the Census and Dutch postcode files was refused (the sandbox reaches only GitHub and npm), so the run added a script that builds them from the official files instead. WeatherKit couldn't be called from here (no key outside Production), so the forecast reading is tested against a sample response only. The PR removes D2.2's spec block from "Ready to build", which open PR #580 also edits, so whichever merges second will need that conflict resolved. The other open PRs (#576, #578, #580) are Brittany's and mergeable; left alone. No PRs closed.
+
 ### 2026-11-28 12:40 EST · Join the Flock screen in Dutch (started by Brittany in a session)
 - **Built:** Dutch for the 50 remaining lines on the Join screen: the "Part of the Flock" sheet, the chapter picker, the community guidelines word for word, "I'm 18 or older" and "I agree", the error messages and the "You're in" screen.
 - **PR:** [#575](https://github.com/the-kya-project/perch-perfect-plan/pull/575)
 - **Outcome:** Merged on Brittany's OK once checks passed (Nov 28, 2026). A native speaker's read of the guidelines is still welcome.
 - **Problems:** none. The chapter names come from the regions table and stay English.
+
+### 2026-11-28 12:24 EST · none (nothing to build)
+- **Built:** nothing. "Ready to build" in docs/BACKLOG.md (main at 5468910) is empty; 2.5 needs Brittany before work starts, D2.2 and the opening items are "Overnight alone: no", and no item is marked "Overnight alone: yes".
+- **PR:** none
+- **Outcome:** Stopped: nothing an unattended run may build.
+- **Problems:** none. The only open PR, [#575](https://github.com/the-kya-project/perch-perfect-plan/pull/575) (Join screen in Dutch, from Brittany's session), is held, mergeable with `main`, and had its checks running after a "Merge main" at 17:21 UTC; it was left alone. No PRs were closed. The clone at `~/.kya-agent/work/agent-run-20261128-1224` has no changes.
 
 ### 2026-11-28 11:45 EST · 1.16 Rescue partner codes, Dutch (started by Brittany in a session)
 - **Built:** Dutch for all 79 rescue-code lines (the adopter's screens, the Join and redeem card, the admin page and the review chip), hand-written and passed through the repo's translation script for its placeholder checks. Partner lines on the admin page now wrap instead of cutting off, since the Dutch is longer.
