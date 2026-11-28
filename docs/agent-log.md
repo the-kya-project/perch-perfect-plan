@@ -20,6 +20,12 @@ Copy this, fill it in, and put it at the top of "Runs", above the latest entry.
 
 ## Runs
 
+### 2026-11-28 12:40 EST · Join the Flock screen in Dutch (started by Brittany in a session)
+- **Built:** Dutch for the 50 remaining lines on the Join screen: the "Part of the Flock" sheet, the chapter picker, the community guidelines word for word, "I'm 18 or older" and "I agree", the error messages and the "You're in" screen.
+- **PR:** [#575](https://github.com/the-kya-project/perch-perfect-plan/pull/575)
+- **Outcome:** Held: for Brittany's read, especially the guidelines (members agree to them).
+- **Problems:** none. The chapter names come from the regions table and stay English.
+
 ### 2026-11-28 11:45 EST · 1.16 Rescue partner codes, Dutch (started by Brittany in a session)
 - **Built:** Dutch for all 79 rescue-code lines (the adopter's screens, the Join and redeem card, the admin page and the review chip), hand-written and passed through the repo's translation script for its placeholder checks. Partner lines on the admin page now wrap instead of cutting off, since the Dutch is longer.
 - **PR:** [#574](https://github.com/the-kya-project/perch-perfect-plan/pull/574)
