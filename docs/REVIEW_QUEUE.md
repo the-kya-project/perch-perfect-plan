@@ -19,7 +19,7 @@ Format:
   - After: "<new wording>"
 ```
 
-### [#574](https://github.com/the-kya-project/perch-perfect-plan/pull/574) · 1.16 Rescue partner codes, Dutch
+### [#574](https://github.com/the-kya-project/perch-perfect-plan/pull/574) · 1.16 Rescue partner codes, Dutch · **merged on Brittany's OK (Nov 28, 2026), not yet read by a native speaker**
 Dutch (informal "je", as the rest of the app) for every rescue-code line from #565, for you or a native speaker to read. Same terms as the billing and gift Dutch: "de Flock", "Word lid van de Flock", "de gratis periode"; "rescue" is "opvang", "rescue code" is "opvangcode".
 - **Where:** Join screen card (Join sheet, Join step, redeem page)
   - "Have a rescue code?" → "Heb je een opvangcode?"
@@ -1960,9 +1960,6 @@ Format:
 ### <PR link> · <item ID> <item title>
 - **Needs:** <the decision, approval or read, in one or two lines>
 ```
-
-### [#574](https://github.com/the-kya-project/perch-perfect-plan/pull/574) · 1.16 Rescue partner codes, Dutch
-- **Needs:** a read of the Dutch (in "Copy that merged"), ideally by a native speaker, then your OK in the PR to merge. Only admins see these screens today.
 
 ### Reminder · the hourly runs' GitHub token expires Feb 20, 2027
 - **Needs:** a new token before **Feb 20, 2027**. That's 90 days from Nov 22, 2026; GitHub → Settings → Developer settings → Fine-grained tokens shows the exact date. When it expires, runs can still build and test but can't push or open PRs, and each run's note in `~/.kya-agent/job.log` says so.

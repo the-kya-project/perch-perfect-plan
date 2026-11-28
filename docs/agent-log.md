@@ -23,7 +23,7 @@ Copy this, fill it in, and put it at the top of "Runs", above the latest entry.
 ### 2026-11-28 11:45 EST · 1.16 Rescue partner codes, Dutch (started by Brittany in a session)
 - **Built:** Dutch for all 79 rescue-code lines (the adopter's screens, the Join and redeem card, the admin page and the review chip), hand-written and passed through the repo's translation script for its placeholder checks. Partner lines on the admin page now wrap instead of cutting off, since the Dutch is longer.
 - **PR:** [#574](https://github.com/the-kya-project/perch-perfect-plan/pull/574)
-- **Outcome:** Held: for Brittany's read of the Dutch.
+- **Outcome:** Merged on Brittany's OK once checks passed (Nov 28, 2026). A native speaker's read is still welcome.
 - **Problems:** the rest of the Flock isn't in Dutch yet (about 1,480 lines), so the Join sheet and the admin card show Dutch rescue lines next to English ones until those are translated.
 
 ### 2026-11-26 13:20 EST · 1.16 Rescue partner codes (started by Brittany in a session, not an hourly run)
