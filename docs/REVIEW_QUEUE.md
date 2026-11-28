@@ -97,6 +97,7 @@ Dutch ("je") for the rest of the Join screen, after #574. Chapter is "afdeling",
 
 ### [#578](https://github.com/the-kya-project/perch-perfect-plan/pull/578) · CR1–CR14 Community navigation redesign (spec and mockups only)
 - **Needs:** merge, once you've read the copy below. All nine answers (Nov 28) are recorded in the spec's "Decisions". Merging puts CR1–CR14 at the top of "Ready to build" for the hourly runs.
+- **Update, Nov 28 (after merge):** the guidelines walk-through (a separate session) replaces CR11 and CR12, so the placeholder guidelines and agreement copy below won't be built; your final text from that work is used instead. CR13 waits on your choice: "report" (Final-08) or "flag" (the walk-through's post options, flag sheet and flag sent).
 - **Space renamed** (your call, Nov 28; built in CR1):
   - "Learn together" → "Flock talk" (sentence case: "Flock" is the community's name, "talk" lowercase)
   - "Questions, guides, and what members are working out with their birds." (Spaces sheet) and "Questions and what's working" (mockups) → "Questions, wins, and everyday life with your bird"

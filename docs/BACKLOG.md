@@ -60,11 +60,11 @@ Where these items came from, with the detail behind each: `docs/flock/opening-sc
 
 **Community navigation redesign (CR1–CR14).**
 
-Spec: [`docs/specs/community-navigation-redesign.md`](specs/community-navigation-redesign.md). Approved mockups: [`docs/specs/mockups/community-redesign-mockups.html`](specs/mockups/community-redesign-mockups.html) (screens Final-01 to Final-11). Build in this order. Match the mockups visually but build with the existing components and `K` tokens, never the mockup HTML; names, counts and bracketed titles in them are samples. Each PR shows its screen next to the mockup. Everything is behind `flock_enabled()` (admins only) except CR10, which adds one switch to the care side's moment sheet under the shared-code rule. Every item lists its new copy in the review queue; the guidelines and agreement copy is placeholder for Brittany.
+Spec: [`docs/specs/community-navigation-redesign.md`](specs/community-navigation-redesign.md). Approved mockups: [`docs/specs/mockups/community-redesign-mockups.html`](specs/mockups/community-redesign-mockups.html) (screens Final-01 to Final-11). Build in this order. Match the mockups visually but build with the existing components and `K` tokens, never the mockup HTML; names, counts and bracketed titles in them are samples. Each PR shows its screen next to the mockup. Everything is behind `flock_enabled()` (admins only) except CR10, which adds one switch to the care side's moment sheet under the shared-code rule. Every item lists its new copy in the review queue; CR11 and CR12 are replaced by the separate guidelines walk-through, and CR13 waits on Brittany's choice of post options design.
 
 ### CR1 Community bottom bar and header
 - **Mockup:** Final-01-Feed (header and bar), Final-06-Library (header)
-- **Done means:** the community bar is Feed, Journeys, a raised gold "Add something" button (an empty placeholder sheet until CR6), Library, My birds; Chapter is off the bar; the Duo and wide-window column match. Every `FlockHeader` screen has the menu tile (opening nothing until CR2) and wordmark on the left, the Updates bell with its unread dot on the right, and the title below; Spaces and the avatar button are gone. `K.gold` and `K.limeLight` added. "Learn together" renamed **Flock talk** everywhere it's shown (`flock.space.learn`; the slug stays `learn`), with its new line and empty state, and the tests and CLAUDE.md updated to match. Spec §1, §2, "Flock talk, the catch-all space".
+- **Done means:** the community bar is Feed, Journeys, a raised gold "Add something" button (an empty placeholder sheet until CR6), Library, My birds; Chapter is off the bar; the Duo and wide-window column match. Every `FlockHeader` screen has the menu tile (opening nothing until CR2) and wordmark on the left, the Updates bell with its unread dot on the right, and the title below; Spaces and the avatar button are gone. `K.gold` and `K.limeLight` added. "Learn together" renamed **Flock talk** everywhere it's shown (`flock.space.learn`; the slug stays `learn`), with its new line and empty state, the tests and CLAUDE.md updated to match, and "Learn together" in the guidelines text (the walk-through's `src/flock/guidelines/content.ts`, once merged) changed too. Spec §1, §2, "Flock talk, the catch-all space".
 - **Size:** M
 - **Depends on:** nothing
 - **Overnight alone:** yes
@@ -142,34 +142,28 @@ Spec: [`docs/specs/community-navigation-redesign.md`](specs/community-navigation
 - **Overnight alone:** yes
 - **Needs Brittany:** merge (it touches shared care code).
 
-### CR11 Community guidelines page
-- **Mockup:** Final-10-Guidelines
-- **Done means:** `/flock/guidelines` as a back-arrow page with the intro, five expandable cards, Report something and the contact line, words from `src/lib/flockGuidelines.ts`: the mockup's placeholder text, or Brittany's final text if it has landed (then with the version bumped in both places). Spec §9.
-- **Size:** S
-- **Depends on:** CR1; CR13 for the "Report a member" row (until then the sheet has the other two rows)
-- **Overnight alone:** yes
-- **Needs Brittany:** merge, and the placeholder copy read in the review queue. Placeholder must be replaced before opening (opening checklist).
+### CR11 Community guidelines page (replaced)
+- **Mockup:** Final-10-Guidelines is superseded by the walk-through's guidelines page.
+- **Status:** Replaced by the guidelines walk-through (Brittany, Nov 28, 2026): a separate session is building the three-screen walk-through at `/flock/agree` and the full guidelines page with her final text (branch `flock-guidelines-walkthrough`, mockups `docs/mockups/flock-guidelines-agreement/`, not yet in a PR). Don't build this item; when that PR merges, move it to Done with that PR's number.
+- **Overnight alone:** no (replaced)
 
-### CR12 Guidelines agreement screen
-- **Mockup:** Final-11-Agreement
-- **Done means:** first-time joiners pick a chapter and confirm 18+, then see the agreement screen; re-agreeing after a version bump goes straight to it; its one button, "I agree, take me to the Flock", records the agreement (version and time, already stored) and opens the Flock; nothing in the community is reachable before it; the zero-tolerance line is there; admins can preview both screens at `/flock/join?preview=1` without recording anything. Spec §10.
-- **Size:** M
-- **Depends on:** CR11
-- **Overnight alone:** yes
-- **Needs Brittany:** merge (it's the join flow), and the placeholder copy read.
+### CR12 Guidelines agreement screen (replaced)
+- **Mockup:** Final-11-Agreement is superseded by `docs/mockups/flock-guidelines-agreement/` 01–03 (the three-screen walk-through).
+- **Status:** Replaced by the guidelines walk-through (Brittany, Nov 28, 2026): a separate session is building the three-screen walk-through at `/flock/agree` and the full guidelines page with her final text (branch `flock-guidelines-walkthrough`, mockups `docs/mockups/flock-guidelines-agreement/`, not yet in a PR). Don't build this item; when that PR merges, move it to Done with that PR's number. One open point for that work: there's already an agreement record (`flock_agreements`, the join step's "I agree" checkbox, version "2026-12"), so a member shouldn't have to agree twice or carry two versions.
+- **Overnight alone:** no (replaced)
 
 ### CR13 Post options: report and block, and report a member
 - **Mockup:** Final-08-PostOptions
 - **Done means:** a ··· button on every post and comment opens one Post options sheet: Report this post (or comment), Report this member, Block this member (red), and the line under them; on your own, Edit and Delete instead; admin tools kept below for admins. `flock_report` accepts subject type `member` (constraint and allowed list rebuilt from their live definitions); "Report [name]" also on member profiles and chapter Members rows; member reports appear in `/admin/review` → Reports and never hide anything on their own. Pinned in `supabase/checks/flock_moderation_checks.sql` and `e2e/flock.shell.ts`. Spec §6b.
 - **Size:** M
 - **Depends on:** nothing (the Feed's ··· from CR5 switches to this sheet when both are in)
-- **Overnight alone:** yes
-- **Needs Brittany:** merge only.
+- **Overnight alone:** no (waits on Brittany's choice of design)
+- **Needs Brittany:** a choice between this design (Final-08: "Report this post", "Report this member", "Block this member") and the walk-through's post options, flag sheet and flag sent (`docs/mockups/flock-guidelines-agreement/` 04–06, built in that session's next step). Whichever she picks, members must be able to report posts and members and block members (Apple 1.2), and there's one sheet, not two.
 
 ### CR14 Dutch for the redesign
-- **Done means:** every string added by CR1–CR13 has Dutch in `src/locales/nl.jsonc`, in the same voice as the Join screen's Dutch (#575). Placeholder guidelines copy waits for the final English.
+- **Done means:** every string added by CR1–CR10 and CR13 has Dutch in `src/locales/nl.jsonc`, in the same voice as the Join screen's Dutch (#575). Placeholder guidelines copy waits for the final English.
 - **Size:** S
-- **Depends on:** CR1–CR13
+- **Depends on:** CR1–CR10, CR13
 - **Overnight alone:** yes
 - **Needs Brittany:** a native speaker's read; merge on her OK.
 
@@ -258,7 +252,7 @@ The launch PR itself (1.18) is already merged dark. What's left before opening i
 3. Check that the founding, gift and redeem pages now say "The Flock is free for everyone until {date}.", that the membership screen shows the end date, and that the founding page's "all 50 claimed" box follows opening day. Emails don't read the settings: check their wording by hand.
 4. **Dry run on production** with admin accounts: join → post → journey → report → block → kill switch, on web, iPhone, iPad and Duo.
 5. **Name reviewers** for `/admin/review`.
-6. **Final community guidelines in place:** the placeholder guidelines and agreement copy (CR11, CR12) replaced with Brittany's final text, and `FLOCK_GUIDELINES_VERSION` and `private.flock_guidelines_version()` bumped together.
+6. **Community guidelines walk-through merged:** Brittany's final guidelines are live through the walk-through (`/flock/agree`, replacing CR11 and CR12), and only one guidelines version is in use, so members agree once.
 7. **Code freeze:** no merges for the days around opening, apart from fixes Brittany approves.
 8. Brittany drafts the opening emails in Brevo and updates the website (Webflow). Nothing is scheduled to send on its own.
 9. **Open:** switch on 1.18 with `select public.admin_set_flock_members_open(true);` (opening day from step 2 must be set first; `false` turns it off again and members keep their memberships). Then check the free-user regression check and save-error alerts that morning.
