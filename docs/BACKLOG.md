@@ -60,7 +60,7 @@ Where these items came from, with the detail behind each: `docs/flock/opening-sc
 
 **Community navigation redesign (CR1–CR14).**
 
-Spec: [`docs/specs/community-navigation-redesign.md`](specs/community-navigation-redesign.md). Approved mockups: [`docs/specs/mockups/community-redesign-mockups.html`](specs/mockups/community-redesign-mockups.html) (screens Final-01 to Final-11). Build in this order. Match the mockups visually but build with the existing components and `K` tokens, never the mockup HTML; names, counts and bracketed titles in them are samples. Each PR shows its screen next to the mockup. Everything is behind `flock_enabled()` (admins only) except CR10, which adds one switch to the care side's moment sheet under the shared-code rule. Every item lists its new copy in the review queue; CR11 and CR12 are replaced by the separate guidelines walk-through, and CR13 waits on Brittany's choice of post options design.
+Spec: [`docs/specs/community-navigation-redesign.md`](specs/community-navigation-redesign.md). Approved mockups: [`docs/specs/mockups/community-redesign-mockups.html`](specs/mockups/community-redesign-mockups.html) (screens Final-01 to Final-11). Build in this order. Match the mockups visually but build with the existing components and `K` tokens, never the mockup HTML; names, counts and bracketed titles in them are samples. Each PR shows its screen next to the mockup. Everything is behind `flock_enabled()` (admins only) except CR10, which adds one switch to the care side's moment sheet under the shared-code rule. Every item lists its new copy in the review queue; CR11 and CR12 are replaced by the separate guidelines walk-through, and so is CR13: Brittany chose flagging, built from the walk-through's mockups 04–06.
 
 ### CR1 Community bottom bar and header
 - **Mockup:** Final-01-Feed (header and bar), Final-06-Library (header)
@@ -96,7 +96,7 @@ Spec: [`docs/specs/community-navigation-redesign.md`](specs/community-navigation
 
 ### CR5 Feed: From the spaces
 - **Mockup:** Final-01-Feed (cards)
-- **Done means:** Feed's space chips and the compose prompt are gone; a selected space shows as the title; "From the spaces" with compact cards ("[Space] · [time]", 3-line body, 92px thumbnail with "+N", Great job and Comment, a ··· button that opens today's menu until CR13). Spec §2 (space title), §4.3.
+- **Done means:** Feed's space chips and the compose prompt are gone; a selected space shows as the title; "From the spaces" with compact cards ("[Space] · [time]", 3-line body, 92px thumbnail with "+N", Great job and Comment, a ··· button that opens today's menu until the flag sheet exists). Spec §2 (space title), §4.3.
 - **Size:** M
 - **Depends on:** CR2 (the menu is how a space is picked once the chips go)
 - **Overnight alone:** yes
@@ -152,18 +152,16 @@ Spec: [`docs/specs/community-navigation-redesign.md`](specs/community-navigation
 - **Status:** Replaced by the guidelines walk-through (Brittany, Nov 28, 2026): a separate session is building the three-screen walk-through at `/flock/agree` and the full guidelines page with her final text (branch `flock-guidelines-walkthrough`, mockups `docs/mockups/flock-guidelines-agreement/`, not yet in a PR). Don't build this item; when that PR merges, move it to Done with that PR's number. One open point for that work: there's already an agreement record (`flock_agreements`, the join step's "I agree" checkbox, version "2026-12"), so a member shouldn't have to agree twice or carry two versions.
 - **Overnight alone:** no (replaced)
 
-### CR13 Post options: report and block, and report a member
-- **Mockup:** Final-08-PostOptions
-- **Done means:** a ··· button on every post and comment opens one Post options sheet: Report this post (or comment), Report this member, Block this member (red), and the line under them; on your own, Edit and Delete instead; admin tools kept below for admins. `flock_report` accepts subject type `member` (constraint and allowed list rebuilt from their live definitions); "Report [name]" also on member profiles and chapter Members rows; member reports appear in `/admin/review` → Reports and never hide anything on their own. Pinned in `supabase/checks/flock_moderation_checks.sql` and `e2e/flock.shell.ts`. Spec §6b.
-- **Size:** M
-- **Depends on:** nothing (the Feed's ··· from CR5 switches to this sheet when both are in)
-- **Overnight alone:** no (waits on Brittany's choice of design)
-- **Needs Brittany:** a choice between this design (Final-08: "Report this post", "Report this member", "Block this member") and the walk-through's post options, flag sheet and flag sent (`docs/mockups/flock-guidelines-agreement/` 04–06, built in that session's next step). Whichever she picks, members must be able to report posts and members and block members (Apple 1.2), and there's one sheet, not two.
+### CR13 Post options: flag and block (replaced)
+- **Mockup:** Final-08-PostOptions is superseded by `docs/mockups/flock-guidelines-agreement/` 04–06 (post options, flag sheet, flag sent), from the guidelines walk-through work.
+- **Status:** Brittany chose **flag** (Nov 28, 2026). Members flag a post or comment (Harmful or unkind · Goes against Kya care standards · Spam or selling · Something else, with an optional note) and block its author; on their own posts they get Edit and Delete. The walk-through's next step builds this from mockups 04–06, so the hourly runs don't build it. When that PR merges, move this item to Done with its number. If Brittany would rather the hourly runs build it, she'll switch this item back to "Overnight alone: yes" with those mockups as its design.
+- **Apple 1.2:** met by flagging content and blocking members. "Report a member" from Final-08 isn't in the chosen design.
+- **Overnight alone:** no (replaced)
 
 ### CR14 Dutch for the redesign
-- **Done means:** every string added by CR1–CR10 and CR13 has Dutch in `src/locales/nl.jsonc`, in the same voice as the Join screen's Dutch (#575). Placeholder guidelines copy waits for the final English.
+- **Done means:** every string added by CR1–CR10 has Dutch in `src/locales/nl.jsonc`, in the same voice as the Join screen's Dutch (#575). Placeholder guidelines copy waits for the final English.
 - **Size:** S
-- **Depends on:** CR1–CR10, CR13
+- **Depends on:** CR1–CR10
 - **Overnight alone:** yes
 - **Needs Brittany:** a native speaker's read; merge on her OK.
 
