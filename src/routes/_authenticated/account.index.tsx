@@ -8,7 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { getLocalUser } from "@/integrations/supabase/currentUser";
 import { deleteMyAccount } from "@/lib/account.functions";
 import { APP_VERSION } from "@/lib/version";
-import { ShieldAlert, Bell, Smartphone, Lock, Archive, Users, Flower2, Languages, Check, Globe } from "lucide-react";
+import { ShieldAlert, Bell, Smartphone, Lock, Archive, Users, Flower2, Languages, Check, Globe, MapPin } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { useAppSurface } from "@/lib/appSurface";
 import {
@@ -33,6 +33,9 @@ import { timeZoneRowLabel } from "@/lib/sitTimeZoneNames";
 import { z } from "zod";
 import { useDuoMode } from "@/lib/duo";
 import { AccountDuo } from "@/components/duo/AccountDuo";
+import { useCareFeature } from "@/lib/careFeatures";
+import { useHomePostcode } from "@/lib/homePostcode";
+import { HomePostcodeSheet } from "@/components/HomePostcodeSheet";
 
 // Each language is named in itself, never translated: someone looking for
 // Nederlands has to recognise it whatever language the app is showing.
@@ -116,6 +119,12 @@ function AccountPage({ openDelete = false }: { openDelete?: boolean }) {
     },
   });
   const [timeZoneOpen, setTimeZoneOpen] = useState(false);
+
+  // Home ZIP or postcode, for Home's weather cards (backlog D2.2): only while
+  // the `weather_cards` switch is on; off, the row isn't there and nothing is read.
+  const weatherOn = useCareFeature("weather_cards") === true;
+  const { data: homePostcode = null } = useHomePostcode(userId, weatherOn);
+  const [postcodeOpen, setPostcodeOpen] = useState(false);
 
   const [editOpen, setEditOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(openDelete);
@@ -272,6 +281,7 @@ function AccountPage({ openDelete = false }: { openDelete?: boolean }) {
               {row(<Lock className="size-5" />, t("account.passwordSignIn", "Password & sign-in"), signInLine || undefined, () => navigate({ to: "/account/security" }))}
               {OWNER_I18N_ENABLED && row(<Languages className="size-5" />, t("account.language", "Language"), locale ? LANGUAGE_NAMES[locale] : t("account.sameAsPhone", "Same as your phone"), () => setLanguageOpen(true))}
               {row(<Globe className="size-5" />, t("account.timeZone", "Time zone"), timeZone ? timeZoneRowLabel(timeZone, i18n.language) : t("account.timeZoneNotSet", "Not set yet"), () => setTimeZoneOpen(true))}
+              {weatherOn && row(<MapPin className="size-5" />, t("account.homePostcode", "Home ZIP or postcode"), homePostcode ? homePostcode.postcode : t("account.timeZoneNotSet", "Not set yet"), () => setPostcodeOpen(true))}
               {row(<Archive className="size-5" />, t("account.birdsRehomed", "Birds you've helped rehome"), t("account.birdsRehomedDetail", "Birds you've handed off to new owners"), () => navigate({ to: "/past-birds" }), { last: !hasRemembering })}
               {/* Remembering — memorials for birds that have passed. Shown only
                   when there is someone to remember; visited by choice, no count. */}
@@ -302,6 +312,9 @@ function AccountPage({ openDelete = false }: { openDelete?: boolean }) {
       )}
       {timeZoneOpen && (
         <TimeZoneSheet userId={userId} current={timeZone} onClose={() => setTimeZoneOpen(false)} />
+      )}
+      {postcodeOpen && (
+        <HomePostcodeSheet userId={userId} current={homePostcode} onClose={() => setPostcodeOpen(false)} />
       )}
       {editOpen && (
         <EditIdentityModal

@@ -141,7 +141,8 @@ check("the date is read in an effect, never during render", () => {
   const firstDateRead = card.indexOf("localDateISO()");
   assert.ok(firstDateRead > effect, "localDateISO() is called before the effect");
   assert.ok(!/new Date\(/.test(card), "the card reads the clock outside localDateISO");
-  assert.match(card, /if \(enabled !== true \|\| !day \|\| !userId \|\| dismissal\.isPending\) return null;/);
+  assert.match(card, /if \(!day \|\| !userId\) return null;/);
+  assert.match(card, /if \(enabled !== true \|\| dismissal\.isPending\) return prompt;/);
 });
 check("the card reads its own switch and never the Flock's Today's idea", () => {
   assert.match(card, /useCareFeature\("today_cards"\)/);
@@ -149,15 +150,16 @@ check("the card reads its own switch and never the Flock's Today's idea", () => 
 });
 check("Home shows the card outside the onboarding tour's demo", () => {
   const home = readFileSync("src/routes/_authenticated/dashboard.tsx", "utf8");
-  assert.match(home, /\{!demo && <SeasonalTodayCard userId=\{me\?\.id\} homeTimeZone=\{me\?\.timeZone\} \/>\}/);
+  assert.match(home, /\{!demo && <SeasonalTodayCard userId=\{me\?\.id\} homeTimeZone=\{me\?\.timeZone\} birdNames=\{ownedBirds\.map\(\(b\) => b\.name\)\} \/>\}/);
 });
 check("the care switches start off in the code, the migrations and the database check", () => {
   const expected = Object.fromEntries(CARE_FEATURES.map((f) => [f.feature, f.startsAt]));
-  assert.deepEqual(expected, { today_cards: "off", care_badges: "off" });
+  assert.deepEqual(expected, { today_cards: "off", care_badges: "off", weather_cards: "off" });
   // Each switch is seeded by the migration that brought its feature.
   const migration = [
     "supabase/migrations/20261123100000_care_features.sql",
     "supabase/migrations/20261128160000_care_badges.sql",
+    "supabase/migrations/20261128190000_weather_cards.sql",
   ].map((f) => readFileSync(f, "utf8")).join("\n");
   for (const f of CARE_FEATURES) {
     assert.match(migration, new RegExp(`\\('${f.feature}', '${f.startsAt}',`), `migration seeds ${f.feature}`);
