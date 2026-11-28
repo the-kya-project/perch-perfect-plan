@@ -4,8 +4,8 @@
 //
 // The database decides everything (20261122100000_flock_open_to_members.sql):
 // flock_enabled() says whether the door is open to you, flock_my_access()
-// where you stand, flock_agree() records your chapter, "I'm 18 or older" and
-// the guidelines, and flock_join() (build B) gives you the free season unless
+// where you stand, flock_agree() records your chapter and "I'm 18 or older"
+// (the guidelines themselves are agreed in the walk-through, src/flock/guidelines/), and flock_join() (build B) gives you the free season unless
 // you already have a membership (founders, chapter leads, members).
 import { supabase } from "@/integrations/supabase/client";
 import { FLOCK_GUIDELINES_VERSION } from "./flockGuidelines";
@@ -74,11 +74,9 @@ export async function agreeAndJoin(input: {
   region: string;
   displayName: string;
   adult: boolean;
-  agreed: boolean;
   source: JoinSource | string | undefined;
 }): Promise<JoinResult> {
   if (!input.adult) throw new Error("adult_required");
-  if (!input.agreed) throw new Error("guidelines_required");
   const source = joinSource(input.source);
   const a = await sb.rpc("flock_agree", {
     p_region: input.region,

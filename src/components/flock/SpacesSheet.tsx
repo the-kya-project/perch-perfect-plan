@@ -1,7 +1,7 @@
 import { useEffect, useId, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
 import { createPortal } from "react-dom";
 import { useNavigate } from "@tanstack/react-router";
-import { Sprout, GraduationCap, HandHeart, ChevronRight, X } from "lucide-react";
+import { Sprout, GraduationCap, HandHeart, ChevronRight, X, ScrollText } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import type { TFunction } from "i18next";
 import { K, KyaHeading, isTopmostDialog } from "@/components/kya";
@@ -124,6 +124,24 @@ export function SpacesSheet({ onClose }: { onClose: () => void }) {
           </div>
         </div>
         <ul className="m-0 flex list-none flex-col gap-2.5 overflow-y-auto overscroll-contain px-5 pb-[max(env(safe-area-inset-bottom),24px)] pt-4">
+          {/* The community guidelines sit at the top until the side-menu
+              drawer from the new navigation is built (then they move there,
+              above Feed: docs/REVIEW_QUEUE.md). */}
+          <li>
+            <button
+              type="button"
+              data-testid="spaces-guidelines"
+              onClick={() => { onClose(); void navigate({ to: "/flock/guidelines" }); }}
+              className="flex min-h-[56px] w-full items-center gap-3 rounded-[18px] border px-4 py-3 text-left active:scale-[0.99]"
+              style={{ borderColor: K.line, background: "#ffffff" }}
+            >
+              <span className="grid size-10 shrink-0 place-items-center rounded-full" style={{ background: K.mist, color: K.forest }}>
+                <ScrollText className="size-5" aria-hidden="true" />
+              </span>
+              <span className="min-w-0 flex-1 text-[16px] font-[700]">{t("flock.guidelines.title", "Community guidelines")}</span>
+              <ChevronRight className="size-5 shrink-0" style={{ color: K.moss }} aria-hidden="true" />
+            </button>
+          </li>
           {FLOCK_SPACES.map((s) => {
             const Icon = SPACE_ICONS[s];
             return (

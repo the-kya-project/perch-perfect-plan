@@ -4,8 +4,8 @@
 // members switch is off (merged state). This one runs after it, with the
 // workflow having turned the switch on for staging (opening day set, members
 // open) for this run only, and checks what the same free account sees then:
-// the Community button, the "Part of the Flock" sheet with no prices, the
-// guidelines with the contact line, the join step's chapter, 18+ and agree,
+// the Community button, the guidelines walk-through, the "Part of the Flock"
+// sheet with no prices, the join step's chapter, 18+ and agree,
 // and that joining lets them in (or tells them when it opens). The workflow
 // turns staging back afterwards, whatever happens here.
 import { test, expect, type BrowserContext, type Page } from "@playwright/test";
@@ -37,9 +37,21 @@ test("1. switch on: the gate says yes, and Home has a Community button", async (
   await expect(page.locator('[data-coach="owner-tab-flock"]').first()).toBeVisible();
 });
 
-test("2. Community opens the join step with the Part of the Flock sheet, and no prices", async () => {
+test("2. Community opens the guidelines walk-through, then the join step with the Part of the Flock sheet, and no prices", async () => {
   await page.locator('[data-coach="owner-tab-flock"]').first().click();
-  await page.waitForURL(/\/flock\/join/, { timeout: 45_000 });
+  await page.waitForURL(/\/flock\/(agree|join)/, { timeout: 45_000 });
+  // The walk-through (20261128180000) comes first once staging has the
+  // migration. Before that (a preview of the PR that adds it) the app finds no
+  // agreement function and goes straight to the join step, as before.
+  if (/\/flock\/agree/.test(page.url())) {
+    await expect(page.getByTestId("walkthrough-step-1")).toBeVisible();
+    await page.getByTestId("walkthrough-next").click();
+    await expect(page.getByTestId("walkthrough-step-2")).toBeVisible();
+    await page.getByTestId("walkthrough-next").click();
+    await expect(page.getByTestId("walkthrough-promises").locator("li")).toHaveCount(6);
+    await page.getByTestId("walkthrough-agree").click();
+    await page.waitForURL(/\/flock\/join/, { timeout: 45_000 });
+  }
   const sheet = page.getByTestId("join-flock-sheet");
   await expect(sheet).toBeVisible();
   await expect(page.getByText("Part of the Flock", { exact: true })).toBeVisible();
@@ -48,17 +60,14 @@ test("2. Community opens the join step with the Part of the Flock sheet, and no 
   await expect(sheet).toHaveCount(0);
 });
 
-test("3. the guidelines and the contact line; Join waits for a chapter, 18+ and agree", async () => {
-  const g = page.getByTestId("flock-guidelines");
-  await expect(g.getByRole("heading", { name: "Welcome to the Flock" })).toBeVisible();
-  await expect(g).toContainText("Be kind. Everyone here is learning");
+test("3. the join step: a link to the guidelines (agreed in the walk-through); Join waits for a chapter and 18+", async () => {
+  await expect(page.getByTestId("join-guidelines-link")).toBeVisible();
+  await expect(page.getByTestId("join-agree")).toHaveCount(0);
   await expect(page.getByTestId("join-adult")).toBeVisible();
-  await expect(g.getByTestId("flock-contact-line")).toContainText("brittany@thekyaproject.com");
   const submit = page.getByTestId("join-submit");
   await expect(submit).toBeDisabled();
   await page.getByRole("button", { name: "Choose" }).click();
   await page.getByRole("dialog").getByText("Great Lakes").first().click();
-  await page.getByTestId("join-agree").check();
   await expect(submit).toBeDisabled();
   await page.getByTestId("join-adult").check();
   await expect(submit).toBeEnabled();
