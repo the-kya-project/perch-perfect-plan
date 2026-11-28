@@ -59,6 +59,7 @@ import { Route as AuthenticatedAdminReviewRouteImport } from './routes/_authenti
 import { Route as AuthenticatedBirdsBirdIdRouteImport } from './routes/_authenticated/birds/$birdId'
 import { Route as AuthenticatedBirdsNewRouteImport } from './routes/_authenticated/birds/new'
 import { Route as AuthenticatedFlockIndexRouteImport } from './routes/_authenticated/flock.index'
+import { Route as AuthenticatedFlockAgreeRouteImport } from './routes/_authenticated/flock.agree'
 import { Route as AuthenticatedFlockChapterRouteImport } from './routes/_authenticated/flock.chapter'
 import { Route as AuthenticatedFlockFoundersRouteImport } from './routes/_authenticated/flock.founders'
 import { Route as AuthenticatedFlockGuidelinesRouteImport } from './routes/_authenticated/flock.guidelines'
@@ -431,6 +432,11 @@ const AuthenticatedBirdsNewRoute = AuthenticatedBirdsNewRouteImport.update({
 const AuthenticatedFlockIndexRoute = AuthenticatedFlockIndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => AuthenticatedFlockRoute,
+} as any)
+const AuthenticatedFlockAgreeRoute = AuthenticatedFlockAgreeRouteImport.update({
+  id: '/agree',
+  path: '/agree',
   getParentRoute: () => AuthenticatedFlockRoute,
 } as any)
 const AuthenticatedFlockChapterRoute =
@@ -1132,6 +1138,7 @@ export interface FileRoutesByFullPath {
   '/admin/review': typeof AuthenticatedAdminReviewRoute
   '/birds/$birdId': typeof AuthenticatedBirdsBirdIdRouteWithChildren
   '/birds/new': typeof AuthenticatedBirdsNewRoute
+  '/flock/agree': typeof AuthenticatedFlockAgreeRoute
   '/flock/chapter': typeof AuthenticatedFlockChapterRoute
   '/flock/founders': typeof AuthenticatedFlockFoundersRoute
   '/flock/guidelines': typeof AuthenticatedFlockGuidelinesRoute
@@ -1289,6 +1296,7 @@ export interface FileRoutesByTo {
   '/admin/rescues': typeof AuthenticatedAdminRescuesRoute
   '/admin/review': typeof AuthenticatedAdminReviewRoute
   '/birds/new': typeof AuthenticatedBirdsNewRoute
+  '/flock/agree': typeof AuthenticatedFlockAgreeRoute
   '/flock/chapter': typeof AuthenticatedFlockChapterRoute
   '/flock/founders': typeof AuthenticatedFlockFoundersRoute
   '/flock/guidelines': typeof AuthenticatedFlockGuidelinesRoute
@@ -1453,6 +1461,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/review': typeof AuthenticatedAdminReviewRoute
   '/_authenticated/birds/$birdId': typeof AuthenticatedBirdsBirdIdRouteWithChildren
   '/_authenticated/birds/new': typeof AuthenticatedBirdsNewRoute
+  '/_authenticated/flock/agree': typeof AuthenticatedFlockAgreeRoute
   '/_authenticated/flock/chapter': typeof AuthenticatedFlockChapterRoute
   '/_authenticated/flock/founders': typeof AuthenticatedFlockFoundersRoute
   '/_authenticated/flock/guidelines': typeof AuthenticatedFlockGuidelinesRoute
@@ -1618,6 +1627,7 @@ export interface FileRouteTypes {
     | '/admin/review'
     | '/birds/$birdId'
     | '/birds/new'
+    | '/flock/agree'
     | '/flock/chapter'
     | '/flock/founders'
     | '/flock/guidelines'
@@ -1775,6 +1785,7 @@ export interface FileRouteTypes {
     | '/admin/rescues'
     | '/admin/review'
     | '/birds/new'
+    | '/flock/agree'
     | '/flock/chapter'
     | '/flock/founders'
     | '/flock/guidelines'
@@ -1938,6 +1949,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/review'
     | '/_authenticated/birds/$birdId'
     | '/_authenticated/birds/new'
+    | '/_authenticated/flock/agree'
     | '/_authenticated/flock/chapter'
     | '/_authenticated/flock/founders'
     | '/_authenticated/flock/guidelines'
@@ -2450,6 +2462,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/flock/'
       preLoaderRoute: typeof AuthenticatedFlockIndexRouteImport
+      parentRoute: typeof AuthenticatedFlockRoute
+    }
+    '/_authenticated/flock/agree': {
+      id: '/_authenticated/flock/agree'
+      path: '/agree'
+      fullPath: '/flock/agree'
+      preLoaderRoute: typeof AuthenticatedFlockAgreeRouteImport
       parentRoute: typeof AuthenticatedFlockRoute
     }
     '/_authenticated/flock/chapter': {
@@ -3255,6 +3274,7 @@ const AuthenticatedAccountRouteWithChildren =
   AuthenticatedAccountRoute._addFileChildren(AuthenticatedAccountRouteChildren)
 
 interface AuthenticatedFlockRouteChildren {
+  AuthenticatedFlockAgreeRoute: typeof AuthenticatedFlockAgreeRoute
   AuthenticatedFlockChapterRoute: typeof AuthenticatedFlockChapterRoute
   AuthenticatedFlockFoundersRoute: typeof AuthenticatedFlockFoundersRoute
   AuthenticatedFlockGuidelinesRoute: typeof AuthenticatedFlockGuidelinesRoute
@@ -3306,6 +3326,7 @@ interface AuthenticatedFlockRouteChildren {
 }
 
 const AuthenticatedFlockRouteChildren: AuthenticatedFlockRouteChildren = {
+  AuthenticatedFlockAgreeRoute: AuthenticatedFlockAgreeRoute,
   AuthenticatedFlockChapterRoute: AuthenticatedFlockChapterRoute,
   AuthenticatedFlockFoundersRoute: AuthenticatedFlockFoundersRoute,
   AuthenticatedFlockGuidelinesRoute: AuthenticatedFlockGuidelinesRoute,

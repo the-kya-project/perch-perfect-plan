@@ -4,9 +4,11 @@ import { KyaCard } from "@/components/kya";
 import { FlockSubPage } from "@/components/flock/FlockSubPage";
 import { FlockGuidelinesText } from "@/components/flock/FlockGuidelines";
 
-// The community guidelines, word for word as on the join step, for members to
-// find again (Flock settings → Community guidelines). The contact line sits at
-// the bottom. Open to someone mid-join too, from the join step's link.
+// The community guidelines in full (src/flock/guidelines/content.ts), for
+// members to find again anytime: the top of the Spaces sheet, and Flock
+// settings → Community guidelines. "Questions? Write to …" sits at the bottom.
+// Open before agreeing too: the walk-through's "Read the full guidelines →"
+// opens it, and Back returns to that screen.
 export const Route = createFileRoute("/_authenticated/flock/guidelines")({
   component: FlockGuidelinesPage,
 });
@@ -16,8 +18,8 @@ function FlockGuidelinesPage() {
   return (
     <FlockSubPage title={t("flock.guidelines.title", "Community guidelines")}
       line={t("flock.guidelines.line", "What everyone in the Flock agrees to.")}
-      fallback="/flock/you">
-      <KyaCard className="p-5">
+      fallback="/flock">
+      <KyaCard className="p-5 sm:p-6">
         <FlockGuidelinesText />
       </KyaCard>
     </FlockSubPage>

@@ -25,6 +25,12 @@ export default {
     "!src/**/*.server.ts",
     "!src/lib/emailTemplates.ts",
     "!src/lib/flockClub.ts",
+    // The community guidelines' words (walk-through and full text, ~20 KB)
+    // stay in their own lazily loaded code: the shared catalog loads with the
+    // app for everyone, and the main bundle sits just under its 2 MB
+    // precache limit. Their English is the t() default; a Dutch version needs
+    // its own namespace (docs/REVIEW_QUEUE.md).
+    "!src/flock/guidelines/content.ts",
     "!src/lib/flockEmails.ts",
     "!src/lib/appLaunchEmail.ts",
     "!src/lib/sitter.functions.ts",

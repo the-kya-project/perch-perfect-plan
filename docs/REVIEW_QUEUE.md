@@ -19,6 +19,30 @@ Format:
   - After: "<new wording>"
 ```
 
+### [#PRNUM](https://github.com/the-kya-project/perch-perfect-plan/pull/PRNUM) · Community guidelines walk-through and guidelines page · **held for Brittany**
+All new member-facing wording, word for word from the approved mockups and the prompt (source: `src/flock/guidelines/content.ts`). English only so far: Dutch shows the English until a translation pass.
+- **Where:** walk-through screen 1 (`/flock/agree`)
+  - New: "1 of 3" (and "2 of 3", "3 of 3"); "Welcome to the Flock"; "Before you join, here's a quick look at what we're all about."
+  - New: "Bridging research and life with birds"; "Researchers"; "Conservationists"; "Parrot owners"; "The Flock brings these communities together. Our care recommendations come from avian research and veterinary science, and our mission is a place where all of us collaborate."
+  - New: "What we advocate for"; "A varied, fresh diet" / "We advocate for fresh foods and a quality pellet."; "Fully flighted birds" / "Research shows how beneficial flight is for birds, so we advocate for keeping them flighted whenever possible."; "Good husbandry" / "That means an appropriately sized cage, daily enrichment, plenty of foraging, and time out of the cage."; "Positive reinforcement training" / "Research shows it's the best way to train and bond with a bird. We don't advocate for dominance or punishment-based methods."
+  - New: "Most importantly, we're building a bigger table" / "We separate the issue from the person. We're all still learning, so wherever you and your bird are today, you're welcome here."; "Next"
+- **Where:** walk-through screen 2 (`/flock/agree?step=2`)
+  - New: "How we look after each other"; "This is what makes the Flock different."; "Back" (the arrow's label)
+  - New: "We give feedback only when it's asked for" / "If someone asks, "What do you think of my setup?", share kind, honest ideas. If someone just shares a photo of their bird, celebrate the bird, and please don't pile on in the comments."
+  - New: "We flag it instead of calling it out" / "If something someone shares worries you, tap flag. The Kya team reviews every single one and reaches out privately, so nobody gets corrected in front of everyone."
+  - New: "Health questions go to your vet" / "We never give medical advice here. You're welcome to share what's worked for you, but none of us are avian vets, and posts that give medical advice will be taken down."
+  - New: "What you share stays here" / "We never feature your posts or photos anywhere else without asking you first."
+- **Where:** walk-through screen 3 (`/flock/agree?step=3`)
+  - New: "Our promises to each other"; "This is what every member agrees to before coming in."
+  - New, the six promises: "I'll be kind, and I'll give feedback only when someone asks for it." · "I'll flag anything that worries me instead of calling someone out." · "I'll follow science-based care and positive reinforcement training when I share." · "I'll take health questions to an avian vet." · "I won't sell, trade, or breed birds here." · "I understand that harassment and harmful content mean removal from the Flock."
+  - New: "Read the full guidelines →"; "I agree, take me to the Flock"; "Saving…"; "Questions? Write to brittany@thekyaproject.com"
+  - New (not in the mockups; the error when saving fails): "We couldn't save that just now. Check your connection and tap the button again."
+- **Where:** the Community guidelines page (`/flock/guidelines`) and the guidelines box on the join step
+  - Before: the six short guidelines ("Welcome to the Flock", "Be kind.", "Put the birds first.", "The Flock isn't your vet.", "No selling or spam.", "Share only what's yours.", "Meet up safely.", and the closing "If something feels wrong, you can report or block anyone…")
+  - After: the full text from the prompt, in four sections: "What we believe", "How the Flock works", "How we treat each other", "The rules" (every line in `fullGuidelines()`), with "Questions? Write to brittany@thekyaproject.com" as the footer.
+- **Where:** the Spaces sheet
+  - New: a "Community guidelines" row at the top, above the three spaces.
+
 ### [#579](https://github.com/the-kya-project/perch-perfect-plan/pull/579) · Chapter names in Dutch · **merged on Brittany's OK (Nov 28, 2026), not yet read by a native speaker**
 Chapter names were rows in the regions table, so they stayed English. The app now shows them in the reader's language wherever the Flock names a chapter (the picker, the Chapter tab, profiles, posts, events, pods, challenges, notifications, the review queue). State codes stay as they are. Not changed: the public `/founding` page (nothing else on it is Dutch yet) and the English-only `/admin/founding`.
 - **Where:** every chapter name in the Flock
@@ -1683,6 +1707,18 @@ Format:
 - **To change it:** <what would need to change>
 ```
 
+### [#PRNUM](https://github.com/the-kya-project/perch-perfect-plan/pull/PRNUM) · Community guidelines walk-through
+- **The walk-through and the join step's own checkbox both stay.** The join step (build C) already records "I agree to the community guidelines" in `flock_agreements` at version "2026-12". This PR adds the walk-through's separate record (`flock_guideline_agreements`, version 1) as specified, shows it first, and puts the new full text in the join step's guidelines box. So a new member agrees twice (walk-through, then the join step's checkbox). Retiring the join step's checkbox would change build C's database rule (`flock_join()` needs `flock_agreements`), so it's left for you to decide. The join version wasn't bumped: only admins have agreed so far.
+- **Posting is blocked by a trigger, not an INSERT policy.** App users have no write grant on posts, comments or journey updates; they write through SECURITY DEFINER functions that RLS never sees, so an INSERT policy would block nothing. A BEFORE INSERT trigger on `flock_posts` (every space, pod posts and challenge entries), `flock_comments` and `journey_updates` blocks every path instead. Sharing a journey with the Flock (`journeys.visibility` → community) needs it too, or updates posted while it was "Just me" would reach the Flock unagreed.
+- **"Just me" journeys and free co-carers are never checked,** so the care app's journeys work exactly as before for anyone outside the Flock. A household co-carer who isn't a Flock member can still post to a journey its owner shared (they can't agree: the Flock is closed to them).
+- **Admins see the walk-through too** (once, at version 1), since they're members. The server, SQL editor, seeds and scheduled jobs aren't blocked.
+- **Events are named `flock_walkthrough_viewed` (`step`) and `flock_guidelines_agreed` (`version`),** with the `flock_` prefix every Flock event has, so the "Flock stickiness" dashboard and its `internal` filter pick them up. Like every Flock event, they send only for members, admins and people whose membership starts on opening day; someone with no membership at all sends nothing.
+- **Screen 1 has no visible way out,** as in the mockup. Backing out is the system Back (or Escape), which returns to the care page they came from. If the iPhone app has no back gesture there, screen 1 may need a close button.
+- **Mockup vs. prompt:** section headings on screen 1 follow the mockup (no full stop: "Bridging research and life with birds", "What we advocate for", "Most importantly, we're building a bigger table"); the prompt wrote them with one.
+- **Before the migration reaches a database** (a preview on staging before merge), the app finds no agreement function and lets people through as before, rather than showing a button that can't save. The database then has no rule to enforce either; production gets both within a minute of merging.
+- **The guidelines' words aren't in the shared translation catalog** (`en.jsonc`). That catalog loads with the app for everyone, and the main bundle was 8 KB under its 2 MB precache limit; the ~20 KB of guidelines text pushed the build over. They live as English defaults in `src/flock/guidelines/content.ts`, which loads only with the walk-through and guidelines screens, so free users' bundle is 1.4 KB smaller than before (the old six guidelines left the catalog). Two follow-ups: a Dutch version needs its own namespace, and Dutch readers now see these screens (and the join step's guidelines box, which #575 had translated) in English; and the main bundle is close to the limit for every future copy change.
+- **The guidelines link sits at the top of the Spaces sheet for now.** The side-menu drawer from the new navigation isn't built yet; the link moves to the top of the drawer, above Feed, when it is.
+
 ### [#543](https://github.com/the-kya-project/perch-perfect-plan/pull/543) · 1.17 Promo codes for memberships
 - **Decision:** Codes are entered in Stripe Checkout's own "Add promotion code" field. No code box was added to the card step, and nothing in the app creates or lists codes; they're made in the Stripe Dashboard.
 - **Why:** gift Checkout already works this way, and an app field would need a new design.
@@ -2068,6 +2104,9 @@ Format:
 ### <PR link> · <item ID> <item title>
 - **Needs:** <the decision, approval or read, in one or two lines>
 ```
+
+### [#PRNUM](https://github.com/the-kya-project/perch-perfect-plan/pull/PRNUM) · Community guidelines walk-through and guidelines page
+- **Needs:** your approval to merge. It's behind the Flock gate (admins only today) and free users see nothing new, but it's a production database change (new table, new triggers on posts, comments and journeys), it replaces the guidelines' text, and you'll see the walk-through yourself once after it merges. Also decide: keep or retire the join step's own "I agree to the community guidelines" checkbox now that the walk-through records agreement (see Decisions).
 
 ### [#572](https://github.com/the-kya-project/perch-perfect-plan/pull/572) · 1.13b Badges: care badges free users can earn
 - **Needs:** your approval of the PR, after looking at the before-and-after screenshots. The run couldn't take them: Chromium won't start inside the hourly job's sandbox. On your Mac, in a copy of this branch: `npm run test:care-badges:screens` (builds, then saves them to `test-results/care-badges/`). "before-switch-off" is what free users get when this merges (no change); the "after-…" ones and "badges-screen" are what you'd see with `select public.admin_set_care_feature('care_badges', 'admins');`.
