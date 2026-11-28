@@ -51,7 +51,8 @@ import {
   RESCUE_LIMITS, RESCUE_MONTHS, adoptedLabel, adoptionProblem, cleanRescueCode, flockTodayIso as rescueToday, parseUseLimit, rescueCodeLooksValid,
   rescueErrorKind, rescueStep, type MyRescue,
 } from "@/lib/flockRescue";
-import { QUEUE_FILTERS, queueItemPlace, type QueueItem } from "@/lib/flockModeration";
+import { FLAG_REASONS, QUEUE_FILTERS, queueItemPlace, type QueueItem } from "@/lib/flockModeration";
+import { reasonLabel } from "@/components/flock/FlagSheets";
 import { PLACE_KINDS, PLACE_LIMITS, groupPlaces, telHref, updatedDay, websiteHref, type Place } from "@/lib/flockPlaces";
 import { VOTE_GUARANTEED_PCT, VOTE_LIMITS, choiceColor, cleanVote, emptyVoteDraft, isDonationVote, openProblems, rankedChoices, toLocalInput, topNames, voteDay, votesFor, type Vote } from "@/lib/flockVotes";
 import {
@@ -784,18 +785,32 @@ check("photos at their own shape: 4:5 to 1.91:1, never cropped inside, tall ones
   assert.equal(jpegSize(new Uint8Array([0x89, 0x50, 0x4e, 0x47])), null, "not a JPEG");
 });
 
-check("blocking menus: Block and Block and report on someone else's things only", () => {
+check("blocking menus: Block on someone else's things only", () => {
   const tt = ((k: string, d: string, o?: Record<string, string>) => d.replace("{{name}}", o?.name ?? "")) as unknown as Parameters<typeof blockActions>[0];
   const noop = () => undefined;
-  let a = blockActions(tt, { authorId: "u2", myId: "u1", name: "Alex R.", onBlock: noop, onBlockAndReport: noop });
-  assert.deepEqual(a.map((x) => [x.key, x.label]), [["block", "Block Alex R."], ["block-report", "Block and report"]]);
-  a = blockActions(tt, { authorId: "u2", myId: null, name: "Alex R.", onBlock: noop });
-  assert.deepEqual(a.map((x) => x.key), ["block"], "profiles, journeys and lists: Block only (nothing to report)");
+  const a = blockActions(tt, { authorId: "u2", myId: "u1", name: "Alex R.", onBlock: noop });
+  assert.deepEqual(a.map((x) => [x.key, x.label]), [["block", "Block Alex R."]]);
   assert.deepEqual(blockActions(tt, { authorId: "u1", myId: "u1", name: "Me", onBlock: noop }), [], "never on your own things");
   assert.deepEqual(blockActions(tt, { authorId: null, myId: "u1", name: "x", onBlock: noop }), [], "never without an author");
   assert.equal(blockName(tt, "  "), "this member");
   assert.equal(blockName(tt, null), "this member");
   assert.equal(blockName(tt, "Priya S."), "Priya S.");
+});
+
+check("flagging: the flag sheet's reasons match the database's, and old reasons still have names", () => {
+  assert.deepEqual(FLAG_REASONS, ["harmful", "care_standards", "spam", "other"]);
+  const sql = readFileSync("supabase/migrations/20261128220000_flock_flag_reasons.sql", "utf8");
+  for (const r of FLAG_REASONS) assert.ok(sql.includes(`'${r}'`), `migration accepts ${r}`);
+  assert.ok(/check \(reason in \('unkind', 'unsafe', 'spam', 'other', 'harmful', 'care_standards'\)\)/.test(sql), "old reasons stay valid");
+  const tt = ((k: string, d: string, o?: Record<string, string>) => d.replace("{{name}}", o?.name ?? "")) as unknown as Parameters<typeof reasonLabel>[0];
+  assert.deepEqual(FLAG_REASONS.map((r) => reasonLabel(tt, r)), ["Harmful or unkind", "Goes against Kya care standards", "Spam or selling", "Something else"]);
+  assert.equal(reasonLabel(tt, "unsafe"), "Unsafe advice for birds");
+  // One sheet: nothing uses the old report menu.
+  assert.ok(!existsSync("src/components/flock/ReportSheet.tsx"));
+  for (const f of ["src/components/flock/PostFeed.tsx", "src/components/flock/CommentThread.tsx", "src/routes/_authenticated/flock.journeys.$journeyId.index.tsx"]) {
+    const src = readFileSync(f, "utf8");
+    assert.ok(src.includes("ContentOptionsSheet") && !src.includes("Block and report"), `${f} uses the options sheet`);
+  }
 });
 
 check("founding members page: a spot shows as #n", () => {

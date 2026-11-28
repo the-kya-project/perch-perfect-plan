@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { createFileRoute, Link, useNavigate, useRouter } from "@tanstack/react-router";
 import { useCommentCounts } from "@/lib/flockPostData";
 import { Flag, X } from "lucide-react";
-import { ReportSheet } from "@/components/flock/ReportSheet";
+import { FlagSheet } from "@/components/flock/FlagSheets";
 import { useTranslation } from "react-i18next";
 import type { TFunction } from "i18next";
 import { K } from "@/components/kya";
@@ -109,7 +109,7 @@ function Story() {
           </span>
         </span>
         {access?.can_share && card && !card.is_mine && cur && (
-          <button type="button" onClick={() => setReporting(cur.update_id)} aria-label={t("flock.report.titleUpdate", "Report this update")} data-testid="story-report"
+          <button type="button" onClick={() => setReporting(cur.update_id)} aria-label={t("flock.flag.thisUpdate", "Flag this update")} data-testid="story-report"
             className="grid size-11 place-items-center rounded-full" style={{ color: K.paleGreen }}>
             <Flag className="size-4" aria-hidden="true" />
           </button>
@@ -160,7 +160,7 @@ function Story() {
           </button>
         )}
       </div>
-      {reporting && <ReportSheet type="journey_update" id={reporting} onClose={() => setReporting(null)} />}
+      {reporting && <FlagSheet type="journey_update" id={reporting} authorName={card?.owner_name} onClose={() => setReporting(null)} />}
     </div>
   );
 }

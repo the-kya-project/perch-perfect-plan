@@ -6,7 +6,7 @@ import type { TFunction } from "i18next";
 import { K, KyaBackRow, KyaBody, KyaHeader, KyaHeading, KyaPage, KyaPrimaryButton, KyaSheet, KyaTitle } from "@/components/kya";
 import { FlockChips } from "@/components/flock/FlockChips";
 import { postSpaceLabel, timeAgo } from "@/components/flock/PostParts";
-import { reasonLabel } from "@/components/flock/ReportSheet";
+import { reasonLabel } from "@/components/flock/FlagSheets";
 import { FLOCK_ENABLED_QUERY } from "@/lib/flock";
 import {
   QUEUE_FILTERS, queueItemPlace, resolveReport, reviewEvent, reviewPost, useCanReview, useInvalidateModeration, useReviewCounts,

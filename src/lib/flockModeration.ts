@@ -15,10 +15,17 @@ const asArray = <T,>(v: unknown): T[] => (Array.isArray(v) ? (v as T[]) : []);
 
 /** "journey" is a member skill (another member's own skill, 1.20c). */
 export type ReportSubject = "post" | "comment" | "journey_update" | "journey";
-export type ReportReason = "unkind" | "unsafe" | "spam" | "other";
-export const REPORT_REASONS: ReportReason[] = ["unkind", "unsafe", "spam", "other"];
+/** Every reason a stored flag can carry. "unkind" and "unsafe" are the old
+ *  report reasons: kept for existing flags (the review queue still names
+ *  them), never offered again (20261128220000_flock_flag_reasons.sql). */
+export type ReportReason = "harmful" | "care_standards" | "spam" | "other" | "unkind" | "unsafe";
+/** The flag sheet's reasons, in order (approved mockup 05). */
+export type FlagReason = "harmful" | "care_standards" | "spam" | "other";
+export const FLAG_REASONS: FlagReason[] = ["harmful", "care_standards", "spam", "other"];
 
-export async function report(type: ReportSubject, id: string, reason: ReportReason, note: string): Promise<void> {
+/** Send a flag to the Kya team (flock_report: private, once per person per
+ *  thing; enough open flags hide it until reviewed). */
+export async function report(type: ReportSubject, id: string, reason: FlagReason, note: string): Promise<void> {
   must(await sb.rpc("flock_report", { p_subject_type: type, p_subject_id: id, p_reason: reason, p_note: note.trim() || null }));
 }
 

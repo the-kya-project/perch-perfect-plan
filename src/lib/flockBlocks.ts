@@ -54,19 +54,17 @@ export function blockName(t: TFunction, name: string | null | undefined): string
 
 export type MenuAction = { key: string; label: string; danger?: boolean; onClick: () => void };
 
-/** The two actions every menu on someone else's thing gets: "Block {name}",
- *  and "Block and report" where the thing can be reported. Never on your own
- *  things, and never for a missing author. */
+/** "Block {name}" for a menu on someone else's thing (a chapter's Members
+ *  rows). Posts, comments and journeys use ContentOptionsSheet instead
+ *  (components/flock/FlagSheets.tsx). Never on your own things, and never for
+ *  a missing author. */
 export function blockActions(t: TFunction, opts: {
   authorId: string | null | undefined; myId: string | null | undefined; name: string | null | undefined;
-  onBlock: () => void; onBlockAndReport?: () => void;
+  onBlock: () => void;
 }): MenuAction[] {
   if (!opts.authorId || (opts.myId && opts.authorId === opts.myId)) return [];
   const out: MenuAction[] = [
     { key: "block", label: t("flock.block.action", "Block {{name}}", { name: blockName(t, opts.name) }), danger: true, onClick: opts.onBlock },
   ];
-  if (opts.onBlockAndReport) {
-    out.push({ key: "block-report", label: t("flock.block.andReport", "Block and report"), danger: true, onClick: opts.onBlockAndReport });
-  }
   return out;
 }
