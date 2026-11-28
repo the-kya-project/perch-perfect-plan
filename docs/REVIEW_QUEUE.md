@@ -1764,6 +1764,7 @@ Format:
 - **Screen 1 has no visible way out,** as in the mockup. Backing out is the system Back (or Escape), which returns to the care page they came from. If the iPhone app has no back gesture there, screen 1 may need a close button.
 - **Mockup vs. prompt:** section headings on screen 1 follow the mockup (no full stop: "Bridging research and life with birds", "What we advocate for", "Most importantly, we're building a bigger table"); the prompt wrote them with one.
 - **Before the migration reaches a database** (a preview on staging before merge), the app finds no agreement function and lets people through as before, rather than showing a button that can't save. The database then has no rule to enforce either; production gets both within a minute of merging.
+- **"Learn together" in "How the Flock works"** stays as written for now; backlog CR1 renames the space "Flock talk" and updates that line (`flock.rules.works.spaces` in `content.ts`) when it lands.
 - **Dutch:** the walk-through and the new guidelines are in the English catalog like every other string, so the next Dutch pass picks them up. Until then Dutch readers see these screens, and the join step's guidelines box (which #582 had translated), in English. The old six guidelines' Dutch lines are no longer used.
 - **The guidelines link sits at the top of the Spaces sheet for now.** The side-menu drawer from the new navigation isn't built yet; the link moves to the top of the drawer, above Feed, when it is.
 
