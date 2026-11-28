@@ -7,28 +7,32 @@ import type { TFunction } from "i18next";
 import { chapterName } from "./chapterNames";
 
 export { CHAPTER_NAMES, chapterName } from "./chapterNames";
-export type FlockTab = "today" | "journeys" | "chapter" | "library";
-/** The five Community tabs, left to right. "care" (My birds) is last, in the
- *  slot the Community button holds on the care tab bar. */
+export type FlockTab = "feed" | "journeys" | "library";
+/** The Community's tab destinations. "care" (My birds) is last, in the slot
+ *  the Community button holds on the care tab bar. Chapter isn't a tab: it
+ *  moves into the side menu (backlog CR1, CR2). */
 export type FlockDest = FlockTab | "care";
 
 export const FLOCK_DESTS: { key: FlockDest; to: string }[] = [
-  { key: "today", to: "/flock" },
+  { key: "feed", to: "/flock" },
   { key: "journeys", to: "/flock/journeys" },
-  { key: "chapter", to: "/flock/chapter" },
   { key: "library", to: "/flock/library" },
   { key: "care", to: "/dashboard" },
 ];
 
-/** The tab a /flock path belongs to: the chapter's member list lights
- *  Chapter; You, other members' profiles and birds light none. Unknown
- *  children read as Today. */
+/** The bar and the column, left to right: "add" is the raised gold Add
+ *  something button in the middle, a button rather than a tab. */
+export type FlockBarItem = FlockDest | "add";
+export const FLOCK_BAR: FlockBarItem[] = ["feed", "journeys", "add", "library", "care"];
+
+/** The tab a /flock path belongs to. Chapter, events, members, You and
+ *  members' birds light none. Unknown children read as Feed. */
 export function destForPath(pathname: string): FlockTab | null {
   if (pathname.startsWith("/flock/journeys")) return "journeys";
-  if (pathname.startsWith("/flock/chapter") || pathname.startsWith("/flock/events") || pathname === "/flock/members" || pathname === "/flock/members/") return "chapter";
   if (pathname.startsWith("/flock/library")) return "library";
-  if (pathname.startsWith("/flock/you") || pathname.startsWith("/flock/members/") || pathname.startsWith("/flock/birds/")) return null;
-  return "today";
+  if (pathname.startsWith("/flock/chapter") || pathname.startsWith("/flock/events") || pathname.startsWith("/flock/members")
+    || pathname.startsWith("/flock/you") || pathname.startsWith("/flock/birds/")) return null;
+  return "feed";
 }
 
 /** Full screens with no tab bar and no column tabs: welcome and setup, and the
@@ -53,8 +57,8 @@ export const FLOCK_REDIRECTS = {
   "/flock/learn": "/flock/library",
 } as const;
 
-// ---- Spaces (the header's sheet) and Today's chips ----------------------
-// Today is one feed for everything; a space narrows it. "everything" is the
+// ---- Spaces and the Feed's chips -----------------------------------------
+// The Feed is one feed for everything; a space narrows it. "everything" is the
 // default and is never written to the URL.
 export type FlockSpace = "start" | "learn" | "good";
 export type TodayFilter = "everything" | FlockSpace;

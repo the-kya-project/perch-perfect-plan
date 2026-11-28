@@ -1,5 +1,6 @@
 import { useEffect, useRef, type ReactNode } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { useQueryClient } from "@tanstack/react-query";
 import { Bell, BellRing, CalendarDays, Megaphone, PlayCircle, Sparkles } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import type { TFunction } from "i18next";
@@ -9,7 +10,7 @@ import { FlockChips, FlockEmpty } from "@/components/flock/FlockChips";
 import { FlockAvatar } from "@/components/flock/FlockPeople";
 import { timeAgo } from "@/components/flock/PostParts";
 import {
-  markNotificationsRead, NOTIFICATION_FILTERS, notificationGroup, notificationTarget, useNotifications,
+  markNotificationsRead, moderationKeys, NOTIFICATION_FILTERS, notificationGroup, notificationTarget, useNotifications,
   type FlockNotification, type NotificationFilter,
 } from "@/lib/flockModeration";
 import { pickOptional, chapterName } from "@/lib/flockNav";
@@ -106,14 +107,17 @@ function FlockNotifications() {
   const { filter } = Route.useSearch();
   const current: NotificationFilter = filter ?? "all";
   const { data, isLoading, isError } = useNotifications(current);
+  const queryClient = useQueryClient();
   const list = data ?? [];
   // Seen once shown: the dots stay for this visit and are gone next time.
   const marked = useRef(false);
   useEffect(() => {
     if (marked.current || !data || !data.some((n) => n.unread)) return;
     marked.current = true;
-    void markNotificationsRead(null).catch(() => { marked.current = false; });
-  }, [data]);
+    void markNotificationsRead(null)
+      .then(() => queryClient.setQueryData(moderationKeys.unread, 0))
+      .catch(() => { marked.current = false; });
+  }, [data, queryClient]);
   const groups: { key: "today" | "earlier"; title: string; items: FlockNotification[] }[] = [
     { key: "today", title: t("flock.notif.today", "Today"), items: list.filter((n) => notificationGroup(n.created_at) === "today") },
     { key: "earlier", title: t("flock.notif.earlier", "Earlier"), items: list.filter((n) => notificationGroup(n.created_at) === "earlier") },

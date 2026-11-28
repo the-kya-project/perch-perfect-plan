@@ -53,7 +53,7 @@ function subjectLabel(t: TFunction, q: QueueItem): string {
   }
 }
 
-/** "Learn together", "Great Lakes chapter", "Journeys". */
+/** "Flock talk", "Great Lakes chapter", "Journeys". */
 function placeLabel(t: TFunction, place: QueuePlace): string {
   if (place.kind === "journeys") return t("flock.nav.journeys", "Journeys");
   if (place.kind === "chapter") return t("flock.posts.chapterSpace", "{{name}} chapter", { name: chapterName(t, place.chapter) });

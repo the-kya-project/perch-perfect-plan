@@ -149,9 +149,9 @@ export function fullGuidelines(t: TFunction): GuidelineSection[] {
       title: t("flock.rules.works.title", "How the Flock works"),
       blocks: [
         { kind: "list", items: [
-          // "Learn together" becomes "Flock talk" in backlog CR1 (a label
-          // change; the slug stays `learn`). CR1 updates this line when it lands.
-          t("flock.rules.works.spaces", "Start here is for introductions and getting your bearings. Learn together is for questions, setups, and what you're working on. Do good is for rescue and conservation needs, and posts there are reviewed before they go live."),
+          // Flock talk was "Learn together" until backlog CR1 (a label
+          // change; the slug stays `learn`).
+          t("flock.rules.works.spaces", "Start here is for introductions and getting your bearings. Flock talk is for questions, setups, and what you're working on. Do good is for rescue and conservation needs, and posts there are reviewed before they go live."),
           t("flock.rules.works.journeys", "Journeys are where members share the skills they're teaching their birds, along with what's working and what isn't."),
           t("flock.rules.works.chapter", "Your chapter is your local corner of the Flock. If a bird is lost or found near you, post it there right away. Please share the general area only, never your home address or your bird's leg band or microchip number."),
           t("flock.rules.works.flagging", "Flagging is how we keep the Flock kind. If something looks harmful, unkind, or out of line with the care standards above, flag it and add a note if you'd like. You don't need to correct anyone yourself."),

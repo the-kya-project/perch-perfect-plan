@@ -10,7 +10,7 @@ import { FLOCK_SPACES, type FlockSpace } from "@/lib/flockNav";
 export function spaceLabel(t: TFunction, s: FlockSpace): string {
   switch (s) {
     case "start": return t("flock.space.start", "Start here");
-    case "learn": return t("flock.space.learn", "Learn together");
+    case "learn": return t("flock.space.learn", "Flock talk");
     case "good": return t("flock.space.good", "Do good");
   }
 }
@@ -18,7 +18,7 @@ export function spaceLabel(t: TFunction, s: FlockSpace): string {
 function spaceLine(t: TFunction, s: FlockSpace): string {
   switch (s) {
     case "start": return t("flock.space.startLine", "New to the Flock? Introductions, first questions, and finding your feet.");
-    case "learn": return t("flock.space.learnLine", "Questions, guides, and what members are working out with their birds.");
+    case "learn": return t("flock.space.learnLine", "Questions, wins, and everyday life with your bird");
     case "good": return t("flock.space.goodLine", "Rescue, conservation, and ways to help parrots beyond your own home.");
   }
 }
@@ -33,8 +33,9 @@ const SWIPE_CLOSE_PX = 80;
  * The three spaces, as a bottom sheet in the app's look (white, 26px top
  * corners, grab handle, round Close). Picking one opens Today filtered to it.
  * A real dialog: focus moves in and stays in (Tab wraps), Escape closes, and
- * so does a swipe down or a tap on the dimmed page. FlockShell puts focus back
- * on the Spaces button afterwards.
+ * so does a swipe down or a tap on the dimmed page. Since CR1 removed the
+ * header's Spaces button nothing opens it; CR2's side menu takes its place
+ * (spaceLabel stays here, read by every screen that names a space).
  */
 export function SpacesSheet({ onClose }: { onClose: () => void }) {
   const { t } = useTranslation();

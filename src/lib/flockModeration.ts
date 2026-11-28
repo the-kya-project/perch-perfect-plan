@@ -53,6 +53,15 @@ export function useNotifications(filter: NotificationFilter) {
   });
 }
 
+/** How many notifications are unread: the header bell's dot. */
+export function useUnreadNotifications() {
+  return useQuery({
+    queryKey: moderationKeys.unread,
+    staleTime: 60_000,
+    queryFn: async (): Promise<number> => Number(must(await sb.rpc("flock_notifications_unread")) ?? 0),
+  });
+}
+
 export async function markNotificationsRead(ids: string[] | null): Promise<void> {
   must(await sb.rpc("flock_notifications_mark_read", { p_ids: ids }));
 }

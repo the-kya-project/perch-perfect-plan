@@ -2,13 +2,14 @@
 // production build with a made-up signed-in session (e2e/duo-mock.ts): nothing
 // real is reached. Runs in the "iPhone hydration" job (e2e/flock.config.ts).
 //
-//   Routes: the five tabs, in order, with My birds last; the old /flock/spaces
-//   and /flock/learn redirect; bad filter links fall back to the defaults.
+//   Routes: the bar's five items in order (Feed, Journeys, Add something,
+//   Library, My birds last); the old /flock/spaces and /flock/learn redirect;
+//   bad filter links fall back to the defaults.
 //   Filters: every chip row and Chapter's sub-tabs change the selection and the
 //   URL; the Library search reaches the URL.
-//   Spaces sheet: focus moves in and stays in, Escape and a swipe down close it
-//   (focus back on Spaces), picking a space opens Today filtered to it.
-//   Duo / wide: the five Community tabs sit in the side column, no care tabs.
+//   Header and Add something: the menu tile, wordmark and Updates bell (its dot
+//   follows unread notifications); the sheet's focus, Escape and Close.
+//   Duo / wide: the five Community items sit in the side column, no care tabs.
 //   Non-admins: every /flock URL sends them Home, and no Community code loads.
 import { test, expect, type Browser, type BrowserContext, type Page, type Route } from "@playwright/test";
 import { devices } from "@playwright/test";
@@ -448,6 +449,7 @@ async function mockFlock(context: BrowserContext, userId: string, opts: { setupD
       return json(route, state.notifications.filter((n) => f === "all" || (f === "replies" && n.kind === "reply") || (f === "cheers" && n.kind === "cheer") || (f === "chapter" && n.kind === "chapter")));
     }
     if (fn === "flock_notifications_mark_read") { for (const n of state.notifications) n.unread = false; return json(route, null); }
+    if (fn === "flock_notifications_unread") return json(route, state.notifications.filter((n) => n.unread).length);
     if (fn === "flock_can_review") return json(route, true);
     if (fn === "flock_review_post_spaces") return json(route, (args.p_post_ids as string[]).map((id) => state.posts.find((p) => p.post_id === id)).filter(Boolean).map((p) => ({ post_id: p!.post_id, space: p!.space, chapter_name: p!.space === "chapter" ? "Great Lakes" : null })));
     if (fn === "flock_review_counts") return json(route, [{ good: state.queue.filter((q) => q.item_type === "good").length, reports: state.queue.filter((q) => q.item_type === "report").length, events: state.queue.filter((q) => q.item_type === "event").length }]);
@@ -806,19 +808,29 @@ const FLOCK_CHUNK = /\/assets\/(?!FlockHealthDuo)(Flock\w+|SpacesSheet|CommentTh
 const tabs = (page: Page) => page.locator("nav[aria-label='Community']:visible [data-flock-tab]");
 
 test.describe("as an admin, on a phone", () => {
-  test("Today: header, five tabs in order, chips change the filter", async ({ browser, baseURL }) => {
+  test("Feed: header, the bar in order, chips change the filter", async ({ browser, baseURL }) => {
     const { context, page } = await open(browser, baseURL!, { admin: true });
     await page.goto("/flock");
-    await expect(page.getByRole("heading", { level: 1, name: "Today" })).toBeVisible();
-    await expect(page.getByRole("button", { name: "Spaces" })).toBeVisible();
-    // The header avatar opens You (the Community profile), not care Account.
-    await expect(page.getByRole("link", { name: "You", exact: true })).toHaveAttribute("href", "/flock/you");
-    await expect(tabs(page)).toHaveText(["Today", "Journeys", "Chapter", "Library", "My birds"]);
+    await expect(page.getByRole("heading", { level: 1, name: "Feed" })).toBeVisible();
+    // CR1: the menu tile, the wordmark and the Updates bell; no Spaces button or avatar.
+    const header = page.locator("header").first();
+    await expect(header.getByRole("button", { name: "Menu" })).toBeVisible();
+    await expect(header.getByText("Kya & Co.", { exact: true })).toBeVisible();
+    await expect(header.getByRole("link", { name: "Updates" })).toHaveAttribute("href", "/flock/you/notifications");
+    await expect(page.getByTestId("flock-updates-dot")).toHaveCount(0);
+    await expect(page.getByRole("button", { name: "Spaces" })).toHaveCount(0);
+    await expect(page.getByRole("link", { name: "You", exact: true })).toHaveCount(0);
+    // Feed, Journeys, the gold Add something button, Library, My birds; no Chapter.
+    await expect(tabs(page)).toHaveText(["Feed", "Journeys", "Library", "My birds"]);
+    const bar = page.locator("nav[aria-label='Community']:visible > div > *");
+    await expect(bar).toHaveCount(5);
+    await expect(bar.nth(2)).toHaveAttribute("data-flock-add");
+    await expect(bar.nth(2)).toHaveAccessibleName("Add something");
     await expect(tabs(page).first()).toHaveAttribute("aria-current", "page");
     await expect(tabs(page).last()).toHaveAttribute("href", "/dashboard");
 
     const chips = page.getByRole("group", { name: "Filter Today" }).getByRole("button");
-    await expect(chips).toHaveText(["Everything", "Learn together", "Do good", "Start here"]);
+    await expect(chips).toHaveText(["Everything", "Flock talk", "Do good", "Start here"]);
     await expect(chips.first()).toHaveAttribute("aria-pressed", "true");
     await expect(page.getByTestId("flock-empty")).toContainText("This is where the Flock's days come together.");
 
@@ -833,50 +845,39 @@ test.describe("as an admin, on a phone", () => {
     await context.close();
   });
 
-  test("Spaces sheet: focus stays inside, Escape and swipe close it, a space filters Today", async ({ browser, baseURL }) => {
-    const { context, page } = await open(browser, baseURL!, { admin: true });
+  test("Add something: the gold button opens the sheet, Escape and Close close it; the bell's dot follows unread notifications", async ({ browser, baseURL }) => {
+    const { context, page, state } = await open(browser, baseURL!, { admin: true });
+    state.notifications.push({ ids: ["n1"], kind: "reply", actor_name: "Priya S.", others: 0, subject_type: "comment", subject_id: "c1", detail: "reply", note: null,
+      post_id: null, post_title: null, post_space: null, journey_id: null, bird_name: null, skill: null, milestone_title: null, region_name: null,
+      created_at: new Date(Date.now() - 60_000).toISOString(), unread: true });
     await page.goto("/flock/journeys");
-    const spaces = page.getByRole("button", { name: "Spaces" });
-    const sheet = page.getByRole("dialog", { name: "Spaces" });
+    const add = page.getByRole("button", { name: "Add something" });
+    const sheet = page.getByRole("dialog", { name: "Add something" });
 
-    await spaces.click();
+    await add.click();
     await expect(sheet).toBeVisible();
-    await expect(sheet.getByRole("button", { name: /Start here/ })).toBeFocused();
-    for (let i = 0; i < 6; i++) {
-      await page.keyboard.press("Tab");
-      expect(await sheet.evaluate((d) => d.contains(document.activeElement))).toBe(true);
-    }
-    await page.keyboard.press("Shift+Tab");
+    await expect(sheet.getByRole("button", { name: "Close" })).toBeFocused();
+    await page.keyboard.press("Tab");
     expect(await sheet.evaluate((d) => d.contains(document.activeElement))).toBe(true);
     await page.keyboard.press("Escape");
     await expect(sheet).toBeHidden();
-    await expect(spaces).toBeFocused();
-
-    // Swipe down from the handle.
-    await spaces.click();
-    const handle = page.getByTestId("spaces-sheet-handle");
-    const box = (await handle.boundingBox())!;
-    await page.mouse.move(box.x + box.width / 2, box.y + 10);
-    await page.mouse.down();
-    await page.mouse.move(box.x + box.width / 2, box.y + 70, { steps: 4 });
-    await page.mouse.move(box.x + box.width / 2, box.y + 160, { steps: 4 });
-    await page.mouse.up();
+    await expect(add).toBeFocused();
+    await add.click();
+    await sheet.getByRole("button", { name: "Close" }).click();
     await expect(sheet).toBeHidden();
+    // The center button is never a lit tab.
+    await expect(add).not.toHaveAttribute("aria-current", /.*/);
 
-    // A short drag snaps back instead.
-    await spaces.click();
-    const box2 = (await handle.boundingBox())!;
-    await page.mouse.move(box2.x + box2.width / 2, box2.y + 10);
-    await page.mouse.down();
-    await page.mouse.move(box2.x + box2.width / 2, box2.y + 40, { steps: 3 });
-    await page.mouse.up();
-    await expect(sheet).toBeVisible();
-
-    await sheet.getByRole("button", { name: /Learn together/ }).click();
-    await expect(sheet).toBeHidden();
-    await expect(page).toHaveURL(/\/flock\?space=learn$/);
-    await expect(page.getByRole("heading", { level: 1, name: "Today" })).toBeVisible();
-    await expect(page.getByRole("group", { name: "Filter Today" }).getByRole("button", { name: "Learn together" })).toHaveAttribute("aria-pressed", "true");
+    // One unread notification: the bell has its dot until the list is opened.
+    const bell = page.locator("header").first().getByRole("link", { name: "Updates, new activity" });
+    await expect(bell).toBeVisible();
+    await expect(page.getByTestId("flock-updates-dot")).toBeVisible();
+    await bell.click();
+    await expect(page).toHaveURL(/\/flock\/you\/notifications$/);
+    await expect.poll(() => state.calls.some((c) => c.fn === "flock_notifications_mark_read")).toBe(true);
+    await page.goto("/flock/library");
+    await expect(page.locator("header").first().getByRole("link", { name: "Updates" })).toBeVisible();
+    await expect(page.getByTestId("flock-updates-dot")).toHaveCount(0);
     await context.close();
   });
 
@@ -891,8 +892,10 @@ test.describe("as an admin, on a phone", () => {
     await expect(page).toHaveURL(/\/flock\/journeys\?filter=tricks$/);
     await expect(jChips.filter({ hasText: "Tricks" })).toHaveAttribute("aria-pressed", "true");
 
-    await tabs(page).filter({ hasText: "Chapter" }).click();
-    await expect(page).toHaveURL(/\/flock\/chapter$/);
+    // Chapter is off the bar (CR1; the side menu reaches it in CR2), and no tab is lit there.
+    await page.goto("/flock/chapter");
+    await expect(tabs(page).locator("[aria-current]")).toHaveCount(0);
+    await expect(page.locator("nav[aria-label='Community']:visible [aria-current='page']")).toHaveCount(0);
     await expect(page.getByTestId("chapter-line")).toHaveText("Great Lakes · IL · IN · MI · OH");
     await expect(page.getByTestId("chapter-count")).toContainText("2 members · meetups unlock at 15");
     const sub = page.getByRole("tablist", { name: "Chapter sections" }).getByRole("tab");
@@ -930,7 +933,7 @@ test.describe("as an admin, on a phone", () => {
     const { context, page } = await open(browser, baseURL!, { admin: true });
     await page.goto("/flock/spaces");
     await expect(page).toHaveURL(/\/flock$/);
-    await expect(page.getByRole("heading", { level: 1, name: "Today" })).toBeVisible();
+    await expect(page.getByRole("heading", { level: 1, name: "Feed" })).toBeVisible();
     await page.goto("/flock/learn");
     await expect(page).toHaveURL(/\/flock\/library$/);
     await expect(page.getByRole("heading", { level: 1, name: "Library" })).toBeVisible();
@@ -942,13 +945,21 @@ test.describe("as an admin, on a phone", () => {
   });
 });
 
-test("as an admin, Duo / wide: the five Community tabs sit in the side column", async ({ browser, baseURL }) => {
+test("as an admin, Duo / wide: the five Community items sit in the side column", async ({ browser, baseURL }) => {
   const { context, page } = await open(browser, baseURL!, { admin: true, size: "duo" });
   await page.goto("/flock/library");
   await expect(page.getByRole("heading", { level: 1, name: "Library" })).toBeVisible();
   await expect(page.locator("html")).toHaveClass(/\bduo\b/);
   const rail = page.locator("nav.duo-rail");
-  await expect(rail.locator("[data-flock-tab]")).toHaveText(["Today", "Journeys", "Chapter", "Library", "My birds"]);
+  await expect(rail.locator("[data-flock-tab]")).toHaveText(["Feed", "Journeys", "Library", "My birds"]);
+  // The gold Add something circle in the middle, opening its sheet.
+  const items = rail.locator("[data-flock-tab], [data-flock-add]");
+  await expect(items).toHaveCount(5);
+  await expect(items.nth(2)).toHaveAttribute("data-flock-add");
+  await items.nth(2).click();
+  await expect(page.getByRole("dialog", { name: "Add something" })).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(page.getByRole("dialog", { name: "Add something" })).toBeHidden();
   await expect(rail.locator("[data-flock-tab='library']")).toHaveAttribute("aria-current", "page");
   // No care tabs in the column, and no bottom bar.
   await expect(rail.locator("[data-coach^='owner-tab-']")).toHaveCount(0);
@@ -1840,7 +1851,7 @@ test.describe("posts, comments and reactions (admin, phone)", () => {
     await expect(page).toHaveURL(/\/flock\/post\/new$/);
     await expect(page.locator("[data-flock-tab]")).toHaveCount(0);
     const chips = page.getByTestId("post-to").getByRole("button");
-    await expect(chips).toHaveText(["Learn together", "Do good", "Great Lakes chapter", "Start here"]);
+    await expect(chips).toHaveText(["Flock talk", "Do good", "Great Lakes chapter", "Start here"]);
     await expect(chips.first()).toHaveAttribute("aria-pressed", "true");
     await expect(page.getByTestId("gps-note")).toHaveText("Photos lose their location data when you post.");
     await page.getByTestId("post-title").fill("Pegboard foraging");
@@ -2179,7 +2190,7 @@ test.describe("reporting, the review queue and notifications (admin, phone)", ()
     await expect(roof.getByTestId("queue-item-label")).toHaveText("Do good");
     await expect(roof).toContainText("Jordan L. · Great Lakes · 3h");
     const reported = page.locator("[data-subject='00000000-0000-4000-8000-0000000079d3']");
-    await expect(reported.getByTestId("queue-item-label")).toHaveText("Report · comment · Learn together");
+    await expect(reported.getByTestId("queue-item-label")).toHaveText("Report · comment · Flock talk");
     await expect(reported).toContainText("Reported by 2 members · 1h");
     expect(state.calls.find((c) => c.fn === "flock_review_post_spaces")!.args).toMatchObject({ p_post_ids: [POST] });
     await roof.locator("[data-act='approve']").click();
@@ -2246,7 +2257,7 @@ test.describe("today's idea and We tried it (admin, phone)", () => {
   test("no idea today: no card on Today", async ({ browser, baseURL }) => {
     const { context, page } = await open(browser, baseURL!, { admin: true });
     await page.goto("/flock");
-    await expect(page.getByRole("heading", { level: 1, name: "Today" })).toBeVisible();
+    await expect(page.getByRole("heading", { level: 1, name: "Feed" })).toBeVisible();
     await expect(page.getByTestId("compose-prompt")).toBeVisible();
     await expect(page.getByTestId("todays-idea")).toHaveCount(0);
     await context.close();
@@ -2911,7 +2922,7 @@ test.describe("welcome, setup, profiles and chapters (admin, phone)", () => {
 
     await page.getByRole("button", { name: "Go to the community" }).click();
     await expect(page).toHaveURL(/\/flock$/);
-    await expect(page.getByRole("heading", { level: 1, name: "Today" })).toBeVisible();
+    await expect(page.getByRole("heading", { level: 1, name: "Feed" })).toBeVisible();
     const saved = state.saves.at(-1)!;
     expect(saved.region_slug).toBe("great-lakes");
     expect(saved.display_name).toBe("Brittany");
@@ -2921,7 +2932,7 @@ test.describe("welcome, setup, profiles and chapters (admin, phone)", () => {
 
     // Never again.
     await page.goto("/flock");
-    await expect(page.getByRole("heading", { level: 1, name: "Today" })).toBeVisible();
+    await expect(page.getByRole("heading", { level: 1, name: "Feed" })).toBeVisible();
     await page.waitForTimeout(500);
     await expect(page).toHaveURL(/\/flock$/);
     await page.goto("/flock/library");
@@ -2970,8 +2981,8 @@ test.describe("welcome, setup, profiles and chapters (admin, phone)", () => {
 
   test("You and Privacy: what members see, and what they never see", async ({ browser, baseURL }) => {
     const { context, page } = await open(browser, baseURL!, { admin: true });
-    await page.goto("/flock");
-    await page.getByRole("link", { name: "You" }).click();
+    // The header's avatar is gone (CR1); the side menu's Settings reaches You in CR2.
+    await page.goto("/flock/you");
     await expect(page).toHaveURL(/\/flock\/you$/);
     await expect(page.getByRole("heading", { level: 1 })).toHaveText("Brittany K.");
     await expect(page.getByText("Community is separate from care reminders")).toBeVisible();
@@ -3778,15 +3789,15 @@ test.describe("the community guidelines walk-through (phone)", () => {
     await context.close();
   });
 
-  test("the Spaces sheet opens the community guidelines from its first row", async ({ browser, baseURL }) => {
+  // The Spaces button that opened the guidelines' first row is gone (CR1);
+  // CR2's side menu puts "Community guidelines" at its top. Until then the
+  // page opens from the join step's link and by URL.
+  test("the community guidelines page opens, with Flock talk named in it", async ({ browser, baseURL }) => {
     const { context, page } = await open(browser, baseURL!, { admin: true });
-    await page.goto("/flock");
-    await page.getByRole("button", { name: "Spaces" }).click();
-    const first = page.getByTestId("spaces-sheet").getByRole("listitem").first();
-    await expect(first).toHaveText("Community guidelines");
-    await first.getByRole("button").click();
-    await expect(page).toHaveURL(/\/flock\/guidelines$/);
+    await page.goto("/flock/guidelines");
     await expect(page.getByTestId("flock-guidelines")).toContainText("Members must be 18 or older.");
+    await expect(page.getByTestId("flock-guidelines")).toContainText("Flock talk is for questions, setups, and what you're working on.");
+    await expect(page.getByTestId("flock-guidelines")).not.toContainText("Learn together");
     await context.close();
   });
 });
