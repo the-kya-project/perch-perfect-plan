@@ -2,6 +2,11 @@
 // the seasonal calendar (src/lib/seasonalCalendar.ts), in the reader's
 // language, behind the `today_cards` care switch (src/lib/careFeatures.ts).
 //
+// On a heat or cold day the weather card (backlog D2.2, WeatherTodayCard)
+// takes this spot, behind its own `weather_cards` switch. With that switch off
+// nothing about weather is asked; with no ZIP, no forecast or any failure the
+// seasonal card shows exactly as before.
+//
 // Renders nothing until the page has loaded: the date and the device's time
 // zone are read in an effect, so the server render and the first browser
 // render match (the iPhone hydration check). Never calls the Flock's Today's
@@ -15,6 +20,10 @@ import { localDateISO } from "@/lib/localDay";
 import { seasonalImageFor, seasonalLabelFor, seasonalToneFor } from "@/lib/seasonalCardStyle";
 import { formatTodayCardEnd, isTodayCardDismissed, todayCardFor } from "@/lib/todayCard";
 import { useDismissTodayCard, useTodayCardDismissal } from "@/lib/todayCardDismissal";
+import { useDismissWeatherCard, useDismissWeatherPrompt, useWeatherCard, useWeatherPromptDismissed } from "@/lib/homePostcode";
+import { WeatherPostcodePrompt, WeatherTodayCard } from "@/components/WeatherTodayCard";
+import { friendlyError } from "@/lib/errorMessage";
+import { toast } from "sonner";
 
 function deviceTimeZone(): string | null {
   try {
@@ -24,19 +33,28 @@ function deviceTimeZone(): string | null {
   }
 }
 
-/** `homeTimeZone` is the account's stored zone (profiles.time_zone), if any. */
+/** `homeTimeZone` is the account's stored zone (profiles.time_zone), if any.
+ *  `birdNames` are the owner's birds on Home, for the weather card's wording. */
 export function SeasonalTodayCard({
   userId,
   homeTimeZone,
+  birdNames = [],
 }: {
   userId?: string | null;
   homeTimeZone?: string | null;
+  birdNames?: readonly string[];
 }) {
   const { t, i18n } = useTranslation();
   const enabled = useCareFeature("today_cards");
+  const weatherOn = useCareFeature("weather_cards");
   const dismissal = useTodayCardDismissal(userId, enabled === true);
   const dismiss = useDismissTodayCard(userId);
   const [day, setDay] = useState<{ date: string; deviceZone: string | null } | null>(null);
+  const weather = useWeatherCard(userId, day?.date ?? null, homeTimeZone || day?.deviceZone || null, weatherOn === true);
+  const dismissWeather = useDismissWeatherCard(userId, day?.date ?? null);
+  const noHome = weatherOn === true && weather.data?.enabled === true && !weather.data.home;
+  const promptDismissed = useWeatherPromptDismissed(userId, noHome);
+  const dismissPrompt = useDismissWeatherPrompt(userId);
 
   // Read after mount, and again when the app comes back to the front, so a
   // page left open overnight moves on to the new day.
@@ -53,15 +71,45 @@ export function SeasonalTodayCard({
     return () => document.removeEventListener("visibilitychange", onVisible);
   }, []);
 
-  if (enabled !== true || !day || !userId || dismissal.isPending) return null;
+  if (!day || !userId) return null;
+  // Wait for the weather answer while its switch is on, so the seasonal card
+  // never shows and then swaps out.
+  if (weatherOn === true && weather.isPending) return null;
+  const w = weatherOn === true ? weather.data : undefined;
+  if (w?.enabled && w.card && w.dismissedOn !== day.date) {
+    return (
+      <WeatherTodayCard
+        card={w.card}
+        birdNames={birdNames}
+        onGotIt={() =>
+          dismissWeather.mutate(undefined, {
+            onError: (err) => toast.error(friendlyError(err, t("dashboard.todayCardDismissFailed", "Couldn't hide this card. Try again."))),
+          })
+        }
+      />
+    );
+  }
+  // Shown only once we know it hasn't been dismissed, so it never flashes.
+  const prompt =
+    noHome && promptDismissed.data === false ? (
+      <WeatherPostcodePrompt
+        onGotIt={() =>
+          dismissPrompt.mutate(undefined, {
+            onError: (err) => toast.error(friendlyError(err, t("dashboard.todayCardDismissFailed", "Couldn't hide this card. Try again."))),
+          })
+        }
+      />
+    ) : null;
+
+  if (enabled !== true || dismissal.isPending) return prompt;
   const today = todayCardFor(day.date, homeTimeZone || day.deviceZone);
-  if (!today || isTodayCardDismissed(today, day.date, dismissal.data)) return null;
+  if (!today || isTodayCardDismissed(today, day.date, dismissal.data)) return prompt;
 
   const tone = seasonalToneFor(today.card.id);
   const label = seasonalLabelFor(today.card);
   const LabelIcon = label === "seasonalTip" ? Leaf : Star;
 
-  return (
+  const seasonal = (
     <section
       data-testid="seasonal-today-card"
       data-card={today.card.id}
@@ -113,5 +161,12 @@ export function SeasonalTodayCard({
         </div>
       </div>
     </section>
+  );
+  if (!prompt) return seasonal;
+  return (
+    <div className="flex w-full flex-col gap-3">
+      {seasonal}
+      {prompt}
+    </div>
   );
 }

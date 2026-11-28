@@ -24,6 +24,10 @@ export const CARE_FEATURES: readonly CareFeature[] = [
   // Care badges on the bird page and its Badges screen (backlog 1.13b,
   // 20261128160000_care_badges.sql, src/lib/careBadges.ts).
   { feature: "care_badges", startsAt: "off" },
+  // Heat and cold cards on Home by the owner's home ZIP or postcode, and the
+  // Account field for it (backlog D2.2, 20261128190000_weather_cards.sql,
+  // src/lib/weatherCards.ts).
+  { feature: "weather_cards", startsAt: "off" },
 ];
 
 /** Fails closed: an error (or a database without the switch yet, like staging
