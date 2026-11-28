@@ -6,6 +6,7 @@ import { AdminOnly } from "@/components/flock/AdminOnly";
 import { challengeDay, challengeStateLabel, statePillStyle } from "@/components/flock/ChallengeParts";
 import { FLOCK_ENABLED_QUERY } from "@/lib/flock";
 import { useAdminChallenges } from "@/lib/flockChallenges";
+import { chapterName } from "@/lib/flockNav";
 
 // Challenges, for admins (backlog 1.10): every challenge, drafts first, then
 // by start day, and New challenge. Laid out like the votes list. Behind the
@@ -58,7 +59,7 @@ function AdminChallenges() {
                           <span className="truncate text-[12.5px]" style={{ color: K.quiet }}>
                             {[
                               r.kind === "journey" ? t("flock.challengesAdmin.journey", "Journey") : t("flock.challengesAdmin.standalone", "Standalone"),
-                              r.region_name ?? t("flock.challengesAdmin.wholeFlock", "The whole Flock"),
+                              r.region_name ? chapterName(t, r.region_name) : t("flock.challengesAdmin.wholeFlock", "The whole Flock"),
                               `${challengeDay(r.starts_on, i18n.language)} – ${challengeDay(r.ends_on, i18n.language)}`,
                               r.state === "draft" || r.state === "upcoming" ? null
                                 : t("flock.challengesAdmin.counts", "{{members}} joined · {{entries}} entries", { members: r.member_count, entries: r.entry_count }),

@@ -13,6 +13,7 @@ import {
   POD_MAX, adminDissolvePod, adminMovePodMember, podRefusal, useAdminPodMembers, useAdminPodWaits, useAdminPods, useInvalidatePods,
   type AdminPodRow, type PodStatus,
 } from "@/lib/flockPods";
+import { chapterName } from "@/lib/flockNav";
 
 // Buddy pods, for admins (backlog 1.11): how many are waiting on each
 // journey, then every pod (open ones first). Opening one lists its members,
@@ -113,7 +114,7 @@ function PodRow({ row, all, open, onToggle }: { row: AdminPodRow; all: AdminPodR
           <span className="truncate text-[12.5px]" style={{ color: K.quiet }}>
             {[
               t("flock.pods.members", "{{count}} members", { count: row.member_count }),
-              row.region_name,
+              row.region_name ? chapterName(t, row.region_name) : null,
               t("flock.podsAdmin.started", "Started {{day}}", { day: day(row.created_at, i18n.language) }),
               row.last_post_at ? t("flock.podsAdmin.lastPost", "Last post {{day}}", { day: day(row.last_post_at, i18n.language) }) : null,
             ].filter(Boolean).join(" · ")}
@@ -130,7 +131,7 @@ function PodRow({ row, all, open, onToggle }: { row: AdminPodRow; all: AdminPodR
                 <span className="flex min-w-0 flex-1 flex-col">
                   <span className="truncate text-[14px] font-[700]">{m.display_name ?? t("flock.pods.member", "Member")}</span>
                   <span className="truncate text-[12.5px]" style={{ color: K.quiet }}>
-                    {[m.region_name, m.left_at ? t("flock.podsAdmin.left", "Left {{day}}", { day: day(m.left_at, i18n.language) }) : t("flock.podsAdmin.joined", "Joined {{day}}", { day: day(m.joined_at, i18n.language) }),
+                    {[m.region_name ? chapterName(t, m.region_name) : null, m.left_at ? t("flock.podsAdmin.left", "Left {{day}}", { day: day(m.left_at, i18n.language) }) : t("flock.podsAdmin.joined", "Joined {{day}}", { day: day(m.joined_at, i18n.language) }),
                       m.journey_status === "finished" ? t("flock.pods.stageLearned", "Learned it")
                         : m.journey_status === "happy_where_we_are" ? t("flock.pods.stageHappy", "Happy where we are") : null].filter(Boolean).join(" · ")}
                   </span>
@@ -148,7 +149,7 @@ function PodRow({ row, all, open, onToggle }: { row: AdminPodRow; all: AdminPodR
                     <button key={p.pod_id} type="button" disabled={busy} data-target={p.pod_id}
                       onClick={() => void act(() => adminMovePodMember(m.user_id, row.pod_id, p.pod_id), () => setMoving(null))}
                       className="min-h-[40px] rounded-full px-3 text-[13px] font-[700] disabled:opacity-60" style={{ background: K.mist }}>
-                      {[podTitle(t, p), t("flock.pods.members", "{{count}} members", { count: p.member_count }), p.region_name].filter(Boolean).join(" · ")}
+                      {[podTitle(t, p), t("flock.pods.members", "{{count}} members", { count: p.member_count }), p.region_name ? chapterName(t, p.region_name) : null].filter(Boolean).join(" · ")}
                     </button>
                   ))}
                 </div>

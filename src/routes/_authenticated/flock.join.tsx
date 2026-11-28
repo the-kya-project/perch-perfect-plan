@@ -115,7 +115,7 @@ function FlockJoin() {
         <FlockSection title={t("flock.setup.chapter", "Your chapter")} hint={t("flock.setup.chapterHint", "Members see your region, never your address.")}>
           <div className="flex items-center justify-between gap-3">
             <span className="text-[16px] font-[700]" data-testid="join-region" style={{ color: K.forest }}>
-              {r ? chapterLine(r.name, r.states) : t("flock.join.noRegion", "Not chosen yet")}
+              {r ? chapterLine(r.name, r.states, t) : t("flock.join.noRegion", "Not chosen yet")}
             </span>
             <KyaLink onClick={() => setPicking(true)}>{r ? t("flock.setup.change", "Change") : t("flock.join.choose", "Choose")}</KyaLink>
           </div>

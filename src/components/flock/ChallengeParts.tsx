@@ -6,6 +6,7 @@ import { K } from "@/components/kya";
 import { FlockAvatar } from "@/components/flock/FlockPeople";
 import { useAvatarUrls } from "@/lib/flockData";
 import type { Challenge, ChallengePrompt, ChallengeState } from "@/lib/flockChallenges";
+import { chapterName } from "@/lib/flockNav";
 
 // Challenges (backlog 1.10, docs/flock/mockups/SpecChallenges.dc.html): the card
 // on Today and Journeys (screen 1), the prompt checklist (screen 2), and the
@@ -85,7 +86,7 @@ export function ChallengeCard({ challenge: c }: { challenge: Challenge }) {
     <div className="flex flex-col gap-2 rounded-[18px] px-4 py-3.5" style={{ background: K.lime, color: K.forest }}
       data-testid="challenge-card" data-challenge={c.challenge_id} data-joined={c.joined ? "yes" : "no"}>
       <span className="text-[11.5px] font-[700] uppercase tracking-[0.06em]" style={{ color: K.moss }}>
-        {challengeEyebrow(t, c)}{c.region_name ? ` · ${c.region_name}` : ""}
+        {challengeEyebrow(t, c)}{c.region_name ? ` · ${chapterName(t, c.region_name)}` : ""}
       </span>
       <span className="text-[17px] font-[700] leading-[1.25]">{c.title}</span>
       <span className="text-[13px] leading-[1.45]" style={{ color: K.ink }} data-testid="challenge-summary">

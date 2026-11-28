@@ -10,6 +10,7 @@ import { useCanReview, useReviewCounts } from "@/lib/flockModeration";
 import { usePlaceSuggestions } from "@/lib/flockPlaces";
 import { useRescueRedemptions } from "@/lib/flockRescue";
 import { FLOCK_BADGES, earnedCount, useMyBadges } from "@/lib/flockBadges";
+import { chapterName } from "@/lib/flockNav";
 
 // You: your Community profile and settings, from the header avatar.
 export const Route = createFileRoute("/_authenticated/flock/you/")({
@@ -42,7 +43,7 @@ function FlockYou() {
           <FlockAvatar name={name} url={me?.photo_path ? urls?.get(me.photo_path) : null} size={88} ring={K.teal} />
           <KyaHeading as="h1" size={28} className="mt-4 text-white">{name}</KyaHeading>
           <p className="m-0 mt-1.5 text-[15px]" style={{ color: K.paleGreen }} data-testid="you-line">
-            {[region?.name, founder ? t("flock.you.founding", "Founding member") : t("flock.you.member", "Member")].filter(Boolean).join(" · ")}
+            {[region ? chapterName(t, region.name) : null, founder ? t("flock.you.founding", "Founding member") : t("flock.you.member", "Member")].filter(Boolean).join(" · ")}
           </p>
           <Link to="/flock/you/edit" className="mt-3 inline-flex min-h-[44px] items-center text-[15px] font-[700] underline underline-offset-4" style={{ color: "#fff" }}>
             {t("flock.you.edit", "Edit profile")}

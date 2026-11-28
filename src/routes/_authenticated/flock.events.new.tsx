@@ -7,6 +7,7 @@ import { FlockSubPage } from "@/components/flock/FlockSubPage";
 import { useFormInProgress } from "@/lib/formsInProgress";
 import { saveEvent, suggestEvent, useEvent, useEventRules, useInvalidateEvents, type EventDraft, type EventKind, type EventMode } from "@/lib/flockEvents";
 import { uploadPostPhoto } from "@/lib/flockPostData";
+import { chapterName } from "@/lib/flockNav";
 
 // Suggest an event (Batch 5, screen 3): any chapter member; it goes to review.
 // The chapter's lead and admins see "New event" instead: it goes live at once,
@@ -62,7 +63,7 @@ function EventForm() {
 
   const inPersonOpen = !!rules?.in_person_open || (existing?.mode === "in_person");
   const effectiveMode: EventMode = inPersonOpen ? mode : "online";
-  const chapter = rules?.region_name ?? "";
+  const chapter = chapterName(t, rules?.region_name);
   const ready = title.trim() && when && (effectiveMode === "online" || placeName.trim()) && (!onlineUrl || /^https:\/\//.test(onlineUrl.trim()));
 
   const submit = async () => {

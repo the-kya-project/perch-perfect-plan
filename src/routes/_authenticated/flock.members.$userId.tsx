@@ -6,7 +6,7 @@ import { K, KyaCard, KyaHeading } from "@/components/kya";
 import { FlockSubPage } from "@/components/flock/FlockSubPage";
 import { FlockEmpty } from "@/components/flock/FlockChips";
 import { BirdThumb, FlockAvatar, FounderBadge } from "@/components/flock/FlockPeople";
-import { chapterLine } from "@/lib/flockNav";
+import { chapterName, chapterLine } from "@/lib/flockNav";
 import { useAvatarUrls, useBirdPhotoUrls, useIsAdmin, useMemberProfile, useMyId, useVisibleBirds } from "@/lib/flockData";
 import { setChapterLead, useChapterLeadOf, useInvalidateMembers } from "@/lib/flockMembers";
 import { ConfirmSheet } from "@/components/flock/PostParts";
@@ -50,7 +50,7 @@ function FlockMember() {
     );
   }
   return (
-    <FlockSubPage title={m?.display_name ?? " "} line={m ? chapterLine(m.region_name, m.region_states) : undefined} fallback="/flock/members">
+    <FlockSubPage title={m?.display_name ?? " "} line={m ? chapterLine(m.region_name, m.region_states, t) : undefined} fallback="/flock/members">
       <KyaCard className="flex flex-col items-center p-6 text-center">
         <FlockAvatar name={m?.display_name ?? ""} url={m?.photo_path ? avatar?.get(m.photo_path) : null} size={88} />
         {(m?.is_founder || isLead) && (
@@ -95,14 +95,14 @@ function FlockMember() {
           <KyaHeading size={18}>{t("flock.members.leadAdminTitle", "Chapter lead (admins only)")}</KyaHeading>
           <p className="m-0 mt-1.5 text-[14px] leading-[1.5]" style={{ color: K.ink }}>
             {isLead
-              ? t("flock.members.leadAdminIs", "{{name}} leads the {{chapter}} chapter: they review its event suggestions and can add and edit its events.", { name: m.display_name, chapter: m.region_name })
+              ? t("flock.members.leadAdminIs", "{{name}} leads the {{chapter}} chapter: they review its event suggestions and can add and edit its events.", { name: m.display_name, chapter: chapterName(t, m.region_name) })
               : t("flock.members.leadAdminNot", "A chapter lead reviews event suggestions for their own chapter and can add and edit its events. It also gives them a Flock membership.")}
           </p>
           {leadError && <p role="alert" className="m-0 mt-2 text-[14px]" style={{ color: K.red }}>{leadError}</p>}
           <button type="button" onClick={() => setConfirming(true)} disabled={busy || (!isLead && m.region_slug === "other")} data-testid="lead-toggle"
             className="mt-3 min-h-[48px] w-full rounded-full text-[15px] font-[700] disabled:opacity-50"
             style={isLead ? { background: K.mist, color: K.red } : { background: K.forest, color: "#fff" }}>
-            {isLead ? t("flock.members.removeLead", "Remove as chapter lead") : t("flock.members.makeLead", "Make chapter lead of {{chapter}}", { chapter: m.region_name })}
+            {isLead ? t("flock.members.removeLead", "Remove as chapter lead") : t("flock.members.makeLead", "Make chapter lead of {{chapter}}", { chapter: chapterName(t, m.region_name) })}
           </button>
         </KyaCard></div>
       )}
@@ -120,8 +120,8 @@ function FlockMember() {
         <ConfirmSheet busy={busy} onClose={() => setConfirming(false)}
           title={isLead ? t("flock.members.removeLeadTitle", "Remove {{name}} as chapter lead?", { name: m.display_name }) : t("flock.members.makeLeadTitle", "Make {{name}} the chapter lead?", { name: m.display_name })}
           line={isLead
-            ? t("flock.members.removeLeadLine", "They stop reviewing and editing {{chapter}} events right away, and the membership that came with the role ends.", { chapter: m.region_name })
-            : t("flock.members.makeLeadLine", "They'll review {{chapter}} event suggestions and can add and edit its events.", { chapter: m.region_name })}
+            ? t("flock.members.removeLeadLine", "They stop reviewing and editing {{chapter}} events right away, and the membership that came with the role ends.", { chapter: chapterName(t, m.region_name) })
+            : t("flock.members.makeLeadLine", "They'll review {{chapter}} event suggestions and can add and edit its events.", { chapter: chapterName(t, m.region_name) })}
           confirm={isLead ? t("flock.members.removeLead", "Remove as chapter lead") : t("flock.members.makeLeadShort", "Make chapter lead")}
           onConfirm={async () => {
             setBusy(true); setLeadError(null);

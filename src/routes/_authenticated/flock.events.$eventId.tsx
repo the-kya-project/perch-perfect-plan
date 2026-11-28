@@ -12,6 +12,7 @@ import { useAvatarUrls } from "@/lib/flockData";
 import {
   cancelEvent, downloadIcs, eventIcs, goersLine, longWhen, rsvp, useEvent, useEventPhoto, useInvalidateEvents, type RsvpAnswer,
 } from "@/lib/flockEvents";
+import { chapterName } from "@/lib/flockNav";
 
 // An event (Batch 5, screen 2): when, where, who's going, who's hosting, and
 // I'm going / Maybe. Only the chapter's members (and its managers) can open
@@ -66,7 +67,7 @@ function EventPage() {
   };
 
   return (
-    <FlockSubPage title={e.title} line={t("flock.events.chapterLine", "{{name}} chapter", { name: e.region_name ?? "" })} fallback="/flock/chapter"
+    <FlockSubPage title={e.title} line={t("flock.events.chapterLine", "{{name}} chapter", { name: chapterName(t, e.region_name) })} fallback="/flock/chapter"
       right={e.can_manage ? (
         <Link to="/flock/events/new" search={{ edit: e.event_id }} className="min-h-[44px] content-center rounded-full px-4 text-[14px] font-[700]"
           style={{ background: K.lime, color: K.forest }} data-testid="edit-event">{t("flock.events.edit", "Edit")}</Link>

@@ -7,6 +7,7 @@ import { FlockEmpty } from "@/components/flock/FlockChips";
 import { FlockAvatar } from "@/components/flock/FlockPeople";
 import { useAvatarUrls } from "@/lib/flockData";
 import { spotLabel, useFoundingMembers } from "@/lib/flockFounders";
+import { chapterName } from "@/lib/flockNav";
 
 // The founding members page: founders who chose to be listed, in spot order,
 // with their display name, photo, chapter and founding spot. Nothing else
@@ -41,7 +42,7 @@ function FlockFounders() {
                 <FlockAvatar name={f.display_name} url={f.photo_path ? urls?.get(f.photo_path) : null} size={44} />
                 <span className="flex min-w-0 flex-1 flex-col gap-0.5">
                   <span className="truncate text-[15.5px] font-[700]" style={{ color: K.forest }}>{f.display_name}</span>
-                  {f.chapter_name && <span className="truncate text-[13px]" style={{ color: K.quiet }}>{f.chapter_name}</span>}
+                  {f.chapter_name && <span className="truncate text-[13px]" style={{ color: K.quiet }}>{chapterName(t, f.chapter_name)}</span>}
                 </span>
                 <span className="shrink-0 rounded-full px-2.5 py-1 text-[13px] font-[700]" style={{ background: K.sunflower, color: K.forest }}
                   aria-label={t("flock.founders.spotAria", "Founding spot {{n}}", { n: f.spot_number })}>
