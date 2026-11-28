@@ -98,6 +98,7 @@ import { Route as AuthenticatedAdminVotesIndexRouteImport } from './routes/_auth
 import { Route as AuthenticatedAdminVotesVoteIdRouteImport } from './routes/_authenticated/admin.votes.$voteId'
 import { Route as AuthenticatedBirdsBirdIdIndexRouteImport } from './routes/_authenticated/birds/$birdId.index'
 import { Route as AuthenticatedBirdsBirdIdAccessRouteImport } from './routes/_authenticated/birds/$birdId.access'
+import { Route as AuthenticatedBirdsBirdIdBadgesRouteImport } from './routes/_authenticated/birds/$birdId.badges'
 import { Route as AuthenticatedBirdsBirdIdCarePlanRouteImport } from './routes/_authenticated/birds/$birdId.care-plan'
 import { Route as AuthenticatedBirdsBirdIdConcernRouteImport } from './routes/_authenticated/birds/$birdId.concern'
 import { Route as AuthenticatedBirdsBirdIdEmergencyRouteImport } from './routes/_authenticated/birds/$birdId.emergency'
@@ -647,6 +648,12 @@ const AuthenticatedBirdsBirdIdAccessRoute =
     path: '/access',
     getParentRoute: () => AuthenticatedBirdsBirdIdRoute,
   } as any)
+const AuthenticatedBirdsBirdIdBadgesRoute =
+  AuthenticatedBirdsBirdIdBadgesRouteImport.update({
+    id: '/badges',
+    path: '/badges',
+    getParentRoute: () => AuthenticatedBirdsBirdIdRoute,
+  } as any)
 const AuthenticatedBirdsBirdIdCarePlanRoute =
   AuthenticatedBirdsBirdIdCarePlanRouteImport.update({
     id: '/care-plan',
@@ -1162,6 +1169,7 @@ export interface FileRoutesByFullPath {
   '/admin/library/$resourceId': typeof AuthenticatedAdminLibraryResourceIdRoute
   '/admin/votes/$voteId': typeof AuthenticatedAdminVotesVoteIdRoute
   '/birds/$birdId/access': typeof AuthenticatedBirdsBirdIdAccessRoute
+  '/birds/$birdId/badges': typeof AuthenticatedBirdsBirdIdBadgesRoute
   '/birds/$birdId/care-plan': typeof AuthenticatedBirdsBirdIdCarePlanRoute
   '/birds/$birdId/concern': typeof AuthenticatedBirdsBirdIdConcernRoute
   '/birds/$birdId/emergency': typeof AuthenticatedBirdsBirdIdEmergencyRoute
@@ -1318,6 +1326,7 @@ export interface FileRoutesByTo {
   '/admin/library/$resourceId': typeof AuthenticatedAdminLibraryResourceIdRoute
   '/admin/votes/$voteId': typeof AuthenticatedAdminVotesVoteIdRoute
   '/birds/$birdId/access': typeof AuthenticatedBirdsBirdIdAccessRoute
+  '/birds/$birdId/badges': typeof AuthenticatedBirdsBirdIdBadgesRoute
   '/birds/$birdId/care-plan': typeof AuthenticatedBirdsBirdIdCarePlanRoute
   '/birds/$birdId/concern': typeof AuthenticatedBirdsBirdIdConcernRoute
   '/birds/$birdId/emergency': typeof AuthenticatedBirdsBirdIdEmergencyRoute
@@ -1481,6 +1490,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/library/$resourceId': typeof AuthenticatedAdminLibraryResourceIdRoute
   '/_authenticated/admin/votes/$voteId': typeof AuthenticatedAdminVotesVoteIdRoute
   '/_authenticated/birds/$birdId/access': typeof AuthenticatedBirdsBirdIdAccessRoute
+  '/_authenticated/birds/$birdId/badges': typeof AuthenticatedBirdsBirdIdBadgesRoute
   '/_authenticated/birds/$birdId/care-plan': typeof AuthenticatedBirdsBirdIdCarePlanRoute
   '/_authenticated/birds/$birdId/concern': typeof AuthenticatedBirdsBirdIdConcernRoute
   '/_authenticated/birds/$birdId/emergency': typeof AuthenticatedBirdsBirdIdEmergencyRoute
@@ -1645,6 +1655,7 @@ export interface FileRouteTypes {
     | '/admin/library/$resourceId'
     | '/admin/votes/$voteId'
     | '/birds/$birdId/access'
+    | '/birds/$birdId/badges'
     | '/birds/$birdId/care-plan'
     | '/birds/$birdId/concern'
     | '/birds/$birdId/emergency'
@@ -1801,6 +1812,7 @@ export interface FileRouteTypes {
     | '/admin/library/$resourceId'
     | '/admin/votes/$voteId'
     | '/birds/$birdId/access'
+    | '/birds/$birdId/badges'
     | '/birds/$birdId/care-plan'
     | '/birds/$birdId/concern'
     | '/birds/$birdId/emergency'
@@ -1963,6 +1975,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/library/$resourceId'
     | '/_authenticated/admin/votes/$voteId'
     | '/_authenticated/birds/$birdId/access'
+    | '/_authenticated/birds/$birdId/badges'
     | '/_authenticated/birds/$birdId/care-plan'
     | '/_authenticated/birds/$birdId/concern'
     | '/_authenticated/birds/$birdId/emergency'
@@ -2712,6 +2725,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedBirdsBirdIdAccessRouteImport
       parentRoute: typeof AuthenticatedBirdsBirdIdRoute
     }
+    '/_authenticated/birds/$birdId/badges': {
+      id: '/_authenticated/birds/$birdId/badges'
+      path: '/badges'
+      fullPath: '/birds/$birdId/badges'
+      preLoaderRoute: typeof AuthenticatedBirdsBirdIdBadgesRouteImport
+      parentRoute: typeof AuthenticatedBirdsBirdIdRoute
+    }
     '/_authenticated/birds/$birdId/care-plan': {
       id: '/_authenticated/birds/$birdId/care-plan'
       path: '/care-plan'
@@ -3404,6 +3424,7 @@ const AuthenticatedBirdsBirdIdPlanRouteWithChildren =
 
 interface AuthenticatedBirdsBirdIdRouteChildren {
   AuthenticatedBirdsBirdIdAccessRoute: typeof AuthenticatedBirdsBirdIdAccessRoute
+  AuthenticatedBirdsBirdIdBadgesRoute: typeof AuthenticatedBirdsBirdIdBadgesRoute
   AuthenticatedBirdsBirdIdCarePlanRoute: typeof AuthenticatedBirdsBirdIdCarePlanRoute
   AuthenticatedBirdsBirdIdConcernRoute: typeof AuthenticatedBirdsBirdIdConcernRoute
   AuthenticatedBirdsBirdIdEmergencyRoute: typeof AuthenticatedBirdsBirdIdEmergencyRoute
@@ -3426,6 +3447,7 @@ interface AuthenticatedBirdsBirdIdRouteChildren {
 const AuthenticatedBirdsBirdIdRouteChildren: AuthenticatedBirdsBirdIdRouteChildren =
   {
     AuthenticatedBirdsBirdIdAccessRoute: AuthenticatedBirdsBirdIdAccessRoute,
+    AuthenticatedBirdsBirdIdBadgesRoute: AuthenticatedBirdsBirdIdBadgesRoute,
     AuthenticatedBirdsBirdIdCarePlanRoute:
       AuthenticatedBirdsBirdIdCarePlanRoute,
     AuthenticatedBirdsBirdIdConcernRoute: AuthenticatedBirdsBirdIdConcernRoute,

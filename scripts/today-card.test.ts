@@ -151,10 +151,14 @@ check("Home shows the card outside the onboarding tour's demo", () => {
   const home = readFileSync("src/routes/_authenticated/dashboard.tsx", "utf8");
   assert.match(home, /\{!demo && <SeasonalTodayCard userId=\{me\?\.id\} homeTimeZone=\{me\?\.timeZone\} \/>\}/);
 });
-check("today_cards starts off in the code, the migration and the database check", () => {
+check("the care switches start off in the code, the migrations and the database check", () => {
   const expected = Object.fromEntries(CARE_FEATURES.map((f) => [f.feature, f.startsAt]));
-  assert.deepEqual(expected, { today_cards: "off" });
-  const migration = readFileSync("supabase/migrations/20261123100000_care_features.sql", "utf8");
+  assert.deepEqual(expected, { today_cards: "off", care_badges: "off" });
+  // Each switch is seeded by the migration that brought its feature.
+  const migration = [
+    "supabase/migrations/20261123100000_care_features.sql",
+    "supabase/migrations/20261128160000_care_badges.sql",
+  ].map((f) => readFileSync(f, "utf8")).join("\n");
   for (const f of CARE_FEATURES) {
     assert.match(migration, new RegExp(`\\('${f.feature}', '${f.startsAt}',`), `migration seeds ${f.feature}`);
   }
