@@ -20,6 +20,12 @@ Copy this, fill it in, and put it at the top of "Runs", above the latest entry.
 
 ## Runs
 
+### 2026-11-28 11:45 EST · 1.16 Rescue partner codes, Dutch (started by Brittany in a session)
+- **Built:** Dutch for all 79 rescue-code lines (the adopter's screens, the Join and redeem card, the admin page and the review chip), hand-written and passed through the repo's translation script for its placeholder checks. Partner lines on the admin page now wrap instead of cutting off, since the Dutch is longer.
+- **PR:** [#574](https://github.com/the-kya-project/perch-perfect-plan/pull/574)
+- **Outcome:** Held: for Brittany's read of the Dutch.
+- **Problems:** the rest of the Flock isn't in Dutch yet (about 1,480 lines), so the Join sheet and the admin card show Dutch rescue lines next to English ones until those are translated.
+
 ### 2026-11-26 13:20 EST · 1.16 Rescue partner codes (started by Brittany in a session, not an hourly run)
 - **Built:** partner rescues each get one reusable code, with an optional limit. "Have a rescue code?" on the Join screen and the redeem page leads to the code, then the bird's name, species and adoption date, then "being confirmed". An admin approves or declines it on the new Rescue partners page or in the review queue; an approved adopter sees a welcome and gets six months in the Flock, free, from the free season's end (or right away once it has ended). One per account, never with a founding spot, never a payment, no seat counting. Admins add and edit partners and pause codes. All behind the Flock gate (admins only).
 - **PR:** [#565](https://github.com/the-kya-project/perch-perfect-plan/pull/565)
