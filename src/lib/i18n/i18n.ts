@@ -25,17 +25,27 @@
 // classic "server picks lang from Accept-Language, client from navigator.language"
 // mismatch cannot occur, because the server renders none of it. On the client,
 // resources are inline and `lng` is set synchronously before the sitter content
-// renders, and `useSuspense: false` guarantees `t()` never suspends. `<html lang>`
+// renders, and `useSuspense: false` guarantees `t()` never suspends. English is
+// bundled; another language is fetched once (loadLocale, below) before anything
+// switches to it, and the sitter subtree waits on it (route.tsx). `<html lang>`
 // stays server-rendered "en" and is corrected by a DOM effect outside React's
 // tree (see route.tsx), which cannot cause a hydration mismatch.
 
 import i18next, { type i18n as I18nInstance } from "i18next";
 import { initReactI18next } from "react-i18next";
-import { resources } from "./catalogs";
+import { loadLocaleBundle, resources, type LocaleBundle } from "./catalogs";
 import { DEFAULT_LOCALE, SUPPORTED_LOCALES, pickLocale, isLocale, type Locale } from "./config";
 
+const NAMESPACES = ["translation", "routine", "seasonal"] as const;
+
+// Languages whose catalogs are in memory. English always; others once
+// loadLocale has fetched them. An instance initialised later (the sitter one)
+// starts with all of them.
+const loadedResources: Record<string, LocaleBundle> = { ...resources };
+
 const commonInit = {
-  resources,
+  // Languages other than English are added at runtime (loadLocale).
+  partialBundledLanguages: true,
   fallbackLng: DEFAULT_LOCALE,
   supportedLngs: SUPPORTED_LOCALES as unknown as string[],
   // "translation" is the app catalog; "routine" renders derived routine tasks;
@@ -57,7 +67,7 @@ const commonInit = {
 // initReactI18next is applied ONLY here, so this is react-i18next's default
 // instance (what useTranslation() resolves to with no <I18nextProvider>).
 if (!i18next.isInitialized) {
-  void i18next.use(initReactI18next).init({ ...commonInit, lng: DEFAULT_LOCALE });
+  void i18next.use(initReactI18next).init({ ...commonInit, resources: { ...loadedResources }, lng: DEFAULT_LOCALE });
 }
 export const globalI18n = i18next;
 
@@ -73,19 +83,51 @@ export const globalI18n = i18next;
 // React applies only once the pending subtrees have hydrated. initImmediate:false
 // makes init synchronous, so it's ready on the very first render.
 export const hydrationI18n: I18nInstance = i18next.createInstance();
-void hydrationI18n.init({ ...commonInit, lng: DEFAULT_LOCALE, initImmediate: false });
+void hydrationI18n.init({ ...commonInit, resources: { ...loadedResources }, lng: DEFAULT_LOCALE, initImmediate: false });
 
 // ---- Sitter instance: scoped to the sitter subtree via <I18nextProvider>. ----
 // NOT wired with initReactI18next (that would steal the global default and flip
 // the owner app). Components under the provider read it from context.
 export const sitterI18n: I18nInstance = i18next.createInstance();
 
+// ---- Loading a language ----------------------------------------------------
+const pending = new Map<string, Promise<void>>();
+
+/** True once `locale`'s catalogs are in memory (English always is). */
+export function isLocaleLoaded(locale: Locale): boolean {
+  return locale in loadedResources;
+}
+
+/** Fetch `locale`'s catalogs once and add them to every instance that's been
+ *  initialised. Resolves at once for English or a language already loaded.
+ *  A failed fetch rejects and can be tried again; the caller keeps showing
+ *  English (or its loading state). */
+export function loadLocale(locale: Locale): Promise<void> {
+  if (isLocaleLoaded(locale)) return Promise.resolve();
+  let p = pending.get(locale);
+  if (!p) {
+    p = loadLocaleBundle(locale)
+      .then((bundle) => {
+        loadedResources[locale] = bundle;
+        for (const inst of [i18next, sitterI18n]) {
+          if (!inst.isInitialized) continue;
+          for (const ns of NAMESPACES) inst.addResourceBundle(locale, ns, bundle[ns], true, true);
+        }
+      })
+      .finally(() => pending.delete(locale));
+    pending.set(locale, p);
+  }
+  return p;
+}
+
 /** Idempotently bring the sitter instance to `locale`. `init` is synchronous
- *  here (inline resources, no backend/detector), so `t()` works immediately on
- *  the same tick — no async gap, no flash. */
+ *  here (in-memory resources, no backend/detector), so `t()` works immediately
+ *  on the same tick: no async gap, no flash. The caller makes sure `locale` is
+ *  loaded first (SitterRoot waits on loadLocale); if it isn't, strings fall
+ *  back to English. */
 export function ensureSitterI18n(locale: Locale): I18nInstance {
   if (!sitterI18n.isInitialized) {
-    void sitterI18n.init({ ...commonInit, lng: locale });
+    void sitterI18n.init({ ...commonInit, resources: { ...loadedResources }, lng: locale });
   } else if (sitterI18n.language !== locale) {
     void sitterI18n.changeLanguage(locale);
   }

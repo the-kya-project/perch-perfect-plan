@@ -1529,6 +1529,12 @@ No new strings: every line reuses existing wording, in new places (admins only).
 
 ## Decisions agents made
 
+### [#587](https://github.com/the-kya-project/perch-perfect-plan/pull/587) · Load each language only when it's needed
+- **Decision:** English stays in the main bundle; Dutch is fetched the first time it's needed (`loadLocale` in `src/lib/i18n`). The main file drops from 2.24 MB to 1.66 MB for everyone.
+- **Decision:** A Dutch sitter sees the usual loading skeleton until the Dutch file arrives (a moment on first open; the service worker caches it after), never English first. If the fetch fails, the sitter page carries on in English rather than staying blank. The owner app shows English until the file arrives, then switches, as it already did after its first paint.
+- **Decision:** The 3 MiB precache limit from #582 goes back to Workbox's 2 MiB default, so a growing bundle shows up as a build failure again.
+- **Why:** the server only ever renders English, so nothing here can cause a hydration mismatch; the only new thing is a short wait before Dutch appears.
+
 ### [#586](https://github.com/the-kya-project/perch-perfect-plan/pull/586) · Dutch wording gaps from #582
 - **Decision:** No change for `dashboard.yourBirds` / `dashboard.yourFlock` (both "Je vogels vandaag" in Dutch). They're alternatives for the same title on Home (with or without a household), never shown together, so reading the same is fine.
 - **Decision:** The Dutch possessive rule lives in `possessive(name, lang)` in `src/lib/journeys.ts`, with tests in `npm run test:flock-shell`.

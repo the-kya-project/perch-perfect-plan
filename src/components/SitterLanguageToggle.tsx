@@ -1,5 +1,5 @@
 import { useTranslation } from "react-i18next";
-import { sitterI18n, writeSitterOverride, pickLocale, type Locale } from "@/lib/i18n";
+import { loadLocale, sitterI18n, writeSitterOverride, pickLocale, type Locale } from "@/lib/i18n";
 
 // Manual EN/NL switch in the sitter chrome. Detection (browser language) is the
 // default; this is the override for when detection is wrong. The choice is
@@ -14,7 +14,9 @@ export function SitterLanguageToggle({ token }: { token: string }) {
   function choose(next: Locale) {
     if (next === current) return;
     writeSitterOverride(token, next);
-    void sitterI18n.changeLanguage(next);
+    // Fetch the language the first time it's picked (src/lib/i18n/catalogs.ts),
+    // then switch; until it arrives the screen stays as it is.
+    void loadLocale(next).then(() => sitterI18n.changeLanguage(next), () => undefined);
   }
 
   // Darker-forest pill on the forest header; the selected language is lime.

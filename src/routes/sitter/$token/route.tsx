@@ -15,7 +15,7 @@ import { reportError } from "@/lib/errorReporting";
 import { SUPPORT_EMAIL } from "@/lib/support";
 import { PullToRefresh } from "@/components/PullToRefresh";
 import { I18nextProvider, useTranslation } from "react-i18next";
-import { sitterI18n, ensureSitterI18n, resolveSitterLocale } from "@/lib/i18n";
+import { sitterI18n, ensureSitterI18n, isLocaleLoaded, loadLocale, resolveSitterLocale } from "@/lib/i18n";
 import { localDateISO } from "@/lib/localDay";
 import { isOwnerPreview } from "@/lib/sitterPreviewMode";
 import { removeSitDrafts } from "@/lib/draftStore";
@@ -160,7 +160,18 @@ function SitterRoot() {
   // sitter i18n instance to it SYNCHRONOUSLY, before any translated content
   // renders. This is why a Dutch sitter's first paint is already Dutch — there
   // is no async detect-then-swap, so no flash of English. See src/lib/i18n.
-  ensureSitterI18n(resolveSitterLocale(token));
+  // English is bundled; another language is fetched the first time, and until
+  // it arrives the sitter sees the loading skeleton, never English. If the
+  // fetch fails, the page carries on in English rather than staying blank.
+  const locale = resolveSitterLocale(token);
+  const [ready, setReady] = useState(() => isLocaleLoaded(locale));
+  useEffect(() => {
+    if (ready) return;
+    let live = true;
+    void loadLocale(locale).finally(() => { if (live) setReady(true); });
+    return () => { live = false; };
+  }, [locale, ready]);
+  ensureSitterI18n(ready && isLocaleLoaded(locale) ? locale : "en");
 
   // Correct <html lang> on the client only. The shell ships lang="en" from the
   // server (see __root RootShell); mutating documentElement here is OUTSIDE
@@ -178,9 +189,11 @@ function SitterRoot() {
   return (
     <I18nextProvider i18n={sitterI18n}>
       <SitterErrorBoundary>
-        <Suspense fallback={<FullPageSkeleton />}>
-          <SitterLayout />
-        </Suspense>
+        {ready ? (
+          <Suspense fallback={<FullPageSkeleton />}>
+            <SitterLayout />
+          </Suspense>
+        ) : <FullPageSkeleton />}
       </SitterErrorBoundary>
     </I18nextProvider>
   );

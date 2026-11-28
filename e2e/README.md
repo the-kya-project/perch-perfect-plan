@@ -24,7 +24,7 @@ A test fails on any React hydration error (#418, #421, #422, #423, #425, #520) o
 ### Adding a language
 There's nothing to do here. Add the language to `SUPPORTED_LOCALES`, and every test runs in it on the next pull request. The expected headings and buttons are read from that language's catalog, falling back to English for anything not translated yet.
 
-The check also confirms the page really appears in the new language. So if the language is on the list but the app doesn't show it yet (for example, the catalog isn't loaded in `src/lib/i18n/catalogs.ts`, or `pickLocale` in `config.ts` doesn't recognise it), the check fails until it does.
+The check also confirms the page really appears in the new language. So if the language is on the list but the app doesn't show it yet (for example, the catalog has no loader in `src/lib/i18n/catalogs.ts`, or `pickLocale` in `config.ts` doesn't recognise it), the check fails until it does.
 
 ## Reading a failure
 On the pull request, open **Details** next to **iPhone hydration**. Each failed test starts with a line like this:
