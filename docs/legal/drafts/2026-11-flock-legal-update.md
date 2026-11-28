@@ -156,7 +156,7 @@ This policy covers the Kya & Co. app (on the web, iPhone and Android), the Flock
 
 ### What we collect
 
-**When you use the care app:** your account details (email and display name), the bird profiles and care plans you create, weights, health checks, journal entries, sits and sitter activity, the photos and clips you upload, and how you use the app, including error reports if something goes wrong (see below).
+**When you use the care app:** your account details (email and display name), the bird profiles and care plans you create, your home ZIP or postcode if you choose to add one, weights, health checks, journal entries, sits and sitter activity, the photos and clips you upload, and how you use the app, including error reports if something goes wrong (see below).
 
 **When you join the Flock:**
 
@@ -180,6 +180,10 @@ We remove location and camera details from every Flock photo before it leaves yo
 - To take payment and manage your membership.
 
 We do not sell your personal data.
+
+### Weather reminders
+
+If you add a home ZIP or postcode, we use it to show heat and cold reminders on Home. Our server looks up the forecast for the middle of that ZIP or postcode area from Apple WeatherKit and shares the result with everyone in the same area. Apple never receives your ZIP or postcode, your name, your email address or your account. We never use your phone's location. You can remove your ZIP or postcode in Account at any time, and it's deleted with your account.
 
 ### Who can see what in the Flock
 
@@ -250,6 +254,7 @@ These companies handle data for us, only to provide their service. We don't let 
 - **Stripe:** takes payments. Handles the buyer's name, email, billing address and card details, and for a gift, the recipient's name, email and message. We never see or store card numbers.
 - **Brevo:** sends our emails (based in France, data stored in the EU). Handles your email address, name, language, email preferences and how you found us; for the waitlist, the chapter you chose and whether you'd like to lead one; and for a gift, the recipient's email address.
 - **PostHog:** product analytics and error reports, without cookies. Handles a coded account ID, the screens you use, your device type and error reports.
+- **Apple WeatherKit:** provides the weather forecast for heat and cold reminders, if you add a home ZIP or postcode. Handles the approximate location of a ZIP or postcode area.
 - **Google Sign-In and Sign in with Apple:** let you sign in, if you choose to. Handles the name and email address they share with us.
 - **Apple Push Notification service and Firebase Cloud Messaging:** deliver notifications in the iPhone and Android apps. Handles a device token and the notification text.
 - **Your browser's push service:** delivers notifications on the website, if you turn them on. Handles a push address for your browser and the notification text.
