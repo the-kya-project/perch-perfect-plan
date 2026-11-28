@@ -5,7 +5,7 @@
 **Written:** Nov 28, 2026, from Brittany's brief and mockups, after a read of the code on `main`. Brittany's answers to all the planning questions are recorded under "Decisions" at the end.
 **Scope:** the community side only (everything under `/flock`, plus one switch on the care side's moment sheet in section 8). The care app's Home, Sits, Health, Explore and its bottom bar with the Community button stay exactly as they are.
 
-> **Update, Nov 28, 2026 (Brittany):** the guidelines page and the agreement are being built separately, as a three-screen walk-through with her final guidelines text (mockups in `docs/mockups/flock-guidelines-agreement/`, branch `flock-guidelines-walkthrough`). That work **replaces sections 9 and 10** (Final-10 and Final-11, backlog CR11 and CR12): don't build them from this spec. Section 6b (post options, CR13) **waits** for Brittany to choose between Final-08 here ("report") and that work's post options and flag sheets (04–06, "flag"). The Community guidelines row at the top of the menu (section 3) stays and opens the walk-through's guidelines page.
+> **Update, Nov 28, 2026 (Brittany):** the guidelines page and the agreement are being built separately, as a three-screen walk-through with her final guidelines text (mockups in `docs/mockups/flock-guidelines-agreement/`, branch `flock-guidelines-walkthrough`). That work **replaces sections 9 and 10** (Final-10 and Final-11, backlog CR11 and CR12): don't build them from this spec. Section 6b (post options, CR13) is **replaced too**: Brittany chose **flag** (Nov 28), so posts and comments get that work's post options, flag sheet and flag sent (04–06: "Flag this post", "Block [name]"; your own posts keep Edit and Delete), built in its next step. Final-08 and the "report a member" type described in 6b and the Apple table aren't built; Apple 1.2 is met by flagging content and blocking members. The Community guidelines row at the top of the menu (section 3) stays and opens the walk-through's guidelines page.
 
 ## How to use the mockups
 
@@ -147,7 +147,7 @@ From the center plus. A bottom sheet (white, 26px top corners, handle, serif tit
 - If the moment fails, the post stands: "Your post is up. We couldn't save it to [bird]'s moments.", and a `save_errors` row.
 - Not on edit, challenge entries or pod posts.
 
-## 6b. Post options: report and block · See Final-08-PostOptions (waiting on Brittany's choice of design: see the update at the top)
+## 6b. Post options: report and block · See Final-08-PostOptions (replaced by flagging: see the update at the top)
 
 Every post and comment (Feed cards, the post page, comment threads, Chapter posts, pod and challenge posts) has a **···** button that opens one **Post options** sheet (white, serif title, round Close), replacing today's separate menus in `PostMenus`:
 
