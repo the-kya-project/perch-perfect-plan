@@ -19,7 +19,7 @@ Format:
   - After: "<new wording>"
 ```
 
-### [#584](https://github.com/the-kya-project/perch-perfect-plan/pull/584) · Community guidelines walk-through and guidelines page · **held for Brittany**
+### [#584](https://github.com/the-kya-project/perch-perfect-plan/pull/584) · Community guidelines walk-through and guidelines page · **merged on Brittany's OK (Nov 28, 2026)**
 All new member-facing wording, word for word from the approved mockups and the prompt (source: `src/flock/guidelines/content.ts`). English only so far: Dutch shows the English until the next translation pass.
 - **Where:** walk-through screen 1 (`/flock/agree`)
   - New: "1 of 3" (and "2 of 3", "3 of 3"); "Welcome to the Flock"; "Before you join, here's a quick look at what we're all about."
@@ -2189,9 +2189,6 @@ Format:
 ### <PR link> · <item ID> <item title>
 - **Needs:** <the decision, approval or read, in one or two lines>
 ```
-
-### [#584](https://github.com/the-kya-project/perch-perfect-plan/pull/584) · Community guidelines walk-through and guidelines page
-- **Needs:** your approval to merge. It's behind the Flock gate (admins only today) and free users see nothing new, but it's a production database change (new table, new triggers on posts, comments and journeys), it replaces the guidelines' text, and you'll see the walk-through yourself once after it merges. You've since decided to retire the join step's checkbox and add a close button to screen 1; both are in.
 
 ### [#581](https://github.com/the-kya-project/perch-perfect-plan/pull/581) · D2.2 Weather cards
 - **Needs:** your review of the copy and the build, as the item says, plus three things the run couldn't do:
