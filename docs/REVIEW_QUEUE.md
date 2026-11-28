@@ -36,6 +36,18 @@ All new member-facing wording, word for word from the approved mockups (source: 
 - **Where:** the review queue: new flags show "Harmful or unkind" and "Goes against Kya care standards"; older reports keep "Unkind or harassing" and "Unsafe advice for birds".
 - **Gone:** "Block and report", "Report and block", and its thank-you ("We'll take a look. You've also blocked …").
 
+### [#586](https://github.com/the-kya-project/perch-perfect-plan/pull/586) · Dutch wording gaps from #582 · **merged on Brittany's OK (Nov 28, 2026)**
+English is unchanged everywhere. New Dutch:
+- **Where:** a bird's name in journey and notification lines ("Started from Max' journey")
+  - Before: always the English form ("Max's")
+  - After: Dutch rules in Dutch: "Kiwi's", "Mango's", "Sunny's"; "Max'", "Iris'"; "Pieters", "Charlies"
+- **Where:** `/admin/library`, "Add … before publishing" (admins only)
+  - Before: the missing items were always English ("a title, at least one topic")
+  - After: "een titel", "een korte samenvatting", "minstens één onderwerp", "de weblink (video's en links hebben er een nodig)"
+- **Where:** Community notifications, when several people cheer
+  - Before: "3 mensen moedigde … aan" (singular verb)
+  - After: "3 mensen moedigden … aan"
+
 ### [#584](https://github.com/the-kya-project/perch-perfect-plan/pull/584) · Community guidelines walk-through and guidelines page · **merged on Brittany's OK (Nov 28, 2026)**
 All new member-facing wording, word for word from the approved mockups and the prompt (source: `src/flock/guidelines/content.ts`). English only so far: Dutch shows the English until the next translation pass.
 - **Where:** walk-through screen 1 (`/flock/agree`)
@@ -1533,6 +1545,10 @@ No new strings: every line reuses existing wording, in new places (admins only).
 ---
 
 ## Decisions agents made
+
+### [#586](https://github.com/the-kya-project/perch-perfect-plan/pull/586) · Dutch wording gaps from #582
+- **Decision:** No change for `dashboard.yourBirds` / `dashboard.yourFlock` (both "Je vogels vandaag" in Dutch). They're alternatives for the same title on Home (with or without a household), never shown together, so reading the same is fine.
+- **Decision:** The Dutch possessive rule lives in `possessive(name, lang)` in `src/lib/journeys.ts`, with tests in `npm run test:flock-shell`.
 
 ### [#581](https://github.com/the-kya-project/perch-perfect-plan/pull/581) · D2.2 Weather cards
 - **Decision:** The ZIP lives in its own table, `home_postcodes` (one row per account, own row only), not as columns on `profiles`, so no existing policy that lets others read a profile can ever reach it. The weather card's "Got it" is a column on that row (`weather_dismissed_on`), not the seasonal card's `today_card_dismissals` row, which holds one card per account: sharing it would have brought back a seasonal card you'd already hidden.

@@ -20,6 +20,12 @@ Copy this, fill it in, and put it at the top of "Runs", above the latest entry.
 
 ## Runs
 
+### 2026-11-28 17:10 EST · Dutch wording gaps from #582 (started by Brittany in a session)
+- **Built:** bird names in journey and notification lines now follow Dutch possessive rules in Dutch ("Max'", "Kiwi's"); the library admin's "Add … before publishing" items are translated; several people cheering uses the Dutch plural verb. The two dashboard titles needed no change.
+- **PR:** [#586](https://github.com/the-kya-project/perch-perfect-plan/pull/586)
+- **Outcome:** Merged on Brittany's OK once checks passed (Nov 28, 2026).
+- **Problems:** the local browser tests collided with another working copy's run on the same ports, and the app server stopped under heavy machine load; rerun in parts, all passing except the join test that fails on this Mac only. I stopped one test server that turned out to belong to that other working copy's run, which may have failed it.
+
 ### 2026-11-28 15:40 EST · Dutch for everything still in English (started by Brittany in a session)
 - **Built:** Dutch for the 1,535 lines that were still English: the whole Flock, the founding page, care badges, weight-baseline lines, a few care-app lines, and the sign-in and gift emails. Written in nine batches against one glossary and run through the repo's translation script; nothing is left untranslated in any catalog. The founding page's chapter names are Dutch too. The app's main file passed the service worker's 2 MB caching limit, which broke the build, so the limit is now 3 MB.
 - **PR:** [#582](https://github.com/the-kya-project/perch-perfect-plan/pull/582)

@@ -5197,6 +5197,14 @@
   "flock.libraryAdmin.previewNote": "Zo zien leden het, inclusief alles wat je nog niet hebt opgeslagen.",
   // Preview
   "flock.libraryAdmin.previewTab": "Voorbeeld",
+  // a short summary
+  "flock.libraryAdmin.problemSummary": "een korte samenvatting",
+  // a title
+  "flock.libraryAdmin.problemTitle": "een titel",
+  // at least one topic
+  "flock.libraryAdmin.problemTopics": "minstens één onderwerp",
+  // the web link (videos and links need one)
+  "flock.libraryAdmin.problemUrl": "de weblink (video's en links hebben er een nodig)",
   // Publish
   "flock.libraryAdmin.publish": "Publiceren",
   // Published
@@ -5343,6 +5351,8 @@
   "flock.notif.chapterPost": "{{name}} plaatste een bericht in je afdeling",
   // cheered {{what}}
   "flock.notif.cheered": "moedigde {{what}} aan",
+  // cheered {{what}}
+  "flock.notif.cheeredMany": "moedigden {{what}} aan",
   // Cheers
   "flock.notif.cheers": "Aanmoedigingen",
   // commented on {{bird}} {{skill}}

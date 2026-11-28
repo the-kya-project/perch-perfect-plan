@@ -245,7 +245,7 @@ function JourneyPage() {
             <p className="m-0 text-[15px] leading-[1.5]" style={{ color: K.ink }}>
               {diet
                 ? t("flock.journeys.page.onNewDietLine", "This finishes the journey. Keep weighing {{name}} as usual.", { name: card.bird_name })
-                : t("flock.journeys.page.learnedLine", "This finishes the journey and adds {{skill}} to {{name}} skills.", { skill: skillInSentence(card.skill), name: possessive(card.bird_name) })}
+                : t("flock.journeys.page.learnedLine", "This finishes the journey and adds {{skill}} to {{name}} skills.", { skill: skillInSentence(card.skill), name: possessive(card.bird_name, i18n.language) })}
             </p>
             <div data-testid="learned-yes">
               <KyaPrimaryButton onClick={() => void learned()} disabled={finishing}>
