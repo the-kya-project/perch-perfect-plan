@@ -76,7 +76,11 @@ Dutch ("je") for the rest of the Join screen, after #574. Chapter is "afdeling",
   - "Email the Kya team at {{email}}." → "Mail het Kya-team op {{email}}."
 
 ### [#578](https://github.com/the-kya-project/perch-perfect-plan/pull/578) · CR1–CR14 Community navigation redesign (spec and mockups only)
-- **Needs:** your answer to open question 6 (does Learn together become the catch-all space, and under what name; shared moments post there), then merge. Your other answers (Nov 28) are recorded in the spec's "Decisions". Merging puts CR1–CR14 at the top of "Ready to build" for the hourly runs; only CR10 waits on question 6.
+- **Needs:** merge, once you've read the copy below. All nine answers (Nov 28) are recorded in the spec's "Decisions". Merging puts CR1–CR14 at the top of "Ready to build" for the hourly runs.
+- **Space renamed** (your call, Nov 28; built in CR1):
+  - "Learn together" → "Flock talk" (sentence case: "Flock" is the community's name, "talk" lowercase)
+  - "Questions, guides, and what members are working out with their birds." (Spaces sheet) and "Questions and what's working" (mockups) → "Questions, wins, and everyday life with your bird"
+  - Feed empty state for the space: "No questions yet" / "When members ask, answer, and share what's working with their birds, it will gather here." → "Nothing here yet" / "Questions, wins, and everyday life with members' birds will gather here." (proposed)
 - **Placeholder copy for your review** (from the approved mockups; you'll supply the final text, and it must be final before opening, step 6 of the opening checklist):
   - **Guidelines page (Final-10):**
     - Intro: "The Flock is a place to get better at caring for our birds, together. These guidelines keep it kind, useful, and safe for everyone."
@@ -96,10 +100,10 @@ Dutch ("je") for the rest of the Join screen, after #574. Chapter is "afdeling",
 - **Other new copy** (from the mockups; each item lists its exact lines again when it's built):
   - Bottom bar: "Today" → "Feed"; "Add something" (center button, screen readers)
   - Header: "Menu", "Menu, new activity", "Updates"
-  - Menu: "Community guidelines" · "How we take care of each other"; "Spaces"; space lines (changed from the Spaces sheet's longer ones) "Introductions and first questions", "Questions and what's working", "Rescue, conservation, ways to help"; "[Chapter] chapter"; "Events"; "My birds"; "Home"; "Sits"; "Your profile and posts"; "Notifications"; "Settings"; page "Events are coming soon"
+  - Menu: "Community guidelines" · "How we take care of each other"; "Spaces"; space lines (changed from the Spaces sheet's longer ones) "Introductions and first questions", "Questions, wins, and everyday life with your bird", "Rescue, conservation, ways to help"; "[Chapter] chapter"; "Events"; "My birds"; "Home"; "Sits"; "Your profile and posts"; "Notifications"; "Settings"; page "Events are coming soon"
   - Feed: "Journeys", "See all", "Your journey", "Start a new journey", "Try today", "Tried it", "See how everyone did", "From the spaces", "(you)"
   - Add sheet: "Add something"; "Weigh & check your flock" · "Opens your daily check for all your birds"; "Post to the community" · "Share a win, ask a question, or say hello"; "Post a journey update" · "[Bird] · [skill]"; "Start a journey"
-  - New post: tile lines "Questions and what's working", "Say hi and ask first questions", "Rescue needs and causes", "Members near you"; "Remove"; "Save to [bird]'s moments too"; "Saved to [bird]'s moments"; "Your post is up. We couldn't save it to [bird]'s moments."
+  - New post: tile lines "Questions, wins, and everyday life with your bird", "Say hi and ask first questions", "Rescue needs and causes", "Members near you"; "Remove"; "Save to [bird]'s moments too"; "Saved to [bird]'s moments"; "Your post is up. We couldn't save it to [bird]'s moments."
   - Post options: "Post options", "Report this post", "Report this comment", "Report this member", "Block this member", "Reports go to the Kya team. Blocking hides their posts and comments from you.", "Edit", "Delete", "Report [name]"
   - Library: "Search the library", "Filters", "Newest first", "TYPE · pick as many as you like", "Subject", "Sort", "Newest", "Oldest", "A to Z", "Clear all", "Show N resources"
   - Moments (care side, Flock members only): "Also share with the community" · "Posts to the community Feed with [bird]'s photo"

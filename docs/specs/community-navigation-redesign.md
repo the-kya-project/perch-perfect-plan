@@ -2,7 +2,7 @@
 
 **Mockups (approved):** [`docs/specs/mockups/community-redesign-mockups.html`](mockups/community-redesign-mockups.html). Eleven screens, Final-01 to Final-11, each with build notes beside it. Open the file in a browser.
 **Status:** spec, not built. Backlog items CR1–CR14 in [`docs/BACKLOG.md`](../BACKLOG.md) ("Ready to build").
-**Written:** Nov 28, 2026, from Brittany's brief and mockups, after a read of the code on `main`. Brittany's answers to the planning questions are recorded under "Decisions" at the end.
+**Written:** Nov 28, 2026, from Brittany's brief and mockups, after a read of the code on `main`. Brittany's answers to all the planning questions are recorded under "Decisions" at the end.
 **Scope:** the community side only (everything under `/flock`, plus one switch on the care side's moment sheet in section 8). The care app's Home, Sits, Health, Explore and its bottom bar with the Community button stay exactly as they are.
 
 ## How to use the mockups
@@ -22,8 +22,20 @@
   - `gold: "#e8b44c"`: the center plus, Post, "Your journey"'s plus, the Weigh & check row, "I agree", Save moment. (`K.sunflower`, `#f2b33d`, is the care app's and stays as it is.)
   - `limeLight: "#e0eed1"`: the selected Post to tile.
   - Already tokens or variables: forest `K.forest` (`#1a3d2e`), page `K.mist` (`#f1f5f0`), lime `K.lime` (`#cdeab0`), moss `K.moss` (`#2d6a4f`), amber fill `K.amberBg` (`#f6e7c4`), teal on dark `K.teal` (`#9bcab8`), card border `--sage-100` (`#e7ece6`; `K.line` is `#e3ebe2`, so use the variable), teal on light `--teal-on-cream` (`#5a8c7a`), Newsreader `SERIF` / `KyaHeading`. The mockups' other near-greens (the menu's tile fill, muted text `#5b6b61`) map to the closest existing token; add a token only if none is close, and say so in the PR.
-- **Space dots** (from the mockups, everywhere a space appears: menu, post cards, Post to tiles): Start here `K.lime`, Learn together `K.gold`, Do good `K.teal`, your chapter `#7fa36a` (add as `K.chapterDot` in the item that first needs it, or reuse the closest existing green).
+- **Space dots** (from the mockups, everywhere a space appears: menu, post cards, Post to tiles): Start here `K.lime`, Flock talk `K.gold`, Do good `K.teal`, your chapter `#7fa36a` (add as `K.chapterDot` in the item that first needs it, or reuse the closest existing green).
 - **Old links keep working.** Every URL that exists today still opens something sensible (`FLOCK_REDIRECTS` in `src/lib/flockNav.ts`).
+- **"Learn together" is now "Flock talk"** (Brittany, Nov 28). The mockups still say "Learn together"; build "Flock talk" wherever they do. See "Flock talk, the catch-all space" below.
+
+## Flock talk, the catch-all space
+
+The space `learn` becomes **Flock talk** ("Flock" capitalized as the community's name, "talk" lowercase for sentence case), the catch-all space for everything that isn't Start here, Do good or a chapter: questions, wins, everyday life, and moments shared from a bird's page (section 8).
+
+- **Description, everywhere a space has one** (the menu, the Post to tile, the Spaces sheet while it lasts): "Questions, wins, and everyday life with your bird". This replaces both "Questions and what's working" (mockups) and "Questions, guides, and what members are working out with their birds." (today's Spaces sheet).
+- **Labels only.** The slug stays `learn` in the URL (`?space=learn`), the database (`flock_posts.space`), analytics and code identifiers. No migration.
+- **One string:** `flock.space.learn` ("Learn together" → "Flock talk") in `SpacesSheet.tsx`'s `spaceLabel` and `src/locales/en.jsonc`; every screen that names the space reads it (Today's chips, Post to, post card tags, `/admin/review` space names). Update the tests that expect "Learn together" (`e2e/flock.shell.ts`, `scripts/flock-shell.test.ts`) and the CLAUDE.md line "learn = Learn together".
+- **Feed empty state for this space** (today "No questions yet" / "When members ask, answer, and share what's working with their birds, it will gather here."), proposed: "Nothing here yet" / "Questions, wins, and everyday life with members' birds will gather here." (review queue).
+- **Default space:** the new post screen already preselects `learn` when nothing else is chosen, so Flock talk is the default with no code change.
+- Built in CR1.
 
 ---
 
@@ -66,7 +78,7 @@ On every screen that uses `FlockHeader`:
 - Next to it, the **Kya & Co.** wordmark in the serif, white.
 - **Right:** the **Updates** bell, a round translucent button opening `/flock/you/notifications`, with a lime dot when `flock_notifications_unread()` is above zero. Label "Updates".
 - **The page title sits below**, in the serif (`KyaHeading`, about 30px).
-- **Feed with a space selected:** the title is the space's name ("Learn together"). A small clear chip under it ("Feed ×", or a back link to Feed) returns to everything; the URL keeps `?space=`.
+- **Feed with a space selected:** the title is the space's name ("Flock talk"). A small clear chip under it ("Feed ×", or a back link to Feed) returns to everything; the URL keeps `?space=`.
 - Sub-pages with a back arrow (`FlockSubPage`, e.g. the guidelines page in Final-10) keep their own header and don't get the menu.
 
 ## 3. Side menu · See Final-02-Menu
@@ -77,7 +89,7 @@ Exactly this order:
 
 1. **Community guidelines:** an outlined row (1.5px light border on forest, about 14px radius), shield icon, "Community guidelines", line "How we take care of each other". Opens `/flock/guidelines`.
 2. **Feed:** a row with the feed icon; filled `K.lime` with forest text when you're on Feed with no space selected.
-3. **SPACES box:** a slightly lighter forest box with the eyebrow **SPACES** (`K.teal`). Three rows: **Start here** ("Introductions and first questions"), **Learn together** ("Questions and what's working"), **Do good** ("Rescue, conservation, ways to help"), each with its dot (ground rules), the one-line description, and an unread badge (lime pill, forest number) on the right. A selected space's row is highlighted. Opens `/flock?space=…`.
+3. **SPACES box:** a slightly lighter forest box with the eyebrow **SPACES** (`K.teal`). Three rows: **Start here** ("Introductions and first questions"), **Flock talk** ("Questions, wins, and everyday life with your bird"), **Do good** ("Rescue, conservation, ways to help"), each with its dot (ground rules), the one-line description, and an unread badge (lime pill, forest number) on the right. A selected space's row is highlighted. Opens `/flock?space=…`.
 4. **Three full-width tiles**, one under another, each with a lime icon square, name and badge:
    - **Journeys:** badge = new updates from journeys you follow. Opens `/flock/journeys`.
    - **Your chapter by name** ("Great Lakes chapter"): badge = anything new in your chapter. Opens `/flock/chapter`. Hidden when you have no chapter.
@@ -123,7 +135,7 @@ From the center plus. A bottom sheet (white, 26px top corners, handle, serif tit
 `/flock/post/new`, redesigning `PostCompose`. **Every current field and behavior stays**: which spaces you can post to, Do good review ("Send for review" and its note), title, body and its placeholder, up to four photos with progress and remove, Attach a bird (shown birds only), the GPS note, vet nudge, hourly limits, editing, challenge and pod variants, discard.
 
 - **Header:** forest band: **Cancel** (left), **New post** (centered, serif), a gold **Post** pill (right; "Send for review" for Do good; disabled until there's a body; "Posting…" while busy).
-- **POST TO:** eyebrow (teal on light), then a 2×2 grid of tiles in this order: **Learn together** ("Questions and what's working"), **Start here** ("Say hi and ask first questions"), **Do good** ("Rescue needs and causes"), **your chapter** by name ("Members near you"). Each tile: dot, bold name, line. Selected: `K.limeLight` fill, 2px `K.forest` border, a forest check circle top right. Unselected: white with `--sage-100` border. No chapter: three tiles.
+- **POST TO:** eyebrow (teal on light), then a 2×2 grid of tiles in this order: **Flock talk** ("Questions, wins, and everyday life with your bird"), **Start here** ("Say hi and ask first questions"), **Do good** ("Rescue needs and causes"), **your chapter** by name ("Members near you"). Each tile: dot, bold name, line. Selected: `K.limeLight` fill, 2px `K.forest` border, a forest check circle top right. Unselected: white with `--sage-100` border. No chapter: three tiles.
 - **Writing card:** white, 18px radius: your avatar and name; a large serif title field ("Title (optional)"); the body ("Ask a question, share what worked, or say hello."); photo thumbnails (about 84px, rounded, a dark × to remove); then, after a divider, two side-by-side mist buttons, **Add photos** (camera) and **Attach a bird** (feather).
 - **Attached bird box** (Final-05): inside the card, above the buttons, a pale box with the bird's photo, name and a **Remove** link, and under it the **"Save to [bird]'s moments too"** checkbox, checked by default. The checkbox shows only when **you own the bird** (moments are owner-only); for a bird you co-care for, the box shows without it.
 - **Location note:** a small lock icon and "Photos lose their location data when you post." under the card.
@@ -163,7 +175,7 @@ The mockup shows the moment sheet redrawn ("Add a moment for Echo", "Add a photo
 
 - **Who sees it:** only when `flock_enabled()` is true, **and** you can use the Flock (`flock_my_access()`: member or admin), **and** you own the bird, **and** the bird is one you show in the Flock (`flock_shown_birds`; Brittany, Nov 28). Free accounts never see it, and the page makes **no new network call** for them: it reads the cached gate (`FLOCK_ENABLED_QUERY`) first and asks for access only after the gate says yes.
 - **Default:** off. (The mockup draws it on to show the "on" state.)
-- **What it does:** after the moment saves, it creates a Flock post in the space decided in question 6 (Learn together until then) with the moment's title as the post title, "[Bird]'s [moment title]" as the body, the moment's photo copied into `flock-posts` server-side (re-encoded, no EXIF), and the bird attached. The vet nudge runs on the text like any post.
+- **What it does:** after the moment saves, it creates a Flock post in **Flock talk** with the moment's title as the post title, "[Bird]'s [moment title]" as the body, the moment's photo copied into `flock-posts` server-side (re-encoded, no EXIF), and the bird attached. The vet nudge runs on the text like any post.
 - Not on editing a moment, and never on the automatic anchors (gotcha day, birthday, years together).
 - **Shared-code rule:** the switch lives in Flock code and is lazy-loaded; the moments page imports only the gate helper from `src/lib/flock.ts`. The PR shows before/after screenshots of the sheet as the free staging account (identical) and runs the free-user regression.
 
@@ -214,10 +226,8 @@ The new screen (Final-11): a forest top with a lime shield tile, serif **"Welcom
 3. **Feed contents:** badges, challenges, votes, the weigh reminder and journey moment cards stay on the Feed.
 4. **Story circles:** journeys you follow first, filled out with community journeys.
 5. **Weigh & check:** goes to the care app's `/check` and stays in the care app.
+6. **A catch-all space:** Learn together becomes **Flock talk**, "Questions, wins, and everyday life with your bird", and moments shared from a bird's page post there.
 7. **Shared moments:** offered only for birds you show in the Flock.
-8. **Space dots:** as the mockups draw them (Start here lime, Learn together gold, Do good teal, chapter green).
+8. **Space dots:** as the mockups draw them (Start here lime, Flock talk gold, Do good teal, chapter green).
 9. **Mockups:** the approved file above.
 
-## Open question
-
-6. **Where shared moments post, and a catch-all space.** Brittany is considering turning Learn together into the catch-all space for everything (shared moments included), possibly under a new name ("The perch", "Flock talk", "Around the flock" or "General Q&A" were suggested). A rename changes only labels and the description (the slug stays `learn`, no database change), and would touch the menu, Post to tiles, card tags and the Spaces copy. Until she decides, the mockups' "Learn together" stands and shared moments post there.

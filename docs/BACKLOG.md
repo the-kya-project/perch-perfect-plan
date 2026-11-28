@@ -28,7 +28,7 @@ Spec: [`docs/specs/community-navigation-redesign.md`](specs/community-navigation
 
 ### CR1 Community bottom bar and header
 - **Mockup:** Final-01-Feed (header and bar), Final-06-Library (header)
-- **Done means:** the community bar is Feed, Journeys, a raised gold "Add something" button (an empty placeholder sheet until CR6), Library, My birds; Chapter is off the bar; the Duo and wide-window column match. Every `FlockHeader` screen has the menu tile (opening nothing until CR2) and wordmark on the left, the Updates bell with its unread dot on the right, and the title below; Spaces and the avatar button are gone. `K.gold` and `K.limeLight` added. Spec §1, §2.
+- **Done means:** the community bar is Feed, Journeys, a raised gold "Add something" button (an empty placeholder sheet until CR6), Library, My birds; Chapter is off the bar; the Duo and wide-window column match. Every `FlockHeader` screen has the menu tile (opening nothing until CR2) and wordmark on the left, the Updates bell with its unread dot on the right, and the title below; Spaces and the avatar button are gone. `K.gold` and `K.limeLight` added. "Learn together" renamed **Flock talk** everywhere it's shown (`flock.space.learn`; the slug stays `learn`), with its new line and empty state, and the tests and CLAUDE.md updated to match. Spec §1, §2, "Flock talk, the catch-all space".
 - **Size:** M
 - **Depends on:** nothing
 - **Overnight alone:** yes
@@ -100,11 +100,11 @@ Spec: [`docs/specs/community-navigation-redesign.md`](specs/community-navigation
 
 ### CR10 Share a moment with the community (care side)
 - **Mockup:** Final-09-Moment (the switch only; the sheet itself stays as it is)
-- **Done means:** the existing add-milestone sheet shows "Also share with the community" (off by default) only to an owner who can use the Flock, for a bird shown in the Flock, while the gate is on, and posts the moment to the Feed; free accounts see and fetch nothing new (before/after screenshots as the free staging account; the free-user regression passing). Spec §8.
+- **Done means:** the existing add-milestone sheet shows "Also share with the community" (off by default) only to an owner who can use the Flock, for a bird shown in the Flock, while the gate is on, and posts the moment to Flock talk; free accounts see and fetch nothing new (before/after screenshots as the free staging account; the free-user regression passing). Spec §8.
 - **Size:** M
 - **Depends on:** CR7
-- **Overnight alone:** no (waits on open question 6, which space; touches shared care code)
-- **Needs Brittany:** her answer to question 6, and merge.
+- **Overnight alone:** yes
+- **Needs Brittany:** merge (it touches shared care code).
 
 ### CR11 Community guidelines page
 - **Mockup:** Final-10-Guidelines
