@@ -22,7 +22,107 @@ Where these items came from, with the detail behind each: `docs/flock/opening-sc
 
 ## Ready to build
 
-Nothing right now.
+**Community navigation redesign (CR1–CR14).**
+
+Spec: [`docs/specs/community-navigation-redesign.md`](specs/community-navigation-redesign.md). Build in this order. Everything is behind `flock_enabled()` (admins only) except CR10, which touches the care side's moment form and follows the shared-code rule. Every item lists its new copy in the review queue. Items marked **yes** use the spec's proposed defaults for questions 8 (space dot colors) and 9 (build from the spec, screenshots in the PR) unless Brittany answers otherwise; items that wait on another open question are marked **no** until she answers it in the spec's PR.
+
+### CR1 Community bottom bar and header
+- **Done means:** the community bar is Feed, Journeys, a raised gold "Add something" button (opens an empty placeholder sheet until CR6), Library, My birds; Chapter is off the bar; the Duo and wide-window column match. Every `FlockHeader` screen has the menu tile (opening nothing until CR2) and logo on the left, the Updates bell with its unread dot on the right, and the title below; Spaces and the avatar button are gone. `K.gold` and `K.limeLight` added. Spec §1, §2.
+- **Size:** M
+- **Depends on:** nothing
+- **Overnight alone:** yes
+- **Needs Brittany:** screenshots in the PR; merge only.
+
+### CR2 Side menu
+- **Done means:** the drawer from §3 with guidelines, Feed, the Spaces box, the Journeys / chapter / Events tiles, My birds (Home, Sits) and the account section, all without badges; "Events are coming soon" at `/flock/events` for anyone with no chapter; your own profile lists your posts (`flock_member_posts`). Spec §3.
+- **Size:** M
+- **Depends on:** CR1
+- **Overnight alone:** yes
+- **Needs Brittany:** screenshots in the PR; merge only.
+
+### CR3 Menu badges and the header dot
+- **Done means:** `flock_seen` and `flock_mark_seen` (additive), `flock_menu_counts()` for the three spaces, Journeys and the chapter, the menu's badges (hidden at zero, "9+"), and the lime dot on the menu tile. Pinned by a `supabase/checks/*_checks.sql` block (blocks and visibility respected, your own posts never counted). Spec §3 "Counts".
+- **Size:** M
+- **Depends on:** CR2
+- **Overnight alone:** yes
+- **Needs Brittany:** merge only.
+
+### CR4 Feed: Journeys row and Try today
+- **Done means:** the Journeys heading with See all, the story circles ("Your journey" first, rings for unseen clips, opening the story viewer), and the amber Try today card in place of today's idea card. Spec §4.1, §4.2.
+- **Size:** M
+- **Depends on:** CR1
+- **Overnight alone:** no (waits on questions 3 and 4)
+- **Needs Brittany:** answers to questions 3 and 4; screenshots.
+
+### CR5 Feed: From the spaces
+- **Done means:** Feed's space chips and the compose prompt are gone; a selected space shows in the title; "From the spaces" with compact post cards (space tag, 3-line body, 92px thumbnail with "+N", Great job and Comment, the "…" menu). Spec §2 (space title), §4.3.
+- **Size:** M
+- **Depends on:** CR2 (the menu is how a space is picked once the chips go)
+- **Overnight alone:** yes
+- **Needs Brittany:** screenshots in the PR; merge only.
+
+### CR6 Add something sheet
+- **Done means:** the center button opens the sheet: Weigh & check your flock (to `/check`), Post to the community, Post a journey update (your open journeys, straight to the update flow). Spec §5.
+- **Size:** S
+- **Depends on:** CR1
+- **Overnight alone:** no (waits on question 5)
+- **Needs Brittany:** answer to question 5.
+
+### CR7 New post screen
+- **Done means:** `PostCompose` redesigned (forest header with gold Post, POST TO 2×2 tiles including your chapter, one writing card, side-by-side Add photos / Attach a bird, the lock note) with every current behavior kept, including editing, Do good review, challenge and pod posts. Spec §6 (everything but the moments checkbox).
+- **Size:** M
+- **Depends on:** CR1
+- **Overnight alone:** yes
+- **Needs Brittany:** screenshots in the PR; merge only.
+
+### CR8 Save a post to the bird's moments
+- **Done means:** "Save to [bird]'s moments too" (owners only, on by default) adds a custom moment with the post's title or opening words, today's date and its first photo (copied server-side), linked by the new nullable `moments.flock_post_id`; a failure leaves the post up and records a `save_errors` row. Spec §6 "Save to moments".
+- **Size:** M
+- **Depends on:** CR7
+- **Overnight alone:** yes
+- **Needs Brittany:** merge (it adds a column to a care table, `moments`), plus a check that the Moments page looks the same for a free account.
+
+### CR9 Library search and filters
+- **Done means:** search plus a Filters button with a count; the filters sheet (multi-select Type and Subject, Sort, "Show N resources"); removable active chips with Clear all; the two-column card grid; `flock_library_search_many` (SECURITY INVOKER, the old function kept); old `?type=` / `?subject=` links still work. Spec §7.
+- **Size:** M
+- **Depends on:** CR1
+- **Overnight alone:** yes
+- **Needs Brittany:** screenshots in the PR; merge only.
+
+### CR10 Share a moment with the community (care side)
+- **Done means:** the add-moment sheet shows "Also share with the community" only for an owner who can use the Flock while the gate is on, and posts the moment to the Feed; free accounts see and fetch nothing new (before/after screenshots as the free staging account, the free-user regression passing). Spec §8.
+- **Size:** M
+- **Depends on:** CR7
+- **Overnight alone:** no (waits on questions 6 and 7; touches shared care code)
+- **Needs Brittany:** answers to questions 6 and 7, and merge.
+
+### CR11 Community guidelines page
+- **Done means:** `/flock/guidelines` as an intro, five expandable cards, Report something and the contact line, with the words from `src/lib/flockGuidelines.ts` (grouped as the spec proposes, or Brittany's new text with the version bumped in both places). Spec §9.
+- **Size:** S
+- **Depends on:** CR1; CR13 for the "Report a member" row (until then the sheet has the other two rows)
+- **Overnight alone:** no (waits on question 1)
+- **Needs Brittany:** answer to question 1; the card titles; any new guideline words.
+
+### CR12 Agreement screen
+- **Done means:** the guidelines step of `/flock/join` is the full-screen guidelines with one "I agree, take me to the Flock" button; re-agreeing after a version bump shows only that; first-time joiners keep the chapter and 18+ steps; admins can preview it at `/flock/join?preview=1` without recording anything. Spec §10.
+- **Size:** S
+- **Depends on:** CR11
+- **Overnight alone:** no (waits on question 2)
+- **Needs Brittany:** answer to question 2, and merge (it's the join flow).
+
+### CR13 Report a member (Apple 1.2)
+- **Done means:** "Report [name]" on member profiles and chapter Members rows, with "Block and report"; `flock_report` accepts subject type `member` (constraint and allowed list rebuilt from their live definitions); member reports appear in `/admin/review` → Reports and never hide a profile on their own. Pinned in `supabase/checks/flock_moderation_checks.sql` and `e2e/flock.shell.ts`. Spec §10, Apple table.
+- **Size:** M
+- **Depends on:** nothing (can be built any time; listed here because it belongs with the guidelines work)
+- **Overnight alone:** yes
+- **Needs Brittany:** merge only; the new copy in the review queue.
+
+### CR14 Dutch for the redesign
+- **Done means:** every string added by CR1–CR13 has Dutch in `src/locales/nl.jsonc`, in the same voice as the Join screen's Dutch (#575).
+- **Size:** S
+- **Depends on:** CR1–CR13
+- **Overnight alone:** yes
+- **Needs Brittany:** a native speaker's read; merge on her OK.
 
 ---
 
