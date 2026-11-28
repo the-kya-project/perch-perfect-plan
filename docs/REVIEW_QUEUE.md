@@ -1251,6 +1251,10 @@ No new strings: every line reuses existing wording, in new places (admins only).
 
 ## Decisions agents made
 
+### 1.20f follow-up · Clip viewer comment link for co-carers (moved from #567, which was closed as superseded by #569)
+- **Decision:** On a journey's clip viewer, someone in the bird's household who isn't a Flock member sees the "N comments" link only when that clip has comments. It opens the read-only thread from #569. There's no "Add a comment" link, Go button or report flag for them.
+- **Why:** this was the one screen change in #567 that #569 didn't have. Without it, the clip viewer gives a co-carer no way to reach the comments #569 lets them read. #567's other differences weren't carried over: its wider household rule (no `journey_viewable` check) and its `canReport` prop on `CommentThread`.
+
 ### [#565](https://github.com/the-kya-project/perch-perfect-plan/pull/565) · 1.16 Rescue partner codes
 - **Decision:** One redemption per account counts waiting and approved ones. A declined one doesn't use it up: the adopter sees why and can try again (say, after a typo in the bird's name).
 - **Why:** the spec says "one redemption per adopter account"; a decline gives nothing, so it shouldn't lock someone out. Easy to make stricter: drop `'declined'`-is-free in `rescue_redemptions_one_per_account` and `rescue_find_code`.
