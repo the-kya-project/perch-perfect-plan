@@ -248,7 +248,7 @@ All new. Nobody but admins sees them while the Flock is closed. The badge names,
   - After: "1 journey" / "{{n}} journeys" (shows as "Journey finisher · 3 journeys")
 - **Where:** `flock.badges.launchLabel` / `.launchTitle` / `.launchLine` (the one-time celebration on Today)
   - Before: new
-  - After: "New: badges" / "Here's what you've already earned" / "You've already done a lot in the Flock. These count." (the mockup's line, "You've been caring for Juno and the flock for a long time. These count.", is about care badges, which come with 1.13b)
+  - After: "New: badges" / "Here's what you've already earned" / "You've already done a lot in the Flock. These count." (the mockup's line, "You've been caring for Juno and the flock for a long time. These count.", is about care badges, which come with 1.13b; Brittany approved 1.13b to start, Nov 28, 2026)
 - **Where:** `flock.badges.seeAll` / `.notNow` / `.gotIt` (celebration buttons)
   - Before: new
   - After: "See all badges" / "Not now" / "Got it"
@@ -1280,6 +1280,7 @@ No new strings: every line reuses existing wording, in new places (admins only).
 - **Decision:** Each image's screen-reader text is the badge's name ("Journey finisher"), as you asked. On the Badges screen and in the celebrations the name is also written under the art, so a screen reader says it twice there.
 - **Decision:** Your README suggests 72px on a collection screen. The Badges screen stays at 64px, as you asked in the prompt.
 - **To change it:** file names and levels are `src/lib/badgeArt.ts`; how the art is drawn is `BadgeCircle` in `src/components/flock/BadgeParts.tsx`.
+- **Brittany (Nov 28, 2026):** 1.13b is approved to start and is in "Ready to build" (overnight alone: yes, held for her). Its PR needs her approval, with before-and-after screenshots of what free users see.
 
 ### [#563](https://github.com/the-kya-project/perch-perfect-plan/pull/563) · 1.15a Kya's Crew on the payment screen
 - **Brittany's decision (Nov 26, 2026):** the screens and wording are approved as written in "Copy that merged", including the lines marked "not in the mockup".
@@ -1445,7 +1446,7 @@ No new strings: every line reuses existing wording, in new places (admins only).
 - **Decision:** Badges are worked out when a member opens Today, Flock settings or the Badges screen (`flock_my_badges`), not by triggers on every table. So "the moment it's earned" means the next time they open the Flock, usually seconds later. It keeps the badge rules in one function and leaves the posts, journeys, votes and places code untouched.
 - **Decision:** "Past activity counts": the first time a member's badges are worked out, everything their history earned is recorded together, and Today shows one "Here's what you've already earned" when that's two or more. With just one (a newcomer who's just finished their profile), it's the small "Badge earned" card instead, since "already earned" would read oddly.
 - **Decision:** The launch celebration is a centered card over Today (a dialog), as the mockup shows it filling the screen. Each later badge is its own "Badge earned" card at the top of Today, styled like the mockup's care-app card (screen 3), with "See all badges" and "Got it". Opening the Badges screen counts as seeing them all.
-- **Decision:** The Badges screen shows only the Flock set for now ("x of 6 earned"); the mockup's "Care badges" section arrives with 1.13b. Founder and Chapter lead stay as they were and aren't counted in the six. The how-to-earn line shows for the badge tapped; it starts on the first one not earned yet, as the mockup shows Trick star.
+- **Decision:** The Badges screen shows only the Flock set for now ("x of 6 earned"); the mockup's "Care badges" section arrives with 1.13b (approved to start, Brittany, Nov 28, 2026). Founder and Chapter lead stay as they were and aren't counted in the six. The how-to-earn line shows for the badge tapped; it starts on the first one not earned yet, as the mockup shows Trick star.
 - **Decision:** On a profile, badges are small lime pills with the icon and name (and Journey finisher's level), next to the existing Founder and Chapter lead pills. The mockup doesn't show a profile.
 - **Decision:** "Members can hide badges from their Flock profile in settings": a "Show my badges on my profile." switch on Edit profile, on by default, below the founding members switch and built the same way. Hidden means hidden from everyone, your own profile view included; your Badges screen always shows them.
 - **Decision:** "A badge earned only through 'Just me' journeys ... never to anyone outside their household": a profile counts only community journeys for Journey finisher and Trick star, worked out fresh each time, so the level shown can be lower than your own (3 finished, 1 shared: "1 journey"). It's stricter than the spec, which would let the bird's co-carers see it: a profile shows the same thing to everyone.
@@ -1800,6 +1801,7 @@ Format:
 - **Why:** The switch isn't in the spec, and a typical diet conversion length could read as health guidance, which the spec rules out.
 - **To change it:** say so when approving 1.12.
 - **Brittany:** agreed that the "Share my profile with my chapter" switch won't be built (Nov 22, 2026). Diet conversion duration: no typical length (Nov 24, 2026). Diet conversion shows no number, range or "usually takes" line anywhere.
+- **Brittany (Nov 28, 2026):** 1.12 is on hold. It's moved to "Later (deferred, still applies)" → Product in `docs/BACKLOG.md` as a later idea, and nothing is to be built until she reopens it. Both decisions above still apply then.
 
 ### [#506](https://github.com/the-kya-project/perch-perfect-plan/pull/506) · 1.6, 1.8, 1.7, 1.13a, 1.10, 1.11 order
 - **Decision:** The six items go after the existing Ready items, in the requested order. 1.6 depends on 0.5, 1.13a on 1.6 and 1.8, and 1.10 on 1.13a. 1.6 keeps the app's tab order (Resources before Members), which differs from its mockup.
