@@ -27,6 +27,10 @@ begin
   insert into auth.users (instance_id, id, aud, role, email, raw_app_meta_data, raw_user_meta_data, created_at, updated_at)
   select '00000000-0000-0000-0000-000000000000', u, 'authenticated', 'authenticated', u::text || '@checks.invalid', '{}', '{}', now(), now()
   from unnest(array[adm, fre, cmp, fdr, cld, gft, j1]) as u;
+  -- Test members have agreed to the community guidelines (20261128180000).
+  insert into public.flock_guideline_agreements (user_id, version)
+  select u.id, public.current_guidelines_version() from auth.users u where u.email like '%@checks.invalid'
+  on conflict do nothing;
   insert into public.user_roles (user_id, role) values (adm, 'admin');
   insert into public.entitlements (user_id, plan, status, source, starts_at) values (cmp, 'comp', 'active', 'manual', now() - interval '1 day');
   insert into public.entitlements (user_id, plan, status, source, starts_at) values (cld, 'chapter_lead', 'active', 'chapter_lead', now() - interval '1 day');

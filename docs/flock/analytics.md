@@ -28,6 +28,8 @@ The same facts are set once as person properties: `flock_member`, `flock_members
 |---|---|---|
 | `flock_active` | the first Flock screen of the Flock's day (Eastern), once per account per day on a device | — |
 | `flock_joined` | the join step succeeds (`trackFlockJoined(source)`; **build C wires it** into the join screen) | `source`: `care_app`, `email`, `website`, `founding`, `gift` |
+| `flock_walkthrough_viewed` | a screen of the community guidelines walk-through is shown (`trackFlockWalkthrough`; members, admins, and people whose membership starts on opening day) | `step`: 1, 2 or 3 |
+| `flock_guidelines_agreed` | "I agree, take me to the Flock" saves the agreement | `version`: the guidelines version (1) |
 | `flock_post_created` | a post is created | `space`, `status` (`live` / `pending`), `has_photo`, `photo_count`, `has_bird` |
 | `flock_comment_created` | a comment or reply is created | `subject_type` (post, journey update, milestone), `is_reply`, `has_photo` |
 | `flock_reaction_added` | a reaction is added (not when one is taken back) | `subject_type`, `kind` |

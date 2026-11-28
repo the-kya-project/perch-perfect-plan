@@ -19,6 +19,64 @@ Format:
   - After: "<new wording>"
 ```
 
+### [#586](https://github.com/the-kya-project/perch-perfect-plan/pull/586) · Dutch wording gaps from #582 · **merged on Brittany's OK (Nov 28, 2026)**
+English is unchanged everywhere. New Dutch:
+- **Where:** a bird's name in journey and notification lines ("Started from Max' journey")
+  - Before: always the English form ("Max's")
+  - After: Dutch rules in Dutch: "Kiwi's", "Mango's", "Sunny's"; "Max'", "Iris'"; "Pieters", "Charlies"
+- **Where:** `/admin/library`, "Add … before publishing" (admins only)
+  - Before: the missing items were always English ("a title, at least one topic")
+  - After: "een titel", "een korte samenvatting", "minstens één onderwerp", "de weblink (video's en links hebben er een nodig)"
+- **Where:** Community notifications, when several people cheer
+  - Before: "3 mensen moedigde … aan" (singular verb)
+  - After: "3 mensen moedigden … aan"
+
+### [#584](https://github.com/the-kya-project/perch-perfect-plan/pull/584) · Community guidelines walk-through and guidelines page · **merged on Brittany's OK (Nov 28, 2026)**
+All new member-facing wording, word for word from the approved mockups and the prompt (source: `src/flock/guidelines/content.ts`). English only so far: Dutch shows the English until the next translation pass.
+- **Where:** walk-through screen 1 (`/flock/agree`)
+  - New: "1 of 3" (and "2 of 3", "3 of 3"); "Welcome to the Flock"; "Before you join, here's a quick look at what we're all about."
+  - New: "Bridging research and life with birds"; "Researchers"; "Conservationists"; "Parrot owners"; "The Flock brings these communities together. Our care recommendations come from avian research and veterinary science, and our mission is a place where all of us collaborate."
+  - New: "What we advocate for"; "A varied, fresh diet" / "We advocate for fresh foods and a quality pellet."; "Fully flighted birds" / "Research shows how beneficial flight is for birds, so we advocate for keeping them flighted whenever possible."; "Good husbandry" / "That means an appropriately sized cage, daily enrichment, plenty of foraging, and time out of the cage."; "Positive reinforcement training" / "Research shows it's the best way to train and bond with a bird. We don't advocate for dominance or punishment-based methods."
+  - New: "Most importantly, we're building a bigger table" / "We separate the issue from the person. We're all still learning, so wherever you and your bird are today, you're welcome here."; "Next"
+- **Where:** walk-through screen 2 (`/flock/agree?step=2`)
+  - New: "How we look after each other"; "This is what makes the Flock different."; "Back" (the arrow's label)
+  - New: "We give feedback only when it's asked for" / "If someone asks, "What do you think of my setup?", share kind, honest ideas. If someone just shares a photo of their bird, celebrate the bird, and please don't pile on in the comments."
+  - New: "We flag it instead of calling it out" / "If something someone shares worries you, tap flag. The Kya team reviews every single one and reaches out privately, so nobody gets corrected in front of everyone."
+  - New: "Health questions go to your vet" / "We never give medical advice here. You're welcome to share what's worked for you, but none of us are avian vets, and posts that give medical advice will be taken down."
+  - New: "What you share stays here" / "We never feature your posts or photos anywhere else without asking you first."
+- **Where:** walk-through screen 3 (`/flock/agree?step=3`)
+  - New: "Our promises to each other"; "This is what every member agrees to before coming in."
+  - New, the six promises: "I'll be kind, and I'll give feedback only when someone asks for it." · "I'll flag anything that worries me instead of calling someone out." · "I'll follow science-based care and positive reinforcement training when I share." · "I'll take health questions to an avian vet." · "I won't sell, trade, or breed birds here." · "I understand that harassment and harmful content mean removal from the Flock."
+  - New: "Read the full guidelines →"; "I agree, take me to the Flock"; "Saving…"; "Questions? Write to brittany@thekyaproject.com"
+  - New (not in the mockups; the error when saving fails): "We couldn't save that just now. Check your connection and tap the button again."
+- **Where:** the Community guidelines page (`/flock/guidelines`) and the guidelines box on the join step
+  - Before: the six short guidelines ("Welcome to the Flock", "Be kind.", "Put the birds first.", "The Flock isn't your vet.", "No selling or spam.", "Share only what's yours.", "Meet up safely.", and the closing "If something feels wrong, you can report or block anyone…")
+  - After: the full text from the prompt, in four sections: "What we believe", "How the Flock works", "How we treat each other", "The rules" (every line in `fullGuidelines()`), with "Questions? Write to brittany@thekyaproject.com" as the footer.
+- **Where:** the Spaces sheet
+  - New: a "Community guidelines" row at the top, above the three spaces.
+- **Where:** walk-through screen 1 (not in the mockup; added at your request)
+  - New: a close button (an ×, labelled "Close" for screen readers) where screens 2 and 3 have Back
+- **Where:** the join step (`/flock/join`): the guidelines box and the "I agree to the community guidelines" checkbox are gone (agreed in the walk-through)
+  - Before: "Choose your chapter, read the community guidelines, and you're in." · After: "Choose your chapter, confirm you're 18 or older, and you're in."
+  - Before: "Please confirm you're 18 or older and agree to the guidelines." · After: "Please confirm you're 18 or older."
+  - New: "Read the community guidelines →" (a link under "I'm 18 or older")
+
+### [#581](https://github.com/the-kya-project/perch-perfect-plan/pull/581) · D2.2 Weather cards · **held, not merged; switched off**
+English only (Dutch after you approve the English). All of it is new and behind the `weather_cards` switch (off). Lines marked "spec" are word for word from the item.
+- **Where:** Home, the weather card
+  - New: "Hot day ahead: {temp}" (spec) / "Cold night ahead: {temp}" (spec)
+  - New: "Keep {bird}'s cage out of direct sun and away from windows, and check the water more often today. A cool shower or misting helps on a hot afternoon." (spec)
+  - New: "Keep your birds' cages out of direct sun and away from windows, and check the water more often today. A cool shower or misting helps on a hot afternoon." (the spec's several-birds rule applied)
+  - New: "Move the cage away from drafty windows and outside doors tonight. A cover over part of the cage helps hold in warmth, and space heaters stay well away from it." (spec)
+  - New: "Forecast for {ZIP}. Change it in Account." (spec) / "Got it" (the seasonal card's existing line)
+- **Where:** Home, with no ZIP saved
+  - New: "Want a heads-up on very hot or cold days? Add your home ZIP or postcode in Account." (spec)
+- **Where:** Account → Home ZIP or postcode
+  - New: "Home ZIP or postcode" (spec; the row, the sheet's title and the field label)
+  - New: "Optional. We use it only to show heat and cold reminders on Home. We never use your phone's location." (spec)
+  - New: "That doesn't look like a ZIP or postcode. Check it and try again." (spec)
+  - New: "Remove" (not in the spec). The row reuses "Not set yet", and the sheet reuses "Save changes" / "Saving…".
+
 ### [#582](https://github.com/the-kya-project/perch-perfect-plan/pull/582) · Dutch for everything still in English · **merged on Brittany's OK (Nov 28, 2026), not yet read by a native speaker**
 1,535 lines, too many to list here: every one, English next to Dutch, is in [`docs/translations/nl-2026-11-28.md`](translations/nl-2026-11-28.md), grouped by screen. For a native speaker's read.
 - **Where:** the whole Flock (journeys, posts, chapter, events, places, pods, challenges, votes, library, badges, review and admin screens); the public `/founding` page (48 lines, all English until now); care badges (behind their switch); the weight-baseline lines (draft, behind their switch); a few live care-app lines (6 weight, 16 sitter-check, 2 dashboard, 4 sit form and link); and the emails: sign-in and confirmation (35, the old Dutch kept where it still matched) and gifts (40).
@@ -97,7 +155,7 @@ Dutch ("je") for the rest of the Join screen, after #574. Chapter is "afdeling",
 
 ### [#578](https://github.com/the-kya-project/perch-perfect-plan/pull/578) · CR1–CR14 Community navigation redesign (spec and mockups only)
 - **Needs:** merge, once you've read the copy below. All nine answers (Nov 28) are recorded in the spec's "Decisions". Merging puts CR1–CR14 at the top of "Ready to build" for the hourly runs.
-- **Update, Nov 28 (after merge):** the guidelines walk-through (a separate session) replaces CR11 and CR12, so the placeholder guidelines and agreement copy below won't be built; your final text from that work is used instead. CR13 waits on your choice: "report" (Final-08) or "flag" (the walk-through's post options, flag sheet and flag sent).
+- **Update, Nov 28 (after merge):** the guidelines walk-through (a separate session) replaces CR11 and CR12, so the placeholder guidelines and agreement copy below won't be built; your final text from that work is used instead. CR13: you chose "flag" (Nov 28), so the walk-through's post options, flag sheet and flag sent (04–06) replace Final-08, and that copy below won't be built either.
 - **Space renamed** (your call, Nov 28; built in CR1):
   - "Learn together" → "Flock talk" (sentence case: "Flock" is the community's name, "talk" lowercase)
   - "Questions, guides, and what members are working out with their birds." (Spaces sheet) and "Questions and what's working" (mockups) → "Questions, wins, and everyday life with your bird"
@@ -1477,6 +1535,23 @@ No new strings: every line reuses existing wording, in new places (admins only).
 - **Decision:** The 3 MiB precache limit from #582 goes back to Workbox's 2 MiB default, so a growing bundle shows up as a build failure again.
 - **Why:** the server only ever renders English, so nothing here can cause a hydration mismatch; the only new thing is a short wait before Dutch appears.
 
+### [#586](https://github.com/the-kya-project/perch-perfect-plan/pull/586) · Dutch wording gaps from #582
+- **Decision:** No change for `dashboard.yourBirds` / `dashboard.yourFlock` (both "Je vogels vandaag" in Dutch). They're alternatives for the same title on Home (with or without a household), never shown together, so reading the same is fine.
+- **Decision:** The Dutch possessive rule lives in `possessive(name, lang)` in `src/lib/journeys.ts`, with tests in `npm run test:flock-shell`.
+
+### [#581](https://github.com/the-kya-project/perch-perfect-plan/pull/581) · D2.2 Weather cards
+- **Decision:** The ZIP lives in its own table, `home_postcodes` (one row per account, own row only), not as columns on `profiles`, so no existing policy that lets others read a profile can ever reach it. The weather card's "Got it" is a column on that row (`weather_dismissed_on`), not the seasonal card's `today_card_dismissals` row, which holds one card per account: sharing it would have brought back a seasonal card you'd already hidden.
+- **Decision:** After "Got it" on the weather card, the seasonal card shows again that day if you haven't hidden it. The spec says the weather card takes the seasonal card's spot; it doesn't say the spot stays empty once you've hidden the weather card.
+- **Decision:** On a day that's both hot and cold, the heat card shows. Thresholds compare the rounded number the card shows, so a 89.6°F high shows "Hot day ahead: 90°F".
+- **Decision:** "Tonight's low" is WeatherKit's overnight low (7 PM to 7 AM) when it sends one, otherwise the next day's low.
+- **Decision:** "At most once a day" means once per area per UTC day. A failed WeatherKit call counts as that day's call, so a failing service isn't asked again on every Home visit. A US area's days follow the time zone of the first account that asks that day (its saved time zone, else the phone's, else Eastern). A Dutch area always uses Amsterdam time.
+- **Decision:** Input: "12345-6789" is saved as 12345, and "1234 AB" as 1234. Anything else gets the error line. Account shows the saved code in the row ("Not set yet" when there isn't one), and the sheet has "Save changes" and a red "Remove".
+- **Decision:** The no-ZIP prompt is a small tappable line in the Today card's spot that opens Account. It shows under the seasonal card when there is one. It can't be dismissed, since the spec doesn't mention that. **Brittany, please say if it should go away after a while or get its own "Got it".**
+  - **Answered (Brittany, Nov 28, 2026):** it should be dismissible. The prompt now has its own "Got it" (the existing string, no new copy), stored in `public.weather_prompt_dismissals` so it stays hidden on every device. Adding a ZIP in Account still works.
+- **Decision:** The weather card has no picture band and no label pill: a sun or snowflake icon, then the title, body and footer, in warm or cool colours. There's no mockup, and a label would have been copy the spec didn't give.
+- **Decision:** One bird → "Keep Kiwi's cage…", and two or more → "Keep your birds' cages…". An account with no birds of its own (a co-carer only) also gets the "your birds'" line. The birds counted are the owner's own on Home (fosters included).
+- **Decision:** The ZIP files can't be downloaded inside the hourly job's sandbox, so they ship empty and `npm run weather:postcodes` builds them. US comes from the Census ZCTA Gazetteer. For the Netherlands, any CSV with a 4-digit postcode and the middle's lat/lon works; the run didn't pick a Dutch source.
+
 ### [#582](https://github.com/the-kya-project/perch-perfect-plan/pull/582) · Dutch for everything still in English
 - **Decision:** The 1,535 lines are listed in their own file (`docs/translations/nl-2026-11-28.md`) rather than in "Copy that merged", with a short summary there.
 - **Why:** the list is longer than the rest of this file.
@@ -1737,6 +1812,19 @@ Format:
 - **Why:** <the reason, in plain language>
 - **To change it:** <what would need to change>
 ```
+
+### [#584](https://github.com/the-kya-project/perch-perfect-plan/pull/584) · Community guidelines walk-through
+- **One agreement (your call, Nov 28):** the join step's "I agree to the community guidelines" checkbox is retired. The walk-through's record is the only guidelines agreement and `current_guidelines_version()` the only version to bump. The join step keeps its chapter and "I'm 18 or older" (still `flock_agree()`, whose version "2026-12" is now frozen), and `flock_join()` needs both that record and the walk-through agreement (`20261128210000_flock_join_uses_walkthrough.sql`).
+- **Posting is blocked by a trigger, not an INSERT policy.** App users have no write grant on posts, comments or journey updates; they write through SECURITY DEFINER functions that RLS never sees, so an INSERT policy would block nothing. A BEFORE INSERT trigger on `flock_posts` (every space, pod posts and challenge entries), `flock_comments` and `journey_updates` blocks every path instead. Sharing a journey with the Flock (`journeys.visibility` → community) needs it too, or updates posted while it was "Just me" would reach the Flock unagreed.
+- **"Just me" journeys and free co-carers are never checked,** so the care app's journeys work exactly as before for anyone outside the Flock. A household co-carer who isn't a Flock member can still post to a journey its owner shared (they can't agree: the Flock is closed to them).
+- **Admins see the walk-through too** (once, at version 1), since they're members. The server, SQL editor, seeds and scheduled jobs aren't blocked.
+- **Events are named `flock_walkthrough_viewed` (`step`) and `flock_guidelines_agreed` (`version`),** with the `flock_` prefix every Flock event has, so the "Flock stickiness" dashboard and its `internal` filter pick them up. Like every Flock event, they send only for members, admins and people whose membership starts on opening day; someone with no membership at all sends nothing.
+- **Screen 1 has a close button** (your call, Nov 28): an × where screens 2 and 3 have Back; closing, the system Back and Escape all return to Home.
+- **Mockup vs. prompt:** section headings on screen 1 follow the mockup (no full stop: "Bridging research and life with birds", "What we advocate for", "Most importantly, we're building a bigger table"); the prompt wrote them with one.
+- **Before the migration reaches a database** (a preview on staging before merge), the app finds no agreement function and lets people through as before, rather than showing a button that can't save. The database then has no rule to enforce either; production gets both within a minute of merging.
+- **"Learn together" in "How the Flock works"** stays as written for now; backlog CR1 renames the space "Flock talk" and updates that line (`flock.rules.works.spaces` in `content.ts`) when it lands.
+- **Dutch:** the walk-through and the new guidelines are in the English catalog like every other string, so the next Dutch pass picks them up. Until then Dutch readers see these screens, and the join step's guidelines box (which #582 had translated), in English. The old six guidelines' Dutch lines are no longer used.
+- **The guidelines link sits at the top of the Spaces sheet for now.** The side-menu drawer from the new navigation isn't built yet; the link moves to the top of the drawer, above Feed, when it is.
 
 ### [#543](https://github.com/the-kya-project/perch-perfect-plan/pull/543) · 1.17 Promo codes for memberships
 - **Decision:** Codes are entered in Stripe Checkout's own "Add promotion code" field. No code box was added to the card step, and nothing in the app creates or lists codes; they're made in the Stripe Dashboard.

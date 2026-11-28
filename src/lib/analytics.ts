@@ -143,6 +143,8 @@ export type AnalyticsEventName =
   // outside the Flock and carries no content. Never call track() with these.
   | "flock_active"
   | "flock_joined"
+  | "flock_walkthrough_viewed"
+  | "flock_guidelines_agreed"
   | "flock_post_created"
   | "flock_comment_created"
   | "flock_reaction_added"

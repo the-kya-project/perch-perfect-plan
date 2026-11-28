@@ -12,7 +12,7 @@
 do $$
 declare
   -- CARE_FEATURES (startsAt)
-  expected_features jsonb := '{"today_cards": "off", "care_badges": "off"}';
+  expected_features jsonb := '{"today_cards": "off", "care_badges": "off", "weather_cards": "off"}';
 
   adm uuid := gen_random_uuid();
   usr uuid := gen_random_uuid();

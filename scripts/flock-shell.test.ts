@@ -43,7 +43,9 @@ import {
 } from "@/lib/flockChallenges";
 import { challengeDay, challengeEyebrow, challengeProgress, challengeSummary } from "@/components/flock/ChallengeParts";
 import { formatFlockDay, freeSeasonEndLabel, NO_FLOCK_DATES } from "@/lib/flockDates";
-import { FLOCK_CONTACT_EMAIL, FLOCK_GUIDELINES_VERSION, contactLine, guidelineSections, guidelinesClosing, guidelinesIntro } from "@/lib/flockGuidelines";
+import { FLOCK_CONTACT_EMAIL, FLOCK_GUIDELINES_VERSION, contactLine } from "@/lib/flockGuidelines";
+import { GUIDELINES_VERSION, fullGuidelines, promises, questionsLine, walkthroughScreen1, walkthroughScreen2, walkthroughScreen3 } from "@/flock/guidelines/content";
+import { isWalkthroughPath } from "@/flock/guidelines/agreement";
 import { isJoinPath, isRescuePath, joinErrorKind, joinRedirect, type FlockAccess } from "@/lib/flockJoin";
 import {
   RESCUE_LIMITS, RESCUE_MONTHS, adoptedLabel, adoptionProblem, cleanRescueCode, flockTodayIso as rescueToday, parseUseLimit, rescueCodeLooksValid,
@@ -455,6 +457,13 @@ check("journeys: pronouns, possessives and the vet check line", () => {
   assert.equal(birdPronoun("Unknown"), "they");
   assert.equal(possessive("Juno"), "Juno's");
   assert.equal(possessive("Iris"), "Iris'");
+  // Dutch: 's after a vowel sound, ' after a sibilant, otherwise a plain s.
+  for (const [n, want] of [["Kiwi", "Kiwi's"], ["Mango", "Mango's"], ["Lola", "Lola's"], ["Sunny", "Sunny's"], ["José", "José's"],
+    ["Max", "Max'"], ["Iris", "Iris'"], ["Fritz", "Fritz'"], ["Bruce", "Bruce'"], ["Pieter", "Pieters"], ["Charlie", "Charlies"], ["Anne", "Annes"], ["Echo", "Echo's"]] as const) {
+    assert.equal(possessive(n, "nl"), want, n);
+  }
+  assert.equal(possessive("Max", "nl-NL"), "Max'");
+  assert.equal(possessive("Max", "en"), "Max's", "English unchanged");
   assert.equal(vetCheckLine({ safeguards: ["Daily weigh-ins.", "The template suggests a vet check before starting."] }), "The template suggests a vet check before starting.");
   assert.equal(vetCheckLine({ safeguards: [] }), null);
 });
@@ -843,22 +852,69 @@ check("join: the guidelines version matches the database's", () => {
   assert.equal(m![1], FLOCK_GUIDELINES_VERSION);
 });
 
-check("join: the guidelines are Brittany's six points, the closing line and the contact line, in order", () => {
-  const tt = ((k: string, d: string, o?: Record<string, string>) => d.replace("{{email}}", o?.email ?? "")) as unknown as Parameters<typeof guidelineSections>[0];
-  assert.deepEqual(guidelineSections(tt).map((x) => x.key), ["kind", "birds", "vet", "selling", "yours", "meetups"]);
-  assert.equal(guidelinesIntro(tt).title, "Welcome to the Flock");
-  assert.equal(guidelinesIntro(tt).body, "We're a community of people who love parrots and want to give them good lives. These are the few things we ask of everyone here.");
-  assert.deepEqual(guidelineSections(tt).map((x) => `${x.title} ${x.body}`), [
-    "Be kind. Everyone here is learning, including the people who've had birds for decades. Disagree with ideas, never with people, and assume the best of each other.",
-    "Put the birds first. Share what keeps parrots safe and healthy. Posts that encourage harmful care, or the sale of wild-caught birds, will be removed.",
-    "The Flock isn't your vet. Members share experience, not medical advice. If your bird seems unwell, please call an avian vet before posting.",
-    "No selling or spam. Please don't advertise products, services, or birds for sale. Sharing a rescue that needs help is always welcome.",
-    "Share only what's yours. Post your own photos, videos, and stories, and don't share anything another member told you privately.",
-    "Meet up safely. Chapter events happen in public places, and you're never obligated to share where you live.",
+check("guidelines: the walk-through version matches current_guidelines_version()", () => {
+  const sql = readFileSync("supabase/migrations/20261128180000_flock_guideline_agreements.sql", "utf8");
+  const m = sql.match(/create or replace function public\.current_guidelines_version\(\)[\s\S]*?as \$\$ select (\d+); \$\$/);
+  assert.ok(m, "version function in the migration");
+  assert.equal(Number(m![1]), GUIDELINES_VERSION);
+  assert.equal(GUIDELINES_VERSION, 1);
+});
+
+check("guidelines: the walk-through's copy, the six promises and the full text's sections, in order", () => {
+  const tt = ((k: string, d: string, o?: Record<string, string | number>) => d.replace(/\{\{(\w+)\}\}/g, (_, n) => String(o?.[n] ?? ""))) as unknown as Parameters<typeof promises>[0];
+  const one = walkthroughScreen1(tt);
+  assert.equal(one.title, "Welcome to the Flock");
+  assert.deepEqual(one.communities.map((c) => c.label), ["Researchers", "Conservationists", "Parrot owners"]);
+  assert.deepEqual(one.advocate.map((a) => a.title), ["A varied, fresh diet", "Fully flighted birds", "Good husbandry", "Positive reinforcement training"]);
+  assert.equal(one.tableTitle, "Most importantly, we're building a bigger table");
+  assert.deepEqual(walkthroughScreen2(tt).rows.map((r) => r.title), [
+    "We give feedback only when it's asked for", "We flag it instead of calling it out", "Health questions go to your vet", "What you share stays here",
   ]);
-  assert.equal(guidelinesClosing(tt), "If something feels wrong, you can report or block anyone, and the Kya team reviews every report. Members who break these guidelines may have posts removed or lose access to the Flock.");
+  assert.equal(walkthroughScreen3(tt).agree, "I agree, take me to the Flock");
+  assert.deepEqual(promises(tt), [
+    "I'll be kind, and I'll give feedback only when someone asks for it.",
+    "I'll flag anything that worries me instead of calling someone out.",
+    "I'll follow science-based care and positive reinforcement training when I share.",
+    "I'll take health questions to an avian vet.",
+    "I won't sell, trade, or breed birds here.",
+    "I understand that harassment and harmful content mean removal from the Flock.",
+  ]);
+  assert.deepEqual(fullGuidelines(tt).map((s) => s.title), ["What we believe", "How the Flock works", "How we treat each other", "The rules"]);
+  const rules = fullGuidelines(tt).find((s) => s.key === "rules")!;
+  const list = rules.blocks.find((b) => b.kind === "list") as { items: string[] };
+  assert.equal(list.items.length, 9);
+  assert.equal(list.items[8], "Members must be 18 or older.");
+  const q = questionsLine(tt);
+  assert.equal(`${q.before}${FLOCK_CONTACT_EMAIL}${q.after}`, "Questions? Write to brittany@thekyaproject.com");
   assert.equal(contactLine(tt).body, `Email the Kya team at ${FLOCK_CONTACT_EMAIL}.`);
   assert.equal(FLOCK_CONTACT_EMAIL, "brittany@thekyaproject.com");
+});
+
+check("guidelines: the walk-through gate comes first, and only it and the full guidelines are open before agreeing", () => {
+  assert.ok(isWalkthroughPath("/flock/agree") && isWalkthroughPath("/flock/guidelines"));
+  assert.ok(!isWalkthroughPath("/flock") && !isWalkthroughPath("/flock/join") && !isWalkthroughPath("/flock/agreement") && !isWalkthroughPath("/flock/library"));
+  const layout = readFileSync("src/routes/_authenticated/flock.tsx", "utf8");
+  const enabled = layout.indexOf("fetchQuery(FLOCK_ENABLED_QUERY)");
+  const agreed = layout.indexOf("fetchQuery(GUIDELINES_AGREED_QUERY)");
+  const access = layout.indexOf("fetchQuery(FLOCK_ACCESS_QUERY)");
+  assert.ok(enabled > 0 && agreed > enabled && access > agreed, "flock_enabled(), then the guidelines, then the join step");
+  // The gate loads with the app: it carries the version number, never the text.
+  assert.ok(!/from "\.\/content"/.test(readFileSync("src/flock/guidelines/agreement.ts", "utf8")), "the gate doesn't import the guidelines' text");
+  assert.ok(!readFileSync("src/routes/_authenticated/flock.agree.tsx", "utf8").includes("guidelines/content"), "the walk-through route's options don't either");
+  // Shared code never imports the walk-through.
+  for (const f of ["src/routes/_authenticated/route.tsx", "src/routes/__root.tsx", "src/components/OwnerTabBar.tsx", "src/lib/flock.ts"]) {
+    if (existsSync(f)) assert.ok(!readFileSync(f, "utf8").includes("flock/guidelines/"), `${f} doesn't import the walk-through`);
+  }
+});
+
+check("guidelines: one agreement, the walk-through's; the join step has no checkbox of its own", () => {
+  const join = readFileSync("src/routes/_authenticated/flock.join.tsx", "utf8");
+  assert.ok(!join.includes("join-agree") && !join.includes("FlockGuidelinesText"), "no guidelines checkbox or text on the join step");
+  assert.ok(join.includes("join-adult") && join.includes('to="/flock/guidelines"'), "18+ stays, with a link to the guidelines");
+  const sql = readFileSync("supabase/migrations/20261128210000_flock_join_uses_walkthrough.sql", "utf8");
+  const fn = sql.slice(sql.indexOf("create or replace function private.flock_agreed"));
+  assert.ok(/public\.flock_agreements/.test(fn) && /public\.flock_guideline_agreements/.test(fn) && /current_guidelines_version\(\)/.test(fn), "joining needs the join record and the walk-through");
+  assert.equal(FLOCK_GUIDELINES_VERSION, "2026-12", "the join record's version is frozen");
 });
 
 check("join: who the /flock layout lets in", () => {

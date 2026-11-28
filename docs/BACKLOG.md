@@ -22,45 +22,9 @@ Where these items came from, with the detail behind each: `docs/flock/opening-sc
 
 ## Ready to build
 
-### D2.2 Weather cards
-- **Spec:** Brittany's approved "Weather cards (D2.2) draft" doc (Nov 28, 2026), written out below. One PR, held for Brittany.
-- **Done means:** Home shows a heat or cold card from Apple WeatherKit, by the owner's own home ZIP or postcode (never the phone's location, never a vet's address), cached per area, behind its own switch, `weather_cards`.
-- **The home ZIP or postcode field (new; the app stores none today):** an optional "Home ZIP or postcode" on Account only, not in setup (Brittany confirmed, Nov 28, 2026), stored on the owner's profile with its country: a 5-digit US ZIP, or the 4 digits of a Dutch postcode. US and Netherlands only for now (Brittany confirmed, Nov 28, 2026); other countries get the seasonal card only. Removing it, or deleting the account, deletes it. Sitters and co-carers never see it. Additive migration only.
-- **Turning a ZIP into a place:** a file in the app maps each ZIP or postcode to the middle of its area, so no outside service ever sees the ZIP itself. US: the Census Bureau's public ZIP areas (ZCTAs). Netherlands: the public 4-digit postcode areas.
-- **The forecast:** a server function asks WeatherKit for each area's daily forecast at most once a day and keeps it for everyone in that area. Never from the phone. Previews have no key, so weather shows as unavailable there.
-- **WeatherKit key:** done (Brittany, Nov 28, 2026, #573). Vercel env vars, Production only: `WEATHERKIT_TEAM_ID`, `WEATHERKIT_KEY_ID`, `WEATHERKIT_SERVICE_ID`, `WEATHERKIT_PRIVATE_KEY` (the .p8 contents). The key is WeatherKit-only; a test call to the availability endpoint passed on Nov 28, 2026.
-- **When a card shows:**
-  - Heat card: today's forecast high is 90°F (32°C) or more.
-  - Cold card: tonight's forecast low is 32°F (0°C) or less.
-  - On a weather day, the weather card takes the seasonal card's spot (D2.1) on Home, and the same "Got it" hides it until the next day.
-  - No ZIP, no forecast, or anything going wrong: the seasonal card shows exactly as today.
-  - Temperatures in °F for US accounts, °C for everyone else. The thresholds live in one place in code, in both units.
-- **Card wording (English only; Dutch after Brittany approves the English).** Plain care steps, never health advice.
-  - Heat card, title: "Hot day ahead: {temp}"
-  - Heat card, body: "Keep {bird}'s cage out of direct sun and away from windows, and check the water more often today. A cool shower or misting helps on a hot afternoon."
-  - Cold card, title: "Cold night ahead: {temp}"
-  - Cold card, body: "Move the cage away from drafty windows and outside doors tonight. A cover over part of the cage helps hold in warmth, and space heaters stay well away from it."
-  - Small print on both cards: "Forecast for {ZIP}. Change it in Account."
-  - ZIP field label (Account): "Home ZIP or postcode"
-  - ZIP field help text: "Optional. We use it only to show heat and cold reminders on Home. We never use your phone's location."
-  - ZIP field error: "That doesn't look like a ZIP or postcode. Check it and try again."
-  - Prompt when no ZIP is saved: "Want a heads-up on very hot or cold days? Add your home ZIP or postcode in Account."
-  - With several birds, {bird}'s becomes "your birds'", so the heat card reads "Keep your birds' cages out of direct sun".
-- **Privacy line (legal text: the agent does not edit the privacy page; it goes out with the legal update, 1.5, Brittany decided Nov 28, 2026).** Matches the policy's current plain style, and the "Last updated" date changes to the day it goes live:
-  1. Add to "What we collect", after "bird profiles and care plans you create,": "your home ZIP or postcode if you choose to add one,"
-  2. A new short section, "Weather reminders", after "How we use it": "If you add a home ZIP or postcode, we use it to show heat and cold reminders on Home. Our server looks up the forecast for the middle of that ZIP or postcode area from Apple WeatherKit and shares the result with everyone in the same area. Apple never receives your ZIP or postcode, your name, your email address or your account. We never use your phone's location. You can remove your ZIP or postcode in Account at any time, and it's deleted with your account."
-  3. A new row in "Services that help us run Kya & Co.": "**Apple WeatherKit**: provides the weather forecast for heat and cold reminders, if you add a home ZIP or postcode. Handles the approximate location of a ZIP or postcode area."
-- **The switch:** a new care-app switch, `weather_cards` in `public.care_features` (off / admins / everyone), like `today_cards`; starts off. The Account field and the no-ZIP prompt are behind it too.
-- **Not in this PR:** push notifications, the phone's location, storm or air-quality alerts, hourly updates, Dutch wording, the privacy page change itself, and any wording that reads as health advice.
-- **Checks:** the ZIP and postcode rules, the heat and cold thresholds in both units, the fallback to the seasonal card, and the free-user regression showing nothing changes while the switch is off.
-- **Size:** M
-- **Depends on:** D2.1 (done, #523)
-- **Overnight alone:** yes, held for Brittany
-- **Needs Brittany:** hold the PR. She reviews the copy and the build, and turns the switch on. The switch stays at off or admins until 1.5 is live with the weather privacy line.
-
 **Community navigation redesign (CR1–CR14).**
 
-Spec: [`docs/specs/community-navigation-redesign.md`](specs/community-navigation-redesign.md). Approved mockups: [`docs/specs/mockups/community-redesign-mockups.html`](specs/mockups/community-redesign-mockups.html) (screens Final-01 to Final-11). Build in this order. Match the mockups visually but build with the existing components and `K` tokens, never the mockup HTML; names, counts and bracketed titles in them are samples. Each PR shows its screen next to the mockup. Everything is behind `flock_enabled()` (admins only) except CR10, which adds one switch to the care side's moment sheet under the shared-code rule. Every item lists its new copy in the review queue; CR11 and CR12 are replaced by the separate guidelines walk-through, and CR13 waits on Brittany's choice of post options design.
+Spec: [`docs/specs/community-navigation-redesign.md`](specs/community-navigation-redesign.md). Approved mockups: [`docs/specs/mockups/community-redesign-mockups.html`](specs/mockups/community-redesign-mockups.html) (screens Final-01 to Final-11). Build in this order. Match the mockups visually but build with the existing components and `K` tokens, never the mockup HTML; names, counts and bracketed titles in them are samples. Each PR shows its screen next to the mockup. Everything is behind `flock_enabled()` (admins only) except CR10, which adds one switch to the care side's moment sheet under the shared-code rule. Every item lists its new copy in the review queue; CR11 and CR12 were replaced by the guidelines walk-through (#584, Done), and so is CR13: Brittany chose flagging, built from the walk-through's mockups 04–06.
 
 ### CR1 Community bottom bar and header
 - **Mockup:** Final-01-Feed (header and bar), Final-06-Library (header)
@@ -96,7 +60,7 @@ Spec: [`docs/specs/community-navigation-redesign.md`](specs/community-navigation
 
 ### CR5 Feed: From the spaces
 - **Mockup:** Final-01-Feed (cards)
-- **Done means:** Feed's space chips and the compose prompt are gone; a selected space shows as the title; "From the spaces" with compact cards ("[Space] · [time]", 3-line body, 92px thumbnail with "+N", Great job and Comment, a ··· button that opens today's menu until CR13). Spec §2 (space title), §4.3.
+- **Done means:** Feed's space chips and the compose prompt are gone; a selected space shows as the title; "From the spaces" with compact cards ("[Space] · [time]", 3-line body, 92px thumbnail with "+N", Great job and Comment, a ··· button that opens today's menu until the flag sheet exists). Spec §2 (space title), §4.3.
 - **Size:** M
 - **Depends on:** CR2 (the menu is how a space is picked once the chips go)
 - **Overnight alone:** yes
@@ -142,28 +106,16 @@ Spec: [`docs/specs/community-navigation-redesign.md`](specs/community-navigation
 - **Overnight alone:** yes
 - **Needs Brittany:** merge (it touches shared care code).
 
-### CR11 Community guidelines page (replaced)
-- **Mockup:** Final-10-Guidelines is superseded by the walk-through's guidelines page.
-- **Status:** Replaced by the guidelines walk-through (Brittany, Nov 28, 2026): a separate session is building the three-screen walk-through at `/flock/agree` and the full guidelines page with her final text (branch `flock-guidelines-walkthrough`, mockups `docs/mockups/flock-guidelines-agreement/`, not yet in a PR). Don't build this item; when that PR merges, move it to Done with that PR's number.
+### CR13 Post options: flag and block (replaced)
+- **Mockup:** Final-08-PostOptions is superseded by `docs/mockups/flock-guidelines-agreement/` 04–06 (post options, flag sheet, flag sent), from the guidelines walk-through work.
+- **Status:** Brittany chose **flag** (Nov 28, 2026). Members flag a post or comment (Harmful or unkind · Goes against Kya care standards · Spam or selling · Something else, with an optional note) and block its author; on their own posts they get Edit and Delete. The walk-through's next step builds this from mockups 04–06, so the hourly runs don't build it. When that PR merges, move this item to Done with its number. If Brittany would rather the hourly runs build it, she'll switch this item back to "Overnight alone: yes" with those mockups as its design.
+- **Apple 1.2:** met by flagging content and blocking members. "Report a member" from Final-08 isn't in the chosen design.
 - **Overnight alone:** no (replaced)
-
-### CR12 Guidelines agreement screen (replaced)
-- **Mockup:** Final-11-Agreement is superseded by `docs/mockups/flock-guidelines-agreement/` 01–03 (the three-screen walk-through).
-- **Status:** Replaced by the guidelines walk-through (Brittany, Nov 28, 2026): a separate session is building the three-screen walk-through at `/flock/agree` and the full guidelines page with her final text (branch `flock-guidelines-walkthrough`, mockups `docs/mockups/flock-guidelines-agreement/`, not yet in a PR). Don't build this item; when that PR merges, move it to Done with that PR's number. One open point for that work: there's already an agreement record (`flock_agreements`, the join step's "I agree" checkbox, version "2026-12"), so a member shouldn't have to agree twice or carry two versions.
-- **Overnight alone:** no (replaced)
-
-### CR13 Post options: report and block, and report a member
-- **Mockup:** Final-08-PostOptions
-- **Done means:** a ··· button on every post and comment opens one Post options sheet: Report this post (or comment), Report this member, Block this member (red), and the line under them; on your own, Edit and Delete instead; admin tools kept below for admins. `flock_report` accepts subject type `member` (constraint and allowed list rebuilt from their live definitions); "Report [name]" also on member profiles and chapter Members rows; member reports appear in `/admin/review` → Reports and never hide anything on their own. Pinned in `supabase/checks/flock_moderation_checks.sql` and `e2e/flock.shell.ts`. Spec §6b.
-- **Size:** M
-- **Depends on:** nothing (the Feed's ··· from CR5 switches to this sheet when both are in)
-- **Overnight alone:** no (waits on Brittany's choice of design)
-- **Needs Brittany:** a choice between this design (Final-08: "Report this post", "Report this member", "Block this member") and the walk-through's post options, flag sheet and flag sent (`docs/mockups/flock-guidelines-agreement/` 04–06, built in that session's next step). Whichever she picks, members must be able to report posts and members and block members (Apple 1.2), and there's one sheet, not two.
 
 ### CR14 Dutch for the redesign
-- **Done means:** every string added by CR1–CR10 and CR13 has Dutch in `src/locales/nl.jsonc`, in the same voice as the Join screen's Dutch (#575). Placeholder guidelines copy waits for the final English.
+- **Done means:** every string added by CR1–CR10 has Dutch in `src/locales/nl.jsonc`, in the same voice as the Join screen's Dutch (#575). Placeholder guidelines copy waits for the final English.
 - **Size:** S
-- **Depends on:** CR1–CR10, CR13
+- **Depends on:** CR1–CR10
 - **Overnight alone:** yes
 - **Needs Brittany:** a native speaker's read; merge on her OK.
 
@@ -329,6 +281,8 @@ The launch PR itself (1.18) is already merged dark. What's left before opening i
 
 ## Done
 
+- **CR11, CR12** Community guidelines page and agreement screen, replaced by the guidelines walk-through (behind `flock_enabled()`): the three-screen walk-through at `/flock/agree` (approved mockups `docs/mockups/flock-guidelines-agreement/` 01–03, plus a close button on screen 1) before anything else in the Flock, for everyone until they agree to the current version; the full guidelines page at `/flock/guidelines` with Brittany's final text, linked from the top of the Spaces sheet until CR2's drawer. One agreement only: `flock_guideline_agreements` at `current_guidelines_version()` = 1; the join step's checkbox is retired and `flock_join()` needs the join record (chapter, 18+) plus the walk-through agreement. Posts, comments, community-journey updates and sharing a journey need the agreement (BEFORE INSERT trigger). `20261128180000_flock_guideline_agreements.sql`, `20261128210000_flock_join_uses_walkthrough.sql`, `supabase/checks/flock_guideline_agreements_checks.sql`, `npm run test:flock-shell`, `e2e/flock.shell.ts`. Merged on Brittany's OK (Nov 28, 2026): #584.
+- **D2.2** Weather cards, behind their own switch (`care_features.weather_cards`, off; `select public.admin_set_care_feature('weather_cards', 'admins');`): an optional "Home ZIP or postcode" on Account (US ZIP, or a Dutch postcode kept as its 4 digits; `home_postcodes`, own row only, deleted with the account), turned into the middle of its area from files in the app so WeatherKit never sees the ZIP; the server fetches each area's daily forecast from Apple WeatherKit at most once a day and shares it (`weather_forecasts`, service role only). Home shows "Hot day ahead" when today's high is 90°F / 32°C or more and "Cold night ahead" when tonight's low is 32°F / 0°C or less, in the seasonal card's spot, with the same "Got it" for the day; with no ZIP, no forecast or any failure, the seasonal card as before; with the switch on and no ZIP, the "Add your home ZIP or postcode" prompt, with its own "Got it" that hides it for good (`weather_prompt_dismissals`). English only. The ZIP and postcode files are built (US: Census ZCTA Gazetteer; Netherlands: GeoNames, CC BY 4.0; `npm run weather:postcodes`). The privacy line goes out with 1.5. `20261128190000_weather_cards.sql`, `supabase/checks/weather_cards_checks.sql`, `npm run test:weather-cards`. Merged on Brittany's OK (Nov 28, 2026): [#581](https://github.com/the-kya-project/perch-perfect-plan/pull/581). **Built, not launched:** Brittany looked at it as admin on Nov 28, 2026, then had the switch turned back to `off`. It stays off, admins included, until she decides to launch it, and never past admins before 1.5 is live with the weather privacy line.
 - **1.13b** Care badges free users can earn, behind their own switch (`care_features.care_badges`, off; `select public.admin_set_care_feature('care_badges', 'admins');`): Steady scale (a weigh-in on 4, 12 or 52 weeks in a row), Daily check-in (7 or 30 days in a row), Plan ready and Sitter ready, each per bird and counting past care. The bird page gets a "Badges" row, a one-time "Here's what you've already earned" and a "Badge earned" card for each new one; `/birds/<bird>/badges` shows earned and unearned with how to earn each. Rewards the habit only; no Flock code or navigation for free users. `20261128160000_care_badges.sql`, `supabase/checks/care_badges_checks.sql`, `npm run test:care-badges`, `npm run test:care-badges:screens`. Held for Brittany's approval (screenshots, wording, vet packet): [#572](https://github.com/the-kya-project/perch-perfect-plan/pull/572)
 - **1.20f** Co-carers read comments on their bird's journeys (Brittany's answer to #562's question, Nov 26, 2026): a bird's household (owner or co-carer) reads the comments, replies and comment photos on that bird's journeys without a Flock membership, with the same moderation, block and "Just me" rules; they can't comment, reply, react, report or block, and the comment screen shows no box, reaction button, Reply or menu for them. `20261126180000_journeys_cocarer_read_comments.sql` (`private.flock_household_reads`; `flock_comments_for`, `flock_comment_counts` and `flock_media_refs` rewritten from their live definitions), `supabase/checks/journeys_cocarer_comments_checks.sql`, `e2e/flock.shell.ts`. [#569](https://github.com/the-kya-project/perch-perfect-plan/pull/569)
 - **1.16** Rescue partner codes, behind `flock_enabled()`: one reusable code per partner rescue with an optional use limit (`rescue_partners`), the adopter's form (bird's name, species, adoption date; `rescue_redemptions`), "being confirmed", then a welcome once an admin approves. An approval gives six months in the Flock, free (source `rescue`, plan `comp`, never billed), from the free season's end or at once if it has ended, queued with gifts. One per account (a declined one can try again), never with a founding spot, no payment, no seat counting. "Have a rescue code?" on the Join screen and the redeem page; `/flock/rescue`; admins add, edit and pause partners on `/admin/rescues` and approve or decline there or in `/admin/review` → Rescues. `20261126130000_flock_rescue_codes.sql`, `supabase/checks/flock_rescue_codes_checks.sql`, `npm run test:flock-shell`, `e2e/flock.shell.ts`. Merged on Brittany's OK (Nov 26, 2026): #565.
