@@ -19,6 +19,23 @@ Format:
   - After: "<new wording>"
 ```
 
+### [#591](https://github.com/the-kya-project/perch-perfect-plan/pull/591) · Flagging: one options sheet and the flag sheet (mockups 04–06) · **held for Brittany**
+All new member-facing wording, word for word from the approved mockups (source: `src/components/flock/FlagSheets.tsx`). English only; Dutch in the next translation pass.
+- **Where:** the ··· options sheet on someone else's post, comment, journey update or member skill
+  - Before: "Reply", "Report", "Block [name]", "Block and report", "Cancel"
+  - After: "Flag this post" (or "Flag this comment", "Flag this update", "Flag this skill") / "The Kya team reviews it privately. [Name] won't know who flagged it."; "Block [name]" / "You won't see each other's posts, comments, or journeys. You can undo this in Settings."; "Cancel"
+- **Where:** the flag sheet (replaces the report sheet)
+  - Before: "Report this post", "What's wrong with it?", "Unkind or harassing", "Unsafe advice for birds", "Spam or selling", "Something else", "Anything we should know? (optional)", "Send report"
+  - After: "What's going on?" / "The Kya team reviews every flag. [Name] won't know who flagged it."; "Harmful or unkind" / "Harassment, hateful content, or harm to an animal."; "Goes against Kya care standards" / "Like a seed-only diet, clipping, a cage that looks too small, or punishment-based training."; "Spam or selling" / "Ads, affiliate links, or selling or trading birds."; "Something else" / "Tell us a little in the note below."; "Add a note (optional)" with the example "For example, I think this cage may be too small for a macaw."; "Send to the Kya team"; "Sending…"
+  - New (not in the mockups; when sending fails): "We couldn't send that. Check your connection and try again."
+- **Where:** after sending
+  - Before: "Thanks for telling us" / "We'll take a look. Your report is private: the person who posted it won't know it was you." / "Done"
+  - After: "Thanks for looking out" / "The Kya team will take a look. If anything needs a follow-up, we'll reach out to [Name] privately, so you won't see a public reply." / then "Flags like this one are reviewed within 24 hours." (Harmful or unkind) or "You can keep scrolling. There's nothing else you need to do." (every other reason) / "Back to the Feed" (from the feed) or "Done" (elsewhere)
+- **Where:** the journey story's flag button (screen-reader label) and a member skill's link
+  - Before: "Report this update", "Report this skill" · After: "Flag this update", "Flag this skill"
+- **Where:** the review queue: new flags show "Harmful or unkind" and "Goes against Kya care standards"; older reports keep "Unkind or harassing" and "Unsafe advice for birds".
+- **Gone:** "Block and report", "Report and block", and its thank-you ("We'll take a look. You've also blocked …").
+
 ### [#584](https://github.com/the-kya-project/perch-perfect-plan/pull/584) · Community guidelines walk-through and guidelines page · **merged on Brittany's OK (Nov 28, 2026)**
 All new member-facing wording, word for word from the approved mockups and the prompt (source: `src/flock/guidelines/content.ts`). English only so far: Dutch shows the English until the next translation pass.
 - **Where:** walk-through screen 1 (`/flock/agree`)
@@ -1791,6 +1808,14 @@ Format:
 - **To change it:** <what would need to change>
 ```
 
+### [#591](https://github.com/the-kya-project/perch-perfect-plan/pull/591) · Flagging
+- **No "Reply" in the options sheet,** matching mockup 04. Comments keep their inline Reply link; posts have their Comment button.
+- **No combined "Block and report".** The mockup has Flag and Block as separate rows; flagging and blocking are each one tap from the sheet.
+- **"Back to the Feed" only on the feed.** Mockup 06 shows it from the feed; on a post page, a comment, a journey update or a member skill the thank-you's button says "Done", since there's no feed to go back to.
+- **Reason values:** `harmful` and `care_standards` are new; "Spam or selling" and "Something else" reuse `spam` and `other`. The old `unkind` and `unsafe` stay valid for existing flags (no row changed) and keep their names in the review queue.
+- **"Something else" doesn't require a note,** since the mockup calls the note optional; its line asks for one.
+- **Harmful flags aren't reviewed any differently by the system.** The "within 24 hours" line describes the Kya team's promise in the guidelines; the queue and the hiding threshold are unchanged.
+
 ### [#584](https://github.com/the-kya-project/perch-perfect-plan/pull/584) · Community guidelines walk-through
 - **One agreement (your call, Nov 28):** the join step's "I agree to the community guidelines" checkbox is retired. The walk-through's record is the only guidelines agreement and `current_guidelines_version()` the only version to bump. The join step keeps its chapter and "I'm 18 or older" (still `flock_agree()`, whose version "2026-12" is now frozen), and `flock_join()` needs both that record and the walk-through agreement (`20261128210000_flock_join_uses_walkthrough.sql`).
 - **Posting is blocked by a trigger, not an INSERT policy.** App users have no write grant on posts, comments or journey updates; they write through SECURITY DEFINER functions that RLS never sees, so an INSERT policy would block nothing. A BEFORE INSERT trigger on `flock_posts` (every space, pod posts and challenge entries), `flock_comments` and `journey_updates` blocks every path instead. Sharing a journey with the Flock (`journeys.visibility` → community) needs it too, or updates posted while it was "Just me" would reach the Flock unagreed.
@@ -2189,6 +2214,9 @@ Format:
 ### <PR link> · <item ID> <item title>
 - **Needs:** <the decision, approval or read, in one or two lines>
 ```
+
+### [#591](https://github.com/the-kya-project/perch-perfect-plan/pull/591) · Flagging: one options sheet and the flag sheet
+- **Needs:** your approval to merge (behind the Flock gate; a small production database change adding two flag reasons). See Decisions for the three small calls (no Reply or "Block and report" in the sheet; "Done" off the feed).
 
 ### Reminder · the hourly runs' GitHub token expires Feb 20, 2027
 - **Needs:** a new token before **Feb 20, 2027**. That's 90 days from Nov 22, 2026; GitHub → Settings → Developer settings → Fine-grained tokens shows the exact date. When it expires, runs can still build and test but can't push or open PRs, and each run's note in `~/.kya-agent/job.log` says so.
