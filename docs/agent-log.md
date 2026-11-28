@@ -23,7 +23,7 @@ Copy this, fill it in, and put it at the top of "Runs", above the latest entry.
 ### 2026-11-28 14:10 EST · Chapter names in Dutch (started by Brittany in a session)
 - **Built:** the ten chapter names now show in the reader's language wherever the Flock names a chapter, with Dutch for all ten ("Grote Meren", "Andere regio", …). The names are looked up in the app, so the database is unchanged.
 - **PR:** [#579](https://github.com/the-kya-project/perch-perfect-plan/pull/579)
-- **Outcome:** Held: for Brittany's read of the names.
+- **Outcome:** Merged on Brittany's OK once checks passed (Nov 28, 2026).
 - **Problems:** the known join test still fails on this Mac only (it fails on a clean `main` too).
 
 ### 2026-11-28 12:40 EST · Join the Flock screen in Dutch (started by Brittany in a session)
