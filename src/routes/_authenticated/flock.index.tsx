@@ -26,8 +26,8 @@ import { FlockChips, FlockEmpty } from "@/components/flock/FlockChips";
 import { spaceLabel } from "@/components/flock/SpacesSheet";
 import { FLOCK_SPACES, TODAY_FILTERS, pickOptional, type FlockSpace, type TodayFilter } from "@/lib/flockNav";
 
-// Today: one feed for everything in the Flock. A space (the chips, or the
-// header's Spaces sheet) narrows it; ?space= keeps the choice across a reload.
+// The Feed (once "Today"): one feed for everything in the Flock. A space (the
+// chips) narrows it; ?space= keeps the choice across a reload.
 export const Route = createFileRoute("/_authenticated/flock/")({
   validateSearch: (s: Record<string, unknown>): { space?: FlockSpace } => ({ space: pickOptional(s.space, FLOCK_SPACES) }),
   component: FlockToday,
@@ -44,8 +44,8 @@ function emptyCopy(t: TFunction, f: TodayFilter): { title: string; line: string 
       line: t("flock.today.empty.everything", "This is where the Flock's days come together. Posts, journeys, and today's idea will show up here."),
     };
     case "learn": return {
-      title: t("flock.today.empty.learnTitle", "No questions yet"),
-      line: t("flock.today.empty.learn", "When members ask, answer, and share what's working with their birds, it will gather here."),
+      title: t("flock.today.empty.learnTitle", "Nothing here yet"),
+      line: t("flock.today.empty.learn", "Questions, wins, and everyday life with members' birds will gather here."),
     };
     case "good": return {
       title: t("flock.today.empty.goodTitle", "Nothing here yet"),
@@ -87,7 +87,7 @@ function FlockToday() {
   const { data: cardComments } = useCommentCounts("journey_update", items.flatMap((x) => (x.kind === "moment" && x.item.update_id ? [x.item.update_id] : [])));
   return (
     <>
-      <FlockHeader title={t("flock.today.title", "Today")} />
+      <FlockHeader title={t("flock.feed.title", "Feed")} />
       <FlockBody>
         <FlockChips
           label={t("flock.today.filterAria", "Filter Today")}

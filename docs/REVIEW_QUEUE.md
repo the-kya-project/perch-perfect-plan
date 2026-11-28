@@ -19,6 +19,27 @@ Format:
   - After: "<new wording>"
 ```
 
+### [#589](https://github.com/the-kya-project/perch-perfect-plan/pull/589) · CR1 Community bottom bar and header
+English only; behind the Flock gate (admins only). Dutch for these waits for CR14: until then Dutch shows the old Dutch for the four changed lines ("Samen leren" and its line and empty state) and English for the new ones.
+- **Where:** the Community bottom bar and the Duo / wide-window column
+  - Before: "Today" · After: "Feed"
+  - New: "Add something" (the gold center button's name for screen readers, and its sheet's title) / "Close" (the sheet's close button)
+  - Removed from the bar: "Chapter"
+- **Where:** every Community screen's header
+  - New: "Menu" (the menu tile's name for screen readers)
+  - New: "Kya & Co." (the wordmark)
+  - New: "Updates" / "Updates, new activity" (the bell's name for screen readers, without and with unread notifications)
+  - Removed: "Spaces" (button) and "You" (the avatar link's name)
+- **Where:** the Feed (`/flock`), its title
+  - Before: "Today" · After: "Feed"
+- **Where:** the space's name everywhere it's shown (the Feed's chips, Post to, post tags, `/admin/review`)
+  - Before: "Learn together" · After: "Flock talk"
+- **Where:** the space's line (the Spaces sheet, which nothing opens since this PR)
+  - Before: "Questions, guides, and what members are working out with their birds." · After: "Questions, wins, and everyday life with your bird" (the spec's wording, no full stop, as written)
+- **Where:** the Feed's empty state for Flock talk
+  - Before: "No questions yet" / "When members ask, answer, and share what's working with their birds, it will gather here."
+  - After: "Nothing here yet" / "Questions, wins, and everyday life with members' birds will gather here." (the spec's proposal)
+
 ### [#581](https://github.com/the-kya-project/perch-perfect-plan/pull/581) · D2.2 Weather cards · **held, not merged; switched off**
 English only (Dutch after you approve the English). All of it is new and behind the `weather_cards` switch (off). Lines marked "spec" are word for word from the item.
 - **Where:** Home, the weather card
@@ -1486,6 +1507,16 @@ No new strings: every line reuses existing wording, in new places (admins only).
 ---
 
 ## Decisions agents made
+
+### [#589](https://github.com/the-kya-project/perch-perfect-plan/pull/589) · CR1 Community bottom bar and header
+- **Decision:** The Feed's space chips stay until CR5. Spec §2 lists them with what the header loses, but CR1's "done means" doesn't, and CR5 removes them; keeping them means a space can still be picked while the menu opens nothing (CR2).
+- **Decision:** Until CR2's menu lands, Flock settings (`/flock/you`) has no button in the header, since the avatar is gone and the menu tile opens nothing, as the item says. It's still reached by URL, and the Notifications screen's back link goes there when there's no page to go back to. Admins only.
+- **Decision:** The Spaces sheet's code stays (it holds `spaceLabel`, which every screen that names a space reads), but nothing opens it. CR2's side menu replaces it.
+- **Decision:** The menu tile has no lime dot yet. The dot shows new menu activity, and the counts behind it come in CR3. The bell's dot is in now: it reads the existing `flock_notifications_unread()`, refreshed every minute, and clears when the Notifications screen marks everything read.
+- **Decision:** The bell's screen-reader name is "Updates, new activity" when the dot shows, matching the menu's "Menu, new activity" in spec §2.
+- **Decision:** The wordmark is the text "Kya & Co." in the serif, as the mockup draws it (no image). Icons: lucide `Rows2` for Feed (the mockup's two stacked boxes), `Menu`, `Bell`, `Plus`; Journeys, Library and My birds keep theirs.
+- **Decision:** In the Duo and wide-window column, the center item is a 52px gold circle inside a tab-sized slot with no label, so the column's fit rules (`useTabFit`, now counting five items) work unchanged.
+- **Decision:** "Learn together" in the guidelines walk-through's `src/flock/guidelines/content.ts` wasn't changed: that file isn't on `main` yet (#584 is open). It needs changing to "Flock talk" when #584 merges.
 
 ### [#581](https://github.com/the-kya-project/perch-perfect-plan/pull/581) · D2.2 Weather cards
 - **Decision:** The ZIP lives in its own table, `home_postcodes` (one row per account, own row only), not as columns on `profiles`, so no existing policy that lets others read a profile can ever reach it. The weather card's "Got it" is a column on that row (`weather_dismissed_on`), not the seasonal card's `today_card_dismissals` row, which holds one card per account: sharing it would have brought back a seasonal card you'd already hidden.

@@ -21,6 +21,9 @@ export const K = {
   red: "#a32d2d",
   amberBg: "#f6e7c4",
   amberText: "#854f0b",
+  // The Community's own (backlog CR1); no care screen uses them.
+  gold: "#e8b44c",
+  limeLight: "#e0eed1",
 };
 export const SERIF = "'Newsreader', Georgia, serif";
 

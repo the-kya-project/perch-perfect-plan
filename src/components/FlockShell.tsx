@@ -1,23 +1,22 @@
 import { createContext, useContext, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { Link, useLocation } from "@tanstack/react-router";
-import { Sun, Route as RouteIcon, MapPin, Library, Bird, LayoutGrid } from "lucide-react";
+import { Rows2, Route as RouteIcon, Library, Bird, Plus, Menu, Bell } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import type { TFunction } from "i18next";
-import { K, KyaHeading } from "@/components/kya";
-import { FlockAvatar } from "@/components/flock/FlockPeople";
-import { useAvatarUrls, useCareName, useMyProfile } from "@/lib/flockData";
-import { defaultDisplayName } from "@/lib/flockProfile";
+import { K, KyaHeading, SERIF } from "@/components/kya";
 import { RAIL_TAB_CLASS, RAIL_TAB_OFF_STYLE, RAIL_TAB_ON_STYLE, useDuoRail, useTabFit } from "@/components/DuoRail";
-import { SpacesSheet } from "@/components/flock/SpacesSheet";
+import { AddSheet } from "@/components/flock/AddSheet";
 import { rememberMode } from "@/lib/flock";
 import { trackFlockActive } from "@/lib/flockAnalytics";
-import { FLOCK_DESTS, destForPath, isFlockFullScreenPath, isFlockOnboardingPath, type FlockDest } from "@/lib/flockNav";
+import { useUnreadNotifications } from "@/lib/flockModeration";
+import { FLOCK_BAR, FLOCK_DESTS, destForPath, isFlockFullScreenPath, isFlockOnboardingPath, type FlockDest } from "@/lib/flockNav";
 
 // The Community's own chrome (the Flock; admins only until launch, the /flock
-// route guard keeps everyone else out). Five destinations in the same order
-// everywhere: Today, Journeys, Chapter, Library, then My birds, which goes back
-// to care from the slot the Community button holds on the care tab bar.
+// route guard keeps everyone else out). Five items in the same order
+// everywhere (backlog CR1): Feed, Journeys, the gold Add something button,
+// Library, then My birds, which goes back to care from the slot the Community
+// button holds on the care tab bar. Chapter is in the side menu (CR2).
 //   - Phones: a bottom bar, same height, border and safe area as OwnerTabBar.
 //   - iPhone Duo sideways (lib/duo.ts): the authenticated layout keeps its side
 //     column and leaves an empty tab group in it (DuoRail `tabs`); the tabs are
@@ -25,22 +24,54 @@ import { FLOCK_DESTS, destForPath, isFlockFullScreenPath, isFlockOnboardingPath,
 //   - Wide desktop windows (1024px+, no Duo column): the same column, drawn
 //     here, so both wide layouts match.
 
-const ICONS: Record<FlockDest, typeof Sun> = {
-  today: Sun,
+const ICONS: Record<FlockDest, typeof Rows2> = {
+  feed: Rows2,
   journeys: RouteIcon,
-  chapter: MapPin,
   library: Library,
   care: Bird,
 };
 
+const DEST_TO = Object.fromEntries(FLOCK_DESTS.map((d) => [d.key, d.to])) as Record<FlockDest, string>;
+
 export function flockDestLabel(t: TFunction, key: FlockDest): string {
   switch (key) {
-    case "today": return t("flock.nav.today", "Today");
+    case "feed": return t("flock.nav.feed", "Feed");
     case "journeys": return t("flock.nav.journeys", "Journeys");
-    case "chapter": return t("flock.nav.chapter", "Chapter");
     case "library": return t("flock.nav.library", "Library");
     case "care": return t("flock.nav.care", "My birds");
   }
+}
+
+type AddApi = { open: (trigger: HTMLElement | null) => void };
+const AddContext = createContext<AddApi | null>(null);
+
+/** The raised gold plus: opens Add something. A button, never lit. */
+function AddButton({ column }: { column?: boolean }) {
+  const { t } = useTranslation();
+  const add = useContext(AddContext);
+  const ref = useRef<HTMLButtonElement>(null);
+  const circle = (
+    <span
+      className={`grid shrink-0 place-items-center rounded-full ${column ? "size-[52px]" : "size-14 border-4 border-white"}`}
+      style={{ background: K.gold, color: K.forest, boxShadow: column ? undefined : "0 4px 12px rgba(15,30,24,.18)" }}
+    >
+      <Plus className="size-6" strokeWidth={2.6} aria-hidden="true" />
+    </span>
+  );
+  return (
+    <button
+      ref={ref}
+      type="button"
+      data-flock-add
+      aria-label={t("flock.nav.add", "Add something")}
+      aria-haspopup="dialog"
+      onClick={() => add?.open(ref.current)}
+      className={column ? `${RAIL_TAB_CLASS} justify-center` : "flex flex-1 justify-center active:scale-95"}
+      style={column ? RAIL_TAB_OFF_STYLE : undefined}
+    >
+      {column ? circle : <span className="-mt-[22px]">{circle}</span>}
+    </button>
+  );
 }
 
 /** Phone: fixed bottom bar. */
@@ -52,13 +83,14 @@ function FlockTabBar({ current }: { current: FlockDest | null }) {
       className="fixed inset-x-0 bottom-0 z-40 border-t border-[#d5dfd5] bg-white pb-[env(safe-area-inset-bottom)] lg:hidden"
     >
       <div className="mx-auto flex max-w-md items-stretch justify-around">
-        {FLOCK_DESTS.map(({ key, to }) => {
+        {FLOCK_BAR.map((key) => {
+          if (key === "add") return <AddButton key={key} />;
           const on = key === current;
           const Icon = ICONS[key];
           return (
             <Link
               key={key}
-              to={to}
+              to={DEST_TO[key]}
               data-flock-tab={key}
               onClick={key === "care" ? () => rememberMode("care") : undefined}
               aria-current={on ? "page" : undefined}
@@ -81,13 +113,14 @@ function ColumnTabs({ current }: { current: FlockDest | null }) {
   const { t } = useTranslation();
   return (
     <>
-      {FLOCK_DESTS.map(({ key, to }) => {
+      {FLOCK_BAR.map((key) => {
+        if (key === "add") return <AddButton key={key} column />;
         const on = key === current;
         const Icon = ICONS[key];
         return (
           <Link
             key={key}
-            to={to}
+            to={DEST_TO[key]}
             data-flock-tab={key}
             onClick={key === "care" ? () => rememberMode("care") : undefined}
             aria-current={on ? "page" : undefined}
@@ -106,7 +139,7 @@ function ColumnTabs({ current }: { current: FlockDest | null }) {
 /** Into the Duo column's empty tab group, sized the way the care tabs are. */
 function DuoColumnTabs({ slot, current }: { slot: HTMLElement; current: FlockDest | null }) {
   const ref = useMemo(() => ({ current: slot as HTMLDivElement | null }), [slot]);
-  const fit = useTabFit(ref, FLOCK_DESTS.length);
+  const fit = useTabFit(ref, FLOCK_BAR.length);
   useLayoutEffect(() => { slot.dataset.fit = fit; }, [slot, fit]);
   return createPortal(<ColumnTabs current={current} />, slot);
 }
@@ -127,27 +160,24 @@ function DesktopColumn({ current }: { current: FlockDest | null }) {
   );
 }
 
-type SpacesApi = { open: (trigger: HTMLElement | null) => void };
-const SpacesContext = createContext<SpacesApi | null>(null);
-
 /** Frame for every Community screen: nav for the current layout, room for it,
- *  and the Spaces sheet the header opens. */
+ *  and the Add something sheet the center button opens. */
 export function FlockShell({ children }: { children: ReactNode }) {
   const pathname = useLocation({ select: (l) => l.pathname });
   const current = destForPath(pathname);
   const onboarding = isFlockOnboardingPath(pathname) || isFlockFullScreenPath(pathname);
   const rail = useDuoRail();
-  const [spacesOpen, setSpacesOpen] = useState(false);
+  const [addOpen, setAddOpen] = useState(false);
   const trigger = useRef<HTMLElement | null>(null);
-  const api = useMemo<SpacesApi>(() => ({ open: (el) => { trigger.current = el; setSpacesOpen(true); } }), []);
-  // A new screen closes the sheet (picking a space navigates).
-  useEffect(() => { setSpacesOpen(false); }, [pathname]);
+  const api = useMemo<AddApi>(() => ({ open: (el) => { trigger.current = el; setAddOpen(true); } }), []);
+  // A new screen closes the sheet.
+  useEffect(() => { setAddOpen(false); }, [pathname]);
   // Daily active member (flock_active): only the first Flock screen of the
   // day sends, and only for a member or admin (src/lib/flockAnalytics.ts).
   useEffect(() => { trackFlockActive(); }, [pathname]);
 
   return (
-    <SpacesContext.Provider value={api}>
+    <AddContext.Provider value={api}>
       <div className={`min-h-screen ${onboarding ? "" : "pb-nav"} ${rail || onboarding ? "" : "lg:pb-10 lg:pr-[104px]"}`} style={{ background: K.mist, color: K.forest }}>
         {children}
         {onboarding ? null : rail
@@ -159,66 +189,74 @@ export function FlockShell({ children }: { children: ReactNode }) {
             </>
           )}
       </div>
-      {spacesOpen && (
-        <SpacesSheet
+      {addOpen && (
+        <AddSheet
           onClose={() => {
-            setSpacesOpen(false);
-            // Back to the Spaces button, as a dialog should.
+            setAddOpen(false);
+            // Back to the button that opened it, as a dialog should.
             requestAnimationFrame(() => trigger.current?.focus());
           }}
         />
       )}
-    </SpacesContext.Provider>
+    </AddContext.Provider>
   );
 }
 
-/** The header's Spaces button: opens the sheet. */
-function SpacesButton() {
+/** The header's menu tile. The side menu it opens comes in CR2, and the lime
+ *  dot for new activity in CR3. */
+function MenuButton() {
   const { t } = useTranslation();
-  const spaces = useContext(SpacesContext);
-  const ref = useRef<HTMLButtonElement>(null);
   return (
     <button
-      ref={ref}
       type="button"
-      onClick={() => spaces?.open(ref.current)}
-      aria-haspopup="dialog"
-      className="inline-flex h-11 items-center gap-2 rounded-full px-4 text-[15px] font-[700] text-white active:scale-95"
-      style={{ background: K.forestDeep, boxShadow: `0 0 0 2px ${K.teal}` }}
+      data-testid="flock-menu-button"
+      aria-label={t("flock.header.menu", "Menu")}
+      className="relative grid size-[52px] shrink-0 place-items-center rounded-[16px] text-white active:scale-95"
+      style={{ background: "rgba(255,255,255,.14)" }}
     >
-      <LayoutGrid className="size-[18px]" strokeWidth={2.2} aria-hidden="true" />
-      {t("flock.spaces.button", "Spaces")}
+      <Menu className="size-[26px]" strokeWidth={2.3} aria-hidden="true" />
     </button>
   );
 }
 
-/** Your photo or initial, opening You (your Community profile). The care
- *  app's AccountAvatar stays as it is; this one is Community's own. */
-function MeAvatarLink() {
+/** Updates: Community notifications, with a lime dot while any are unread. */
+function UpdatesBell() {
   const { t } = useTranslation();
-  const { data: me } = useMyProfile();
-  const { data: care } = useCareName();
-  const { data: urls } = useAvatarUrls([me?.photo_path]);
-  const name = me?.display_name ?? defaultDisplayName(care?.first_name, care?.full_name);
+  const { data: unread } = useUnreadNotifications();
+  const dot = (unread ?? 0) > 0;
   return (
-    <Link to="/flock/you" aria-label={t("flock.you.open", "You")} className="shrink-0 rounded-full active:scale-95">
-      <FlockAvatar name={name} url={me?.photo_path ? urls?.get(me.photo_path) : null} size={44} ring={K.teal} />
+    <Link
+      to="/flock/you/notifications"
+      data-testid="flock-updates"
+      aria-label={dot ? t("flock.header.updatesNew", "Updates, new activity") : t("flock.header.updates", "Updates")}
+      className="relative grid size-11 shrink-0 place-items-center rounded-full text-white active:scale-95"
+      style={{ background: "rgba(255,255,255,.12)" }}
+    >
+      <Bell className="size-5" strokeWidth={1.8} aria-hidden="true" />
+      {dot && (
+        <span data-testid="flock-updates-dot" aria-hidden="true" className="absolute right-[9px] top-[9px] size-2.5 rounded-full"
+          style={{ background: K.lime, boxShadow: `0 0 0 2px ${K.forest}` }} />
+      )}
     </Link>
   );
 }
 
-/** Every Community screen's forest header: the title on the left; Spaces and
- *  the account avatar on the right; an optional line under the title. */
+/** Every Community screen's forest header: the menu tile and the Kya & Co.
+ *  wordmark on the left, the Updates bell on the right, the title below and
+ *  an optional line under it. */
 export function FlockHeader({ title, line }: { title: ReactNode; line?: ReactNode }) {
   return (
     <header className="text-white" style={{ background: K.forest }}>
-      <div className="mx-auto max-w-md px-5 pb-[46px] pt-[calc(env(safe-area-inset-top)+18px)] lg:max-w-2xl">
+      <div className="mx-auto max-w-md px-4 pb-[46px] pt-[calc(env(safe-area-inset-top)+18px)] lg:max-w-2xl">
         <div className="flex items-center gap-3">
-          <KyaHeading as="h1" size={30} className="min-w-0 flex-1 truncate text-white">{title}</KyaHeading>
-          <SpacesButton />
-          <MeAvatarLink />
+          <MenuButton />
+          <span className="min-w-0 flex-1 truncate text-[21px] font-[700] text-white" style={{ fontFamily: SERIF }}>Kya &amp; Co.</span>
+          <UpdatesBell />
         </div>
-        {line && <p className="m-0 mt-2 text-[15px] leading-[1.5]" style={{ color: K.paleGreen }}>{line}</p>}
+        <div className="mt-3 px-1">
+          <KyaHeading as="h1" size={30} className="truncate text-white">{title}</KyaHeading>
+          {line && <p className="m-0 mt-2 text-[15px] leading-[1.5]" style={{ color: K.paleGreen }}>{line}</p>}
+        </div>
       </div>
     </header>
   );

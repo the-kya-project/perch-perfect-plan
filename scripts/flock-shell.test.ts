@@ -17,7 +17,7 @@ import { existsSync, readFileSync } from "node:fs";
 import { rememberMode, rememberedMode } from "@/lib/flock";
 import { avatarInitial } from "@/lib/accountInitial";
 import {
-  CHAPTER_TABS, FLOCK_DESTS, FLOCK_REDIRECTS, FLOCK_SPACES, JOURNEYS_FILTERS, LIBRARY_SUBJECTS, LIBRARY_TYPES, TODAY_FILTERS,
+  CHAPTER_TABS, FLOCK_BAR, FLOCK_DESTS, FLOCK_REDIRECTS, FLOCK_SPACES, JOURNEYS_FILTERS, LIBRARY_SUBJECTS, LIBRARY_TYPES, TODAY_FILTERS,
   CHAPTER_NAMES, chapterLine, chapterName, destForPath, isFlockFullScreenPath, isFlockOnboardingPath, pick, pickOptional, pickQuery,
   LIBRARY_RESOURCE_TYPES, resourceTypeFor,
 } from "@/lib/flockNav";
@@ -121,18 +121,19 @@ check("nothing known: empty, not a crash", () => {
 });
 
 console.log("community navigation");
-check("five destinations, left to right, My birds last and back to care", () => {
-  assert.deepEqual(FLOCK_DESTS.map((d) => d.key), ["today", "journeys", "chapter", "library", "care"]);
-  assert.deepEqual(FLOCK_DESTS.map((d) => d.to), ["/flock", "/flock/journeys", "/flock/chapter", "/flock/library", "/dashboard"]);
+check("the bar: Feed, Journeys, Add something, Library, My birds last and back to care (CR1)", () => {
+  assert.deepEqual(FLOCK_BAR, ["feed", "journeys", "add", "library", "care"]);
+  assert.deepEqual(FLOCK_DESTS.map((d) => d.key), ["feed", "journeys", "library", "care"]);
+  assert.deepEqual(FLOCK_DESTS.map((d) => d.to), ["/flock", "/flock/journeys", "/flock/library", "/dashboard"]);
 });
-check("every path lights the right tab", () => {
-  assert.equal(destForPath("/flock"), "today");
-  assert.equal(destForPath("/flock/"), "today");
+check("every path lights the right tab; Chapter is off the bar and lights none", () => {
+  assert.equal(destForPath("/flock"), "feed");
+  assert.equal(destForPath("/flock/"), "feed");
   assert.equal(destForPath("/flock/journeys"), "journeys");
-  assert.equal(destForPath("/flock/chapter"), "chapter");
+  assert.equal(destForPath("/flock/chapter"), null);
   assert.equal(destForPath("/flock/library"), "library");
-  assert.equal(destForPath("/flock/something-new"), "today");
-  assert.equal(destForPath("/flock/members"), "chapter");
+  assert.equal(destForPath("/flock/something-new"), "feed");
+  assert.equal(destForPath("/flock/members"), null);
   assert.equal(destForPath("/flock/members/abc"), null);
   assert.equal(destForPath("/flock/you"), null);
   assert.equal(destForPath("/flock/you/edit"), null);
@@ -561,10 +562,10 @@ check("post screens are full screen (no tab bar) but still behind setup", () => 
   }
   assert.equal(isFlockFullScreenPath("/flock"), false);
   assert.equal(isFlockFullScreenPath("/flock/postcards"), false);
-  assert.equal(destForPath("/flock/post/abc"), "today");
+  assert.equal(destForPath("/flock/post/abc"), "feed");
 });
 
-check("Post to chips: Learn together, Do good, my chapter, Start here", () => {
+check("Post to chips: Flock talk, Do good, my chapter, Start here", () => {
   assert.deepEqual(POST_SPACES, ["learn", "good", "chapter", "start"]);
 });
 
@@ -679,10 +680,10 @@ check("the Members tab: top species, search by name or species, birds line", () 
   assert.equal(birdsLine([...roster[2].birds, { name: "Pip", species: null }]), "Echo, Kya, and Pip");
 });
 
-check("Chapter tabs: Posts, Events, Resources, Members; old members links read as Chapter", () => {
+check("Chapter tabs: Posts, Events, Resources, Members; chapter, members and event pages light no bar tab", () => {
   assert.deepEqual(CHAPTER_TABS, ["posts", "events", "resources", "members"]);
-  assert.equal(destForPath("/flock/members"), "chapter");
-  assert.equal(destForPath("/flock/events/abc"), "chapter");
+  assert.equal(destForPath("/flock/members"), null);
+  assert.equal(destForPath("/flock/events/abc"), null);
 });
 
 check("Diet conversion: lories and lorikeets, eclectus, young birds, the vet reminder once the starting weight is set", () => {
