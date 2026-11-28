@@ -19,7 +19,7 @@ Format:
   - After: "<new wording>"
 ```
 
-### [#591](https://github.com/the-kya-project/perch-perfect-plan/pull/591) · Flagging: one options sheet and the flag sheet (mockups 04–06) · **held for Brittany**
+### [#591](https://github.com/the-kya-project/perch-perfect-plan/pull/591) · Flagging: one options sheet and the flag sheet (mockups 04–06) · **merged on Brittany's OK (Nov 28, 2026)**
 All new member-facing wording, word for word from the approved mockups (source: `src/components/flock/FlagSheets.tsx`). English only; Dutch in the next translation pass.
 - **Where:** the ··· options sheet on someone else's post, comment, journey update or member skill
   - Before: "Reply", "Report", "Block [name]", "Block and report", "Cancel"
@@ -2214,9 +2214,6 @@ Format:
 ### <PR link> · <item ID> <item title>
 - **Needs:** <the decision, approval or read, in one or two lines>
 ```
-
-### [#591](https://github.com/the-kya-project/perch-perfect-plan/pull/591) · Flagging: one options sheet and the flag sheet
-- **Needs:** your approval to merge (behind the Flock gate; a small production database change adding two flag reasons). See Decisions for the three small calls (no Reply or "Block and report" in the sheet; "Done" off the feed).
 
 ### Reminder · the hourly runs' GitHub token expires Feb 20, 2027
 - **Needs:** a new token before **Feb 20, 2027**. That's 90 days from Nov 22, 2026; GitHub → Settings → Developer settings → Fine-grained tokens shows the exact date. When it expires, runs can still build and test but can't push or open PRs, and each run's note in `~/.kya-agent/job.log` says so.
