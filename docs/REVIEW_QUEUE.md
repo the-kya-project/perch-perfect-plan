@@ -2226,6 +2226,10 @@ Format:
 - **Needs:** <the decision, approval or read, in one or two lines>
 ```
 
+### [#589](https://github.com/the-kya-project/perch-perfect-plan/pull/589) · CR1 Community bottom bar and header
+- **Needs:** the Free-user regression passing on `main` again. Since #584 merged, its switch-on part fails at "2. Community opens the guidelines walk-through, then the join step…" on every branch, `flock-flag-sheet` included: after the walk-through, the join step's "Part of the Flock" sheet never appears. That failure isn't CR1's, and everything else on #589 passes. Once `main` is fixed, a run (or you) updates #589 from `main` and merges it; it needs nothing else from you ("merge only").
+- **Also please look at:** with the Spaces button gone, the guidelines page has no link from the Feed's header until CR2 (see "Decisions agents made").
+
 ### Reminder · the hourly runs' GitHub token expires Feb 20, 2027
 - **Needs:** a new token before **Feb 20, 2027**. That's 90 days from Nov 22, 2026; GitHub → Settings → Developer settings → Fine-grained tokens shows the exact date. When it expires, runs can still build and test but can't push or open PRs, and each run's note in `~/.kya-agent/job.log` says so.
 - **To replace it:** make a new fine-grained token for `the-kya-project/perch-perfect-plan` only, with the same permissions as the old one (Contents and Pull requests: read and write; Actions, Commit statuses and Checks: read). Then run the save command again in Terminal (it asks you to paste the token and doesn't show it). It overwrites `~/.config/kya-agent/github-token`, readable only by you. Delete the old token on GitHub after that. Clear this item and add a new one with the new date.
