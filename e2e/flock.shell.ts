@@ -74,6 +74,9 @@ type FlockState = {
   /** Build C: where this account stands (flock_my_access), and its join calls. */
   access: { member_now: boolean; has_membership: boolean; agreed: boolean; is_admin: boolean; guidelines_version: string; opens_at: string | null; season_ends_at: string | null };
   joinResult: string;
+  /** The guidelines walk-through (20261128180000): has_agreed_to_guidelines, and whether saving the agreement fails. */
+  guidelinesAgreed: boolean;
+  agreeFails: boolean;
   /** Backlog 1.16: this account's rescue redemption (flock_rescue_status), the partners and adoptions admins see. */
   rescue: { mine: Record<string, any> | null; partners: Record<string, any>[]; pending: Record<string, any>[] };
   /** Backlog 1.11: buddy pods, as the flock_pod* functions return them. */
@@ -120,6 +123,8 @@ async function mockFlock(context: BrowserContext, userId: string, opts: { setupD
     challenges: [],
     challengeEntries: [],
     access: { member_now: true, has_membership: true, agreed: true, is_admin: true, guidelines_version: "2026-12", opens_at: null, season_ends_at: "2027-07-06T04:00:00Z" },
+    guidelinesAgreed: true,
+    agreeFails: false,
     joinResult: "joined",
     rescue: { mine: null, partners: [], pending: [] },
     pods: { canWait: true, journey: {}, pod: null, members: [], feed: [], mine: [], admin: [], adminMembers: [] },
@@ -202,6 +207,17 @@ async function mockFlock(context: BrowserContext, userId: string, opts: { setupD
         voters: v.voters, choice_count: v.choices.length, updated_at: v.closes_at })));
     }
     return json(route, null);
+  });
+  await context.route(`${MOCK}/rest/v1/rpc/has_agreed_to_guidelines`, async (route) => {
+    return json(route, state.guidelinesAgreed);
+  });
+  await context.route(`${MOCK}/rest/v1/flock_guideline_agreements**`, async (route) => {
+    if (route.request().method() !== "POST") return json(route, []);
+    const args = (route.request().postDataJSON() ?? {}) as Record<string, any>;
+    state.calls.push({ fn: "flock_guideline_agreements.insert", args });
+    if (state.agreeFails) return json(route, { code: "08006", message: "network" }, 503);
+    state.guidelinesAgreed = true;
+    return route.fulfill({ status: 201, headers: { "access-control-allow-origin": "*" }, body: "" });
   });
   await context.route(`${MOCK}/rest/v1/rpc/flock_*`, async (route) => {
     const fn = new URL(route.request().url()).pathname.split("/").pop();
@@ -3565,7 +3581,7 @@ test.describe("rescue partner codes (backlog 1.16)", () => {
 test.describe("joining the Flock (members switch on, phone)", () => {
   const NOT_JOINED = { member_now: false, has_membership: false, agreed: false, is_admin: false, guidelines_version: "2026-12", opens_at: null, season_ends_at: "2027-07-06T04:00:00Z" };
 
-  test("a free account: Community opens the Part of the Flock sheet, then chapter, guidelines, 18+ and agree; Join calls flock_agree then flock_join", async ({ browser, baseURL }) => {
+  test("a free account: Community opens the Part of the Flock sheet, then chapter and 18+; Join calls flock_agree then flock_join", async ({ browser, baseURL }) => {
     const { context, page, state } = await open(browser, baseURL!, { admin: false, membersOpen: true, setupDone: false });
     state.access = { ...NOT_JOINED };
     await page.goto("/dashboard");
@@ -3581,22 +3597,17 @@ test.describe("joining the Flock (members switch on, phone)", () => {
     await sheet.getByRole("button", { name: "Join the Flock free" }).click();
     await expect(sheet).toHaveCount(0);
 
-    // The guidelines, word for word, with the contact line at the bottom.
-    const g = page.getByTestId("flock-guidelines");
-    await expect(g.getByRole("heading", { name: "Welcome to the Flock" })).toBeVisible();
-    await expect(g.locator("li")).toHaveCount(6);
-    await expect(g).toContainText("The Flock isn't your vet. Members share experience, not medical advice.");
-    await expect(g).toContainText("If something feels wrong, you can report or block anyone, and the Kya team reviews every report.");
-    await expect(g.getByTestId("flock-contact-line")).toContainText("Questions or a problem? Email the Kya team at brittany@thekyaproject.com.");
-    await expect(g.getByRole("link", { name: "brittany@thekyaproject.com" })).toHaveAttribute("href", "mailto:brittany@thekyaproject.com");
+    // The guidelines were agreed in the walk-through: no second checkbox
+    // here, just a link to read them again.
+    await expect(page.getByTestId("join-agree")).toHaveCount(0);
+    await expect(page.getByTestId("flock-guidelines")).toHaveCount(0);
+    await expect(page.getByTestId("join-guidelines-link")).toHaveAttribute("href", "/flock/guidelines");
 
     const submit = page.getByTestId("join-submit");
     await expect(submit).toBeDisabled();
     await page.getByRole("button", { name: "Choose" }).click();
     await page.getByRole("dialog").getByText("Texas").click();
     await expect(page.getByTestId("join-region")).toContainText("Texas");
-    await expect(submit).toBeDisabled();
-    await page.getByTestId("join-agree").check();
     await expect(submit).toBeDisabled(); // 18+ still unchecked
     await page.getByTestId("join-adult").check();
     await expect(submit).toBeEnabled();
@@ -3605,7 +3616,8 @@ test.describe("joining the Flock (members switch on, phone)", () => {
     await expect(page).toHaveURL(/\/flock\/welcome/);
     const agree = state.calls.find((c) => c.fn === "flock_agree")!;
     expect(agree.args).toMatchObject({ p_region: "texas", p_adult: true, p_guidelines_version: "2026-12", p_source: "care_app" });
-    expect(state.calls.map((c) => c.fn)).toEqual(["flock_agree", "flock_join"]);
+    // Agree, then join, once each (the Flock's own screens may start loading after).
+    expect(state.calls.map((c) => c.fn).filter((f) => f === "flock_agree" || f === "flock_join")).toEqual(["flock_agree", "flock_join"]);
     await context.close();
   });
 
@@ -3619,14 +3631,13 @@ test.describe("joining the Flock (members switch on, phone)", () => {
     await page.getByRole("button", { name: "Choose" }).click();
     await page.getByRole("dialog").getByText("Great Lakes").click();
     await page.getByTestId("join-adult").check();
-    await page.getByTestId("join-agree").check();
     await page.getByTestId("join-submit").click();
     await expect(page).toHaveURL(/\/flock\/welcome/);
     expect(state.calls.find((c) => c.fn === "flock_agree")!.args.p_source).toBe("email");
     await context.close();
   });
 
-  test("a founder who hasn't agreed: the same guidelines and 18+ step, no intro sheet, no second membership", async ({ browser, baseURL }) => {
+  test("a founder who hasn't joined: the same chapter and 18+ step, no intro sheet, no second membership", async ({ browser, baseURL }) => {
     const { context, page, state } = await open(browser, baseURL!, { admin: false, membersOpen: true, setupDone: true });
     state.access = { ...NOT_JOINED, member_now: true, has_membership: true };
     state.joinResult = "founder";
@@ -3637,7 +3648,6 @@ test.describe("joining the Flock (members switch on, phone)", () => {
     await page.getByRole("button", { name: "Choose" }).click();
     await page.getByRole("dialog").getByText("Great Lakes").click();
     await page.getByTestId("join-adult").check();
-    await page.getByTestId("join-agree").check();
     await page.getByTestId("join-submit").click();
     await expect(page).toHaveURL(/\/flock$/);
     expect(state.calls.find((c) => c.fn === "flock_agree")!.args.p_source).toBe("founding");
@@ -3652,7 +3662,6 @@ test.describe("joining the Flock (members switch on, phone)", () => {
     await page.getByRole("button", { name: "Choose" }).click();
     await page.getByRole("dialog").getByText("Texas").click();
     await page.getByTestId("join-adult").check();
-    await page.getByTestId("join-agree").check();
     await page.getByTestId("join-submit").click();
     await expect(page.getByTestId("flock-join-waiting")).toContainText("The Flock opens on January 5, 2027.");
     await page.goto("/flock");
@@ -3666,8 +3675,118 @@ test.describe("joining the Flock (members switch on, phone)", () => {
     await expect(page.getByTestId("flock-contact-line")).toContainText("Email the Kya team at brittany@thekyaproject.com.");
     await page.getByText("Community guidelines", { exact: true }).click();
     await expect(page).toHaveURL(/\/flock\/guidelines$/);
-    await expect(page.getByTestId("flock-guidelines")).toContainText("No selling or spam. Please don't advertise products, services, or birds for sale.");
+    await expect(page.getByTestId("flock-guidelines")).toContainText("No selling, trading, or breeding birds, and no posts asking where to buy one.");
     await expect(page.getByTestId("flock-guidelines").getByTestId("flock-contact-line")).toBeVisible();
+    await context.close();
+  });
+});
+
+test.describe("the community guidelines walk-through (phone)", () => {
+  test("not agreed yet: any way in opens screen 1; Next, Back, the full guidelines and back; agreeing saves the row and opens Today", async ({ browser, baseURL }) => {
+    const { context, page, state } = await open(browser, baseURL!, { admin: true });
+    state.guidelinesAgreed = false;
+    // The brief's phone: 390×844 (screens 2 and 3 must fit it without scrolling).
+    await page.setViewportSize({ width: 390, height: 844 });
+    // A deep link to another Flock screen still lands on the walk-through first.
+    await page.goto("/flock/library");
+    await expect(page).toHaveURL(/\/flock\/agree$/);
+    const one = page.getByTestId("walkthrough-step-1");
+    await expect(one.getByRole("heading", { level: 1, name: "Welcome to the Flock" })).toBeVisible();
+    await expect(page.getByTestId("walkthrough-progress")).toHaveText("1 of 3");
+    await expect(page.getByTestId("walkthrough-back")).toHaveCount(0);
+    await expect(page.getByTestId("walkthrough-close")).toHaveAccessibleName("Close");
+    await expect(one.getByRole("heading", { level: 2 })).toHaveText(["Bridging research and life with birds", "What we advocate for", "Most importantly, we're building a bigger table"]);
+    await expect(one.getByRole("heading", { level: 3 })).toHaveText(["A varied, fresh diet", "Fully flighted birds", "Good husbandry", "Positive reinforcement training"]);
+    // No member chrome: no tab bar, no feed.
+    await expect(tabs(page)).toHaveCount(0);
+    // Screen 1 scrolls, with Next pinned in view.
+    expect(await page.evaluate(() => document.documentElement.scrollHeight > window.innerHeight)).toBe(true);
+    await expect(page.getByTestId("walkthrough-next")).toBeInViewport();
+
+    await page.getByTestId("walkthrough-next").click();
+    await expect(page).toHaveURL(/\/flock\/agree\?step=2$/);
+    await expect(page.getByTestId("walkthrough-progress")).toHaveText("2 of 3");
+    await expect(page.getByRole("heading", { level: 2 })).toHaveText([
+      "We give feedback only when it's asked for", "We flag it instead of calling it out", "Health questions go to your vet", "What you share stays here",
+    ]);
+    // Screen 2 fits a 390×844 phone without scrolling.
+    expect(await page.evaluate(() => document.documentElement.scrollHeight <= window.innerHeight + 1)).toBe(true);
+    await page.getByTestId("walkthrough-back").click();
+    await expect(page.getByTestId("walkthrough-step-1")).toBeVisible();
+    await page.getByTestId("walkthrough-next").click();
+    await page.getByTestId("walkthrough-next").click();
+
+    await expect(page).toHaveURL(/\/flock\/agree\?step=3$/);
+    await expect(page.getByTestId("walkthrough-progress")).toHaveText("3 of 3");
+    await expect(page.getByTestId("walkthrough-promises").locator("li")).toHaveCount(6);
+    await expect(page.getByTestId("walkthrough-promises")).toContainText("I won't sell, trade, or breed birds here.");
+    await expect(page.getByRole("link", { name: "brittany@thekyaproject.com" })).toHaveAttribute("href", "mailto:brittany@thekyaproject.com");
+    expect(await page.evaluate(() => document.documentElement.scrollHeight <= window.innerHeight + 1)).toBe(true);
+    await expect(page.getByTestId("walkthrough-agree")).toBeInViewport();
+
+    // Read the full guidelines, then come back to screen 3.
+    await page.getByTestId("walkthrough-read-full").click();
+    await expect(page).toHaveURL(/\/flock\/guidelines$/);
+    await expect(page.getByTestId("flock-guidelines").getByRole("heading", { level: 2 })).toHaveText(["What we believe", "How the Flock works", "How we treat each other", "The rules"]);
+    await page.getByRole("button", { name: "Back" }).click();
+    await expect(page).toHaveURL(/\/flock\/agree\?step=3$/);
+
+    // A failed save keeps them here with a retry message; the next tap saves.
+    state.agreeFails = true;
+    await page.getByTestId("walkthrough-agree").click();
+    await expect(page.getByTestId("walkthrough-error")).toContainText("We couldn't save that just now.");
+    await expect(page).toHaveURL(/\/flock\/agree\?step=3$/);
+    state.agreeFails = false;
+    await page.getByTestId("walkthrough-agree").click();
+    await expect(page).toHaveURL(/\/flock$/);
+    await expect(page.getByRole("heading", { level: 1, name: "Today" })).toBeVisible();
+    const saved = state.calls.filter((c) => c.fn === "flock_guideline_agreements.insert");
+    expect(saved.at(-1)?.args).toEqual({ user_id: expect.any(String), version: 1 });
+
+    // Agreed: never again this session, by any route.
+    await page.goto("/flock/journeys");
+    await expect(page).toHaveURL(/\/flock\/journeys/);
+    await page.goto("/flock/agree");
+    await expect(page).toHaveURL(/\/flock$/);
+    await context.close();
+  });
+
+  test("screen 1's close button, Back and Escape all return to the care side", async ({ browser, baseURL }) => {
+    const { context, page, state } = await open(browser, baseURL!, { admin: true });
+    state.guidelinesAgreed = false;
+    await page.goto("/dashboard");
+    await page.locator('[data-coach="owner-tab-flock"]').first().click();
+    await expect(page.getByTestId("walkthrough-step-1")).toBeVisible();
+    await page.getByTestId("walkthrough-close").click();
+    await expect(page).toHaveURL(/\/dashboard/);
+    await page.waitForTimeout(1000);
+    await expect(page).toHaveURL(/\/dashboard/);
+    await page.locator('[data-coach="owner-tab-flock"]').first().click();
+    await expect(page.getByTestId("walkthrough-step-1")).toBeVisible();
+    await page.goBack();
+    await expect(page).toHaveURL(/\/dashboard/);
+    // And it stays there (nothing sends them round again).
+    await page.waitForTimeout(1000);
+    await expect(page).toHaveURL(/\/dashboard/);
+    await page.goto("/flock/agree");
+    await expect(page.getByTestId("walkthrough-step-1")).toBeVisible();
+    // Escape too (pressed again until the page has started and is listening).
+    await expect(async () => {
+      await page.keyboard.press("Escape");
+      await expect(page).toHaveURL(/\/dashboard/, { timeout: 1000 });
+    }).toPass({ timeout: 15_000 });
+    await context.close();
+  });
+
+  test("the Spaces sheet opens the community guidelines from its first row", async ({ browser, baseURL }) => {
+    const { context, page } = await open(browser, baseURL!, { admin: true });
+    await page.goto("/flock");
+    await page.getByRole("button", { name: "Spaces" }).click();
+    const first = page.getByTestId("spaces-sheet").getByRole("listitem").first();
+    await expect(first).toHaveText("Community guidelines");
+    await first.getByRole("button").click();
+    await expect(page).toHaveURL(/\/flock\/guidelines$/);
+    await expect(page.getByTestId("flock-guidelines")).toContainText("Members must be 18 or older.");
     await context.close();
   });
 });
