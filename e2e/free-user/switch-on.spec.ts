@@ -5,7 +5,7 @@
 // workflow having turned the switch on for staging (opening day set, members
 // open) for this run only, and checks what the same free account sees then:
 // the Community button, the guidelines walk-through, the "Part of the Flock"
-// sheet with no prices, the guidelines with the contact line, the join step's chapter, 18+ and agree,
+// sheet with no prices, the join step's chapter, 18+ and agree,
 // and that joining lets them in (or tells them when it opens). The workflow
 // turns staging back afterwards, whatever happens here.
 import { test, expect, type BrowserContext, type Page } from "@playwright/test";
@@ -60,17 +60,14 @@ test("2. Community opens the guidelines walk-through, then the join step with th
   await expect(sheet).toHaveCount(0);
 });
 
-test("3. the guidelines and the contact line; Join waits for a chapter, 18+ and agree", async () => {
-  const g = page.getByTestId("flock-guidelines");
-  await expect(g.getByRole("heading", { name: "What we believe" })).toBeVisible();
-  await expect(g).toContainText("Be kind in the comments.");
+test("3. the join step: a link to the guidelines (agreed in the walk-through); Join waits for a chapter and 18+", async () => {
+  await expect(page.getByTestId("join-guidelines-link")).toBeVisible();
+  await expect(page.getByTestId("join-agree")).toHaveCount(0);
   await expect(page.getByTestId("join-adult")).toBeVisible();
-  await expect(g.getByTestId("flock-contact-line")).toContainText("brittany@thekyaproject.com");
   const submit = page.getByTestId("join-submit");
   await expect(submit).toBeDisabled();
   await page.getByRole("button", { name: "Choose" }).click();
   await page.getByRole("dialog").getByText("Great Lakes").first().click();
-  await page.getByTestId("join-agree").check();
   await expect(submit).toBeDisabled();
   await page.getByTestId("join-adult").check();
   await expect(submit).toBeEnabled();

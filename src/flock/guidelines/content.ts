@@ -98,6 +98,7 @@ export function walkthroughLabels(t: TFunction) {
   return {
     next: t("flock.walkthrough.next", "Next"),
     back: t("flock.walkthrough.back", "Back"),
+    close: t("flock.walkthrough.close", "Close"),
   };
 }
 

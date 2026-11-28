@@ -900,6 +900,16 @@ check("guidelines: the walk-through gate comes first, and only it and the full g
   }
 });
 
+check("guidelines: one agreement, the walk-through's; the join step has no checkbox of its own", () => {
+  const join = readFileSync("src/routes/_authenticated/flock.join.tsx", "utf8");
+  assert.ok(!join.includes("join-agree") && !join.includes("FlockGuidelinesText"), "no guidelines checkbox or text on the join step");
+  assert.ok(join.includes("join-adult") && join.includes('to="/flock/guidelines"'), "18+ stays, with a link to the guidelines");
+  const sql = readFileSync("supabase/migrations/20261128210000_flock_join_uses_walkthrough.sql", "utf8");
+  const fn = sql.slice(sql.indexOf("create or replace function private.flock_agreed"));
+  assert.ok(/public\.flock_agreements/.test(fn) && /public\.flock_guideline_agreements/.test(fn) && /current_guidelines_version\(\)/.test(fn), "joining needs the join record and the walk-through");
+  assert.equal(FLOCK_GUIDELINES_VERSION, "2026-12", "the join record's version is frozen");
+});
+
 check("join: who the /flock layout lets in", () => {
   const base: FlockAccess = { member_now: false, has_membership: false, agreed: false, is_admin: false, guidelines_version: FLOCK_GUIDELINES_VERSION, opens_at: null, season_ends_at: null };
   assert.equal(joinRedirect(null, "/flock"), "/dashboard", "status unreadable: fails closed");

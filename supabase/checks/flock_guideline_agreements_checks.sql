@@ -1,5 +1,6 @@
 -- Verification for 20261128180000_flock_guideline_agreements (the community
--- guidelines walk-through).
+-- guidelines walk-through) and 20261128210000_flock_join_uses_walkthrough
+-- (joining needs the walk-through's agreement, not the join step's checkbox).
 --
 -- Self-contained and leaves nothing behind: its own admin, two Flock members
 -- (one agrees, one doesn't), a free user and a free household co-carer. Then
@@ -18,7 +19,7 @@ declare
   b2  uuid := gen_random_uuid();  -- m2's bird
   v   int := public.current_guidelines_version();
   passed int := 0; failed text[] := '{}';
-  ok boolean; st text; n int; p1 uuid; jp uuid; jp2 uuid;
+  ok boolean; st text; n int; p1 uuid; jp uuid; jp2 uuid; res text;
 begin
   insert into auth.users (instance_id, id, aud, role, email, raw_app_meta_data, raw_user_meta_data, created_at, updated_at)
   select '00000000-0000-0000-0000-000000000000', x, 'authenticated', 'authenticated', x::text || '@checks.invalid', '{}', '{}', now(), now()
@@ -182,6 +183,23 @@ begin
                     where s.nspname = 'public' and t.tgname like '%require_guidelines'
                       and c.relname not in ('flock_posts', 'flock_comments', 'journey_updates', 'journeys'));
   if ok then passed := passed + 1; else failed := array_append(failed, 'triggers only where expected'); end if;
+
+  -- 12) Joining needs the walk-through: the join step's record (chapter and
+  --     18+) alone isn't enough; with the walk-through agreement it is.
+  update public.flock_settings set members_open = true, flock_opens_at = now() - interval '1 day',
+    free_season_ends_at = now() + interval '180 days' where id;
+  perform set_config('request.jwt.claims', json_build_object('sub', fr, 'role', 'authenticated')::text, true);
+  set local role authenticated;
+  perform public.flock_agree('great-lakes', 'Sam T.', true, private.flock_guidelines_version(), 'care_app');
+  ok := not (select agreed from public.flock_my_access());
+  st := null; begin perform * from public.flock_join(); exception when others then st := sqlerrm; end;
+  ok := ok and st like '%agree_first%';
+  insert into public.flock_guideline_agreements (user_id, version) values (fr, v);
+  ok := ok and (select agreed from public.flock_my_access());
+  select result into res from public.flock_join();
+  ok := ok and res = 'joined';
+  reset role;
+  if ok then passed := passed + 1; else failed := array_append(failed, 'joining needs the walk-through: ' || coalesce(st, '') || ' ' || coalesce(res, '')); end if;
 
   raise exception 'FLOCK GUIDELINE AGREEMENTS CHECKS: % passed, % failed%', passed, coalesce(array_length(failed, 1), 0),
     case when array_length(failed, 1) > 0 then ': ' || array_to_string(failed, ', ') else '' end;

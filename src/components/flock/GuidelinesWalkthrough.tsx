@@ -9,7 +9,9 @@ import {
 // The community guidelines walk-through: three full screens before anyone
 // enters the Flock (approved mockups: docs/mockups/flock-guidelines-agreement/
 // 01–03). Screen 1 scrolls; 2 and 3 fit a 390×844 phone. The sunflower button
-// is pinned at the bottom of each. The route (flock.agree.tsx) owns the step,
+// is pinned at the bottom of each. Screen 1 has a close button where screens
+// 2 and 3 have Back (added at Brittany's request, Nov 28, 2026; not in the
+// mockup). The route (flock.agree.tsx) owns the step,
 // saving and navigation; this file is only the look.
 
 const MUTED = "#3d4f45";
@@ -51,8 +53,8 @@ function Circle({ size, bg, children }: { size: number; bg: string; children: Re
 
 /** The forest header: back arrow (screens 2 and 3), the three-part progress
  *  bar and "n of 3", then the title and line. */
-function Header({ step, title, line, onBack, titleSize, compact }: {
-  step: number; title: string; line: string; onBack?: () => void; titleSize: number; compact: boolean;
+function Header({ step, title, line, onBack, onClose, titleSize, compact }: {
+  step: number; title: string; line: string; onBack?: () => void; onClose?: () => void; titleSize: number; compact: boolean;
 }) {
   const { t } = useTranslation();
   const labels = walkthroughLabels(t);
@@ -65,6 +67,13 @@ function Header({ step, title, line, onBack, titleSize, compact }: {
         paddingLeft: 24, paddingRight: 24, paddingBottom: compact ? 38 : 46,
       }}>
       <div className="flex items-center" style={{ gap: 10, height: 32 }}>
+        {onClose && (
+          <button type="button" onClick={onClose} aria-label={labels.close} data-testid="walkthrough-close"
+            className="-ml-1.5 flex h-8 w-8 items-center justify-center rounded-full focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2"
+            style={{ outlineColor: K.lime }}>
+            <svg aria-hidden="true" width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="#ffffff" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d="M6 6l12 12M18 6L6 18" /></svg>
+          </button>
+        )}
         {onBack && (
           <button type="button" onClick={onBack} aria-label={labels.back} data-testid="walkthrough-back"
             className="-ml-1.5 flex h-8 w-8 items-center justify-center rounded-full focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2"
@@ -123,14 +132,14 @@ function Sheet({ children, scroll, gap, pad }: { children: ReactNode; scroll: bo
   );
 }
 
-function ScreenOne({ onNext }: { onNext: () => void }) {
+function ScreenOne({ onNext, onClose }: { onNext: () => void; onClose: () => void }) {
   const { t } = useTranslation();
   const s = walkthroughScreen1(t);
   const h2 = { fontFamily: SERIF, fontSize: 24, lineHeight: 1.15, letterSpacing: "-0.01em", textWrap: "balance" as const };
   return (
     <div className="flex min-h-[100dvh] flex-col bg-white" data-testid="walkthrough-step-1">
       <div className="flex-1">
-        <Header step={1} title={s.title} line={s.line} titleSize={34} compact={false} />
+        <Header step={1} title={s.title} line={s.line} onClose={onClose} titleSize={34} compact={false} />
         <Sheet scroll gap={36} pad={28}>
           <section className="flex flex-col" style={{ gap: 16 }}>
             <h2 className="m-0 font-[700]" style={h2}>{s.bridgeTitle}</h2>
@@ -235,11 +244,13 @@ function ScreenThree({ onBack, onAgree, onReadFull, saving, failed }: {
   );
 }
 
-/** The walk-through at a step. Backing out of screen 1 is the system Back
- *  (or Escape), handled by the route. */
-export function GuidelinesWalkthrough({ step, onStep, onAgree, onReadFull }: {
+/** The walk-through at a step. Screen 1's close button (and the system Back,
+ *  or Escape) leaves for the care side, handled by the route. */
+export function GuidelinesWalkthrough({ step, onStep, onAgree, onReadFull, onClose }: {
   step: number;
   onStep: (step: number) => void;
+  /** Screen 1's close button: back to the care side. */
+  onClose: () => void;
   onAgree: () => Promise<void>;
   onReadFull: () => void;
 }) {
@@ -256,7 +267,7 @@ export function GuidelinesWalkthrough({ step, onStep, onAgree, onReadFull }: {
   };
   return (
     <div style={{ color: K.forest, fontFamily: "'DM Sans', sans-serif" }} className="setup-frame">
-      {step === 1 && <ScreenOne onNext={() => onStep(2)} />}
+      {step === 1 && <ScreenOne onNext={() => onStep(2)} onClose={onClose} />}
       {step === 2 && <ScreenTwo onNext={() => onStep(3)} onBack={() => onStep(1)} />}
       {step === 3 && <ScreenThree onBack={() => onStep(2)} onAgree={agree} onReadFull={onReadFull} saving={saving} failed={failed} />}
     </div>

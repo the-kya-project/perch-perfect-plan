@@ -46,7 +46,11 @@ function FlockAgree() {
 
   useEffect(() => { void trackFlockWalkthrough("flock_walkthrough_viewed", { step }); }, [step]);
 
-  // Escape backs out to the care side, like the system Back.
+  // Screen 1's close button, and Escape: back to the care side.
+  const leave = () => {
+    rememberMode("care");
+    void navigate({ to: "/dashboard", replace: true });
+  };
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key !== "Escape") return;
@@ -62,6 +66,7 @@ function FlockAgree() {
       step={step}
       onStep={(n) => void navigate({ to: "/flock/agree", search: n === 1 ? {} : { step: n }, replace: true })}
       onReadFull={() => void navigate({ to: "/flock/guidelines" })}
+      onClose={leave}
       onAgree={async () => {
         await agreeToGuidelines(qc);
         setWalkthroughOpen(false);

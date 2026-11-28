@@ -42,6 +42,12 @@ All new member-facing wording, word for word from the approved mockups and the p
   - After: the full text from the prompt, in four sections: "What we believe", "How the Flock works", "How we treat each other", "The rules" (every line in `fullGuidelines()`), with "Questions? Write to brittany@thekyaproject.com" as the footer.
 - **Where:** the Spaces sheet
   - New: a "Community guidelines" row at the top, above the three spaces.
+- **Where:** walk-through screen 1 (not in the mockup; added at your request)
+  - New: a close button (an ×, labelled "Close" for screen readers) where screens 2 and 3 have Back
+- **Where:** the join step (`/flock/join`): the guidelines box and the "I agree to the community guidelines" checkbox are gone (agreed in the walk-through)
+  - Before: "Choose your chapter, read the community guidelines, and you're in." · After: "Choose your chapter, confirm you're 18 or older, and you're in."
+  - Before: "Please confirm you're 18 or older and agree to the guidelines." · After: "Please confirm you're 18 or older."
+  - New: "Read the community guidelines →" (a link under "I'm 18 or older")
 
 ### [#582](https://github.com/the-kya-project/perch-perfect-plan/pull/582) · Dutch for everything still in English · **merged on Brittany's OK (Nov 28, 2026), not yet read by a native speaker**
 1,535 lines, too many to list here: every one, English next to Dutch, is in [`docs/translations/nl-2026-11-28.md`](translations/nl-2026-11-28.md), grouped by screen. For a native speaker's read.
@@ -1756,12 +1762,12 @@ Format:
 ```
 
 ### [#584](https://github.com/the-kya-project/perch-perfect-plan/pull/584) · Community guidelines walk-through
-- **The walk-through and the join step's own checkbox both stay.** The join step (build C) already records "I agree to the community guidelines" in `flock_agreements` at version "2026-12". This PR adds the walk-through's separate record (`flock_guideline_agreements`, version 1) as specified, shows it first, and puts the new full text in the join step's guidelines box. So a new member agrees twice (walk-through, then the join step's checkbox). Retiring the join step's checkbox would change build C's database rule (`flock_join()` needs `flock_agreements`), so it's left for you to decide. The join version wasn't bumped: only admins have agreed so far.
+- **One agreement (your call, Nov 28):** the join step's "I agree to the community guidelines" checkbox is retired. The walk-through's record is the only guidelines agreement and `current_guidelines_version()` the only version to bump. The join step keeps its chapter and "I'm 18 or older" (still `flock_agree()`, whose version "2026-12" is now frozen), and `flock_join()` needs both that record and the walk-through agreement (`20261128210000_flock_join_uses_walkthrough.sql`).
 - **Posting is blocked by a trigger, not an INSERT policy.** App users have no write grant on posts, comments or journey updates; they write through SECURITY DEFINER functions that RLS never sees, so an INSERT policy would block nothing. A BEFORE INSERT trigger on `flock_posts` (every space, pod posts and challenge entries), `flock_comments` and `journey_updates` blocks every path instead. Sharing a journey with the Flock (`journeys.visibility` → community) needs it too, or updates posted while it was "Just me" would reach the Flock unagreed.
 - **"Just me" journeys and free co-carers are never checked,** so the care app's journeys work exactly as before for anyone outside the Flock. A household co-carer who isn't a Flock member can still post to a journey its owner shared (they can't agree: the Flock is closed to them).
 - **Admins see the walk-through too** (once, at version 1), since they're members. The server, SQL editor, seeds and scheduled jobs aren't blocked.
 - **Events are named `flock_walkthrough_viewed` (`step`) and `flock_guidelines_agreed` (`version`),** with the `flock_` prefix every Flock event has, so the "Flock stickiness" dashboard and its `internal` filter pick them up. Like every Flock event, they send only for members, admins and people whose membership starts on opening day; someone with no membership at all sends nothing.
-- **Screen 1 has no visible way out,** as in the mockup. Backing out is the system Back (or Escape), which returns to the care page they came from. If the iPhone app has no back gesture there, screen 1 may need a close button.
+- **Screen 1 has a close button** (your call, Nov 28): an × where screens 2 and 3 have Back; closing, the system Back and Escape all return to Home.
 - **Mockup vs. prompt:** section headings on screen 1 follow the mockup (no full stop: "Bridging research and life with birds", "What we advocate for", "Most importantly, we're building a bigger table"); the prompt wrote them with one.
 - **Before the migration reaches a database** (a preview on staging before merge), the app finds no agreement function and lets people through as before, rather than showing a button that can't save. The database then has no rule to enforce either; production gets both within a minute of merging.
 - **"Learn together" in "How the Flock works"** stays as written for now; backlog CR1 renames the space "Flock talk" and updates that line (`flock.rules.works.spaces` in `content.ts`) when it lands.
@@ -2155,7 +2161,7 @@ Format:
 ```
 
 ### [#584](https://github.com/the-kya-project/perch-perfect-plan/pull/584) · Community guidelines walk-through and guidelines page
-- **Needs:** your approval to merge. It's behind the Flock gate (admins only today) and free users see nothing new, but it's a production database change (new table, new triggers on posts, comments and journeys), it replaces the guidelines' text, and you'll see the walk-through yourself once after it merges. Also decide: keep or retire the join step's own "I agree to the community guidelines" checkbox now that the walk-through records agreement (see Decisions).
+- **Needs:** your approval to merge. It's behind the Flock gate (admins only today) and free users see nothing new, but it's a production database change (new table, new triggers on posts, comments and journeys), it replaces the guidelines' text, and you'll see the walk-through yourself once after it merges. You've since decided to retire the join step's checkbox and add a close button to screen 1; both are in.
 
 ### Reminder · the hourly runs' GitHub token expires Feb 20, 2027
 - **Needs:** a new token before **Feb 20, 2027**. That's 90 days from Nov 22, 2026; GitHub → Settings → Developer settings → Fine-grained tokens shows the exact date. When it expires, runs can still build and test but can't push or open PRs, and each run's note in `~/.kya-agent/job.log` says so.
