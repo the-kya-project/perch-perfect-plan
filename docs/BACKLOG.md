@@ -58,9 +58,10 @@ Where these items came from, with the detail behind each: `docs/flock/opening-sc
 ### D2.2 Weather cards
 - **Done means:** Home shows a heat or cold card from Apple WeatherKit, by the owner's stored home ZIP (never device location), cached per area, behind its own switch.
 - **Size:** M
-- **Depends on:** D2.1, a WeatherKit key, a privacy-policy line
+- **Depends on:** D2.1, a privacy-policy line (WeatherKit key done)
+- **WeatherKit key:** done (Brittany, Nov 28, 2026). Vercel env vars, Production only: `WEATHERKIT_TEAM_ID`, `WEATHERKIT_KEY_ID`, `WEATHERKIT_SERVICE_ID`, `WEATHERKIT_PRIVATE_KEY` (the .p8 contents). Previews have none, so weather shows as unavailable there. The key is WeatherKit-only; a test call to the availability endpoint passed on Nov 28, 2026.
 - **Overnight alone:** no
-- **Needs Brittany:** the WeatherKit key, the privacy line and the copy.
+- **Needs Brittany:** the privacy line and the copy.
 
 ---
 
