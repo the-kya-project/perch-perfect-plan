@@ -48,7 +48,7 @@ export function JourneyMomentCard({ card, photo, comments = 0 }: { card: MomentC
         className="flex flex-col gap-2.5 rounded-[18px] bg-white p-4" style={{ color: K.forest }}>
         {header}
         <span className="self-start rounded-full px-2.5 py-1 text-[12px] font-[700]" style={{ background: K.lime, color: K.forest }} data-testid="moment-pill">
-          {t("flock.today.learnedPill", "Learned it · {{name}} {{skill}}", { name: possessive(card.bird_name), skill: skillInSentence(card.skill) })}
+          {t("flock.today.learnedPill", "Learned it · {{name}} {{skill}}", { name: possessive(card.bird_name, i18n.language), skill: skillInSentence(card.skill) })}
         </span>
         <p className="m-0 text-[15px] leading-[1.45]">
           {card.template_slug === DIET_SLUG
@@ -73,7 +73,7 @@ export function JourneyMomentCard({ card, photo, comments = 0 }: { card: MomentC
     <article className="flex flex-col gap-2.5 rounded-[18px] bg-white p-4" data-moment-card={updateId} data-kind="big_moment" style={{ color: K.forest }}>
       {header}
       <span className="self-start rounded-full px-2.5 py-1 text-[12px] font-[700]" style={{ background: K.lime, color: K.forest }} data-testid="moment-pill">
-        {t("flock.today.bigMomentPill", "Big moment · {{name}} {{skill}}", { name: possessive(card.bird_name), skill: skillInSentence(card.skill) })}
+        {t("flock.today.bigMomentPill", "Big moment · {{name}} {{skill}}", { name: possessive(card.bird_name, i18n.language), skill: skillInSentence(card.skill) })}
       </span>
       {card.caption && <p className="m-0 text-[15px] leading-[1.45]">{card.caption}</p>}
       {card.has_clip && (
