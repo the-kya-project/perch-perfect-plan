@@ -15,6 +15,7 @@
  *         naming the postcode column (postcode, pc4 or postcode4) and the
  *         middle's coordinates (lat or latitude; lon, lng or longitude), in
  *         WGS84 degrees.
+ *         nl.json comes from GeoNames (geonames.org), CC BY 4.0, downloaded Nov 28, 2026.
  *
  * Coordinates are rounded to 2 decimals (about a kilometre), which is all a
  * forecast needs and keeps the files small. Postcodes that don't fit the

@@ -2152,6 +2152,7 @@ Format:
   2. **Add `npm run test:weather-cards`** to `.github/workflows/hydration.yml`, after `test:today-card`. The runs' token can't push workflow changes.
   3. **Try it once in production as admin.** `select public.admin_set_care_feature('weather_cards', 'admins');`, add a ZIP on Account, and check Home. Nothing has called WeatherKit with the real key yet, and previews have no key.
 - **Also:** the switch stays at off or admins until 1.5 is live with the weather privacy line (#580). The no-ZIP prompt question is answered: dismissible (Brittany, Nov 28, 2026).
+- **Done (Nov 28, 2026):** Brittany approved the wording. The ZIP and postcode files are built (US: 33,791 ZIPs from the Census 2024 ZCTA Gazetteer; Netherlands: 4,086 postcodes from GeoNames, geonames.org, CC BY 4.0, with codes GeoNames lists more than once averaged), and `npm run test:weather-cards` is in `.github/workflows/hydration.yml`. Still open: step 3, the admin try in production.
 
 ### Reminder · the hourly runs' GitHub token expires Feb 20, 2027
 - **Needs:** a new token before **Feb 20, 2027**. That's 90 days from Nov 22, 2026; GitHub → Settings → Developer settings → Fine-grained tokens shows the exact date. When it expires, runs can still build and test but can't push or open PRs, and each run's note in `~/.kya-agent/job.log` says so.
