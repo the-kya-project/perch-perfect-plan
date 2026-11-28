@@ -19,7 +19,7 @@ Format:
   - After: "<new wording>"
 ```
 
-### [#575](https://github.com/the-kya-project/perch-perfect-plan/pull/575) · Join the Flock screen in Dutch
+### [#575](https://github.com/the-kya-project/perch-perfect-plan/pull/575) · Join the Flock screen in Dutch · **merged on Brittany's OK (Nov 28, 2026), not yet read by a native speaker**
 Dutch ("je") for the rest of the Join screen, after #574. Chapter is "afdeling", community guidelines "communityrichtlijnen"; "de Flock" and "Word lid van de Flock" as in the billing Dutch. The chapter names themselves come from the regions table and stay English.
 - **Where:** The "Part of the Flock" sheet (also used wherever a free account taps a Flock-only journey)
   - "Part of the Flock" → "Onderdeel van de Flock"
@@ -2016,9 +2016,6 @@ Format:
 ### <PR link> · <item ID> <item title>
 - **Needs:** <the decision, approval or read, in one or two lines>
 ```
-
-### [#575](https://github.com/the-kya-project/perch-perfect-plan/pull/575) · Join the Flock screen in Dutch
-- **Needs:** a read of the Dutch (in "Copy that merged"), especially the community guidelines: Dutch-speaking members will agree to that text when they join. Then your OK in the PR to merge.
 
 ### Reminder · the hourly runs' GitHub token expires Feb 20, 2027
 - **Needs:** a new token before **Feb 20, 2027**. That's 90 days from Nov 22, 2026; GitHub → Settings → Developer settings → Fine-grained tokens shows the exact date. When it expires, runs can still build and test but can't push or open PRs, and each run's note in `~/.kya-agent/job.log` says so.
