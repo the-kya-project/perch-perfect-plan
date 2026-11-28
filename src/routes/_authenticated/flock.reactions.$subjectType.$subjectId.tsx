@@ -10,6 +10,7 @@ import { ReactionIcon } from "@/components/flock/PostParts";
 import { useAvatarUrls } from "@/lib/flockData";
 import { useReactors, type ReactSubject } from "@/lib/flockPostData";
 import { REACTIONS, type ReactionKind } from "@/lib/journeyData";
+import { chapterName } from "@/lib/flockNav";
 
 // Who reacted (Batch 3, screen 5): everyone, filtered by reaction, with region.
 const SUBJECTS: ReactSubject[] = ["post", "comment", "journey_update", "journey_milestone"];
@@ -55,7 +56,7 @@ function WhoReacted() {
                 </span>
                 <span className="flex flex-col">
                   <b className="text-[15px]">{r.display_name}</b>
-                  <span className="text-[13px]" style={{ color: K.quiet }}>{[reactionLabel(t, r.kind), r.region_name].filter(Boolean).join(" · ")}</span>
+                  <span className="text-[13px]" style={{ color: K.quiet }}>{[reactionLabel(t, r.kind), r.region_name ? chapterName(t, r.region_name) : null].filter(Boolean).join(" · ")}</span>
                 </span>
               </li>
             ))}

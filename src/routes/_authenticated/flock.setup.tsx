@@ -85,7 +85,7 @@ function FlockSetup() {
         <FlockSection title={t("flock.setup.chapter", "Your chapter")} hint={t("flock.setup.chapterHint", "Members see your region, never your address.")}>
           <div className="flex items-center justify-between gap-3">
             <span className="text-[16px] font-[700]" data-testid="setup-region" style={{ color: K.forest }}>
-              {r ? chapterLine(r.name, r.states) : " "}
+              {r ? chapterLine(r.name, r.states, t) : " "}
             </span>
             <KyaLink onClick={() => setPicking(true)}>{t("flock.setup.change", "Change")}</KyaLink>
           </div>

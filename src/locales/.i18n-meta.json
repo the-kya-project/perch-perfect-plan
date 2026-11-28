@@ -5226,6 +5226,36 @@
     "flock.billing.yearlyTotal": {
       "stamp": "663485083086f81c"
     },
+    "flock.chapters.california": {
+      "stamp": "a75b6326cd6bd26b"
+    },
+    "flock.chapters.florida": {
+      "stamp": "3438ef878754b5fe"
+    },
+    "flock.chapters.greatLakes": {
+      "stamp": "95e934108c7dc312"
+    },
+    "flock.chapters.midAtlantic": {
+      "stamp": "13ea21735bd8ba96"
+    },
+    "flock.chapters.northeast": {
+      "stamp": "a7c8dcb88e1b897b"
+    },
+    "flock.chapters.other": {
+      "stamp": "a8f9e35f20fd7104"
+    },
+    "flock.chapters.pacificNorthwest": {
+      "stamp": "faccc10243c1d0d1"
+    },
+    "flock.chapters.southeast": {
+      "stamp": "5ebd042a600fd869"
+    },
+    "flock.chapters.southwest": {
+      "stamp": "07fb05d30ae9233a"
+    },
+    "flock.chapters.texas": {
+      "stamp": "3d949708f503c424"
+    },
     "flock.guidelines.birds": {
       "stamp": "951c3a011fa90992"
     },

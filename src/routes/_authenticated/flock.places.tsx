@@ -9,6 +9,7 @@ import { ConfirmSheet } from "@/components/flock/PostParts";
 import { PlaceFormSheet, placeGroupLabel } from "@/components/flock/PlaceParts";
 import { useIsAdmin, useRegions } from "@/lib/flockData";
 import { groupPlaces, movePlace, removePlace, updatedDay, useChapterPlaces, useInvalidatePlaces, usePlaceRules, type Place } from "@/lib/flockPlaces";
+import { chapterName } from "@/lib/flockNav";
 
 // Managing a chapter's Resources (backlog 1.6, SpecCollections screen 3): the
 // chapter's lead (their own chapter) and admins (any chapter, ?region=) add,
@@ -50,8 +51,8 @@ function ManagePlaces() {
   }
 
   const line = rules.is_lead
-    ? t("flock.places.leadLine", "{{chapter}} · you lead this chapter", { chapter: rules.region_name ?? "" })
-    : rules.region_name ?? "";
+    ? t("flock.places.leadLine", "{{chapter}} · you lead this chapter", { chapter: chapterName(t, rules.region_name) })
+    : chapterName(t, rules.region_name);
   const run = async (key: string, fn: () => Promise<void>) => {
     setBusy(key); setError(null);
     try { await fn(); await invalidate(); }

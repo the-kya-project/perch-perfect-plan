@@ -130,7 +130,7 @@ export function RegionSheet({ regions, value, onPick, onClose }: {
                 className="flex min-h-[52px] w-full items-center justify-between gap-3 rounded-[16px] px-4 py-2.5 text-left active:scale-[0.99]"
                 style={on ? { background: K.forest, color: "#fff" } : { background: K.mist, color: K.forest }}
               >
-                <span className="text-[15px] font-[700]">{chapterLine(r.name, r.states)}</span>
+                <span className="text-[15px] font-[700]">{chapterLine(r.name, r.states, t)}</span>
                 {on && <Check className="size-5 shrink-0" aria-hidden="true" />}
               </button>
             </li>

@@ -18,7 +18,7 @@ import { rememberMode, rememberedMode } from "@/lib/flock";
 import { avatarInitial } from "@/lib/accountInitial";
 import {
   CHAPTER_TABS, FLOCK_DESTS, FLOCK_REDIRECTS, FLOCK_SPACES, JOURNEYS_FILTERS, LIBRARY_SUBJECTS, LIBRARY_TYPES, TODAY_FILTERS,
-  chapterLine, destForPath, isFlockFullScreenPath, isFlockOnboardingPath, pick, pickOptional, pickQuery,
+  CHAPTER_NAMES, chapterLine, chapterName, destForPath, isFlockFullScreenPath, isFlockOnboardingPath, pick, pickOptional, pickQuery,
   LIBRARY_RESOURCE_TYPES, resourceTypeFor,
 } from "@/lib/flockNav";
 import { parseBody, parseInline, plainText, safeHref } from "@/lib/libraryMarkdown";
@@ -1315,6 +1315,20 @@ check("rescue codes: the redeem page shows the link only behind the Flock gate",
   const src = readFileSync("src/routes/redeem.tsx", "utf8");
   assert.ok(src.includes("flockOpen === true &&"), "the link waits for flock_enabled()");
   assert.doesNotMatch(src, /from "@\/lib\/flockRescue"/, "shared code doesn't import Flock code");
+});
+
+
+check("chapter names: every stored chapter has a translation, unknown names pass through", () => {
+  const sql = readFileSync("supabase/migrations/20261020180000_flock_foundation.sql", "utf8");
+  const seeded = [...sql.slice(sql.indexOf("insert into public.regions")).matchAll(/\('[a-z-]+',\s+'([^']+)'/g)].map((m) => m[1]);
+  assert.deepEqual([...CHAPTER_NAMES], seeded, "the same ten names as the regions table");
+  const keys: string[] = [];
+  const t = ((k: string, d: string) => { keys.push(k); return `<${d}>`; }) as unknown as Parameters<typeof chapterName>[0];
+  for (const n of CHAPTER_NAMES) assert.equal(chapterName(t, n), `<${n}>`, n);
+  assert.equal(new Set(keys).size, CHAPTER_NAMES.length, "one key each");
+  assert.equal(chapterName(t, "Rocky Mountains"), "Rocky Mountains", "a new region shows as stored");
+  assert.equal(chapterName(t, null), "");
+  assert.equal(chapterLine("Great Lakes", ["IL", "IN"], t), "<Great Lakes> · IL · IN", "state codes stay as they are");
 });
 
 console.log(`\n${passed} passed${process.exitCode ? ", some FAILED" : ""}`);

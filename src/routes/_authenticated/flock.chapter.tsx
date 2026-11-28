@@ -23,7 +23,7 @@ import { RegionSheet } from "@/components/flock/FlockPeople";
 import { K } from "@/components/kya";
 import { memberCountLine } from "@/lib/flockProfile";
 import { saveFlockProfile, useChapter, useInvalidateFlock, useMyProfile, useRegions } from "@/lib/flockData";
-import { CHAPTER_TABS, chapterLine, pickOptional, type ChapterTab } from "@/lib/flockNav";
+import { CHAPTER_TABS, chapterLine, chapterName, pickOptional, type ChapterTab } from "@/lib/flockNav";
 
 // Chapter: the members near you. Your chapter is your profile's region
 // (chapters map one-to-one onto regions); change the region and you move at
@@ -93,7 +93,7 @@ function FlockChapter() {
     : chapter
       ? (
         <>
-          <span data-testid="chapter-line">{chapterLine(chapter.name, chapter.states)}</span>
+          <span data-testid="chapter-line">{chapterLine(chapter.name, chapter.states, t)}</span>
           <span className="mt-1 block" data-testid="chapter-count">
             {memberCountLine(chapter.member_count)} ·{" "}
             <Link to="/flock/chapter" search={{ tab: "members" }} className="font-[700] text-white underline underline-offset-4">{t("flock.chapter.seeMembers", "See members")}</Link>
@@ -156,7 +156,7 @@ function ChapterPosts({ name, empty }: { name: string | null; empty: React.React
   const posts = (feed.data?.pages ?? []).flat();
   return (
     <>
-      <ComposePrompt space="chapter" label={name ? t("flock.chapter.postPrompt", "Post to the {{name}} chapter", { name }) : undefined} />
+      <ComposePrompt space="chapter" label={name ? t("flock.chapter.postPrompt", "Post to the {{name}} chapter", { name: chapterName(t, name) }) : undefined} />
       {posts.length > 0 ? (
         <div className="flex flex-col gap-3" data-testid="chapter-posts">
           <PostList posts={posts} />
