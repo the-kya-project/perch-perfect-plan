@@ -20,6 +20,12 @@ Copy this, fill it in, and put it at the top of "Runs", above the latest entry.
 
 ## Runs
 
+### 2026-11-28 14:53 EST · CR1 Community bottom bar and header
+- **Built:** the Community's new bottom bar and header, from the approved mockups, for admins only (behind the Flock gate). The bar is now Feed, Journeys, a raised gold "Add something" button (it opens an empty sheet until CR6 fills it), Library and My birds, and the iPhone Duo and wide-window column show the same five. Chapter is off the bar; the side menu will reach it in CR2. Every Community screen's header now has a menu tile (it opens nothing until CR2) and the Kya & Co. wordmark on the left, an Updates bell on the right with a lime dot while there are unread notifications, and the screen's title below; the Spaces button and the avatar are gone. The space "Learn together" is now called "Flock talk", with its new description and empty-feed wording. Two new Community colors (gold and a light lime) were added.
+- **PR:** [#589](https://github.com/the-kya-project/perch-perfect-plan/pull/589)
+- **Outcome:** see the PR (merge if every check passes; otherwise waiting on checks)
+- **Problems:** the walk-through's guidelines file that also says "Learn together" isn't on `main` yet (#584), so that rename waits for it (noted in the backlog and the review queue). No side-by-side screenshots: the run can't take or attach them. The other open PRs (#584, #586, #587, #588) are Brittany's session PRs, left alone; #584 and #587 show as conflicting with `main`. No PRs closed. The pending log was empty.
+
 ### 2026-11-28 15:40 EST · Dutch for everything still in English (started by Brittany in a session)
 - **Built:** Dutch for the 1,535 lines that were still English: the whole Flock, the founding page, care badges, weight-baseline lines, a few care-app lines, and the sign-in and gift emails. Written in nine batches against one glossary and run through the repo's translation script; nothing is left untranslated in any catalog. The founding page's chapter names are Dutch too. The app's main file passed the service worker's 2 MB caching limit, which broke the build, so the limit is now 3 MB.
 - **PR:** [#582](https://github.com/the-kya-project/perch-perfect-plan/pull/582)

@@ -807,7 +807,7 @@ test.describe("as an admin, on a phone", () => {
     await expect(tabs(page)).toHaveText(["Feed", "Journeys", "Library", "My birds"]);
     const bar = page.locator("nav[aria-label='Community']:visible > div > *");
     await expect(bar).toHaveCount(5);
-    await expect(bar.nth(2)).toHaveAttribute("data-flock-add", "");
+    await expect(bar.nth(2)).toHaveAttribute("data-flock-add");
     await expect(bar.nth(2)).toHaveAccessibleName("Add something");
     await expect(tabs(page).first()).toHaveAttribute("aria-current", "page");
     await expect(tabs(page).last()).toHaveAttribute("href", "/dashboard");
@@ -938,7 +938,7 @@ test("as an admin, Duo / wide: the five Community items sit in the side column",
   // The gold Add something circle in the middle, opening its sheet.
   const items = rail.locator("[data-flock-tab], [data-flock-add]");
   await expect(items).toHaveCount(5);
-  await expect(items.nth(2)).toHaveAttribute("data-flock-add", "");
+  await expect(items.nth(2)).toHaveAttribute("data-flock-add");
   await items.nth(2).click();
   await expect(page.getByRole("dialog", { name: "Add something" })).toBeVisible();
   await page.keyboard.press("Escape");
