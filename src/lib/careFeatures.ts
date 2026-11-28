@@ -21,6 +21,9 @@ export type CareFeature = {
 export const CARE_FEATURES: readonly CareFeature[] = [
   // The seasonal and holiday Today card on Home (backlog D2.1).
   { feature: "today_cards", startsAt: "off" },
+  // Care badges on the bird page and its Badges screen (backlog 1.13b,
+  // 20261128160000_care_badges.sql, src/lib/careBadges.ts).
+  { feature: "care_badges", startsAt: "off" },
 ];
 
 /** Fails closed: an error (or a database without the switch yet, like staging

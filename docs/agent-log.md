@@ -26,6 +26,270 @@ Copy this, fill it in, and put it at the top of "Runs", above the latest entry.
 - **Outcome:** Merged on Brittany's OK once checks passed (Nov 28, 2026). A native speaker's read is still welcome.
 - **Problems:** the rest of the Flock isn't in Dutch yet (about 1,480 lines), so the Join sheet and the admin card show Dutch rescue lines next to English ones until those are translated.
 
+### 2026-11-28 10:25 EST · 1.13b Badges: care badges free users can earn
+- **Built:** four care badges for every bird, earned in the free care app and switched off until Brittany turns them on: Steady scale (weighing the bird at least once a week, 4, 12 or 52 weeks in a row), Daily check-in (a health check 7 or 30 days in a row), Plan ready (the whole care plan done) and Sitter ready (a pet sitter link sent). Past care counts, shown once as "Here's what you've already earned"; a new badge later gets a "Badge earned" card on the bird page, the bird's record list gets a "Badges" row, and a new Badges screen shows earned and unearned badges with how to earn each. Badges reward the habit, never a weight or a health result. With the switch off, the bird page looks and behaves exactly as before and asks nothing about badges.
+- **PR:** [#572](https://github.com/the-kya-project/perch-perfect-plan/pull/572)
+- **Outcome:** Held: it changes what free users see once switched on, so Brittany approves it with before-and-after screenshots, reads the wording, answers four questions in the PR, and adds one CI line. Never merged by an agent.
+- **Problems:** the screenshots couldn't be taken here: Chromium won't start inside the job's sandbox (it can't read its own files under ~/Library). The PR adds `npm run test:care-badges:screens` for Brittany to run on her Mac. The new unit test (`npm run test:care-badges`) isn't in CI yet because the runs' token can't push a `.github/workflows` change; the PR asks her to add the line. No local database here, so the SQL checks ran in CI ("Database checks"): they failed twice and were fixed in the PR (the bird-access function now lives in `private`, and `profiles` refuses an unknown time zone, so that part of the check was dropped). `main` moved (#570), and the review queue conflict was resolved by keeping both entries. All required checks pass, Free-user regression included; "Supabase Preview" reported "skipping", so the migration was checked only by "Database checks". Open PR check at the start: [#570](https://github.com/the-kya-project/perch-perfect-plan/pull/570) (Brittany's session, 1.20f follow-up) passes its checks and was left alone; #567 is now closed (by Brittany's session, as superseded by #569), so the 14:53 note about it below wasn't added to the review queue. The 43 entries below, from runs with no PR, were moved here from `~/.kya-agent/pending-log.md`.
+
+### 2026-11-28 09:24 EST · none (nothing to build)
+- **Built:** nothing. "Ready to build" in docs/BACKLOG.md (main at 2257a7b) is still empty; 2.5, 1.13b and 1.12 need Brittany before work starts, and no item is marked "Overnight alone: yes".
+- **PR:** none
+- **Outcome:** Stopped: nothing an unattended run may build.
+- **Problems:** none new. The only open PR, [#567](https://github.com/the-kya-project/perch-perfect-plan/pull/567), is unchanged (held, still conflicting with `main` outside the record files, last updated 19:54 UTC). Its review-queue note is already in the 14:53 entry below. No PRs were closed. The clone at `~/.kya-agent/work/agent-run-20261128-0924` has no changes.
+
+### 2026-11-28 08:24 EST · none (nothing to build)
+- **Built:** nothing. "Ready to build" in docs/BACKLOG.md (main at 2257a7b) is still empty; 2.5, 1.13b and 1.12 need Brittany before work starts, and no item is marked "Overnight alone: yes".
+- **PR:** none
+- **Outcome:** Stopped: nothing an unattended run may build.
+- **Problems:** none new. The only open PR, [#567](https://github.com/the-kya-project/perch-perfect-plan/pull/567), is unchanged (held, still conflicting with `main` outside the record files, last updated 19:54 UTC). Its review-queue note is already in the 14:53 entry below. No PRs were closed. The clone at `~/.kya-agent/work/agent-run-20261128-0824` has no changes.
+
+### 2026-11-28 07:23 EST · none (nothing to build)
+- **Built:** nothing. "Ready to build" in docs/BACKLOG.md (main at 2257a7b) is still empty; 2.5, 1.13b and 1.12 need Brittany before work starts, and no item is marked "Overnight alone: yes".
+- **PR:** none
+- **Outcome:** Stopped: nothing an unattended run may build.
+- **Problems:** none new. The only open PR, [#567](https://github.com/the-kya-project/perch-perfect-plan/pull/567), is unchanged (held, still conflicting with `main` outside the record files, last updated 19:54 UTC). Its review-queue note is already in the 14:53 entry below. No PRs were closed. The clone at `~/.kya-agent/work/agent-run-20261128-0723` has no changes.
+
+### 2026-11-28 06:22 EST · none (nothing to build)
+- **Built:** nothing. "Ready to build" in docs/BACKLOG.md (main at 2257a7b) is still empty; 2.5, 1.13b and 1.12 need Brittany before work starts, and no item is marked "Overnight alone: yes".
+- **PR:** none
+- **Outcome:** Stopped: nothing an unattended run may build.
+- **Problems:** none new. The only open PR, [#567](https://github.com/the-kya-project/perch-perfect-plan/pull/567), is unchanged (held, still conflicting with `main` outside the record files, last updated 19:54 UTC). Its review-queue note is already in the 14:53 entry below. No PRs were closed. The clone at `~/.kya-agent/work/agent-run-20261128-0622` has no changes.
+
+### 2026-11-28 05:21 EST · none (nothing to build)
+- **Built:** nothing. "Ready to build" in docs/BACKLOG.md (main at 2257a7b) is still empty; 2.5, 1.13b and 1.12 need Brittany before work starts, and no item is marked "Overnight alone: yes".
+- **PR:** none
+- **Outcome:** Stopped: nothing an unattended run may build.
+- **Problems:** none new. The only open PR, [#567](https://github.com/the-kya-project/perch-perfect-plan/pull/567), is unchanged (held, still conflicting with `main` outside the record files, last updated 19:54 UTC). Its review-queue note is already in the 14:53 entry below. No PRs were closed. The clone at `~/.kya-agent/work/agent-run-20261128-0521` has no changes.
+
+### 2026-11-28 04:20 EST · none (nothing to build)
+- **Built:** nothing. "Ready to build" in docs/BACKLOG.md (main at 2257a7b) is still empty; 2.5, 1.13b and 1.12 need Brittany before work starts, and no item is marked "Overnight alone: yes".
+- **PR:** none
+- **Outcome:** Stopped: nothing an unattended run may build.
+- **Problems:** none new. The only open PR, [#567](https://github.com/the-kya-project/perch-perfect-plan/pull/567), is unchanged (held, still conflicting with `main` outside the record files, last updated 19:54 UTC). Its review-queue note is already in the 14:53 entry below. No PRs were closed. The clone at `~/.kya-agent/work/agent-run-20261128-0420` has no changes.
+
+### 2026-11-28 03:20 EST · none (nothing to build)
+- **Built:** nothing. "Ready to build" in docs/BACKLOG.md (main at 2257a7b) is still empty; 2.5, 1.13b and 1.12 need Brittany before work starts, and no item is marked "Overnight alone: yes".
+- **PR:** none
+- **Outcome:** Stopped: nothing an unattended run may build.
+- **Problems:** none new. The only open PR, [#567](https://github.com/the-kya-project/perch-perfect-plan/pull/567), is unchanged (held, still conflicting with `main` outside the record files, last updated 19:54 UTC). Its review-queue note is already in the 14:53 entry below. No PRs were closed. The clone at `~/.kya-agent/work/agent-run-20261128-0320` has no changes.
+
+### 2026-11-28 02:19 EST · none (nothing to build)
+- **Built:** nothing. "Ready to build" in docs/BACKLOG.md (main at 2257a7b) is still empty; 2.5, 1.13b and 1.12 need Brittany before work starts, and no item is marked "Overnight alone: yes".
+- **PR:** none
+- **Outcome:** Stopped: nothing an unattended run may build.
+- **Problems:** none new. The only open PR, [#567](https://github.com/the-kya-project/perch-perfect-plan/pull/567), is unchanged (held, still conflicting with `main` outside the record files, last updated 19:54 UTC). Its review-queue note is already in the 14:53 entry below. No PRs were closed. The clone at `~/.kya-agent/work/agent-run-20261128-0219` has no changes.
+
+### 2026-11-28 01:18 EST · none (nothing to build)
+- **Built:** nothing. "Ready to build" in docs/BACKLOG.md (main at 2257a7b) is still empty; 2.5, 1.13b and 1.12 need Brittany before work starts, and no item is marked "Overnight alone: yes".
+- **PR:** none
+- **Outcome:** Stopped: nothing an unattended run may build.
+- **Problems:** none new. The only open PR, [#567](https://github.com/the-kya-project/perch-perfect-plan/pull/567), is unchanged (held, still conflicting with `main` outside the record files, last updated 19:54 UTC). Its review-queue note is already in the 14:53 entry below. No PRs were closed. The clone at `~/.kya-agent/work/agent-run-20261128-0118` has no changes.
+
+### 2026-11-28 00:17 EST · none (nothing to build)
+- **Built:** nothing. "Ready to build" in docs/BACKLOG.md (main at 2257a7b) is still empty; 2.5, 1.13b and 1.12 need Brittany before work starts, and no item is marked "Overnight alone: yes".
+- **PR:** none
+- **Outcome:** Stopped: nothing an unattended run may build.
+- **Problems:** none new. The only open PR, [#567](https://github.com/the-kya-project/perch-perfect-plan/pull/567), is unchanged (held, still conflicting with `main` outside the record files, last updated 19:54 UTC). Its review-queue note is already in the 14:53 entry below. No PRs were closed. The clone at `~/.kya-agent/work/agent-run-20261128-0017` has no changes.
+
+### 2026-11-27 23:17 EST · none (nothing to build)
+- **Built:** nothing. "Ready to build" in docs/BACKLOG.md (main at 2257a7b) is still empty; 2.5, 1.13b and 1.12 need Brittany before work starts, and no item is marked "Overnight alone: yes".
+- **PR:** none
+- **Outcome:** Stopped: nothing an unattended run may build.
+- **Problems:** none new. The only open PR, [#567](https://github.com/the-kya-project/perch-perfect-plan/pull/567), is unchanged (held, still conflicting with `main` outside the record files, last updated 19:54 UTC). Its review-queue note is already in the 14:53 entry below. No PRs were closed. The clone at `~/.kya-agent/work/agent-run-20261127-2317` has no changes.
+
+### 2026-11-27 22:16 EST · none (nothing to build)
+- **Built:** nothing. "Ready to build" in docs/BACKLOG.md (main at 2257a7b) is still empty; 2.5, 1.13b and 1.12 need Brittany before work starts, and no item is marked "Overnight alone: yes".
+- **PR:** none
+- **Outcome:** Stopped: nothing an unattended run may build.
+- **Problems:** none new. The only open PR, [#567](https://github.com/the-kya-project/perch-perfect-plan/pull/567), is unchanged (held, still conflicting with `main` outside the record files, last updated 19:54 UTC). Its review-queue note is already in the 14:53 entry below. No PRs were closed. The clone at `~/.kya-agent/work/agent-run-20261127-2216` has no changes.
+
+### 2026-11-27 21:15 EST · none (nothing to build)
+- **Built:** nothing. "Ready to build" in docs/BACKLOG.md (main at 2257a7b) is still empty; 2.5, 1.13b and 1.12 need Brittany before work starts, and no item is marked "Overnight alone: yes".
+- **PR:** none
+- **Outcome:** Stopped: nothing an unattended run may build.
+- **Problems:** none new. The only open PR, [#567](https://github.com/the-kya-project/perch-perfect-plan/pull/567), is unchanged (held, still conflicting with `main` outside the record files, last updated 19:54 UTC). Its review-queue note is already in the 14:53 entry below. No PRs were closed. The clone at `~/.kya-agent/work/agent-run-20261127-2115` has no changes.
+
+### 2026-11-27 20:15 EST · none (nothing to build)
+- **Built:** nothing. "Ready to build" in docs/BACKLOG.md (main at 2257a7b) is still empty; 2.5, 1.13b and 1.12 need Brittany before work starts, and no item is marked "Overnight alone: yes".
+- **PR:** none
+- **Outcome:** Stopped: nothing an unattended run may build.
+- **Problems:** none new. The only open PR, [#567](https://github.com/the-kya-project/perch-perfect-plan/pull/567), is unchanged (held, still conflicting with `main` outside the record files, last updated 19:54 UTC). Its review-queue note is already in the 14:53 entry below. No PRs were closed. The clone at `~/.kya-agent/work/agent-run-20261127-2015` has no changes.
+
+### 2026-11-27 19:14 EST · none (nothing to build)
+- **Built:** nothing. "Ready to build" in docs/BACKLOG.md (main at 2257a7b) is still empty; 2.5, 1.13b and 1.12 need Brittany before work starts, and no item is marked "Overnight alone: yes".
+- **PR:** none
+- **Outcome:** Stopped: nothing an unattended run may build.
+- **Problems:** none new. The only open PR, [#567](https://github.com/the-kya-project/perch-perfect-plan/pull/567), is unchanged (held, still conflicting with `main` outside the record files, last updated 19:54 UTC). Its review-queue note is already in the 14:53 entry below. No PRs were closed. The clone at `~/.kya-agent/work/agent-run-20261127-1914` has no changes.
+
+### 2026-11-27 18:13 EST · none (nothing to build)
+- **Built:** nothing. "Ready to build" in docs/BACKLOG.md (main at 2257a7b) is still empty; 2.5, 1.13b and 1.12 need Brittany before work starts, and no item is marked "Overnight alone: yes".
+- **PR:** none
+- **Outcome:** Stopped: nothing an unattended run may build.
+- **Problems:** none new. The only open PR, [#567](https://github.com/the-kya-project/perch-perfect-plan/pull/567), is unchanged (held, still conflicting with `main` outside the record files, last updated 19:54 UTC). Its review-queue note is already in the 14:53 entry below. No PRs were closed. The clone at `~/.kya-agent/work/agent-run-20261127-1813` has no changes.
+
+### 2026-11-27 17:13 EST · none (nothing to build)
+- **Built:** nothing. "Ready to build" in docs/BACKLOG.md (main at 2257a7b) is still empty; 2.5, 1.13b and 1.12 need Brittany before work starts, and no item is marked "Overnight alone: yes".
+- **PR:** none
+- **Outcome:** Stopped: nothing an unattended run may build.
+- **Problems:** none new. The only open PR, [#567](https://github.com/the-kya-project/perch-perfect-plan/pull/567), is unchanged (held, still conflicting with `main` outside the record files, last updated 19:54 UTC). Its review-queue note is already in the 14:53 entry below. No PRs were closed. The clone at `~/.kya-agent/work/agent-run-20261127-1713` has no changes.
+
+### 2026-11-27 16:12 EST · none (nothing to build)
+- **Built:** nothing. "Ready to build" in docs/BACKLOG.md (main at 2257a7b) is still empty; 2.5, 1.13b and 1.12 need Brittany before work starts, and no item is marked "Overnight alone: yes".
+- **PR:** none
+- **Outcome:** Stopped: nothing an unattended run may build.
+- **Problems:** none new. The only open PR, [#567](https://github.com/the-kya-project/perch-perfect-plan/pull/567), is unchanged (held, still conflicting with `main` outside the record files, last updated 19:54 UTC). Its review-queue note is already in the 14:53 entry below. No PRs were closed. The clone at `~/.kya-agent/work/agent-run-20261127-1612` has no changes.
+
+### 2026-11-27 15:11 EST · none (nothing to build)
+- **Built:** nothing. "Ready to build" in docs/BACKLOG.md (main at 2257a7b) is still empty; 2.5, 1.13b and 1.12 need Brittany before work starts, and no item is marked "Overnight alone: yes".
+- **PR:** none
+- **Outcome:** Stopped: nothing an unattended run may build.
+- **Problems:** none new. The only open PR, [#567](https://github.com/the-kya-project/perch-perfect-plan/pull/567), is unchanged (held, still conflicting with `main` outside the record files, last updated 19:54 UTC). Its review-queue note is already in the 14:53 entry below. No PRs were closed. The clone at `~/.kya-agent/work/agent-run-20261127-1511` has no changes.
+
+### 2026-11-27 14:10 EST · none (nothing to build)
+- **Built:** nothing. "Ready to build" in docs/BACKLOG.md (main at 2257a7b) is still empty; 2.5, 1.13b and 1.12 need Brittany before work starts, and no item is marked "Overnight alone: yes".
+- **PR:** none
+- **Outcome:** Stopped: nothing an unattended run may build.
+- **Problems:** none new. The only open PR, [#567](https://github.com/the-kya-project/perch-perfect-plan/pull/567), is unchanged (held, still conflicting with `main` outside the record files, last updated 19:54 UTC). Its review-queue note is already in the 14:53 entry below. No PRs were closed. The clone at `~/.kya-agent/work/agent-run-20261127-1410` has no changes.
+
+### 2026-11-27 13:10 EST · none (nothing to build)
+- **Built:** nothing. "Ready to build" in docs/BACKLOG.md (main at 2257a7b) is still empty; 2.5, 1.13b and 1.12 need Brittany before work starts, and no item is marked "Overnight alone: yes".
+- **PR:** none
+- **Outcome:** Stopped: nothing an unattended run may build.
+- **Problems:** none new. The only open PR, [#567](https://github.com/the-kya-project/perch-perfect-plan/pull/567), is unchanged (held, still conflicting with `main` outside the record files, last updated 19:54 UTC). Its review-queue note is already in the 14:53 entry below. No PRs were closed. The clone at `~/.kya-agent/work/agent-run-20261127-1310` has no changes.
+
+### 2026-11-27 12:09 EST · none (nothing to build)
+- **Built:** nothing. "Ready to build" in docs/BACKLOG.md (main at 2257a7b) is still empty; 2.5, 1.13b and 1.12 need Brittany before work starts, and no item is marked "Overnight alone: yes".
+- **PR:** none
+- **Outcome:** Stopped: nothing an unattended run may build.
+- **Problems:** none new. The only open PR, [#567](https://github.com/the-kya-project/perch-perfect-plan/pull/567), is unchanged (held, still conflicting with `main` outside the record files, last updated 19:54 UTC). Its review-queue note is already in the 14:53 entry below. No PRs were closed. The clone at `~/.kya-agent/work/agent-run-20261127-1209` has no changes.
+
+### 2026-11-27 11:08 EST · none (nothing to build)
+- **Built:** nothing. "Ready to build" in docs/BACKLOG.md (main at 2257a7b) is still empty; 2.5, 1.13b and 1.12 need Brittany before work starts, and no item is marked "Overnight alone: yes".
+- **PR:** none
+- **Outcome:** Stopped: nothing an unattended run may build.
+- **Problems:** none new. The only open PR, [#567](https://github.com/the-kya-project/perch-perfect-plan/pull/567), is unchanged (held, still conflicting with `main` outside the record files, last updated 19:54 UTC). Its review-queue note is already in the 14:53 entry below. No PRs were closed. The clone at `~/.kya-agent/work/agent-run-20261127-1108` has no changes.
+
+### 2026-11-27 10:07 EST · none (nothing to build)
+- **Built:** nothing. "Ready to build" in docs/BACKLOG.md (main at 2257a7b) is still empty; 2.5, 1.13b and 1.12 need Brittany before work starts, and no item is marked "Overnight alone: yes".
+- **PR:** none
+- **Outcome:** Stopped: nothing an unattended run may build.
+- **Problems:** none new. The only open PR, [#567](https://github.com/the-kya-project/perch-perfect-plan/pull/567), is unchanged (held, still conflicting with `main` outside the record files, last updated 19:54 UTC). Its review-queue note is already in the 14:53 entry below. No PRs were closed. The clone at `~/.kya-agent/work/agent-run-20261127-1007` has no changes.
+
+### 2026-11-27 09:07 EST · none (nothing to build)
+- **Built:** nothing. "Ready to build" in docs/BACKLOG.md (main at 2257a7b) is still empty; 2.5, 1.13b and 1.12 need Brittany before work starts, and no item is marked "Overnight alone: yes".
+- **PR:** none
+- **Outcome:** Stopped: nothing an unattended run may build.
+- **Problems:** none new. The only open PR, [#567](https://github.com/the-kya-project/perch-perfect-plan/pull/567), is unchanged (held, still conflicting with `main` outside the record files, last updated 19:54 UTC). Its review-queue note is already in the 14:53 entry below. No PRs were closed. The clone at `~/.kya-agent/work/agent-run-20261127-0907` has no changes.
+
+### 2026-11-27 08:06 EST · none (nothing to build)
+- **Built:** nothing. "Ready to build" in docs/BACKLOG.md (main at 2257a7b) is still empty; 2.5, 1.13b and 1.12 need Brittany before work starts, and no item is marked "Overnight alone: yes".
+- **PR:** none
+- **Outcome:** Stopped: nothing an unattended run may build.
+- **Problems:** none new. The only open PR, [#567](https://github.com/the-kya-project/perch-perfect-plan/pull/567), is unchanged (held, still conflicting with `main` outside the record files, last updated 19:54 UTC). Its review-queue note is already in the 14:53 entry below. No PRs were closed. The clone at `~/.kya-agent/work/agent-run-20261127-0806` has no changes.
+
+### 2026-11-27 07:05 EST · none (nothing to build)
+- **Built:** nothing. "Ready to build" in docs/BACKLOG.md (main at 2257a7b) is still empty; 2.5, 1.13b and 1.12 need Brittany before work starts, and no item is marked "Overnight alone: yes".
+- **PR:** none
+- **Outcome:** Stopped: nothing an unattended run may build.
+- **Problems:** none new. The only open PR, [#567](https://github.com/the-kya-project/perch-perfect-plan/pull/567), is unchanged (held, still conflicting with `main` outside the record files, last updated 19:54 UTC). Its review-queue note is already in the 14:53 entry below. No PRs were closed. The clone at `~/.kya-agent/work/agent-run-20261127-0705` has no changes.
+
+### 2026-11-27 06:04 EST · none (nothing to build)
+- **Built:** nothing. "Ready to build" in docs/BACKLOG.md (main at 2257a7b) is still empty; 2.5, 1.13b and 1.12 need Brittany before work starts, and no item is marked "Overnight alone: yes".
+- **PR:** none
+- **Outcome:** Stopped: nothing an unattended run may build.
+- **Problems:** none new. The only open PR, [#567](https://github.com/the-kya-project/perch-perfect-plan/pull/567), is unchanged (held, still conflicting with `main` outside the record files, last updated 19:54 UTC). Its review-queue note is already in the 14:53 entry below. No PRs were closed. The clone at `~/.kya-agent/work/agent-run-20261127-0604` has no changes.
+
+### 2026-11-27 05:04 EST · none (nothing to build)
+- **Built:** nothing. "Ready to build" in docs/BACKLOG.md (main at 2257a7b) is still empty; 2.5, 1.13b and 1.12 need Brittany before work starts, and no item is marked "Overnight alone: yes".
+- **PR:** none
+- **Outcome:** Stopped: nothing an unattended run may build.
+- **Problems:** none new. The only open PR, [#567](https://github.com/the-kya-project/perch-perfect-plan/pull/567), is unchanged (held, still conflicting with `main` outside the record files, last updated 19:54 UTC). Its review-queue note is already in the 14:53 entry below. No PRs were closed. The clone at `~/.kya-agent/work/agent-run-20261127-0504` has no changes.
+
+### 2026-11-27 04:03 EST · none (nothing to build)
+- **Built:** nothing. "Ready to build" in docs/BACKLOG.md (main at 2257a7b) is still empty; 2.5, 1.13b and 1.12 need Brittany before work starts, and no item is marked "Overnight alone: yes".
+- **PR:** none
+- **Outcome:** Stopped: nothing an unattended run may build.
+- **Problems:** none new. The only open PR, [#567](https://github.com/the-kya-project/perch-perfect-plan/pull/567), is unchanged (held, still conflicting with `main` outside the record files, last updated 19:54 UTC). Its review-queue note is already in the 14:53 entry below. No PRs were closed. The clone at `~/.kya-agent/work/agent-run-20261127-0403` has no changes.
+
+### 2026-11-27 03:02 EST · none (nothing to build)
+- **Built:** nothing. "Ready to build" in docs/BACKLOG.md (main at 2257a7b) is still empty; 2.5, 1.13b and 1.12 need Brittany before work starts, and no item is marked "Overnight alone: yes".
+- **PR:** none
+- **Outcome:** Stopped: nothing an unattended run may build.
+- **Problems:** none new. The only open PR, [#567](https://github.com/the-kya-project/perch-perfect-plan/pull/567), is unchanged (held, still conflicting with `main` outside the record files, last updated 19:54 UTC). Its review-queue note is already in the 14:53 entry below. No PRs were closed. The clone at `~/.kya-agent/work/agent-run-20261127-0302` has no changes.
+
+### 2026-11-27 02:02 EST · none (nothing to build)
+- **Built:** nothing. "Ready to build" in docs/BACKLOG.md (main at 2257a7b) is still empty; 2.5, 1.13b and 1.12 need Brittany before work starts, and no item is marked "Overnight alone: yes".
+- **PR:** none
+- **Outcome:** Stopped: nothing an unattended run may build.
+- **Problems:** none new. The only open PR, [#567](https://github.com/the-kya-project/perch-perfect-plan/pull/567), is unchanged (held, still conflicting with `main` outside the record files, last updated 19:54 UTC). Its review-queue note is already in the 14:53 entry below. No PRs were closed. The clone at `~/.kya-agent/work/agent-run-20261127-0202` has no changes.
+
+### 2026-11-27 01:01 EST · none (nothing to build)
+- **Built:** nothing. "Ready to build" in docs/BACKLOG.md (main at 2257a7b) is still empty; 2.5, 1.13b and 1.12 need Brittany before work starts, and no item is marked "Overnight alone: yes".
+- **PR:** none
+- **Outcome:** Stopped: nothing an unattended run may build.
+- **Problems:** none new. The only open PR, [#567](https://github.com/the-kya-project/perch-perfect-plan/pull/567), is unchanged (held, still conflicting with `main` outside the record files, last updated 19:54 UTC). Its review-queue note is already in the 14:53 entry below. No PRs were closed. The clone at `~/.kya-agent/work/agent-run-20261127-0101` has no changes.
+
+### 2026-11-27 00:00 EST · none (nothing to build)
+- **Built:** nothing. "Ready to build" in docs/BACKLOG.md (main at 2257a7b) is still empty; 2.5, 1.13b and 1.12 need Brittany before work starts, and no item is marked "Overnight alone: yes".
+- **PR:** none
+- **Outcome:** Stopped: nothing an unattended run may build.
+- **Problems:** none new. The only open PR, [#567](https://github.com/the-kya-project/perch-perfect-plan/pull/567), is unchanged (held, still conflicting with `main` outside the record files, last updated 19:54 UTC). Its review-queue note is already in the 14:53 entry below. No PRs were closed. The clone at `~/.kya-agent/work/agent-run-20261127-0000` has no changes.
+
+### 2026-11-26 22:59 EST · none (nothing to build)
+- **Built:** nothing. "Ready to build" in docs/BACKLOG.md (main at 2257a7b) is still empty; 2.5, 1.13b and 1.12 need Brittany before work starts, and no item is marked "Overnight alone: yes".
+- **PR:** none
+- **Outcome:** Stopped: nothing an unattended run may build.
+- **Problems:** none new. The only open PR, [#567](https://github.com/the-kya-project/perch-perfect-plan/pull/567), is unchanged (held, still conflicting with `main` outside the record files, last updated 19:54 UTC). Its review-queue note is already in the 14:53 entry below. No PRs were closed. The clone at `~/.kya-agent/work/agent-run-20261126-2259` has no changes.
+
+### 2026-11-26 21:59 EST · none (nothing to build)
+- **Built:** nothing. "Ready to build" in docs/BACKLOG.md (main at 2257a7b) is still empty; 2.5, 1.13b and 1.12 need Brittany before work starts, and no item is marked "Overnight alone: yes".
+- **PR:** none
+- **Outcome:** Stopped: nothing an unattended run may build.
+- **Problems:** none new. The only open PR, [#567](https://github.com/the-kya-project/perch-perfect-plan/pull/567), is unchanged (held, still conflicting with `main` outside the record files, last updated 19:54 UTC). Its review-queue note is already in the 14:53 entry below. No PRs were closed. The clone at `~/.kya-agent/work/agent-run-20261126-2159` has no changes.
+
+### 2026-11-26 20:58 EST · none (nothing to build)
+- **Built:** nothing. "Ready to build" in docs/BACKLOG.md (main at 2257a7b) is still empty; 2.5, 1.13b and 1.12 need Brittany before work starts, and no item is marked "Overnight alone: yes".
+- **PR:** none
+- **Outcome:** Stopped: nothing an unattended run may build.
+- **Problems:** none new. The only open PR, [#567](https://github.com/the-kya-project/perch-perfect-plan/pull/567), is unchanged (held, still conflicting with `main` outside the record files, last updated 19:54 UTC). Its review-queue note is already in the 14:53 entry below. No PRs were closed. The clone at `~/.kya-agent/work/agent-run-20261126-2058` has no changes.
+
+### 2026-11-26 19:57 EST · none (nothing to build)
+- **Built:** nothing. "Ready to build" in docs/BACKLOG.md (main at 2257a7b) is still empty; 2.5, 1.13b and 1.12 need Brittany before work starts, and no item is marked "Overnight alone: yes".
+- **PR:** none
+- **Outcome:** Stopped: nothing an unattended run may build.
+- **Problems:** none new. The only open PR, [#567](https://github.com/the-kya-project/perch-perfect-plan/pull/567), is unchanged (held, still conflicting with `main` outside the record files, last updated 19:54 UTC). Its review-queue note is already in the 14:53 entry below. No PRs were closed. The clone at `~/.kya-agent/work/agent-run-20261126-1957` has no changes.
+
+### 2026-11-26 18:57 EST · none (nothing to build)
+- **Built:** nothing. "Ready to build" in docs/BACKLOG.md (main at 2257a7b) is still empty; 2.5, 1.13b and 1.12 need Brittany before work starts, and no item is marked "Overnight alone: yes".
+- **PR:** none
+- **Outcome:** Stopped: nothing an unattended run may build.
+- **Problems:** none new. The only open PR, [#567](https://github.com/the-kya-project/perch-perfect-plan/pull/567), is unchanged (held, still conflicting with `main` outside the record files, last updated 19:54 UTC). Its review-queue note is already in the 14:53 entry below. No PRs were closed. The clone at `~/.kya-agent/work/agent-run-20261126-1857` has no changes.
+
+### 2026-11-26 17:56 EST · none (nothing to build)
+- **Built:** nothing. "Ready to build" in docs/BACKLOG.md (main at 2257a7b) is still empty; 2.5, 1.13b and 1.12 need Brittany before work starts, and no item is marked "Overnight alone: yes".
+- **PR:** none
+- **Outcome:** Stopped: nothing an unattended run may build.
+- **Problems:** none new. The only open PR, [#567](https://github.com/the-kya-project/perch-perfect-plan/pull/567), is unchanged (held, still conflicting with `main` outside the record files, last updated 19:54 UTC). Its review-queue note is already in the 14:53 entry below. No PRs were closed. The clone at `~/.kya-agent/work/agent-run-20261126-1756` has no changes.
+
+### 2026-11-26 16:55 EST · none (nothing to build)
+- **Built:** nothing. "Ready to build" in docs/BACKLOG.md (main at 2257a7b) is still empty; 2.5, 1.13b and 1.12 need Brittany before work starts, and no other item is marked "Overnight alone: yes".
+- **PR:** none
+- **Outcome:** Stopped: nothing an unattended run may build.
+- **Problems:** none new. The only open PR, [#567](https://github.com/the-kya-project/perch-perfect-plan/pull/567), is unchanged (held, still conflicting with `main` outside the record files, latest commit 18:36 UTC). Its review-queue note is already in the 14:53 entry below. No PRs were closed. The clone at `~/.kya-agent/work/agent-run-20261126-1655` has no changes.
+
+### 2026-11-26 15:54 EST · none (nothing to build)
+- **Built:** nothing. "Ready to build" in docs/BACKLOG.md is still empty; 2.5, 1.13b and 1.12 need Brittany before work starts, and everything else waits on her.
+- **PR:** none
+- **Outcome:** Stopped: nothing an unattended run may build.
+- **Problems:** none new. The only open PR, [#567](https://github.com/the-kya-project/perch-perfect-plan/pull/567), is unchanged since the 14:53 run (held, still conflicting with `main` outside the record files, no new commits). Its review-queue note is already in the 14:53 entry below, so no new comment was left. No PRs were closed. The clone at `~/.kya-agent/work/agent-run-20261126-1554` has no changes.
+
+### 2026-11-26 14:53 EST · none (nothing to build)
+- **Built:** nothing. "Ready to build" in docs/BACKLOG.md is empty; every other item needs Brittany before work starts or waits on her.
+- **PR:** none
+- **Outcome:** Stopped: nothing an unattended run may build.
+- **Problems:** open PR check: [#567](https://github.com/the-kya-project/perch-perfect-plan/pull/567) (1.20f, held) now conflicts with `main` outside the record files (`src/components/flock/CommentThread.tsx`, `supabase/checks/flock_posts_checks.sql`, also `CLAUDE.md`), because [#569](https://github.com/the-kya-project/perch-perfect-plan/pull/569) built the same item and merged at 14:17 EST. Left as it is and not closed: #569 doesn't fully replace it (#567 also has the clip viewer's read-only "N comments" link and counts anyone with bird access). Comment left on #567. **For the review queue's "Held for Brittany"** (next run with a PR, add it there): "#567 · 1.20f Co-carers read comments (the second build) · **Needs:** #569 merged the same item, so this conflicts with main. Close it if #569 is what you wanted, or say which parts (the clip viewer's comment link) should go in a new PR."
+
 ### 2026-11-26 13:20 EST · 1.16 Rescue partner codes (started by Brittany in a session, not an hourly run)
 - **Built:** partner rescues each get one reusable code, with an optional limit. "Have a rescue code?" on the Join screen and the redeem page leads to the code, then the bird's name, species and adoption date, then "being confirmed". An admin approves or declines it on the new Rescue partners page or in the review queue; an approved adopter sees a welcome and gets six months in the Flock, free, from the free season's end (or right away once it has ended). One per account, never with a founding spot, never a payment, no seat counting. Admins add and edit partners and pause codes. All behind the Flock gate (admins only).
 - **PR:** [#565](https://github.com/the-kya-project/perch-perfect-plan/pull/565)

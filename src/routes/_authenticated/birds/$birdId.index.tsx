@@ -43,6 +43,8 @@ import { getHouseholdForBird } from "@/lib/household.functions";
 import { useBirdOwnerEmergency } from "@/lib/useOwnerEmergency";
 import { emergencyDifferent } from "@/lib/emergency";
 import { checkKindOf } from "@/lib/checkKind";
+import { planReadyFor, useCareBadges } from "@/lib/careBadges";
+import { BirdBadgeCelebration, BirdBadgesRow } from "@/components/CareBadgeParts";
 
 // Bird-record home — the new landing when you tap a bird. A glanceable hub for
 // the living record; the care plan is one facet among several. Facet screens
@@ -333,6 +335,9 @@ export function BirdRecordBody({ birdId, part, quietChecks = false }: { birdId: 
   const { data: bird } = useBirdRecord(birdId);
   const { data: dailyToday } = useDailyCheckToday([birdId]);
   const planStatus = useCarePlanStatus(birdId);
+  // Care badges (1.13b): nothing is asked, and nothing shows, while the
+  // care_badges switch is off.
+  const { data: careBadges } = useCareBadges(birdId, planReadyFor(planStatus, planStatus.bird?.setup_complete));
 
   const { data: weights } = useQuery({
     queryKey: ["bird-weights", birdId],
@@ -400,6 +405,8 @@ export function BirdRecordBody({ birdId, part, quietChecks = false }: { birdId: 
   return (
     <>
       {summary && (<>
+      {careBadges && !passed && <BirdBadgeCelebration birdId={birdId} name={name} badges={careBadges} />}
+
       <SummaryCard birdId={birdId} weights={weights} today={dailyToday?.[birdId]} canCheck={canHealth && !passed} planExists={bird ? !!bird.setup_complete : true} passed={passed} quietChecks={quietChecks} />
 
       {/* Fresh bird → guide straight into the care plan. Prominent but skippable. */}
@@ -482,7 +489,8 @@ export function BirdRecordBody({ birdId, part, quietChecks = false }: { birdId: 
         <KyaRow leading={<KyaIconTile size={38}><Siren className="size-5" /></KyaIconTile>} title={t("birdRecord.emergencyInfo", "Emergency info")} detail={emCustom ? t("birdRecord.emergencyCustom", "Custom for {{name}}", { name }) : (isOwner
           ? t("birdRecord.emergencyShared", "Uses your emergency info")
           : t("birdRecord.emergencySharedOwner", "Uses {{owner}}'s emergency info", { owner: emOwnerName || t("birdRecord.theOwner", "the owner") }))} onClick={() => navigate({ to: "/birds/$birdId/emergency", params: { birdId } })} />
-        <KyaRow leading={<KyaIconTile size={38}><FileText className="size-5" /></KyaIconTile>} title={t("birdRecord.vetSummary", "Vet summary")} detail={t("birdRecord.oneCleanSheetForThe", "One clean sheet for the vet")} onClick={() => navigate({ to: "/birds/$birdId/vet-summary", params: { birdId } })} last />
+        <KyaRow leading={<KyaIconTile size={38}><FileText className="size-5" /></KyaIconTile>} title={t("birdRecord.vetSummary", "Vet summary")} detail={t("birdRecord.oneCleanSheetForThe", "One clean sheet for the vet")} onClick={() => navigate({ to: "/birds/$birdId/vet-summary", params: { birdId } })} last={!careBadges} />
+        {careBadges && <BirdBadgesRow birdId={birdId} badges={careBadges} />}
       </KyaCard>
 
       {/* About [bird] — Species / Age / Hatch date / Sex / Flight (owner-editable). */}
