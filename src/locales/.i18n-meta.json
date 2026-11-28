@@ -2883,6 +2883,9 @@
     "birdWeight.cancel": {
       "stamp": "06c80f8b6f9f2b3b"
     },
+    "birdWeight.change": {
+      "stamp": "8a5e4f7f469e8f56"
+    },
     "birdWeight.chartAria": {
       "stamp": "67192f7bb6e18dbf"
     },
@@ -2913,6 +2916,12 @@
     "birdWeight.editWeight": {
       "stamp": "112c8a33f56d46ee"
     },
+    "birdWeight.entriesPill_one": {
+      "stamp": "60bf56f682c4efdb"
+    },
+    "birdWeight.entriesPill_other": {
+      "stamp": "a7aeacf56a38a66f"
+    },
     "birdWeight.grams": {
       "stamp": "32a06ffb524410f9"
     },
@@ -2931,6 +2940,9 @@
     "birdWeight.keep": {
       "stamp": "6a37de9a420e6ec2"
     },
+    "birdWeight.latest": {
+      "stamp": "202710e4b60268dd"
+    },
     "birdWeight.legendOthers": {
       "stamp": "935a6d5e29232362"
     },
@@ -2942,6 +2954,9 @@
     },
     "birdWeight.logged": {
       "stamp": "46561b94e2f45b72"
+    },
+    "birdWeight.loggedAs": {
+      "stamp": "eebc3f4c625e42d7"
     },
     "birdWeight.loggedBy": {
       "stamp": "34ae1406de18aa2c"
@@ -2963,6 +2978,9 @@
     },
     "birdWeight.noneInRange": {
       "stamp": "f8fb71a4945a523c"
+    },
+    "birdWeight.nowAt": {
+      "stamp": "419e92e76f351431"
     },
     "birdWeight.noWeightThen": {
       "stamp": "410e41a0df0f233f"
@@ -3068,6 +3086,102 @@
     },
     "capabilities.recordHealth": {
       "stamp": "fb3702da42894c39"
+    },
+    "careBadges.careSet": {
+      "stamp": "b0efeda14ccd31d5"
+    },
+    "careBadges.count": {
+      "stamp": "03b118be5246719b"
+    },
+    "careBadges.daysN": {
+      "stamp": "e4eb664b0d3db46d"
+    },
+    "careBadges.earned.dailyCheckIn": {
+      "stamp": "c55fd70ffae21208"
+    },
+    "careBadges.earned.planReady": {
+      "stamp": "9c4e3c0a9fd218a5"
+    },
+    "careBadges.earned.sitterReady": {
+      "stamp": "e7dcdc01ef89b51c"
+    },
+    "careBadges.earned.steadyScale": {
+      "stamp": "8696067ce2fbda55"
+    },
+    "careBadges.earnedLabel": {
+      "stamp": "d9a2758d92a51ed1"
+    },
+    "careBadges.earnedOn": {
+      "stamp": "08f969fa9f9099c2"
+    },
+    "careBadges.earnedOnLevel": {
+      "stamp": "3c3498c7864a114c"
+    },
+    "careBadges.footer": {
+      "stamp": "7dc01a8b2f92fe02"
+    },
+    "careBadges.gotIt": {
+      "stamp": "dea25a84086025ca"
+    },
+    "careBadges.how.dailyCheckIn": {
+      "stamp": "bf19413c83d53a1b"
+    },
+    "careBadges.how.planReady": {
+      "stamp": "289d2ca27a9a96c8"
+    },
+    "careBadges.how.sitterReady": {
+      "stamp": "b95f0357a645f52f"
+    },
+    "careBadges.how.steadyScale": {
+      "stamp": "cf78f932d3ee233c"
+    },
+    "careBadges.launchLabel": {
+      "stamp": "ce1c7a1a05fe6c72"
+    },
+    "careBadges.launchLine": {
+      "stamp": "1b486ba571bfcc23"
+    },
+    "careBadges.launchTitle": {
+      "stamp": "82c0da90b19e8a9d"
+    },
+    "careBadges.loading": {
+      "stamp": "5ea605b44fe46533"
+    },
+    "careBadges.metaTitle": {
+      "stamp": "e80377e56cb1ec6e"
+    },
+    "careBadges.name.dailyCheckIn": {
+      "stamp": "c41b7e8fcf670ee6"
+    },
+    "careBadges.name.planReady": {
+      "stamp": "5df1fa0b1cbee30f"
+    },
+    "careBadges.name.sitterReady": {
+      "stamp": "3d1f42db728ec37c"
+    },
+    "careBadges.name.steadyScale": {
+      "stamp": "11e2b23b72fad919"
+    },
+    "careBadges.nextDays": {
+      "stamp": "455eaa321ed259c3"
+    },
+    "careBadges.nextWeeks": {
+      "stamp": "136543509215cdf0"
+    },
+    "careBadges.notNow": {
+      "stamp": "e09226312af9076b"
+    },
+    "careBadges.seeAll": {
+      "stamp": "59b3b0aba63f6172"
+    },
+    "careBadges.title": {
+      "stamp": "1e3d43e2a1dcdf56"
+    },
+    "careBadges.weeksN": {
+      "stamp": "6f6d20434e419003"
+    },
+    "careBadges.yourBird": {
+      "stamp": "fb5d7aead9178f25"
     },
     "careCards.freeFed": {
       "stamp": "b56e602269f54471"
@@ -3602,6 +3716,54 @@
     },
     "checkEmail.useDifferentEmail": {
       "stamp": "b562efa6940f9f9d"
+    },
+    "checkReference.allNormal": {
+      "stamp": "64a4591f4aa16f9c"
+    },
+    "checkReference.concern": {
+      "stamp": "e2d41a9d4e29d90a"
+    },
+    "checkReference.dailyCheck": {
+      "stamp": "a55b557383617330"
+    },
+    "checkReference.eyebrow": {
+      "stamp": "829138652169e4ec"
+    },
+    "checkReference.fullCheck": {
+      "stamp": "6849412e9ebe15d2"
+    },
+    "checkReference.grams": {
+      "stamp": "32a06ffb524410f9"
+    },
+    "checkReference.lastChecks": {
+      "stamp": "3c184d25f889e4e5"
+    },
+    "checkReference.lastWeight": {
+      "stamp": "21faf089ce86a576"
+    },
+    "checkReference.noChecks": {
+      "stamp": "0cfafcdcffa50802"
+    },
+    "checkReference.noWeight": {
+      "stamp": "83d210b728cc6f87"
+    },
+    "checkReference.offBody": {
+      "stamp": "58e9a5f78a658870"
+    },
+    "checkReference.offTitle": {
+      "stamp": "e16b56aa379490cd"
+    },
+    "checkReference.somethingToCheck": {
+      "stamp": "334cb9928400c46a"
+    },
+    "checkReference.title": {
+      "stamp": "733970e423e53ec5"
+    },
+    "checkReference.today": {
+      "stamp": "65e7700b50124553"
+    },
+    "checkReference.yesterday": {
+      "stamp": "f32151871285a2b8"
     },
     "clipPlayer.clip": {
       "stamp": "9ab451e992ce4185"
@@ -4287,8 +4449,14 @@
     "dashboard.youHelpHere": {
       "stamp": "b8b0f55d4969f67f"
     },
+    "dashboard.yourBirds": {
+      "stamp": "c316e4480a591556"
+    },
     "dashboard.yourBirdsLower": {
       "stamp": "6afed180f92c7f4e"
+    },
+    "dashboard.yourFlock": {
+      "stamp": "8db1cf5e79a401ab"
     },
     "dbError.alreadyExists": {
       "stamp": "78e0651affa7280c"
@@ -4977,6 +5145,126 @@
     "farewell.yourBird": {
       "stamp": "fb5d7aead9178f25"
     },
+    "flock.badges.count": {
+      "stamp": "03b118be5246719b"
+    },
+    "flock.badges.earned.challengeChamp": {
+      "stamp": "52a242d2b662c845"
+    },
+    "flock.badges.earned.firstSteps": {
+      "stamp": "18b580d1a5d4410b"
+    },
+    "flock.badges.earned.goodNeighbor": {
+      "stamp": "23b85ee6966da625"
+    },
+    "flock.badges.earned.journeyFirst": {
+      "stamp": "bed50e57e5f15ce4"
+    },
+    "flock.badges.earned.journeysMany": {
+      "stamp": "e74494393cedd9f3"
+    },
+    "flock.badges.earned.trickStar": {
+      "stamp": "f09f98b47208ca76"
+    },
+    "flock.badges.earned.voice": {
+      "stamp": "61e3c7f2903cb270"
+    },
+    "flock.badges.earnedLabel": {
+      "stamp": "d9a2758d92a51ed1"
+    },
+    "flock.badges.earnedOn": {
+      "stamp": "08f969fa9f9099c2"
+    },
+    "flock.badges.earnedOnLevel": {
+      "stamp": "3c3498c7864a114c"
+    },
+    "flock.badges.flockSet": {
+      "stamp": "0a85e662a98051a3"
+    },
+    "flock.badges.footer": {
+      "stamp": "84530c17311b84cf"
+    },
+    "flock.badges.gotIt": {
+      "stamp": "dea25a84086025ca"
+    },
+    "flock.badges.how.challengeChamp": {
+      "stamp": "19bc344a1090794a"
+    },
+    "flock.badges.how.firstSteps": {
+      "stamp": "9e90854756ac69ad"
+    },
+    "flock.badges.how.goodNeighbor": {
+      "stamp": "b62a4f8b0b50d9d5"
+    },
+    "flock.badges.how.journeyFinisher": {
+      "stamp": "5ca974106c8f2f02"
+    },
+    "flock.badges.how.trickStar": {
+      "stamp": "f0cc5c01f4a5a08f"
+    },
+    "flock.badges.how.voice": {
+      "stamp": "7307966084afcf4a"
+    },
+    "flock.badges.journeysN": {
+      "stamp": "97cc7a1056af216f"
+    },
+    "flock.badges.launchLabel": {
+      "stamp": "ce1c7a1a05fe6c72"
+    },
+    "flock.badges.launchLine": {
+      "stamp": "e1b44f4424b52db9"
+    },
+    "flock.badges.launchTitle": {
+      "stamp": "82c0da90b19e8a9d"
+    },
+    "flock.badges.loading": {
+      "stamp": "e243841ab5c3008e"
+    },
+    "flock.badges.name.challengeChamp": {
+      "stamp": "15591dbd6083b356"
+    },
+    "flock.badges.name.firstSteps": {
+      "stamp": "50873f0aced531b8"
+    },
+    "flock.badges.name.goodNeighbor": {
+      "stamp": "79f001e05ce1744a"
+    },
+    "flock.badges.name.journeyFinisher": {
+      "stamp": "5e54c7602d87f15d"
+    },
+    "flock.badges.name.trickStar": {
+      "stamp": "188abf1a0527ffd1"
+    },
+    "flock.badges.name.voice": {
+      "stamp": "cad6c72c7a965d89"
+    },
+    "flock.badges.nextLevel": {
+      "stamp": "aea970ce97d02669"
+    },
+    "flock.badges.notNow": {
+      "stamp": "e09226312af9076b"
+    },
+    "flock.badges.oneJourney": {
+      "stamp": "f87a5778997487f5"
+    },
+    "flock.badges.see": {
+      "stamp": "ce729b638b787ca5"
+    },
+    "flock.badges.seeAll": {
+      "stamp": "59b3b0aba63f6172"
+    },
+    "flock.badges.title": {
+      "stamp": "1e3d43e2a1dcdf56"
+    },
+    "flock.badges.toggleError": {
+      "stamp": "7f0dc9b174d432a4"
+    },
+    "flock.badges.toggleHint": {
+      "stamp": "b01bda217ed682b6"
+    },
+    "flock.badges.toggleLabel": {
+      "stamp": "917c8fd81d5043dd"
+    },
     "flock.billing.accessUntil": {
       "stamp": "cf93d5a798f0c777"
     },
@@ -5022,6 +5310,33 @@
     "flock.billing.confirmingTitle": {
       "stamp": "34d2664ddfdcfdab"
     },
+    "flock.billing.crewEverything": {
+      "stamp": "933be792ed0cffd2"
+    },
+    "flock.billing.crewGives": {
+      "stamp": "1912d923cbd3219a"
+    },
+    "flock.billing.crewGivesBack": {
+      "stamp": "f419702c14a57e41"
+    },
+    "flock.billing.crewLine": {
+      "stamp": "a76836ffe7ef3c97"
+    },
+    "flock.billing.crewMonthlyLabel": {
+      "stamp": "0b0e25c9a49982be"
+    },
+    "flock.billing.crewRescue": {
+      "stamp": "053e5804032419a7"
+    },
+    "flock.billing.crewSave": {
+      "stamp": "b7f6d6bf53b2cc9a"
+    },
+    "flock.billing.crewTitle": {
+      "stamp": "e805212d24032e6f"
+    },
+    "flock.billing.crewYearlyLabel": {
+      "stamp": "9caea8910eba87d5"
+    },
     "flock.billing.ends": {
       "stamp": "139d823087f8cd1d"
     },
@@ -5033,6 +5348,9 @@
     },
     "flock.billing.flockMember": {
       "stamp": "ecd48bed39fec7f9"
+    },
+    "flock.billing.flockMembership": {
+      "stamp": "b1988822915bd88d"
     },
     "flock.billing.founding": {
       "stamp": "cde6f061170fbbed"
@@ -5067,6 +5385,9 @@
     "flock.billing.givesBackNote": {
       "stamp": "79057cb7e1b941d3"
     },
+    "flock.billing.givesBackNoteCrew": {
+      "stamp": "617d71023e937d40"
+    },
     "flock.billing.heroAfterLine": {
       "stamp": "9973974cefb5ea04"
     },
@@ -5087,6 +5408,12 @@
     },
     "flock.billing.includes": {
       "stamp": "e9ed736f637b36a7"
+    },
+    "flock.billing.joinCrew": {
+      "stamp": "86d9435a6e46389b"
+    },
+    "flock.billing.joinCrewToday": {
+      "stamp": "5882e1ac73d1429f"
     },
     "flock.billing.joinFlock": {
       "stamp": "874f61e3ee58e788"
@@ -5157,6 +5484,9 @@
     "flock.billing.pickHow": {
       "stamp": "5bffcb9e0d55dfca"
     },
+    "flock.billing.pickMembership": {
+      "stamp": "e159ccc0a8f5397c"
+    },
     "flock.billing.planFounding": {
       "stamp": "48becebe659da444"
     },
@@ -5171,6 +5501,12 @@
     },
     "flock.billing.renewsYearly": {
       "stamp": "470ef197983afd82"
+    },
+    "flock.billing.saveCardNoteCrewMonthly": {
+      "stamp": "fb43470b9e498688"
+    },
+    "flock.billing.saveCardNoteCrewYearly": {
+      "stamp": "ae7a726b7efaefb6"
     },
     "flock.billing.saveCardNoteMonthly": {
       "stamp": "a8922f5e179bc541"
@@ -5199,6 +5535,9 @@
     "flock.billing.thanks": {
       "stamp": "32044e5d1758a5e3"
     },
+    "flock.billing.thanksCrew": {
+      "stamp": "64d50d9276bef95d"
+    },
     "flock.billing.today": {
       "stamp": "65e7700b50124553"
     },
@@ -5225,6 +5564,519 @@
     },
     "flock.billing.yearlyTotal": {
       "stamp": "663485083086f81c"
+    },
+    "flock.bird.missing": {
+      "stamp": "83d6ae1dc32646a5"
+    },
+    "flock.bird.missingTitle": {
+      "stamp": "3f09f4a811cb94db"
+    },
+    "flock.bird.seeProfile": {
+      "stamp": "e0bcde7c72555dcb"
+    },
+    "flock.bird.whose": {
+      "stamp": "fa9f376c552a4416"
+    },
+    "flock.birds.groupAria": {
+      "stamp": "fe8a8bc6a64f1daa"
+    },
+    "flock.birds.none": {
+      "stamp": "ffb447bbe1dacab4"
+    },
+    "flock.block.action": {
+      "stamp": "59d3412166b082d4"
+    },
+    "flock.block.andReport": {
+      "stamp": "2c3e8d0bc355f74b"
+    },
+    "flock.block.confirm": {
+      "stamp": "5db01ee66ef345db"
+    },
+    "flock.block.error": {
+      "stamp": "01ee742d1bc56953"
+    },
+    "flock.block.line": {
+      "stamp": "1ed9489b15ea8987"
+    },
+    "flock.block.reportSend": {
+      "stamp": "7e949d1011e5966e"
+    },
+    "flock.block.reportThanks": {
+      "stamp": "87641f14ad363277"
+    },
+    "flock.block.reportTitle": {
+      "stamp": "2c3e8d0bc355f74b"
+    },
+    "flock.block.thisMember": {
+      "stamp": "41e6150e46734886"
+    },
+    "flock.block.title": {
+      "stamp": "c71f5852e5612f84"
+    },
+    "flock.blocked.confirmLine": {
+      "stamp": "9b2085477303057e"
+    },
+    "flock.blocked.confirmTitle": {
+      "stamp": "9f0c0382b7b54ccd"
+    },
+    "flock.blocked.empty": {
+      "stamp": "3f5d2f834b2b9b68"
+    },
+    "flock.blocked.emptyTitle": {
+      "stamp": "f583aad3d56fde9c"
+    },
+    "flock.blocked.line": {
+      "stamp": "ed4a0b95e5a15096"
+    },
+    "flock.blocked.title": {
+      "stamp": "171b17075c0337b4"
+    },
+    "flock.blocked.unblock": {
+      "stamp": "f01a34d00eb84f83"
+    },
+    "flock.challenges.allPosted": {
+      "stamp": "bc078efbabf651c4"
+    },
+    "flock.challenges.alreadyPosted": {
+      "stamp": "9888894a8d1c63db"
+    },
+    "flock.challenges.closedError": {
+      "stamp": "1a25be390e1db0e2"
+    },
+    "flock.challenges.closedJoin": {
+      "stamp": "43757f0947943ee1"
+    },
+    "flock.challenges.closedLine": {
+      "stamp": "2a89dd848dbd3c9e"
+    },
+    "flock.challenges.closedTag": {
+      "stamp": "e84c70bf84ee98e3"
+    },
+    "flock.challenges.daysLeft": {
+      "stamp": "b335214c43b239b4"
+    },
+    "flock.challenges.doneSr": {
+      "stamp": "0f904774631198fd"
+    },
+    "flock.challenges.entries": {
+      "stamp": "eb7b52525d72ec5a"
+    },
+    "flock.challenges.entryJourney": {
+      "stamp": "5c8b9615bfe97888"
+    },
+    "flock.challenges.entryLabel": {
+      "stamp": "2120e9e9f503e57f"
+    },
+    "flock.challenges.entryPlaceholder": {
+      "stamp": "8bb2cd9a340be1ae"
+    },
+    "flock.challenges.entryPrompt": {
+      "stamp": "3eb48f621dc86815"
+    },
+    "flock.challenges.entryTitle": {
+      "stamp": "17717410f1ff988f"
+    },
+    "flock.challenges.featured": {
+      "stamp": "9c68e39d4f60a0c9"
+    },
+    "flock.challenges.featureOk": {
+      "stamp": "7d93d60e1e8eb8fb"
+    },
+    "flock.challenges.finishedLine": {
+      "stamp": "5f8d8ad735c0ada4"
+    },
+    "flock.challenges.finishedLineNoBird": {
+      "stamp": "8af9997e626ee6a0"
+    },
+    "flock.challenges.finishedTitle": {
+      "stamp": "085af5fa5cc16f15"
+    },
+    "flock.challenges.join": {
+      "stamp": "627c09339bcdd46c"
+    },
+    "flock.challenges.joined": {
+      "stamp": "f482f5171e06b61e"
+    },
+    "flock.challenges.joinError": {
+      "stamp": "456ab4f849700335"
+    },
+    "flock.challenges.joinFirst": {
+      "stamp": "7bf6106430ed520a"
+    },
+    "flock.challenges.joining": {
+      "stamp": "46519b6c7afff570"
+    },
+    "flock.challenges.journeyDone": {
+      "stamp": "bd8987b1e0710f2f"
+    },
+    "flock.challenges.journeyGoing": {
+      "stamp": "33bbae09169d22fd"
+    },
+    "flock.challenges.journeyHow": {
+      "stamp": "405679e5ee612cce"
+    },
+    "flock.challenges.journeyKind": {
+      "stamp": "ab45f73f86f1a2a5"
+    },
+    "flock.challenges.journeyLearned": {
+      "stamp": "c0e99d013258669a"
+    },
+    "flock.challenges.keepGoing": {
+      "stamp": "5507dd17ff95fc22"
+    },
+    "flock.challenges.lastDay": {
+      "stamp": "9dfd4b0da175a7e9"
+    },
+    "flock.challenges.manage": {
+      "stamp": "282b7e20399a3fb7"
+    },
+    "flock.challenges.manageAll": {
+      "stamp": "759954315e7e1d17"
+    },
+    "flock.challenges.missing": {
+      "stamp": "7366b5b7324d7a94"
+    },
+    "flock.challenges.missingTitle": {
+      "stamp": "b5c32a4e8f4c7282"
+    },
+    "flock.challenges.moreAfter": {
+      "stamp": "540c3d6870d9608f"
+    },
+    "flock.challenges.noBirds": {
+      "stamp": "57fa0cc5e2c35344"
+    },
+    "flock.challenges.noEntries": {
+      "stamp": "f6a58d14a2d025b2"
+    },
+    "flock.challenges.noEntriesClosed": {
+      "stamp": "6559297ed7e97999"
+    },
+    "flock.challenges.noEntryTitle": {
+      "stamp": "bfe6a138f2f9eaf2"
+    },
+    "flock.challenges.notStarted": {
+      "stamp": "0929768bc19efdc4"
+    },
+    "flock.challenges.oneDayLeft": {
+      "stamp": "992a36f8b885547b"
+    },
+    "flock.challenges.oneJoined": {
+      "stamp": "62934c39185f246e"
+    },
+    "flock.challenges.oneMore": {
+      "stamp": "dc29a9bee2ce7a85"
+    },
+    "flock.challenges.onePrompt": {
+      "stamp": "9af9ffe49450efee"
+    },
+    "flock.challenges.openJourney": {
+      "stamp": "8d2f034d57968ef3"
+    },
+    "flock.challenges.pinned": {
+      "stamp": "09d88daa01d6f570"
+    },
+    "flock.challenges.postEntry": {
+      "stamp": "4d29ace1661c6a4c"
+    },
+    "flock.challenges.postJourneyEntry": {
+      "stamp": "486c5fce22e3eae0"
+    },
+    "flock.challenges.progress": {
+      "stamp": "59efbd7d6145d298"
+    },
+    "flock.challenges.prompts": {
+      "stamp": "4b1539771e549b34"
+    },
+    "flock.challenges.seeBadges": {
+      "stamp": "ce729b638b787ca5"
+    },
+    "flock.challenges.seeYours": {
+      "stamp": "ce93b310d70185b5"
+    },
+    "flock.challenges.standaloneKind": {
+      "stamp": "17e08a1cf710d989"
+    },
+    "flock.challenges.startJourney": {
+      "stamp": "e6e466b053dab0ae"
+    },
+    "flock.challenges.title": {
+      "stamp": "f06bbeeb9acaa204"
+    },
+    "flock.challenges.whichBird": {
+      "stamp": "0d79b8f34eb8ca17"
+    },
+    "flock.challenges.wrapUp": {
+      "stamp": "81469f0bf4043525"
+    },
+    "flock.challengesAdmin.audienceLabel": {
+      "stamp": "90cd39f39f13f015"
+    },
+    "flock.challengesAdmin.cantSchedule": {
+      "stamp": "88e6005c4e320926"
+    },
+    "flock.challengesAdmin.checkError": {
+      "stamp": "b24557b9ace72471"
+    },
+    "flock.challengesAdmin.closed": {
+      "stamp": "d5672a8ac459f2c5"
+    },
+    "flock.challengesAdmin.counts": {
+      "stamp": "28e0eb68ca21020d"
+    },
+    "flock.challengesAdmin.daysHint": {
+      "stamp": "ea7925544f38796d"
+    },
+    "flock.challengesAdmin.delete": {
+      "stamp": "75fe3682692b9432"
+    },
+    "flock.challengesAdmin.deleteConfirm": {
+      "stamp": "75fe3682692b9432"
+    },
+    "flock.challengesAdmin.deleteConfirmLine": {
+      "stamp": "38dfc59d674aaa9a"
+    },
+    "flock.challengesAdmin.descriptionLabel": {
+      "stamp": "44969e283c39f448"
+    },
+    "flock.challengesAdmin.draft": {
+      "stamp": "8119b6fd7f6a8540"
+    },
+    "flock.challengesAdmin.draftLine": {
+      "stamp": "7e961caa604aff5c"
+    },
+    "flock.challengesAdmin.edit": {
+      "stamp": "a31b1fb0e3912f1b"
+    },
+    "flock.challengesAdmin.empty": {
+      "stamp": "52a30937bb62bd30"
+    },
+    "flock.challengesAdmin.ends": {
+      "stamp": "687040fcb382264a"
+    },
+    "flock.challengesAdmin.entriesHint": {
+      "stamp": "6cd85553b3777274"
+    },
+    "flock.challengesAdmin.entriesLabel": {
+      "stamp": "dd1a57476e3aa4a9"
+    },
+    "flock.challengesAdmin.feature": {
+      "stamp": "cbdc5cfa026ef914"
+    },
+    "flock.challengesAdmin.featuredOn": {
+      "stamp": "577628b30496b088"
+    },
+    "flock.challengesAdmin.journey": {
+      "stamp": "97e41655520de49d"
+    },
+    "flock.challengesAdmin.journeyLine": {
+      "stamp": "8d8f439f867e2276"
+    },
+    "flock.challengesAdmin.keep": {
+      "stamp": "e7157b3479f74680"
+    },
+    "flock.challengesAdmin.kindLabel": {
+      "stamp": "1a4ae3c225cf1ea5"
+    },
+    "flock.challengesAdmin.line": {
+      "stamp": "c0d80b57ea0f5a75"
+    },
+    "flock.challengesAdmin.loadError": {
+      "stamp": "b5a5eeed365f9307"
+    },
+    "flock.challengesAdmin.missing": {
+      "stamp": "ced2006a1ad0f7d0"
+    },
+    "flock.challengesAdmin.missingLine": {
+      "stamp": "d0885c4f75339df3"
+    },
+    "flock.challengesAdmin.needDates": {
+      "stamp": "987f9328169f6ed7"
+    },
+    "flock.challengesAdmin.needDatesFirst": {
+      "stamp": "1ddd99dff32d70ad"
+    },
+    "flock.challengesAdmin.needFuture": {
+      "stamp": "37acc4c5385dcad7"
+    },
+    "flock.challengesAdmin.needPrompts": {
+      "stamp": "637b10067c4afbae"
+    },
+    "flock.challengesAdmin.needShortPrompts": {
+      "stamp": "b33ed2a7598b14eb"
+    },
+    "flock.challengesAdmin.needsPermission": {
+      "stamp": "797e19970bac36ba"
+    },
+    "flock.challengesAdmin.needTemplate": {
+      "stamp": "67c9c010dd697761"
+    },
+    "flock.challengesAdmin.needTitle": {
+      "stamp": "d44e41b9ac63406f"
+    },
+    "flock.challengesAdmin.needTitleFirst": {
+      "stamp": "87317196261f699f"
+    },
+    "flock.challengesAdmin.new": {
+      "stamp": "a1a08ae5623c0fb0"
+    },
+    "flock.challengesAdmin.noFeaturable": {
+      "stamp": "b0d5b0cfce56c62a"
+    },
+    "flock.challengesAdmin.noFood": {
+      "stamp": "3f56fbc75f6a2a9d"
+    },
+    "flock.challengesAdmin.open": {
+      "stamp": "a60b5be2df86455e"
+    },
+    "flock.challengesAdmin.openPage": {
+      "stamp": "893c3ca71ddd87a3"
+    },
+    "flock.challengesAdmin.overlap": {
+      "stamp": "43b72922168f60f9"
+    },
+    "flock.challengesAdmin.pin": {
+      "stamp": "b58cbc37944bb018"
+    },
+    "flock.challengesAdmin.pinnedDone": {
+      "stamp": "6bc249777d9c89dc"
+    },
+    "flock.challengesAdmin.promptsHint": {
+      "stamp": "4eeb11f65a3b733f"
+    },
+    "flock.challengesAdmin.promptsLabel": {
+      "stamp": "d175734280b66bdc"
+    },
+    "flock.challengesAdmin.promptsPlaceholder": {
+      "stamp": "882f126b0b0769a3"
+    },
+    "flock.challengesAdmin.saveChanges": {
+      "stamp": "3dc2f8e8fc14e4eb"
+    },
+    "flock.challengesAdmin.savedDraft": {
+      "stamp": "e55f853d2a32475d"
+    },
+    "flock.challengesAdmin.saveDraft": {
+      "stamp": "1e38e5c890e19b10"
+    },
+    "flock.challengesAdmin.savedScheduled": {
+      "stamp": "fefc50f1ab214625"
+    },
+    "flock.challengesAdmin.saveWrapUp": {
+      "stamp": "0459b05f4aac3f32"
+    },
+    "flock.challengesAdmin.saving": {
+      "stamp": "0b998d1b1ad7ec9e"
+    },
+    "flock.challengesAdmin.schedule": {
+      "stamp": "568da32d84545c84"
+    },
+    "flock.challengesAdmin.scheduledLine": {
+      "stamp": "ed6bf177990de580"
+    },
+    "flock.challengesAdmin.scheduling": {
+      "stamp": "7abca759c1dc8e18"
+    },
+    "flock.challengesAdmin.standalone": {
+      "stamp": "9eb85ccb2d014104"
+    },
+    "flock.challengesAdmin.standaloneLine": {
+      "stamp": "5334eeb10a56c8c2"
+    },
+    "flock.challengesAdmin.started": {
+      "stamp": "a58ffd9eab146bf7"
+    },
+    "flock.challengesAdmin.starts": {
+      "stamp": "707065f42e46590e"
+    },
+    "flock.challengesAdmin.templateHint": {
+      "stamp": "c73fd700b2010a69"
+    },
+    "flock.challengesAdmin.templateLabel": {
+      "stamp": "97e41655520de49d"
+    },
+    "flock.challengesAdmin.title": {
+      "stamp": "877e918439ce19e0"
+    },
+    "flock.challengesAdmin.titleLabel": {
+      "stamp": "6e5ed655dd0033da"
+    },
+    "flock.challengesAdmin.titlePlaceholder": {
+      "stamp": "cbd53198b5ad673a"
+    },
+    "flock.challengesAdmin.unpin": {
+      "stamp": "b13c2c4a625d92cc"
+    },
+    "flock.challengesAdmin.unpinned": {
+      "stamp": "b461b0d21147d715"
+    },
+    "flock.challengesAdmin.unschedule": {
+      "stamp": "20a41f96eade3ffc"
+    },
+    "flock.challengesAdmin.upcoming": {
+      "stamp": "a19906f6e09cc99a"
+    },
+    "flock.challengesAdmin.wholeFlock": {
+      "stamp": "6ffc50f327d3c2de"
+    },
+    "flock.challengesAdmin.wrapUpLabel": {
+      "stamp": "81469f0bf4043525"
+    },
+    "flock.challengesAdmin.wrapUpLater": {
+      "stamp": "759455bebfaa9ff2"
+    },
+    "flock.challengesAdmin.wrapUpPlaceholder": {
+      "stamp": "fed52ba4490dda2c"
+    },
+    "flock.challengesAdmin.wrapUpSaved": {
+      "stamp": "3ca69e1069f255af"
+    },
+    "flock.chapter.empty.events": {
+      "stamp": "c50b3f2e162f0399"
+    },
+    "flock.chapter.empty.eventsTitle": {
+      "stamp": "2ecb7fb6640bbe54"
+    },
+    "flock.chapter.empty.noChapter": {
+      "stamp": "6f2e2df46e729211"
+    },
+    "flock.chapter.empty.noChapterTitle": {
+      "stamp": "5f4e594c8dafc90e"
+    },
+    "flock.chapter.empty.posts": {
+      "stamp": "63f2f037e2ccaebe"
+    },
+    "flock.chapter.empty.postsTitle": {
+      "stamp": "991be710af5e2c76"
+    },
+    "flock.chapter.events": {
+      "stamp": "1bde75b8ef760ee9"
+    },
+    "flock.chapter.members": {
+      "stamp": "8200b6d9c2ce7cbc"
+    },
+    "flock.chapter.noChapterLine": {
+      "stamp": "5f4e594c8dafc90e"
+    },
+    "flock.chapter.pickRegion": {
+      "stamp": "6412d41585d1c146"
+    },
+    "flock.chapter.postPrompt": {
+      "stamp": "9d5b90c1ea804aee"
+    },
+    "flock.chapter.posts": {
+      "stamp": "13658e4579c75fb8"
+    },
+    "flock.chapter.resources": {
+      "stamp": "5a6d388f9bd70d15"
+    },
+    "flock.chapter.seeMembers": {
+      "stamp": "a8c94f3e92bd4671"
+    },
+    "flock.chapter.tabsAria": {
+      "stamp": "d0961bf41d2666bd"
+    },
+    "flock.chapter.title": {
+      "stamp": "43ecfdf216ec4968"
     },
     "flock.chapters.california": {
       "stamp": "a75b6326cd6bd26b"
@@ -5256,6 +6108,282 @@
     "flock.chapters.texas": {
       "stamp": "3d949708f503c424"
     },
+    "flock.edit.bio": {
+      "stamp": "08c7cd261febc012"
+    },
+    "flock.edit.bioCount": {
+      "stamp": "5433be6cecd3580c"
+    },
+    "flock.edit.bioPlaceholder": {
+      "stamp": "55df53c5d76fb081"
+    },
+    "flock.edit.error": {
+      "stamp": "f627e67262d04884"
+    },
+    "flock.edit.name": {
+      "stamp": "be57c4355747cf95"
+    },
+    "flock.edit.nameHint": {
+      "stamp": "b8a1daa4eee21dee"
+    },
+    "flock.edit.photo": {
+      "stamp": "1353378311b6aed1"
+    },
+    "flock.edit.photoError": {
+      "stamp": "bcf099785fa99482"
+    },
+    "flock.edit.photoHint": {
+      "stamp": "d2e38a81ce7d85d9"
+    },
+    "flock.edit.photoPick": {
+      "stamp": "d4b79d5662e02cea"
+    },
+    "flock.edit.photoRemove": {
+      "stamp": "bb3e96aaf42e33bd"
+    },
+    "flock.edit.save": {
+      "stamp": "385fbd02814e7f10"
+    },
+    "flock.edit.title": {
+      "stamp": "acaf920813434c45"
+    },
+    "flock.events.about": {
+      "stamp": "d59b3820f4231a24"
+    },
+    "flock.events.address": {
+      "stamp": "42ac1c084ed97a6d"
+    },
+    "flock.events.addToCalendar": {
+      "stamp": "80bf684555230c84"
+    },
+    "flock.events.cancel": {
+      "stamp": "c60d27a29fefdc96"
+    },
+    "flock.events.cancelConfirm": {
+      "stamp": "c60d27a29fefdc96"
+    },
+    "flock.events.cancelledLine": {
+      "stamp": "6df46453099ed587"
+    },
+    "flock.events.cancelLine": {
+      "stamp": "b862e8630619d128"
+    },
+    "flock.events.cancelNote": {
+      "stamp": "35a06ff409503cb7"
+    },
+    "flock.events.cancelTitle": {
+      "stamp": "fe0503bee2b22f96"
+    },
+    "flock.events.chapterLine": {
+      "stamp": "1f15beab9a79910d"
+    },
+    "flock.events.comingUp": {
+      "stamp": "1fd8b4ac6f292784"
+    },
+    "flock.events.edit": {
+      "stamp": "dc46962c1249053f"
+    },
+    "flock.events.editTitle": {
+      "stamp": "fae18e9ec28cd66f"
+    },
+    "flock.events.full": {
+      "stamp": "8ed055397a340f3a"
+    },
+    "flock.events.goersOne": {
+      "stamp": "1c8c3d80a36994ae"
+    },
+    "flock.events.goersOthers_one": {
+      "stamp": "90c01b4d0852c717"
+    },
+    "flock.events.goersOthers_other": {
+      "stamp": "2d46be8191c3f384"
+    },
+    "flock.events.goersTwo": {
+      "stamp": "8d140c378c43ff52"
+    },
+    "flock.events.going_one": {
+      "stamp": "653ca8df6cfcf2ff"
+    },
+    "flock.events.going_other": {
+      "stamp": "653ca8df6cfcf2ff"
+    },
+    "flock.events.goingHint": {
+      "stamp": "f4af05264c8524d0"
+    },
+    "flock.events.hosted": {
+      "stamp": "e3841f8e7cc77cdc"
+    },
+    "flock.events.hostedLead": {
+      "stamp": "bf1e2eb67a7ac34e"
+    },
+    "flock.events.iHost": {
+      "stamp": "c458f7389140b402"
+    },
+    "flock.events.imGoing": {
+      "stamp": "8c5e6c661f3b1d2e"
+    },
+    "flock.events.inPerson": {
+      "stamp": "3e0f8e6454431c9f"
+    },
+    "flock.events.join": {
+      "stamp": "c418b390492dad1c"
+    },
+    "flock.events.kindLabel": {
+      "stamp": "ecda1b6bd7f7b891"
+    },
+    "flock.events.kindMeetup": {
+      "stamp": "c2e4ce59dc6d4904"
+    },
+    "flock.events.kindVolunteer": {
+      "stamp": "f6813def913cb237"
+    },
+    "flock.events.link": {
+      "stamp": "710a4d28b4cce3ce"
+    },
+    "flock.events.linkHint": {
+      "stamp": "060e2ca8bb620f0e"
+    },
+    "flock.events.linkLater": {
+      "stamp": "f78e5ec49caa5752"
+    },
+    "flock.events.locked_one": {
+      "stamp": "1dba1f10fdbbdadf"
+    },
+    "flock.events.locked_other": {
+      "stamp": "1dba1f10fdbbdadf"
+    },
+    "flock.events.maybe": {
+      "stamp": "3bd1b787068f025b"
+    },
+    "flock.events.missing": {
+      "stamp": "8b5fe48bcefbdc83"
+    },
+    "flock.events.missingTitle": {
+      "stamp": "8ad1f01d898e11c2"
+    },
+    "flock.events.modeLabel": {
+      "stamp": "5fa34fd26be99307"
+    },
+    "flock.events.new": {
+      "stamp": "ea1f84e94bb74715"
+    },
+    "flock.events.online": {
+      "stamp": "8bbc1291bccbbe85"
+    },
+    "flock.events.past": {
+      "stamp": "6c641189f8d16e32"
+    },
+    "flock.events.pastTime": {
+      "stamp": "880332f71ded3107"
+    },
+    "flock.events.photo": {
+      "stamp": "bc3fa4206acaa8d8"
+    },
+    "flock.events.reminderLine": {
+      "stamp": "22b15a151eef6599"
+    },
+    "flock.events.reviewHint": {
+      "stamp": "62318e60a7c87373"
+    },
+    "flock.events.rsvpError": {
+      "stamp": "304a3ee7cd2706e1"
+    },
+    "flock.events.safety": {
+      "stamp": "1220cb82680009d4"
+    },
+    "flock.events.save": {
+      "stamp": "8bb15c22c84e1ce9"
+    },
+    "flock.events.saveError": {
+      "stamp": "58216175e8161af6"
+    },
+    "flock.events.send": {
+      "stamp": "0076db469bcaf85b"
+    },
+    "flock.events.spotLimit": {
+      "stamp": "c7b9ea91aa8e8a5f"
+    },
+    "flock.events.spots": {
+      "stamp": "46078be2f2026bba"
+    },
+    "flock.events.status.cancelled": {
+      "stamp": "bc86f4ba30b9943e"
+    },
+    "flock.events.status.changes": {
+      "stamp": "4ec5bc80a16de034"
+    },
+    "flock.events.status.declined": {
+      "stamp": "a8fb47a46295a177"
+    },
+    "flock.events.status.pending": {
+      "stamp": "1734ecf2659213eb"
+    },
+    "flock.events.suggest": {
+      "stamp": "41ce8a292412c543"
+    },
+    "flock.events.until": {
+      "stamp": "49e2610a8ea2a978"
+    },
+    "flock.events.went_one": {
+      "stamp": "36106baeb0b03ad4"
+    },
+    "flock.events.went_other": {
+      "stamp": "36106baeb0b03ad4"
+    },
+    "flock.events.what": {
+      "stamp": "11224151bc87ff22"
+    },
+    "flock.events.when": {
+      "stamp": "36d837f9b7726bfe"
+    },
+    "flock.events.where": {
+      "stamp": "8bdd04fe24870754"
+    },
+    "flock.events.wherePlaceholder": {
+      "stamp": "6e6a60aa8ac616c4"
+    },
+    "flock.founders.badgeLink": {
+      "stamp": "27238ccdc35ee27e"
+    },
+    "flock.founders.empty": {
+      "stamp": "6aae72d20a0b0de1"
+    },
+    "flock.founders.emptyTitle": {
+      "stamp": "a43c574eca832759"
+    },
+    "flock.founders.footer": {
+      "stamp": "0b5786d4e3d30130"
+    },
+    "flock.founders.line": {
+      "stamp": "1b05ccf60d646f61"
+    },
+    "flock.founders.loading": {
+      "stamp": "185be7554a3065ae"
+    },
+    "flock.founders.meet": {
+      "stamp": "a7f3f71fb20db28f"
+    },
+    "flock.founders.see": {
+      "stamp": "c65b14b3fa18ac9d"
+    },
+    "flock.founders.spotAria": {
+      "stamp": "a8bf62ea19fe7ebb"
+    },
+    "flock.founders.title": {
+      "stamp": "75b19fbaed0598d4"
+    },
+    "flock.founders.toggleError": {
+      "stamp": "7f0dc9b174d432a4"
+    },
+    "flock.founders.toggleHint": {
+      "stamp": "d3059b5f166e4c07"
+    },
+    "flock.founders.toggleLabel": {
+      "stamp": "f2d627cf3dbca45b"
+    },
+    "flock.founders.toggleTitle": {
+      "stamp": "df7f09f36005bac2"
+    },
     "flock.guidelines.birds": {
       "stamp": "951c3a011fa90992"
     },
@@ -5283,6 +6411,9 @@
     "flock.guidelines.kindTitle": {
       "stamp": "87cc78f60db86214"
     },
+    "flock.guidelines.line": {
+      "stamp": "7f7a06f2ee90243d"
+    },
     "flock.guidelines.meetups": {
       "stamp": "f0f986d6de1d73bf"
     },
@@ -5309,6 +6440,180 @@
     },
     "flock.guidelines.yoursTitle": {
       "stamp": "e5ca3f1670b4f375"
+    },
+    "flock.idea.addPhoto": {
+      "stamp": "bc3fa4206acaa8d8"
+    },
+    "flock.idea.cat.conservation": {
+      "stamp": "b88f42c9e3d4ebdb"
+    },
+    "flock.idea.cat.didYouKnow": {
+      "stamp": "7e5f72818c48204b"
+    },
+    "flock.idea.cat.enrichment": {
+      "stamp": "8bf1d156ec4248f5"
+    },
+    "flock.idea.cat.project": {
+      "stamp": "b0b3fd197263315e"
+    },
+    "flock.idea.cat.training": {
+      "stamp": "af6c90ba8b0dbcba"
+    },
+    "flock.idea.curious": {
+      "stamp": "61af22528047cae7"
+    },
+    "flock.idea.howDid": {
+      "stamp": "6ba2e3a28b3c62c6"
+    },
+    "flock.idea.howDidAria": {
+      "stamp": "0049b7d7d1dab207"
+    },
+    "flock.idea.label": {
+      "stamp": "e0bfad008b37e3ab"
+    },
+    "flock.idea.labelShort": {
+      "stamp": "c33726167f97155e"
+    },
+    "flock.idea.loved": {
+      "stamp": "5d0da9a5c106278f"
+    },
+    "flock.idea.lovedPct": {
+      "stamp": "fff181db5b23b2e0"
+    },
+    "flock.idea.none": {
+      "stamp": "239017161fe738b5"
+    },
+    "flock.idea.noneTitle": {
+      "stamp": "4e4b237a2b22d790"
+    },
+    "flock.idea.notForHer": {
+      "stamp": "f30cf43be72fdc48"
+    },
+    "flock.idea.notForHim": {
+      "stamp": "566babac1c7fa265"
+    },
+    "flock.idea.notForThem": {
+      "stamp": "6994d840f03dc553"
+    },
+    "flock.idea.popular": {
+      "stamp": "8025f788d0051ecb"
+    },
+    "flock.idea.save": {
+      "stamp": "dc25a677fdf6aa45"
+    },
+    "flock.idea.saveError": {
+      "stamp": "304a3ee7cd2706e1"
+    },
+    "flock.idea.saving": {
+      "stamp": "0b998d1b1ad7ec9e"
+    },
+    "flock.idea.seeHow": {
+      "stamp": "6c9d798a115b9205"
+    },
+    "flock.idea.tallySoon": {
+      "stamp": "55a31f1a99330f63"
+    },
+    "flock.idea.title": {
+      "stamp": "c33726167f97155e"
+    },
+    "flock.idea.tried_one": {
+      "stamp": "20b1594e54dc7531"
+    },
+    "flock.idea.tried_other": {
+      "stamp": "9ec593d71c71c188"
+    },
+    "flock.idea.weTried": {
+      "stamp": "0220e82606effb1c"
+    },
+    "flock.idea.whichBird": {
+      "stamp": "e11520890b89d221"
+    },
+    "flock.idea.yourAnswer": {
+      "stamp": "44c4a1ae5eda0f41"
+    },
+    "flock.idea.youTried": {
+      "stamp": "43d8642b8537369a"
+    },
+    "flock.ideasAdmin.adminOnly": {
+      "stamp": "bb286ba5684324d5"
+    },
+    "flock.ideasAdmin.bodyLabel": {
+      "stamp": "fe4ee53b525aae5a"
+    },
+    "flock.ideasAdmin.category": {
+      "stamp": "bd654342811d6a4e"
+    },
+    "flock.ideasAdmin.day": {
+      "stamp": "d3234f936e818a35"
+    },
+    "flock.ideasAdmin.dayTaken": {
+      "stamp": "64d36f1800315008"
+    },
+    "flock.ideasAdmin.delete": {
+      "stamp": "1819160a14ee357c"
+    },
+    "flock.ideasAdmin.draft": {
+      "stamp": "8119b6fd7f6a8540"
+    },
+    "flock.ideasAdmin.earlier": {
+      "stamp": "aeb913e1214ac75d"
+    },
+    "flock.ideasAdmin.edit": {
+      "stamp": "a23dcca370ccd5fc"
+    },
+    "flock.ideasAdmin.empty": {
+      "stamp": "c4122bfd68254a50"
+    },
+    "flock.ideasAdmin.favorite": {
+      "stamp": "f9f9e5bfa18de965"
+    },
+    "flock.ideasAdmin.favoriteLabel": {
+      "stamp": "4606e81be6155651"
+    },
+    "flock.ideasAdmin.help": {
+      "stamp": "e228a6d632ba03a7"
+    },
+    "flock.ideasAdmin.later": {
+      "stamp": "204721eb2132ecb1"
+    },
+    "flock.ideasAdmin.line": {
+      "stamp": "63cb1c9ffcd650fd"
+    },
+    "flock.ideasAdmin.new": {
+      "stamp": "582b1dbf32e18840"
+    },
+    "flock.ideasAdmin.noDay": {
+      "stamp": "1d69a972894c8d43"
+    },
+    "flock.ideasAdmin.noFavorite": {
+      "stamp": "090bff28e2e403af"
+    },
+    "flock.ideasAdmin.notScheduled": {
+      "stamp": "a10836820e2337a9"
+    },
+    "flock.ideasAdmin.photo": {
+      "stamp": "bc3fa4206acaa8d8"
+    },
+    "flock.ideasAdmin.photoAdded": {
+      "stamp": "b5fe8e3998b34542"
+    },
+    "flock.ideasAdmin.ready": {
+      "stamp": "febf31ddd8bcb7b1"
+    },
+    "flock.ideasAdmin.reuses": {
+      "stamp": "408a1ed145afe9e9"
+    },
+    "flock.ideasAdmin.save": {
+      "stamp": "a0fd9498ca9d9f53"
+    },
+    "flock.ideasAdmin.statusLabel": {
+      "stamp": "d94324f235af5cf2"
+    },
+    "flock.ideasAdmin.title": {
+      "stamp": "48b7126344136440"
+    },
+    "flock.ideasAdmin.titleLabel": {
+      "stamp": "6e5ed655dd0033da"
     },
     "flock.join.adult": {
       "stamp": "2eb92243c0818e86"
@@ -5400,8 +6705,200 @@
     "flock.join.waitingTitle": {
       "stamp": "59585bd637a0bab7"
     },
+    "flock.journeys.basics": {
+      "stamp": "6c0a132464dc486c"
+    },
+    "flock.journeys.card.day": {
+      "stamp": "88fc5279acfa3102"
+    },
+    "flock.journeys.card.following_one": {
+      "stamp": "097b115af6d31aef"
+    },
+    "flock.journeys.card.following_other": {
+      "stamp": "097b115af6d31aef"
+    },
+    "flock.journeys.card.happy": {
+      "stamp": "072f8461dd1ca4f2"
+    },
+    "flock.journeys.card.learned_one": {
+      "stamp": "48065c3dbcade3c7"
+    },
+    "flock.journeys.card.learned_other": {
+      "stamp": "7e5c53081d2de404"
+    },
+    "flock.journeys.card.learnedPill": {
+      "stamp": "c0e99d013258669a"
+    },
+    "flock.journeys.clip.failed": {
+      "stamp": "64eb7eb4e82f53a9"
+    },
+    "flock.journeys.clip.failedShort": {
+      "stamp": "5f9790560f1fc528"
+    },
+    "flock.journeys.clip.loading": {
+      "stamp": "41ee80e52734cbed"
+    },
+    "flock.journeys.clip.processing": {
+      "stamp": "0956200e04589e84"
+    },
+    "flock.journeys.clip.processingShort": {
+      "stamp": "7e41538448e23a12"
+    },
+    "flock.journeys.clip.retry": {
+      "stamp": "5c0ecee5e225e041"
+    },
+    "flock.journeys.clip.stalled": {
+      "stamp": "05774eaae34b23b9"
+    },
+    "flock.journeys.compare.dayOne": {
+      "stamp": "5a869818ea1a5c7c"
+    },
+    "flock.journeys.compare.on": {
+      "stamp": "a1f8259ad78329f9"
+    },
+    "flock.journeys.compare.pick": {
+      "stamp": "ed10c0f2e6693541"
+    },
+    "flock.journeys.compare.pickLeft": {
+      "stamp": "c136a463a0987ce9"
+    },
+    "flock.journeys.compare.pickRight": {
+      "stamp": "41d2e2ab857d63e7"
+    },
+    "flock.journeys.compare.playBoth": {
+      "stamp": "f9f297fe8502809a"
+    },
+    "flock.journeys.compare.slow": {
+      "stamp": "e10920062b7b2a6f"
+    },
+    "flock.journeys.compare.summaryDays": {
+      "stamp": "d0e708e1a3462375"
+    },
+    "flock.journeys.compare.summaryMoments_one": {
+      "stamp": "3a1abc0dbb9c5079"
+    },
+    "flock.journeys.compare.summaryMoments_other": {
+      "stamp": "1ac83ec91479657c"
+    },
+    "flock.journeys.compare.title": {
+      "stamp": "47a70a1ec606e22c"
+    },
+    "flock.journeys.customLimit.line": {
+      "stamp": "498ee6c990d302d5"
+    },
+    "flock.journeys.customLimit.ok": {
+      "stamp": "dea25a84086025ca"
+    },
+    "flock.journeys.customLimit.title": {
+      "stamp": "18beaeaaad513606"
+    },
+    "flock.journeys.dayShort": {
+      "stamp": "d3234f936e818a35"
+    },
+    "flock.journeys.diet.disclaimer": {
+      "stamp": "225e0f344b93ca92"
+    },
+    "flock.journeys.diet.eclectus": {
+      "stamp": "9a47aabcea52ccae"
+    },
+    "flock.journeys.diet.findVet": {
+      "stamp": "ba3bc9ce291ef0ac"
+    },
+    "flock.journeys.diet.howTo": {
+      "stamp": "5b96813a8302f54a"
+    },
+    "flock.journeys.diet.nectar": {
+      "stamp": "6d0f8832d33733de"
+    },
+    "flock.journeys.diet.reminder": {
+      "stamp": "0565283866a1dcc1"
+    },
+    "flock.journeys.diet.reminderLater": {
+      "stamp": "26b217c78f08b6fe"
+    },
+    "flock.journeys.diet.reminderYes": {
+      "stamp": "3d2d45352e3cc56b"
+    },
+    "flock.journeys.diet.talked": {
+      "stamp": "0a49f0198862a813"
+    },
+    "flock.journeys.diet.vetBody": {
+      "stamp": "e2595c1b5a56b32e"
+    },
+    "flock.journeys.diet.vetTitle": {
+      "stamp": "e7aff773720fe6b4"
+    },
+    "flock.journeys.diet.willCall": {
+      "stamp": "692242fbbe6818e7"
+    },
+    "flock.journeys.diet.young": {
+      "stamp": "c56327df011e7d09"
+    },
+    "flock.journeys.empty.basics": {
+      "stamp": "0adb389059a786b9"
+    },
+    "flock.journeys.empty.basicsTitle": {
+      "stamp": "2a3c4fcbd350ff8c"
+    },
+    "flock.journeys.empty.followingTitle": {
+      "stamp": "3f38935eed706dad"
+    },
+    "flock.journeys.empty.followingUpdates": {
+      "stamp": "a7ad46cf4b814b9f"
+    },
+    "flock.journeys.empty.forYouSkills": {
+      "stamp": "7768f20a63b02501"
+    },
+    "flock.journeys.empty.forYouTitle": {
+      "stamp": "bfe984d981c445c7"
+    },
+    "flock.journeys.empty.tricks": {
+      "stamp": "0eca368bf0043432"
+    },
+    "flock.journeys.empty.tricksTitle": {
+      "stamp": "4333c0d084946b1e"
+    },
+    "flock.journeys.filterAria": {
+      "stamp": "f7f3aaf81f83795d"
+    },
+    "flock.journeys.finished.another": {
+      "stamp": "a97abf3590d22356"
+    },
+    "flock.journeys.finished.dietTitle": {
+      "stamp": "52509bb3ae184fb1"
+    },
+    "flock.journeys.finished.done": {
+      "stamp": "3e00dbef8dddb12e"
+    },
+    "flock.journeys.finished.error": {
+      "stamp": "9f13d034dd701c4b"
+    },
+    "flock.journeys.finished.eyebrow_one": {
+      "stamp": "692517d5885b4ba0"
+    },
+    "flock.journeys.finished.eyebrow_other": {
+      "stamp": "b382f7f40026b6d3"
+    },
+    "flock.journeys.finished.learnedTitle": {
+      "stamp": "e95f0a70cf319378"
+    },
+    "flock.journeys.finished.line": {
+      "stamp": "8c50dc69987f314e"
+    },
+    "flock.journeys.finished.tipHint": {
+      "stamp": "dbc47f577c30ede8"
+    },
+    "flock.journeys.finished.tipQ": {
+      "stamp": "741743c61f8f0146"
+    },
     "flock.journeys.flockOnly.about": {
       "stamp": "72522599d1d84b61"
+    },
+    "flock.journeys.flockOnly.aboutCommunity": {
+      "stamp": "67a26296c63da24a"
+    },
+    "flock.journeys.flockOnly.askLine": {
+      "stamp": "7764ab3aa7f27e65"
     },
     "flock.journeys.flockOnly.eyebrow": {
       "stamp": "24075790246cf679"
@@ -5409,11 +6906,1883 @@
     "flock.journeys.flockOnly.free": {
       "stamp": "f37b440e1535dadb"
     },
+    "flock.journeys.flockOnly.howOthersLine": {
+      "stamp": "c4baf7a531097f0c"
+    },
+    "flock.journeys.flockOnly.howOthersLineNoSkill": {
+      "stamp": "7cf613561846d90a"
+    },
+    "flock.journeys.flockOnly.join": {
+      "stamp": "ffd006c9926cec7e"
+    },
+    "flock.journeys.flockOnly.title.ask": {
+      "stamp": "f35016520ea5dd87"
+    },
+    "flock.journeys.flockOnly.title.howOthers": {
+      "stamp": "e446fb665507d439"
+    },
+    "flock.journeys.following": {
+      "stamp": "0f916e367d15936c"
+    },
+    "flock.journeys.forYou": {
+      "stamp": "68771c04e1a80b23"
+    },
+    "flock.journeys.fromFlock": {
+      "stamp": "9638161523453708"
+    },
+    "flock.journeys.known.error": {
+      "stamp": "9f13d034dd701c4b"
+    },
+    "flock.journeys.known.lineHe": {
+      "stamp": "11d6453e75a5b9c1"
+    },
+    "flock.journeys.known.lineShe": {
+      "stamp": "a5b239e5ec533c55"
+    },
+    "flock.journeys.known.lineThey": {
+      "stamp": "921968c7687f21a4"
+    },
+    "flock.journeys.known.save_one": {
+      "stamp": "25da87fac84d0514"
+    },
+    "flock.journeys.known.save_other": {
+      "stamp": "e06fdd40f5b76ce6"
+    },
+    "flock.journeys.known.title": {
+      "stamp": "3131764cc11d7cae"
+    },
+    "flock.journeys.limit.compare": {
+      "stamp": "cf447f0e56611008"
+    },
+    "flock.journeys.limit.line": {
+      "stamp": "16c1f47b272546cd"
+    },
+    "flock.journeys.limit.reached": {
+      "stamp": "9b0872c695d07a4c"
+    },
+    "flock.journeys.limit.title_one": {
+      "stamp": "d04f922741e5f463"
+    },
+    "flock.journeys.limit.title_other": {
+      "stamp": "d3f6119559c4fb7a"
+    },
+    "flock.journeys.member.fromJourney": {
+      "stamp": "6665d8b3ffe6f392"
+    },
+    "flock.journeys.member.gone": {
+      "stamp": "f245db725795b4b8"
+    },
+    "flock.journeys.member.goneTitle": {
+      "stamp": "9184f877a7b4fcd9"
+    },
+    "flock.journeys.member.label": {
+      "stamp": "532f51502da21a35"
+    },
+    "flock.journeys.member.line": {
+      "stamp": "0ef87d150b3a2e92"
+    },
+    "flock.journeys.member.locked": {
+      "stamp": "79c22a8df3ce2a8f"
+    },
+    "flock.journeys.member.noMatch": {
+      "stamp": "24fe9d7a20cc40dc"
+    },
+    "flock.journeys.member.none": {
+      "stamp": "278d92be0dca0591"
+    },
+    "flock.journeys.member.search": {
+      "stamp": "89aaa1539b4b9b31"
+    },
+    "flock.journeys.member.searchPlaceholder": {
+      "stamp": "54c33cf8aa28133c"
+    },
+    "flock.journeys.member.seeJourney": {
+      "stamp": "126940fb7cd6df96"
+    },
+    "flock.journeys.member.start": {
+      "stamp": "909d5a7a782b98f6"
+    },
+    "flock.journeys.member.startedFrom": {
+      "stamp": "ea915927e0585b47"
+    },
+    "flock.journeys.member.title": {
+      "stamp": "ab854cca8d43b3ab"
+    },
+    "flock.journeys.menu.delete": {
+      "stamp": "e56b368367451d2c"
+    },
+    "flock.journeys.menu.deleteConfirm": {
+      "stamp": "e56b368367451d2c"
+    },
+    "flock.journeys.menu.deleteLine": {
+      "stamp": "85b5a882e4dee312"
+    },
+    "flock.journeys.menu.deleteLineClips_one": {
+      "stamp": "b29e84fb9c805a7b"
+    },
+    "flock.journeys.menu.deleteLineClips_other": {
+      "stamp": "27e31e9f6f562d03"
+    },
+    "flock.journeys.menu.deleteTitle": {
+      "stamp": "44c5483d8271b4b5"
+    },
+    "flock.journeys.menu.happy": {
+      "stamp": "9abc1db3c8f5f094"
+    },
+    "flock.journeys.menu.happyLine": {
+      "stamp": "b126e11cdd305fcb"
+    },
+    "flock.journeys.menu.keep": {
+      "stamp": "e7157b3479f74680"
+    },
+    "flock.journeys.menu.pause": {
+      "stamp": "288cb9932508e20c"
+    },
+    "flock.journeys.menu.pauseLine": {
+      "stamp": "47e1a108321cef10"
+    },
+    "flock.journeys.menu.resume": {
+      "stamp": "237abbe805e898bf"
+    },
+    "flock.journeys.menu.resumeLine": {
+      "stamp": "0cf0ab6bd7072dc7"
+    },
+    "flock.journeys.menu.who": {
+      "stamp": "543bef1f353b1041"
+    },
+    "flock.journeys.menu.whoLine": {
+      "stamp": "934fc42b182e4a8b"
+    },
+    "flock.journeys.page.compare": {
+      "stamp": "47a70a1ec606e22c"
+    },
+    "flock.journeys.page.deleteError": {
+      "stamp": "b5136729f09dd24e"
+    },
+    "flock.journeys.page.error": {
+      "stamp": "9f13d034dd701c4b"
+    },
+    "flock.journeys.page.follow": {
+      "stamp": "a4ee011dd6ed7817"
+    },
+    "flock.journeys.page.following": {
+      "stamp": "0f916e367d15936c"
+    },
+    "flock.journeys.page.learnedIt": {
+      "stamp": "df852787dcf0e2c8"
+    },
+    "flock.journeys.page.learnedLine": {
+      "stamp": "2161185a5196ffda"
+    },
+    "flock.journeys.page.learnedYes": {
+      "stamp": "380849de111cf05d"
+    },
+    "flock.journeys.page.line_one": {
+      "stamp": "46c8354a847e3a86"
+    },
+    "flock.journeys.page.line_other": {
+      "stamp": "46c8354a847e3a86"
+    },
+    "flock.journeys.page.menu": {
+      "stamp": "207b70f5c98fd047"
+    },
+    "flock.journeys.page.missing": {
+      "stamp": "815cffd7e97ddb9c"
+    },
+    "flock.journeys.page.missingTitle": {
+      "stamp": "58ea87e01574597e"
+    },
+    "flock.journeys.page.noClips": {
+      "stamp": "284084c8ab68e1f6"
+    },
+    "flock.journeys.page.notYet": {
+      "stamp": "02d6f1a346f6bfe1"
+    },
+    "flock.journeys.page.onNewDiet": {
+      "stamp": "52509bb3ae184fb1"
+    },
+    "flock.journeys.page.onNewDietLine": {
+      "stamp": "f7dd84ef00e89527"
+    },
+    "flock.journeys.page.paused": {
+      "stamp": "b071957d345636d2"
+    },
+    "flock.journeys.page.post": {
+      "stamp": "ca1008dd93dba0cf"
+    },
+    "flock.journeys.post.allIn": {
+      "stamp": "f0d37748a8624bee"
+    },
+    "flock.journeys.post.askCommunity": {
+      "stamp": "1c6409cebed1ce2b"
+    },
+    "flock.journeys.post.askFlock": {
+      "stamp": "f35016520ea5dd87"
+    },
+    "flock.journeys.post.askPrivate": {
+      "stamp": "5c42a63a1efc51e7"
+    },
+    "flock.journeys.post.backToJourney": {
+      "stamp": "df4668bdfb8f34a6"
+    },
+    "flock.journeys.post.bigMoment": {
+      "stamp": "7268d163d7cdf821"
+    },
+    "flock.journeys.post.bigMomentDone": {
+      "stamp": "ec8632d710ea922b"
+    },
+    "flock.journeys.post.bigMomentHint": {
+      "stamp": "f6a63b2f46d7343d"
+    },
+    "flock.journeys.post.close": {
+      "stamp": "d981ee660d866d8c"
+    },
+    "flock.journeys.post.distracted": {
+      "stamp": "684d82ec2471126b"
+    },
+    "flock.journeys.post.error": {
+      "stamp": "0e914617e0c6e760"
+    },
+    "flock.journeys.post.howInto": {
+      "stamp": "c258fe763c1dffa7"
+    },
+    "flock.journeys.post.notActive": {
+      "stamp": "a4cd5bc074ac68ea"
+    },
+    "flock.journeys.post.notToday": {
+      "stamp": "b3d390e2b11e8ff7"
+    },
+    "flock.journeys.post.post": {
+      "stamp": "686d2458ba7e9a38"
+    },
+    "flock.journeys.post.posted": {
+      "stamp": "24eaaa8bec1072e2"
+    },
+    "flock.journeys.post.posting": {
+      "stamp": "66bb6c205597a2b8"
+    },
+    "flock.journeys.post.preview": {
+      "stamp": "a4b0684bf7e34590"
+    },
+    "flock.journeys.post.retake": {
+      "stamp": "7025fe9c7bfa14b4"
+    },
+    "flock.journeys.post.say": {
+      "stamp": "53127d64b44a2e87"
+    },
+    "flock.journeys.post.sayHint": {
+      "stamp": "63935347ad9e0b97"
+    },
+    "flock.journeys.post.tipEyebrow": {
+      "stamp": "ac0bef6d07fb5152"
+    },
+    "flock.journeys.post.title": {
+      "stamp": "ca1008dd93dba0cf"
+    },
+    "flock.journeys.post.toCommunity": {
+      "stamp": "2273d1e5b4925208"
+    },
+    "flock.journeys.post.toJustMe": {
+      "stamp": "a57a91dfe3d3068a"
+    },
+    "flock.journeys.post.toLead": {
+      "stamp": "5ee863a9420bec0e"
+    },
+    "flock.journeys.post.trim": {
+      "stamp": "af1ae91b66b56a4a"
+    },
+    "flock.journeys.react.beenThere": {
+      "stamp": "c79852aa51f211c0"
+    },
+    "flock.journeys.react.greatJob": {
+      "stamp": "b0d67ed32097eb6f"
+    },
+    "flock.journeys.react.love": {
+      "stamp": "9c57e021ed2b47e2"
+    },
+    "flock.journeys.react.rooting": {
+      "stamp": "ca901043c1c11664"
+    },
+    "flock.journeys.rhythm.fewTimes": {
+      "stamp": "e1c7d4178f99889b"
+    },
+    "flock.journeys.rhythm.mostDays": {
+      "stamp": "9399a0e3be9bb8e1"
+    },
+    "flock.journeys.rhythm.weekends": {
+      "stamp": "546fd733771f3e12"
+    },
+    "flock.journeys.setup.community": {
+      "stamp": "8fcafeadbfcdbc1a"
+    },
+    "flock.journeys.setup.cta": {
+      "stamp": "3bff7d7fa6e61449"
+    },
+    "flock.journeys.setup.descriptionCount": {
+      "stamp": "3373e530aa3938c1"
+    },
+    "flock.journeys.setup.descriptionLabel": {
+      "stamp": "d31de0d18eddab44"
+    },
+    "flock.journeys.setup.descriptionPlaceholder": {
+      "stamp": "714e1330881b5b66"
+    },
+    "flock.journeys.setup.errGoing": {
+      "stamp": "30a0f933fc5ad506"
+    },
+    "flock.journeys.setup.errNectar": {
+      "stamp": "6700c70327eb1887"
+    },
+    "flock.journeys.setup.error": {
+      "stamp": "5e3f95cc170e8eed"
+    },
+    "flock.journeys.setup.errShare": {
+      "stamp": "b2dee8323435f433"
+    },
+    "flock.journeys.setup.forBird": {
+      "stamp": "b17363be843a6fcc"
+    },
+    "flock.journeys.setup.justMe": {
+      "stamp": "e121696f5c2f54f2"
+    },
+    "flock.journeys.setup.nameLabel": {
+      "stamp": "46cd83476ba84876"
+    },
+    "flock.journeys.setup.namePlaceholder": {
+      "stamp": "9956714372ae864f"
+    },
+    "flock.journeys.setup.optional": {
+      "stamp": "e301f0fddfd8d6a1"
+    },
+    "flock.journeys.setup.rhythm": {
+      "stamp": "59735511c519edcd"
+    },
+    "flock.journeys.setup.safeguards": {
+      "stamp": "a291145d805c2d11"
+    },
+    "flock.journeys.setup.safety": {
+      "stamp": "dcd373c2c2ab0583"
+    },
+    "flock.journeys.setup.setUp": {
+      "stamp": "6d5f8b208c6e42cd"
+    },
+    "flock.journeys.setup.shareNote": {
+      "stamp": "e50e27c5cd9be21d"
+    },
+    "flock.journeys.setup.suggestion": {
+      "stamp": "a09d56aeeb43d011"
+    },
+    "flock.journeys.setup.useSuggestion": {
+      "stamp": "2a2b8c814933c7e9"
+    },
+    "flock.journeys.setup.who": {
+      "stamp": "1b0f81c14d0d3522"
+    },
+    "flock.journeys.shareCard.addMe": {
+      "stamp": "993c6b98bbcc836e"
+    },
+    "flock.journeys.shareCard.compareEyebrowFinished": {
+      "stamp": "6b5ea78753512804"
+    },
+    "flock.journeys.shareCard.compareTitle": {
+      "stamp": "10c6c123950513af"
+    },
+    "flock.journeys.shareCard.compareTitleNoName": {
+      "stamp": "73c28ac3c3d65de7"
+    },
+    "flock.journeys.shareCard.failed": {
+      "stamp": "2f35ad529c933228"
+    },
+    "flock.journeys.shareCard.finishedEyebrow": {
+      "stamp": "e5f72b65fa684f22"
+    },
+    "flock.journeys.shareCard.finishedOn": {
+      "stamp": "1afd50f8e9f56766"
+    },
+    "flock.journeys.shareCard.finishedTitle": {
+      "stamp": "a0f8332c1d42c73c"
+    },
+    "flock.journeys.shareCard.finishedTitleNoName": {
+      "stamp": "3b80b695011cfc4b"
+    },
+    "flock.journeys.shareCard.from": {
+      "stamp": "397f441ce87d391d"
+    },
+    "flock.journeys.shareCard.make": {
+      "stamp": "ccaf94978753cf69"
+    },
+    "flock.journeys.shareCard.momentEyebrow": {
+      "stamp": "7d1d65ac91980790"
+    },
+    "flock.journeys.shareCard.momentTitle": {
+      "stamp": "14484b53dba31f03"
+    },
+    "flock.journeys.shareCard.momentTitleNoName": {
+      "stamp": "b6555afefeacd4b0"
+    },
+    "flock.journeys.shareCard.post": {
+      "stamp": "686d2458ba7e9a38"
+    },
+    "flock.journeys.shareCard.saved": {
+      "stamp": "1a0f679a9611c82c"
+    },
+    "flock.journeys.shareCard.share": {
+      "stamp": "cdcba29bb82cb786"
+    },
+    "flock.journeys.shareCard.showBird": {
+      "stamp": "350a6b2c58664280"
+    },
+    "flock.journeys.shareCard.story": {
+      "stamp": "43ff7bdd2250b7f7"
+    },
+    "flock.journeys.shareCard.title": {
+      "stamp": "3be51131ba44f946"
+    },
+    "flock.journeys.shareCard.unavailable": {
+      "stamp": "a66471075a06c84c"
+    },
+    "flock.journeys.shareCard.webHint": {
+      "stamp": "90c8aaf61683f77f"
+    },
+    "flock.journeys.skill.about": {
+      "stamp": "4eb297f01120bca3"
+    },
+    "flock.journeys.skill.howOthers": {
+      "stamp": "2a4655e7b6d01872"
+    },
+    "flock.journeys.skill.howOthersEmpty": {
+      "stamp": "c5c6a9b3d96b88f0"
+    },
+    "flock.journeys.skill.howOthersLocked": {
+      "stamp": "82593214d7308b02"
+    },
+    "flock.journeys.skill.learnedIn_one": {
+      "stamp": "02426d4578187413"
+    },
+    "flock.journeys.skill.learnedIn_other": {
+      "stamp": "f6f9ca69269556ff"
+    },
+    "flock.journeys.skill.onDay": {
+      "stamp": "88fc5279acfa3102"
+    },
+    "flock.journeys.skill.safety": {
+      "stamp": "ff6a6cdbb0755321"
+    },
+    "flock.journeys.skill.video": {
+      "stamp": "5602736519b64335"
+    },
+    "flock.journeys.start.alreadyKnows": {
+      "stamp": "348e2ff921fdcc66"
+    },
+    "flock.journeys.start.for": {
+      "stamp": "b17363be843a6fcc"
+    },
+    "flock.journeys.start.going": {
+      "stamp": "1a8c049e3e3e5145"
+    },
+    "flock.journeys.start.groupFood": {
+      "stamp": "225420650888dd0d"
+    },
+    "flock.journeys.start.groupFoundations": {
+      "stamp": "fd8b3b565e859631"
+    },
+    "flock.journeys.start.groupHusbandry": {
+      "stamp": "275877f80a790105"
+    },
+    "flock.journeys.start.groupTricks": {
+      "stamp": "d5c9743a79bc4b98"
+    },
+    "flock.journeys.start.markKnown": {
+      "stamp": "84308fad67d2a945"
+    },
+    "flock.journeys.start.noBirds": {
+      "stamp": "4aeea50012e87185"
+    },
+    "flock.journeys.start.ownSkill": {
+      "stamp": "d4562f4cf9abf0b8"
+    },
+    "flock.journeys.start.pickTitle": {
+      "stamp": "b89fccd20bffced0"
+    },
+    "flock.journeys.start.whichBird": {
+      "stamp": "e11520890b89d221"
+    },
+    "flock.journeys.startSomething": {
+      "stamp": "55987b79ea0e5d16"
+    },
+    "flock.journeys.story.cheered": {
+      "stamp": "f9c771f30c21c5eb"
+    },
+    "flock.journeys.story.clip": {
+      "stamp": "6e6679c1e4e3b6c5"
+    },
+    "flock.journeys.story.go": {
+      "stamp": "a0eea21881bfe326"
+    },
+    "flock.journeys.story.hours_one": {
+      "stamp": "04aee037cf0c063f"
+    },
+    "flock.journeys.story.hours_other": {
+      "stamp": "04aee037cf0c063f"
+    },
+    "flock.journeys.story.milestone": {
+      "stamp": "098c75f2377761c8"
+    },
+    "flock.journeys.story.minutes_one": {
+      "stamp": "11e14340c82253d9"
+    },
+    "flock.journeys.story.minutes_other": {
+      "stamp": "11e14340c82253d9"
+    },
+    "flock.journeys.story.next": {
+      "stamp": "f9eabcb7604ba1a1"
+    },
+    "flock.journeys.story.none": {
+      "stamp": "14fdb187b085a469"
+    },
+    "flock.journeys.story.prev": {
+      "stamp": "c49ce8e864f07f3f"
+    },
+    "flock.journeys.tag.bigMoment": {
+      "stamp": "66bcfd7de5aef04a"
+    },
+    "flock.journeys.tag.dayOne": {
+      "stamp": "56651a5a67cda835"
+    },
+    "flock.journeys.tag.question": {
+      "stamp": "6fbcbe85a9ead30e"
+    },
+    "flock.journeys.tips.eyebrow": {
+      "stamp": "c317d78b8468be80"
+    },
+    "flock.journeys.tips.next": {
+      "stamp": "29ccc3c01bda1092"
+    },
+    "flock.journeys.tips.shared_one": {
+      "stamp": "ce6a3ece13ce75f1"
+    },
+    "flock.journeys.tips.shared_other": {
+      "stamp": "c174f9557399ade9"
+    },
+    "flock.journeys.title": {
+      "stamp": "d7b85fd398e07601"
+    },
+    "flock.journeys.today": {
+      "stamp": "65e7700b50124553"
+    },
+    "flock.journeys.tricks": {
+      "stamp": "d5c9743a79bc4b98"
+    },
+    "flock.journeys.trim.end": {
+      "stamp": "6b11169664de02cf"
+    },
+    "flock.journeys.trim.error": {
+      "stamp": "c15685fdda9f7605"
+    },
+    "flock.journeys.trim.loading": {
+      "stamp": "0956200e04589e84"
+    },
+    "flock.journeys.trim.notReady": {
+      "stamp": "fc9b00d5518305ff"
+    },
+    "flock.journeys.trim.save": {
+      "stamp": "4576d57d50810b8f"
+    },
+    "flock.journeys.trim.saving": {
+      "stamp": "18e1c350ac2fc6cd"
+    },
+    "flock.journeys.trim.start": {
+      "stamp": "82eeb239b7198ed2"
+    },
+    "flock.journeys.trim.title": {
+      "stamp": "db27d6ce795e04a7"
+    },
+    "flock.journeys.weight.avgKey": {
+      "stamp": "e299b6ad09875300"
+    },
+    "flock.journeys.weight.confirm": {
+      "stamp": "3ba1bb2d6b3afd8a"
+    },
+    "flock.journeys.weight.error": {
+      "stamp": "2dd2d72f0af2f017"
+    },
+    "flock.journeys.weight.lineAvg": {
+      "stamp": "ff7092b8443877ea"
+    },
+    "flock.journeys.weight.logWeight": {
+      "stamp": "66cf207cb78e3c20"
+    },
+    "flock.journeys.weight.missed": {
+      "stamp": "9a3deecac2df2469"
+    },
+    "flock.journeys.weight.noStart": {
+      "stamp": "dfc40b9f59689f2a"
+    },
+    "flock.journeys.weight.notCountedAt": {
+      "stamp": "79504b8e1a36928a"
+    },
+    "flock.journeys.weight.notice": {
+      "stamp": "0a4dfb420f7aa365"
+    },
+    "flock.journeys.weight.paused": {
+      "stamp": "bbadf636f6bf9178"
+    },
+    "flock.journeys.weight.pausedSudden": {
+      "stamp": "bce72d70bffd04ad"
+    },
+    "flock.journeys.weight.recheck": {
+      "stamp": "49959b8a1eda0401"
+    },
+    "flock.journeys.weight.resume": {
+      "stamp": "6d10921dba40b3f5"
+    },
+    "flock.journeys.weight.startOnly": {
+      "stamp": "baf814c3f985fdf6"
+    },
+    "flock.journeys.weight.title": {
+      "stamp": "807c320d8c029d12"
+    },
+    "flock.journeys.weight.weighAgain": {
+      "stamp": "8100878cda265b47"
+    },
+    "flock.journeys.which.days_one": {
+      "stamp": "f671aa12f87c63a2"
+    },
+    "flock.journeys.which.days_other": {
+      "stamp": "6da971d43cf7f73c"
+    },
+    "flock.journeys.which.lastWeek": {
+      "stamp": "1f92349f14e7524e"
+    },
+    "flock.journeys.which.never": {
+      "stamp": "255f651db80874b3"
+    },
+    "flock.journeys.which.startNew": {
+      "stamp": "5e22a57c94685202"
+    },
+    "flock.journeys.which.title": {
+      "stamp": "56be53dc337d5799"
+    },
+    "flock.journeys.which.today": {
+      "stamp": "b2a7fc27a4d8949c"
+    },
+    "flock.journeys.which.weeks_one": {
+      "stamp": "2027232873defb18"
+    },
+    "flock.journeys.which.weeks_other": {
+      "stamp": "33f65184189da892"
+    },
+    "flock.journeys.which.yesterday": {
+      "stamp": "b2c10bf05db14895"
+    },
+    "flock.journeys.yours.paused": {
+      "stamp": "48f19248b01c9832"
+    },
+    "flock.journeys.yours.title": {
+      "stamp": "15718b8eb5d4fcba"
+    },
+    "flock.library.all": {
+      "stamp": "9ff90ed7f88032a8"
+    },
+    "flock.library.checklists": {
+      "stamp": "018518af3ce2ba2b"
+    },
+    "flock.library.conservation": {
+      "stamp": "b88f42c9e3d4ebdb"
+    },
+    "flock.library.diet": {
+      "stamp": "f077a06150dfe1b2"
+    },
+    "flock.library.empty.filtered": {
+      "stamp": "a0acee76a15b7c8b"
+    },
+    "flock.library.empty.filteredTitle": {
+      "stamp": "0433997e4af8b51d"
+    },
+    "flock.library.empty.line": {
+      "stamp": "4023f7e6fb88925a"
+    },
+    "flock.library.empty.title": {
+      "stamp": "041441b1e1cf4d51"
+    },
+    "flock.library.error": {
+      "stamp": "8e4859d03259aa43"
+    },
+    "flock.library.foraging": {
+      "stamp": "d4b0dce9d84f9114"
+    },
+    "flock.library.guides": {
+      "stamp": "e1e1c5b257d8fcd1"
+    },
+    "flock.library.hormones": {
+      "stamp": "f9f1b7a8e81e7dc2"
+    },
+    "flock.library.links": {
+      "stamp": "64a2d4a1062361e4"
+    },
+    "flock.library.loading": {
+      "stamp": "de75268657e1dc3f"
+    },
+    "flock.library.manage": {
+      "stamp": "70d43949234ee28a"
+    },
+    "flock.library.notFound": {
+      "stamp": "cdd5b4b7a46b6d8b"
+    },
+    "flock.library.notFoundTitle": {
+      "stamp": "e1efdc42ef28e420"
+    },
+    "flock.library.open": {
+      "stamp": "7eb14a887846085a"
+    },
+    "flock.library.pdf": {
+      "stamp": "03a3f28cd2d2de3e"
+    },
+    "flock.library.pdfLoading": {
+      "stamp": "eb055c1ee4faac51"
+    },
+    "flock.library.results": {
+      "stamp": "33a72245ae15ebcd"
+    },
+    "flock.library.retry": {
+      "stamp": "5c0ecee5e225e041"
+    },
+    "flock.library.searchLabel": {
+      "stamp": "58d82a9412968da2"
+    },
+    "flock.library.searchPlaceholder": {
+      "stamp": "921974a60afca0f7"
+    },
+    "flock.library.subjectAria": {
+      "stamp": "c552c73f8d717795"
+    },
+    "flock.library.tags": {
+      "stamp": "3bb26c0b47f7fff5"
+    },
+    "flock.library.title": {
+      "stamp": "e155d82c6e57156c"
+    },
+    "flock.library.training": {
+      "stamp": "af6c90ba8b0dbcba"
+    },
+    "flock.library.type.checklist": {
+      "stamp": "f224df095258383e"
+    },
+    "flock.library.type.guide": {
+      "stamp": "6eadd164ada28aa5"
+    },
+    "flock.library.type.link": {
+      "stamp": "c0802379a9aec03f"
+    },
+    "flock.library.type.video": {
+      "stamp": "362715703a6eeb58"
+    },
+    "flock.library.typeAria": {
+      "stamp": "8d0ea98aeaee4f82"
+    },
+    "flock.library.untitled": {
+      "stamp": "a95ecd02d90e2ac6"
+    },
+    "flock.library.vetReviewed": {
+      "stamp": "6dacb25527831839"
+    },
+    "flock.library.vetShort": {
+      "stamp": "edb0d39997ca0a21"
+    },
+    "flock.library.videos": {
+      "stamp": "7a8aa466ecfdd88f"
+    },
+    "flock.library.watch": {
+      "stamp": "436608c29ccfeef4"
+    },
+    "flock.libraryAdmin.add": {
+      "stamp": "7243fcbe9aec5d44"
+    },
+    "flock.libraryAdmin.bodyHint": {
+      "stamp": "fe05ed5db58c8ad3"
+    },
+    "flock.libraryAdmin.bodyLabel": {
+      "stamp": "7e221a1ceaa827db"
+    },
+    "flock.libraryAdmin.cantPublish": {
+      "stamp": "f4af81d62c2e6ca1"
+    },
+    "flock.libraryAdmin.checkError": {
+      "stamp": "e627dd6bce891a23"
+    },
+    "flock.libraryAdmin.coverAdded": {
+      "stamp": "d7b883f7b1c7ba2a"
+    },
+    "flock.libraryAdmin.delete": {
+      "stamp": "54c42e793850eb0e"
+    },
+    "flock.libraryAdmin.deleteConfirm": {
+      "stamp": "b316f356b1ad4f1e"
+    },
+    "flock.libraryAdmin.deleteConfirmLine": {
+      "stamp": "7a4730aa04f98729"
+    },
+    "flock.libraryAdmin.deleteYes": {
+      "stamp": "97e6c24eab9130b3"
+    },
+    "flock.libraryAdmin.deleting": {
+      "stamp": "17dadddd53c0f524"
+    },
+    "flock.libraryAdmin.draft": {
+      "stamp": "8119b6fd7f6a8540"
+    },
+    "flock.libraryAdmin.draftLine": {
+      "stamp": "7e961caa604aff5c"
+    },
+    "flock.libraryAdmin.edit": {
+      "stamp": "e133e0d202723128"
+    },
+    "flock.libraryAdmin.edited": {
+      "stamp": "e732fc8c644f2548"
+    },
+    "flock.libraryAdmin.editTab": {
+      "stamp": "dc46962c1249053f"
+    },
+    "flock.libraryAdmin.empty": {
+      "stamp": "28e6dad0489849dd"
+    },
+    "flock.libraryAdmin.filesHint": {
+      "stamp": "d6bba940e8f28e7b"
+    },
+    "flock.libraryAdmin.filesLabel": {
+      "stamp": "3976501539c1d510"
+    },
+    "flock.libraryAdmin.keep": {
+      "stamp": "e7157b3479f74680"
+    },
+    "flock.libraryAdmin.line": {
+      "stamp": "7d403cc50ea4534c"
+    },
+    "flock.libraryAdmin.liveLine": {
+      "stamp": "7bf925f431527c70"
+    },
+    "flock.libraryAdmin.loadError": {
+      "stamp": "b2cede3350330b90"
+    },
+    "flock.libraryAdmin.missing": {
+      "stamp": "6947acfcca4616c8"
+    },
+    "flock.libraryAdmin.missingLine": {
+      "stamp": "d0885c4f75339df3"
+    },
+    "flock.libraryAdmin.modeLabel": {
+      "stamp": "d1b16c16068fe1ba"
+    },
+    "flock.libraryAdmin.new": {
+      "stamp": "359811ad86346179"
+    },
+    "flock.libraryAdmin.noCover": {
+      "stamp": "a40593dedf9f0f1a"
+    },
+    "flock.libraryAdmin.noPdf": {
+      "stamp": "b19abc106372bd60"
+    },
+    "flock.libraryAdmin.pdfAdded": {
+      "stamp": "d7977616e138e81e"
+    },
+    "flock.libraryAdmin.previewNote": {
+      "stamp": "f825a66c645949fa"
+    },
+    "flock.libraryAdmin.previewTab": {
+      "stamp": "5b4680732706d9f7"
+    },
+    "flock.libraryAdmin.publish": {
+      "stamp": "5757a4202591503a"
+    },
+    "flock.libraryAdmin.published": {
+      "stamp": "7713a7d3d82fc61e"
+    },
+    "flock.libraryAdmin.publishedNow": {
+      "stamp": "79c8ef131e96749b"
+    },
+    "flock.libraryAdmin.remove": {
+      "stamp": "7a3c74b21c1d6ef1"
+    },
+    "flock.libraryAdmin.replace": {
+      "stamp": "9309430110d116c7"
+    },
+    "flock.libraryAdmin.reviewedOnLabel": {
+      "stamp": "146185cd92c4064f"
+    },
+    "flock.libraryAdmin.reviewerLabel": {
+      "stamp": "16a5f136658668e9"
+    },
+    "flock.libraryAdmin.reviewerPlaceholder": {
+      "stamp": "a4b50cbacee2c6b8"
+    },
+    "flock.libraryAdmin.savedDraft": {
+      "stamp": "e55f853d2a32475d"
+    },
+    "flock.libraryAdmin.savedLive": {
+      "stamp": "ee8f4d6b372a60a4"
+    },
+    "flock.libraryAdmin.saveDraft": {
+      "stamp": "1e38e5c890e19b10"
+    },
+    "flock.libraryAdmin.saveLive": {
+      "stamp": "3dc2f8e8fc14e4eb"
+    },
+    "flock.libraryAdmin.speciesHint": {
+      "stamp": "bcf44e77928fff49"
+    },
+    "flock.libraryAdmin.speciesLabel": {
+      "stamp": "ae88869603fa687f"
+    },
+    "flock.libraryAdmin.speciesPlaceholder": {
+      "stamp": "7902ba5d1c82b3a4"
+    },
+    "flock.libraryAdmin.summaryHint": {
+      "stamp": "651beeace6d0f586"
+    },
+    "flock.libraryAdmin.summaryLabel": {
+      "stamp": "4ed7b111b08fd922"
+    },
+    "flock.libraryAdmin.title": {
+      "stamp": "e155d82c6e57156c"
+    },
+    "flock.libraryAdmin.titleLabel": {
+      "stamp": "6e5ed655dd0033da"
+    },
+    "flock.libraryAdmin.topicsHint": {
+      "stamp": "57df0d29082d8dee"
+    },
+    "flock.libraryAdmin.topicsLabel": {
+      "stamp": "e5871082aba894dc"
+    },
+    "flock.libraryAdmin.toPublish": {
+      "stamp": "6c909c8914b45fc3"
+    },
+    "flock.libraryAdmin.typeLabel": {
+      "stamp": "8d0ea98aeaee4f82"
+    },
+    "flock.libraryAdmin.unpublish": {
+      "stamp": "44c83bdd43f1a53c"
+    },
+    "flock.libraryAdmin.unpublished": {
+      "stamp": "19a1925d844ba864"
+    },
+    "flock.libraryAdmin.uploading": {
+      "stamp": "0336712da6ad3b00"
+    },
+    "flock.libraryAdmin.urlHint": {
+      "stamp": "fb9ed34535ced530"
+    },
+    "flock.libraryAdmin.urlLabel": {
+      "stamp": "a13366025e6078f0"
+    },
+    "flock.libraryAdmin.urlRequired": {
+      "stamp": "94480f698516f756"
+    },
+    "flock.libraryAdmin.vetHint": {
+      "stamp": "651f537c1a2305f5"
+    },
+    "flock.libraryAdmin.vetLabel": {
+      "stamp": "6dacb25527831839"
+    },
+    "flock.member.birds": {
+      "stamp": "b88a343019d28078"
+    },
+    "flock.member.missing": {
+      "stamp": "be82637cf9cc39ac"
+    },
+    "flock.member.missingTitle": {
+      "stamp": "222a14e4b8cc99ab"
+    },
+    "flock.members.and": {
+      "stamp": "fbb61779e9eb40c1"
+    },
+    "flock.members.empty": {
+      "stamp": "4998ad86b5e8be0d"
+    },
+    "flock.members.emptyTitle": {
+      "stamp": "d47d548c379c5043"
+    },
+    "flock.members.everyone": {
+      "stamp": "36743c1ca0178902"
+    },
+    "flock.members.footer": {
+      "stamp": "4a5da39354c2f7f4"
+    },
+    "flock.members.groupsAria": {
+      "stamp": "5cfc372f6f2bd4fc"
+    },
+    "flock.members.lead": {
+      "stamp": "81f2c7aa834c611c"
+    },
+    "flock.members.leadAdminIs": {
+      "stamp": "e2ba61ef037700ff"
+    },
+    "flock.members.leadAdminNot": {
+      "stamp": "dc95083e598d3655"
+    },
+    "flock.members.leadAdminTitle": {
+      "stamp": "ed0e256055396f17"
+    },
+    "flock.members.makeLead": {
+      "stamp": "2beecb519cca6d1d"
+    },
+    "flock.members.makeLeadLine": {
+      "stamp": "a158d0cc374010b5"
+    },
+    "flock.members.makeLeadShort": {
+      "stamp": "1fa9f80bbad1e176"
+    },
+    "flock.members.makeLeadTitle": {
+      "stamp": "559439878071bbb2"
+    },
+    "flock.members.noBirds": {
+      "stamp": "f6d955d03837ff5e"
+    },
+    "flock.members.noMatch": {
+      "stamp": "01bdcdb50d0a6738"
+    },
+    "flock.members.options": {
+      "stamp": "4633af0ec4222d0e"
+    },
+    "flock.members.removeLead": {
+      "stamp": "3ac5350274e1fc83"
+    },
+    "flock.members.removeLeadLine": {
+      "stamp": "cb42690f18b15c54"
+    },
+    "flock.members.removeLeadTitle": {
+      "stamp": "e6d197a35ab8078f"
+    },
+    "flock.members.search": {
+      "stamp": "2c74dcba972bf8de"
+    },
+    "flock.membership.billingSoon": {
+      "stamp": "0c921b85cafc66f9"
+    },
     "flock.nav.aria": {
       "stamp": "856262315fd175c0"
     },
     "flock.nav.care": {
       "stamp": "ac0b3154b5476f5c"
+    },
+    "flock.nav.chapter": {
+      "stamp": "43ecfdf216ec4968"
+    },
+    "flock.nav.journeys": {
+      "stamp": "d7b85fd398e07601"
+    },
+    "flock.nav.library": {
+      "stamp": "e155d82c6e57156c"
+    },
+    "flock.nav.today": {
+      "stamp": "65e7700b50124553"
+    },
+    "flock.notif.aboutClip": {
+      "stamp": "28e2b860cbb2e09a"
+    },
+    "flock.notif.aboutComment": {
+      "stamp": "42507b98e4f13d53"
+    },
+    "flock.notif.aboutMilestone": {
+      "stamp": "6c084caa1ec50dcf"
+    },
+    "flock.notif.aboutMilestoneShort": {
+      "stamp": "bef524981a6b72bb"
+    },
+    "flock.notif.aboutPost": {
+      "stamp": "6aac92d726c7d7b8"
+    },
+    "flock.notif.aboutSkill": {
+      "stamp": "1e71298913ffe1a1"
+    },
+    "flock.notif.all": {
+      "stamp": "9ff90ed7f88032a8"
+    },
+    "flock.notif.chapter": {
+      "stamp": "47d4db8328a8bee1"
+    },
+    "flock.notif.chapterEvent": {
+      "stamp": "4c7cc3e52b93f30e"
+    },
+    "flock.notif.chapterPost": {
+      "stamp": "007da9f390938900"
+    },
+    "flock.notif.cheered": {
+      "stamp": "02008889f5e02e05"
+    },
+    "flock.notif.cheers": {
+      "stamp": "31f5f195a5dc8f45"
+    },
+    "flock.notif.commentedJourney": {
+      "stamp": "677fc00ce043bd87"
+    },
+    "flock.notif.commentedPost": {
+      "stamp": "8cb3100a8b2c381a"
+    },
+    "flock.notif.earlier": {
+      "stamp": "67422dd1ef4ee52b"
+    },
+    "flock.notif.empty": {
+      "stamp": "15a50f30d62d9625"
+    },
+    "flock.notif.emptyTitle": {
+      "stamp": "c46b1cb21304ece3"
+    },
+    "flock.notif.error": {
+      "stamp": "c5fd838f48323701"
+    },
+    "flock.notif.eventApproved": {
+      "stamp": "f5b6d738d898f2b6"
+    },
+    "flock.notif.eventCancelled": {
+      "stamp": "34075f390d8366a7"
+    },
+    "flock.notif.eventChanges": {
+      "stamp": "b88aa5de3e5beb59"
+    },
+    "flock.notif.eventDeclined": {
+      "stamp": "8898def5814292e2"
+    },
+    "flock.notif.eventReminder": {
+      "stamp": "11b7d7003ecbef75"
+    },
+    "flock.notif.eventTomorrow": {
+      "stamp": "b14a8cb1970af1c2"
+    },
+    "flock.notif.filterAria": {
+      "stamp": "aeff36c5cd86cf5a"
+    },
+    "flock.notif.newClip": {
+      "stamp": "7d023087710287e6"
+    },
+    "flock.notif.notice": {
+      "stamp": "976850c1b9adef24"
+    },
+    "flock.notif.people_one": {
+      "stamp": "4c65c608627ee88c"
+    },
+    "flock.notif.people_other": {
+      "stamp": "4c65c608627ee88c"
+    },
+    "flock.notif.removed": {
+      "stamp": "d821bb152ffdb23e"
+    },
+    "flock.notif.repliedToYou": {
+      "stamp": "0efae54877777d39"
+    },
+    "flock.notif.replies": {
+      "stamp": "40d679ce908c67fe"
+    },
+    "flock.notif.reviewChanges": {
+      "stamp": "267e743155bc25b6"
+    },
+    "flock.notif.reviewDeclined": {
+      "stamp": "c6cbe1b7661faefd"
+    },
+    "flock.notif.reviewLive": {
+      "stamp": "ddc4ce36c0be7c38"
+    },
+    "flock.notif.reviewLiveEnd": {
+      "stamp": "7ac6a3361565e0ba"
+    },
+    "flock.notif.reviewLiveLead": {
+      "stamp": "ee4361b8070aff2d"
+    },
+    "flock.notif.settings": {
+      "stamp": "4a45f6be28cd6165"
+    },
+    "flock.notif.settingsTitle": {
+      "stamp": "88c61e32e03f490f"
+    },
+    "flock.notif.today": {
+      "stamp": "65e7700b50124553"
+    },
+    "flock.notif.unread": {
+      "stamp": "d67156011d89b907"
+    },
+    "flock.people.founder": {
+      "stamp": "48becebe659da444"
+    },
+    "flock.places.add": {
+      "stamp": "b0b380ad5f3d4981"
+    },
+    "flock.places.addSave": {
+      "stamp": "ffd66f8ced4caf12"
+    },
+    "flock.places.area": {
+      "stamp": "a5380d4d26308667"
+    },
+    "flock.places.call": {
+      "stamp": "f41e78237e5ce96b"
+    },
+    "flock.places.callAria": {
+      "stamp": "9f3588f1f5faa189"
+    },
+    "flock.places.chapterPick": {
+      "stamp": "43ecfdf216ec4968"
+    },
+    "flock.places.disclaimer": {
+      "stamp": "8199cea6106e73ce"
+    },
+    "flock.places.edit": {
+      "stamp": "dc46962c1249053f"
+    },
+    "flock.places.editTitle": {
+      "stamp": "1cf95104e1ce8fb7"
+    },
+    "flock.places.group.rescue": {
+      "stamp": "6d662c4d8601b60c"
+    },
+    "flock.places.group.shop": {
+      "stamp": "cffa6eba5e935582"
+    },
+    "flock.places.group.vet": {
+      "stamp": "d2f484e1e0c6c2b1"
+    },
+    "flock.places.groupEmpty": {
+      "stamp": "5e2569158c378bdf"
+    },
+    "flock.places.kind.rescue": {
+      "stamp": "bf039b4c276fb02a"
+    },
+    "flock.places.kind.shop": {
+      "stamp": "640d0731517bd93a"
+    },
+    "flock.places.kind.vet": {
+      "stamp": "0168857d0c5b19a0"
+    },
+    "flock.places.kindLabel": {
+      "stamp": "49a4dd733df54a6b"
+    },
+    "flock.places.leadLine": {
+      "stamp": "40cd246eed826edd"
+    },
+    "flock.places.manage": {
+      "stamp": "c3ba778dda226287"
+    },
+    "flock.places.moveDown": {
+      "stamp": "665fc24572727288"
+    },
+    "flock.places.moveUp": {
+      "stamp": "f9176fd089cac607"
+    },
+    "flock.places.name": {
+      "stamp": "007f731cba24111c"
+    },
+    "flock.places.noneYet": {
+      "stamp": "20401093cbaef89e"
+    },
+    "flock.places.noteField": {
+      "stamp": "c8a01b8a4b698167"
+    },
+    "flock.places.notManager": {
+      "stamp": "3eda544ce2e55baf"
+    },
+    "flock.places.notManagerTitle": {
+      "stamp": "fbfb5f98379801b0"
+    },
+    "flock.places.phone": {
+      "stamp": "1e9b5b4223e1976d"
+    },
+    "flock.places.remove": {
+      "stamp": "ef1bfbcb2579e88a"
+    },
+    "flock.places.removeLine": {
+      "stamp": "090e6936e93d46a1"
+    },
+    "flock.places.removeTitle": {
+      "stamp": "9fffec33f8f2602b"
+    },
+    "flock.places.review": {
+      "stamp": "8b2f81666244b331"
+    },
+    "flock.places.reviewHint": {
+      "stamp": "605904677fda027d"
+    },
+    "flock.places.saveChanges": {
+      "stamp": "3dc2f8e8fc14e4eb"
+    },
+    "flock.places.saveError": {
+      "stamp": "58216175e8161af6"
+    },
+    "flock.places.send": {
+      "stamp": "c2d078c47bc843fb"
+    },
+    "flock.places.sendError": {
+      "stamp": "f2d02bc7a3fc804b"
+    },
+    "flock.places.sent": {
+      "stamp": "7393d7dabaf8ea46"
+    },
+    "flock.places.suggest": {
+      "stamp": "868c1531af6d27fd"
+    },
+    "flock.places.tooMany": {
+      "stamp": "38564789f0e29d77"
+    },
+    "flock.places.updated": {
+      "stamp": "cc43c684fde864f1"
+    },
+    "flock.places.waiting_one": {
+      "stamp": "6aca4f898954109f"
+    },
+    "flock.places.waiting_other": {
+      "stamp": "070cc86347d8b09b"
+    },
+    "flock.places.waitingLine": {
+      "stamp": "771a1e50ba258ba7"
+    },
+    "flock.places.website": {
+      "stamp": "8b19c31cbc996aeb"
+    },
+    "flock.places.websiteAria": {
+      "stamp": "8895d7b4c97563c8"
+    },
+    "flock.places.websiteField": {
+      "stamp": "c5ca4750475efc93"
+    },
+    "flock.places.websiteHint": {
+      "stamp": "df3011a104ad4039"
+    },
+    "flock.places.why": {
+      "stamp": "37cf3545593964b1"
+    },
+    "flock.pods.checkIn": {
+      "stamp": "fe58d5feda488f9c"
+    },
+    "flock.pods.closedTag": {
+      "stamp": "d5672a8ac459f2c5"
+    },
+    "flock.pods.ended": {
+      "stamp": "1c783515dac662f8"
+    },
+    "flock.pods.endedQuiet": {
+      "stamp": "516548f035e5c422"
+    },
+    "flock.pods.errBlocked": {
+      "stamp": "9162b9a9aedbc931"
+    },
+    "flock.pods.errClosed": {
+      "stamp": "fc10cfd3cd26a4b3"
+    },
+    "flock.pods.errFull": {
+      "stamp": "dfc892c5e12a04ea"
+    },
+    "flock.pods.errLimit": {
+      "stamp": "c5c854586fee8a9d"
+    },
+    "flock.pods.error": {
+      "stamp": "9f13d034dd701c4b"
+    },
+    "flock.pods.feedEmpty": {
+      "stamp": "5c7915cfcc9d4f19"
+    },
+    "flock.pods.feedEmptyEnded": {
+      "stamp": "77e634970218438b"
+    },
+    "flock.pods.finding": {
+      "stamp": "746b008a757ee62b"
+    },
+    "flock.pods.findingLine_one": {
+      "stamp": "153a27acdf131f9c"
+    },
+    "flock.pods.findingLine_other": {
+      "stamp": "153a27acdf131f9c"
+    },
+    "flock.pods.findingSoon": {
+      "stamp": "bd701052cbf20ab9"
+    },
+    "flock.pods.finishedLine": {
+      "stamp": "f447b21c6b7583d3"
+    },
+    "flock.pods.finishedTitle": {
+      "stamp": "085af5fa5cc16f15"
+    },
+    "flock.pods.leave": {
+      "stamp": "51960951ae95b15a"
+    },
+    "flock.pods.leaveLine": {
+      "stamp": "c850ebbd4f8122e1"
+    },
+    "flock.pods.leaveTitle": {
+      "stamp": "a7f39514370ca37b"
+    },
+    "flock.pods.leaveWaitlist": {
+      "stamp": "96e4e7e243c42d80"
+    },
+    "flock.pods.listEmpty": {
+      "stamp": "62a563f9c72fa941"
+    },
+    "flock.pods.listEmptyTitle": {
+      "stamp": "b369407bc80530e1"
+    },
+    "flock.pods.listLine": {
+      "stamp": "e8ce01a452a3def4"
+    },
+    "flock.pods.listTitle": {
+      "stamp": "7bf86ca618faf2dc"
+    },
+    "flock.pods.manage": {
+      "stamp": "9e952a80bc0e5d57"
+    },
+    "flock.pods.member": {
+      "stamp": "f10b7eed417fdde3"
+    },
+    "flock.pods.members_one": {
+      "stamp": "dd41303e7aa1e533"
+    },
+    "flock.pods.members_other": {
+      "stamp": "0972281164e1969a"
+    },
+    "flock.pods.missing": {
+      "stamp": "47fbdd67ec5aa303"
+    },
+    "flock.pods.missingTitle": {
+      "stamp": "ebf8cb37ac2bbf51"
+    },
+    "flock.pods.offerCta": {
+      "stamp": "2887d0d8e636e746"
+    },
+    "flock.pods.offerLine": {
+      "stamp": "c40243e915a52e21"
+    },
+    "flock.pods.offerTitle": {
+      "stamp": "b9e50aa5af151ff0"
+    },
+    "flock.pods.open": {
+      "stamp": "a60b5be2df86455e"
+    },
+    "flock.pods.optIn": {
+      "stamp": "c4d6bbc7ad6c8944"
+    },
+    "flock.pods.optInJustMe": {
+      "stamp": "baa9d1d22dd70cc5"
+    },
+    "flock.pods.optInLimit": {
+      "stamp": "cde2aaf549315bc8"
+    },
+    "flock.pods.optInLine": {
+      "stamp": "c0cb3c2e6f3d05d1"
+    },
+    "flock.pods.post": {
+      "stamp": "e1730cb53be60f7f"
+    },
+    "flock.pods.readOldPod": {
+      "stamp": "d895f1bbb030fffe"
+    },
+    "flock.pods.space": {
+      "stamp": "825ad864fbd2a088"
+    },
+    "flock.pods.stageHappy": {
+      "stamp": "072f8461dd1ca4f2"
+    },
+    "flock.pods.stageLearned": {
+      "stamp": "c0e99d013258669a"
+    },
+    "flock.pods.stagePrivate": {
+      "stamp": "c33010575be3d874"
+    },
+    "flock.pods.stageWorking": {
+      "stamp": "3f90be6261e66e2a"
+    },
+    "flock.pods.stay": {
+      "stamp": "1ab7e0e656e0deae"
+    },
+    "flock.pods.thisWeek": {
+      "stamp": "474c42b639835413"
+    },
+    "flock.pods.title": {
+      "stamp": "389f5d597b1eb07f"
+    },
+    "flock.pods.weekly": {
+      "stamp": "d3032108cc8b7359"
+    },
+    "flock.pods.you": {
+      "stamp": "082a30d4026bdff4"
+    },
+    "flock.pods.yourPod": {
+      "stamp": "d04f178eb60df278"
+    },
+    "flock.podsAdmin.active": {
+      "stamp": "a60b5be2df86455e"
+    },
+    "flock.podsAdmin.closed": {
+      "stamp": "d5672a8ac459f2c5"
+    },
+    "flock.podsAdmin.dissolve": {
+      "stamp": "31e1ecb1776291fd"
+    },
+    "flock.podsAdmin.dissolved": {
+      "stamp": "ebdd11d91dc99bce"
+    },
+    "flock.podsAdmin.dissolveLine": {
+      "stamp": "37f95d7d9c876430"
+    },
+    "flock.podsAdmin.dissolveTitle": {
+      "stamp": "68dfac48c199a156"
+    },
+    "flock.podsAdmin.empty": {
+      "stamp": "14e55de613acb188"
+    },
+    "flock.podsAdmin.joined": {
+      "stamp": "896c1a5452bf684a"
+    },
+    "flock.podsAdmin.lastPost": {
+      "stamp": "8e44e90f7288d1ef"
+    },
+    "flock.podsAdmin.left": {
+      "stamp": "17b48117f06efbd2"
+    },
+    "flock.podsAdmin.line": {
+      "stamp": "fb6fd936697deac6"
+    },
+    "flock.podsAdmin.loadError": {
+      "stamp": "72956598f25aba04"
+    },
+    "flock.podsAdmin.move": {
+      "stamp": "0ab206b9d5f2b717"
+    },
+    "flock.podsAdmin.moveTo": {
+      "stamp": "9e487e6a4d1d1a3a"
+    },
+    "flock.podsAdmin.started": {
+      "stamp": "acc2ca11714963a1"
+    },
+    "flock.podsAdmin.title": {
+      "stamp": "7bf86ca618faf2dc"
+    },
+    "flock.podsAdmin.waiting": {
+      "stamp": "3721c6efd0e1db7a"
+    },
+    "flock.podsAdmin.waitingRow_one": {
+      "stamp": "23ca3a3b28a46461"
+    },
+    "flock.podsAdmin.waitingRow_other": {
+      "stamp": "23ca3a3b28a46461"
+    },
+    "flock.posts.addComment": {
+      "stamp": "e27cc9894d3df7ee"
+    },
+    "flock.posts.addPhoto": {
+      "stamp": "6fb2eafd03f3dc13"
+    },
+    "flock.posts.addPhotos": {
+      "stamp": "4e84111a045cab7e"
+    },
+    "flock.posts.allCount_one": {
+      "stamp": "bf78dcf9ce1190a5"
+    },
+    "flock.posts.allCount_other": {
+      "stamp": "bf78dcf9ce1190a5"
+    },
+    "flock.posts.attachBird": {
+      "stamp": "2da5a96f9b543c9d"
+    },
+    "flock.posts.attachLine": {
+      "stamp": "efbbcf8eddd6494b"
+    },
+    "flock.posts.birdNamePhoto": {
+      "stamp": "6e302ca46062a48a"
+    },
+    "flock.posts.bodyLabel": {
+      "stamp": "42551e79c2b042df"
+    },
+    "flock.posts.bodyPlaceholder": {
+      "stamp": "25727307b367e3c9"
+    },
+    "flock.posts.cancel": {
+      "stamp": "06c80f8b6f9f2b3b"
+    },
+    "flock.posts.challengeSpace": {
+      "stamp": "f06bbeeb9acaa204"
+    },
+    "flock.posts.change": {
+      "stamp": "8a5e4f7f469e8f56"
+    },
+    "flock.posts.chapterSpace": {
+      "stamp": "1f15beab9a79910d"
+    },
+    "flock.posts.comment": {
+      "stamp": "ed4fb513a5d11318"
+    },
+    "flock.posts.commentCount_one": {
+      "stamp": "339c86fad0f0b340"
+    },
+    "flock.posts.commentCount_other": {
+      "stamp": "aedf0107d4817768"
+    },
+    "flock.posts.commentError": {
+      "stamp": "a0d62d8fa09a0865"
+    },
+    "flock.posts.commentFor": {
+      "stamp": "c3b1cfef2eddf3c3"
+    },
+    "flock.posts.commentMenu": {
+      "stamp": "e318586a04dee4fe"
+    },
+    "flock.posts.commentsError": {
+      "stamp": "839150c241a7238a"
+    },
+    "flock.posts.commentsTitle": {
+      "stamp": "f9a833653b641dd2"
+    },
+    "flock.posts.delete": {
+      "stamp": "97e6c24eab9130b3"
+    },
+    "flock.posts.deleteCommentConfirm": {
+      "stamp": "666d7afa8fb551e8"
+    },
+    "flock.posts.deleteCommentLine": {
+      "stamp": "34e5f34d39cf41ff"
+    },
+    "flock.posts.deleteCommentTitle": {
+      "stamp": "98844e242a6e27db"
+    },
+    "flock.posts.deleteConfirm": {
+      "stamp": "16db0792d4b1f363"
+    },
+    "flock.posts.deleteError": {
+      "stamp": "d1c21a649feb8eaf"
+    },
+    "flock.posts.deleteLine": {
+      "stamp": "eb079520ddddf185"
+    },
+    "flock.posts.deleteReplyLine": {
+      "stamp": "fc340cd7c08a4fa3"
+    },
+    "flock.posts.deleteTitle": {
+      "stamp": "a898ba6f14084284"
+    },
+    "flock.posts.edit": {
+      "stamp": "dc46962c1249053f"
+    },
+    "flock.posts.edited": {
+      "stamp": "c0b83572ccdafe69"
+    },
+    "flock.posts.editingComment": {
+      "stamp": "1cffc6ffa12c0112"
+    },
+    "flock.posts.editReviewHint": {
+      "stamp": "124355fd76cde5c2"
+    },
+    "flock.posts.editTitle": {
+      "stamp": "277e8a4cc80ac696"
+    },
+    "flock.posts.gpsNote": {
+      "stamp": "0100e2dfab446668"
+    },
+    "flock.posts.holdForMore": {
+      "stamp": "b8e34b9d8b7c2956"
+    },
+    "flock.posts.justNow": {
+      "stamp": "4c1a2025c2c60a7e"
+    },
+    "flock.posts.loading": {
+      "stamp": "543c404f0e5a7d86"
+    },
+    "flock.posts.member": {
+      "stamp": "b52c16f37a7dd703"
+    },
+    "flock.posts.menuTitle": {
+      "stamp": "0a4e03e7ffb8fc64"
+    },
+    "flock.posts.more": {
+      "stamp": "a805013e934130df"
+    },
+    "flock.posts.newTitle": {
+      "stamp": "35f3d52d693dc14f"
+    },
+    "flock.posts.noBird": {
+      "stamp": "3f7d201e2a3ad0ae"
+    },
+    "flock.posts.noComments": {
+      "stamp": "144ccbfe5f4b40a8"
+    },
+    "flock.posts.notFound": {
+      "stamp": "69862f317cb9c9c2"
+    },
+    "flock.posts.photoAlt": {
+      "stamp": "35d39aae88d1f919"
+    },
+    "flock.posts.photoError": {
+      "stamp": "14dcf71eb614b384"
+    },
+    "flock.posts.photoMax": {
+      "stamp": "0a8d4c9927e9a91d"
+    },
+    "flock.posts.photoOf": {
+      "stamp": "cb7aea27942c20d8"
+    },
+    "flock.posts.post": {
+      "stamp": "686d2458ba7e9a38"
+    },
+    "flock.posts.posting": {
+      "stamp": "66bb6c205597a2b8"
+    },
+    "flock.posts.postTo": {
+      "stamp": "d2b7e6b39a982774"
+    },
+    "flock.posts.prompt": {
+      "stamp": "b78c9000a49a9f88"
+    },
+    "flock.posts.rate.comments": {
+      "stamp": "a7277cb11b299e07"
+    },
+    "flock.posts.rate.photos": {
+      "stamp": "a8c8d270acdb4c97"
+    },
+    "flock.posts.rate.posts": {
+      "stamp": "555a266c44e620f0"
+    },
+    "flock.posts.reactionCount_one": {
+      "stamp": "61aa1465aae77040"
+    },
+    "flock.posts.reactionCount_other": {
+      "stamp": "4cdb9294334111ff"
+    },
+    "flock.posts.reactionsFilter": {
+      "stamp": "6a4c374c973ca854"
+    },
+    "flock.posts.reactionsTitle": {
+      "stamp": "7812ebee5586710b"
+    },
+    "flock.posts.reactorsError": {
+      "stamp": "fff1c5a04e6db640"
+    },
+    "flock.posts.reactTitle": {
+      "stamp": "4a656c0125ba87df"
+    },
+    "flock.posts.removePhoto": {
+      "stamp": "bb3e96aaf42e33bd"
+    },
+    "flock.posts.reply": {
+      "stamp": "ea77224faa7d04f2"
+    },
+    "flock.posts.replyingTo": {
+      "stamp": "13d0a1ea4e6105f1"
+    },
+    "flock.posts.reviewHint": {
+      "stamp": "2bb610fb90925187"
+    },
+    "flock.posts.save": {
+      "stamp": "8bb70b77034c99c6"
+    },
+    "flock.posts.saveError": {
+      "stamp": "0e914617e0c6e760"
+    },
+    "flock.posts.saySomething": {
+      "stamp": "aec8675ba6e55649"
+    },
+    "flock.posts.send": {
+      "stamp": "524b49692503484e"
+    },
+    "flock.posts.sendForReview": {
+      "stamp": "0076db469bcaf85b"
+    },
+    "flock.posts.showMore": {
+      "stamp": "fbe2c05ae4d92841"
+    },
+    "flock.posts.status.changes": {
+      "stamp": "4ec5bc80a16de034"
+    },
+    "flock.posts.status.declined": {
+      "stamp": "a8fb47a46295a177"
+    },
+    "flock.posts.status.pending": {
+      "stamp": "1734ecf2659213eb"
+    },
+    "flock.posts.status.removed": {
+      "stamp": "e551123c8c9803d6"
+    },
+    "flock.posts.titleLabel": {
+      "stamp": "05b5ff6372005d13"
+    },
+    "flock.posts.vet.anyway": {
+      "stamp": "ab9bb170429654a5"
+    },
+    "flock.posts.vet.body": {
+      "stamp": "bdbba9513aa16e81"
+    },
+    "flock.posts.vet.find": {
+      "stamp": "a13a8d495ff6ba9b"
+    },
+    "flock.posts.vet.title": {
+      "stamp": "e3245e8a6e29eef1"
+    },
+    "flock.posts.vet.urgentBody": {
+      "stamp": "914156a8ec097a3c"
+    },
+    "flock.posts.vet.urgentFind": {
+      "stamp": "54d899343110d654"
+    },
+    "flock.posts.vet.urgentTitle": {
+      "stamp": "fbeb375e214db836"
+    },
+    "flock.posts.whoReacted": {
+      "stamp": "b808f091220a4f7c"
+    },
+    "flock.posts.whoReactedAria_one": {
+      "stamp": "1fcfe1039dac6e36"
+    },
+    "flock.posts.whoReactedAria_other": {
+      "stamp": "1fcfe1039dac6e36"
+    },
+    "flock.posts.you": {
+      "stamp": "70f51654b7b76868"
+    },
+    "flock.privacy.line": {
+      "stamp": "7a1ba4b3f4dd2910"
+    },
+    "flock.privacy.manage": {
+      "stamp": "b6e5ea30c2f3e682"
+    },
+    "flock.privacy.never.address": {
+      "stamp": "a9783decc12c4caf"
+    },
+    "flock.privacy.never.blocked": {
+      "stamp": "cefea59bb079429e"
+    },
+    "flock.privacy.never.care": {
+      "stamp": "c63e087402428ab1"
+    },
+    "flock.privacy.never.email": {
+      "stamp": "e51787b1a8990056"
+    },
+    "flock.privacy.never.health": {
+      "stamp": "684030d98d16f54f"
+    },
+    "flock.privacy.never.sits": {
+      "stamp": "b1b116a14dc73c34"
+    },
+    "flock.privacy.never.weights": {
+      "stamp": "74128dec81688186"
+    },
+    "flock.privacy.neverTitle": {
+      "stamp": "7001dcd029165e86"
+    },
+    "flock.privacy.see.badges": {
+      "stamp": "fcf082b7b1693fe0"
+    },
+    "flock.privacy.see.bio": {
+      "stamp": "89e28df0d081632c"
+    },
+    "flock.privacy.see.birds": {
+      "stamp": "2d293203e20079d5"
+    },
+    "flock.privacy.see.name": {
+      "stamp": "c86cb4908ad41091"
+    },
+    "flock.privacy.see.photo": {
+      "stamp": "ac4425424cb75c7d"
+    },
+    "flock.privacy.see.pods": {
+      "stamp": "2257d5c0f6ad0fec"
+    },
+    "flock.privacy.see.region": {
+      "stamp": "ec3396f1d3261f36"
+    },
+    "flock.privacy.seeTitle": {
+      "stamp": "8c7a618ff1bb8388"
     },
     "flock.region.close": {
       "stamp": "d981ee660d866d8c"
@@ -5423,6 +8792,57 @@
     },
     "flock.region.title": {
       "stamp": "d6fe4c89a4c4554c"
+    },
+    "flock.report.action": {
+      "stamp": "05aa0849e046abe7"
+    },
+    "flock.report.close": {
+      "stamp": "3e00dbef8dddb12e"
+    },
+    "flock.report.error": {
+      "stamp": "f2d02bc7a3fc804b"
+    },
+    "flock.report.noteLabel": {
+      "stamp": "3f1bed5c6115b329"
+    },
+    "flock.report.other": {
+      "stamp": "b613b408cb5cecde"
+    },
+    "flock.report.send": {
+      "stamp": "a6ed0e5e38765e5a"
+    },
+    "flock.report.sending": {
+      "stamp": "2696b1cead25f426"
+    },
+    "flock.report.spam": {
+      "stamp": "01ea0473fe6d4010"
+    },
+    "flock.report.thanks": {
+      "stamp": "7e419455236c10ed"
+    },
+    "flock.report.thanksTitle": {
+      "stamp": "da7bd69e33a43661"
+    },
+    "flock.report.titleComment": {
+      "stamp": "1a4c2414d15bb1bc"
+    },
+    "flock.report.titlePost": {
+      "stamp": "4d936f557be8f865"
+    },
+    "flock.report.titleSkill": {
+      "stamp": "e551d76c0c147ad5"
+    },
+    "flock.report.titleUpdate": {
+      "stamp": "572cb3de2ddaa1a4"
+    },
+    "flock.report.unkind": {
+      "stamp": "ebd45b5c61fd4195"
+    },
+    "flock.report.unsafe": {
+      "stamp": "bb63ebd86a101048"
+    },
+    "flock.report.why": {
+      "stamp": "d94b4e21020cf10c"
     },
     "flock.rescue.about": {
       "stamp": "a2e7106934a9cb18"
@@ -5634,11 +9054,182 @@
     "flock.rescueAdmin.waiting": {
       "stamp": "b7980b3f7d468425"
     },
+    "flock.review.all_one": {
+      "stamp": "bf78dcf9ce1190a5"
+    },
+    "flock.review.all_other": {
+      "stamp": "bf78dcf9ce1190a5"
+    },
+    "flock.review.approve": {
+      "stamp": "15b7af86a7b57c6d"
+    },
+    "flock.review.by": {
+      "stamp": "353ff08123304613"
+    },
+    "flock.review.changes": {
+      "stamp": "ef8261e82451d6f9"
+    },
+    "flock.review.changesLabel": {
+      "stamp": "43fd79cd3fae21f1"
+    },
+    "flock.review.changesSend": {
+      "stamp": "5b50c57ad8799e98"
+    },
+    "flock.review.changesTitle": {
+      "stamp": "ef8261e82451d6f9"
+    },
+    "flock.review.clipOnly": {
+      "stamp": "4f93ebca03c17444"
+    },
+    "flock.review.decline": {
+      "stamp": "44bde86f2bc0d422"
+    },
+    "flock.review.declineEventTitle": {
+      "stamp": "07c19b4d485754fa"
+    },
+    "flock.review.declineLabel": {
+      "stamp": "5a5f931a572b6073"
+    },
+    "flock.review.declineSend": {
+      "stamp": "44bde86f2bc0d422"
+    },
+    "flock.review.declineTitle": {
+      "stamp": "95d12e2cbd7f1ba3"
+    },
+    "flock.review.doGood": {
+      "stamp": "1bbc7a297325c6ae"
+    },
+    "flock.review.empty": {
+      "stamp": "db8a00dfeeb75c8a"
+    },
+    "flock.review.error": {
+      "stamp": "7f0dc9b174d432a4"
+    },
+    "flock.review.event": {
+      "stamp": "a4c89627f38ac7c8"
+    },
+    "flock.review.events_one": {
+      "stamp": "54dd1bc72abacfe3"
+    },
+    "flock.review.events_other": {
+      "stamp": "54dd1bc72abacfe3"
+    },
+    "flock.review.eventVolunteer": {
+      "stamp": "26bf14d48c6b62ef"
+    },
+    "flock.review.filterAria": {
+      "stamp": "75291c6acbd3576b"
+    },
+    "flock.review.good_one": {
+      "stamp": "bbdec27e78418c51"
+    },
+    "flock.review.good_other": {
+      "stamp": "bbdec27e78418c51"
+    },
+    "flock.review.hidden": {
+      "stamp": "974ec5ac5f2b863c"
+    },
+    "flock.review.home": {
+      "stamp": "f89f5e8c2a2ff998"
+    },
+    "flock.review.keep": {
+      "stamp": "e7157b3479f74680"
+    },
+    "flock.review.line_one": {
+      "stamp": "73c5ebc19ec63f73"
+    },
+    "flock.review.line_other": {
+      "stamp": "73c5ebc19ec63f73"
+    },
+    "flock.review.message": {
+      "stamp": "c6f929456ab9512e"
+    },
+    "flock.review.messaged": {
+      "stamp": "f62e5a334c152db2"
+    },
+    "flock.review.messageLabel": {
+      "stamp": "8fe2db71832a8ecf"
+    },
+    "flock.review.messageSend": {
+      "stamp": "357736a30685c3d1"
+    },
+    "flock.review.messageTitle": {
+      "stamp": "c6f929456ab9512e"
+    },
+    "flock.review.noDescription": {
+      "stamp": "fe2243836a1c311e"
+    },
+    "flock.review.notAvailable": {
+      "stamp": "b3f3a01e583b4ebe"
+    },
+    "flock.review.notAvailableLine": {
+      "stamp": "77fdbebfdae21666"
+    },
+    "flock.review.open": {
+      "stamp": "66c0a4a0b85ac99c"
+    },
+    "flock.review.place": {
+      "stamp": "0d9d8541de093856"
+    },
+    "flock.review.placeListings": {
+      "stamp": "93a55396ecc4e92a"
+    },
+    "flock.review.places_one": {
+      "stamp": "de5ba9d83a5a3e67"
+    },
+    "flock.review.places_other": {
+      "stamp": "de5ba9d83a5a3e67"
+    },
+    "flock.review.remove": {
+      "stamp": "fab55e87827fc15d"
+    },
+    "flock.review.removeLabel": {
+      "stamp": "5a5f931a572b6073"
+    },
+    "flock.review.removeSend": {
+      "stamp": "fab55e87827fc15d"
+    },
+    "flock.review.removeTitle": {
+      "stamp": "fab55e87827fc15d"
+    },
+    "flock.review.reportComment": {
+      "stamp": "95d3de6b8cfe10da"
+    },
+    "flock.review.reportedBy_one": {
+      "stamp": "cac8d3e84c41d0c8"
+    },
+    "flock.review.reportedBy_other": {
+      "stamp": "04fb30863b5e7b1b"
+    },
+    "flock.review.reportPost": {
+      "stamp": "8a0a46f669dc1aad"
+    },
+    "flock.review.reports_one": {
+      "stamp": "1cccd11ada627a2d"
+    },
+    "flock.review.reports_other": {
+      "stamp": "1cccd11ada627a2d"
+    },
+    "flock.review.reportSkill": {
+      "stamp": "2fc4f3516543a9b4"
+    },
+    "flock.review.reportUpdate": {
+      "stamp": "3c2bdf640d973f1a"
+    },
     "flock.review.rescues_one": {
       "stamp": "75b69dc492471955"
     },
     "flock.review.rescues_other": {
       "stamp": "75b69dc492471955"
+    },
+    "flock.review.title": {
+      "stamp": "51e347b04e379cae"
+    },
+    "flock.setup.birds": {
+      "stamp": "692c3c7504ca0f64"
+    },
+    "flock.setup.birdsHint": {
+      "stamp": "c850d5328467f82b"
     },
     "flock.setup.change": {
       "stamp": "8a5e4f7f469e8f56"
@@ -5649,11 +9240,533 @@
     "flock.setup.chapterHint": {
       "stamp": "6457f3ae793742f3"
     },
+    "flock.setup.cta": {
+      "stamp": "bd8d9bbdcb53cb41"
+    },
+    "flock.setup.error": {
+      "stamp": "9f13d034dd701c4b"
+    },
+    "flock.setup.line": {
+      "stamp": "ea09afa9dade632e"
+    },
+    "flock.setup.progressAria": {
+      "stamp": "ecdabe0e93e81547"
+    },
+    "flock.setup.saving": {
+      "stamp": "0b998d1b1ad7ec9e"
+    },
+    "flock.setup.title": {
+      "stamp": "3a7a767e4d6edba5"
+    },
+    "flock.space.good": {
+      "stamp": "1bbc7a297325c6ae"
+    },
+    "flock.space.goodLine": {
+      "stamp": "8a9874bca3921a28"
+    },
+    "flock.space.learn": {
+      "stamp": "cf124e63dcf799ef"
+    },
+    "flock.space.learnLine": {
+      "stamp": "55fd7f1341062e41"
+    },
+    "flock.space.start": {
+      "stamp": "665040d449066196"
+    },
+    "flock.space.startLine": {
+      "stamp": "af973859ffe80850"
+    },
+    "flock.spaces.button": {
+      "stamp": "2a10581379fa1095"
+    },
+    "flock.spaces.close": {
+      "stamp": "d981ee660d866d8c"
+    },
+    "flock.spaces.intro": {
+      "stamp": "64fd4c49cf67154d"
+    },
     "flock.spaces.title": {
       "stamp": "2a10581379fa1095"
     },
+    "flock.today.bigMomentPill": {
+      "stamp": "15c21494329af4dd"
+    },
+    "flock.today.empty.everything": {
+      "stamp": "50f080d5ea59f445"
+    },
+    "flock.today.empty.everythingTitle": {
+      "stamp": "0b7fab19c257a2e9"
+    },
+    "flock.today.empty.good": {
+      "stamp": "01894676d6a46240"
+    },
+    "flock.today.empty.goodTitle": {
+      "stamp": "45153ca28739e358"
+    },
+    "flock.today.empty.learn": {
+      "stamp": "cf090dae70023cc2"
+    },
+    "flock.today.empty.learnTitle": {
+      "stamp": "03cb4202ab2983f3"
+    },
+    "flock.today.empty.start": {
+      "stamp": "8934d47cfca19d95"
+    },
+    "flock.today.empty.startTitle": {
+      "stamp": "85c20b44974f5779"
+    },
+    "flock.today.everything": {
+      "stamp": "59db49f7708f7b73"
+    },
+    "flock.today.filterAria": {
+      "stamp": "f1c686db01bfc413"
+    },
+    "flock.today.following": {
+      "stamp": "0974bca64a0fbfbb"
+    },
+    "flock.today.learnedLine": {
+      "stamp": "e95f0a70cf319378"
+    },
+    "flock.today.learnedPill": {
+      "stamp": "6e36d82b42dc4845"
+    },
+    "flock.today.onNewDiet": {
+      "stamp": "a5b9a5cfd0cf18e5"
+    },
+    "flock.today.playClip": {
+      "stamp": "97d503c61b802011"
+    },
+    "flock.today.ringAriaDay": {
+      "stamp": "c5a942ecee6d269d"
+    },
+    "flock.today.ringLearned": {
+      "stamp": "c0e99d013258669a"
+    },
+    "flock.today.title": {
+      "stamp": "65e7700b50124553"
+    },
+    "flock.votes.adminCounts_one": {
+      "stamp": "628ef0ff5c82b46f"
+    },
+    "flock.votes.adminCounts_other": {
+      "stamp": "63d1549112df5df3"
+    },
+    "flock.votes.backToGood": {
+      "stamp": "fcf4289d3f7530d4"
+    },
+    "flock.votes.closedError": {
+      "stamp": "159ac47af49e2209"
+    },
+    "flock.votes.closedEyebrow_one": {
+      "stamp": "3629f42492386b20"
+    },
+    "flock.votes.closedEyebrow_other": {
+      "stamp": "5086fc4268c9c74f"
+    },
+    "flock.votes.closedTag": {
+      "stamp": "0710aad1de2837ab"
+    },
+    "flock.votes.draftLine": {
+      "stamp": "5ea425be02a2f14e"
+    },
+    "flock.votes.error": {
+      "stamp": "4003e5f4c7c34a2c"
+    },
+    "flock.votes.finalNote": {
+      "stamp": "45d781633b7225c6"
+    },
+    "flock.votes.founders": {
+      "stamp": "16664b21243573f8"
+    },
+    "flock.votes.foundersChose": {
+      "stamp": "de184fd72b42d50d"
+    },
+    "flock.votes.foundersChoseTag": {
+      "stamp": "90e5324ddded233b"
+    },
+    "flock.votes.foundersClosedEyebrow_one": {
+      "stamp": "f8ee02a9235f2b47"
+    },
+    "flock.votes.foundersClosedEyebrow_other": {
+      "stamp": "0e5cea7c29cb8e38"
+    },
+    "flock.votes.foundersOpenEyebrow": {
+      "stamp": "16a070ba763e1504"
+    },
+    "flock.votes.howItWorks": {
+      "stamp": "8f7b8b19dc9be91c"
+    },
+    "flock.votes.howItWorksFounders": {
+      "stamp": "964b2552a5606bd8"
+    },
+    "flock.votes.manage": {
+      "stamp": "7b00a478f8eca2e4"
+    },
+    "flock.votes.manageAll": {
+      "stamp": "638c582fef72186a"
+    },
+    "flock.votes.missing": {
+      "stamp": "3726d326dc4bb566"
+    },
+    "flock.votes.missingTitle": {
+      "stamp": "b2d59b81fa0a337b"
+    },
+    "flock.votes.noResult": {
+      "stamp": "8736deac470a26be"
+    },
+    "flock.votes.note": {
+      "stamp": "639fc9c9d8d8cb97"
+    },
+    "flock.votes.noteFrom": {
+      "stamp": "840dbfc4ee2ca7f0"
+    },
+    "flock.votes.ofVotes": {
+      "stamp": "44439562d9a48004"
+    },
+    "flock.votes.openEyebrow": {
+      "stamp": "41958f6fac8db3dc"
+    },
+    "flock.votes.openTag": {
+      "stamp": "db0e1b4f7f47da8d"
+    },
+    "flock.votes.partners": {
+      "stamp": "8299646231e30711"
+    },
+    "flock.votes.pickOne": {
+      "stamp": "509a4e058bc9a71d"
+    },
+    "flock.votes.resultsTitle": {
+      "stamp": "b6bba696356e9cd8"
+    },
+    "flock.votes.resultsWhen": {
+      "stamp": "7933ec2c6206cd77"
+    },
+    "flock.votes.ringLabel": {
+      "stamp": "005049fe79caeb13"
+    },
+    "flock.votes.seeResults": {
+      "stamp": "57cc1cde9a7dbd54"
+    },
+    "flock.votes.seeYourVote": {
+      "stamp": "2d61c7a4bd0a2a5f"
+    },
+    "flock.votes.sharedEvenly": {
+      "stamp": "257c4f41ac529934"
+    },
+    "flock.votes.sharedOutcome": {
+      "stamp": "d4d44d5f32a4bc0f"
+    },
+    "flock.votes.shareSplit": {
+      "stamp": "d0563bfa979fae9f"
+    },
+    "flock.votes.tenPercentLine": {
+      "stamp": "2ec9c347f3665eec"
+    },
+    "flock.votes.thanks": {
+      "stamp": "d0c0a94ed1767910"
+    },
+    "flock.votes.thanksLine": {
+      "stamp": "9a67dcf6a1e80f09"
+    },
+    "flock.votes.thanksLineFounders": {
+      "stamp": "aa08e0576abd9960"
+    },
+    "flock.votes.title": {
+      "stamp": "5277217739e571ea"
+    },
+    "flock.votes.voted_one": {
+      "stamp": "c41715bd4dd66449"
+    },
+    "flock.votes.voted_other": {
+      "stamp": "58f76df57567e803"
+    },
+    "flock.votes.votedSoFar_one": {
+      "stamp": "86c99cfc63956874"
+    },
+    "flock.votes.votedSoFar_other": {
+      "stamp": "df02f6c9c74547b3"
+    },
+    "flock.votes.voteFor": {
+      "stamp": "9cedd0ab55f4156e"
+    },
+    "flock.votes.voteNow": {
+      "stamp": "d0f3ee2a62c8f2f9"
+    },
+    "flock.votes.yourVote": {
+      "stamp": "f28ac221884e908c"
+    },
+    "flock.votes.youVoted_one": {
+      "stamp": "f538e74c37793917"
+    },
+    "flock.votes.youVoted_other": {
+      "stamp": "19a39520bfe5a3f6"
+    },
+    "flock.votesAdmin.addChoice": {
+      "stamp": "3ef8cc833e1cd029"
+    },
+    "flock.votesAdmin.addLogo": {
+      "stamp": "9b6e8e3b7245af8a"
+    },
+    "flock.votesAdmin.allMembers": {
+      "stamp": "24260ec488c91fc5"
+    },
+    "flock.votesAdmin.audienceLabel": {
+      "stamp": "320490f0ab9d150f"
+    },
+    "flock.votesAdmin.cantOpen": {
+      "stamp": "a18a663a0a8e41e9"
+    },
+    "flock.votesAdmin.checkError": {
+      "stamp": "18c9dde63fcf5405"
+    },
+    "flock.votesAdmin.choiceBlurb": {
+      "stamp": "1a5149d3c72201ff"
+    },
+    "flock.votesAdmin.choiceBlurbPlaceholder": {
+      "stamp": "d3dd070ae58fed33"
+    },
+    "flock.votesAdmin.choiceCount_one": {
+      "stamp": "58d9a1ad23b0726e"
+    },
+    "flock.votesAdmin.choiceCount_other": {
+      "stamp": "b1e068a8119097ae"
+    },
+    "flock.votesAdmin.choiceName": {
+      "stamp": "842b4799a3aa8da3"
+    },
+    "flock.votesAdmin.choiceNamePlaceholder": {
+      "stamp": "007f731cba24111c"
+    },
+    "flock.votesAdmin.choicesHint": {
+      "stamp": "c80a4af7a2949c8b"
+    },
+    "flock.votesAdmin.choicesLabel": {
+      "stamp": "a8eda53df7789d58"
+    },
+    "flock.votesAdmin.closeConfirm": {
+      "stamp": "dd6ad3670ad20248"
+    },
+    "flock.votesAdmin.closeConfirmLine": {
+      "stamp": "ed980de0cb769105"
+    },
+    "flock.votesAdmin.closed": {
+      "stamp": "d5672a8ac459f2c5"
+    },
+    "flock.votesAdmin.closedLine_one": {
+      "stamp": "b5e67741d5bff226"
+    },
+    "flock.votesAdmin.closedLine_other": {
+      "stamp": "e789e2566b245f16"
+    },
+    "flock.votesAdmin.closedNow": {
+      "stamp": "ec89d5b65bcd1efc"
+    },
+    "flock.votesAdmin.closedOn": {
+      "stamp": "0d30ca8e51b11906"
+    },
+    "flock.votesAdmin.closeEarly": {
+      "stamp": "1f89556973384eb7"
+    },
+    "flock.votesAdmin.closesHint": {
+      "stamp": "28a6f99e4d194ef6"
+    },
+    "flock.votesAdmin.closesLabel": {
+      "stamp": "648d622fb70430b3"
+    },
+    "flock.votesAdmin.closesOn": {
+      "stamp": "3b9cfcd1d707ba8f"
+    },
+    "flock.votesAdmin.closeYes": {
+      "stamp": "8e4901015a1e2126"
+    },
+    "flock.votesAdmin.delete": {
+      "stamp": "75fe3682692b9432"
+    },
+    "flock.votesAdmin.deleteConfirm": {
+      "stamp": "88c286e3d25041e1"
+    },
+    "flock.votesAdmin.deleteConfirmLine": {
+      "stamp": "079045a7dac5b659"
+    },
+    "flock.votesAdmin.descriptionLabel": {
+      "stamp": "44969e283c39f448"
+    },
+    "flock.votesAdmin.draft": {
+      "stamp": "8119b6fd7f6a8540"
+    },
+    "flock.votesAdmin.draftLine": {
+      "stamp": "7e961caa604aff5c"
+    },
+    "flock.votesAdmin.edit": {
+      "stamp": "06c763945979341b"
+    },
+    "flock.votesAdmin.empty": {
+      "stamp": "112ea8a95048054b"
+    },
+    "flock.votesAdmin.extend": {
+      "stamp": "8728753a473b6fa5"
+    },
+    "flock.votesAdmin.extended": {
+      "stamp": "c531e23fd4623d12"
+    },
+    "flock.votesAdmin.extendError": {
+      "stamp": "824850079633109f"
+    },
+    "flock.votesAdmin.extendLabel": {
+      "stamp": "aa79a3bfa4e0ecf4"
+    },
+    "flock.votesAdmin.foundersOnly": {
+      "stamp": "320de86965346ed4"
+    },
+    "flock.votesAdmin.keepOpen": {
+      "stamp": "16a1eb6c7b9fc526"
+    },
+    "flock.votesAdmin.line": {
+      "stamp": "b7a542ffd37f96c5"
+    },
+    "flock.votesAdmin.loadError": {
+      "stamp": "47bdc061c1d08d47"
+    },
+    "flock.votesAdmin.memberView": {
+      "stamp": "e88217d1a9dd9a97"
+    },
+    "flock.votesAdmin.missing": {
+      "stamp": "7b94e352e3bba0dd"
+    },
+    "flock.votesAdmin.missingLine": {
+      "stamp": "d0885c4f75339df3"
+    },
+    "flock.votesAdmin.moveDown": {
+      "stamp": "1c94e74f12449f40"
+    },
+    "flock.votesAdmin.moveUp": {
+      "stamp": "05039bf464530822"
+    },
+    "flock.votesAdmin.needQuestion": {
+      "stamp": "73a6d0e6bb6a1227"
+    },
+    "flock.votesAdmin.new": {
+      "stamp": "36beece3eb182be5"
+    },
+    "flock.votesAdmin.noteHint": {
+      "stamp": "a75fb65eb503bf74"
+    },
+    "flock.votesAdmin.noteLabel": {
+      "stamp": "a15f30d55e48ec27"
+    },
+    "flock.votesAdmin.noteSaved": {
+      "stamp": "183c8cc0f2373dcd"
+    },
+    "flock.votesAdmin.open": {
+      "stamp": "a60b5be2df86455e"
+    },
+    "flock.votesAdmin.openLine_one": {
+      "stamp": "10e81a01b3db4328"
+    },
+    "flock.votesAdmin.openLine_other": {
+      "stamp": "46994bfbf6e71afa"
+    },
+    "flock.votesAdmin.openVote": {
+      "stamp": "818cae8efe15c829"
+    },
+    "flock.votesAdmin.questionLabel": {
+      "stamp": "6fbcbe85a9ead30e"
+    },
+    "flock.votesAdmin.questionPlaceholder": {
+      "stamp": "2362c5425445dfa2"
+    },
+    "flock.votesAdmin.removeChoice": {
+      "stamp": "880ccb313eec23a7"
+    },
+    "flock.votesAdmin.removeLogo": {
+      "stamp": "7a3c74b21c1d6ef1"
+    },
+    "flock.votesAdmin.replaceLogo": {
+      "stamp": "86d44abcbd96f347"
+    },
+    "flock.votesAdmin.savedDraft": {
+      "stamp": "e55f853d2a32475d"
+    },
+    "flock.votesAdmin.saveNote": {
+      "stamp": "370aad49f1f64153"
+    },
+    "flock.votesAdmin.sharesHint": {
+      "stamp": "af09bb6c7a7b3ec1"
+    },
+    "flock.votesAdmin.sharesTitle": {
+      "stamp": "8ebb8212a038cd63"
+    },
+    "flock.votesAdmin.title": {
+      "stamp": "1af9f0e231471061"
+    },
+    "flock.votesAdmin.toOpen": {
+      "stamp": "e909ad6268ad3a68"
+    },
+    "flock.votesAdmin.voteCount_one": {
+      "stamp": "a59abe0a694056c3"
+    },
+    "flock.votesAdmin.voteCount_other": {
+      "stamp": "003289b6cdd01fc6"
+    },
+    "flock.welcome.cta": {
+      "stamp": "f160137413e889d1"
+    },
+    "flock.welcome.founding": {
+      "stamp": "16a6dadf8fb7dab8"
+    },
+    "flock.welcome.line": {
+      "stamp": "4ffac93dce31831b"
+    },
+    "flock.welcome.member": {
+      "stamp": "f10b7eed417fdde3"
+    },
+    "flock.welcome.time": {
+      "stamp": "d62a1780f8873d9b"
+    },
+    "flock.welcome.title": {
+      "stamp": "a3cdc997a93aefe9"
+    },
+    "flock.welcome.titleNoName": {
+      "stamp": "140befe03dd62379"
+    },
+    "flock.you.blocked": {
+      "stamp": "171b17075c0337b4"
+    },
+    "flock.you.blockedLine": {
+      "stamp": "32896bef040afb06"
+    },
+    "flock.you.edit": {
+      "stamp": "acaf920813434c45"
+    },
+    "flock.you.foundersLine": {
+      "stamp": "418fc73119b60769"
+    },
+    "flock.you.founding": {
+      "stamp": "48becebe659da444"
+    },
+    "flock.you.guidelinesLine": {
+      "stamp": "bbdd602088ab65ee"
+    },
+    "flock.you.member": {
+      "stamp": "f10b7eed417fdde3"
+    },
     "flock.you.membership": {
       "stamp": "dbc836c859ce0792"
+    },
+    "flock.you.notifications": {
+      "stamp": "d55e3b0a4cc07aaa"
+    },
+    "flock.you.notificationsLine": {
+      "stamp": "d533c0cfe6bfbdac"
+    },
+    "flock.you.open": {
+      "stamp": "082a30d4026bdff4"
+    },
+    "flock.you.privacy": {
+      "stamp": "7e4f176cd281246c"
+    },
+    "flock.you.privacyLine": {
+      "stamp": "b67e746b9880d74a"
     },
     "flockCheck.addWeight": {
       "stamp": "1e7d56b6177867b4"
@@ -6287,6 +10400,150 @@
     },
     "foodEditor.when": {
       "stamp": "1391a59a62eace9c"
+    },
+    "founding.back": {
+      "stamp": "5001815e48b3af8b"
+    },
+    "founding.claimButton": {
+      "stamp": "e797fdfe947b2156"
+    },
+    "founding.claimError": {
+      "stamp": "afdc0240a49f60bd"
+    },
+    "founding.claiming": {
+      "stamp": "6233fa62a417d843"
+    },
+    "founding.confirm": {
+      "stamp": "bf57d83828ac822c"
+    },
+    "founding.counter": {
+      "stamp": "992e4bf6f1cc4883"
+    },
+    "founding.doneTitle": {
+      "stamp": "fcc99a64b1cce42f"
+    },
+    "founding.fullBody": {
+      "stamp": "115173d8ed5b42ae"
+    },
+    "founding.fullBodyDated": {
+      "stamp": "4af666a7c443e51a"
+    },
+    "founding.fullOpenBody": {
+      "stamp": "dea978026e7061bf"
+    },
+    "founding.fullOpenBodyDated": {
+      "stamp": "6f61730627fa8ea1"
+    },
+    "founding.fullTitle": {
+      "stamp": "cb1cf91aaf784b4d"
+    },
+    "founding.justClosed": {
+      "stamp": "e79f413ffdda914f"
+    },
+    "founding.justFilled": {
+      "stamp": "26de20394723692e"
+    },
+    "founding.launchNews": {
+      "stamp": "cd38226d313f159d"
+    },
+    "founding.line": {
+      "stamp": "25cfbb9d2c57e512"
+    },
+    "founding.loading": {
+      "stamp": "9038593a5fbeca26"
+    },
+    "founding.locked": {
+      "stamp": "5eecf17740cbfcca"
+    },
+    "founding.lockedDated": {
+      "stamp": "99be807657c52104"
+    },
+    "founding.metaDescription": {
+      "stamp": "25c72d0ae5ba439b"
+    },
+    "founding.next": {
+      "stamp": "b8d288a50238a2c8"
+    },
+    "founding.nextDated": {
+      "stamp": "f939f26cc1fbc59c"
+    },
+    "founding.nextPrice": {
+      "stamp": "20252ec4daa487fb"
+    },
+    "founding.nextTitle": {
+      "stamp": "ce54afdd2144b059"
+    },
+    "founding.noCard": {
+      "stamp": "faac3669bfbfeebb"
+    },
+    "founding.offerLabel": {
+      "stamp": "25c95125a2acdfc8"
+    },
+    "founding.pageTitle": {
+      "stamp": "a540a53d0fe45df1"
+    },
+    "founding.perkBadge": {
+      "stamp": "7266254dc2ecd661"
+    },
+    "founding.perkCall": {
+      "stamp": "15cf4c1b250c6e2d"
+    },
+    "founding.perkEarly": {
+      "stamp": "2ac26c28fbdb04fc"
+    },
+    "founding.perkMonthly": {
+      "stamp": "17c07b91d14cc6be"
+    },
+    "founding.perkPage": {
+      "stamp": "0865b0139752ebfe"
+    },
+    "founding.perksTitle": {
+      "stamp": "b41b746953475ac3"
+    },
+    "founding.perkVote": {
+      "stamp": "283ee5db50e130b9"
+    },
+    "founding.pickRegion": {
+      "stamp": "8aa7228811842e21"
+    },
+    "founding.price": {
+      "stamp": "9900529fc37b7dca"
+    },
+    "founding.regionHint": {
+      "stamp": "9a6b17b8268bdba1"
+    },
+    "founding.regionQ": {
+      "stamp": "d9fc6b94f151a5c9"
+    },
+    "founding.regionsError": {
+      "stamp": "a2150c37bcef52fb"
+    },
+    "founding.regionsLoading": {
+      "stamp": "d9b5ae62724b79f1"
+    },
+    "founding.regular": {
+      "stamp": "dea623af6061bcc6"
+    },
+    "founding.selectRegion": {
+      "stamp": "aa0d3b406c0e407d"
+    },
+    "founding.showOnPage": {
+      "stamp": "f2d627cf3dbca45b"
+    },
+    "founding.showOnPageHint": {
+      "stamp": "f54bdd168df1df99"
+    },
+    "founding.spotNumber": {
+      "stamp": "158146981bb1583f"
+    },
+    "founding.title": {
+      "stamp": "b27606d481230a20"
+    },
+    "founding.toApp": {
+      "stamp": "4f27904dee72234b"
+    },
+    "founding.yourSpot": {
+      "stamp": "cff3a8fb94a0756d"
     },
     "frontDoor.back": {
       "stamp": "5001815e48b3af8b"
@@ -10017,6 +14274,9 @@
     "sitForm.bird": {
       "stamp": "7964d14d200e7108"
     },
+    "sitForm.copySitterLink": {
+      "stamp": "a9de39219487ce7e"
+    },
     "sitForm.couldNotCreate": {
       "stamp": "0b1a8b7341ed6d6d"
     },
@@ -10025,6 +14285,9 @@
     },
     "sitForm.createAndEmail": {
       "stamp": "29a65efbeac4e800"
+    },
+    "sitForm.createdAddressUndeliverable": {
+      "stamp": "009eb6d9c7d4be09"
     },
     "sitForm.createdCopyLink": {
       "stamp": "274fae8f8b8cee04"
@@ -10239,6 +14502,9 @@
     "sitForm.theirInfo": {
       "stamp": "00f6fb73531cd11e"
     },
+    "sitForm.updatedAddressUndeliverable": {
+      "stamp": "3e6cf4595fe37945"
+    },
     "sitForm.updatedHouseholdEmailFailed": {
       "stamp": "7cf9c989fa88ddef"
     },
@@ -10268,6 +14534,9 @@
     },
     "sitLink.copied": {
       "stamp": "570ee0bf18d47361"
+    },
+    "sitLink.copyFailed": {
+      "stamp": "cfd344a0b8d7857e"
     },
     "sitLink.missingContactsAccount": {
       "stamp": "46fafee3da75f2e2"
@@ -12320,6 +16589,117 @@
     },
     "waitlist.yes": {
       "stamp": "3c2100d515be78f6"
+    },
+    "weightBaseline.gotIt": {
+      "stamp": "dea25a84086025ca"
+    },
+    "weightBaseline.hardLossBody": {
+      "stamp": "741ce7cec1d1561b"
+    },
+    "weightBaseline.idealAdd": {
+      "stamp": "7243fcbe9aec5d44"
+    },
+    "weightBaseline.idealCancel": {
+      "stamp": "06c80f8b6f9f2b3b"
+    },
+    "weightBaseline.idealHigh": {
+      "stamp": "62d7c8a6aa32848e"
+    },
+    "weightBaseline.idealHint": {
+      "stamp": "55cca45b73d1e110"
+    },
+    "weightBaseline.idealInvalid": {
+      "stamp": "5df2df4ffab0d634"
+    },
+    "weightBaseline.idealLow": {
+      "stamp": "83d9ae26fc6a3ec4"
+    },
+    "weightBaseline.idealRemove": {
+      "stamp": "7a3c74b21c1d6ef1"
+    },
+    "weightBaseline.idealRemoved": {
+      "stamp": "481183add71779b2"
+    },
+    "weightBaseline.idealSave": {
+      "stamp": "8bb70b77034c99c6"
+    },
+    "weightBaseline.idealSaved": {
+      "stamp": "74c067ffebce154c"
+    },
+    "weightBaseline.idealSaveFailed": {
+      "stamp": "c8fa341ac0115169"
+    },
+    "weightBaseline.idealSaving": {
+      "stamp": "0b998d1b1ad7ec9e"
+    },
+    "weightBaseline.idealTitle": {
+      "stamp": "d2e95dc90f8b275b"
+    },
+    "weightBaseline.idealValue": {
+      "stamp": "462ba16a1d1df352"
+    },
+    "weightBaseline.keepAnEyeBody": {
+      "stamp": "7496f9a2df5fd991"
+    },
+    "weightBaseline.keepAnEyeTitle": {
+      "stamp": "075b84b40d2bab52"
+    },
+    "weightBaseline.learnedBody": {
+      "stamp": "0a128abfa1a90ff8"
+    },
+    "weightBaseline.learnedTitle": {
+      "stamp": "a49741919ba11b05"
+    },
+    "weightBaseline.learning": {
+      "stamp": "af6a514b28a8b5f9"
+    },
+    "weightBaseline.learningAfter": {
+      "stamp": "1b18dc4b01d9fad2"
+    },
+    "weightBaseline.learningBefore": {
+      "stamp": "bc2fea4fc3b5f190"
+    },
+    "weightBaseline.learningTitle": {
+      "stamp": "42009a8538e21025"
+    },
+    "weightBaseline.reweighBody": {
+      "stamp": "b6f5dfcfc074c60e"
+    },
+    "weightBaseline.reweighTitle": {
+      "stamp": "8a4a2115d5fe8f79"
+    },
+    "weightBaseline.shiftedBody": {
+      "stamp": "e8adf74dee776579"
+    },
+    "weightBaseline.shiftedTitle": {
+      "stamp": "bed2dd172424bbff"
+    },
+    "weightBaseline.suddenConfirmedBody": {
+      "stamp": "2265b0c5f3ed6edc"
+    },
+    "weightBaseline.suddenConfirmedTitle": {
+      "stamp": "1f627172599a085a"
+    },
+    "weightBaseline.suddenReweighBody": {
+      "stamp": "10ed39d9293fa56b"
+    },
+    "weightBaseline.usual": {
+      "stamp": "4c06ef4fbce1a712"
+    },
+    "weightBaseline.usualAfter": {
+      "stamp": "3b47f27e84643c14"
+    },
+    "weightBaseline.usualBefore": {
+      "stamp": "6ab6a28548079adb"
+    },
+    "weightBaseline.usualTitle": {
+      "stamp": "72fcff0588f6d7c2"
+    },
+    "weightBaseline.worthWatchingBody": {
+      "stamp": "6331898d311cf70f"
+    },
+    "weightBaseline.worthWatchingTitle": {
+      "stamp": "8a24fb8f536e35ce"
     },
     "weightPill.down": {
       "stamp": "ed2146525061c13f"

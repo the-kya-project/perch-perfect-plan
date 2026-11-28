@@ -43,6 +43,12 @@ All new member-facing wording, word for word from the approved mockups and the p
 - **Where:** the Spaces sheet
   - New: a "Community guidelines" row at the top, above the three spaces.
 
+### [#582](https://github.com/the-kya-project/perch-perfect-plan/pull/582) · Dutch for everything still in English · **merged on Brittany's OK (Nov 28, 2026), not yet read by a native speaker**
+1,535 lines, too many to list here: every one, English next to Dutch, is in [`docs/translations/nl-2026-11-28.md`](translations/nl-2026-11-28.md), grouped by screen. For a native speaker's read.
+- **Where:** the whole Flock (journeys, posts, chapter, events, places, pods, challenges, votes, library, badges, review and admin screens); the public `/founding` page (48 lines, all English until now); care badges (behind their switch); the weight-baseline lines (draft, behind their switch); a few live care-app lines (6 weight, 16 sitter-check, 2 dashboard, 4 sit form and link); and the emails: sign-in and confirmation (35, the old Dutch kept where it still matched) and gifts (40).
+- **Terms:** journey = traject (tab "Trajecten"), chapter = afdeling, chapter lead = afdelingsleider, comment = reactie, reactions = aanmoedigingen, buddy pod = buddygroep, challenge = uitdaging, Today's idea = Idee van de dag, review queue = beoordelingslijst, Resources tab = Bronnen, avian vet = vogeldierenarts, free season = de gratis periode. Brand names stay (Do good, Founding 50, Kya's Crew).
+- **Badge names (new):** Vaste weger, Klaar voor de oppas, Trajectafronder, Trucjesster, Uitdagingskampioen, Goede buur.
+
 ### [#579](https://github.com/the-kya-project/perch-perfect-plan/pull/579) · Chapter names in Dutch · **merged on Brittany's OK (Nov 28, 2026), not yet read by a native speaker**
 Chapter names were rows in the regions table, so they stayed English. The app now shows them in the reader's language wherever the Flock names a chapter (the picker, the Chapter tab, profiles, posts, events, pods, challenges, notifications, the review queue). State codes stay as they are. Not changed: the public `/founding` page (nothing else on it is Dutch yet) and the English-only `/admin/founding`.
 - **Where:** every chapter name in the Flock
@@ -112,6 +118,40 @@ Dutch ("je") for the rest of the Join screen, after #574. Chapter is "afdeling",
   - "If something feels wrong, you can report or block anyone, and the Kya team reviews every report. Members who break these guidelines may have posts removed or lose access to the Flock." → "Voelt er iets niet goed? Je kunt iedereen melden of blokkeren, en het Kya-team bekijkt elke melding. Bij leden die zich niet aan deze richtlijnen houden, kunnen berichten worden verwijderd of kan hun toegang tot de Flock worden ingetrokken."
   - "Questions or a problem?" → "Vragen of een probleem?"
   - "Email the Kya team at {{email}}." → "Mail het Kya-team op {{email}}."
+
+### [#578](https://github.com/the-kya-project/perch-perfect-plan/pull/578) · CR1–CR14 Community navigation redesign (spec and mockups only)
+- **Needs:** merge, once you've read the copy below. All nine answers (Nov 28) are recorded in the spec's "Decisions". Merging puts CR1–CR14 at the top of "Ready to build" for the hourly runs.
+- **Space renamed** (your call, Nov 28; built in CR1):
+  - "Learn together" → "Flock talk" (sentence case: "Flock" is the community's name, "talk" lowercase)
+  - "Questions, guides, and what members are working out with their birds." (Spaces sheet) and "Questions and what's working" (mockups) → "Questions, wins, and everyday life with your bird"
+  - Feed empty state for the space: "No questions yet" / "When members ask, answer, and share what's working with their birds, it will gather here." → "Nothing here yet" / "Questions, wins, and everyday life with members' birds will gather here." (proposed)
+- **Placeholder copy for your review** (from the approved mockups; you'll supply the final text, and it must be final before opening, step 6 of the opening checklist):
+  - **Guidelines page (Final-10):**
+    - Intro: "The Flock is a place to get better at caring for our birds, together. These guidelines keep it kind, useful, and safe for everyone."
+    - What we believe: "Every bird deserves a good life, and most mistakes come from not knowing, not from not caring." / "We share what we've learned so the next bird, and the next person, has an easier time."
+    - How we treat each other: "Kindness first, no shaming, and assume good intent."
+    - Health questions go to your vet: "We share experiences, but we never diagnose."
+    - Posting and sharing: "What belongs where, and how Do good posts are reviewed."
+    - How moderation works: "How the Kya team handles reports and removals."
+    - Button: "Report something"; its sheet: "Report a post or comment", "Report a member", "Email the Kya team"
+  - **Agreement screen (Final-11):**
+    - "Welcome to the Flock" / "Before you join in, take a minute to read how we take care of each other here."
+    - "Be kind" · "No shaming. Assume everyone here loves their birds."
+    - "Health questions go to your vet" · "We share experiences, never diagnoses."
+    - "Share what's yours" · "Your own photos, stories, and questions."
+    - "Zero tolerance for abuse" · "Harassment or harmful content is removed, and the person may be removed too." (keep this line in the final version: Apple 1.2)
+    - "Read the full guidelines" / "I agree, take me to the Flock" / "You'll see this again if the guidelines change."
+- **Other new copy** (from the mockups; each item lists its exact lines again when it's built):
+  - Bottom bar: "Today" → "Feed"; "Add something" (center button, screen readers)
+  - Header: "Menu", "Menu, new activity", "Updates"
+  - Menu: "Community guidelines" · "How we take care of each other"; "Spaces"; space lines (changed from the Spaces sheet's longer ones) "Introductions and first questions", "Questions, wins, and everyday life with your bird", "Rescue, conservation, ways to help"; "[Chapter] chapter"; "Events"; "My birds"; "Home"; "Sits"; "Your profile and posts"; "Notifications"; "Settings"; page "Events are coming soon"
+  - Feed: "Journeys", "See all", "Your journey", "Start a new journey", "Try today", "Tried it", "See how everyone did", "From the spaces", "(you)"
+  - Add sheet: "Add something"; "Weigh & check your flock" · "Opens your daily check for all your birds"; "Post to the community" · "Share a win, ask a question, or say hello"; "Post a journey update" · "[Bird] · [skill]"; "Start a journey"
+  - New post: tile lines "Questions, wins, and everyday life with your bird", "Say hi and ask first questions", "Rescue needs and causes", "Members near you"; "Remove"; "Save to [bird]'s moments too"; "Saved to [bird]'s moments"; "Your post is up. We couldn't save it to [bird]'s moments."
+  - Post options: "Post options", "Report this post", "Report this comment", "Report this member", "Block this member", "Reports go to the Kya team. Blocking hides their posts and comments from you.", "Edit", "Delete", "Report [name]"
+  - Library: "Search the library", "Filters", "Newest first", "TYPE · pick as many as you like", "Subject", "Sort", "Newest", "Oldest", "A to Z", "Clear all", "Show N resources"
+  - Moments (care side, Flock members only): "Also share with the community" · "Posts to the community Feed with [bird]'s photo"
+  - Join: the "I agree to the community guidelines" checkbox and "Join the Flock" give way to "Continue" (chapter and 18+ screen) and the agreement screen's button
 
 ### [#572](https://github.com/the-kya-project/perch-perfect-plan/pull/572) · 1.13b Care badges · **merged on Brittany's OK (Nov 28, 2026), switched off**
 English only (Dutch after you approve the English). Everything is behind the `care_badges` switch (off). All new. Lines marked "mockup" are word for word from `SpecBadges.dc.html`.
@@ -1454,6 +1494,14 @@ No new strings: every line reuses existing wording, in new places (admins only).
 
 ## Decisions agents made
 
+### [#582](https://github.com/the-kya-project/perch-perfect-plan/pull/582) · Dutch for everything still in English
+- **Decision:** The 1,535 lines are listed in their own file (`docs/translations/nl-2026-11-28.md`) rather than in "Copy that merged", with a short summary there.
+- **Why:** the list is longer than the rest of this file.
+- **Decision:** Raised the service worker's precache limit from 2 MiB to 3 MiB (`maximumFileSizeToCacheInBytes` in `vite.config.ts`). The main bundle carries every language's catalog and passed 2 MiB with the Dutch complete, which fails the build. Nothing else about caching changes.
+- **Worth doing next:** load each language's catalog only when it's needed, which shrinks the bundle for everyone. It changes how pages first load (hydration), so it's its own PR.
+- **Decision:** Reactions ("Great job", "Been there"…) are "aanmoedigingen", since "reactie" already means a comment.
+- **Known gaps, not fixed here (code changes):** journey lines get the bird's name from `possessive()` in English form ("Kiwi's"), right in Dutch for most names but not all ("Max's" should be "Max'"); the library admin builds part of one error from English phrases in code (the `PROBLEM` map in `admin.library.$resourceId.tsx`); "{count} people cheered" uses a singular Dutch verb after the count (needs its own plural key); `dashboard.yourBirds` and `dashboard.yourFlock` both read "Je vogels vandaag" because "flock" is locked to "je vogels".
+
 ### [#579](https://github.com/the-kya-project/perch-perfect-plan/pull/579) · Chapter names in Dutch
 - **Decision:** The names are translated in the app, not the database: `chapterName(t, name)` in `src/lib/flockNav.ts` looks up the English name the regions table stores. A renamed or new region shows as stored until a line is added there; `npm run test:flock-shell` fails if the regions seeded in the database and that list drift apart.
 - **Why:** the database name is also what emails, exports and `/admin/founding` read; a table of names per language would be a migration for ten words.
@@ -2107,11 +2155,6 @@ Format:
 
 ### [#584](https://github.com/the-kya-project/perch-perfect-plan/pull/584) · Community guidelines walk-through and guidelines page
 - **Needs:** your approval to merge. It's behind the Flock gate (admins only today) and free users see nothing new, but it's a production database change (new table, new triggers on posts, comments and journeys), it replaces the guidelines' text, and you'll see the walk-through yourself once after it merges. Also decide: keep or retire the join step's own "I agree to the community guidelines" checkbox now that the walk-through records agreement (see Decisions).
-
-### [#572](https://github.com/the-kya-project/perch-perfect-plan/pull/572) · 1.13b Badges: care badges free users can earn
-- **Needs:** your approval of the PR, after looking at the before-and-after screenshots. The run couldn't take them: Chromium won't start inside the hourly job's sandbox. On your Mac, in a copy of this branch: `npm run test:care-badges:screens` (builds, then saves them to `test-results/care-badges/`). "before-switch-off" is what free users get when this merges (no change); the "after-…" ones and "badges-screen" are what you'd see with `select public.admin_set_care_feature('care_badges', 'admins');`.
-- **Also needs:** a read of the new wording (below, under "Copy that merged" once it merges), the answers to the four questions in the PR's "Needs Brittany", and one line added to `.github/workflows/hydration.yml` (`npm run test:care-badges`, after `test:today-card`), which the runs' token can't push. The two habit badges (Steady scale, Daily check-in) go in the vet packet: they reward weighing and checking, never a weight or a result.
-- **Update, Nov 28:** the screenshots are taken and posted on the PR, and the `hydration.yml` line is in (after `test:blog-feed`, alphabetical). Brittany answered all four questions: the pop-up is fine, the Flock's Badges screen stays Flock badges only, everyone's care counts toward a streak (co-carers, and sitters during a sit), and a co-carer earns Plan ready when the plan shows Ready for them. Still open: approval of the PR and its wording.
 
 ### Reminder · the hourly runs' GitHub token expires Feb 20, 2027
 - **Needs:** a new token before **Feb 20, 2027**. That's 90 days from Nov 22, 2026; GitHub → Settings → Developer settings → Fine-grained tokens shows the exact date. When it expires, runs can still build and test but can't push or open PRs, and each run's note in `~/.kya-agent/job.log` says so.

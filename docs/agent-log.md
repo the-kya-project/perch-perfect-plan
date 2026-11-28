@@ -20,6 +20,12 @@ Copy this, fill it in, and put it at the top of "Runs", above the latest entry.
 
 ## Runs
 
+### 2026-11-28 15:40 EST · Dutch for everything still in English (started by Brittany in a session)
+- **Built:** Dutch for the 1,535 lines that were still English: the whole Flock, the founding page, care badges, weight-baseline lines, a few care-app lines, and the sign-in and gift emails. Written in nine batches against one glossary and run through the repo's translation script; nothing is left untranslated in any catalog. The founding page's chapter names are Dutch too. The app's main file passed the service worker's 2 MB caching limit, which broke the build, so the limit is now 3 MB.
+- **PR:** [#582](https://github.com/the-kya-project/perch-perfect-plan/pull/582)
+- **Outcome:** Merged on Brittany's OK once checks passed (Nov 28, 2026). A native speaker's read is still welcome.
+- **Problems:** the build failure above, fixed. Four small wording gaps that need code changes are listed in the review queue.
+
 ### 2026-11-28 14:10 EST · Chapter names in Dutch (started by Brittany in a session)
 - **Built:** the ten chapter names now show in the reader's language wherever the Flock names a chapter, with Dutch for all ten ("Grote Meren", "Andere regio", …). The names are looked up in the app, so the database is unchanged.
 - **PR:** [#579](https://github.com/the-kya-project/perch-perfect-plan/pull/579)

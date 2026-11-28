@@ -204,6 +204,11 @@ export default defineConfig({
           // anything not matched here on demand. Stylesheets are left out on
           // purpose: they load straight from the network (see src/sw.ts).
           globPatterns: ["**/*.{js,html,svg,ico,woff2}"],
+          // Workbox skips (and fails the build on) files over 2 MiB by default.
+          // The main bundle carries every language's catalog and passed 2 MiB
+          // once the Dutch was complete (Nov 2026); 3 MiB keeps it precached
+          // as before. Loading each catalog on demand would shrink it.
+          maximumFileSizeToCacheInBytes: 3 * 1024 * 1024,
         },
       }),
       // NOTE: the plugin emits the finished worker to dist/sw.js (the root

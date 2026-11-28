@@ -4,6 +4,9 @@
 // (CLAUDE.md, Flock safety rules); it imports only the gate in lib/flock.ts.
 
 import type { TFunction } from "i18next";
+import { chapterName } from "./chapterNames";
+
+export { CHAPTER_NAMES, chapterName } from "./chapterNames";
 export type FlockTab = "today" | "journeys" | "chapter" | "library";
 /** The five Community tabs, left to right. "care" (My birds) is last, in the
  *  slot the Community button holds on the care tab bar. */
@@ -99,32 +102,6 @@ export function pickQuery(value: unknown): string | undefined {
   if (typeof value !== "string") return undefined;
   const q = value.slice(0, 100);
   return q.trim() ? q : undefined;
-}
-
-/** The chapters' English names, as the regions table stores them. */
-export const CHAPTER_NAMES = [
-  "California", "Florida", "Great Lakes", "Mid-Atlantic", "Northeast",
-  "Pacific Northwest", "Southeast", "Southwest", "Texas", "Other region",
-] as const;
-
-/** A chapter's name in the reader's language. The regions table stores the
- *  English name (and RPCs return it as region_name / chapter_name), so this
- *  looks it up by that name; a name it doesn't know (a renamed or new region)
- *  is shown as stored. Each key is written out so i18n:extract finds it. */
-export function chapterName(t: TFunction, name: string | null | undefined): string {
-  switch (name) {
-    case "California": return t("flock.chapters.california", "California");
-    case "Florida": return t("flock.chapters.florida", "Florida");
-    case "Great Lakes": return t("flock.chapters.greatLakes", "Great Lakes");
-    case "Mid-Atlantic": return t("flock.chapters.midAtlantic", "Mid-Atlantic");
-    case "Northeast": return t("flock.chapters.northeast", "Northeast");
-    case "Pacific Northwest": return t("flock.chapters.pacificNorthwest", "Pacific Northwest");
-    case "Southeast": return t("flock.chapters.southeast", "Southeast");
-    case "Southwest": return t("flock.chapters.southwest", "Southwest");
-    case "Texas": return t("flock.chapters.texas", "Texas");
-    case "Other region": return t("flock.chapters.other", "Other region");
-    default: return name ?? "";
-  }
 }
 
 /** "Great Lakes · IL · IN · MI · OH"; just the name when there are no states.
