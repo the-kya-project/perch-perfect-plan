@@ -75,6 +75,21 @@ Dutch ("je") for the rest of the Join screen, after #574. Chapter is "afdeling",
   - "Questions or a problem?" → "Vragen of een probleem?"
   - "Email the Kya team at {{email}}." → "Mail het Kya-team op {{email}}."
 
+### [#578](https://github.com/the-kya-project/perch-perfect-plan/pull/578) · CR1–CR14 Community navigation redesign (spec only)
+- **Needs:** answers to the nine questions in the PR's "Needs Brittany" (also at the end of `docs/specs/community-navigation-redesign.md`), then merge. Merging puts CR1–CR14 at the top of "Ready to build" for the hourly runs.
+- **Proposed new copy** (nothing built yet; each item lists its exact lines here again when it's built):
+  - Bottom bar: "Today" → "Feed"; new "Add something" (center button)
+  - Header: new "Menu", "Menu, new activity", "Updates"
+  - Menu: new "How we take care of each other" (under "Community guidelines"), "Spaces", "[Chapter] chapter", "Events", "My birds", "Home", "Sits", "Your profile and posts", "Notifications", "Settings"; new page "Events are coming soon"
+  - Feed: new "Journeys", "See all", "Your journey", "Start a new journey", "Try today", "Tried it", "See how everyone did", "From the spaces"
+  - Add sheet: new "Add something", "Weigh & check your flock", "Post to the community", "Post a journey update", "Start a journey"
+  - New post: new "Posts for your chapter's members" (chapter tile), "Save to [bird]'s moments too", "Saved to [bird]'s moments", "Your post is up. We couldn't save it to [bird]'s moments."
+  - Library: new "Filters", "Type", "Subject", "Sort", "Newest", "Oldest", "A to Z", "Show N resources", "Clear all"
+  - Moments (care side, Flock members only): new "Also share with the community", "[Bird] will be shown to members on this post"
+  - Guidelines: new card titles "What we believe", "How we treat each other", "Health questions go to your vet", "Posting and sharing", "How moderation works"; new "Report something", "Report a post or comment", "Report a member", "Email the Kya team"
+  - Agreement: "I agree to the community guidelines" checkbox + "Join the Flock" → one button, "I agree, take me to the Flock"
+  - Report a member: new "Report [name]"
+
 ### [#572](https://github.com/the-kya-project/perch-perfect-plan/pull/572) · 1.13b Care badges · **merged on Brittany's OK (Nov 28, 2026), switched off**
 English only (Dutch after you approve the English). Everything is behind the `care_badges` switch (off). All new. Lines marked "mockup" are word for word from `SpecBadges.dc.html`.
 - **Where:** the bird page's record list
