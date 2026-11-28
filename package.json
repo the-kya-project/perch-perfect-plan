@@ -80,6 +80,7 @@
     "test:billing": "npx --yes vite-node scripts/billing.test.ts",
     "test:flock-purge": "npx --yes vite-node scripts/flock-purge.test.ts",
     "test:today-card": "npx --yes vite-node scripts/today-card.test.ts",
+    "test:care-badges": "npx --yes vite-node scripts/care-badges.test.ts",
     "test:weight-baseline": "npx --yes vite-node scripts/weight-baseline.test.ts",
     "weight-baseline:replay": "npx --yes vite-node scripts/weight-baseline-replay.ts"
   },

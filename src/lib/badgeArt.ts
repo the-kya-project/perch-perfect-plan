@@ -49,8 +49,8 @@ export function flockBadgeArt(badge: FlockBadgeId, level: number, size: BadgeArt
   return artPath("flock", file, level > 0, size);
 }
 
-// Care badges (1.13b, not built yet) -------------------------------------------
-// Stored now so 1.13b uses this art. Nothing imports it yet.
+// Care badges (1.13b) ------------------------------------------------------------
+// Used by src/components/CareBadgeParts.tsx; the rules are in src/lib/careBadges.ts.
 
 export type CareBadgeId = "steady_scale" | "daily_check_in" | "plan_ready" | "sitter_ready";
 
