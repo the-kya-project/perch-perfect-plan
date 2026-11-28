@@ -86,3 +86,47 @@ export function useDismissWeatherCard(userId: string | null | undefined, date: s
     },
   });
 }
+
+const promptKey = (userId: string | null | undefined) => ["weather-prompt-dismissed", userId];
+
+/** Has this account tapped "Got it" on Home's no-ZIP prompt? Asked only
+ *  while the switch is on and no ZIP or postcode is saved (`enabled`). */
+export function useWeatherPromptDismissed(userId: string | null | undefined, enabled: boolean) {
+  return useQuery({
+    queryKey: promptKey(userId),
+    enabled: enabled && !!userId,
+    staleTime: 5 * 60_000,
+    queryFn: async (): Promise<boolean> => {
+      // Not in the generated types yet.
+      const { data, error } = await (supabase.from as any)("weather_prompt_dismissals")
+        .select("user_id")
+        .eq("user_id", userId)
+        .maybeSingle();
+      if (error) throw error;
+      return !!data;
+    },
+  });
+}
+
+/** "Got it" on the no-ZIP prompt: hidden for good, on every device. */
+export function useDismissWeatherPrompt(userId: string | null | undefined) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async () => {
+      const { error } = await (supabase.from as any)("weather_prompt_dismissals").upsert(
+        { user_id: userId },
+        { onConflict: "user_id", ignoreDuplicates: true },
+      );
+      if (error) throw error;
+    },
+    onMutate: async () => {
+      await qc.cancelQueries({ queryKey: promptKey(userId) });
+      const previous = qc.getQueryData<boolean>(promptKey(userId));
+      qc.setQueryData(promptKey(userId), true);
+      return { previous };
+    },
+    onError: (_err, _v, ctx) => {
+      qc.setQueryData(promptKey(userId), ctx?.previous ?? false);
+    },
+  });
+}

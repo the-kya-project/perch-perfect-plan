@@ -65,20 +65,28 @@ export function WeatherTodayCard({
   );
 }
 
-/** Shown on Home, while the switch is on, when no ZIP or postcode is saved. */
-export function WeatherPostcodePrompt() {
+/** Shown on Home, while the switch is on, when no ZIP or postcode is saved.
+ *  "Got it" hides it for good (Brittany, Nov 28, 2026). */
+export function WeatherPostcodePrompt({ onGotIt }: { onGotIt: () => void }) {
   const { t } = useTranslation();
   const navigate = useNavigate();
   return (
-    <button
-      type="button"
+    <div
       data-testid="weather-postcode-prompt"
-      onClick={() => navigate({ to: "/account" })}
-      className="flex min-h-[44px] w-full items-center gap-3 rounded-[16px] px-4 py-2.5 text-left text-[14px] leading-[1.4]"
+      className="flex min-h-[44px] w-full items-center gap-3 rounded-[16px] px-4 py-2.5 text-[14px] leading-[1.4]"
       style={{ background: "#f1f5f0", color: K.forest }}
     >
-      <Sun className="size-5 shrink-0" style={{ color: K.quiet }} aria-hidden />
-      <span>{t("dashboard.weatherAddPostcode", "Want a heads-up on very hot or cold days? Add your home ZIP or postcode in Account.")}</span>
-    </button>
+      <button
+        type="button"
+        onClick={() => navigate({ to: "/account" })}
+        className="flex min-h-[44px] flex-1 items-center gap-3 text-left"
+      >
+        <Sun className="size-5 shrink-0" style={{ color: K.quiet }} aria-hidden />
+        <span>{t("dashboard.weatherAddPostcode", "Want a heads-up on very hot or cold days? Add your home ZIP or postcode in Account.")}</span>
+      </button>
+      <KyaLink color={K.forest} onClick={onGotIt} className="shrink-0">
+        {t("dashboard.todayCardGotIt", "Got it")}
+      </KyaLink>
+    </div>
   );
 }

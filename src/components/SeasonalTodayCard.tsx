@@ -20,7 +20,7 @@ import { localDateISO } from "@/lib/localDay";
 import { seasonalImageFor, seasonalLabelFor, seasonalToneFor } from "@/lib/seasonalCardStyle";
 import { formatTodayCardEnd, isTodayCardDismissed, todayCardFor } from "@/lib/todayCard";
 import { useDismissTodayCard, useTodayCardDismissal } from "@/lib/todayCardDismissal";
-import { useDismissWeatherCard, useWeatherCard } from "@/lib/homePostcode";
+import { useDismissWeatherCard, useDismissWeatherPrompt, useWeatherCard, useWeatherPromptDismissed } from "@/lib/homePostcode";
 import { WeatherPostcodePrompt, WeatherTodayCard } from "@/components/WeatherTodayCard";
 import { friendlyError } from "@/lib/errorMessage";
 import { toast } from "sonner";
@@ -52,6 +52,9 @@ export function SeasonalTodayCard({
   const [day, setDay] = useState<{ date: string; deviceZone: string | null } | null>(null);
   const weather = useWeatherCard(userId, day?.date ?? null, homeTimeZone || day?.deviceZone || null, weatherOn === true);
   const dismissWeather = useDismissWeatherCard(userId, day?.date ?? null);
+  const noHome = weatherOn === true && weather.data?.enabled === true && !weather.data.home;
+  const promptDismissed = useWeatherPromptDismissed(userId, noHome);
+  const dismissPrompt = useDismissWeatherPrompt(userId);
 
   // Read after mount, and again when the app comes back to the front, so a
   // page left open overnight moves on to the new day.
@@ -86,7 +89,17 @@ export function SeasonalTodayCard({
       />
     );
   }
-  const prompt = w?.enabled && !w.home ? <WeatherPostcodePrompt /> : null;
+  // Shown only once we know it hasn't been dismissed, so it never flashes.
+  const prompt =
+    noHome && promptDismissed.data === false ? (
+      <WeatherPostcodePrompt
+        onGotIt={() =>
+          dismissPrompt.mutate(undefined, {
+            onError: (err) => toast.error(friendlyError(err, t("dashboard.todayCardDismissFailed", "Couldn't hide this card. Try again."))),
+          })
+        }
+      />
+    ) : null;
 
   if (enabled !== true || dismissal.isPending) return prompt;
   const today = todayCardFor(day.date, homeTimeZone || day.deviceZone);

@@ -1,5 +1,5 @@
 -- Weather cards on Home (backlog D2.2). Additive only: one new switch row and
--- two new tables; nothing existing changes.
+-- three new tables; nothing existing changes.
 --
 -- 1. The care switch 'weather_cards' (public.care_features), off. With it off
 --    nobody sees the Account field, the no-ZIP prompt or a weather card. With
@@ -18,6 +18,12 @@
 --    fetched from Apple WeatherKit by the server at most once a day per area and
 --    shared by everyone in it. Service role only. Holds no account, only the
 --    area and the next days' highs and lows (src/lib/weatherCards.ts).
+--
+-- 4. public.weather_prompt_dismissals: "Got it" on Home's no-ZIP prompt
+--    (Brittany, Nov 28, 2026: it should be dismissible). One row per account,
+--    own row only; once it's there the prompt stays hidden on every device.
+--    Adding a ZIP or postcode later in Account still works as before. Deleted
+--    with the account by foreign key.
 
 insert into public.care_features (feature, audience, description) values
   ('weather_cards', 'off', 'Heat and cold cards on Home by the owner''s home ZIP or postcode (backlog D2.2)')
@@ -81,3 +87,28 @@ grant select, insert, update, delete on public.weather_forecasts to service_role
 drop policy if exists "weather_forecasts no direct access" on public.weather_forecasts;
 create policy "weather_forecasts no direct access" on public.weather_forecasts
   for select to authenticated using (false);
+
+create table if not exists public.weather_prompt_dismissals (
+  user_id uuid primary key references auth.users (id) on delete cascade,
+  dismissed_at timestamptz not null default now()
+);
+
+comment on table public.weather_prompt_dismissals is
+  '"Got it" on Home''s no-ZIP weather prompt (backlog D2.2). Own row only. See src/lib/homePostcode.ts.';
+
+alter table public.weather_prompt_dismissals enable row level security;
+revoke all on public.weather_prompt_dismissals from anon, authenticated;
+grant select, insert, delete on public.weather_prompt_dismissals to authenticated;
+grant select, insert, update, delete on public.weather_prompt_dismissals to service_role;
+
+drop policy if exists "weather_prompt_dismissals read own" on public.weather_prompt_dismissals;
+create policy "weather_prompt_dismissals read own" on public.weather_prompt_dismissals
+  for select to authenticated using (user_id = (select auth.uid()));
+
+drop policy if exists "weather_prompt_dismissals add own" on public.weather_prompt_dismissals;
+create policy "weather_prompt_dismissals add own" on public.weather_prompt_dismissals
+  for insert to authenticated with check (user_id = (select auth.uid()));
+
+drop policy if exists "weather_prompt_dismissals remove own" on public.weather_prompt_dismissals;
+create policy "weather_prompt_dismissals remove own" on public.weather_prompt_dismissals
+  for delete to authenticated using (user_id = (select auth.uid()));

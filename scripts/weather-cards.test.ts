@@ -171,12 +171,23 @@ check("off, Home and Account read nothing about weather", () => {
   assert.match(account, /useHomePostcode\(userId, weatherOn\)/);
   assert.match(account, /\{weatherOn && row\(<MapPin/);
   const hooks = readFileSync("src/lib/homePostcode.ts", "utf8");
-  assert.equal((hooks.match(/enabled: enabled && !!userId/g) ?? []).length, 2);
+  assert.equal((hooks.match(/enabled: enabled && !!userId/g) ?? []).length, 3);
 });
 check("the weather card's Got it never touches the seasonal card's", () => {
   const hooks = readFileSync("src/lib/homePostcode.ts", "utf8");
   assert.ok(!/today_card_dismissals/.test(hooks));
   assert.match(hooks, /update\(\{ weather_dismissed_on: date \}\)/);
+});
+check("the no-ZIP prompt has a Got it that hides it for good, asked only with no ZIP", () => {
+  const seasonal = readFileSync("src/components/SeasonalTodayCard.tsx", "utf8");
+  assert.match(seasonal, /const noHome = weatherOn === true && weather\.data\?\.enabled === true && !weather\.data\.home;/);
+  assert.match(seasonal, /useWeatherPromptDismissed\(userId, noHome\)/);
+  assert.match(seasonal, /noHome && promptDismissed\.data === false \?/);
+  const card = readFileSync("src/components/WeatherTodayCard.tsx", "utf8");
+  assert.match(card, /export function WeatherPostcodePrompt\(\{ onGotIt \}/);
+  const sql = readFileSync("supabase/migrations/20261128190000_weather_cards.sql", "utf8");
+  assert.match(sql, /create table if not exists public\.weather_prompt_dismissals/);
+  assert.match(sql, /references auth\.users \(id\) on delete cascade,\n {2}dismissed_at/);
 });
 
 console.log(`\n${passed} passed${process.exitCode ? ", some FAILED" : ""}`);

@@ -109,6 +109,32 @@ begin
     failed := array_append(failed, 'removed and deleted with the account');
   end if;
 
+  -- 8) The no-ZIP prompt's "Got it" is its owner's alone, and goes with the account.
+  perform set_config('request.jwt.claims', json_build_object('sub', owner_id, 'role', 'authenticated')::text, true);
+  set local role authenticated;
+  insert into public.weather_prompt_dismissals (user_id) values (owner_id);
+  select count(*) into n from public.weather_prompt_dismissals;
+  denied := false;
+  begin
+    insert into public.weather_prompt_dismissals (user_id) values (gen_random_uuid());
+  exception when insufficient_privilege then denied := true;
+  end;
+  reset role;
+  if n = 1 and denied then passed := passed + 1; else failed := array_append(failed, 'prompt dismissal own row only'); end if;
+  set local role anon;
+  denied := false;
+  begin
+    perform 1 from public.weather_prompt_dismissals;
+  exception when insufficient_privilege then denied := true;
+  end;
+  reset role;
+  delete from auth.users where id = owner_id;
+  if denied and not exists (select 1 from public.weather_prompt_dismissals where user_id = owner_id) then
+    passed := passed + 1;
+  else
+    failed := array_append(failed, 'prompt dismissal closed to anon and deleted with the account');
+  end if;
+
   raise exception 'WEATHER CARDS CHECKS: % passed, % failed%', passed, coalesce(array_length(failed, 1), 0),
     case when coalesce(array_length(failed, 1), 0) > 0 then ': ' || array_to_string(failed, '; ') else '' end;
 end $$;
