@@ -22,6 +22,42 @@ Where these items came from, with the detail behind each: `docs/flock/opening-sc
 
 ## Ready to build
 
+### D2.2 Weather cards
+- **Spec:** Brittany's approved "Weather cards (D2.2) draft" doc (Nov 28, 2026), written out below. One PR, held for Brittany.
+- **Done means:** Home shows a heat or cold card from Apple WeatherKit, by the owner's own home ZIP or postcode (never the phone's location, never a vet's address), cached per area, behind its own switch, `weather_cards`.
+- **The home ZIP or postcode field (new; the app stores none today):** an optional "Home ZIP or postcode" on Account only, not in setup (Brittany confirmed, Nov 28, 2026), stored on the owner's profile with its country: a 5-digit US ZIP, or the 4 digits of a Dutch postcode. US and Netherlands only for now (Brittany confirmed, Nov 28, 2026); other countries get the seasonal card only. Removing it, or deleting the account, deletes it. Sitters and co-carers never see it. Additive migration only.
+- **Turning a ZIP into a place:** a file in the app maps each ZIP or postcode to the middle of its area, so no outside service ever sees the ZIP itself. US: the Census Bureau's public ZIP areas (ZCTAs). Netherlands: the public 4-digit postcode areas.
+- **The forecast:** a server function asks WeatherKit for each area's daily forecast at most once a day and keeps it for everyone in that area. Never from the phone. Previews have no key, so weather shows as unavailable there.
+- **WeatherKit key:** done (Brittany, Nov 28, 2026, #573). Vercel env vars, Production only: `WEATHERKIT_TEAM_ID`, `WEATHERKIT_KEY_ID`, `WEATHERKIT_SERVICE_ID`, `WEATHERKIT_PRIVATE_KEY` (the .p8 contents). The key is WeatherKit-only; a test call to the availability endpoint passed on Nov 28, 2026.
+- **When a card shows:**
+  - Heat card: today's forecast high is 90°F (32°C) or more.
+  - Cold card: tonight's forecast low is 32°F (0°C) or less.
+  - On a weather day, the weather card takes the seasonal card's spot (D2.1) on Home, and the same "Got it" hides it until the next day.
+  - No ZIP, no forecast, or anything going wrong: the seasonal card shows exactly as today.
+  - Temperatures in °F for US accounts, °C for everyone else. The thresholds live in one place in code, in both units.
+- **Card wording (English only; Dutch after Brittany approves the English).** Plain care steps, never health advice.
+  - Heat card, title: "Hot day ahead: {temp}"
+  - Heat card, body: "Keep {bird}'s cage out of direct sun and away from windows, and check the water more often today. A cool shower or misting helps on a hot afternoon."
+  - Cold card, title: "Cold night ahead: {temp}"
+  - Cold card, body: "Move the cage away from drafty windows and outside doors tonight. A cover over part of the cage helps hold in warmth, and space heaters stay well away from it."
+  - Small print on both cards: "Forecast for {ZIP}. Change it in Account."
+  - ZIP field label (Account): "Home ZIP or postcode"
+  - ZIP field help text: "Optional. We use it only to show heat and cold reminders on Home. We never use your phone's location."
+  - ZIP field error: "That doesn't look like a ZIP or postcode. Check it and try again."
+  - Prompt when no ZIP is saved: "Want a heads-up on very hot or cold days? Add your home ZIP or postcode in Account."
+  - With several birds, {bird}'s becomes "your birds'", so the heat card reads "Keep your birds' cages out of direct sun".
+- **Privacy line (legal text: the agent does not edit the privacy page; Brittany publishes it, with or before the legal update, 1.5).** Matches the policy's current plain style, and the "Last updated" date changes to the day it goes live:
+  1. Add to "What we collect", after "bird profiles and care plans you create,": "your home ZIP or postcode if you choose to add one,"
+  2. A new short section, "Weather reminders", after "How we use it": "If you add a home ZIP or postcode, we use it to show heat and cold reminders on Home. Our server looks up the forecast for the middle of that ZIP or postcode area from Apple WeatherKit and shares the result with everyone in the same area. Apple never receives your ZIP or postcode, your name, your email address or your account. We never use your phone's location. You can remove your ZIP or postcode in Account at any time, and it's deleted with your account."
+  3. A new row in "Services that help us run Kya & Co.": "**Apple WeatherKit**: provides the weather forecast for heat and cold reminders, if you add a home ZIP or postcode. Handles the approximate location of a ZIP or postcode area."
+- **The switch:** a new care-app switch, `weather_cards` in `public.care_features` (off / admins / everyone), like `today_cards`; starts off. The Account field and the no-ZIP prompt are behind it too.
+- **Not in this PR:** push notifications, the phone's location, storm or air-quality alerts, hourly updates, Dutch wording, the privacy page change itself, and any wording that reads as health advice.
+- **Checks:** the ZIP and postcode rules, the heat and cold thresholds in both units, the fallback to the seasonal card, and the free-user regression showing nothing changes while the switch is off.
+- **Size:** M
+- **Depends on:** D2.1 (done, #523)
+- **Overnight alone:** yes, held for Brittany
+- **Needs Brittany:** hold the PR. She reviews the copy and the build, publishes the privacy line before the switch goes past admins, and turns the switch on.
+
 **Community navigation redesign (CR1–CR14).**
 
 Spec: [`docs/specs/community-navigation-redesign.md`](specs/community-navigation-redesign.md). Approved mockups: [`docs/specs/mockups/community-redesign-mockups.html`](specs/mockups/community-redesign-mockups.html) (screens Final-01 to Final-11). Build in this order. Match the mockups visually but build with the existing components and `K` tokens, never the mockup HTML; names, counts and bracketed titles in them are samples. Each PR shows its screen next to the mockup. Everything is behind `flock_enabled()` (admins only) except CR10, which adds one switch to the care side's moment sheet under the shared-code rule. Every item lists its new copy in the review queue; the guidelines and agreement copy is placeholder for Brittany.
@@ -158,13 +194,7 @@ Spec: [`docs/specs/community-navigation-redesign.md`](specs/community-navigation
 
 ## Lowest priority (after everything else)
 
-### D2.2 Weather cards
-- **Done means:** Home shows a heat or cold card from Apple WeatherKit, by the owner's stored home ZIP (never device location), cached per area, behind its own switch.
-- **Size:** M
-- **Depends on:** D2.1, a privacy-policy line (WeatherKit key done)
-- **WeatherKit key:** done (Brittany, Nov 28, 2026). Vercel env vars, Production only: `WEATHERKIT_TEAM_ID`, `WEATHERKIT_KEY_ID`, `WEATHERKIT_SERVICE_ID`, `WEATHERKIT_PRIVATE_KEY` (the .p8 contents). Previews have none, so weather shows as unavailable there. The key is WeatherKit-only; a test call to the availability endpoint passed on Nov 28, 2026.
-- **Overnight alone:** no
-- **Needs Brittany:** the privacy line and the copy.
+Nothing right now.
 
 ---
 

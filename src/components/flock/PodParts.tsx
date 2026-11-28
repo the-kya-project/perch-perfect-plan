@@ -10,6 +10,7 @@ import {
   podRefusal, podStillNeeded, podUnwait, podWait, useInvalidatePods,
   type JourneyPodState, type Pod, type PodMember, type PodRefusal, type PodStage,
 } from "@/lib/flockPods";
+import { chapterName } from "@/lib/flockNav";
 
 // Buddy pods (backlog 1.11; mockup SpecPods.dc.html): the opt-in on the
 // journey setup screen (screen 1), the waiting card on your journey (screen
@@ -32,7 +33,7 @@ export function podRefusalLine(t: TFunction, r: PodRefusal): string {
 
 /** "Pod · 4 members · Great Lakes" style line under a pod's title. */
 export function podLine(t: TFunction, pod: Pick<Pod, "member_count" | "region_name">): string {
-  return [t("flock.pods.members", "{{count}} members", { count: pod.member_count }), pod.region_name].filter(Boolean).join(" · ");
+  return [t("flock.pods.members", "{{count}} members", { count: pod.member_count }), pod.region_name ? chapterName(t, pod.region_name) : null].filter(Boolean).join(" · ");
 }
 
 /** "Target training pod". */

@@ -3535,6 +3535,26 @@
   "flock.billing.yearlyLabel": "Jaarlijks",
   // {{price}} once a year
   "flock.billing.yearlyTotal": "{{price}} eens per jaar",
+  // California
+  "flock.chapters.california": "Californië",
+  // Florida
+  "flock.chapters.florida": "Florida",
+  // Great Lakes
+  "flock.chapters.greatLakes": "Grote Meren",
+  // Mid-Atlantic
+  "flock.chapters.midAtlantic": "Mid-Atlantische staten",
+  // Northeast
+  "flock.chapters.northeast": "Noordoosten",
+  // Other region
+  "flock.chapters.other": "Andere regio",
+  // Pacific Northwest
+  "flock.chapters.pacificNorthwest": "Pacifisch Noordwesten",
+  // Southeast
+  "flock.chapters.southeast": "Zuidoosten",
+  // Southwest
+  "flock.chapters.southwest": "Zuidwesten",
+  // Texas
+  "flock.chapters.texas": "Texas",
   // Share what keeps parrots safe and healthy. Posts that encourage harmful care, or the sale of wild-caught birds, will be removed.
   "flock.guidelines.birds": "Deel wat papegaaien veilig en gezond houdt. Berichten die schadelijke verzorging aanmoedigen, of de verkoop van in het wild gevangen vogels, worden verwijderd.",
   // Put the birds first.

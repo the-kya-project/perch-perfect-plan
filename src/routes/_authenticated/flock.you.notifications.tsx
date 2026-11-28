@@ -12,7 +12,7 @@ import {
   markNotificationsRead, NOTIFICATION_FILTERS, notificationGroup, notificationTarget, useNotifications,
   type FlockNotification, type NotificationFilter,
 } from "@/lib/flockModeration";
-import { pickOptional } from "@/lib/flockNav";
+import { pickOptional, chapterName } from "@/lib/flockNav";
 import { possessive } from "@/lib/journeys";
 
 // Community notifications (Batch 3, screen 7): replies, cheers, review results,
@@ -79,10 +79,10 @@ function NotificationText({ n }: { n: FlockNotification }) {
       return parts(b(n.bird_name ?? who), t("flock.notif.newClip", "posted a new clip in a journey you follow"));
     case "chapter":
       if (n.subject_type === "event" && n.event_starts_at) {
-        return <>{b(`${n.region_name ?? t("flock.notif.chapter", "My chapter")}:`)} {t("flock.notif.chapterEvent", "{{title}} is on the calendar for {{date}}", {
+        return <>{b(`${n.region_name ? chapterName(t, n.region_name) : t("flock.notif.chapter", "My chapter")}:`)} {t("flock.notif.chapterEvent", "{{title}} is on the calendar for {{date}}", {
           title: n.event_title ?? "", date: new Date(n.event_starts_at).toLocaleDateString(i18n.language, { month: "short", day: "numeric" }) })}</>;
       }
-      return <>{b(`${n.region_name ?? t("flock.notif.chapter", "My chapter")}:`)} {t("flock.notif.chapterPost", "{{name}} posted in your chapter", { name: who })}</>;
+      return <>{b(`${n.region_name ? chapterName(t, n.region_name) : t("flock.notif.chapter", "My chapter")}:`)} {t("flock.notif.chapterPost", "{{name}} posted in your chapter", { name: who })}</>;
     case "notice":
       return <>{b(n.detail === "removed" ? t("flock.notif.removed", "We removed something you posted.") : t("flock.notif.notice", "A note from The Kya Project:"))} {n.note}</>;
   }

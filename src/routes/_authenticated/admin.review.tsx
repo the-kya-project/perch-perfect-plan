@@ -12,7 +12,7 @@ import {
   QUEUE_FILTERS, queueItemPlace, resolveReport, reviewEvent, reviewPost, useCanReview, useInvalidateModeration, useReviewCounts,
   useReviewPostSpaces, useReviewQueue, type QueueFilter, type QueueItem, type QueuePlace, type ReportSubject,
 } from "@/lib/flockModeration";
-import { pickOptional } from "@/lib/flockNav";
+import { pickOptional, chapterName } from "@/lib/flockNav";
 import { longWhen } from "@/lib/flockEvents";
 import { reviewPlace, usePlaceSuggestions, type PlaceSuggestion } from "@/lib/flockPlaces";
 import { placeKindLabel } from "@/components/flock/PlaceParts";
@@ -56,7 +56,7 @@ function subjectLabel(t: TFunction, q: QueueItem): string {
 /** "Learn together", "Great Lakes chapter", "Journeys". */
 function placeLabel(t: TFunction, place: QueuePlace): string {
   if (place.kind === "journeys") return t("flock.nav.journeys", "Journeys");
-  if (place.kind === "chapter") return t("flock.posts.chapterSpace", "{{name}} chapter", { name: place.chapter });
+  if (place.kind === "chapter") return t("flock.posts.chapterSpace", "{{name}} chapter", { name: chapterName(t, place.chapter) });
   return postSpaceLabel(t, place.space, place.chapter);
 }
 
@@ -242,7 +242,7 @@ function PlaceSuggestionCard({ p, busy, onApprove, onDecline }: { p: PlaceSugges
   return (
     <article className="flex flex-col gap-2.5 rounded-[18px] bg-white p-4" style={{ color: K.forest }} data-queue-item="place" data-subject={p.place_id}>
       <span className="text-[12.5px] font-[700] uppercase tracking-[0.04em]" style={{ color: K.moss }} data-testid="queue-item-label">
-        {[t("flock.review.place", "Place suggestion"), placeKindLabel(t, p.kind), p.region_name ? t("flock.posts.chapterSpace", "{{name}} chapter", { name: p.region_name }) : null].filter(Boolean).join(" · ")}
+        {[t("flock.review.place", "Place suggestion"), placeKindLabel(t, p.kind), p.region_name ? t("flock.posts.chapterSpace", "{{name}} chapter", { name: chapterName(t, p.region_name) }) : null].filter(Boolean).join(" · ")}
       </span>
       <span className="text-[13px]" style={{ color: K.quiet }}>
         {[p.suggested_by_name, timeAgo(t, p.created_at, i18n.language)].filter(Boolean).join(" · ")}
