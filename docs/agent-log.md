@@ -20,6 +20,12 @@ Copy this, fill it in, and put it at the top of "Runs", above the latest entry.
 
 ## Runs
 
+### 2026-11-28 11:45 EST · 1.16 Rescue partner codes, Dutch (started by Brittany in a session)
+- **Built:** Dutch for all 79 rescue-code lines (the adopter's screens, the Join and redeem card, the admin page and the review chip), hand-written and passed through the repo's translation script for its placeholder checks. Partner lines on the admin page now wrap instead of cutting off, since the Dutch is longer.
+- **PR:** [#574](https://github.com/the-kya-project/perch-perfect-plan/pull/574)
+- **Outcome:** Merged on Brittany's OK once checks passed (Nov 28, 2026). A native speaker's read is still welcome.
+- **Problems:** the rest of the Flock isn't in Dutch yet (about 1,480 lines), so the Join sheet and the admin card show Dutch rescue lines next to English ones until those are translated.
+
 ### 2026-11-28 10:25 EST · 1.13b Badges: care badges free users can earn
 - **Built:** four care badges for every bird, earned in the free care app and switched off until Brittany turns them on: Steady scale (weighing the bird at least once a week, 4, 12 or 52 weeks in a row), Daily check-in (a health check 7 or 30 days in a row), Plan ready (the whole care plan done) and Sitter ready (a pet sitter link sent). Past care counts, shown once as "Here's what you've already earned"; a new badge later gets a "Badge earned" card on the bird page, the bird's record list gets a "Badges" row, and a new Badges screen shows earned and unearned badges with how to earn each. Badges reward the habit, never a weight or a health result. With the switch off, the bird page looks and behaves exactly as before and asks nothing about badges.
 - **PR:** [#572](https://github.com/the-kya-project/perch-perfect-plan/pull/572)
