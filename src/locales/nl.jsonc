@@ -3535,10 +3535,168 @@
   "flock.billing.yearlyLabel": "Jaarlijks",
   // {{price}} once a year
   "flock.billing.yearlyTotal": "{{price}} eens per jaar",
+  // Your rescue adoption is confirmed
+  "flock.join.rescueApproved": "Je adoptie via de opvang is bevestigd",
+  // You have six months in the Flock, free.
+  "flock.join.rescueApprovedLine": "Je krijgt zes maanden in de Flock, gratis.",
+  // We couldn't confirm your adoption
+  "flock.join.rescueDeclined": "We konden je adoptie niet bevestigen",
+  // See what happened and try again.
+  "flock.join.rescueDeclinedLine": "Bekijk wat er is gebeurd en probeer het opnieuw.",
+  // Your adoption is being confirmed
+  "flock.join.rescuePending": "We bevestigen je adoptie",
+  // We'll send a welcome message once it's confirmed, usually within a day or two.
+  "flock.join.rescuePendingLine": "We sturen je een welkomstbericht zodra die bevestigd is, meestal binnen een dag of twee.",
+  // Have a rescue code?
+  "flock.join.rescueTitle": "Heb je een opvangcode?",
   // Community
   "flock.nav.aria": "Community",
   // My birds
   "flock.nav.care": "Mijn vogels",
+  // Adopted from a partner rescue? Your code gives you six months in the Flock.
+  "flock.rescue.about": "Geadopteerd via een partneropvang? Met je code krijg je zes maanden in de Flock.",
+  // Adoption date
+  "flock.rescue.adoptedOn": "Adoptiedatum",
+  // This account has already used a rescue code.
+  "flock.rescue.already": "Met dit account is al een opvangcode gebruikt.",
+  // Back
+  "flock.rescue.back": "Terug",
+  // Back to Join the Flock
+  "flock.rescue.backToJoin": "Terug naar lid worden",
+  // Bird's name
+  "flock.rescue.birdName": "Naam van je vogel",
+  // Checking…
+  "flock.rescue.checking": "Controleren…",
+  // Rescue code
+  "flock.rescue.codeLabel": "Opvangcode",
+  // Continue
+  "flock.rescue.continue": "Doorgaan",
+  // {{rescue}} couldn't confirm {{bird}}'s adoption. If you think that's a mistake, check with your rescue and try again, or email us at {{email}}.
+  "flock.rescue.declinedLine": "{{rescue}} kon de adoptie van {{bird}} niet bevestigen. Denk je dat dit niet klopt? Check het bij de opvang en probeer het opnieuw, of mail ons op {{email}}.",
+  // We couldn't confirm this adoption
+  "flock.rescue.declinedTitle": "We konden deze adoptie niet bevestigen",
+  // Congratulations on your new bird. Tell us a little about the adoption so we can confirm it.
+  "flock.rescue.detailsLine": "Gefeliciteerd met je nieuwe vogel. Vertel ons iets over de adoptie, dan kunnen we die bevestigen.",
+  // Enter the code your rescue gave you.
+  "flock.rescue.enterCode": "Vul de code in die je van de opvang hebt gekregen.",
+  // Rescue codes can't be combined with a founding spot, and your founding membership already includes the Flock.
+  "flock.rescue.founderLine": "Een opvangcode kan niet samen met een oprichtersplek worden gebruikt, en je lidmaatschap als oprichter hoort al bij de Flock.",
+  // You already have a founding spot
+  "flock.rescue.founderTitle": "Je hebt al een oprichtersplek",
+  // That code didn't work. Check it with your rescue and try again.
+  "flock.rescue.invalid": "Die code werkt niet. Check hem bij de opvang en probeer het opnieuw.",
+  // Choose the adoption date. It can't be in the future.
+  "flock.rescue.needDate": "Kies de adoptiedatum. Die kan niet in de toekomst liggen.",
+  // Add your bird's name.
+  "flock.rescue.needName": "Vul de naam van je vogel in.",
+  // Add your bird's species.
+  "flock.rescue.needSpecies": "Vul de soort van je vogel in.",
+  // We're confirming {{bird}}'s adoption with {{rescue}}.
+  "flock.rescue.pendingLine": "We bevestigen de adoptie van {{bird}} bij {{rescue}}.",
+  // You'll get a welcome message here once it's confirmed, usually within a day or two.
+  "flock.rescue.pendingNote": "Je krijgt hier een welkomstbericht zodra die bevestigd is, meestal binnen een dag of twee.",
+  // Your adoption is being confirmed
+  "flock.rescue.pendingTitle": "We bevestigen je adoptie",
+  // Send for confirmation
+  "flock.rescue.send": "Verstuur ter bevestiging",
+  // Sending…
+  "flock.rescue.sending": "Versturen…",
+  // Species
+  "flock.rescue.species": "Soort",
+  // Have a rescue code?
+  "flock.rescue.title": "Heb je een opvangcode?",
+  // Try again
+  "flock.rescue.tryAgain": "Opnieuw proberen",
+  // Continue
+  "flock.rescue.welcomeCta": "Doorgaan",
+  // Your six months: {{start}} to {{end}}.
+  "flock.rescue.welcomeDates": "Je zes maanden: {{start}} tot {{end}}.",
+  // {{rescue}} confirmed {{bird}}'s adoption. You have six months in the Flock, free.
+  "flock.rescue.welcomeLine": "{{rescue}} heeft de adoptie van {{bird}} bevestigd. Je krijgt zes maanden in de Flock, gratis.",
+  // You'll get a welcome message once it's confirmed, usually within a day or two.
+  "flock.rescue.welcomeNote": "Je krijgt een welkomstbericht zodra die bevestigd is, meestal binnen een dag of twee.",
+  // Welcome to the Flock
+  "flock.rescue.welcomeTitle": "Welkom in de Flock",
+  // Your six months start when the free season ends.
+  "flock.rescue.welcomeWhen": "Je zes maanden beginnen als de gratis periode afloopt.",
+  // Add a partner rescue
+  "flock.rescueAdmin.add": "Partneropvang toevoegen",
+  // Add a partner rescue
+  "flock.rescueAdmin.addTitle": "Partneropvang toevoegen",
+  // {{rescue}} · adopted {{date}}
+  "flock.rescueAdmin.adopted": "{{rescue}} · geadopteerd op {{date}}",
+  // {{bird}} · {{species}}
+  "flock.rescueAdmin.bird": "{{bird}} · {{species}}",
+  // Code
+  "flock.rescueAdmin.code": "Code",
+  // One code the rescue shares with every adopter. Letters and numbers only.
+  "flock.rescueAdmin.codeHint": "Eén code die de opvang met elke adoptant deelt. Alleen letters en cijfers.",
+  // Another partner already uses that code.
+  "flock.rescueAdmin.codeTaken": "Een andere partner gebruikt die code al.",
+  // Add partner
+  "flock.rescueAdmin.create": "Partner toevoegen",
+  // Edit
+  "flock.rescueAdmin.edit": "Bewerken",
+  // Edit partner rescue
+  "flock.rescueAdmin.editTitle": "Partneropvang bewerken",
+  // No partner rescues yet. Add one to give it a code for its adopters.
+  "flock.rescueAdmin.empty": "Nog geen partneropvangen. Voeg er een toe om een code voor haar adoptanten te maken.",
+  // This account has a founding spot, so it can't use a rescue code. Decline it.
+  "flock.rescueAdmin.founder": "Dit account heeft een oprichtersplek en kan dus geen opvangcode gebruiken. Wijs het af.",
+  // From {{name}}
+  "flock.rescueAdmin.from": "Van {{name}}",
+  // Rescue adoption
+  "flock.rescueAdmin.label": "Adoptie via de opvang",
+  // Limit on uses (optional)
+  "flock.rescueAdmin.limit": "Maximaal aantal keer gebruiken (optioneel)",
+  // Leave blank for no limit. Adoptions waiting and approved both count.
+  "flock.rescueAdmin.limitHint": "Laat leeg voor geen maximum. Adopties die wachten en die zijn goedgekeurd tellen allebei mee.",
+  // Admin · each adoption gives six months in the Flock, free
+  "flock.rescueAdmin.line": "Beheer · elke adoptie geeft zes maanden in de Flock, gratis",
+  // We couldn't load the partners. Try again.
+  "flock.rescueAdmin.loadError": "We konden de partners niet laden. Probeer het opnieuw.",
+  // Rescue name
+  "flock.rescueAdmin.name": "Naam van de opvang",
+  // Codes are 4 to 30 letters or numbers.
+  "flock.rescueAdmin.needCode": "Een code is 4 tot 30 letters of cijfers.",
+  // Leave the limit blank, or use a whole number.
+  "flock.rescueAdmin.needLimit": "Laat het maximum leeg, of vul een heel getal in.",
+  // Add the rescue's name.
+  "flock.rescueAdmin.needName": "Vul de naam van de opvang in.",
+  // Partners
+  "flock.rescueAdmin.partners": "Partners",
+  // Pause this code
+  "flock.rescueAdmin.pause": "Deze code pauzeren",
+  // Paused
+  "flock.rescueAdmin.paused": "Gepauzeerd",
+  // While it's paused, adopters can't use the code. Adoptions already sent can still be approved.
+  "flock.rescueAdmin.pauseHint": "Zolang de code gepauzeerd is, kunnen adoptanten hem niet gebruiken. Adopties die al zijn verstuurd, kun je nog wel goedkeuren.",
+  // {{count}} waiting
+  "flock.rescueAdmin.pendingCount_one": "{{count}} wacht",
+  // {{count}} waiting
+  "flock.rescueAdmin.pendingCount_other": "{{count}} wachten",
+  // {{count}} redeemed
+  "flock.rescueAdmin.redeemed_one": "{{count}} ingewisseld",
+  // {{count}} redeemed
+  "flock.rescueAdmin.redeemed_other": "{{count}} ingewisseld",
+  // {{count}} of {{limit}} redeemed
+  "flock.rescueAdmin.redeemedOf_one": "{{count}} van {{limit}} ingewisseld",
+  // {{count}} of {{limit}} redeemed
+  "flock.rescueAdmin.redeemedOf_other": "{{count}} van {{limit}} ingewisseld",
+  // Partner rescues and their codes
+  "flock.rescueAdmin.rowLine": "Partneropvangen en hun codes",
+  // Save changes
+  "flock.rescueAdmin.save": "Wijzigingen opslaan",
+  // Saving…
+  "flock.rescueAdmin.saving": "Opslaan…",
+  // Rescue partners
+  "flock.rescueAdmin.title": "Partneropvangen",
+  // Waiting for confirmation
+  "flock.rescueAdmin.waiting": "Wacht op bevestiging",
+  // Rescues {{count}}
+  "flock.review.rescues_one": "Opvang {{count}}",
+  // Rescues {{count}}
+  "flock.review.rescues_other": "Opvang {{count}}",
   // Spaces
   "flock.spaces.title": "Ruimtes",
   // Membership and billing

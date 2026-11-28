@@ -5226,11 +5226,248 @@
     "flock.billing.yearlyTotal": {
       "stamp": "663485083086f81c"
     },
+    "flock.join.rescueApproved": {
+      "stamp": "2f6a6ad5bc1185e0"
+    },
+    "flock.join.rescueApprovedLine": {
+      "stamp": "62c98f4de9c05128"
+    },
+    "flock.join.rescueDeclined": {
+      "stamp": "33fe4bcb9e456d28"
+    },
+    "flock.join.rescueDeclinedLine": {
+      "stamp": "f6cc84de9f09fc7c"
+    },
+    "flock.join.rescuePending": {
+      "stamp": "1077fafcdab4f2ca"
+    },
+    "flock.join.rescuePendingLine": {
+      "stamp": "2f7acfbca2e2c4c5"
+    },
+    "flock.join.rescueTitle": {
+      "stamp": "b267ab1c0a7cab8a"
+    },
     "flock.nav.aria": {
       "stamp": "856262315fd175c0"
     },
     "flock.nav.care": {
       "stamp": "ac0b3154b5476f5c"
+    },
+    "flock.rescue.about": {
+      "stamp": "a2e7106934a9cb18"
+    },
+    "flock.rescue.adoptedOn": {
+      "stamp": "25bd87a411b33e1c"
+    },
+    "flock.rescue.already": {
+      "stamp": "925ed334a402f377"
+    },
+    "flock.rescue.back": {
+      "stamp": "5001815e48b3af8b"
+    },
+    "flock.rescue.backToJoin": {
+      "stamp": "f1e14017509e7891"
+    },
+    "flock.rescue.birdName": {
+      "stamp": "fc6effbf7a87295a"
+    },
+    "flock.rescue.checking": {
+      "stamp": "e9721fdda7f70658"
+    },
+    "flock.rescue.codeLabel": {
+      "stamp": "f57530469663cda6"
+    },
+    "flock.rescue.continue": {
+      "stamp": "f5d8735d0e2ff713"
+    },
+    "flock.rescue.declinedLine": {
+      "stamp": "c3a102b84c60e69c"
+    },
+    "flock.rescue.declinedTitle": {
+      "stamp": "86f4a133c9a09446"
+    },
+    "flock.rescue.detailsLine": {
+      "stamp": "ebf8b3a61d5ae2e1"
+    },
+    "flock.rescue.enterCode": {
+      "stamp": "72cd214d0cc814f6"
+    },
+    "flock.rescue.founderLine": {
+      "stamp": "19cbacfcbfb5b001"
+    },
+    "flock.rescue.founderTitle": {
+      "stamp": "e2cbba2fe2dee487"
+    },
+    "flock.rescue.invalid": {
+      "stamp": "50c30533cbcce84c"
+    },
+    "flock.rescue.needDate": {
+      "stamp": "6d7314221d5da693"
+    },
+    "flock.rescue.needName": {
+      "stamp": "f0bbd84c6f854f96"
+    },
+    "flock.rescue.needSpecies": {
+      "stamp": "5b631b95e2b98fd4"
+    },
+    "flock.rescue.pendingLine": {
+      "stamp": "07aeacea8e95615b"
+    },
+    "flock.rescue.pendingNote": {
+      "stamp": "57aae8b4c2f27954"
+    },
+    "flock.rescue.pendingTitle": {
+      "stamp": "1077fafcdab4f2ca"
+    },
+    "flock.rescue.send": {
+      "stamp": "48746a54abd3ae24"
+    },
+    "flock.rescue.sending": {
+      "stamp": "2696b1cead25f426"
+    },
+    "flock.rescue.species": {
+      "stamp": "558943ff684792a6"
+    },
+    "flock.rescue.title": {
+      "stamp": "b267ab1c0a7cab8a"
+    },
+    "flock.rescue.tryAgain": {
+      "stamp": "5c0ecee5e225e041"
+    },
+    "flock.rescue.welcomeCta": {
+      "stamp": "f5d8735d0e2ff713"
+    },
+    "flock.rescue.welcomeDates": {
+      "stamp": "71721b36bed74c9c"
+    },
+    "flock.rescue.welcomeLine": {
+      "stamp": "aaa546a5e7fae324"
+    },
+    "flock.rescue.welcomeNote": {
+      "stamp": "05732102cf75ce66"
+    },
+    "flock.rescue.welcomeTitle": {
+      "stamp": "140befe03dd62379"
+    },
+    "flock.rescue.welcomeWhen": {
+      "stamp": "8bf2f0e295b79875"
+    },
+    "flock.rescueAdmin.add": {
+      "stamp": "8504af082b589d37"
+    },
+    "flock.rescueAdmin.addTitle": {
+      "stamp": "8504af082b589d37"
+    },
+    "flock.rescueAdmin.adopted": {
+      "stamp": "216e02f3954e6b6b"
+    },
+    "flock.rescueAdmin.bird": {
+      "stamp": "62c66e08bd02df4c"
+    },
+    "flock.rescueAdmin.code": {
+      "stamp": "4760b0db35ae132b"
+    },
+    "flock.rescueAdmin.codeHint": {
+      "stamp": "1dc5bf1ebfb085b1"
+    },
+    "flock.rescueAdmin.codeTaken": {
+      "stamp": "b5629df978789935"
+    },
+    "flock.rescueAdmin.create": {
+      "stamp": "550697464c2fd2b9"
+    },
+    "flock.rescueAdmin.edit": {
+      "stamp": "dc46962c1249053f"
+    },
+    "flock.rescueAdmin.editTitle": {
+      "stamp": "97b2513685f7e375"
+    },
+    "flock.rescueAdmin.empty": {
+      "stamp": "bd1a457068ae924d"
+    },
+    "flock.rescueAdmin.founder": {
+      "stamp": "4e93012e813ea26a"
+    },
+    "flock.rescueAdmin.from": {
+      "stamp": "397f441ce87d391d"
+    },
+    "flock.rescueAdmin.label": {
+      "stamp": "c05e5ee92bc0fd29"
+    },
+    "flock.rescueAdmin.limit": {
+      "stamp": "51ffd5a2086f8fd2"
+    },
+    "flock.rescueAdmin.limitHint": {
+      "stamp": "f96b753132bf7344"
+    },
+    "flock.rescueAdmin.line": {
+      "stamp": "30a67e628f3bf6e7"
+    },
+    "flock.rescueAdmin.loadError": {
+      "stamp": "fa63e4781dbce13e"
+    },
+    "flock.rescueAdmin.name": {
+      "stamp": "ea51f981bfd607a8"
+    },
+    "flock.rescueAdmin.needCode": {
+      "stamp": "f34836fe3b4fc2e9"
+    },
+    "flock.rescueAdmin.needLimit": {
+      "stamp": "26b4ee705452b2ed"
+    },
+    "flock.rescueAdmin.needName": {
+      "stamp": "3b6f06616b1268e5"
+    },
+    "flock.rescueAdmin.partners": {
+      "stamp": "58bd55bd6331fde6"
+    },
+    "flock.rescueAdmin.pause": {
+      "stamp": "27bbe6a56e0c713d"
+    },
+    "flock.rescueAdmin.paused": {
+      "stamp": "48f19248b01c9832"
+    },
+    "flock.rescueAdmin.pauseHint": {
+      "stamp": "84dceff49ee6bcb4"
+    },
+    "flock.rescueAdmin.pendingCount_one": {
+      "stamp": "45956b328ca2d1bc"
+    },
+    "flock.rescueAdmin.pendingCount_other": {
+      "stamp": "45956b328ca2d1bc"
+    },
+    "flock.rescueAdmin.redeemed_one": {
+      "stamp": "2712080a28e29ef9"
+    },
+    "flock.rescueAdmin.redeemed_other": {
+      "stamp": "2712080a28e29ef9"
+    },
+    "flock.rescueAdmin.redeemedOf_one": {
+      "stamp": "ff56f689d1d1575f"
+    },
+    "flock.rescueAdmin.redeemedOf_other": {
+      "stamp": "ff56f689d1d1575f"
+    },
+    "flock.rescueAdmin.rowLine": {
+      "stamp": "0a8eb1135b92a47b"
+    },
+    "flock.rescueAdmin.save": {
+      "stamp": "3dc2f8e8fc14e4eb"
+    },
+    "flock.rescueAdmin.saving": {
+      "stamp": "0b998d1b1ad7ec9e"
+    },
+    "flock.rescueAdmin.title": {
+      "stamp": "dc6bf67494b1e777"
+    },
+    "flock.rescueAdmin.waiting": {
+      "stamp": "b7980b3f7d468425"
+    },
+    "flock.review.rescues_one": {
+      "stamp": "75b69dc492471955"
+    },
+    "flock.review.rescues_other": {
+      "stamp": "75b69dc492471955"
     },
     "flock.spaces.title": {
       "stamp": "2a10581379fa1095"

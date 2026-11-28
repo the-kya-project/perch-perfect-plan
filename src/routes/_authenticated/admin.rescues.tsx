@@ -114,8 +114,8 @@ function PartnerRow({ p, onEdit }: { p: RescuePartner; onEdit: () => void }) {
   return (
     <li className="flex min-h-[60px] items-center gap-3 rounded-[16px] bg-white px-4 py-3" style={{ color: K.forest }} data-partner={p.partner_id} data-paused={p.paused || undefined}>
       <span className="flex min-w-0 flex-1 flex-col gap-0.5">
-        <span className="truncate text-[15px] font-[700]">{p.name}</span>
-        <span className="truncate text-[13px]" style={{ color: K.quiet }} data-testid="partner-line">
+        <span className="break-words text-[15px] font-[700]">{p.name}</span>
+        <span className="break-words text-[13px] leading-[1.4]" style={{ color: K.quiet }} data-testid="partner-line">
           {[p.code, uses, p.pending > 0 ? t("flock.rescueAdmin.pendingCount", "{{count}} waiting", { count: p.pending }) : null].filter(Boolean).join(" · ")}
         </span>
       </span>
