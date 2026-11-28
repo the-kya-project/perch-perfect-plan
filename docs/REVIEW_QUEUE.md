@@ -19,6 +19,18 @@ Format:
   - After: "<new wording>"
 ```
 
+### [#586](https://github.com/the-kya-project/perch-perfect-plan/pull/586) · Dutch wording gaps from #582
+English is unchanged everywhere. New Dutch:
+- **Where:** a bird's name in journey and notification lines ("Started from Max' journey")
+  - Before: always the English form ("Max's")
+  - After: Dutch rules in Dutch: "Kiwi's", "Mango's", "Sunny's"; "Max'", "Iris'"; "Pieters", "Charlies"
+- **Where:** `/admin/library`, "Add … before publishing" (admins only)
+  - Before: the missing items were always English ("a title, at least one topic")
+  - After: "een titel", "een korte samenvatting", "minstens één onderwerp", "de weblink (video's en links hebben er een nodig)"
+- **Where:** Community notifications, when several people cheer
+  - Before: "3 mensen moedigde … aan" (singular verb)
+  - After: "3 mensen moedigden … aan"
+
 ### [#582](https://github.com/the-kya-project/perch-perfect-plan/pull/582) · Dutch for everything still in English · **merged on Brittany's OK (Nov 28, 2026), not yet read by a native speaker**
 1,535 lines, too many to list here: every one, English next to Dutch, is in [`docs/translations/nl-2026-11-28.md`](translations/nl-2026-11-28.md), grouped by screen. For a native speaker's read.
 - **Where:** the whole Flock (journeys, posts, chapter, events, places, pods, challenges, votes, library, badges, review and admin screens); the public `/founding` page (48 lines, all English until now); care badges (behind their switch); the weight-baseline lines (draft, behind their switch); a few live care-app lines (6 weight, 16 sitter-check, 2 dashboard, 4 sit form and link); and the emails: sign-in and confirmation (35, the old Dutch kept where it still matched) and gifts (40).
@@ -1470,6 +1482,10 @@ No new strings: every line reuses existing wording, in new places (admins only).
 
 ## Decisions agents made
 
+### [#586](https://github.com/the-kya-project/perch-perfect-plan/pull/586) · Dutch wording gaps from #582
+- **Decision:** No change for `dashboard.yourBirds` / `dashboard.yourFlock` (both "Je vogels vandaag" in Dutch). They're alternatives for the same title on Home (with or without a household), never shown together, so reading the same is fine.
+- **Decision:** The Dutch possessive rule lives in `possessive(name, lang)` in `src/lib/journeys.ts`, with tests in `npm run test:flock-shell`.
+
 ### [#582](https://github.com/the-kya-project/perch-perfect-plan/pull/582) · Dutch for everything still in English
 - **Decision:** The 1,535 lines are listed in their own file (`docs/translations/nl-2026-11-28.md`) rather than in "Copy that merged", with a short summary there.
 - **Why:** the list is longer than the rest of this file.
@@ -2116,6 +2132,9 @@ Format:
 ### <PR link> · <item ID> <item title>
 - **Needs:** <the decision, approval or read, in one or two lines>
 ```
+
+### [#586](https://github.com/the-kya-project/perch-perfect-plan/pull/586) · Dutch wording gaps from #582
+- **Needs:** your OK in the PR to merge. Behind the Flock gate; English unchanged.
 
 ### [#572](https://github.com/the-kya-project/perch-perfect-plan/pull/572) · 1.13b Badges: care badges free users can earn
 - **Needs:** your approval of the PR, after looking at the before-and-after screenshots. The run couldn't take them: Chromium won't start inside the hourly job's sandbox. On your Mac, in a copy of this branch: `npm run test:care-badges:screens` (builds, then saves them to `test-results/care-badges/`). "before-switch-off" is what free users get when this merges (no change); the "after-…" ones and "badges-screen" are what you'd see with `select public.admin_set_care_feature('care_badges', 'admins');`.
