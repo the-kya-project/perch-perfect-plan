@@ -36,6 +36,12 @@ export const Route = createFileRoute("/_authenticated/flock")({
       rememberMode("care");
       throw redirect({ to: "/dashboard", replace: true });
     }
+    // Already agreed and opening the walk-through (a stale link, another tab):
+    // straight to the feed.
+    if (location.pathname.startsWith("/flock/agree")) {
+      const agreed = await context.queryClient.fetchQuery(GUIDELINES_AGREED_QUERY).catch(() => false);
+      if (agreed) throw redirect({ to: "/flock", replace: true });
+    }
     if (!isWalkthroughPath(location.pathname)) {
       const agreed = await context.queryClient.fetchQuery(GUIDELINES_AGREED_QUERY).catch(() => false);
       if (!agreed) {

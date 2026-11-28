@@ -3776,6 +3776,26 @@ test.describe("the community guidelines walk-through (phone)", () => {
     await context.close();
   });
 
+  test("a non-member: walk-through first, then the join step with its sheet (and nothing loops)", async ({ browser, baseURL }) => {
+    const { context, page, state } = await open(browser, baseURL!, { admin: false, membersOpen: true, setupDone: false });
+    state.access = { member_now: false, has_membership: false, agreed: false, is_admin: false, guidelines_version: "2026-12", opens_at: null, season_ends_at: "2027-07-06T04:00:00Z" };
+    state.guidelinesAgreed = false;
+    let profileReads = 0;
+    page.on("request", (r) => { if (r.url().includes("/rest/v1/flock_profiles")) profileReads++; });
+    await page.goto("/dashboard");
+    await page.locator('[data-coach="owner-tab-flock"]').first().click();
+    await expect(page.getByTestId("walkthrough-step-1")).toBeVisible();
+    await page.getByTestId("walkthrough-next").click();
+    await page.getByTestId("walkthrough-next").click();
+    await page.getByTestId("walkthrough-agree").click();
+    await expect(page).toHaveURL(/\/flock\/join/);
+    await expect(page.getByTestId("join-flock-sheet")).toBeVisible();
+    await page.waitForTimeout(1500);
+    await expect(page).toHaveURL(/\/flock\/join/);
+    expect(profileReads).toBeLessThan(10);
+    await context.close();
+  });
+
   test("screen 1's close button, Back and Escape all return to the care side", async ({ browser, baseURL }) => {
     const { context, page, state } = await open(browser, baseURL!, { admin: true });
     state.guidelinesAgreed = false;

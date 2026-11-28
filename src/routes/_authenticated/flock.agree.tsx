@@ -1,9 +1,9 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQueryClient } from "@tanstack/react-query";
 import { GuidelinesWalkthrough } from "@/components/flock/GuidelinesWalkthrough";
 import { GUIDELINES_VERSION, WALKTHROUGH_STEPS } from "@/flock/guidelines/version";
-import { GUIDELINES_AGREED_QUERY, agreeToGuidelines, setWalkthroughOpen } from "@/flock/guidelines/agreement";
+import { agreeToGuidelines, setWalkthroughOpen } from "@/flock/guidelines/agreement";
 import { trackFlockWalkthrough } from "@/lib/flockAnalytics";
 import { rememberMode } from "@/lib/flock";
 
@@ -29,12 +29,10 @@ function FlockAgree() {
   const step = raw ?? 1;
   const navigate = useNavigate();
   const qc = useQueryClient();
-  const { data: agreed } = useQuery(GUIDELINES_AGREED_QUERY);
-
-  // Already agreed (another tab, or a stale link): straight to the feed.
-  useEffect(() => {
-    if (agreed === true) void navigate({ to: "/flock", replace: true });
-  }, [agreed, navigate]);
+  // Already agreed (another tab, or a stale link)? The /flock layout's
+  // beforeLoad sends them on to the feed. Not an effect here: while the router
+  // moves a non-member on to the join step, this page re-renders, and an
+  // effect would send them back to /flock again and again.
 
   // Not in the Flock until they agree: the device stays in care mode, so
   // backing out (or reopening the app) lands on Home, not back here.
