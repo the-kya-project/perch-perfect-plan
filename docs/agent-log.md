@@ -23,7 +23,7 @@ Copy this, fill it in, and put it at the top of "Runs", above the latest entry.
 ### 2026-11-28 18:20 EST · Load each language only when it's needed (started by Brittany in a session)
 - **Built:** the app's main file now carries English only; Dutch is a separate file the browser fetches the first time Dutch is needed. The main file is 26% smaller (2.24 MB to 1.66 MB). A Dutch sitter sees the loading skeleton until Dutch arrives, never English first. The temporary 3 MB caching limit from #582 is back to 2 MB.
 - **PR:** [#587](https://github.com/the-kya-project/perch-perfect-plan/pull/587)
-- **Outcome:** Held: for Brittany's OK (changes how the live app loads).
+- **Outcome:** Merged on Brittany's OK once checks passed (Nov 28, 2026).
 - **Problems:** none; the known join test fails on this Mac only.
 
 ### 2026-11-28 17:10 EST · Dutch wording gaps from #582 (started by Brittany in a session)
