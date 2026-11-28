@@ -29,7 +29,10 @@ import {
 import { SEASONAL_CARDS } from "@/lib/seasonalCalendar";
 import { localDateISO } from "@/lib/localDay";
 import { CARE_FEATURES } from "@/lib/careFeatures";
-import { resources } from "@/lib/i18n/catalogs";
+import { loadLocaleBundle } from "@/lib/i18n/catalogs";
+
+// English is bundled; Dutch is fetched on demand, the same way the app loads it.
+const seasonalByLang = { en: (await loadLocaleBundle("en")).seasonal, nl: (await loadLocaleBundle("nl")).seasonal };
 
 let passed = 0;
 function check(name: string, fn: () => void) {
@@ -120,13 +123,18 @@ check("late on Thanksgiving in Hawaii (already Friday in UTC) still shows Thanks
 console.log("Words in both languages");
 check("the app loads every card's title and body in English and Dutch", () => {
   for (const lng of ["en", "nl"] as const) {
-    const ns = resources[lng].seasonal as Record<string, string>;
+    const ns = seasonalByLang[lng] as Record<string, string>;
     for (const card of SEASONAL_CARDS) {
       for (const key of [`seasonal.${card.id}.title`, `seasonal.${card.id}.body`]) {
         assert.ok(typeof ns[key] === "string" && ns[key].trim().length > 0, `${lng} ${key}`);
       }
     }
   }
+});
+check("only English is bundled: other languages are fetched on demand", () => {
+  const src = readFileSync("src/lib/i18n/catalogs.ts", "utf8");
+  assert.doesNotMatch(src, /^import [^;]* from "@\/locales\/(?!(routine\.|seasonal\.)?en\.)[^"]+";/m, "a static import of a non-English catalog");
+  assert.match(src, /import\("@\/locales\/nl\.jsonc\?raw"\)/, "Dutch is a dynamic import");
 });
 check("the i18n runtime lists the seasonal namespace", () => {
   const src = readFileSync("src/lib/i18n/i18n.ts", "utf8");

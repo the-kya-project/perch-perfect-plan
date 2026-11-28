@@ -11,16 +11,25 @@
 // hydrationI18n instead, and RootComponent hands over to globalI18n afterwards.
 
 import { supabase } from "@/integrations/supabase/client";
-import { globalI18n } from "./i18n";
+import { globalI18n, isLocaleLoaded, loadLocale } from "./i18n";
 import { OWNER_I18N_ENABLED, isLocale, pickLocale, type Locale } from "./config";
 
 /** Render the owner app in `saved` (profiles.locale), or the browser language
  *  when there's no saved choice (signed out, or not captured yet). */
+let wanted: Locale | null = null;
 export function applyOwnerLocale(saved: string | null | undefined): void {
   if (!OWNER_I18N_ENABLED || typeof window === "undefined") return;
   const locale: Locale = isLocale(saved) ? saved : pickLocale(navigator.language);
-  if (globalI18n.language !== locale) void globalI18n.changeLanguage(locale);
-  document.documentElement.lang = locale;
+  wanted = locale;
+  const apply = () => {
+    if (wanted !== locale) return; // a newer choice came in while this one loaded
+    if (globalI18n.language !== locale) void globalI18n.changeLanguage(locale);
+    document.documentElement.lang = locale;
+  };
+  // Languages other than English are fetched the first time (./catalogs). The
+  // page stays in English until then; if the fetch fails it simply stays English.
+  if (isLocaleLoaded(locale)) apply();
+  else void loadLocale(locale).then(apply, () => undefined);
 }
 
 /** Save the owner's language choice and switch to it. Throws if the row
