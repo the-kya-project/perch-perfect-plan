@@ -177,7 +177,7 @@ begin
   if not private.care_feature_on_for('care_badges', v_me) then
     return;
   end if;
-  if p_bird_id is null or public.has_bird_access(p_bird_id, v_me) is null then
+  if p_bird_id is null or private.has_bird_access(p_bird_id, v_me) is null then
     raise exception 'not your bird' using errcode = '42501';
   end if;
   insert into public.care_badge_syncs (user_id, bird_id) values (v_me, p_bird_id)
