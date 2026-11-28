@@ -24,7 +24,7 @@ export const Route = createFileRoute("/_authenticated/flock/journeys/skills")({
 });
 
 function MemberSkills() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const navigate = useNavigate({ from: Route.fullPath });
   const searchId = useId();
   const { bird, q } = Route.useSearch();
@@ -74,7 +74,7 @@ function MemberSkills() {
                 <span className="text-[15px] font-[700]">{s.skill}</span>
                 {s.description && <span className="line-clamp-2 text-[12.5px] leading-[1.35]" style={{ color: K.quiet }}>{s.description}</span>}
                 <span className="text-[12px]" style={{ color: K.quiet }}>
-                  {[t("flock.journeys.member.fromJourney", "From {{name}} journey", { name: possessive(s.bird_name) }), s.owner_name].filter(Boolean).join(" · ")}
+                  {[t("flock.journeys.member.fromJourney", "From {{name}} journey", { name: possessive(s.bird_name, i18n.language) }), s.owner_name].filter(Boolean).join(" · ")}
                 </span>
                 <MemberSuppliedTag className="mt-1" />
               </span>

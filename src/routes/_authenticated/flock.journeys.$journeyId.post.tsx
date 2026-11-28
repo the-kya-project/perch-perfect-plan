@@ -133,7 +133,7 @@ function Compose({ journeyId, clip, birdName, diet, visibility, canShare, onBack
   journeyId: string; clip: string; birdName: string; diet: boolean; visibility: JourneyVisibility; canShare: boolean;
   onBack: () => void; onClip: (ref: string) => void;
 }) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const invalidate = useInvalidateJourneys();
   const captionId = useId();
@@ -270,7 +270,7 @@ function Compose({ journeyId, clip, birdName, diet, visibility, canShare, onBack
           <div className="mx-3 mb-3 flex flex-col gap-3 rounded-[22px] bg-white p-[18px]" style={{ color: K.forest }}>
             <div className="flex items-center gap-2.5">
               <span className="grid size-7 place-items-center rounded-full" style={{ background: K.moss }}><Check className="size-4 text-white" strokeWidth={3} aria-hidden="true" /></span>
-              <span className="text-[15px] font-[700]">{t("flock.journeys.post.posted", "Posted to {{name}} journey", { name: possessive(birdName) })}</span>
+              <span className="text-[15px] font-[700]">{t("flock.journeys.post.posted", "Posted to {{name}} journey", { name: possessive(birdName, i18n.language) })}</span>
             </div>
             {posted.bigMoment && (
               <>

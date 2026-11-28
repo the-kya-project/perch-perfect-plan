@@ -455,6 +455,13 @@ check("journeys: pronouns, possessives and the vet check line", () => {
   assert.equal(birdPronoun("Unknown"), "they");
   assert.equal(possessive("Juno"), "Juno's");
   assert.equal(possessive("Iris"), "Iris'");
+  // Dutch: 's after a vowel sound, ' after a sibilant, otherwise a plain s.
+  for (const [n, want] of [["Kiwi", "Kiwi's"], ["Mango", "Mango's"], ["Lola", "Lola's"], ["Sunny", "Sunny's"], ["José", "José's"],
+    ["Max", "Max'"], ["Iris", "Iris'"], ["Fritz", "Fritz'"], ["Bruce", "Bruce'"], ["Pieter", "Pieters"], ["Charlie", "Charlies"], ["Anne", "Annes"], ["Echo", "Echo's"]] as const) {
+    assert.equal(possessive(n, "nl"), want, n);
+  }
+  assert.equal(possessive("Max", "nl-NL"), "Max'");
+  assert.equal(possessive("Max", "en"), "Max's", "English unchanged");
   assert.equal(vetCheckLine({ safeguards: ["Daily weigh-ins.", "The template suggests a vet check before starting."] }), "The template suggests a vet check before starting.");
   assert.equal(vetCheckLine({ safeguards: [] }), null);
 });
