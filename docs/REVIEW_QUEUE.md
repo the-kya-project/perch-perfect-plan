@@ -19,6 +19,12 @@ Format:
   - After: "<new wording>"
 ```
 
+### [#582](https://github.com/the-kya-project/perch-perfect-plan/pull/582) · Dutch for everything still in English
+1,535 lines, too many to list here: every one, English next to Dutch, is in [`docs/translations/nl-2026-11-28.md`](translations/nl-2026-11-28.md), grouped by screen. For a native speaker's read.
+- **Where:** the whole Flock (journeys, posts, chapter, events, places, pods, challenges, votes, library, badges, review and admin screens); the public `/founding` page (48 lines, all English until now); care badges (behind their switch); the weight-baseline lines (draft, behind their switch); a few live care-app lines (6 weight, 16 sitter-check, 2 dashboard, 4 sit form and link); and the emails: sign-in and confirmation (35, the old Dutch kept where it still matched) and gifts (40).
+- **Terms:** journey = traject (tab "Trajecten"), chapter = afdeling, chapter lead = afdelingsleider, comment = reactie, reactions = aanmoedigingen, buddy pod = buddygroep, challenge = uitdaging, Today's idea = Idee van de dag, review queue = beoordelingslijst, Resources tab = Bronnen, avian vet = vogeldierenarts, free season = de gratis periode. Brand names stay (Do good, Founding 50, Kya's Crew).
+- **Badge names (new):** Vaste weger, Klaar voor de oppas, Trajectafronder, Trucjesster, Uitdagingskampioen, Goede buur.
+
 ### [#579](https://github.com/the-kya-project/perch-perfect-plan/pull/579) · Chapter names in Dutch · **merged on Brittany's OK (Nov 28, 2026), not yet read by a native speaker**
 Chapter names were rows in the regions table, so they stayed English. The app now shows them in the reader's language wherever the Flock names a chapter (the picker, the Chapter tab, profiles, posts, events, pods, challenges, notifications, the review queue). State codes stay as they are. Not changed: the public `/founding` page (nothing else on it is Dutch yet) and the English-only `/admin/founding`.
 - **Where:** every chapter name in the Flock
@@ -1430,6 +1436,14 @@ No new strings: every line reuses existing wording, in new places (admins only).
 
 ## Decisions agents made
 
+### [#582](https://github.com/the-kya-project/perch-perfect-plan/pull/582) · Dutch for everything still in English
+- **Decision:** The 1,535 lines are listed in their own file (`docs/translations/nl-2026-11-28.md`) rather than in "Copy that merged", with a short summary there.
+- **Why:** the list is longer than the rest of this file.
+- **Decision:** Raised the service worker's precache limit from 2 MiB to 3 MiB (`maximumFileSizeToCacheInBytes` in `vite.config.ts`). The main bundle carries every language's catalog and passed 2 MiB with the Dutch complete, which fails the build. Nothing else about caching changes.
+- **Worth doing next:** load each language's catalog only when it's needed, which shrinks the bundle for everyone. It changes how pages first load (hydration), so it's its own PR.
+- **Decision:** Reactions ("Great job", "Been there"…) are "aanmoedigingen", since "reactie" already means a comment.
+- **Known gaps, not fixed here (code changes):** journey lines get the bird's name from `possessive()` in English form ("Kiwi's"), right in Dutch for most names but not all ("Max's" should be "Max'"); the library admin builds part of one error from English phrases in code (the `PROBLEM` map in `admin.library.$resourceId.tsx`); "{count} people cheered" uses a singular Dutch verb after the count (needs its own plural key); `dashboard.yourBirds` and `dashboard.yourFlock` both read "Je vogels vandaag" because "flock" is locked to "je vogels".
+
 ### [#579](https://github.com/the-kya-project/perch-perfect-plan/pull/579) · Chapter names in Dutch
 - **Decision:** The names are translated in the app, not the database: `chapterName(t, name)` in `src/lib/flockNav.ts` looks up the English name the regions table stores. A renamed or new region shows as stored until a line is added there; `npm run test:flock-shell` fails if the regions seeded in the database and that list drift apart.
 - **Why:** the database name is also what emails, exports and `/admin/founding` read; a table of names per language would be a migration for ten words.
@@ -2068,6 +2082,9 @@ Format:
 ### <PR link> · <item ID> <item title>
 - **Needs:** <the decision, approval or read, in one or two lines>
 ```
+
+### [#582](https://github.com/the-kya-project/perch-perfect-plan/pull/582) · Dutch for everything still in English
+- **Needs:** your OK in the PR to merge, after any read you want (list in `docs/translations/nl-2026-11-28.md`). Most of it is behind the Flock gate, but some is live for Dutch-speaking visitors as soon as it merges: the `/founding` page, the sign-in and gift emails, and a few care-app lines. Also the precache limit change (see "Decisions agents made").
 
 ### [#572](https://github.com/the-kya-project/perch-perfect-plan/pull/572) · 1.13b Badges: care badges free users can earn
 - **Needs:** your approval of the PR, after looking at the before-and-after screenshots. The run couldn't take them: Chromium won't start inside the hourly job's sandbox. On your Mac, in a copy of this branch: `npm run test:care-badges:screens` (builds, then saves them to `test-results/care-badges/`). "before-switch-off" is what free users get when this merges (no change); the "after-…" ones and "badges-screen" are what you'd see with `select public.admin_set_care_feature('care_badges', 'admins');`.
