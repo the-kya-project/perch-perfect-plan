@@ -19,7 +19,7 @@ Format:
   - After: "<new wording>"
 ```
 
-### [#582](https://github.com/the-kya-project/perch-perfect-plan/pull/582) · Dutch for everything still in English
+### [#582](https://github.com/the-kya-project/perch-perfect-plan/pull/582) · Dutch for everything still in English · **merged on Brittany's OK (Nov 28, 2026), not yet read by a native speaker**
 1,535 lines, too many to list here: every one, English next to Dutch, is in [`docs/translations/nl-2026-11-28.md`](translations/nl-2026-11-28.md), grouped by screen. For a native speaker's read.
 - **Where:** the whole Flock (journeys, posts, chapter, events, places, pods, challenges, votes, library, badges, review and admin screens); the public `/founding` page (48 lines, all English until now); care badges (behind their switch); the weight-baseline lines (draft, behind their switch); a few live care-app lines (6 weight, 16 sitter-check, 2 dashboard, 4 sit form and link); and the emails: sign-in and confirmation (35, the old Dutch kept where it still matched) and gifts (40).
 - **Terms:** journey = traject (tab "Trajecten"), chapter = afdeling, chapter lead = afdelingsleider, comment = reactie, reactions = aanmoedigingen, buddy pod = buddygroep, challenge = uitdaging, Today's idea = Idee van de dag, review queue = beoordelingslijst, Resources tab = Bronnen, avian vet = vogeldierenarts, free season = de gratis periode. Brand names stay (Do good, Founding 50, Kya's Crew).
@@ -2082,9 +2082,6 @@ Format:
 ### <PR link> · <item ID> <item title>
 - **Needs:** <the decision, approval or read, in one or two lines>
 ```
-
-### [#582](https://github.com/the-kya-project/perch-perfect-plan/pull/582) · Dutch for everything still in English
-- **Needs:** your OK in the PR to merge, after any read you want (list in `docs/translations/nl-2026-11-28.md`). Most of it is behind the Flock gate, but some is live for Dutch-speaking visitors as soon as it merges: the `/founding` page, the sign-in and gift emails, and a few care-app lines. Also the precache limit change (see "Decisions agents made").
 
 ### [#572](https://github.com/the-kya-project/perch-perfect-plan/pull/572) · 1.13b Badges: care badges free users can earn
 - **Needs:** your approval of the PR, after looking at the before-and-after screenshots. The run couldn't take them: Chromium won't start inside the hourly job's sandbox. On your Mac, in a copy of this branch: `npm run test:care-badges:screens` (builds, then saves them to `test-results/care-badges/`). "before-switch-off" is what free users get when this merges (no change); the "after-…" ones and "badges-screen" are what you'd see with `select public.admin_set_care_feature('care_badges', 'admins');`.
