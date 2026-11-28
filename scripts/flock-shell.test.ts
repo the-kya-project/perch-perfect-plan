@@ -894,7 +894,6 @@ check("guidelines: the walk-through gate comes first, and only it and the full g
   // The gate loads with the app: it carries the version number, never the text.
   assert.ok(!/from "\.\/content"/.test(readFileSync("src/flock/guidelines/agreement.ts", "utf8")), "the gate doesn't import the guidelines' text");
   assert.ok(!readFileSync("src/routes/_authenticated/flock.agree.tsx", "utf8").includes("guidelines/content"), "the walk-through route's options don't either");
-  assert.ok(readFileSync("i18next-parser.config.js", "utf8").includes('"!src/flock/guidelines/content.ts"'), "the text stays out of the shared catalog");
   // Shared code never imports the walk-through.
   for (const f of ["src/routes/_authenticated/route.tsx", "src/routes/__root.tsx", "src/components/OwnerTabBar.tsx", "src/lib/flock.ts"]) {
     if (existsSync(f)) assert.ok(!readFileSync(f, "utf8").includes("flock/guidelines/"), `${f} doesn't import the walk-through`);

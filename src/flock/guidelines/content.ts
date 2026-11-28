@@ -9,11 +9,6 @@
 // walk-through again and stops their posting until they agree to it.
 // scripts/flock-shell.test.ts checks the two match.
 //
-// The English lives here as each t() call's default, not in
-// src/locales/en.jsonc: this file is left out of i18n extraction so ~20 KB of
-// text loads only with the walk-through and guidelines screens, never with the
-// app for everyone (i18next-parser.config.js says why).
-//
 // Copy approved by Brittany, Nov 28, 2026 (docs/mockups/flock-guidelines-agreement/).
 import type { TFunction } from "i18next";
 import { FLOCK_CONTACT_EMAIL } from "@/lib/flockGuidelines";

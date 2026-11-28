@@ -20,7 +20,7 @@ Format:
 ```
 
 ### [#584](https://github.com/the-kya-project/perch-perfect-plan/pull/584) · Community guidelines walk-through and guidelines page · **held for Brittany**
-All new member-facing wording, word for word from the approved mockups and the prompt (source: `src/flock/guidelines/content.ts`). English only so far: Dutch shows the English until a translation pass.
+All new member-facing wording, word for word from the approved mockups and the prompt (source: `src/flock/guidelines/content.ts`). English only so far: Dutch shows the English until the next translation pass.
 - **Where:** walk-through screen 1 (`/flock/agree`)
   - New: "1 of 3" (and "2 of 3", "3 of 3"); "Welcome to the Flock"; "Before you join, here's a quick look at what we're all about."
   - New: "Bridging research and life with birds"; "Researchers"; "Conservationists"; "Parrot owners"; "The Flock brings these communities together. Our care recommendations come from avian research and veterinary science, and our mission is a place where all of us collaborate."
@@ -1764,7 +1764,7 @@ Format:
 - **Screen 1 has no visible way out,** as in the mockup. Backing out is the system Back (or Escape), which returns to the care page they came from. If the iPhone app has no back gesture there, screen 1 may need a close button.
 - **Mockup vs. prompt:** section headings on screen 1 follow the mockup (no full stop: "Bridging research and life with birds", "What we advocate for", "Most importantly, we're building a bigger table"); the prompt wrote them with one.
 - **Before the migration reaches a database** (a preview on staging before merge), the app finds no agreement function and lets people through as before, rather than showing a button that can't save. The database then has no rule to enforce either; production gets both within a minute of merging.
-- **The guidelines' words aren't in the shared translation catalog** (`en.jsonc`). That catalog loads with the app for everyone, and the main bundle was 8 KB under its 2 MB precache limit; the ~20 KB of guidelines text pushed the build over. They live as English defaults in `src/flock/guidelines/content.ts`, which loads only with the walk-through and guidelines screens, so free users' bundle is 1.4 KB smaller than before (the old six guidelines left the catalog). Two follow-ups: a Dutch version needs its own namespace, and Dutch readers now see these screens (and the join step's guidelines box, which #575 had translated) in English; and the main bundle is close to the limit for every future copy change.
+- **Dutch:** the walk-through and the new guidelines are in the English catalog like every other string, so the next Dutch pass picks them up. Until then Dutch readers see these screens, and the join step's guidelines box (which #582 had translated), in English. The old six guidelines' Dutch lines are no longer used.
 - **The guidelines link sits at the top of the Spaces sheet for now.** The side-menu drawer from the new navigation isn't built yet; the link moves to the top of the drawer, above Feed, when it is.
 
 ### [#543](https://github.com/the-kya-project/perch-perfect-plan/pull/543) · 1.17 Promo codes for memberships
