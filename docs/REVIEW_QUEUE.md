@@ -19,6 +19,62 @@ Format:
   - After: "<new wording>"
 ```
 
+### [#575](https://github.com/the-kya-project/perch-perfect-plan/pull/575) · Join the Flock screen in Dutch · **merged on Brittany's OK (Nov 28, 2026), not yet read by a native speaker**
+Dutch ("je") for the rest of the Join screen, after #574. Chapter is "afdeling", community guidelines "communityrichtlijnen"; "de Flock" and "Word lid van de Flock" as in the billing Dutch. The chapter names themselves come from the regions table and stay English.
+- **Where:** The "Part of the Flock" sheet (also used wherever a free account taps a Flock-only journey)
+  - "Part of the Flock" → "Onderdeel van de Flock"
+  - "The Flock is The Kya Project's community, where you'll find your local chapter, a library of guides and recordings, and every training journey, including tricks, nail trims, and stationing." → "De Flock is de community van The Kya Project. Je vindt er je eigen afdeling bij jou in de buurt, een bibliotheek met gidsen en opnames, en elk trainingstraject, ook trucjes, nagels knippen en stationing."
+  - "Join the Flock early, while it's free for everyone." → "Word nu al lid van de Flock, nu het nog gratis is voor iedereen."
+  - "Join the Flock" → "Word lid van de Flock"
+  - "Join the Flock free" → "Word gratis lid van de Flock"
+  - "Close" → "Sluiten"
+- **Where:** The Join step, chapter picker and messages
+  - "Back to my birds" → "Terug naar mijn vogels"
+  - "Join the Flock" → "Word lid van de Flock"
+  - "Before you go in" → "Voordat je naar binnen gaat"
+  - "Choose your chapter, read the community guidelines, and you're in." → "Kies je afdeling, lees de communityrichtlijnen en je bent binnen."
+  - "Your chapter" → "Je afdeling"
+  - "Members see your region, never your address." → "Leden zien je regio, nooit je adres."
+  - "Not chosen yet" → "Nog niet gekozen"
+  - "Choose" → "Kiezen"
+  - "Change" → "Wijzigen"
+  - "Choose your chapter" → "Kies je afdeling"
+  - "Your chapter is the members near you. Members see your region, never your address." → "Je afdeling bestaat uit de leden bij jou in de buurt. Leden zien je regio, nooit je adres."
+  - "Please read them before you join." → "Lees ze voordat je lid wordt."
+  - "I'm 18 or older" → "Ik ben 18 jaar of ouder"
+  - "I agree to the community guidelines" → "Ik ga akkoord met de communityrichtlijnen"
+  - "Join the Flock" → "Word lid van de Flock"
+  - "Joining…" → "Lid worden…"
+  - "Loading" → "Laden"
+  - "Choose your chapter first." → "Kies eerst je afdeling."
+  - "Please confirm you're 18 or older and agree to the guidelines." → "Bevestig dat je 18 jaar of ouder bent en ga akkoord met de richtlijnen."
+  - "Joining for the free season has closed." → "Lid worden tijdens de gratis periode kan niet meer."
+  - "The Flock isn't open to new members yet." → "De Flock is nog niet open voor nieuwe leden."
+  - "The guidelines have just changed. Reload the page to read the new version." → "De richtlijnen zijn net gewijzigd. Laad de pagina opnieuw om de nieuwe versie te lezen."
+  - "We couldn't save that. Check your connection and try again." → "We konden dat niet opslaan. Controleer je verbinding en probeer het opnieuw."
+  - "You're in" → "Je bent binnen"
+  - "The Flock opens on {{date}}. We'll see you there." → "De Flock gaat open op {{date}}. Tot dan!"
+  - "The Flock opens soon. We'll see you there." → "De Flock gaat binnenkort open. Tot dan!"
+  - "Community guidelines" → "Communityrichtlijnen"
+- **Where:** The community guidelines (Join step and /flock/guidelines)
+  - "Welcome to the Flock" → "Welkom in de Flock"
+  - "We're a community of people who love parrots and want to give them good lives. These are the few things we ask of everyone here." → "We zijn een community van mensen die van papegaaien houden en ze een goed leven willen geven. Dit zijn de paar dingen die we van iedereen hier vragen."
+  - "Be kind." → "Wees vriendelijk."
+  - "Everyone here is learning, including the people who've had birds for decades. Disagree with ideas, never with people, and assume the best of each other." → "Iedereen hier is aan het leren, ook mensen die al tientallen jaren vogels hebben. Je mag het oneens zijn met ideeën, nooit met mensen, en ga uit van het beste in elkaar."
+  - "Put the birds first." → "De vogels komen eerst."
+  - "Share what keeps parrots safe and healthy. Posts that encourage harmful care, or the sale of wild-caught birds, will be removed." → "Deel wat papegaaien veilig en gezond houdt. Berichten die schadelijke verzorging aanmoedigen, of de verkoop van in het wild gevangen vogels, worden verwijderd."
+  - "The Flock isn't your vet." → "De Flock is niet je dierenarts."
+  - "Members share experience, not medical advice. If your bird seems unwell, please call an avian vet before posting." → "Leden delen ervaring, geen medisch advies. Lijkt je vogel ziek? Bel dan eerst een vogeldierenarts voordat je iets plaatst."
+  - "No selling or spam." → "Geen verkoop of spam."
+  - "Please don't advertise products, services, or birds for sale. Sharing a rescue that needs help is always welcome." → "Maak geen reclame voor producten, diensten of vogels die te koop zijn. Een opvang delen die hulp nodig heeft, is altijd welkom."
+  - "Share only what's yours." → "Deel alleen wat van jou is."
+  - "Post your own photos, videos, and stories, and don't share anything another member told you privately." → "Plaats je eigen foto's, video's en verhalen, en deel niets wat een ander lid je privé heeft verteld."
+  - "Meet up safely." → "Spreek veilig af."
+  - "Chapter events happen in public places, and you're never obligated to share where you live." → "Afdelingsevenementen vinden plaats op openbare plekken, en je hoeft nooit te vertellen waar je woont."
+  - "If something feels wrong, you can report or block anyone, and the Kya team reviews every report. Members who break these guidelines may have posts removed or lose access to the Flock." → "Voelt er iets niet goed? Je kunt iedereen melden of blokkeren, en het Kya-team bekijkt elke melding. Bij leden die zich niet aan deze richtlijnen houden, kunnen berichten worden verwijderd of kan hun toegang tot de Flock worden ingetrokken."
+  - "Questions or a problem?" → "Vragen of een probleem?"
+  - "Email the Kya team at {{email}}." → "Mail het Kya-team op {{email}}."
+
 ### [#572](https://github.com/the-kya-project/perch-perfect-plan/pull/572) · 1.13b Care badges · **merged on Brittany's OK (Nov 28, 2026), switched off**
 English only (Dutch after you approve the English). Everything is behind the `care_badges` switch (off). All new. Lines marked "mockup" are word for word from `SpecBadges.dc.html`.
 - **Where:** the bird page's record list
