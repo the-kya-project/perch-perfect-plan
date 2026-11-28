@@ -22,7 +22,17 @@ Where these items came from, with the detail behind each: `docs/flock/opening-sc
 
 ## Ready to build
 
-Nothing right now.
+### 1.13b Badges: care badges free users can earn
+- **Spec:** [Badges](flock/specs/feature-specs.md#badges-113a-and-113b) · **Mockup:** [`SpecBadges.dc.html`](flock/mockups/SpecBadges.dc.html)
+- **Done means:**
+  - Behind its own off switch, care badges are earned in the care app: Steady scale (4, 12 and 52 weeks in a row), Daily check-in (7 and 30 days), Plan ready and Sitter ready.
+  - A small celebration, then the badge on the bird's page, and a Badges screen with earned and unearned badges. Free users see no Flock badges or Flock navigation while the Flock is closed to them.
+  - Past activity counts, shown once as a single "Here's what you've already earned" celebration.
+  - Badges reward the habit, never a weight, trend or health outcome. No points, leaderboards or rankings.
+- **Size:** L
+- **Depends on:** 1.13a
+- **Overnight alone:** yes, held for Brittany. It changes what free users see, so the PR is never merged by an agent.
+- **Needs Brittany:** approval of the finished PR, with before-and-after screenshots of what free users see. Any health-related badge rule also goes in the vet packet. (Approved to start: Brittany, Nov 28, 2026.)
 
 ---
 
@@ -34,31 +44,6 @@ Nothing right now.
 - **Depends on:** 2.3 (and 2.4 if that's approved)
 - **Overnight alone:** no (needs a hands-on Simulator check)
 - **Needs Brittany:** the Simulator test with her, and merge.
-
-### 1.13b Badges: care badges free users can earn
-- **Spec:** [Badges](flock/specs/feature-specs.md#badges-113a-and-113b) · **Mockup:** [`SpecBadges.dc.html`](flock/mockups/SpecBadges.dc.html)
-- **Done means:**
-  - Behind its own off switch, care badges are earned in the care app: Steady scale (4, 12 and 52 weeks in a row), Daily check-in (7 and 30 days), Plan ready and Sitter ready.
-  - A small celebration, then the badge on the bird's page, and a Badges screen with earned and unearned badges. Free users see no Flock badges or Flock navigation while the Flock is closed to them.
-  - Past activity counts, shown once as a single "Here's what you've already earned" celebration.
-  - Badges reward the habit, never a weight, trend or health outcome. No points, leaderboards or rankings.
-- **Size:** L
-- **Depends on:** 1.13a
-- **Overnight alone:** no. It changes what free users see, so before-and-after screenshots are required.
-- **Needs Brittany:** approval before work starts and of the PR. Any health-related badge rule also goes in the vet packet.
-
-### 1.12 Flock insights
-- **Spec:** [Flock insights](flock/specs/feature-specs.md#flock-insights-112) · **Mockup:** [`SpecInsights.dc.html`](flock/mockups/SpecInsights.dc.html)
-- **Done means:**
-  - A monthly Insights card shows habit patterns by species (how often, how long, how many), each with how many birds it's based on, with a species filter.
-  - Totals and averages only, computed inside the app's database. Groups under 20 birds aren't shown. No weight ranges, health statistics, comparisons between birds, or anything that reads as medical advice.
-  - Free users' care logs count unless they turn off "Include my birds in Flock insights" under Privacy in account settings. The card's footnote links there, and the privacy policy has a line about it.
-  - The mockup's "Share my profile with my chapter" switch isn't in the spec, so it isn't built unless Brittany asks for it.
-  - Diet conversion shows no typical length, anywhere: no number, no range and no "usually takes" line, because it could read as health guidance (Brittany's decision, Nov 24, 2026).
-- **Size:** L
-- **Depends on:** the privacy-policy line from Brittany
-- **Overnight alone:** no. It reads care-app data and adds a Privacy setting free users can see.
-- **Needs Brittany:** approval before work starts, and evidence of exactly what free users see. (The diet conversion duration is decided: no typical length, Nov 24, 2026.)
 
 ---
 
@@ -182,6 +167,7 @@ The launch PR itself (1.18) is already merged dark. What's left before opening i
 - **CSP is still report-only.** Read the `[csp-report]` lines in Vercel runtime logs, add any hosts that are really needed, then switch to enforcing. Never flip it blind.
 
 ### Product
+- **1.12 Flock insights.** On hold (Brittany, Nov 28, 2026): a later idea, not on the build list. Spec: [Flock insights](flock/specs/feature-specs.md#flock-insights-112) · Mockup: [`SpecInsights.dc.html`](flock/mockups/SpecInsights.dc.html). Already decided: Diet conversion shows no typical length, anywhere (no number, no range and no "usually takes" line), because it could read as health guidance (Brittany, Nov 24, 2026). Nothing is to be built until she reopens it; then it needs her before work starts.
 - **1.10a Short clips as challenge entries.** Decided (Brittany, Nov 24, 2026, on #547): not now. Challenge entries are a few sentences plus up to four photos. Clips would need clip support on Flock posts first (Cloudflare Stream uploads, the clip limits, playback and the "never the player's own error" handling, as journey clips have). Not to be built until she asks for it; then it needs her before work starts.
 - **1.9 Pre-approval for more spaces.** Decided (Brittany, Nov 22, 2026): pre-approval stays on Do good only, as it works today. No other space waits for review, and nothing here is to be built unless she reopens it.
 - **iPad landscape polish:**
