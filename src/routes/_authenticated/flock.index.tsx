@@ -125,7 +125,7 @@ function FlockToday() {
         ) : !feed.isLoading && (
           <FlockEmpty icon={<Sun className="size-6" />} title={empty.title}>{empty.line}</FlockEmpty>
         )}
-        <PostMenus menuFor={menuFor} setMenuFor={setMenuFor} />
+        <PostMenus menuFor={menuFor} setMenuFor={setMenuFor} fromFeed />
       </FlockBody>
     </>
   );

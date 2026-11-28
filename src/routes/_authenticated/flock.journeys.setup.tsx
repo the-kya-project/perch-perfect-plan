@@ -9,7 +9,7 @@ import { FlockSubPage } from "@/components/flock/FlockSubPage";
 import { ChoiceChips, FlockOnlySheet, FlowFooter, HowOthersDidIt, JourneyEyebrow, MemberSuppliedNote, SkillAbout } from "@/components/flock/JourneyParts";
 import { DietEclectusAlert, DietNotForBird, DietVetCard } from "@/components/flock/JourneyDiet";
 import { PodOptIn } from "@/components/flock/PodParts";
-import { ReportSheet } from "@/components/flock/ReportSheet";
+import { FlagSheet } from "@/components/flock/FlagSheets";
 import { podWait, usePodCanWait, useInvalidatePods } from "@/lib/flockPods";
 import { useHealthFeature } from "@/lib/useHealthFeature";
 import {
@@ -175,7 +175,7 @@ function SetupJourney() {
                 className="text-[14px] font-[700] underline underline-offset-4" style={{ color: K.moss }}>
                 {t("flock.journeys.member.seeJourney", "See {{name}} journey", { name: possessive(source.bird_name) })}
               </Link>
-              <KyaLink onClick={() => setReporting(true)}>{t("flock.report.titleSkill", "Report this skill")}</KyaLink>
+              <KyaLink onClick={() => setReporting(true)}>{t("flock.flag.thisSkill", "Flag this skill")}</KyaLink>
             </div>
             {birds && birds.length > 1 && !birdId && (
               <>
@@ -282,7 +282,7 @@ function SetupJourney() {
         </KyaPrimaryButton>
       </FlowFooter>
       {flockSheet && template && <FlockOnlySheet reason="how_others" skill={template.name} onClose={() => setFlockSheet(false)} />}
-      {reporting && from && <ReportSheet type="journey" id={from} onClose={() => setReporting(false)} />}
+      {reporting && from && <FlagSheet type="journey" id={from} authorName={source?.owner_name} onClose={() => setReporting(false)} />}
     </FlockSubPage>
   );
 }

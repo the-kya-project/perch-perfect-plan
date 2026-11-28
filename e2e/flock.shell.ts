@@ -1216,16 +1216,16 @@ test.describe("journeys: start a journey (admin, phone)", () => {
     await expect(page.getByTestId("started-from")).toHaveText("Started from Sunny's journey");
     await page.getByTestId("started-from").click();
     await expect(page).toHaveURL(new RegExp(`/flock/journeys/${SOURCE}`));
-    // The source journey: labeled, "Start this skill", and "Report this skill" in its menu.
+    // The source journey: labeled, "Start this skill", and "Flag this skill" in its menu.
     await expect(page.getByTestId("member-supplied-note")).toBeVisible();
     await expect(page.getByTestId("start-this-skill")).toBeVisible();
     await page.getByTestId("journey-other-menu").click();
-    await page.getByRole("button", { name: "Report this skill" }).click();
-    const sheet = page.getByTestId("report-sheet");
-    await sheet.locator("[data-reason='unsafe']").click();
-    await sheet.getByRole("button", { name: "Send report" }).click();
-    await expect(page.getByTestId("report-done")).toBeVisible();
-    expect(state.calls.find((c) => c.fn === "flock_report")!.args).toMatchObject({ p_subject_type: "journey", p_subject_id: SOURCE, p_reason: "unsafe" });
+    await page.getByTestId("options-sheet").locator("[data-action='flag']").click();
+    const sheet = page.getByTestId("flag-sheet");
+    await sheet.locator("[data-reason='care_standards']").click();
+    await page.getByTestId("flag-send").click();
+    await expect(page.getByTestId("flag-sent")).toBeVisible();
+    expect(state.calls.find((c) => c.fn === "flock_report")!.args).toMatchObject({ p_subject_type: "journey", p_subject_id: SOURCE, p_reason: "care_standards" });
     // The Journeys tab labels it too.
     await page.goto("/flock/journeys");
     await expect(page.locator(`[data-journey-card='${SOURCE}']`).getByTestId("member-supplied")).toBeVisible();
@@ -1950,7 +1950,7 @@ test.describe("posts, comments and reactions (admin, phone)", () => {
     await page.mouse.down();
     await page.waitForTimeout(700);
     await page.mouse.up();
-    const sheet = page.getByTestId("action-sheet");
+    const sheet = page.getByTestId("options-sheet");
     await expect(sheet.getByRole("button")).toHaveText(["Edit", "Delete", "Cancel"]);
     await sheet.locator("[data-action='edit']").click();
     await expect(page.getByTestId("replying-to")).toHaveText("Editing your comment");
@@ -1958,11 +1958,11 @@ test.describe("posts, comments and reactions (admin, phone)", () => {
     await page.getByTestId("comment-send").click();
     expect(created(state, "flock_comment_edit")[0].args).toMatchObject({ p_body: "@Priya walnut, in very tiny pieces." });
 
-    // Someone else's: Reply / Report / Cancel.
+    // Someone else's: Flag / Block / Cancel (mockup 04).
     await page.locator(`[data-comment='${PRIYA_C}']`).getByTestId("comment-more").click();
-    await expect(page.getByTestId("action-sheet").getByRole("button")).toHaveText(["Reply", "Report", "Block Priya S.", "Block and report", "Cancel"]);
-    await page.getByTestId("action-sheet").locator("[data-action='cancel']").click();
-    await expect(page.getByTestId("action-sheet")).toHaveCount(0);
+    await expect(page.getByTestId("options-sheet").locator("[data-action]")).toHaveText([/^Flag this comment/, /^Block Priya S\./, "Cancel"]);
+    await page.getByTestId("options-sheet").locator("[data-action='cancel']").click();
+    await expect(page.getByTestId("options-sheet")).toHaveCount(0);
     await context.close();
   });
 
@@ -2000,18 +2000,18 @@ test.describe("posts, comments and reactions (admin, phone)", () => {
     await expect(page).toHaveURL(/\/flock\?space=learn$/);
     const mine = page.locator("[data-post]").filter({ hasText: "Hello, Flock!" });
     await mine.getByTestId("post-more").click();
-    await expect(page.getByTestId("action-sheet").getByRole("button")).toHaveText(["Edit", "Delete", "Cancel"]);
-    await page.getByTestId("action-sheet").locator("[data-action='edit']").click();
+    await expect(page.getByTestId("options-sheet").getByRole("button")).toHaveText(["Edit", "Delete", "Cancel"]);
+    await page.getByTestId("options-sheet").locator("[data-action='edit']").click();
     await expect(page).toHaveURL(/\/flock\/post\/[0-9a-f-]+\/edit$/);
     await expect(page.getByTestId("post-body-input")).toHaveValue("Hello, Flock!");
     await page.getByTestId("post-body-input").fill("Hello, Flock! Echo says hi.");
     await page.getByTestId("composer-post").click();
     expect(created(state, "flock_post_edit")[0].args).toMatchObject({ p_body: "Hello, Flock! Echo says hi." });
-    // Someone else's post: Reply / Report / Cancel.
+    // Someone else's post: Flag / Block / Cancel.
     await page.goto("/flock");
     await page.locator(`[data-post='${POST}']`).getByTestId("post-more").click();
-    await expect(page.getByTestId("action-sheet").getByRole("button")).toHaveText(["Reply", "Report", "Block Alex R.", "Block and report", "Cancel"]);
-    await page.getByTestId("action-sheet").locator("[data-action='cancel']").click();
+    await expect(page.getByTestId("options-sheet").locator("[data-action]")).toHaveText([/^Flag this post/, /^Block Alex R\./, "Cancel"]);
+    await page.getByTestId("options-sheet").locator("[data-action='cancel']").click();
 
     state.rateLimit = "posts";
     await page.goto("/flock/post/new");
@@ -2045,34 +2045,64 @@ test.describe("reporting, the review queue and notifications (admin, phone)", ()
     state.comments.push({ comment_id: COMMENT, subject_type: "post", subject_id: POST, author_id: ALEX, author_name: "Alex R.", body: "Works every time.", created_at: hoursAgo(1) });
   };
 
-  test("report a post or a comment: a reason, an optional note, and a private thank-you", async ({ browser, baseURL }) => {
+  test("flag a post or a comment: options, a reason and an optional note, then the thank-you (mockups 04–06)", async ({ browser, baseURL }) => {
     const { context, page, state } = await open(browser, baseURL!, { admin: true });
     seedPost(state);
     await page.goto("/flock");
     await page.locator(`[data-post='${POST}']`).getByTestId("post-more").click();
-    await expect(page.getByTestId("action-sheet").getByRole("button")).toHaveText(["Reply", "Report", "Block Alex R.", "Block and report", "Cancel"]);
-    await page.getByTestId("action-sheet").locator("[data-action='report']").click();
-    const sheet = page.getByTestId("report-sheet");
-    await expect(sheet.getByRole("radio")).toHaveText(["Unkind or harassing", "Unsafe advice for birds", "Spam or selling", "Something else"]);
-    await expect(sheet.getByRole("button", { name: "Send report" })).toBeDisabled();
-    await sheet.locator("[data-reason='unsafe']").click();
-    await page.getByTestId("report-note").fill("Clipping isn't a behavior fix.");
-    await sheet.getByRole("button", { name: "Send report" }).click();
-    await expect(page.getByTestId("report-done")).toContainText("the person who posted it won't know it was you");
-    expect(state.calls.find((c) => c.fn === "flock_report")!.args).toMatchObject({ p_subject_type: "post", p_subject_id: POST, p_reason: "unsafe", p_note: "Clipping isn't a behavior fix." });
-    await page.getByRole("button", { name: "Done" }).click();
+    const options = page.getByTestId("options-sheet");
+    await expect(options.locator("[data-action='flag']")).toHaveText("Flag this postThe Kya team reviews it privately. Alex R. won't know who flagged it.");
+    await expect(options.locator("[data-action='block']")).toHaveText("Block Alex R.You won't see each other's posts, comments, or journeys. You can undo this in Settings.");
+    await options.locator("[data-action='flag']").click();
+    const sheet = page.getByTestId("flag-sheet");
+    await expect(page.getByRole("heading", { name: "What's going on?" })).toBeVisible();
+    await expect(page.getByText("The Kya team reviews every flag. Alex R. won't know who flagged it.")).toBeVisible();
+    await expect(sheet.getByRole("radio")).toHaveText([
+      "Harmful or unkindHarassment, hateful content, or harm to an animal.",
+      "Goes against Kya care standardsLike a seed-only diet, clipping, a cage that looks too small, or punishment-based training.",
+      "Spam or sellingAds, affiliate links, or selling or trading birds.",
+      "Something elseTell us a little in the note below.",
+    ]);
+    // Send stays greyed out until a reason is picked.
+    await expect(page.getByTestId("flag-send")).toBeDisabled();
+    await sheet.locator("[data-reason='care_standards']").click();
+    await expect(sheet.locator("[data-reason='care_standards']")).toHaveAttribute("aria-checked", "true");
+    await expect(page.getByTestId("flag-note")).toHaveAttribute("placeholder", "For example, I think this cage may be too small for a macaw.");
+    await page.getByTestId("flag-note").fill("Clipping isn't a behavior fix.");
+    await page.getByTestId("flag-send").click();
+    const sent = page.getByTestId("flag-sent");
+    await expect(sent).toContainText("Thanks for looking out");
+    await expect(sent).toContainText("we'll reach out to Alex R. privately, so you won't see a public reply.");
+    await expect(page.getByTestId("flag-sent-next")).toHaveText("You can keep scrolling. There's nothing else you need to do.");
+    expect(state.calls.find((c) => c.fn === "flock_report")!.args).toMatchObject({ p_subject_type: "post", p_subject_id: POST, p_reason: "care_standards", p_note: "Clipping isn't a behavior fix." });
+    await page.getByTestId("flag-done").click();
+    await expect(sent).toHaveCount(0);
 
+    // A comment, flagged as harmful: the 24-hour line, and "Done" off the feed.
     await page.goto(`/flock/post/${POST}`);
     await page.locator(`[data-comment='${COMMENT}']`).getByTestId("comment-more").click();
-    await expect(page.getByTestId("action-sheet").getByRole("button")).toHaveText(["Reply", "Report", "Block Alex R.", "Block and report", "Cancel"]);
-    await page.getByTestId("action-sheet").locator("[data-action='report']").click();
-    await page.getByTestId("report-sheet").locator("[data-reason='spam']").click();
-    await page.getByTestId("report-sheet").getByRole("button", { name: "Send report" }).click();
-    expect(state.calls.filter((c) => c.fn === "flock_report").at(-1)!.args).toMatchObject({ p_subject_type: "comment", p_subject_id: COMMENT, p_reason: "spam", p_note: null });
+    await page.getByTestId("options-sheet").locator("[data-action='flag']").click();
+    await page.getByTestId("flag-sheet").locator("[data-reason='harmful']").click();
+    await page.getByTestId("flag-send").click();
+    await expect(page.getByTestId("flag-sent-next")).toHaveText("Flags like this one are reviewed within 24 hours.");
+    await expect(page.getByTestId("flag-done")).toHaveText("Done");
+    expect(state.calls.filter((c) => c.fn === "flock_report").at(-1)!.args).toMatchObject({ p_subject_type: "comment", p_subject_id: COMMENT, p_reason: "harmful", p_note: null });
     await context.close();
   });
 
-  test("block from a post, block and report from a comment, and unblock from Blocked members", async ({ browser, baseURL }) => {
+  test("the feed's thank-you goes back to the Feed", async ({ browser, baseURL }) => {
+    const { context, page, state } = await open(browser, baseURL!, { admin: true });
+    seedPost(state);
+    await page.goto("/flock");
+    await page.locator(`[data-post='${POST}']`).getByTestId("post-more").click();
+    await page.getByTestId("options-sheet").locator("[data-action='flag']").click();
+    await page.getByTestId("flag-sheet").locator("[data-reason='spam']").click();
+    await page.getByTestId("flag-send").click();
+    await expect(page.getByTestId("flag-done")).toHaveText("Back to the Feed");
+    await context.close();
+  });
+
+  test("block from a post and from a comment, and unblock from Blocked members", async ({ browser, baseURL }) => {
     const { context, page, state } = await open(browser, baseURL!, { admin: true });
     seedPost(state);
     const PRIYA = "00000000-0000-4000-8000-00000000e002";
@@ -2084,7 +2114,7 @@ test.describe("reporting, the review queue and notifications (admin, phone)", ()
     // Block from a post's menu: a calm confirmation, and the post is gone.
     await page.goto("/flock");
     await page.locator(`[data-post='${POST}']`).getByTestId("post-more").click();
-    await page.getByTestId("action-sheet").locator("[data-action='block']").click();
+    await page.getByTestId("options-sheet").locator("[data-action='block']").click();
     await expect(page.getByRole("heading", { name: "Block Alex R.?" })).toBeVisible();
     await expect(page.getByText("They won't be told.")).toBeVisible();
     await page.getByTestId("confirm-delete").click();
@@ -2092,19 +2122,14 @@ test.describe("reporting, the review queue and notifications (admin, phone)", ()
     await expect(page.locator(`[data-post='${POST}']`)).toHaveCount(0);
     await expect(page.locator(`[data-post='${PRIYA_POST}']`)).toBeVisible();
 
-    // Block and report from a comment: the report goes first, then the block.
+    // Block from a comment's options.
     state.blocks = [];
     await page.goto(`/flock/post/${POST}`);
     await page.locator(`[data-comment='${PRIYA_COMMENT}']`).getByTestId("comment-more").click();
-    await page.getByTestId("action-sheet").locator("[data-action='block-report']").click();
-    const sheet = page.getByTestId("report-sheet");
-    await sheet.locator("[data-reason='unkind']").click();
-    await sheet.getByRole("button", { name: "Report and block" }).click();
-    await expect(page.getByTestId("report-done")).toContainText("You've also blocked Priya S.");
-    const order = state.calls.filter((c) => c.fn === "flock_report" || c.fn === "flock_block").map((c) => c.fn);
-    expect(order.slice(-2)).toEqual(["flock_report", "flock_block"]);
-    expect(state.calls.filter((c) => c.fn === "flock_report").at(-1)!.args).toMatchObject({ p_subject_type: "comment", p_subject_id: PRIYA_COMMENT, p_reason: "unkind" });
-    await page.getByRole("button", { name: "Done" }).click();
+    await page.getByTestId("options-sheet").locator("[data-action='block']").click();
+    await expect(page.getByRole("heading", { name: "Block Priya S.?" })).toBeVisible();
+    await page.getByTestId("confirm-delete").click();
+    await expect.poll(() => state.calls.filter((c) => c.fn === "flock_block").at(-1)?.args).toMatchObject({ p_user_id: PRIYA, p_on: true });
     await expect(page.locator(`[data-comment='${PRIYA_COMMENT}']`)).toHaveCount(0);
 
     // Flock settings, Blocked members: the list, and Unblock.

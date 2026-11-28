@@ -5,10 +5,9 @@ import { useTranslation } from "react-i18next";
 import { K } from "@/components/kya";
 import { FlockAvatar } from "@/components/flock/FlockPeople";
 import { useCardBirdPhotos } from "@/components/flock/JourneyBrowse";
-import { ActionSheet, ConfirmSheet, PostCard } from "@/components/flock/PostParts";
-import { ReportSheet } from "@/components/flock/ReportSheet";
+import { ConfirmSheet, PostCard } from "@/components/flock/PostParts";
+import { ContentOptionsSheet, FlagSheet } from "@/components/flock/FlagSheets";
 import { BlockSheet } from "@/components/flock/BlockSheet";
-import { blockActions } from "@/lib/flockBlocks";
 import { useAvatarUrls, useMyProfile, type FlockPhotoSrc } from "@/lib/flockData";
 import { deletePost, useInvalidatePosts, usePostPhotos, type FlockPost } from "@/lib/flockPostData";
 import type { PostSpace } from "@/lib/flockPosts";
@@ -25,47 +24,34 @@ export function usePostMedia(posts: FlockPost[]) {
   };
 }
 
-/** A post's press-and-hold menu: Edit / Delete on your own; Reply, Report,
- *  Block and Block and report on others'. After a block, `onDeleted` runs too
- *  (the post is gone for you, so a post page leaves). */
-export function PostMenus({ menuFor, setMenuFor, onDeleted }: {
-  menuFor: FlockPost | null; setMenuFor: (p: FlockPost | null) => void; onDeleted?: () => void;
+/** A post's ··· (or press-and-hold) sheet: Edit / Delete on your own; Flag
+ *  and Block on others' (mockups 04–06). After a block, `onDeleted` runs too
+ *  (the post is gone for you, so a post page leaves). `fromFeed`: the
+ *  thank-you's button says "Back to the Feed". */
+export function PostMenus({ menuFor, setMenuFor, onDeleted, fromFeed }: {
+  menuFor: FlockPost | null; setMenuFor: (p: FlockPost | null) => void; onDeleted?: () => void; fromFeed?: boolean;
 }) {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const invalidate = useInvalidatePosts();
   const [confirmFor, setConfirmFor] = useState<FlockPost | null>(null);
-  const [reportFor, setReportFor] = useState<FlockPost | null>(null);
+  const [flagFor, setFlagFor] = useState<FlockPost | null>(null);
   const [blockFor, setBlockFor] = useState<FlockPost | null>(null);
-  const [blockReportFor, setBlockReportFor] = useState<FlockPost | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const p = menuFor;
   return (
     <>
-      {p && (
-        <ActionSheet title={t("flock.posts.menuTitle", "Post options")} onClose={() => setMenuFor(null)}
-          actions={p.is_mine
-            ? [
-              { key: "edit", label: t("flock.posts.edit", "Edit"), onClick: () => { setMenuFor(null); void navigate({ to: "/flock/post/$postId/edit", params: { postId: p.post_id } }); } },
-              { key: "delete", label: t("flock.posts.delete", "Delete"), danger: true, onClick: () => { setMenuFor(null); setConfirmFor(p); } },
-            ]
-            : p.status === "live"
-              ? [
-                { key: "reply", label: t("flock.posts.reply", "Reply"), onClick: () => { setMenuFor(null); void navigate({ to: "/flock/post/$postId", params: { postId: p.post_id }, search: { focus: 1 } }); } },
-                { key: "report", label: t("flock.report.action", "Report"), onClick: () => { setMenuFor(null); setReportFor(p); } },
-                ...blockActions(t, {
-                  authorId: p.author_id, myId: null, name: p.author_name,
-                  onBlock: () => { setMenuFor(null); setBlockFor(p); },
-                  onBlockAndReport: () => { setMenuFor(null); setBlockReportFor(p); },
-                }),
-              ]
-              : []} />
+      {p && (p.is_mine || p.status === "live") && (
+        <ContentOptionsSheet type="post" mine={p.is_mine} authorName={p.author_name} onClose={() => setMenuFor(null)}
+          onEdit={() => { setMenuFor(null); void navigate({ to: "/flock/post/$postId/edit", params: { postId: p.post_id } }); }}
+          onDelete={() => { setMenuFor(null); setConfirmFor(p); }}
+          onFlag={() => { setMenuFor(null); setFlagFor(p); }}
+          onBlock={p.author_id ? () => { setMenuFor(null); setBlockFor(p); } : undefined} />
       )}
-      {reportFor && <ReportSheet type="post" id={reportFor.post_id} onClose={() => setReportFor(null)} />}
-      {blockReportFor && (
-        <ReportSheet type="post" id={blockReportFor.post_id} alsoBlock={{ userId: blockReportFor.author_id, name: blockReportFor.author_name }}
-          onBlocked={() => onDeleted?.()} onClose={() => setBlockReportFor(null)} />
+      {flagFor && (
+        <FlagSheet type="post" id={flagFor.post_id} authorName={flagFor.author_name} onClose={() => setFlagFor(null)}
+          doneLabel={fromFeed ? t("flock.flag.backToFeed", "Back to the Feed") : undefined} />
       )}
       {blockFor && <BlockSheet userId={blockFor.author_id} name={blockFor.author_name} onBlocked={() => onDeleted?.()} onClose={() => setBlockFor(null)} />}
       {confirmFor && (
@@ -130,7 +116,7 @@ export function PostList({ posts }: { posts: FlockPost[] }) {
       {posts.map((p) => (
         <PostCard key={p.post_id} post={p} avatar={media.avatar(p)} photos={media.photos(p)} birdPhoto={media.bird(p)} onMenu={() => setMenuFor(p)} />
       ))}
-      <PostMenus menuFor={menuFor} setMenuFor={setMenuFor} />
+      <PostMenus menuFor={menuFor} setMenuFor={setMenuFor} fromFeed />
     </>
   );
 }

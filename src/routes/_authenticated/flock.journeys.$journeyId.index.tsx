@@ -6,11 +6,9 @@ import { K, KyaHeading, KyaPrimaryButton, KyaSecondaryButton, KyaSheet } from "@
 import { FlockSubPage } from "@/components/flock/FlockSubPage";
 import { FlockEmpty } from "@/components/flock/FlockChips";
 import { ClipTile, JourneyMenuSheet, shortDay } from "@/components/flock/JourneyBrowse";
-import { ActionSheet } from "@/components/flock/PostParts";
 import { BlockSheet } from "@/components/flock/BlockSheet";
-import { blockActions } from "@/lib/flockBlocks";
 import { FinisherTipsCard, MemberSuppliedNote, SkillAbout, StartedFrom } from "@/components/flock/JourneyParts";
-import { ReportSheet } from "@/components/flock/ReportSheet";
+import { ContentOptionsSheet, FlagSheet } from "@/components/flock/FlagSheets";
 import { ClipTileState } from "@/components/flock/JourneyClipView";
 import { DietDisclaimer, VetReminderCard, WeighTodayCard } from "@/components/flock/JourneyDiet";
 import { JourneyPodCard } from "@/components/flock/PodParts";
@@ -218,13 +216,11 @@ function JourneyPage() {
         {diet && card && <DietDisclaimer birdName={card.bird_name} className="pt-2" />}
       </div>
       {otherMenu && card && (
-        <ActionSheet title={t("flock.journeys.page.menu", "Journey options")} onClose={() => setOtherMenu(false)}
-          actions={[
-            ...(memberSupplied ? [{ key: "report", label: t("flock.report.titleSkill", "Report this skill"), onClick: () => { setOtherMenu(false); setReporting(true); } }] : []),
-            ...blockActions(t, { authorId: card.owner_id, myId: null, name: card.owner_name, onBlock: () => { setOtherMenu(false); setBlocking(true); } }),
-          ]} />
+        <ContentOptionsSheet type="journey" mine={false} authorName={card.owner_name} onClose={() => setOtherMenu(false)}
+          onFlag={memberSupplied ? () => { setOtherMenu(false); setReporting(true); } : undefined}
+          onBlock={card.owner_id ? () => { setOtherMenu(false); setBlocking(true); } : undefined} />
       )}
-      {reporting && <ReportSheet type="journey" id={journeyId} onClose={() => setReporting(false)} />}
+      {reporting && <FlagSheet type="journey" id={journeyId} authorName={card?.owner_name} onClose={() => setReporting(false)} />}
       {blocking && card?.owner_id && (
         <BlockSheet userId={card.owner_id} name={card.owner_name} onClose={() => setBlocking(false)}
           onBlocked={() => void navigate({ to: "/flock/journeys", replace: true })} />
