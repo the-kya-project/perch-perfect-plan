@@ -19,6 +19,20 @@ Format:
   - After: "<new wording>"
 ```
 
+### [#579](https://github.com/the-kya-project/perch-perfect-plan/pull/579) · Chapter names in Dutch
+Chapter names were rows in the regions table, so they stayed English. The app now shows them in the reader's language wherever the Flock names a chapter (the picker, the Chapter tab, profiles, posts, events, pods, challenges, notifications, the review queue). State codes stay as they are. Not changed: the public `/founding` page (nothing else on it is Dutch yet) and the English-only `/admin/founding`.
+- **Where:** every chapter name in the Flock
+  - "California" → "Californië"
+  - "Florida" → "Florida"
+  - "Great Lakes" → "Grote Meren"
+  - "Mid-Atlantic" → "Mid-Atlantische staten"
+  - "Northeast" → "Noordoosten"
+  - "Pacific Northwest" → "Pacifisch Noordwesten"
+  - "Southeast" → "Zuidoosten"
+  - "Southwest" → "Zuidwesten"
+  - "Texas" → "Texas"
+  - "Other region" → "Andere regio"
+
 ### [#575](https://github.com/the-kya-project/perch-perfect-plan/pull/575) · Join the Flock screen in Dutch · **merged on Brittany's OK (Nov 28, 2026), not yet read by a native speaker**
 Dutch ("je") for the rest of the Join screen, after #574. Chapter is "afdeling", community guidelines "communityrichtlijnen"; "de Flock" and "Word lid van de Flock" as in the billing Dutch. The chapter names themselves come from the regions table and stay English.
 - **Where:** The "Part of the Flock" sheet (also used wherever a free account taps a Flock-only journey)
@@ -1416,6 +1430,10 @@ No new strings: every line reuses existing wording, in new places (admins only).
 
 ## Decisions agents made
 
+### [#579](https://github.com/the-kya-project/perch-perfect-plan/pull/579) · Chapter names in Dutch
+- **Decision:** The names are translated in the app, not the database: `chapterName(t, name)` in `src/lib/flockNav.ts` looks up the English name the regions table stores. A renamed or new region shows as stored until a line is added there; `npm run test:flock-shell` fails if the regions seeded in the database and that list drift apart.
+- **Why:** the database name is also what emails, exports and `/admin/founding` read; a table of names per language would be a migration for ten words.
+
 ### [#572](https://github.com/the-kya-project/perch-perfect-plan/pull/572) · 1.13b Care badges
 - **Decision:** Care badges belong to a bird: each bird has its own four, on its own page and its own Badges screen (`/birds/<bird>/badges`). Each person with access to the bird (owner or co-carer) gets their own celebration and their own "seen".
 - **Why:** the spec's rules are per bird ("weighing a bird", "a bird's full care plan") and the mockup's card says "You've weighed Juno 12 weeks in a row".
@@ -2050,6 +2068,9 @@ Format:
 ### <PR link> · <item ID> <item title>
 - **Needs:** <the decision, approval or read, in one or two lines>
 ```
+
+### [#579](https://github.com/the-kya-project/perch-perfect-plan/pull/579) · Chapter names in Dutch
+- **Needs:** a read of the ten Dutch names (in "Copy that merged"), then your OK in the PR to merge.
 
 ### [#572](https://github.com/the-kya-project/perch-perfect-plan/pull/572) · 1.13b Badges: care badges free users can earn
 - **Needs:** your approval of the PR, after looking at the before-and-after screenshots. The run couldn't take them: Chromium won't start inside the hourly job's sandbox. On your Mac, in a copy of this branch: `npm run test:care-badges:screens` (builds, then saves them to `test-results/care-badges/`). "before-switch-off" is what free users get when this merges (no change); the "after-…" ones and "badges-screen" are what you'd see with `select public.admin_set_care_feature('care_badges', 'admins');`.
